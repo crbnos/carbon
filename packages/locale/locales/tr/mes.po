@@ -145,6 +145,9 @@ msgstr "Bu işlemi bitirmek istediğinizden emin misiniz? Bu, bu işlem için t�
 msgid "Are you sure you want to leave this page?"
 msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 
+msgid "Assembly steps"
+msgstr "Montaj adımları"
+
 msgid "Assigned"
 msgstr "Atanmış"
 
@@ -552,6 +555,9 @@ msgstr "Malzeme seçilmeden bitir?"
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
 
+msgid "General"
+msgstr "Genel"
+
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
 
@@ -649,6 +655,9 @@ msgstr "İş emirleri"
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
 
+msgid "Keyboard shortcuts"
+msgstr "Klavye kısayolları"
+
 msgid "Kit"
 msgstr "Set"
 
@@ -742,6 +751,9 @@ msgstr "Envanterden stok kartlarını manuel kaldır"
 msgid "Mark Short"
 msgstr "Kısa Teslim Et"
 
+msgid "Mark the step done / record"
+msgstr "Adımı tamamlandı olarak işaretle / kaydet"
+
 msgid "matches"
 msgstr "eşleşir"
 
@@ -785,6 +797,9 @@ msgstr "Saatlik Çalışmalarım"
 msgid "Name"
 msgstr "Adı"
 
+msgid "Navigation"
+msgstr "Gezinti"
+
 msgid "New"
 msgstr "Yeni"
 
@@ -796,6 +811,9 @@ msgstr "En yeniden önce"
 
 msgid "Next"
 msgstr "Sonraki"
+
+msgid "Next step"
+msgstr "Sonraki adım"
 
 msgid "No"
 msgstr "Hayır"
@@ -892,6 +910,9 @@ msgstr "Seri numarası yok"
 
 msgid "No serial numbers found"
 msgstr "Seri numarası bulunamadı"
+
+msgid "No shortcuts available on this page."
+msgstr "Bu sayfada kullanılabilir kısayol yoktur."
 
 msgid "No spare parts added yet"
 msgstr "Henüz yedek parça eklenmedi"
@@ -1044,6 +1065,9 @@ msgstr "Önceki"
 msgid "Preventive"
 msgstr "Önleyici"
 
+msgid "Previous step"
+msgstr "Önceki adım"
+
 msgid "Print"
 msgstr "Yazdır"
 
@@ -1154,6 +1178,9 @@ msgstr "Satış Siparişi"
 
 msgid "Save"
 msgstr "Kaydet"
+
+msgid "Save the form you're editing"
+msgstr "Düzenlediğiniz formu kaydetin"
 
 msgid "Scan"
 msgstr "Tarama"
@@ -1311,6 +1338,9 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+msgid "Show this overlay"
+msgstr "Bu katmanı göster"
+
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -1346,6 +1376,9 @@ msgstr "Kullanılan Yedek Parçalar"
 
 msgid "Start"
 msgstr "Başlat"
+
+msgid "Start or pause the operation"
+msgstr "Operasyonu başlat veya duraklat"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -1435,6 +1468,9 @@ msgstr "Çalışma Süresi: {0}"
 
 msgid "Today"
 msgstr "Bugün"
+
+msgid "Toggle the sidebar"
+msgstr "Kenar çubuğunu aç/kapat"
 
 msgid "Tools"
 msgstr "Araçlar"

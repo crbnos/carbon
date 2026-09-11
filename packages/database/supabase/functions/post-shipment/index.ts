@@ -8,6 +8,10 @@ import { requirePermissions } from "../lib/supabase.ts";
 import type { Database, Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import {
+  buildJournalLineDimensionInserts,
+  type JournalDimensionMeta,
+} from "../shared/journal-dimensions.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -1779,6 +1783,1024 @@ serve(async (req: Request) => {
             break;
           }
 
+          case "Sales Return Order": {
+            // Return-to-customer: ships rejected-claim goods back out of the
+            // returned (On Hold) stock at carried cost. Dr COGS / Cr Inventory.
+            // No RMA quantity bumps — dispositions carry the line state.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const salesReturnOrderId = shipment.data.sourceDocumentId;
+
+            const salesReturnOrder = await client
+              .from("salesReturnOrder")
+              .select("*")
+              .eq("id", salesReturnOrderId)
+              .eq("companyId", companyId)
+              .single();
+            if (salesReturnOrder.error)
+              throw new Error("Failed to fetch sales return order");
+            // Same allowlist as the create edge function: goods can only ship
+            // back once they came in. A Draft RMA has never had its caps
+            // validated; Cancelled cannot ship.
+            if (
+              !["To Receive", "Completed"].includes(
+                salesReturnOrder.data.status
+              )
+            )
+              throw new Error(
+                `Cannot ship against a return order in ${salesReturnOrder.data.status} status`
+              );
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const accountDefaults = accountingEnabled
+              ? await getDefaultPostingGroup(client, companyId)
+              : null;
+
+            // GL dimensions for the return shipment journal (item, item group,
+            // customer, customer type, location).
+            const [company, customer] = accountingEnabled
+              ? await Promise.all([
+                  client
+                    .from("company")
+                    .select("companyGroupId")
+                    .eq("id", companyId)
+                    .single(),
+                  client
+                    .from("customer")
+                    .select("id, customerTypeId")
+                    .eq("id", salesReturnOrder.data.customerId)
+                    .eq("companyId", companyId)
+                    .single(),
+                ])
+              : [null, null];
+            const dimensions =
+              accountingEnabled && company?.data?.companyGroupId
+                ? await client
+                    .from("dimension")
+                    .select("id, entityType")
+                    .eq("companyGroupId", company.data.companyGroupId)
+                    .eq("active", true)
+                    .in("entityType", [
+                      "CustomerType",
+                      "Customer",
+                      "ItemPostingGroup",
+                      "Item",
+                      "Location",
+                    ])
+                : null;
+            const dimensionMap = new Map<string, string>();
+            for (const dim of dimensions?.data ?? []) {
+              if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+            }
+            const customerTypeId = customer?.data?.customerTypeId ?? null;
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+            const itemShipmentQuantities: Record<string, number> = {};
+
+            for (const shipmentLine of shipmentLines.data) {
+              if (!shipmentLine.itemId) continue;
+              const shippedQuantity =
+                isNaN(shipmentLine.shippedQuantity) ||
+                shipmentLine.shippedQuantity == null
+                  ? 0
+                  : shipmentLine.shippedQuantity;
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              // Non-Inventory lines have no stock and no carried cost —
+              // posting them would book COGS/costLedger with zero inventory
+              // movement (the Sales Order branch excludes them the same way).
+              if (itemTrackingType === "Non-Inventory") continue;
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  shippedQuantity;
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Sales Return Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                // Whole-entity shipping (v1: return shipments do not split
+                // partial batches — the picker picks whole entities). The
+                // ledger writes one row per entity, so the entities must
+                // account for the full shipped quantity — otherwise cost and
+                // stock relief would diverge from what the line claims.
+                const entitySum = lineEntities.reduce(
+                  (sum, entity) => sum + Number(entity.quantity ?? 0),
+                  0
+                );
+                if (Math.abs(entitySum - shippedQuantity) > 0.00001) {
+                  throw new Error(
+                    `Shipment line ${shipmentLine.id}: tracked entities account for ${entitySum} of ${shippedQuantity} shipped — assign tracking before posting`
+                  );
+                }
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  entitySum;
+                for (const entity of lineEntities) {
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-(entity.quantity ?? 0)),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Sales Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  trackedEntityUpdates[entity.id] = {
+                    status: "Consumed",
+                    quantity: entity.quantity ?? 0,
+                  };
+                }
+              }
+            }
+
+            const accountingPeriodId = accountingEnabled
+              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              : null;
+
+            await db.transaction().execute(async (trx) => {
+              // Double-post guard: serialize on the shipment row — a second
+              // concurrent post waits here, then sees Posted and aborts, so
+              // ledger rows and journals can never double.
+              const lockedShipment = await trx
+                .selectFrom("shipment")
+                .select(["status"])
+                .where("id", "=", shipmentId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (
+                lockedShipment.status === "Posted" ||
+                lockedShipment.status === "Voided"
+              ) {
+                throw new Error(
+                  `Shipment is already ${lockedShipment.status}`
+                );
+              }
+
+              const journalLineInserts: Omit<
+                Database["public"]["Tables"]["journalLine"]["Insert"],
+                "journalId"
+              >[] = [];
+              // Index-parallel to journalLineInserts: dimension #i belongs to
+              // journal line #i.
+              const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
+
+              for (const [itemId, quantity] of Object.entries(
+                itemShipmentQuantities
+              )) {
+                const cogsResult = await calculateCOGS(trx, {
+                  itemId,
+                  quantity,
+                  companyId,
+                });
+
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: "Sale",
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Sales Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    itemId,
+                    quantity: round(-quantity),
+                    cost: round(-cogsResult.totalCost),
+                    nominalCost: round(-cogsResult.totalCost),
+                    remainingQuantity: 0,
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+
+                if (
+                  accountingEnabled &&
+                  accountDefaults?.data &&
+                  cogsResult.totalCost > 0
+                ) {
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId: accountDefaults.data.costOfGoodsSoldAccount,
+                    description: "Cost of Goods Sold",
+                    amount: round(debit("expense", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipment.data.locationId,
+                    customerId: salesReturnOrder.data.customerId,
+                    customerTypeId,
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
+                }
+              }
+
+              if (
+                accountingEnabled &&
+                journalLineInserts.length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `Return Shipment ${shipment.data.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    // Distinct source type: these are NOT sales shipments —
+                    // "Sales Shipment" here double-counted return-to-customer
+                    // movements in shipment/COGS reporting and pushed the
+                    // journal through the always-on external-sync policy
+                    // instead of the opt-in return types.
+                    sourceType: "Sales Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                const journalLineResults = await trx
+                  .insertInto("journalLine")
+                  .values(
+                    journalLineInserts.map((line) => ({
+                      ...line,
+                      journalId: journalResult.id,
+                    }))
+                  )
+                  .returning(["id"])
+                  .execute();
+
+                const journalLineDimensionInserts =
+                  buildJournalLineDimensionInserts({
+                    journalLineIds: journalLineResults.map((jl) => jl.id),
+                    meta: journalLineDimensionsMeta,
+                    dimensionMap,
+                    companyId,
+                  });
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              if (Object.keys(trackedEntityUpdates).length > 0) {
+                const activity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Return Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    attributes: {
+                      "Sales Return Order": salesReturnOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const activityId = activity[0]?.id;
+                for await (const [id, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set(update)
+                    .where("id", "=", id)
+                    .execute();
+                  if (activityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: id,
+                        quantity: update.quantity ?? 0,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
+          case "Purchase Return Order": {
+            // Supplier return: relieves inventory at carried cost against
+            // GRNI (reverses the receipt posting). Cr Inventory / Dr GRNI.
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+
+            const [purchaseReturnOrder, purchaseReturnOrderLines] =
+              await Promise.all([
+                client
+                  .from("purchaseReturnOrder")
+                  .select("*")
+                  .eq("id", purchaseReturnOrderId)
+                  .eq("companyId", companyId)
+                  .single(),
+                client
+                  .from("purchaseReturnOrderLine")
+                  .select("*")
+                  .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+                  .eq("companyId", companyId),
+              ]);
+            if (purchaseReturnOrder.error)
+              throw new Error("Failed to fetch purchase return order");
+            if (purchaseReturnOrderLines.error)
+              throw new Error("Failed to fetch purchase return order lines");
+            if (purchaseReturnOrder.data.status !== "To Ship")
+              throw new Error(
+                `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
+              );
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const returnLineById = new Map(
+              (purchaseReturnOrderLines.data ?? []).map((l) => [l.id, l])
+            );
+
+            const accountDefaults = accountingEnabled
+              ? await getDefaultPostingGroup(client, companyId)
+              : null;
+
+            // GL dimensions for the return shipment journal (item, item group,
+            // supplier, supplier type, location).
+            const [company, supplier] = accountingEnabled
+              ? await Promise.all([
+                  client
+                    .from("company")
+                    .select("companyGroupId")
+                    .eq("id", companyId)
+                    .single(),
+                  client
+                    .from("supplier")
+                    .select("id, supplierTypeId")
+                    .eq("id", purchaseReturnOrder.data.supplierId)
+                    .eq("companyId", companyId)
+                    .single(),
+                ])
+              : [null, null];
+            const dimensions =
+              accountingEnabled && company?.data?.companyGroupId
+                ? await client
+                    .from("dimension")
+                    .select("id, entityType")
+                    .eq("companyGroupId", company.data.companyGroupId)
+                    .eq("active", true)
+                    .in("entityType", [
+                      "SupplierType",
+                      "Supplier",
+                      "ItemPostingGroup",
+                      "Item",
+                      "Location",
+                    ])
+                : null;
+            const dimensionMap = new Map<string, string>();
+            for (const dim of dimensions?.data ?? []) {
+              if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+            }
+            const supplierTypeId = supplier?.data?.supplierTypeId ?? null;
+
+            const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+              [];
+            const trackedEntityUpdates: Record<
+              string,
+              {
+                status: Database["public"]["Tables"]["trackedEntity"]["Row"]["status"];
+                quantity: number;
+              }
+            > = {};
+            const itemShipmentQuantities: Record<string, number> = {};
+            const returnLineUpdates: Record<
+              string,
+              { quantityShipped: number; updatedBy: string }
+            > = {};
+            // A batch returned in part is split at post: the shelf entity keeps
+            // its id and is decremented, the shipped portion departs as a new
+            // Consumed child (mirrors the Sales Order path).
+            const trackedEntitySplits: {
+              entity: NonNullable<typeof shipmentLineTracking.data>[number];
+              drawQuantity: number;
+              storageUnitId: string | null;
+              itemId: string | null;
+              ledgerIndex: number;
+            }[] = [];
+            const splitChildEdges: { childId: string; quantity: number }[] = [];
+
+            for (const shipmentLine of shipmentLines.data) {
+              if (!shipmentLine.itemId || !shipmentLine.lineId) continue;
+              const returnLine = returnLineById.get(shipmentLine.lineId);
+              if (!returnLine)
+                throw new Error(
+                  `Shipment line ${shipmentLine.id} does not map to a return order line`
+                );
+              const shippedQuantity =
+                isNaN(shipmentLine.shippedQuantity) ||
+                shipmentLine.shippedQuantity == null
+                  ? 0
+                  : shipmentLine.shippedQuantity;
+              if (shippedQuantity <= 0) continue;
+
+              const itemTrackingType =
+                items.data.find((i) => i.id === shipmentLine.itemId)
+                  ?.itemTrackingType ?? "Inventory";
+
+              const existingUpdate = returnLineUpdates[returnLine.id];
+              returnLineUpdates[returnLine.id] = {
+                quantityShipped:
+                  (existingUpdate?.quantityShipped ??
+                    Number(returnLine.quantityShipped ?? 0)) + shippedQuantity,
+                updatedBy: userId,
+              };
+
+              // Non-Inventory lines still advance the return line (so the
+              // order can settle) but post no ledger, cost, or GL — there is
+              // no stock or carried cost to relieve, and booking GRNI against
+              // nothing diverges the books from stock.
+              if (itemTrackingType === "Non-Inventory") continue;
+
+              const lineEntities = (shipmentLineTracking.data ?? []).filter(
+                (tracking) =>
+                  (
+                    tracking.attributes as TrackedEntityAttributes | undefined
+                  )?.["Shipment Line"] === shipmentLine.id
+              );
+
+              if (itemTrackingType === "Inventory") {
+                itemShipmentQuantities[shipmentLine.itemId] =
+                  (itemShipmentQuantities[shipmentLine.itemId] ?? 0) +
+                  shippedQuantity;
+                itemLedgerInserts.push({
+                  postingDate: today,
+                  itemId: shipmentLine.itemId,
+                  quantity: round(-shippedQuantity),
+                  locationId: shipmentLine.locationId,
+                  storageUnitId: shipmentLine.storageUnitId,
+                  entryType: "Negative Adjmt.",
+                  documentType: "Purchase Return Shipment",
+                  documentId: shipment.data?.id ?? undefined,
+                  externalDocumentId:
+                    shipment.data?.externalDocumentId ?? undefined,
+                  createdBy: userId,
+                  companyId,
+                });
+              } else {
+                // Draw the shipped quantity from the linked entities. A fully
+                // drawn entity is Consumed whole; a batch drawn in part is
+                // split (below, in the transaction). The linked entities must
+                // be able to cover the shipped quantity.
+                const entitySum = lineEntities.reduce(
+                  (sum, entity) => sum + Number(entity.quantity ?? 0),
+                  0
+                );
+                if (entitySum + 0.00001 < shippedQuantity) {
+                  throw new Error(
+                    `Shipment line ${shipmentLine.id}: tracked entities account for ${entitySum} of ${shippedQuantity} shipped — assign tracking before posting`
+                  );
+                }
+                let remaining = shippedQuantity;
+                for (const entity of lineEntities) {
+                  if (remaining <= 0.00001) break;
+                  const entityQty = Number(entity.quantity ?? 0);
+                  const draw = Math.min(entityQty, remaining);
+                  remaining -= draw;
+                  itemShipmentQuantities[shipmentLine.itemId] =
+                    (itemShipmentQuantities[shipmentLine.itemId] ?? 0) + draw;
+                  const ledgerIndex = itemLedgerInserts.length;
+                  itemLedgerInserts.push({
+                    postingDate: today,
+                    itemId: shipmentLine.itemId,
+                    quantity: round(-draw),
+                    locationId: shipmentLine.locationId,
+                    storageUnitId: shipmentLine.storageUnitId,
+                    entryType: "Negative Adjmt.",
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    trackedEntityId: entity.id,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    createdBy: userId,
+                    companyId,
+                  });
+                  if (draw + 0.00001 >= entityQty) {
+                    trackedEntityUpdates[entity.id] = {
+                      status: "Consumed",
+                      quantity: entityQty,
+                    };
+                  } else {
+                    // Partial → split at post; the negative ledger row above is
+                    // retargeted to the departing child in the transaction.
+                    trackedEntitySplits.push({
+                      entity,
+                      drawQuantity: draw,
+                      storageUnitId: shipmentLine.storageUnitId,
+                      itemId: shipmentLine.itemId,
+                      ledgerIndex,
+                    });
+                  }
+                }
+              }
+            }
+
+            const accountingPeriodId = accountingEnabled
+              ? await getCurrentAccountingPeriod(client, companyId, db, today)
+              : null;
+
+            await db.transaction().execute(async (trx) => {
+              // Double-post guard: serialize on the shipment row — a second
+              // concurrent post waits here, then sees Posted and aborts, so
+              // ledger rows, journals, and quantityShipped can never double.
+              const lockedShipment = await trx
+                .selectFrom("shipment")
+                .select(["status"])
+                .where("id", "=", shipmentId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (
+                lockedShipment.status === "Posted" ||
+                lockedShipment.status === "Voided"
+              ) {
+                throw new Error(
+                  `Shipment is already ${lockedShipment.status}`
+                );
+              }
+
+              // cancelPurchaseReturnOrder locks this same order row — re-check
+              // the status under the lock so a cancel committed after our
+              // pre-transaction read cannot be posted over.
+              const lockedOrder = await trx
+                .selectFrom("purchaseReturnOrder")
+                .select(["status"])
+                .where("id", "=", purchaseReturnOrderId)
+                .forUpdate()
+                .executeTakeFirstOrThrow();
+              if (lockedOrder.status !== "To Ship") {
+                throw new Error(
+                  `Cannot ship against a return order in ${lockedOrder.status} status`
+                );
+              }
+
+              // Split any batch returned in part: keep the shelf entity's id
+              // (decremented), depart the shipped portion as a new Consumed
+              // child, and retarget the negative Purchase Return Shipment
+              // ledger row onto that child.
+              for (const split of trackedEntitySplits) {
+                const parent = split.entity;
+                const parentAttributes =
+                  (parent.attributes as TrackedEntityAttributes | null) ?? {};
+                const childId = nanoid();
+                const built = buildBatchSplitRecords({
+                  parent: {
+                    id: parent.id,
+                    readableId: parent.readableId,
+                    quantity: Number(parent.quantity ?? 0),
+                    sourceDocument: parent.sourceDocument,
+                    sourceDocumentId: parent.sourceDocumentId,
+                    sourceDocumentReadableId: parent.sourceDocumentReadableId,
+                    itemId: parent.itemId ?? null,
+                    expirationDate: parent.expirationDate ?? null,
+                    attributes: parentAttributes as Record<string, unknown>,
+                  },
+                  drawQuantity: split.drawQuantity,
+                  childId,
+                  splitActivityId: nanoid(),
+                  activitySourceDocument: "Shipment",
+                  activitySourceDocumentId: shipmentId,
+                  bin: {
+                    storageUnitId: split.storageUnitId,
+                    locationId: shipment.data.locationId,
+                  },
+                  itemLedgerItemId: split.itemId,
+                  companyId,
+                  userId,
+                  postingDate: today,
+                  childStatus: "Consumed",
+                });
+
+                await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    ...built.activityInsert,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    createdAt: today,
+                  })
+                  .execute();
+                await trx
+                  .insertInto("trackedEntity")
+                  .values(built.childEntityInsert)
+                  .execute();
+                await trx
+                  .insertInto("trackedActivityInput")
+                  .values(built.activityInputInsert)
+                  .execute();
+                await trx
+                  .insertInto("trackedActivityOutput")
+                  .values(built.activityOutputInsert)
+                  .execute();
+
+                const retainedAttributes = {
+                  ...parentAttributes,
+                } as Record<string, unknown>;
+                delete retainedAttributes["Shipment"];
+                delete retainedAttributes["Shipment Line"];
+                delete retainedAttributes["Shipment Line Index"];
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({
+                    quantity: built.parentUpdate.quantity,
+                    attributes: retainedAttributes as Json,
+                  })
+                  .where("id", "=", parent.id)
+                  .execute();
+
+                itemLedgerInserts.push(
+                  ...built.ledgerInserts.map((ledger) => ({
+                    ...ledger,
+                    quantity: round(ledger.quantity),
+                  }))
+                );
+                itemLedgerInserts[split.ledgerIndex].trackedEntityId = childId;
+                splitChildEdges.push({
+                  childId,
+                  quantity: split.drawQuantity,
+                });
+              }
+
+              const journalLineInserts: Omit<
+                Database["public"]["Tables"]["journalLine"]["Insert"],
+                "journalId"
+              >[] = [];
+              // Index-parallel to journalLineInserts: dimension #i belongs to
+              // journal line #i.
+              const journalLineDimensionsMeta: JournalDimensionMeta[] = [];
+
+              for (const [itemId, quantity] of Object.entries(
+                itemShipmentQuantities
+              )) {
+                const cogsResult = await calculateCOGS(trx, {
+                  itemId,
+                  quantity,
+                  companyId,
+                });
+
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: "Purchase",
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Purchase Return Shipment",
+                    documentId: shipment.data?.id ?? undefined,
+                    externalDocumentId:
+                      shipment.data?.externalDocumentId ?? undefined,
+                    itemId,
+                    quantity: round(-quantity),
+                    cost: round(-cogsResult.totalCost),
+                    nominalCost: round(-cogsResult.totalCost),
+                    remainingQuantity: 0,
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+
+                if (
+                  accountingEnabled &&
+                  accountDefaults?.data &&
+                  cogsResult.totalCost > 0
+                ) {
+                  const journalLineReference = nanoid();
+                  const item = items.data.find((i) => i.id === itemId);
+                  const inventoryAccount = resolveInventoryAccount(
+                    item?.replenishmentSystem ?? null,
+                    accountDefaults.data
+                  );
+                  journalLineInserts.push({
+                    accountId:
+                      accountDefaults.data.goodsReceivedNotInvoicedAccount,
+                    description: "Goods Received Not Invoiced",
+                    amount: round(debit("liability", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  journalLineInserts.push({
+                    accountId: inventoryAccount.account,
+                    description: inventoryAccount.description,
+                    amount: round(credit("asset", cogsResult.totalCost)),
+                    quantity: round(quantity),
+                    documentType: "Return Order",
+                    documentId: shipment.data?.id ?? undefined,
+                    documentLineReference: journalReference.to.shipment(
+                      shipment.data?.id ?? ""
+                    ),
+                    journalLineReference,
+                    companyId,
+                  });
+                  // Two journal lines were pushed for this item — one
+                  // dimension meta entry each, index-aligned.
+                  const meta = {
+                    itemId,
+                    itemPostingGroupId:
+                      itemCosts.data.find((c) => c.itemId === itemId)
+                        ?.itemPostingGroupId ?? null,
+                    locationId: shipment.data.locationId,
+                    supplierId: purchaseReturnOrder.data.supplierId,
+                    supplierTypeId,
+                  };
+                  journalLineDimensionsMeta.push(meta, { ...meta });
+                }
+              }
+
+              if (
+                accountingEnabled &&
+                journalLineInserts.length > 0 &&
+                accountingPeriodId
+              ) {
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `Purchase Return Shipment ${shipment.data.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Purchase Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                const journalLineResults = await trx
+                  .insertInto("journalLine")
+                  .values(
+                    journalLineInserts.map((line) => ({
+                      ...line,
+                      journalId: journalResult.id,
+                    }))
+                  )
+                  .returning(["id"])
+                  .execute();
+
+                const journalLineDimensionInserts =
+                  buildJournalLineDimensionInserts({
+                    journalLineIds: journalLineResults.map((jl) => jl.id),
+                    meta: journalLineDimensionsMeta,
+                    dimensionMap,
+                    companyId,
+                  });
+                if (journalLineDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(journalLineDimensionInserts)
+                    .execute();
+                }
+              }
+
+              if (itemLedgerInserts.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(itemLedgerInserts)
+                  .execute();
+              }
+
+              for await (const [lineId, update] of Object.entries(
+                returnLineUpdates
+              )) {
+                await trx
+                  .updateTable("purchaseReturnOrderLine")
+                  .set(update)
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              // Derived status (mirrors getPurchaseReturnOrderStatus): the
+              // return is Completed once every line has shipped its authorized
+              // quantity or been short-closed, otherwise it stays To Ship.
+              const allLines = await trx
+                .selectFrom("purchaseReturnOrderLine")
+                .select(["quantity", "quantityShipped", "closedComplete"])
+                .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+                .execute();
+              const allShipped =
+                allLines.length > 0 &&
+                allLines.every(
+                  (l) =>
+                    l.closedComplete ||
+                    Number(l.quantityShipped) >= Number(l.quantity)
+                );
+              const returnStatus = allShipped
+                ? ("Completed" as const)
+                : ("To Ship" as const);
+              await trx
+                .updateTable("purchaseReturnOrder")
+                .set({ status: returnStatus, updatedBy: userId })
+                .where("id", "=", purchaseReturnOrderId)
+                .execute();
+
+              if (
+                Object.keys(trackedEntityUpdates).length > 0 ||
+                splitChildEdges.length > 0
+              ) {
+                const activity = await trx
+                  .insertInto("trackedActivity")
+                  .values({
+                    type: "Return Shipment",
+                    sourceDocument: "Shipment",
+                    sourceDocumentId: shipmentId,
+                    sourceDocumentReadableId: shipment.data.shipmentId,
+                    attributes: {
+                      "Purchase Return Order": purchaseReturnOrderId,
+                      Shipment: shipmentId,
+                      Employee: userId,
+                    },
+                    companyId,
+                    createdBy: userId,
+                    createdAt: today,
+                  })
+                  .returning(["id"])
+                  .execute();
+                const activityId = activity[0]?.id;
+                for await (const [id, update] of Object.entries(
+                  trackedEntityUpdates
+                )) {
+                  await trx
+                    .updateTable("trackedEntity")
+                    .set(update)
+                    .where("id", "=", id)
+                    .execute();
+                  if (activityId) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: id,
+                        quantity: update.quantity ?? 0,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+                // The Consumed children departed by a split relieve on this
+                // same Return Shipment activity.
+                if (activityId) {
+                  for (const edge of splitChildEdges) {
+                    await trx
+                      .insertInto("trackedActivityInput")
+                      .values({
+                        trackedActivityId: activityId,
+                        trackedEntityId: edge.childId,
+                        quantity: edge.quantity,
+                        companyId,
+                        createdBy: userId,
+                        createdAt: today,
+                      })
+                      .execute();
+                  }
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Posted",
+                  postingDate: today,
+                  postedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
           default: {
             throw new Error(
               `Invalid source document type: ${shipment.data.sourceDocument}`
@@ -1788,6 +2810,13 @@ serve(async (req: Request) => {
         break;
       }
       case "void": {
+        // A void replays quantity rollbacks — voiding a shipment that is not
+        // Posted (e.g. already Voided) would subtract them a second time.
+        if (shipment.data?.status !== "Posted") {
+          throw new Error(
+            `Cannot void a shipment in ${shipment.data?.status} status`
+          );
+        }
         switch (shipment.data?.sourceDocument) {
           case "Sales Order": {
             if (!shipment.data.sourceDocumentId)
@@ -2811,6 +3840,601 @@ serve(async (req: Request) => {
             break;
           }
 
+          case "Sales Return Order": {
+            // Void a return-to-customer shipment: rebuild positive ledger,
+            // sign-flip journal, entities back On Hold (their RMA state).
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const [originalJournalLines, originalItemLedger, originalCostRows] =
+              await Promise.all([
+                client
+                  .from("journalLine")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Return Order")
+                  .eq("companyId", companyId),
+                client
+                  .from("itemLedger")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Sales Return Shipment")
+                  .eq("companyId", companyId),
+                client
+                  .from("costLedger")
+                  .select("*")
+                  .eq("documentId", shipmentId)
+                  .eq("documentType", "Sales Return Shipment")
+                  .eq("companyId", companyId),
+              ]);
+            // A failed read here must abort: treating data:null as "nothing
+            // to reverse" would mark the shipment Voided while its journal
+            // and ledger rows stand.
+            if (originalJournalLines.error)
+              throw new Error("Failed to fetch journal lines to reverse");
+            if (originalItemLedger.error)
+              throw new Error("Failed to fetch item ledger rows to reverse");
+            if (originalCostRows.error)
+              throw new Error("Failed to fetch cost ledger rows to reverse");
+
+            const accountingPeriodId =
+              accountingEnabled && (originalJournalLines.data ?? []).length > 0
+                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                : null;
+
+            await db.transaction().execute(async (trx) => {
+              const reversingItemLedger = (
+                originalItemLedger.data ?? []
+              ).map((entry) => ({
+                postingDate: today,
+                itemId: entry.itemId,
+                quantity: -entry.quantity,
+                locationId: entry.locationId,
+                storageUnitId: entry.storageUnitId,
+                entryType: "Positive Adjmt." as const,
+                documentType: "Sales Return Shipment" as const,
+                documentId: entry.documentId,
+                externalDocumentId: entry.externalDocumentId,
+                trackedEntityId: entry.trackedEntityId,
+                createdBy: userId,
+                companyId,
+              }));
+              if (reversingItemLedger.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(reversingItemLedger)
+                  .execute();
+              }
+
+              // Restore inventory VALUE, not just quantity: posting consumed
+              // FIFO layers via calculateCOGS; without an offsetting layer
+              // the voided stock re-enters at zero value and inventory is
+              // permanently understated.
+              for (const row of (originalCostRows.data ?? []).filter(
+                (r) => Number(r.quantity) < 0
+              )) {
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: row.itemLedgerType,
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Sales Return Shipment",
+                    documentId: row.documentId,
+                    externalDocumentId: row.externalDocumentId ?? undefined,
+                    itemId: row.itemId,
+                    quantity: round(-Number(row.quantity)),
+                    cost: round(-Number(row.cost)),
+                    nominalCost: round(-Number(row.nominalCost)),
+                    remainingQuantity: round(-Number(row.quantity)),
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+              }
+
+              if (
+                accountingEnabled &&
+                (originalJournalLines.data ?? []).length > 0 &&
+                accountingPeriodId
+              ) {
+                const originalLines = originalJournalLines.data ?? [];
+                // Carry the original lines' GL dimensions onto the reversing
+                // lines so the void mirrors the posting.
+                const originalDimensions = await client
+                  .from("journalLineDimension")
+                  .select("journalLineId, dimensionId, valueId")
+                  .in(
+                    "journalLineId",
+                    originalLines.map((l) => l.id)
+                  )
+                  .eq("companyId", companyId);
+                const dimensionsByLine = new Map<
+                  string,
+                  { dimensionId: string; valueId: string }[]
+                >();
+                for (const dim of originalDimensions.data ?? []) {
+                  const list = dimensionsByLine.get(dim.journalLineId) ?? [];
+                  list.push({
+                    dimensionId: dim.dimensionId,
+                    valueId: dim.valueId,
+                  });
+                  dimensionsByLine.set(dim.journalLineId, list);
+                }
+
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `VOID Return Shipment ${shipment.data?.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Sales Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                const journalLineResults = await trx
+                  .insertInto("journalLine")
+                  .values(
+                    originalLines.map((line) => ({
+                      accountId: line.accountId,
+                      description: `VOID: ${line.description ?? ""}`,
+                      amount: -line.amount,
+                      quantity:
+                        line.quantity == null ? undefined : -line.quantity,
+                      documentType: line.documentType,
+                      documentId: line.documentId,
+                      externalDocumentId:
+                        line.externalDocumentId ?? undefined,
+                      documentLineReference:
+                        line.documentLineReference ?? undefined,
+                      journalLineReference: line.journalLineReference,
+                      journalId: journalResult.id,
+                      companyId,
+                    }))
+                  )
+                  .returning(["id"])
+                  .execute();
+
+                const voidDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+                journalLineResults.forEach((jl, index) => {
+                  const originalId = originalLines[index]?.id;
+                  if (!originalId) return;
+                  for (const dim of dimensionsByLine.get(originalId) ?? []) {
+                    voidDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dim.dimensionId,
+                      valueId: dim.valueId,
+                      companyId,
+                    });
+                  }
+                });
+                if (voidDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(voidDimensionInserts)
+                    .execute();
+                }
+              }
+
+              const voidActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Void Shipment",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data?.shipmentId,
+                  attributes: {
+                    "Sales Return Order": shipment.data?.sourceDocumentId,
+                    Shipment: shipmentId,
+                    Employee: userId,
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+              const voidActivityId = voidActivity[0]?.id;
+
+              for await (const entity of shipmentLineTracking.data ?? []) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({ status: "On Hold" })
+                  .where("id", "=", entity.id)
+                  .execute();
+                if (voidActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: entity.id,
+                      quantity: entity.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today,
+                    })
+                    .execute();
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Voided",
+                  updatedAt: today,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
+          case "Purchase Return Order": {
+            // Void a supplier-return shipment: rebuild positive ledger,
+            // sign-flip journal, roll back quantityShipped + ladder,
+            // entities back to Available (their pre-shipment state).
+            if (!shipment.data.sourceDocumentId)
+              throw new Error("Shipment has no sourceDocumentId");
+            const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+
+            // Mirror of the sales-side guard in post-receipt: voiding after a
+            // debit memo exists would leave quantityCredited > quantityShipped
+            // with no path to reconcile. Worse here than on the sales side —
+            // post-memo recovers the GRNI clearing amount from THIS shipment's
+            // costLedger rows, so a void afterwards strands that clearing and
+            // leaves GRNI permanently out by the carried cost.
+            const debitMemos = await client
+              .from("memo")
+              .select("id, status")
+              .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+              .eq("companyId", companyId)
+              .neq("status", "Voided");
+            if (debitMemos.error)
+              throw new Error("Failed to check for debit memos");
+            if ((debitMemos.data ?? []).length > 0) {
+              throw new Error(
+                "Cannot void: a debit memo exists for this return order. Void it first."
+              );
+            }
+
+            const accountingSettings = await client
+              .from("companySettings")
+              .select("accountingEnabled")
+              .eq("id", companyId)
+              .single();
+            const accountingEnabled =
+              accountingSettings.data?.accountingEnabled ?? false;
+
+            const [
+              originalJournalLines,
+              originalItemLedger,
+              returnLinesVoid,
+              originalCostRows,
+            ] = await Promise.all([
+              client
+                .from("journalLine")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Return Order")
+                .eq("companyId", companyId),
+              client
+                .from("itemLedger")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Purchase Return Shipment")
+                .eq("companyId", companyId),
+              client
+                .from("purchaseReturnOrderLine")
+                .select("*")
+                .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+                .eq("companyId", companyId),
+              client
+                .from("costLedger")
+                .select("*")
+                .eq("documentId", shipmentId)
+                .eq("documentType", "Purchase Return Shipment")
+                .eq("companyId", companyId),
+            ]);
+            // A failed read here must abort: treating data:null as "nothing
+            // to reverse" would mark the shipment Voided while its journal
+            // and ledger rows stand.
+            if (originalJournalLines.error)
+              throw new Error("Failed to fetch journal lines to reverse");
+            if (originalItemLedger.error)
+              throw new Error("Failed to fetch item ledger rows to reverse");
+            if (returnLinesVoid.error)
+              throw new Error("Failed to fetch return order lines");
+            if (originalCostRows.error)
+              throw new Error("Failed to fetch cost ledger rows to reverse");
+
+            const shippedByLine = new Map<string, number>();
+            for (const shipmentLine of shipmentLines.data ?? []) {
+              if (!shipmentLine.lineId) continue;
+              const qty = Number(shipmentLine.shippedQuantity ?? 0);
+              shippedByLine.set(
+                shipmentLine.lineId,
+                (shippedByLine.get(shipmentLine.lineId) ?? 0) + qty
+              );
+            }
+
+            const accountingPeriodId =
+              accountingEnabled && (originalJournalLines.data ?? []).length > 0
+                ? await getCurrentAccountingPeriod(client, companyId, db, today)
+                : null;
+
+            await db.transaction().execute(async (trx) => {
+              const reversingItemLedger = (
+                originalItemLedger.data ?? []
+              ).map((entry) => ({
+                postingDate: today,
+                itemId: entry.itemId,
+                quantity: -entry.quantity,
+                locationId: entry.locationId,
+                storageUnitId: entry.storageUnitId,
+                entryType: "Positive Adjmt." as const,
+                documentType: "Purchase Return Shipment" as const,
+                documentId: entry.documentId,
+                externalDocumentId: entry.externalDocumentId,
+                trackedEntityId: entry.trackedEntityId,
+                createdBy: userId,
+                companyId,
+              }));
+              if (reversingItemLedger.length > 0) {
+                await trx
+                  .insertInto("itemLedger")
+                  .values(reversingItemLedger)
+                  .execute();
+              }
+
+              // Restore inventory VALUE, not just quantity: posting consumed
+              // FIFO layers via calculateCOGS; without an offsetting layer
+              // the voided stock re-enters at zero value and inventory is
+              // permanently understated.
+              for (const row of (originalCostRows.data ?? []).filter(
+                (r) => Number(r.quantity) < 0
+              )) {
+                await trx
+                  .insertInto("costLedger")
+                  .values({
+                    itemLedgerType: row.itemLedgerType,
+                    costLedgerType: "Direct Cost",
+                    adjustment: false,
+                    documentType: "Purchase Return Shipment",
+                    documentId: row.documentId,
+                    externalDocumentId: row.externalDocumentId ?? undefined,
+                    itemId: row.itemId,
+                    quantity: round(-Number(row.quantity)),
+                    cost: round(-Number(row.cost)),
+                    nominalCost: round(-Number(row.nominalCost)),
+                    remainingQuantity: round(-Number(row.quantity)),
+                    companyId,
+                    postingDate: today,
+                  })
+                  .execute();
+              }
+
+              if (
+                accountingEnabled &&
+                (originalJournalLines.data ?? []).length > 0 &&
+                accountingPeriodId
+              ) {
+                const originalLines = originalJournalLines.data ?? [];
+                // Carry the original lines' GL dimensions onto the reversing
+                // lines so the void mirrors the posting.
+                const originalDimensions = await client
+                  .from("journalLineDimension")
+                  .select("journalLineId, dimensionId, valueId")
+                  .in(
+                    "journalLineId",
+                    originalLines.map((l) => l.id)
+                  )
+                  .eq("companyId", companyId);
+                const dimensionsByLine = new Map<
+                  string,
+                  { dimensionId: string; valueId: string }[]
+                >();
+                for (const dim of originalDimensions.data ?? []) {
+                  const list = dimensionsByLine.get(dim.journalLineId) ?? [];
+                  list.push({
+                    dimensionId: dim.dimensionId,
+                    valueId: dim.valueId,
+                  });
+                  dimensionsByLine.set(dim.journalLineId, list);
+                }
+
+                const journalEntryId = await getNextSequence(
+                  trx,
+                  "journalEntry",
+                  companyId
+                );
+                const journalResult = await trx
+                  .insertInto("journal")
+                  .values({
+                    journalEntryId,
+                    accountingPeriodId,
+                    description: `VOID Purchase Return Shipment ${shipment.data?.shipmentId}`,
+                    postingDate: today,
+                    companyId,
+                    sourceType: "Purchase Return Shipment",
+                    status: "Posted",
+                    postedAt: new Date().toISOString(),
+                    postedBy: userId,
+                    createdBy: userId,
+                  })
+                  .returning(["id"])
+                  .executeTakeFirstOrThrow();
+                const journalLineResults = await trx
+                  .insertInto("journalLine")
+                  .values(
+                    originalLines.map((line) => ({
+                      accountId: line.accountId,
+                      description: `VOID: ${line.description ?? ""}`,
+                      amount: -line.amount,
+                      quantity:
+                        line.quantity == null ? undefined : -line.quantity,
+                      documentType: line.documentType,
+                      documentId: line.documentId,
+                      externalDocumentId:
+                        line.externalDocumentId ?? undefined,
+                      documentLineReference:
+                        line.documentLineReference ?? undefined,
+                      journalLineReference: line.journalLineReference,
+                      journalId: journalResult.id,
+                      companyId,
+                    }))
+                  )
+                  .returning(["id"])
+                  .execute();
+
+                const voidDimensionInserts: {
+                  journalLineId: string;
+                  dimensionId: string;
+                  valueId: string;
+                  companyId: string;
+                }[] = [];
+                journalLineResults.forEach((jl, index) => {
+                  const originalId = originalLines[index]?.id;
+                  if (!originalId) return;
+                  for (const dim of dimensionsByLine.get(originalId) ?? []) {
+                    voidDimensionInserts.push({
+                      journalLineId: jl.id,
+                      dimensionId: dim.dimensionId,
+                      valueId: dim.valueId,
+                      companyId,
+                    });
+                  }
+                });
+                if (voidDimensionInserts.length > 0) {
+                  await trx
+                    .insertInto("journalLineDimension")
+                    .values(voidDimensionInserts)
+                    .execute();
+                }
+              }
+
+              for await (const [lineId, shipped] of shippedByLine) {
+                const line = (returnLinesVoid.data ?? []).find(
+                  (l) => l.id === lineId
+                );
+                if (!line) continue;
+                await trx
+                  .updateTable("purchaseReturnOrderLine")
+                  .set({
+                    quantityShipped: Math.max(
+                      0,
+                      Number(line.quantityShipped ?? 0) - shipped
+                    ),
+                    updatedBy: userId,
+                  })
+                  .where("id", "=", lineId)
+                  .execute();
+              }
+
+              const remainingLines = await trx
+                .selectFrom("purchaseReturnOrderLine")
+                .select(["quantity", "quantityShipped", "closedComplete"])
+                .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+                .execute();
+              // Derived status (mirrors getPurchaseReturnOrderStatus): a void
+              // that drops shipped quantity below the authorized total returns
+              // the order to To Ship; otherwise it stays Completed.
+              const allShipped =
+                remainingLines.length > 0 &&
+                remainingLines.every(
+                  (l) =>
+                    l.closedComplete ||
+                    Number(l.quantityShipped) >= Number(l.quantity)
+                );
+              const returnStatus = allShipped
+                ? ("Completed" as const)
+                : ("To Ship" as const);
+              await trx
+                .updateTable("purchaseReturnOrder")
+                .set({ status: returnStatus, updatedBy: userId })
+                .where("id", "=", purchaseReturnOrderId)
+                .execute();
+
+              const voidActivity = await trx
+                .insertInto("trackedActivity")
+                .values({
+                  type: "Void Shipment",
+                  sourceDocument: "Shipment",
+                  sourceDocumentId: shipmentId,
+                  sourceDocumentReadableId: shipment.data?.shipmentId,
+                  attributes: {
+                    "Purchase Return Order": purchaseReturnOrderId,
+                    Shipment: shipmentId,
+                    Employee: userId,
+                  },
+                  companyId,
+                  createdBy: userId,
+                  createdAt: today,
+                })
+                .returning(["id"])
+                .execute();
+              const voidActivityId = voidActivity[0]?.id;
+
+              for await (const entity of shipmentLineTracking.data ?? []) {
+                await trx
+                  .updateTable("trackedEntity")
+                  .set({ status: "Available" })
+                  .where("id", "=", entity.id)
+                  .execute();
+                if (voidActivityId) {
+                  await trx
+                    .insertInto("trackedActivityOutput")
+                    .values({
+                      trackedActivityId: voidActivityId,
+                      trackedEntityId: entity.id,
+                      quantity: entity.quantity ?? 0,
+                      companyId,
+                      createdBy: userId,
+                      createdAt: today,
+                    })
+                    .execute();
+                }
+              }
+
+              await trx
+                .updateTable("shipment")
+                .set({
+                  status: "Voided",
+                  updatedAt: today,
+                  updatedBy: userId,
+                })
+                .where("id", "=", shipmentId)
+                .execute();
+            });
+
+            break;
+          }
+
           default: {
             throw new Error(
               `Invalid source document type: ${shipment.data.sourceDocument}`
@@ -2827,7 +4451,11 @@ serve(async (req: Request) => {
     });
   } catch (err) {
     console.error(err);
-    if ("shipmentId" in payload) {
+    // A failed VOID must not touch status: the shipment is still Posted and its
+    // ledger/journal rows still stand, so forcing it to Draft would contradict
+    // the books and let it be edited and posted a second time. Same guard
+    // post-receipt and post-purchase-invoice already carry.
+    if (payload.type !== "void" && "shipmentId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "inventory" });
       await client
         .from("shipment")

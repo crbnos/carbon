@@ -1,6 +1,19 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
+import { parseDate } from "@internationalized/date";
 import { createMappingService } from "../../../core/external-mapping";
-import { roundCurrency } from "../../../core/posting";
+import {
+  JournalEntrySyncError,
+  toPostingDateString
+} from "../../../core/posting";
+import {
+  buildSalesDocumentComponents,
+  type SalesDocumentComponents
+} from "../../../core/sales-document-components";
+import {
+  loadSalesInvoices,
+  requirePostedShippingAccountId
+} from "../../../core/sales-invoice-source";
 import {
   type Accounting,
   BaseEntitySyncer,
@@ -9,7 +22,14 @@ import {
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
 import {
+  loadQboInvoiceTaxCatalog,
+  type QboInvoiceTaxCatalog,
+  resolveQboInvoiceTax
+} from "./invoice-tax";
+import type { QboItemSyncer } from "./item";
+import {
   buildQboDocNumberFields,
+  loadQboAccountRefsById,
   type QboDocNumberSource,
   type QboWriteOmit,
   updateWithSyncTokenRetry
@@ -43,39 +63,6 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
   "Overdue"
 ];
 
-// Row shapes for sales invoice queries (mirror the Xero syncer's)
-type InvoiceRow = {
-  id: string;
-  invoiceId: string;
-  companyId: string;
-  customerId: string;
-  status: Accounting.SalesInvoice["status"];
-  currencyCode: string;
-  exchangeRate: number;
-  dateIssued: string | null;
-  dateDue: string | null;
-  datePaid: string | null;
-  customerReference: string | null;
-  subtotal: number;
-  totalTax: number;
-  totalDiscount: number;
-  totalAmount: number;
-  balance: number;
-  updatedAt: string | null;
-};
-
-type InvoiceLineRow = {
-  id: string;
-  invoiceId: string;
-  invoiceLineType: string;
-  itemId: string | null;
-  description: string | null;
-  quantity: number;
-  unitPrice: number;
-  taxPercent: number;
-  itemReadableIdWithRevision: string | null;
-};
-
 /**
  * Derive the Carbon invoice status from QBO's Balance/TotalAmt (QBO has no
  * invoice status enum). Pure — exported for tests.
@@ -96,21 +83,50 @@ export function deriveCarbonInvoiceStatus(
  * (resolved by ensureDependencySynced before mapping); lines without an
  * item ship without an ItemRef.
  */
-export function buildQboInvoiceLines(
-  lines: Accounting.SalesInvoiceLine[],
-  itemRemoteIds: ReadonlyMap<string, string>
-): Array<Omit<Qbo.InvoiceLine, "Id">> {
-  return lines.map((line) => {
-    const remoteItemId = line.itemId ? itemRemoteIds.get(line.itemId) : null;
-
+export function buildQboInvoiceLines(args: {
+  document: SalesDocumentComponents;
+  itemRemoteIds: ReadonlyMap<string, string>;
+  shippingItemRemoteId: string | null;
+  lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
+}): Array<Omit<Qbo.InvoiceLine, "Id">> {
+  return args.document.components.map((component) => {
+    const shipping =
+      component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    const itemId = shipping
+      ? args.shippingItemRemoteId
+      : component.itemId
+        ? args.itemRemoteIds.get(component.itemId)
+        : null;
+    if ((shipping || component.itemId) && !itemId)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message: `Invoice component ${component.id} has no QuickBooks item mapping`,
+        metadata: {
+          invoiceId: args.document.invoiceId,
+          componentId: component.id
+        }
+      });
+    const taxCode = args.lineTaxCodeRefs.get(component.id);
+    if (!taxCode)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Invoice component ${component.id} has no resolved QuickBooks tax code`,
+        metadata: {
+          invoiceId: args.document.invoiceId,
+          componentId: component.id
+        }
+      });
     return {
-      Description: line.description ?? undefined,
-      Amount: roundCurrency(line.quantity * line.unitPrice),
+      Description: component.description,
+      Amount: component.netAmount,
       DetailType: "SalesItemLineDetail",
       SalesItemLineDetail: {
-        ItemRef: remoteItemId ? { value: remoteItemId } : undefined,
-        Qty: line.quantity,
-        UnitPrice: line.unitPrice
+        ItemRef: itemId ? { value: itemId } : undefined,
+        Qty: component.quantity,
+        UnitPrice: component.unitAmount,
+        TaxCodeRef: taxCode
       }
     };
   });
@@ -121,6 +137,59 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   Qbo.Invoice,
   QboWriteOmit
 > {
+  private taxCatalogPromise?: Promise<QboInvoiceTaxCatalog>;
+  private shippingAccountRefsPromise?: ReturnType<
+    typeof loadQboAccountRefsById
+  >;
+  private shippingItemSyncerPromise?: Promise<QboItemSyncer>;
+
+  private async getShippingAccountId(
+    local: Accounting.SalesInvoice
+  ): Promise<string> {
+    const id = requirePostedShippingAccountId(local);
+    this.shippingAccountRefsPromise ??= loadQboAccountRefsById(this.database, {
+      companyId: this.companyId,
+      integration: this.provider.id
+    }).catch((error) => {
+      this.shippingAccountRefsPromise = undefined;
+      throw error;
+    });
+    if (!(await this.shippingAccountRefsPromise).has(id))
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Shipping Revenue account has no QuickBooks mapping",
+        metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
+      });
+    return id;
+  }
+
+  private getShippingItemSyncer(): Promise<QboItemSyncer> {
+    if (!this.shippingItemSyncerPromise)
+      this.shippingItemSyncerPromise = (async () => {
+        const [{ SyncFactory }, { QboItemSyncer }] = await Promise.all([
+          import("../../../core/sync"),
+          import("./item")
+        ]);
+        const syncer = SyncFactory.getSyncer({
+          ...this.context,
+          entityType: "item",
+          config: this.provider.getSyncConfig("item") ?? {
+            enabled: true,
+            direction: "push-to-accounting",
+            owner: "carbon"
+          }
+        });
+        if (!(syncer instanceof QboItemSyncer))
+          throw new Error(
+            "QuickBooks shipping requires the existing item syncer"
+          );
+        return syncer;
+      })();
+    return this.shippingItemSyncerPromise;
+  }
+
   // Bookkeeping for linkEntities: concurrency metadata per remote id and
   // the DocNumber carrier per local id (recorded during mapToRemote)
   private remoteMetaById = new Map<
@@ -176,7 +245,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     // Also update updatedAt on salesInvoice (Xero-syncer parity)
     await tx
       .updateTable("salesInvoice")
-      .set({ updatedAt: new Date().toISOString() })
+      .set({ updatedAt: datetime.timestamp() })
       .where("id", "=", localId)
       .execute();
   }
@@ -204,111 +273,10 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     return this.fetchInvoicesByIds(ids);
   }
 
-  private async fetchInvoicesByIds(
+  private fetchInvoicesByIds(
     ids: string[]
   ): Promise<Map<string, Accounting.SalesInvoice>> {
-    if (ids.length === 0) return new Map();
-
-    const invoiceRows = await this.database
-      .selectFrom("salesInvoice")
-      // `balance` is derived and lives only on the `salesInvoices` view
-      .leftJoin("salesInvoices", "salesInvoices.id", "salesInvoice.id")
-      .select([
-        "salesInvoice.id",
-        "salesInvoice.invoiceId",
-        "salesInvoice.companyId",
-        "salesInvoice.customerId",
-        "salesInvoice.status",
-        "salesInvoice.currencyCode",
-        "salesInvoice.exchangeRate",
-        "salesInvoice.dateIssued",
-        "salesInvoice.dateDue",
-        "salesInvoice.datePaid",
-        "salesInvoice.customerReference",
-        "salesInvoice.subtotal",
-        "salesInvoice.totalTax",
-        "salesInvoice.totalDiscount",
-        "salesInvoice.totalAmount",
-        "salesInvoices.balance",
-        "salesInvoice.updatedAt"
-      ])
-      .where("salesInvoice.id", "in", ids)
-      .where("salesInvoice.companyId", "=", this.companyId)
-      .execute();
-
-    if (invoiceRows.length === 0) return new Map();
-
-    const lineRows = await this.database
-      .selectFrom("salesInvoiceLine")
-      .leftJoin("item", "item.id", "salesInvoiceLine.itemId")
-      .select([
-        "salesInvoiceLine.id",
-        "salesInvoiceLine.invoiceId",
-        "salesInvoiceLine.invoiceLineType",
-        "salesInvoiceLine.itemId",
-        "salesInvoiceLine.description",
-        "salesInvoiceLine.quantity",
-        "salesInvoiceLine.unitPrice",
-        "salesInvoiceLine.taxPercent",
-        "item.readableIdWithRevision as itemReadableIdWithRevision"
-      ])
-      .where(
-        "salesInvoiceLine.invoiceId",
-        "in",
-        invoiceRows.map((r) => r.id)
-      )
-      .execute();
-
-    const linesByInvoiceId = new Map<string, InvoiceLineRow[]>();
-    for (const line of lineRows as InvoiceLineRow[]) {
-      const existing = linesByInvoiceId.get(line.invoiceId) ?? [];
-      existing.push(line);
-      linesByInvoiceId.set(line.invoiceId, existing);
-    }
-
-    const result = new Map<string, Accounting.SalesInvoice>();
-    for (const row of invoiceRows as InvoiceRow[]) {
-      const lines = linesByInvoiceId.get(row.id) ?? [];
-
-      result.set(row.id, {
-        id: row.id,
-        invoiceId: row.invoiceId,
-        companyId: row.companyId,
-        customerId: row.customerId,
-        customerExternalId: null, // Resolved during mapToRemote
-        status: row.status,
-        currencyCode: row.currencyCode,
-        exchangeRate: Number(row.exchangeRate) || 1,
-        dateIssued: row.dateIssued,
-        dateDue: row.dateDue,
-        datePaid: row.datePaid,
-        customerReference: row.customerReference,
-        subtotal: Number(row.subtotal) || 0,
-        totalTax: Number(row.totalTax) || 0,
-        totalDiscount: Number(row.totalDiscount) || 0,
-        totalAmount: Number(row.totalAmount) || 0,
-        balance: Number(row.balance) || 0,
-        lines: lines.map((line) => {
-          const quantity = Number(line.quantity) || 0;
-          const unitPrice = Number(line.unitPrice) || 0;
-          return {
-            id: line.id,
-            invoiceLineType: line.invoiceLineType,
-            itemId: line.itemId,
-            itemCode: line.itemReadableIdWithRevision,
-            description: line.description,
-            quantity,
-            unitPrice,
-            taxPercent: Number(line.taxPercent) || 0,
-            lineAmount: quantity * unitPrice
-          };
-        }),
-        updatedAt: row.updatedAt ?? new Date().toISOString(),
-        raw: row
-      });
-    }
-
-    return result;
+    return loadSalesInvoices(this.database, { companyId: this.companyId, ids });
   }
 
   // =================================================================
@@ -339,34 +307,74 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
   protected async mapToRemote(
     local: Accounting.SalesInvoice
   ): Promise<Omit<Qbo.Invoice, QboWriteOmit>> {
-    // JIT dependencies: customer, then every line item, before the document
+    const document = buildSalesDocumentComponents(local);
+    const remoteExchangeRate = 1 / local.exchangeRate;
+    if (!Number.isFinite(remoteExchangeRate))
+      throw new Error("QuickBooks exchange rate must be finite");
+    let catalog: QboInvoiceTaxCatalog;
+    try {
+      this.taxCatalogPromise ??= loadQboInvoiceTaxCatalog(
+        this.qboProvider
+      ).catch((error) => {
+        this.taxCatalogPromise = undefined;
+        throw error;
+      });
+      catalog = await this.taxCatalogPromise;
+    } catch (error) {
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_TAX_CODES",
+        warning: true,
+        message: `Cannot read QuickBooks tax configuration: ${error instanceof Error ? error.message : String(error)}`,
+        metadata: {
+          invoiceId: local.id,
+          requestedRates: [
+            ...new Set(document.components.map((line) => line.taxPercent))
+          ],
+          candidateTaxCodeIds: [],
+          reason: "Tax catalog unavailable"
+        }
+      });
+    }
+    const tax = resolveQboInvoiceTax({ document, catalog });
+    const hasShipping = document.components.some(
+      (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
+    );
+    const shippingAccountId = hasShipping
+      ? await this.getShippingAccountId(local)
+      : null;
+    // Tax, account and currency preflight finishes before any dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-
     const itemRemoteIds = new Map<string, string>();
-    for (const line of local.lines) {
-      if (line.itemId && !itemRemoteIds.has(line.itemId)) {
-        itemRemoteIds.set(
-          line.itemId,
-          await this.ensureDependencySynced("item", line.itemId)
-        );
-      }
-    }
-
-    // Due date: use dateDue if provided, otherwise default to Net 30
-    // (Xero-syncer parity)
-    let dueDate = local.dateDue;
-    if (!dueDate && local.dateIssued) {
-      const issued = new Date(local.dateIssued);
-      issued.setDate(issued.getDate() + 30);
-      dueDate = issued.toISOString().split("T")[0];
-    } else if (!dueDate) {
-      const now = new Date();
-      now.setDate(now.getDate() + 30);
-      dueDate = now.toISOString().split("T")[0];
-    }
+    const itemIds = [
+      ...new Set(
+        document.components
+          .filter(
+            (line) =>
+              line.kind !== "LineShipping" &&
+              line.kind !== "HeaderShipping" &&
+              line.itemId
+          )
+          .map((line) => line.itemId!)
+      )
+    ];
+    for (const itemId of itemIds)
+      itemRemoteIds.set(
+        itemId,
+        await this.ensureDependencySynced("item", itemId)
+      );
+    const shippingItemRemoteId = shippingAccountId
+      ? await (await this.getShippingItemSyncer()).ensureShippingItem({
+          shippingAccountId
+        })
+      : null;
+    const dueDate =
+      local.dateDue ??
+      parseDate(toPostingDateString(local.dateIssued ?? datetime.timestamp()))
+        .add({ days: 30 })
+        .toString();
 
     const docNumber = buildQboDocNumberFields(local.invoiceId);
     this.docNumberSourceByLocalId.set(local.id, docNumber.source);
@@ -377,7 +385,18 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       TxnDate: local.dateIssued ?? undefined,
       DueDate: dueDate,
       CustomerRef: { value: customerRemoteId },
-      Line: buildQboInvoiceLines(local.lines, itemRemoteIds)
+      CurrencyRef: { value: document.currencyCode },
+      ExchangeRate: remoteExchangeRate,
+      ...(catalog.country.toUpperCase() === "US"
+        ? {}
+        : { GlobalTaxCalculation: "TaxExcluded" as const }),
+      TxnTaxDetail: tax.txnTaxDetail,
+      Line: buildQboInvoiceLines({
+        document,
+        itemRemoteIds,
+        shippingItemRemoteId,
+        lineTaxCodeRefs: tax.lineTaxCodeRefs
+      })
     };
   }
 
@@ -398,6 +417,9 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         description: line.Description ?? null,
         quantity: line.SalesItemLineDetail?.Qty ?? 0,
         unitPrice: line.SalesItemLineDetail?.UnitPrice ?? 0,
+        shippingCost: 0,
+        addOnCost: 0,
+        nonTaxableAddOnCost: 0,
         taxPercent: 0,
         lineAmount: line.Amount
       }));
@@ -436,7 +458,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
         dateIssued: data.dateIssued,
         dateDue: data.dateDue,
         totalAmount: data.totalAmount,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", existingLocalId)
       .execute();

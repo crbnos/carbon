@@ -145,6 +145,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to leave this page?"
 msgstr "क्या आप वाकई इस पृष्ठ को छोड़ना चाहते हैं?"
 
+msgid "Assembly steps"
+msgstr "असेंबली चरण"
+
 msgid "Assigned"
 msgstr "निर्दिष्ट"
 
@@ -552,6 +555,9 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
+msgid "General"
+msgstr "सामान्य"
+
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
 
@@ -649,6 +655,9 @@ msgstr "जॉब"
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
 
+msgid "Keyboard shortcuts"
+msgstr "कीबोर्ड शॉर्टकट"
+
 msgid "Kit"
 msgstr "किट"
 
@@ -742,6 +751,9 @@ msgstr "इन्वेंटरी से मैनुअल रूप से �
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
 
+msgid "Mark the step done / record"
+msgstr "चरण को हो गया चिह्नित करें / रिकॉर्ड करें"
+
 msgid "matches"
 msgstr "मेल खाता है"
 
@@ -785,6 +797,9 @@ msgstr "मेरे घंटे"
 msgid "Name"
 msgstr "नाम"
 
+msgid "Navigation"
+msgstr "नेविगेशन"
+
 msgid "New"
 msgstr "नया"
 
@@ -796,6 +811,9 @@ msgstr "सबसे नया पहले"
 
 msgid "Next"
 msgstr "अगला"
+
+msgid "Next step"
+msgstr "अगला चरण"
 
 msgid "No"
 msgstr "नहीं"
@@ -892,6 +910,9 @@ msgstr "कोई सीरियल नंबर नहीं"
 
 msgid "No serial numbers found"
 msgstr "कोई सीरियल नंबर नहीं मिला"
+
+msgid "No shortcuts available on this page."
+msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं हैं।"
 
 msgid "No spare parts added yet"
 msgstr "अभी तक कोई स्पेयर पार्ट्स नहीं जोड़े गए हैं"
@@ -1044,6 +1065,9 @@ msgstr "पिछला"
 msgid "Preventive"
 msgstr "निवारक"
 
+msgid "Previous step"
+msgstr "पिछला चरण"
+
 msgid "Print"
 msgstr "प्रिंट करें"
 
@@ -1154,6 +1178,9 @@ msgstr "विक्रय आदेश"
 
 msgid "Save"
 msgstr "सहेजें"
+
+msgid "Save the form you're editing"
+msgstr "जो फॉर्म आप संपादित कर रहे हैं उसे सहेजें"
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -1311,6 +1338,9 @@ msgstr "कम"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Show this overlay"
+msgstr "यह ओवरले दिखाएं"
+
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
 
@@ -1346,6 +1376,9 @@ msgstr "उपयोग किए गए स्पेयर पार्ट्�
 
 msgid "Start"
 msgstr "शुरू करें"
+
+msgid "Start or pause the operation"
+msgstr "ऑपरेशन को शुरू करें या रोकें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -1435,6 +1468,9 @@ msgstr "समय काम किया: {0}"
 
 msgid "Today"
 msgstr "आज"
+
+msgid "Toggle the sidebar"
+msgstr "साइडबार को टॉगल करें"
 
 msgid "Tools"
 msgstr "उपकरण"

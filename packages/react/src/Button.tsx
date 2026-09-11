@@ -137,6 +137,8 @@ export interface ButtonProps
   shortcut?: ShortcutInput | ShortcutInput[];
   /** Keep the hotkey active but hide the visual key badge. */
   hideShortcutKey?: boolean;
+  /** Extra guard AND-composed with the built-in topmost-dialog guard. */
+  shortcutGuard?: (event: KeyboardEvent) => boolean;
 }
 
 const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -154,6 +156,7 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       rightIcon,
       shortcut,
       hideShortcutKey = false,
+      shortcutGuard,
       children,
       ...props
     },
@@ -170,8 +173,10 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     // to their shortcut — a background (or outer-dialog) ⌘S must not fire
     // under a confirmation modal stacked on top.
     const dialogGuard = useCallback(
-      () => !hasOpenDialog() || isInsideTopmostDialog(innerRef.current),
-      []
+      (event: KeyboardEvent) =>
+        (!hasOpenDialog() || isInsideTopmostDialog(innerRef.current)) &&
+        (shortcutGuard?.(event) ?? true),
+      [shortcutGuard]
     );
 
     // Ref-click (not a direct onClick call) so type="submit" buttons submit

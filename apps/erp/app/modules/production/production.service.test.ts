@@ -29,6 +29,8 @@ vi.mock("@lingui/core/macro", () => ({
 
 const {
   planAssemblyStepMarkerSync,
+  planAssemblyStepMarkerRemap,
+  planOrphanStepAdoption,
   maxToolQuantityByItem,
   buildAssemblyToolStepLinks,
   duplicateJobOperationStep
@@ -66,6 +68,154 @@ describe("planAssemblyStepMarkerSync", () => {
       ]
     );
     expect(staleTargetIds).toEqual(["job-2"]);
+  });
+});
+
+// ── Assembly version activation: marker remap across versions ────────────────
+describe("planAssemblyStepMarkerRemap", () => {
+  it("maps a v1 step id to the v2 step copied from it", () => {
+    const remap = planAssemblyStepMarkerRemap(
+      [{ id: "v1a", rootStepId: null }],
+      [{ id: "v2a", rootStepId: "v1a" }]
+    );
+    expect(remap.get("v1a")).toBe("v2a");
+  });
+
+  it("maps across three versions via the flat root chain", () => {
+    // v3 copied from v2 still roots at v1.
+    const remap = planAssemblyStepMarkerRemap(
+      [{ id: "v2a", rootStepId: "v1a" }],
+      [{ id: "v3a", rootStepId: "v1a" }]
+    );
+    expect(remap.get("v2a")).toBe("v3a");
+  });
+
+  it("maps regardless of reordering", () => {
+    const remap = planAssemblyStepMarkerRemap(
+      [
+        { id: "v1a", rootStepId: null },
+        { id: "v1b", rootStepId: null }
+      ],
+      [
+        { id: "v2b", rootStepId: "v1b" },
+        { id: "v2a", rootStepId: "v1a" }
+      ]
+    );
+    expect(remap.get("v1a")).toBe("v2a");
+    expect(remap.get("v1b")).toBe("v2b");
+  });
+
+  it("leaves a deleted step unmapped", () => {
+    const remap = planAssemblyStepMarkerRemap(
+      [
+        { id: "v1a", rootStepId: null },
+        { id: "v1gone", rootStepId: null }
+      ],
+      [{ id: "v2a", rootStepId: "v1a" }]
+    );
+    expect(remap.get("v1a")).toBe("v2a");
+    expect(remap.has("v1gone")).toBe(false);
+  });
+
+  it("ignores a step added in the new version", () => {
+    const remap = planAssemblyStepMarkerRemap(
+      [{ id: "v1a", rootStepId: null }],
+      [
+        { id: "v2a", rootStepId: "v1a" },
+        { id: "v2new", rootStepId: null }
+      ]
+    );
+    expect(remap.size).toBe(1);
+  });
+
+  it("collapses every old version in the group onto the new step", () => {
+    // activateAssemblyInstructionVersion passes ALL sibling versions as
+    // otherVersionIds, so oldSteps can span v1 AND v2 while v3 is activated.
+    // Both collapse to the same target; harmless only because an operation's
+    // markers all come from ONE version, so at most one entry matches a row.
+    const remap = planAssemblyStepMarkerRemap(
+      [
+        { id: "v1a", rootStepId: null },
+        { id: "v2a", rootStepId: "v1a" }
+      ],
+      [{ id: "v3a", rootStepId: "v1a" }]
+    );
+    expect(remap.get("v1a")).toBe("v3a");
+    expect(remap.get("v2a")).toBe("v3a");
+  });
+
+  it("does not map a step to itself", () => {
+    const remap = planAssemblyStepMarkerRemap(
+      [{ id: "same", rootStepId: null }],
+      [{ id: "same", rootStepId: null }]
+    );
+    expect(remap.size).toBe(0);
+  });
+});
+
+// ── Assembly → BoP sync: reclaiming orphaned (null-marker) steps ─────────────
+describe("planOrphanStepAdoption", () => {
+  it("adopts an orphan matching a source step on sortOrder and name", () => {
+    const adoption = planOrphanStepAdoption(
+      [{ id: "src1", title: "Fit cover", sortOrder: 1 }],
+      [{ id: "orphan1", name: "Fit cover", sortOrder: 1 }],
+      new Set()
+    );
+    expect(adoption.get("orphan1")).toBe("src1");
+  });
+
+  it("ignores an orphan whose name differs", () => {
+    const adoption = planOrphanStepAdoption(
+      [{ id: "src1", title: "Fit cover", sortOrder: 1 }],
+      [{ id: "handmade", name: "Operator note", sortOrder: 1 }],
+      new Set()
+    );
+    expect(adoption.size).toBe(0);
+  });
+
+  it("does not claim a source step an existing marked step already owns", () => {
+    const adoption = planOrphanStepAdoption(
+      [{ id: "src1", title: "Fit cover", sortOrder: 1 }],
+      [{ id: "orphan1", name: "Fit cover", sortOrder: 1 }],
+      new Set(["src1"])
+    );
+    expect(adoption.size).toBe(0);
+  });
+
+  it("adopts a null-titled source step via its positional placeholder name", () => {
+    // The sync writes name = title || `Step ${index + 1}`, so a null title
+    // becomes "Step 1" on the job step. Comparing against the raw title would
+    // never match and would insert a duplicate instead of healing.
+    const adoption = planOrphanStepAdoption(
+      [{ id: "src1", title: null, sortOrder: 1 }],
+      [{ id: "orphan1", name: "Step 1", sortOrder: 1 }],
+      new Set()
+    );
+    expect(adoption.get("orphan1")).toBe("src1");
+  });
+
+  it("uses the source's own index for the placeholder name", () => {
+    const adoption = planOrphanStepAdoption(
+      [
+        { id: "src1", title: "Real title", sortOrder: 1 },
+        { id: "src2", title: null, sortOrder: 2 }
+      ],
+      [{ id: "orphan2", name: "Step 2", sortOrder: 2 }],
+      new Set()
+    );
+    expect(adoption.get("orphan2")).toBe("src2");
+  });
+
+  it("adopts each orphan at most once", () => {
+    const adoption = planOrphanStepAdoption(
+      [
+        { id: "src1", title: "Same", sortOrder: 1 },
+        { id: "src2", title: "Same", sortOrder: 1 }
+      ],
+      [{ id: "orphan1", name: "Same", sortOrder: 1 }],
+      new Set()
+    );
+    expect(adoption.size).toBe(1);
   });
 });
 

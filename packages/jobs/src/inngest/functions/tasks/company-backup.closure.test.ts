@@ -12,7 +12,10 @@ import {
   assertReferentiallyClosed,
   buildIdMaps,
   buildRowTransforms,
-  findDanglingReferences
+  findDanglingReferences,
+  mapCollidingRows,
+  matchableUniqueGroups,
+  referencedDroppedTables
 } from "./company-backup.transforms";
 
 // ── Tiny synthetic-catalog builders ─────────────────────────────────────────
@@ -635,5 +638,107 @@ describe("selectWipeableTables (identity tables vs foreign restore)", () => {
     const names = selectWipeableTables(cat, { remap: true }).map((t) => t.name);
     expect(names).toContain("customer");
     expect(names).toContain("customerAccount");
+  });
+});
+
+describe("referencedDroppedTables (reseed re-inclusion)", () => {
+  // The bug this pins: onboarding inserts one "Headquarters" location, so the
+  // reseed dropped the backup's `location` table as "already populated" — and
+  // every workCenter/job locationId was then nulled or left dangling.
+  const LOCATION = table("location", [col("id"), col("companyId")]);
+  const WORK_CENTER = table(
+    "workCenter",
+    [col("id"), col("locationId", { nullable: true }), col("companyId")],
+    [fk("locationId", "location")]
+  );
+
+  it("re-adds a dropped table that kept rows reference", () => {
+    const result = referencedDroppedTables([WORK_CENTER], [LOCATION]);
+    expect(result.map((t) => t.name)).toEqual(["location"]);
+  });
+
+  it("does not resurrect a dropped table nothing references", () => {
+    const SEQUENCE = table("sequence", [col("id"), col("companyId")]);
+    const result = referencedDroppedTables([WORK_CENTER], [LOCATION, SEQUENCE]);
+    expect(result.map((t) => t.name)).toEqual(["location"]);
+  });
+
+  it("follows a re-added table's own references transitively", () => {
+    const ADDRESS = table("address", [col("id"), col("companyId")]);
+    const SITE = table(
+      "site",
+      [col("id"), col("addressId"), col("companyId")],
+      [fk("addressId", "address")]
+    );
+    const PLANT = table(
+      "plant",
+      [col("id"), col("siteId"), col("companyId")],
+      [fk("siteId", "site")]
+    );
+    const result = referencedDroppedTables([PLANT], [SITE, ADDRESS]);
+    expect(result.map((t) => t.name).sort()).toEqual(["address", "site"]);
+  });
+
+  it("ignores non-id FK references", () => {
+    const REF = table("ref", [col("id"), col("code"), col("companyId")]);
+    const USER_OF_CODE = table(
+      "userOfCode",
+      [col("id"), col("refCode"), col("companyId")],
+      [{ column: "refCode", refTable: "ref", refColumn: "code" }]
+    );
+    expect(referencedDroppedTables([USER_OF_CODE], [REF])).toEqual([]);
+  });
+});
+
+describe("matchableUniqueGroups", () => {
+  const LOCATION = table(
+    "location",
+    [col("id"), col("name"), col("companyId")],
+    [],
+    { uniqueColumns: ["name", "companyId"] }
+  );
+
+  it("drops the scope column and keeps the natural key", () => {
+    expect(matchableUniqueGroups([["name", "companyId"]], LOCATION)).toEqual([
+      ["name"]
+    ]);
+  });
+
+  it("rejects a group containing id or a remapped FK column", () => {
+    const T = table(
+      "t",
+      [col("id"), col("parentId"), col("code"), col("companyId")],
+      [fk("parentId", "parent")]
+    );
+    expect(
+      matchableUniqueGroups([["id"], ["parentId", "code"], ["companyId"]], T)
+    ).toEqual([]);
+  });
+});
+
+describe("mapCollidingRows", () => {
+  const groups = [["name"]];
+
+  it("maps a colliding backup row onto the existing target row", () => {
+    const { skippedSourceIds, overrides } = mapCollidingRows(
+      groups,
+      [
+        { id: "src-hq", name: "Headquarters" },
+        { id: "src-plant", name: "Manufacturing Plant" }
+      ],
+      [{ id: "tgt-hq", name: "Headquarters" }]
+    );
+    expect([...skippedSourceIds]).toEqual(["src-hq"]);
+    expect(overrides.get("src-hq")).toBe("tgt-hq");
+    expect(overrides.has("src-plant")).toBe(false);
+  });
+
+  it("never matches on NULL (Postgres unique treats NULLs as distinct)", () => {
+    const { skippedSourceIds } = mapCollidingRows(
+      groups,
+      [{ id: "src", name: null }],
+      [{ id: "tgt", name: null }]
+    );
+    expect(skippedSourceIds.size).toBe(0);
   });
 });

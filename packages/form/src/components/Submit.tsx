@@ -2,23 +2,37 @@ import { useFormState } from "@carbon/form";
 import type { ButtonProps } from "@carbon/react";
 import {
   Button,
+  isEditableTarget,
   Modal,
   ModalContent,
   ModalDescription,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  SHORTCUTS
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { forwardRef } from "react";
+import { forwardRef, useCallback, useEffect, useRef } from "react";
 import { useBlocker, useNavigation } from "react-router";
 import { useIsSubmitting } from "../hooks";
 import { useFormStateContext } from "../internal/formStateContext";
+import {
+  isSubmitShortcutOwner,
+  registerSubmitShortcut,
+  shouldSubmitOnShortcut,
+  submitShortcutCount,
+  unregisterSubmitShortcut
+} from "../internal/submitShortcutRegistry";
 import { useFormContext } from "../userFacingFormContext";
 
-type SubmitProps = ButtonProps & {
+type SubmitProps = Omit<ButtonProps, "shortcut"> & {
   formId?: string;
   withBlocker?: boolean;
+  /**
+   * Save shortcut — defaults to the shared ⌘/Ctrl+Enter binding, which fires
+   * while typing in a field. `false` opts this Submit out entirely.
+   */
+  shortcut?: ButtonProps["shortcut"] | false;
 };
 
 export function DefaultDisabledSubmit({
@@ -46,6 +60,7 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
       children,
       isDisabled: isDisabledProp,
       withBlocker = true,
+      shortcut = SHORTCUTS.save,
       ...props
     },
     ref
@@ -58,6 +73,53 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     const isIdle = transition.state === "idle";
     const formState = useFormState(formId);
     const isTouched = Object.keys(formState.touchedFields).length > 0;
+
+    const innerRef = useRef<HTMLButtonElement | null>(null);
+    const setRefs = useCallback(
+      (node: HTMLButtonElement | null) => {
+        innerRef.current = node;
+        if (typeof ref === "function") ref(node);
+        else if (ref) ref.current = node;
+      },
+      [ref]
+    );
+
+    // The guard's sole-Submit fallback needs to know how many Submits are
+    // active on screen; a mounted-but-invisible Submit still counts, which
+    // fails safe (count > 1 → no-op).
+    const shortcutActive =
+      shortcut !== false && !(isDisabled || isSubmitting || !isIdle);
+    const shortcutId = useRef<symbol | null>(null);
+    if (shortcutId.current === null) {
+      shortcutId.current = Symbol("submit-shortcut");
+    }
+    useEffect(() => {
+      if (!shortcutActive) return;
+      const id = shortcutId.current;
+      if (!id) return;
+      registerSubmitShortcut(id, innerRef.current?.form ?? null);
+      return () => unregisterSubmitShortcut(id);
+    }, [shortcutActive]);
+
+    // Focus-aware guard: submit the form being edited; never steal keys from
+    // other editable surfaces (lesson .ai/lessons.md:373); on body-focus fire
+    // only when this is the sole active Submit — ambiguity means no-op.
+    const shortcutGuard = useCallback((_event: KeyboardEvent) => {
+      const el = innerRef.current;
+      if (!el) return false;
+      const active = document.activeElement;
+      const activeForm =
+        active instanceof HTMLElement ? active.closest("form") : null;
+      return shouldSubmitOnShortcut({
+        ownForm: el.form,
+        activeForm,
+        activeIsEditable: isEditableTarget(active),
+        activeSubmitCount: submitShortcutCount(),
+        ownsForm: shortcutId.current
+          ? isSubmitShortcutOwner(shortcutId.current, el.form)
+          : false
+      });
+    }, []);
 
     const blocker = useBlocker(
       ({ currentLocation, nextLocation }) =>
@@ -75,12 +137,14 @@ export const Submit = forwardRef<HTMLButtonElement, SubmitProps>(
     return (
       <>
         <Button
-          ref={ref}
+          ref={setRefs}
           form={formId}
           type="submit"
           disabled={isDisabled || isSubmitting}
           isLoading={isSubmitting}
           isDisabled={isDisabled || isSubmitting || !isIdle}
+          shortcut={shortcut === false ? undefined : shortcut}
+          shortcutGuard={shortcutGuard}
           {...props}
         >
           {children}

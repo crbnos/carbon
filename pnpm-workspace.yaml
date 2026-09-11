@@ -65,6 +65,7 @@ catalog:
   '@lingui/macro': 5.9.4
   '@lingui/react': 5.9.4
   '@lingui/vite-plugin': 5.9.4
+  '@marsidev/react-turnstile': 1.5.0
   '@logtape/logtape': 2.2.3
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3
@@ -153,6 +154,7 @@ catalog:
   vite-plugin-babel-macros: 1.0.6
   vitest: 4.1.6
   wait-on: 7.2.0
+  zbsearch: 4.0.0
   zod: 4.5.4
   zod-form-data: 3.0.3
   zustand: 5.0.12

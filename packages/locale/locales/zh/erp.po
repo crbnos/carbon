@@ -80,6 +80,12 @@ msgstr "{0} 已启动"
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
 
+#. placeholder {0}: line.creditableQuantity
+#. placeholder {1}: line.quantityCredited
+#. placeholder {2}: line.quantityShipped
+msgid "{0} creditable ({1} / {2} credited)"
+msgstr "{0} 可开贷项（{1} / {2} 已开贷项）"
+
 #. placeholder {0}: distinctCustomers.length
 msgid "{0} customers"
 msgstr "{0} 个客户"
@@ -147,6 +153,11 @@ msgstr "{0}个问题——未发布"
 #. placeholder {0}: selectedProcesses.length
 msgid "{0} Processes"
 msgstr "{0} 个流程"
+
+#. placeholder {0}: quantityFormatter(line.quantityReceived)
+#. placeholder {1}: quantityFormatter(line.quantityCredited)
+msgid "{0} received · {1} credited"
+msgstr "{0} 已收货 · {1} 已开贷项"
 
 #. placeholder {0}: result.credentialName ?? "Passkey"
 msgid "{0} registered"
@@ -324,11 +335,17 @@ msgstr "{resourceCount} 个资源 · {reservationCount} 个预留 · {jobCount} 
 msgid "{scopeCount} permissions"
 msgstr "{scopeCount} 个权限"
 
+msgid "{selectedCount} selected"
+msgstr ""
+
 msgid "{total} phases to get your company live on Carbon. Each one ends at a checkpoint."
 msgstr "{total}个阶段使贵公司在Carbon中正式启用。每个阶段都在一个检查点处结束。"
 
 msgid "{total} phases to go live"
 msgstr "{total}个阶段即可正式运行"
+
+msgid "{totalCount} results"
+msgstr ""
 
 msgid "{totalQuantity, plural, one {# unit} other {# units}}"
 msgstr "{totalQuantity, plural, one {# 件} other {# 件}}"
@@ -613,6 +630,9 @@ msgstr "任务的开始日期已变更"
 msgid "A job's status changes"
 msgstr "任务的状态已变更"
 
+msgid "A line settles more than its invoice's open balance"
+msgstr "某行结算金额超过其发票的未结余额"
+
 #. placeholder {0}: label( operationInputLabelKey(operationId, batchInput), batchInput )
 msgid "A list is wired into {0}, so this step runs once for each item and returns a list of results."
 msgstr "列表被接入到 {0}，所以此步骤为每个项目运行一次并返回结果列表。"
@@ -807,6 +827,9 @@ msgstr "收据的状态已更改"
 msgid "A receipt's supplier changes"
 msgstr "收据的供应商已更改"
 
+msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
+msgstr "退货授权（RMA）授权客户退回商品以换取贷项、替代品或维修。"
+
 msgid "A reusable, versioned set of work instructions attached to a process, giving an operation its ordered steps to record and check plus the parameters it runs at."
 msgstr "一套可重用的、版本化的作业指导书，附加到一个工艺并为工序提供有序的步骤以进行记录和检查，以及运行参数。"
 
@@ -929,6 +952,9 @@ msgstr "供应商已创建"
 
 msgid "A supplier is deleted"
 msgstr "供应商已删除"
+
+msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
+msgstr "供应商退货将以前收到的商品送回供应商，以换取贷项或替代品。"
 
 msgid "A supplier's account manager changes"
 msgstr "供应商的账户经理已更改"
@@ -1229,8 +1255,14 @@ msgstr "添加自定义定价行以覆盖数量、价格、运费、提前期和
 msgid "Add a domain"
 msgstr "添加一个域"
 
+msgid "Add a line (in document explorers)"
+msgstr "添加一行（在文件浏览器中）"
+
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
+
+msgid "Add a parameter (in the procedure explorer)"
+msgstr "添加参数（在程序文件浏览器中）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "在打印设置中添加打印机以直接打印标签。"
@@ -1243,6 +1275,9 @@ msgstr "添加一行"
 
 msgid "Add a step"
 msgstr "添加步骤"
+
+msgid "Add a step or question (in procedure and training explorers)"
+msgstr "添加步骤或问题（在程序文件和培训浏览器中）"
 
 msgid "Add Ability"
 msgstr "添加能力"
@@ -1304,6 +1339,12 @@ msgstr "添加功能"
 msgid "Add from library…"
 msgstr "从库中添加…"
 
+msgid "Add from receipt"
+msgstr ""
+
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "添加组"
 
@@ -1318,6 +1359,15 @@ msgstr "添加行"
 
 msgid "Add Line Item"
 msgstr "添加行项目"
+
+msgid "Add Lines"
+msgstr "添加行"
+
+msgid "Add lines from document"
+msgstr "从文档添加行"
+
+msgid "Add manually"
+msgstr ""
 
 msgid "Add match"
 msgstr "添加匹配"
@@ -1450,6 +1500,10 @@ msgstr "附加成本"
 msgid "Added"
 msgstr "已添加"
 
+#. placeholder {0}: rows.length
+msgid "Added {0} lines"
+msgstr "已添加 {0} 行"
+
 msgid "Added for this customer"
 msgstr "为此客户添加"
 
@@ -1564,6 +1618,9 @@ msgstr "所有位置"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
+
+msgid "All returnable lines"
+msgstr ""
 
 msgid "All rows imported — {inserted} inserted, {updated} updated."
 msgstr "所有行已导入—{inserted}行插入，{updated}行更新。"
@@ -1841,11 +1898,17 @@ msgstr "已应用"
 msgid "Applied amount for {0}"
 msgstr "已应用金额 {0}"
 
+msgid "Applied amounts are in company base currency ({baseCurrency})."
+msgstr "应用的金额采用公司基础货币（{baseCurrency}）。"
+
 msgid "Applied Date"
 msgstr "应用日期"
 
 msgid "Applied To"
 msgstr "应用于"
+
+msgid "Applied, discount and write-off amounts are in company base currency ({baseCurrency})."
+msgstr "已应用金额、折扣和核销金额均以公司基本货币（{baseCurrency}）表示。"
 
 msgid "Applies to"
 msgstr "适用于"
@@ -1992,14 +2055,26 @@ msgstr "您确定要取消 {orderLabel} 吗？这将关闭订单。"
 msgid "Are you sure you want to cancel this job? It will no longer be available on the shop floor."
 msgstr "你确定要取消此工作吗？它将不再在车间可用。"
 
+msgid "Are you sure you want to cancel this RMA? This releases the authorized quantities back to the source documents."
+msgstr "确实要取消此 RMA 吗？这将把授权数量释放回源文档。"
+
+msgid "Are you sure you want to cancel this supplier return? This releases the authorized quantities back to the source documents."
+msgstr "确实要取消此供应商退货吗？这将把授权数量释放回源文档。"
+
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "您确定要更改{propertyName}属性吗？由于您使用自动生成的物料ID，这将更改该零件的零件ID及其所有相关的修订版。"
 
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "你确定要完成此库存转移吗？"
 
+msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
+msgstr "确实要确认此 RMA 吗？确认授权客户退回这些行上的商品。"
+
 msgid "Are you sure you want to confirm this sales order? Confirming the order will affect on order quantities used to calculate supply and demand."
 msgstr "你确定要确认此销售订单吗？确认订单将影响用于计算供应和需求的订单数量。"
+
+msgid "Are you sure you want to confirm this supplier return? Confirming authorizes the goods on the lines to be shipped back to the supplier."
+msgstr "确实要确认此供应商退货吗？确认授权这些行上的商品发回供应商。"
 
 msgid "Are you sure you want to convert the RFQ to a quote?"
 msgstr "您确定要将RFQ转换为报价吗？"
@@ -2211,6 +2286,10 @@ msgstr "你确定要删除打印机\"{0}\"吗？任何引用此打印机的分�
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
 msgstr "您确定要删除采购发票行 {0} {1} 吗？此操作无法撤销。"
 
+#. placeholder {0}: returnReason.name
+msgid "Are you sure you want to delete the return reason: {0}? This cannot be undone."
+msgstr "确实要删除返回原因：{0}？此操作无法撤销。"
+
 #. placeholder {0}: salesInvoiceLine.quantity ?? 0
 #. placeholder {1}: salesInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the sales invoice line for {0} {1}? This cannot be undone."
@@ -2298,6 +2377,9 @@ msgstr "你确定要删除此记录吗？"
 msgid "Are you sure you want to delete this required action?"
 msgstr "你确定要删除此必需操作吗？"
 
+msgid "Are you sure you want to delete this return order line? This cannot be undone."
+msgstr "确实要删除此退货单行吗？此操作无法撤销。"
+
 msgid "Are you sure you want to delete this risk?"
 msgstr "你确定要删除此风险吗？"
 
@@ -2370,6 +2452,12 @@ msgstr "你确定要向这些用户发送邀请吗？"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
+
+msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此备忘录吗？这将反转其会计分录和应用。此操作无法撤销。"
+
+msgid "Are you sure you want to void this payment? This will reverse its accounting entries and applications. This cannot be undone."
+msgstr "你确定要作废此付款吗？这将反转其会计分录和应用。此操作无法撤销。"
 
 msgid "Are you sure you want to void this purchase invoice? This action will reverse all financial transactions and cannot be undone."
 msgstr "您确定要作废此采购发票吗？此操作将反转所有财务交易，无法撤销。"
@@ -2798,6 +2886,9 @@ msgstr "可批处理的工序"
 msgid "Batches"
 msgstr "批次"
 
+msgid "Batches to return"
+msgstr ""
+
 msgid "Batching"
 msgstr "分批"
 
@@ -2858,6 +2949,9 @@ msgstr "物料清单"
 
 msgid "Blank = computed from the ability's recertification period"
 msgstr "空白 = 从能力的再认证期间计算"
+
+msgid "Blind"
+msgstr "盲法"
 
 msgid "Blind Count"
 msgstr "盲点库存"
@@ -3085,6 +3179,11 @@ msgstr "无法下载此文件"
 msgid "Cancel"
 msgstr "取消"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
+msgid "Cancel {0}"
+msgstr "取消 {0}"
+
 msgid "Cancel change notice"
 msgstr "取消变更通知"
 
@@ -3099,6 +3198,12 @@ msgstr "取消订单"
 
 msgid "Cancel Purchase Order"
 msgstr "取消采购订单"
+
+msgid "Cancel Return"
+msgstr "取消退货"
+
+msgid "Cancel RMA"
+msgstr "取消 RMA"
 
 msgid "Cancel Sales Order"
 msgstr "取消销售订单"
@@ -3401,6 +3506,9 @@ msgstr "选择序列号"
 msgid "Choose another file"
 msgstr "选择另一个文件"
 
+msgid "Choose how to add lines to this return."
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
@@ -3439,9 +3547,6 @@ msgstr "清除搜索查询"
 
 msgid "Clear selection"
 msgstr "清除选择"
-
-msgid "Clear this invoice with the party's posted credits as well as cash. Credits apply directly — no posting needed."
-msgstr "用交易对方的已过账信用余额和现金清偿此发票。信用直接应用 — 无需过账。"
 
 msgid "Clear value"
 msgstr "清除值"
@@ -3762,12 +3867,17 @@ msgstr "已配置"
 msgid "Confirm"
 msgstr "确认"
 
+#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
 #. placeholder {0}: salesOrder?.salesOrderId
+#. placeholder {0}: salesReturnOrder.salesReturnOrderId
 msgid "Confirm {0}"
 msgstr "确认 {0}"
 
 msgid "Confirm & release"
 msgstr "确认并下达"
+
+msgid "Confirm a dialog"
+msgstr "确认对话框"
 
 msgid "Confirm all"
 msgstr "全部确认"
@@ -4075,8 +4185,14 @@ msgstr "复制零件链接"
 msgid "Copy link to procedure"
 msgstr "复制程序文件链接"
 
+msgid "Copy link to RMA"
+msgstr "复制 RMA 链接"
+
 msgid "Copy link to service"
 msgstr "复制服务链接"
+
+msgid "Copy link to supplier return"
+msgstr "复制供应商退货链接"
 
 msgid "Copy link to tool"
 msgstr "复制工具链接"
@@ -4128,6 +4244,12 @@ msgstr "复制报价"
 
 msgid "Copy Quote number"
 msgstr "复制报价单号"
+
+msgid "Copy return number"
+msgstr "复制退货编号"
+
+msgid "Copy RMA number"
+msgstr "复制 RMA 编号"
 
 msgid "Copy service number"
 msgstr "复制服务编号"
@@ -4258,6 +4380,11 @@ msgstr "无法准备区域图像以进行分析"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
+
+#. placeholder {0}: d.failed.length
+#. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
+msgid "Could not release {0}: {1}"
+msgstr "无法下达{0}：{1}"
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -4412,11 +4539,17 @@ msgstr "创建生产数量"
 msgid "Create Quote Revision"
 msgstr "创建报价单修订版"
 
+msgid "Create Replacement"
+msgstr "创建替代品"
+
 msgid "Create Revision"
 msgstr "创建修订版"
 
 msgid "Create Rule"
 msgstr "创建规则"
+
+msgid "Create Supplier Return"
+msgstr "创建供应商退货"
 
 msgid "Create Transfer"
 msgstr "创建转移"
@@ -4533,6 +4666,9 @@ msgstr "已创建流程"
 msgid "Created required action"
 msgstr "已创建必需操作"
 
+msgid "Created return reason"
+msgstr "创建的返回原因"
+
 msgid "Created scrap reason"
 msgstr "已创建报废原因"
 
@@ -4563,6 +4699,9 @@ msgstr "已创建 webhook"
 
 msgid "Created work center"
 msgstr "已创建工作中心"
+
+msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
+msgstr "为尚未贷项的已发货数量创建供应商贷项备忘录草稿"
 
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "为会计年度创建12个每月期间。已有期间保留不变。"
@@ -4595,8 +4734,17 @@ msgstr "当制造费用吸收入在制品时的贷方科目"
 msgid "Credit accounts used when manufacturing costs are absorbed into WIP"
 msgstr "当制造成本吸收入在制品时使用的贷方科目"
 
+msgid "Credit amounts are in company base currency ({currency}). Credits take effect when this payment posts."
+msgstr "抵扣金额以公司基本货币（{currency}）表示。此付款过账后，抵扣才会生效。"
+
 msgid "Credit Memo"
 msgstr "贷项凭证"
+
+msgid "Credit total"
+msgstr "贷项总额"
+
+msgid "Credited"
+msgstr "已贷项"
 
 msgid "Credits"
 msgstr "贷方"
@@ -5382,6 +5530,9 @@ msgstr "删除询价单"
 msgid "Delete Risk"
 msgstr "删除风险"
 
+msgid "Delete RMA"
+msgstr "删除 RMA"
+
 msgid "Delete row"
 msgstr "删除行"
 
@@ -5438,6 +5589,9 @@ msgstr "删除供应商"
 
 msgid "Delete Supplier Quote"
 msgstr "删除供应商报价"
+
+msgid "Delete Supplier Return"
+msgstr "删除供应商退货"
 
 msgid "Delete Supplier Type"
 msgstr "删除供应商类型"
@@ -5834,6 +5988,9 @@ msgstr "下载模板"
 
 msgid "Draft"
 msgstr "草稿"
+
+msgid "Draft a supplier return for the quantities dispositioned Return to Supplier. Quantities already covered by a linked return are excluded, and this issue cannot close while a linked return is open."
+msgstr "为处置为\"退回供应商\"的数量起草供应商退货。已由关联退货覆盖的数量被排除，当关联退货开放时，此问题无法关闭。"
 
 msgid "Draft is editable; Active is in use and requires a new version to change; Archived is retired."
 msgstr "草稿可编辑；启用表示正在使用，需要新版本才能更改；已归档表示已停用。"
@@ -6550,6 +6707,9 @@ msgstr "在设置到期日期前输入生产批次号"
 msgid "Enter a quantity between 1 and {0}."
 msgstr "请输入 1 至 {0} 之间的数量。"
 
+msgid "Enter an item and quantity yourself."
+msgstr ""
+
 msgid "Enter and approve vendor bills against a PO (three-way match)"
 msgstr "输入和审批供应商账单与采购单进行三单匹配"
 
@@ -6995,6 +7155,13 @@ msgstr "失败"
 msgid "Failed features"
 msgstr "失效特性"
 
+#. placeholder {0}: rows.length
+msgid "Failed to add line — {addedCount} of {0} lines were added"
+msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"
+
+msgid "Failed to add lines"
+msgstr "添加行失败"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
 msgstr "创建资产类别失败：{0}"
@@ -7090,6 +7257,10 @@ msgstr "创建付款条件失败：{0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "创建流程失败：{0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create return reason: {0}"
+msgstr "创建返回原因失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create service: {0}"
@@ -7189,6 +7360,15 @@ msgstr "加载收据行失败"
 msgid "Failed to load receipts"
 msgstr "加载收据失败"
 
+msgid "Failed to load return reasons"
+msgstr "无法加载退货原因"
+
+msgid "Failed to load RMA lines"
+msgstr "加载 RMA 行失败"
+
+msgid "Failed to load RMAs"
+msgstr "加载 RMA 失败"
+
 msgid "Failed to load sales order lines"
 msgstr "加载销售订单行失败"
 
@@ -7203,6 +7383,12 @@ msgstr "加载发货失败"
 
 msgid "Failed to load supplier part details"
 msgstr "未能加载供应商零件详情"
+
+msgid "Failed to load supplier return lines"
+msgstr "加载供应商退货行失败"
+
+msgid "Failed to load supplier returns"
+msgstr "加载供应商退货失败"
 
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
@@ -7870,6 +8056,9 @@ msgstr "前往 {0}"
 
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
+
+msgid "Go to module"
+msgstr "转到模块"
 
 msgid "Go to that week"
 msgstr "跳转到该周"
@@ -8559,6 +8748,9 @@ msgstr "库存"
 msgid "Inv Rate"
 msgstr "发票汇率"
 
+msgid "Invalid applications"
+msgstr "无效应用"
+
 msgid "Invalid Invite"
 msgstr "无效邀请"
 
@@ -8733,6 +8925,9 @@ msgstr "问题"
 msgid "Issue (material)"
 msgstr "领料（原材料）"
 
+msgid "Issue Credit"
+msgstr "发放信用"
+
 msgid "Issue description"
 msgstr "问题描述"
 
@@ -8902,7 +9097,7 @@ msgid "Job Operation"
 msgstr "工单工序"
 
 msgid "Job operation batch"
-msgstr ""
+msgstr "工单工序批次"
 
 msgid "Job Operations"
 msgstr "工单工序"
@@ -8950,6 +9145,9 @@ msgstr "日记账行"
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
+msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
+msgstr "跳转到详情页面中的某个分区（同样的修饰符 + 分区字母）"
+
 msgid "Just one"
 msgstr "仅一个"
 
@@ -8995,6 +9193,9 @@ msgstr "让订单、报价单和设置受到第二道检查的保护"
 msgid "Key"
 msgstr "钥匙"
 
+msgid "Keyboard shortcuts"
+msgstr "键盘快捷键"
+
 msgid "Kind of record"
 msgstr "记录类型"
 
@@ -9007,7 +9208,7 @@ msgstr "标签"
 msgid "Label to complete the current operation for this kanban"
 msgstr "用于完成此看板当前操作的标签"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "Label to create a {0} for this kanban"
 msgstr "用于为此看板创建 {0} 的标签"
 
@@ -9221,6 +9422,9 @@ msgstr "浅色"
 msgid "Light Mode"
 msgstr "浅色模式"
 
+msgid "Light or dark mode"
+msgstr "亮色或深色模式"
+
 msgid "Lights Out (24×7)"
 msgstr "熄灯（24×7）"
 
@@ -9229,6 +9433,13 @@ msgstr "熄灯（24/7）"
 
 msgid "Likelihood"
 msgstr "可能性"
+
+msgid "Line"
+msgstr "行"
+
+#. placeholder {0}: line.lineNumber
+msgid "Line {0}"
+msgstr "行 {0}"
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -9248,6 +9459,12 @@ msgstr "线性班组"
 msgid "Lines"
 msgstr "行"
 
+msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
+msgstr ""
+
+msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
+msgstr ""
+
 msgid "Lines need internal part numbers"
 msgstr "行需要内部零件号"
 
@@ -9262,6 +9479,12 @@ msgstr "链接"
 
 msgid "Link (optional) — e.g. /x/settings/…"
 msgstr "链接（可选）— 例如 /x/settings/…"
+
+msgid "Link a purchase order"
+msgstr "关联采购订单"
+
+msgid "Link a sales order"
+msgstr "关联销售订单"
 
 msgid "Link Jira Issue"
 msgstr "关联 Jira 问题"
@@ -9327,11 +9550,17 @@ msgstr "最后加载，在切换时进行，以便余额是最新的。"
 msgid "Loading associated jobs..."
 msgstr "加载相关工单..."
 
+msgid "Loading creditable lines..."
+msgstr "正在加载可退款行..."
+
 msgid "Loading current quantity…"
 msgstr "正在加载当前数量…"
 
 msgid "Loading item details..."
 msgstr "正在加载项目详情..."
+
+msgid "Loading returnable lines..."
+msgstr "正在加载可退货行..."
 
 msgid "Loading your own data with Carbon's import tools"
 msgstr "使用 Carbon 的导入工具加载您自己的数据"
@@ -10087,6 +10316,9 @@ msgstr "更多加班"
 msgid "Morning, {name}."
 msgstr "早上，{name}。"
 
+msgid "Most recent — search to find more"
+msgstr ""
+
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "大多数问题在这里都会被发现和解决。直言不讳地说出来。"
 
@@ -10437,6 +10669,9 @@ msgstr "新报价行"
 msgid "New Receipt"
 msgstr "新收据"
 
+msgid "New record (on list pages)"
+msgstr "新建记录（在列表页面）"
+
 msgid "New record created"
 msgstr "新记录已创建"
 
@@ -10445,6 +10680,9 @@ msgstr "新修订版"
 
 msgid "New RFQ"
 msgstr "新建 RFQ"
+
+msgid "New RMA"
+msgstr "新建RMA"
 
 msgid "New rule"
 msgstr "新规则"
@@ -10496,6 +10734,9 @@ msgstr "新供应商"
 
 msgid "New Supplier Part"
 msgstr "新供应商零件"
+
+msgid "New Supplier Return"
+msgstr "新建供应商退货"
 
 msgid "New Timecard"
 msgstr "新时间卡"
@@ -10559,6 +10800,9 @@ msgstr "下次到期日期"
 
 msgid "Next page"
 msgstr "下一页"
+
+msgid "Next page (in tables)"
+msgstr "下一页（在表格中）"
 
 msgid "Next Sequence"
 msgstr "下一个编号规则"
@@ -10651,6 +10895,9 @@ msgstr "未找到可用的追踪实体"
 msgid "No batches"
 msgstr "无生产批次"
 
+msgid "No batches selected yet."
+msgstr ""
+
 msgid "No BOM input has a shelf-life policy"
 msgstr "没有 BOM 输入具有保质期策略"
 
@@ -10686,6 +10933,9 @@ msgstr "不需要转换"
 
 msgid "No cost history found"
 msgstr "未找到成本历史记录"
+
+msgid "No credits yet"
+msgstr "尚无信用"
 
 msgid "No Data"
 msgstr "无数据"
@@ -10780,6 +11030,9 @@ msgstr "无检验计划"
 msgid "No issue types configured"
 msgstr "未配置问题类型"
 
+msgid "No issues yet"
+msgstr "尚无问题"
+
 msgid "No items"
 msgstr "没有物料"
 
@@ -10842,6 +11095,9 @@ msgstr "没有人员可分配"
 
 msgid "No open invoices"
 msgstr "没有未结发票"
+
+msgid "No open memos"
+msgstr "无未结单据"
 
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
@@ -10945,8 +11201,14 @@ msgstr "不报价原因"
 msgid "No rate"
 msgstr "无汇率"
 
+msgid "No receipts yet"
+msgstr "尚无收据"
+
 msgid "No receivables"
 msgstr "没有应收款项"
+
+msgid "No received quantity remains creditable"
+msgstr "未收到的数量已不可计入信用"
 
 msgid "No records found"
 msgstr "未找到记录"
@@ -10969,6 +11231,15 @@ msgstr "无结果"
 msgid "No results found"
 msgstr "未找到结果"
 
+msgid "No returnable lines for this customer"
+msgstr ""
+
+msgid "No returnable lines for this supplier"
+msgstr ""
+
+msgid "No returnable lines match your search"
+msgstr ""
+
 msgid "No rows here."
 msgstr "这里没有行。"
 
@@ -10978,8 +11249,17 @@ msgstr "没有已分配的规则"
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
+msgid "No serial numbers selected yet."
+msgstr ""
+
 msgid "No shifts configured — assuming Mon–Fri, 8h days"
 msgstr "未配置班次——假定周一至周五，每天8小时"
+
+msgid "No shipments yet"
+msgstr "尚无发货"
+
+msgid "No shortcuts available on this page."
+msgstr "此页面没有可用的快捷键。"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "库存管理或工单状态没有单一的可信数字"
@@ -11049,6 +11329,9 @@ msgstr "此物料的仓库库存无记录。您仍然可以拣货 — 在手库�
 
 msgid "No work center utilization data within range"
 msgstr "范围内没有工作中心利用率数据"
+
+msgid "No work centers at this location"
+msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
@@ -11336,11 +11619,11 @@ msgstr "一套数字"
 msgid "One shared setup instead of one per operation"
 msgstr "共享一次设置，而非每道工序一次"
 
-msgid "One shared setup plus the longest labor and machine time — the members run together"
-msgstr "一次共享换型加上最长的人工和机器工时 — 成员一起运行"
+msgid "One shared setup plus each member's run time — the greater of its labor and machine — in sequence"
+msgstr "一次共享换型加上每个成员的加工时间 — 取人工和机器时间的较大值 — 按顺序运行"
 
-msgid "One shared setup plus the summed labor and machine time"
-msgstr "一个共享设置加上汇总的劳动和机器时间"
+msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
+msgstr "一次共享换型加上最长的成员加工时间 — 取人工和机器时间的较大值 — 由于成员并行运行"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "工单工艺路线中的一个步骤，命名一个工艺和工作中心，并包含其自己的换型、人工和机器工时及费率。"
@@ -11525,6 +11808,9 @@ msgstr "工序"
 
 msgid "Operation"
 msgstr "操作"
+
+msgid "Operation batch"
+msgstr "工序生产批次"
 
 msgid "Operation lead time"
 msgstr "操作提前期"
@@ -11948,6 +12234,9 @@ msgstr "付款应用"
 msgid "Payment Date"
 msgstr "付款日期"
 
+msgid "Payment from Customer"
+msgstr "来自客户的付款"
+
 msgid "Payment ID"
 msgstr "付款ID"
 
@@ -11969,11 +12258,14 @@ msgstr "付款条件"
 msgid "Payment terms like Net 30 or due on receipt"
 msgstr "付款条件，如净30天或收货即付"
 
+msgid "Payment to Supplier"
+msgstr "向供应商付款"
+
 msgid "Payments"
 msgstr "付款"
 
-msgid "Payments and credits applied to this invoice. Click a row to open the source document."
-msgstr "应用于此发票的付款和贷方。单击一行以打开源单据。"
+msgid "Payments and credits applied to this invoice. Applied amounts and FX are in company base currency. Click a row to open the source document."
+msgstr "分配至此发票的付款和抵扣款。已分配金额和汇兑差额均以公司基本货币表示。点击某一行以打开源单据。"
 
 msgid "PDF"
 msgstr "PDF"
@@ -12110,8 +12402,17 @@ msgstr "拣货单"
 msgid "Pick Order"
 msgstr "拣货单"
 
+msgid "Pick serials/batches to return"
+msgstr "选择要退货的序列号/批次"
+
+msgid "Pick the batches on hand that were received from this supplier."
+msgstr ""
+
 msgid "Pick the bin that needs stock, then pick the bins to pull it from."
 msgstr "选择需要库存的料箱，然后选择要从中拣货的料箱。"
+
+msgid "Pick the serial numbers on hand that were received from this supplier."
+msgstr ""
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -12390,6 +12691,9 @@ msgstr "前一天"
 
 msgid "Previous page"
 msgstr "上一页"
+
+msgid "Previous page (in tables)"
+msgstr "上一页（在表格中）"
 
 msgid "Previous step"
 msgstr "上一步骤"
@@ -12792,6 +13096,9 @@ msgstr "采购价格差异（默认）"
 msgid "Purchase Qty"
 msgstr "采购数量"
 
+msgid "Purchase Return"
+msgstr ""
+
 msgid "Purchase Tax Payable"
 msgstr "应付采购税（默认）"
 
@@ -12855,7 +13162,7 @@ msgstr "推送到会计系统"
 msgid "Putting your data back"
 msgstr "正在恢复您的数据"
 
-#. placeholder {0}: row.original.replenishmentSystem === "Make" ? "Job" : "Order"
+#. placeholder {0}: getKanbanCreateNoun(row.original.replenishmentSystem)
 msgid "QR Code to create a {0} for this kanban"
 msgstr "二维码以为此看板创建{0}"
 
@@ -13233,8 +13540,14 @@ msgstr "接收于"
 msgid "Received By"
 msgstr "接收人"
 
+msgid "Received lines from this supplier with quantity remaining to return"
+msgstr "来自此供应商且还有数量待退货的已收行"
+
 msgid "Received Qty"
 msgstr "已收货数量"
+
+msgid "Received quantity not yet credited. The credit memo is created as a draft."
+msgstr "已收到的数量尚未进行贷项。贷项通知单已创建为草稿。"
 
 msgid "Receiving Location"
 msgstr "收货地点"
@@ -13266,8 +13579,8 @@ msgstr "录音"
 msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
 msgstr "针对客户或供应商记录贷方或借方备忘录。对特定发票的应用在创建备忘录后添加。"
 
-msgid "Record cash received from a customer (Receipt) or paid to a supplier (Disbursement). Applications to specific invoices are added after the payment is created."
-msgstr "记录从客户收到的现金（收据）或支付给供应商的现金（支付）。对特定发票的应用在创建付款后添加。"
+msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgstr "记录客户付款、供应商付款或退款。付款创建后，可以添加对发票或单据的应用。"
 
 msgid "Record deleted"
 msgstr "记录已删除"
@@ -13310,6 +13623,15 @@ msgstr "刷新"
 
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
+
+msgid "Refund from Supplier"
+msgstr "来自供应商的退款"
+
+msgid "Refund memos"
+msgstr "退款单据"
+
+msgid "Refund to Customer"
+msgstr "向客户退款"
 
 msgid "Regenerate"
 msgstr "重新生成"
@@ -13368,6 +13690,10 @@ msgstr "相对时间表·待确认的日期"
 msgid "Release"
 msgstr "下达"
 
+#. placeholder {0}: releasable.length
+msgid "Release {0} batches"
+msgstr "下达{0}个生产批次"
+
 msgid "Release Batch"
 msgstr "下达生产批次"
 
@@ -13385,6 +13711,10 @@ msgstr "下达工单"
 
 msgid "Released"
 msgstr "已下达"
+
+#. placeholder {0}: d.released
+msgid "Released {0} batches"
+msgstr "已下达{0}个生产批次"
 
 msgid "Released date"
 msgstr "下达日期"
@@ -13556,6 +13886,9 @@ msgstr "替换 PDF"
 
 msgid "Replace this company's data with a demo dataset — snapshotted first, so you can revert."
 msgstr "用演示数据集替换此公司的数据——首先快照，以便您可以还原。"
+
+msgid "Replacement Order"
+msgstr "替换订单"
 
 msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
 msgstr "替换 PDF 会移除此文件上的所有气球位置。功能行及其值保持不变；你可以在新绘图上重新放置气球。"
@@ -13738,6 +14071,22 @@ msgstr "资源"
 msgid "Responsible Employee"
 msgstr ""
 
+msgid "Restock"
+msgstr "补货"
+
+msgid "restock fee"
+msgstr "补货费"
+
+msgid "Restock Fee Percent"
+msgstr "补货费百分比"
+
+#. placeholder {0}: percentFormatter.format( line.restockFeePercent )
+msgid "Restocking fee {0}"
+msgstr "补货费 {0}"
+
+msgid "Restocking fee:"
+msgstr "补货费："
+
 msgid "Restorable with changes"
 msgstr "可恢复（有变更）"
 
@@ -13777,6 +14126,9 @@ msgstr "每页结果数"
 msgid "Resume Receiving"
 msgstr "恢复接收"
 
+msgid "Resume Shipping"
+msgstr "恢复发货"
+
 msgid "Retained Earnings"
 msgstr "未分配利润"
 
@@ -13798,11 +14150,44 @@ msgstr "重试还原"
 msgid "Return Home"
 msgstr "返回首页"
 
+msgid "Return ID"
+msgstr "退货编号"
+
+msgid "Return Location"
+msgstr "退货地点"
+
+msgid "Return Number"
+msgstr "退货号"
+
+msgid "Return Quantity"
+msgstr "退货数量"
+
+msgid "Return Reason"
+msgstr "退货原因"
+
+msgid "Return Reasons"
+msgstr "退货原因"
+
+msgid "returnable"
+msgstr "可退货的"
+
 msgid "Returned"
 msgstr "已返回"
 
+msgid "Returned batch"
+msgstr "已退货批次"
+
+msgid "Returned goods re-enter inventory at zero value"
+msgstr "退回的货物以零价值重新进入库存"
+
+msgid "Returned serial numbers"
+msgstr "退货序列号"
+
 msgid "Returning unused picked material"
 msgstr "返回未使用的已拣货原材料"
+
+msgid "Returns"
+msgstr "退货"
 
 msgid "Returns:"
 msgstr "返回："
@@ -13813,8 +14198,14 @@ msgstr "修订版 {revision}"
 msgid "Revenue"
 msgstr "收入"
 
+msgid "Revenue account for shipping charged to customers"
+msgstr "向客户收取的运输费用收入科目"
+
 msgid "Revenue and expenses over a period"
 msgstr "期间的收入和费用"
+
+msgid "Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default."
+msgstr "用于向客户收取的运费收入贷记的总账科目，已过账显示在单独行；必须与销售默认账户不同。"
 
 msgid "Reverse all inventory adjustments"
 msgstr "反转所有库存调整"
@@ -13943,6 +14334,24 @@ msgstr "风险登记册"
 
 msgid "Risks"
 msgstr "风险"
+
+msgid "RMA"
+msgstr "RMA"
+
+msgid "RMA ID"
+msgstr "RMA ID"
+
+msgid "RMA Line"
+msgstr "RMA 明细行"
+
+msgid "RMA Lines"
+msgstr "RMA 明细行"
+
+msgid "RMA Number"
+msgstr "RMA 号"
+
+msgid "RMAs"
+msgstr "RMA"
 
 msgid "Role"
 msgstr "角色"
@@ -14185,6 +14594,9 @@ msgstr "销售订单"
 msgid "Sales Person"
 msgstr "销售人员"
 
+msgid "Sales Return"
+msgstr ""
+
 msgid "Sales Revenue"
 msgstr "销售收入"
 
@@ -14254,6 +14666,9 @@ msgstr "保存方法"
 
 msgid "Save Rate"
 msgstr "保存汇率"
+
+msgid "Save the form you're editing"
+msgstr "保存您正在编辑的表单"
 
 msgid "Save view"
 msgstr "保存视图"
@@ -14425,6 +14840,12 @@ msgstr "按 Jira 问题标题搜索..."
 
 msgid "Search by linear issue title..."
 msgstr "按线性问题标题搜索..."
+
+msgid "Search by receipt, PO, or item"
+msgstr ""
+
+msgid "Search by shipment, sales order, or item"
+msgstr ""
 
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
@@ -14625,6 +15046,9 @@ msgstr "选择客户"
 msgid "Select dimension"
 msgstr "选择维度"
 
+msgid "Select disposition"
+msgstr "选择处理方式"
+
 msgid "Select Employee"
 msgstr "选择员工"
 
@@ -14667,6 +15091,12 @@ msgstr "选择操作"
 msgid "Select operations"
 msgstr "选择工序"
 
+msgid "Select posted receipt lines from this supplier to return."
+msgstr ""
+
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "选择打印机"
 
@@ -14705,9 +15135,6 @@ msgstr "选择表面"
 
 msgid "Select the groups that should complete this training"
 msgstr "选择应该完成此培训的组"
-
-msgid "Select the invoices this payment settles. Discount and write-off are in invoice currency."
-msgstr "选择此付款结算的发票。折扣和核销以发票货币计。"
 
 msgid "Select value"
 msgstr "选择值"
@@ -14803,6 +15230,9 @@ msgstr "序列号"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
+msgid "Serial numbers to return"
+msgstr ""
+
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
 
@@ -14817,6 +15247,9 @@ msgstr "序列号/批次 #"
 
 msgid "Serialize & sell your parts"
 msgstr "序列化并销售您的零件"
+
+msgid "Serials and batches on hand that were received from this supplier"
+msgstr "从该供应商收到的现有序列号和批次"
 
 msgid "Series"
 msgstr "序列"
@@ -14850,6 +15283,12 @@ msgstr "服务"
 
 msgid "Session locked"
 msgstr "会话已锁定"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
+
+msgid "Set a supplier on this return to add from a receipt."
+msgstr ""
 
 msgid "Set a target"
 msgstr "设置目标"
@@ -15046,6 +15485,12 @@ msgstr "发货地点"
 msgid "Shipments"
 msgstr "发货单"
 
+msgid "Shipped"
+msgstr "已发货"
+
+msgid "Shipped lines for this customer with quantity remaining to return"
+msgstr "该客户已发货行项中剩余待退货的数量"
+
 msgid "Shipped Qty"
 msgstr "已发货数量"
 
@@ -15081,6 +15526,12 @@ msgstr "发货方式"
 
 msgid "Shipping Notes"
 msgstr "运输备注"
+
+msgid "Shipping Revenue"
+msgstr "运输收入"
+
+msgid "Shipping Revenue (default)"
+msgstr "运输收入（默认）"
 
 msgid "Shipping Supplier"
 msgstr "运输供应商"
@@ -15118,17 +15569,29 @@ msgstr "短缺拣货 {itemName}"
 msgid "Shortcuts"
 msgstr "快捷键"
 
+msgid "Show"
+msgstr "显示"
+
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
+msgid "Show available batch numbers"
+msgstr ""
+
+msgid "Show available tracking numbers"
+msgstr ""
+
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
 
 msgid "Show Durations"
 msgstr "显示时长"
+
+msgid "Show more"
+msgstr ""
 
 msgid "Show one inventory number the floor and office both trust"
 msgstr "显示一个楼层和办公室都信任的库存数字"
@@ -15147,6 +15610,9 @@ msgstr "显示供应商ID"
 
 msgid "Show sync options"
 msgstr "显示同步选项"
+
+msgid "Show this overlay"
+msgstr "显示此覆盖层"
 
 msgid "Show Trailing Zeros"
 msgstr "显示尾随零"
@@ -15590,6 +16056,9 @@ msgstr "在此日期后停止提出采购订单"
 msgid "Stop Receiving"
 msgstr "停止接收"
 
+msgid "Stop Shipping"
+msgstr "停止发货"
+
 msgid "Storage client not available"
 msgstr "存储客户端不可用"
 
@@ -15788,6 +16257,9 @@ msgstr "供应商"
 msgid "Supplier"
 msgstr "供应商"
 
+msgid "Supplier (optional — auto-resolved)"
+msgstr "供应商（可选——自动解析）"
+
 msgid "Supplier Accounts"
 msgstr "供应商账户"
 
@@ -15886,6 +16358,21 @@ msgstr "供应商参考"
 
 msgid "Supplier Reference"
 msgstr "供应商参考"
+
+msgid "Supplier Return"
+msgstr "供应商退货"
+
+msgid "Supplier Return Line"
+msgstr "供应商退货明细行"
+
+msgid "Supplier Return Lines"
+msgstr "供应商退货明细行"
+
+msgid "Supplier Returns"
+msgstr "供应商退货"
+
+msgid "Supplier RMA #"
+msgstr "供应商 RMA #"
 
 msgid "Supplier Status"
 msgstr "供应商状态"
@@ -16112,6 +16599,9 @@ msgstr "税收百分比"
 
 msgid "Tax Residual Value %"
 msgstr "税务残值 %"
+
+msgid "Tax Status"
+msgstr "税状态"
 
 msgid "Tax Useful Life (default)"
 msgstr "税使用年限（默认）"
@@ -16345,6 +16835,9 @@ msgstr "商品实际离开仓库的日期；记录在出货过账中，用于按
 msgid "The date the item is required on-site to cover the period's projected demand."
 msgstr "该项目需要在现场到达的日期，以满足该期间的预计需求。"
 
+msgid "The date the return authorization expires"
+msgstr "退货授权的到期日期"
+
 msgid "The date this asset is retired from service; depreciation stops on this date and remaining net book value is booked to the disposal account."
 msgstr "此资产退役日期；折旧在此日期停止，剩余账面净值计入处置账户。"
 
@@ -16540,6 +17033,9 @@ msgstr "此供应商的生命周期状态 — 启用、已停用、待批准等�
 msgid "The local timezone this location reports time in; schedules, timecards, and shift hours at this location are interpreted in this zone regardless of the user's browser locale."
 msgstr "此地点报告时间所在的本地时区；此地点的排程、工时记录和班次小时数在此时区中解释，无论用户的浏览器区域设置如何。"
 
+msgid "The location the goods will be shipped from"
+msgstr "货物将从中发货的位置"
+
 msgid "The location this employee defaults to; drives timezone interpretation on their timecards and the default shift selectors on their job record."
 msgstr "此员工默认的地点；驱动其工时记录上的时区解释和其工单记录上的默认班次选择器。"
 
@@ -16551,6 +17047,9 @@ msgstr "如果转换为订单，此报价单将从其中履行的地点；计划
 
 msgid "The location this RFQ would fulfill from if it converts to a quote and then an order."
 msgstr "如果此报价请求转换为报价，然后转换为订单，将履行此报价请求的位置。"
+
+msgid "The location where the goods will be received"
+msgstr "货物将被接收的位置"
 
 msgid "The log of risks and opportunities raised against any entity, each rated by independent 1–5 severity and likelihood and driven to a resolution."
 msgstr "针对任何实体提出的风险和机遇日志，每个均由独立的 1–5 严重度和可能性评级，并推动到解决方案。"
@@ -16867,6 +17366,9 @@ msgstr "此订单的供应商自己的参考（他们系统上的SO编号）；�
 msgid "The supplier's packing-slip or shipment number, recorded for audit; not used by any posting logic."
 msgstr "供应商的装箱单或发货号，记录以供审计；不被任何过账逻辑使用。"
 
+msgid "The supplier's return authorization number"
+msgstr "供应商的退货授权号"
+
 msgid "The suppliers and vendors you buy from"
 msgstr "你采购的供应商和卖家"
 
@@ -17174,6 +17676,9 @@ msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔
 msgid "This restore could not be completed."
 msgstr "无法完成此恢复。"
 
+msgid "This return order has no lines to credit"
+msgstr "此退货订单没有贷记行项"
+
 msgid "This revert could not be completed."
 msgstr "无法完成此还原。"
 
@@ -17264,6 +17769,14 @@ msgstr "这将根据启用的制造方法的物料清单和工艺使用生产批
 #. placeholder {1}: routeData?.job?.salesOrderReadableId
 msgid "This will remove {0}'s link to {1}. The job will no longer appear under the sales order and shipments won't find it."
 msgstr "这将移除 {0} 与 {1} 的关联。该工作单将不再显示在销售订单下，发货单也将无法找到它。"
+
+#. placeholder {0}: routeData?.purchaseReturnOrder?.purchaseReturnOrderId
+msgid "This will remove the link between {0} and its purchase order. The return will no longer appear under the purchase order."
+msgstr "这将解除 {0} 与其采购订单的关联。该退货将不再显示在采购订单下。"
+
+#. placeholder {0}: routeData?.salesReturnOrder?.salesReturnOrderId
+msgid "This will remove the link between {0} and its sales order. The RMA will no longer appear under the sales order."
+msgstr "这将解除 {0} 与其销售订单的关联。该 RMA 将不再显示在销售订单下。"
 
 msgid "This will replace all method materials of other revisions with this revision."
 msgstr "这将用此修订版替换其他修订版的所有方法原材料。"
@@ -17424,6 +17937,9 @@ msgstr "切换级别"
 
 msgid "Toggle Properties"
 msgstr "切换属性"
+
+msgid "Toggle the sidebar"
+msgstr "切换侧边栏"
 
 msgid "Toggle views"
 msgstr "切换视图"
@@ -17830,6 +18346,12 @@ msgstr "取消链接"
 msgid "Unlink job from sales order?"
 msgstr "从销售订单取消关联工作？"
 
+msgid "Unlink return from purchase order?"
+msgstr "解除退货与采购订单的关联？"
+
+msgid "Unlink RMA from sales order?"
+msgstr "解除 RMA 与销售订单的关联？"
+
 msgid "Unlock"
 msgstr "解锁"
 
@@ -17895,6 +18417,9 @@ msgstr "取消报废 {label}"
 
 msgid "Unshipped orders"
 msgstr "未发货订单"
+
+msgid "Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity."
+msgstr "在工作中心的可组批工艺上，分组在一起运行的未开始工单工序，共享一个换型和一个计时器，其时间按工单数量比例分配回各工单。"
 
 msgid "Unsupported source document type: {sourceDocument}"
 msgstr "不支持的源单据类型：{sourceDocument}"
@@ -18417,6 +18942,12 @@ msgstr "查看收据"
 msgid "View Receivables"
 msgstr "查看应收款项"
 
+msgid "View replacement purchase order"
+msgstr "查看替换采购订单"
+
+msgid "View replacement sales order"
+msgstr "查看替换销售订单"
+
 msgid "View Run"
 msgstr "查看运行"
 
@@ -18461,6 +18992,11 @@ msgstr "在用户的公开资料中可见"
 
 msgid "Void"
 msgstr "作废"
+
+#. placeholder {0}: initialValues.memoId
+#. placeholder {0}: initialValues.paymentId
+msgid "Void {0}"
+msgstr "作废 {0}"
 
 msgid "Void Invoice"
 msgstr "作废发票"
@@ -19305,6 +19841,12 @@ msgstr "Z1.4检验水平(I / II / III);较高级别意味着同一批次的样�
 
 msgid "Z1.4 severity (Normal / Tightened / Reduced); switches by rule based on recent lot-acceptance history."
 msgstr "Z1.4 严重度（正常检验/加严检验/放宽检验）；根据最近的批次接收历史按规则切换。"
+
+msgid "Zero inventory value"
+msgstr "库存价值为零"
+
+msgid "Zero Inventory Value"
+msgstr "库存价值为零"
 
 msgid "Zoom Box"
 msgstr "缩放框"

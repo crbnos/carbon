@@ -6,6 +6,7 @@ import {
   getColumnPlacement,
   getItemPlacement,
   isSamePlacement,
+  planColumnReorder,
   resolveInsertionMarker
 } from "./placement";
 
@@ -199,6 +200,43 @@ describe("placement", () => {
         slot: { index: 1, previousItemId: "a", nextItemId: "c" }
       })
     ).toBe(true);
+  });
+
+  it("renumbers an all-equal-priority column so a reorder can land", () => {
+    // Every op still at the default priority 1 (scheduler has not sequenced
+    // them) — the fractional path finds no gap, so the drop renumbers instead.
+    const items = [item("a", 1), item("b", 1), item("c", 1)];
+    const origin = createDragOrigin(items, item("a", 1));
+
+    // Drop "a" at the bottom of its own column.
+    expect(planColumnReorder(origin!, items, "a", 2)).toEqual([
+      { id: "c", priority: 2 },
+      { id: "a", priority: 3 }
+    ]);
+
+    // Drop "a" between "b" and "c" (order becomes b, a, c).
+    expect(planColumnReorder(origin!, items, "a", 1)).toEqual([
+      { id: "a", priority: 2 },
+      { id: "c", priority: 3 }
+    ]);
+  });
+
+  it("only writes the siblings whose priority actually shifts", () => {
+    const items = [
+      item("a", 1),
+      item("b", 1, "b"),
+      item("c", 2, "b"),
+      item("d", 3, "b")
+    ];
+    const origin = createDragOrigin(items, item("a", 1));
+
+    // Cross-column drop of "a" into slot 1 of column "b": "b" keeps priority 1,
+    // the rest shift down by one.
+    expect(planColumnReorder(origin!, items, "b", 1)).toEqual([
+      { id: "a", priority: 2 },
+      { id: "c", priority: 3 },
+      { id: "d", priority: 4 }
+    ]);
   });
 
   it("resolves before and after insertion markers", () => {

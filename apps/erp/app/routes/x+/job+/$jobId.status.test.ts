@@ -1,5 +1,7 @@
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@carbon/auth", () => ({
@@ -18,6 +20,15 @@ vi.mock("@carbon/auth/session.server", () => ({
 }));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn() })
+}));
+// Scheduling moved OUT of the `schedule` edge function and into Node in #1151:
+// the release path now regenerates the job's whole location in-process via
+// `runLocationSchedule` instead of `serviceRole.functions.invoke("schedule")`.
+vi.mock("@carbon/ee/planning", () => ({
+  runLocationSchedule: vi.fn()
+}));
+vi.mock("~/services/database.server", () => ({
+  getDatabaseClient: vi.fn(() => ({}))
 }));
 vi.mock("~/utils/path", () => ({
   path: {
@@ -101,6 +112,10 @@ function setup() {
     events.push("updateJobStatus");
     return { data: { id: "job-1" }, error: null } as any;
   });
+  vi.mocked(runLocationSchedule).mockImplementation(async () => {
+    events.push("runLocationSchedule");
+    return {} as any;
+  });
 
   return { client, serviceRole };
 }
@@ -134,15 +149,21 @@ describe("Job release status action", () => {
     // On success the action ends by throwing a redirect Response.
     await expect(runRelease()).rejects.toBeInstanceOf(Response);
 
+    // The redirect must be the SUCCESS one. Without this, a scheduler that
+    // throws still redirects (the catch flashes "Failed to schedule job"), and
+    // the ordering assertion below would pass on the failure path.
+    expect(success).toHaveBeenCalledWith("Updated job status");
+    expect(error).not.toHaveBeenCalled();
+
     expect(updateJobStatus).toHaveBeenCalledOnce();
     expect(events).toContain("updateJobStatus");
-    expect(events).toContain("invoke:schedule");
-    // Regression guard: the `schedule` edge function only batches jobs already
-    // Ready/In Progress/Paused. If the status is committed AFTER the scheduler
-    // runs, the freshly released job is filtered out of its own schedule run and
-    // never lands in capacityReservation / the forecast.
+    expect(events).toContain("runLocationSchedule");
+    // Regression guard: the scheduler only batches jobs already Ready/In
+    // Progress/Paused. If the status is committed AFTER the scheduler runs, the
+    // freshly released job is filtered out of its own schedule run and never
+    // lands in capacityReservation / the forecast.
     expect(events.indexOf("updateJobStatus")).toBeLessThan(
-      events.indexOf("invoke:schedule")
+      events.indexOf("runLocationSchedule")
     );
   });
 });

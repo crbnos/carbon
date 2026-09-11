@@ -183,8 +183,43 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
     }
   }, [dissolveFetcher.state, dissolveFetcher.data, t]);
 
+  // Bulk release for the selected rows — Planned batches only (release is the
+  // Planned → Active flip; Active/Completing/Completed batches are already on or
+  // off the floor). Posts the ids to the release action, which recalcs member
+  // jobs, releases each, and notifies the scheduler; we toast the summary.
+  const releaseBatchesFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+    released?: number;
+    failed?: { readableId: string; message: string }[];
+  }>();
+  const wasReleasingBatches = useRef(false);
+  useEffect(() => {
+    if (releaseBatchesFetcher.state !== "idle") {
+      wasReleasingBatches.current = true;
+      return;
+    }
+    if (!wasReleasingBatches.current) return;
+    wasReleasingBatches.current = false;
+    const d = releaseBatchesFetcher.data;
+    if (!d) return;
+    if (d.success === false && d.message) {
+      toast.error(d.message);
+      return;
+    }
+    if (d.released) toast.success(t`Released ${d.released} batches`);
+    if (d.failed?.length) {
+      toast.error(
+        t`Could not release ${d.failed.length}: ${d.failed
+          .map((f) => f.readableId)
+          .join(", ")}`
+      );
+    }
+  }, [releaseBatchesFetcher.state, releaseBatchesFetcher.data, t]);
+
   const renderActions = useCallback(
     (selectedRows: JobOperationBatch[]) => {
+      const releasable = selectedRows.filter((r) => r.status === "Planned");
       const dissolvable = selectedRows.filter(
         (r) => r.status === "Planned" || r.status === "Active"
       );
@@ -194,6 +229,22 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
             <Trans>Actions</Trans>
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
+          <DropdownMenuItem
+            disabled={releasable.length === 0 || !canUpdate}
+            onClick={() =>
+              releaseBatchesFetcher.submit(
+                { batchIds: releasable.map((r) => r.id) },
+                {
+                  method: "post",
+                  action: path.to.releaseOperationBatches,
+                  encType: "application/json"
+                }
+              )
+            }
+          >
+            <DropdownMenuIcon icon={<LuCirclePlay />} />
+            {t`Release ${releasable.length} batches`}
+          </DropdownMenuItem>
           <DropdownMenuItem
             destructive
             disabled={dissolvable.length === 0 || !canUpdate}
@@ -214,7 +265,7 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
         </DropdownMenuContent>
       );
     },
-    [canUpdate, dissolveFetcher, t]
+    [canUpdate, dissolveFetcher, releaseBatchesFetcher, t]
   );
 
   const customColumns =

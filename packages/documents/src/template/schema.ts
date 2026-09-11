@@ -382,7 +382,9 @@ export const documentSettingsSchema = z.object({
 export const documentTemplateTypeSchema = z.enum([
   "salesInvoice",
   "salesOrder",
+  "salesReturnOrder",
   "purchaseOrder",
+  "purchaseReturnOrder",
   "quote",
   "packingSlip",
   "stockTransfer",
@@ -399,7 +401,9 @@ export const documentTemplateTypeSchema = z.enum([
 export const REGISTRATION_LINE_DOCUMENT_TYPES: DocumentTemplateType[] = [
   "salesInvoice",
   "salesOrder",
+  "salesReturnOrder",
   "purchaseOrder",
+  "purchaseReturnOrder",
   "quote",
   "packingSlip"
 ];

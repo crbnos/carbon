@@ -48,7 +48,7 @@ const ResendInviteModal = ({
         </ModalHeader>
 
         <ModalBody>
-          <p className="mb-2">
+          <p className="text-sm text-muted-foreground mb-2">
             {isSingleUser ? (
               <Trans>
                 Are you sure you want to send an invite to this user?

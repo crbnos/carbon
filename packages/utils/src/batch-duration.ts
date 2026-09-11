@@ -23,6 +23,19 @@ export type BatchDurationMember = {
 export type BatchType = "Sequential" | "Simultaneous";
 
 /**
+ * Combine per-member values by the batch type: members run one after another
+ * (Sequential → sum) or together in one load (Simultaneous → the longest).
+ * The single rule `batchDuration` and `batchPlanBreakdown` share, so their run
+ * totals cannot drift. Caller guards the empty case (Simultaneous's max over an
+ * empty list is -Infinity).
+ */
+function combineRuns(values: number[], batchType: BatchType): number {
+  return batchType === "Sequential"
+    ? values.reduce((a, b) => a + b, 0)
+    : Math.max(...values);
+}
+
+/**
  * Planned duration of an operation batch, in seconds.
  *
  * setup = max member setup, counted once (shared load), 0 when the batch has
@@ -52,10 +65,57 @@ export function batchDuration(
     return Math.max(m.laborDuration, m.machineDuration) * remainingFraction;
   });
 
-  const run =
-    batchType === "Sequential"
-      ? runs.reduce((a, b) => a + b, 0)
-      : Math.max(...runs);
+  return setup + combineRuns(runs, batchType);
+}
 
-  return setup + run;
+/** Pre-converted setup/labor/machine durations for one batch member. */
+export type BatchMemberDurations = {
+  setupDuration: number;
+  laborDuration: number;
+  machineDuration: number;
+};
+
+/**
+ * Planned durations of an operation batch, broken out for display. Unlike
+ * `batchDuration` this is not netted for progress and has no setup-done rule —
+ * it is the full plan a user reads before the run starts.
+ *
+ * - `setup` = max member setup (one shared load).
+ * - `labor` / `machine` = Σ (Sequential) | max (Simultaneous) — per-type
+ *   buckets that survive as denominators for plan-vs-actual rows.
+ * - `total` = setup + Σ|max of each member's run (`max(labor_i, machine_i)`),
+ *   NOT setup + labor + machine: a member's labor and machine overlap on one
+ *   wall clock, so summing the buckets double-counts. This matches the
+ *   scheduler's reservation (`batchDuration`) for zero-progress members exactly.
+ */
+export type BatchPlanBreakdown = {
+  setup: number;
+  labor: number;
+  machine: number;
+  total: number;
+};
+
+export function batchPlanBreakdown(
+  members: BatchMemberDurations[],
+  batchType: BatchType
+): BatchPlanBreakdown {
+  if (members.length === 0) return { setup: 0, labor: 0, machine: 0, total: 0 };
+
+  const setup = Math.max(...members.map((m) => m.setupDuration));
+  const labor = combineRuns(
+    members.map((m) => m.laborDuration),
+    batchType
+  );
+  const machine = combineRuns(
+    members.map((m) => m.machineDuration),
+    batchType
+  );
+  const total =
+    setup +
+    combineRuns(
+      members.map((m) => Math.max(m.laborDuration, m.machineDuration)),
+      batchType
+    );
+
+  return { setup, labor, machine, total };
 }
