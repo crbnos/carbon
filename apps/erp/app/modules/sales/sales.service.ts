@@ -1776,9 +1776,7 @@ export async function getSalesOrderInvoicesByIds(
 ) {
   return client
     .from("salesInvoices")
-    .select(
-      "id, invoiceTotal, balance, status, baseStatus, currencyCode, exchangeRate"
-    )
+    .select("id, invoiceTotal, balance, status, currencyCode, exchangeRate")
     .in("id", invoiceIds);
 }
 
@@ -1789,12 +1787,12 @@ export async function getSalesOrderInvoicePaymentsByIds(
 ) {
   return fetchAllFromTable<{
     targetSalesInvoiceId: string | null;
-    sourceAmount: number | null;
+    appliedAmount: number;
     payment: { status: string } | null;
   }>(
     client,
     "invoiceSettlement",
-    "targetSalesInvoiceId, sourceAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    "targetSalesInvoiceId, appliedAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
     (query) =>
       query
         .eq("companyId", companyId)

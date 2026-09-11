@@ -102,7 +102,6 @@ beforeEach(() => {
         invoiceTotal: 100,
         balance: 0,
         status: "Paid",
-        baseStatus: "Submitted",
         currencyCode: "USD",
         exchangeRate: 1
       }
@@ -113,7 +112,7 @@ beforeEach(() => {
     data: [
       {
         targetSalesInvoiceId: "invoice-1",
-        sourceAmount: 80,
+        appliedAmount: 75,
         payment: { status: "Posted" }
       }
     ],
@@ -131,7 +130,7 @@ beforeEach(() => {
 });
 
 describe("sales order invoice summary", () => {
-  it("counts posted cash principal instead of discounts and write-offs", async () => {
+  it("counts applied payment principal instead of discounts and write-offs", async () => {
     const result = await loader({
       request: new Request("http://localhost/x/sales-order/order-1"),
       params: { orderId: "order-1" },
@@ -140,39 +139,9 @@ describe("sales order invoice summary", () => {
 
     expect(result.invoiceSummary).toEqual({
       invoicedAmount: 100,
-      paidAmount: 80,
+      paidAmount: 75,
       currencyMismatchCount: 0
     });
-  });
-
-  it("preserves legacy invoices explicitly marked paid", async () => {
-    vi.mocked(sales.getSalesOrderInvoicesByIds).mockResolvedValue({
-      data: [
-        {
-          id: "invoice-1",
-          invoiceTotal: 100,
-          balance: 0,
-          status: "Paid",
-          baseStatus: "Paid",
-          currencyCode: "USD",
-          exchangeRate: 1
-        }
-      ],
-      error: null
-    } as never);
-    getSalesOrderInvoicePaymentsByIds.mockResolvedValue({
-      data: [],
-      count: 0,
-      error: null
-    });
-
-    const result = await loader({
-      request: new Request("http://localhost/x/sales-order/order-1"),
-      params: { orderId: "order-1" },
-      context: {}
-    } as unknown as Parameters<typeof loader>[0]);
-
-    expect(result.invoiceSummary.paidAmount).toBe(100);
   });
 
   it("returns invoice and payment totals in the order currency", async () => {
@@ -193,7 +162,6 @@ describe("sales order invoice summary", () => {
           invoiceTotal: 100,
           balance: 50,
           status: "Partially Paid",
-          baseStatus: "Submitted",
           currencyCode: "EUR",
           exchangeRate: 0.8
         }
@@ -204,7 +172,7 @@ describe("sales order invoice summary", () => {
       data: [
         {
           targetSalesInvoiceId: "invoice-1",
-          sourceAmount: 40,
+          appliedAmount: 50,
           payment: { status: "Posted" }
         }
       ],

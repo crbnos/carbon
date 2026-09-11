@@ -144,13 +144,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       );
     }
 
-    const paidByInvoiceId = new Map<string, number>();
+    const paidBaseByInvoiceId = new Map<string, number>();
     for (const payment of payments.data ?? []) {
       if (!payment.targetSalesInvoiceId) continue;
-      paidByInvoiceId.set(
+      paidBaseByInvoiceId.set(
         payment.targetSalesInvoiceId,
-        (paidByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
-          (payment.sourceAmount ?? 0)
+        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
+          payment.appliedAmount
       );
     }
 
@@ -176,13 +176,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      const invoiceTotalInOrderCurrency =
-        invoiceTotal * (invoice.exchangeRate ?? 1);
-      invoicedAmount += invoiceTotalInOrderCurrency;
-      if (invoice.baseStatus === "Paid") {
-        paidAmount += invoiceTotalInOrderCurrency;
-      } else if (invoice.id) {
-        paidAmount += paidByInvoiceId.get(invoice.id) ?? 0;
+      invoicedAmount += invoiceTotal * (invoice.exchangeRate ?? 1);
+      if (invoice.id) {
+        paidAmount +=
+          (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+          (invoice.exchangeRate ?? 1);
       }
     }
   }
