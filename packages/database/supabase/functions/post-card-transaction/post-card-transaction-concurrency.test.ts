@@ -34,6 +34,45 @@ databaseTest("concurrent posting retries create one journal", async () => {
   }
 });
 
+databaseTest(
+  "concurrent void retries create one reversal journal",
+  async () => {
+    const f = await cardTransactionFixture();
+    const left = await f.connect();
+    const right = await f.connect();
+    try {
+      const posted = await postCardTransactionTransaction(f.db, f.args);
+      const args = { ...f.args, type: "void" as const };
+      const results = await Promise.all([
+        postCardTransactionTransaction(left, args),
+        postCardTransactionTransaction(right, args),
+      ]);
+      assertEquals(results, [posted, posted]);
+      assertEquals(
+        (await f.db.selectFrom("journal").select("id").where(
+          "companyId",
+          "=",
+          f.companyId,
+        ).where("sourceType", "=", "Card Transaction").execute()).length,
+        2,
+      );
+      assertEquals(
+        (await f.db.selectFrom("cardTransaction").select("status").where(
+          "id",
+          "=",
+          f.cardTransactionId,
+        ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
+          .status,
+        "Voided",
+      );
+    } finally {
+      await left.destroy();
+      await right.destroy();
+      await f.cleanup();
+    }
+  },
+);
+
 databaseTest("a line mutation holds the parent lock until commit", async () => {
   const f = await cardTransactionFixture();
   const writer = await f.connect();

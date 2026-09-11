@@ -93,6 +93,72 @@ databaseTest("a sequence failure rolls the entire post back", async () => {
 });
 
 databaseTest(
+  "a failure after journal creation rolls the entire post back",
+  async () => {
+    const f = await cardTransactionFixture();
+    const triggerName = "test_fail_card_transaction_post_update";
+    const functionName = "test_fail_card_transaction_post_update";
+    try {
+      await sql.raw(`
+      CREATE OR REPLACE FUNCTION public.${functionName}()
+      RETURNS trigger
+      LANGUAGE plpgsql
+      AS $function$
+      BEGIN
+        IF NEW.status = 'Posted' THEN
+          RAISE EXCEPTION 'forced mid-transaction failure';
+        END IF;
+        RETURN NEW;
+      END;
+      $function$;
+      DROP TRIGGER IF EXISTS ${triggerName} ON public."cardTransaction";
+      CREATE TRIGGER ${triggerName}
+        BEFORE UPDATE ON public."cardTransaction"
+        FOR EACH ROW
+        EXECUTE FUNCTION public.${functionName}();
+    `).execute(f.db);
+
+      await assertRejects(
+        () => postCardTransactionTransaction(f.db, f.args),
+        Error,
+        "forced mid-transaction failure",
+      );
+      const header = await f.db.selectFrom("cardTransaction").select([
+        "status",
+        "journalId",
+      ]).where("id", "=", f.cardTransactionId).where(
+        "companyId",
+        "=",
+        f.companyId,
+      ).executeTakeFirstOrThrow();
+      assertEquals(header, { status: "Draft", journalId: null });
+      assertEquals(
+        await f.db.selectFrom("journal").select("id").where(
+          "companyId",
+          "=",
+          f.companyId,
+        ).where("sourceType", "=", "Card Transaction").execute(),
+        [],
+      );
+      assertEquals(
+        await f.db.selectFrom("journalLine").select("id").where(
+          "companyId",
+          "=",
+          f.companyId,
+        ).where("documentType", "=", "Card Transaction").execute(),
+        [],
+      );
+    } finally {
+      await sql.raw(`
+      DROP TRIGGER IF EXISTS ${triggerName} ON public."cardTransaction";
+      DROP FUNCTION IF EXISTS public.${functionName}();
+    `).execute(f.db);
+      await f.cleanup();
+    }
+  },
+);
+
+databaseTest(
   "posting only changes the matching company when ids overlap",
   async () => {
     const cardTransactionId = `shared-${crypto.randomUUID()}`;
