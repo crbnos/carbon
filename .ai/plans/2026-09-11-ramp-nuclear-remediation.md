@@ -35,10 +35,11 @@
 - [x] Task 28: Release-gate unverified outbound bill export (`21d83b81a4`)
 - [x] Task 29: Authenticate every webhook challenge (`95ad2310e0`)
 - [x] Task 30: Constrain legacy reimbursement adoption (`80281070e1`)
+- [x] Task 31: Batch outbound PO/vendor prerequisites (`7c0555d90c`)
 
 ## Dependencies
 
-Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Tasks 13–18 are the findings from the follow-up nuclear review and depend on the relevant earlier foundations. Tasks 19–30 resolve the final review's ten Must Fixes plus its line-magnitude and webhook risks. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
+Tasks 2 and 5 are independent. Task 3 depends on its migration being applied and generated. Task 4 depends on Tasks 2–3. Task 6 depends on Task 5. Task 7 depends on Task 5. Task 8 is independent. Task 9 depends on Tasks 3 and 8. Tasks 11–12 depend on the completed behavioral fixes and preserve their contracts. Tasks 13–18 are the findings from the follow-up nuclear review and depend on the relevant earlier foundations. Tasks 19–30 resolve the final review's ten Must Fixes plus its line-magnitude and webhook risks. Task 31 resolves the review's outbound N+1 suggestion. Task 10's final gates depend on all implementation and nuclear-refactor tasks.
 
 ---
 
@@ -370,7 +371,7 @@ commit with its own regression coverage:
 **Verification:** Focused unit, integration, real-database, Deno, and scoped typecheck gates
 are recorded in the commits. Task 10 reruns the aggregate branch gates after these changes.
 
-## Tasks 19–30: Final nuclear-review corrections
+## Tasks 19–31: Final nuclear-review corrections
 
 **Depends on:** Tasks 5–9 and 13–18
 
@@ -406,6 +407,9 @@ The ten Must Fixes and two independently identified risks landed separately:
     with matching identity, dates, currency, complete delivery/lines, coding and amounts,
     preserved valid FX, zero tax/shipping and no unrelated source provenance. Incomplete,
     mismatched, ambiguous or non-Draft reference matches fail without destructive repair.
+31. `7c0555d90c` — outbound PO pages preload PO/vendor mappings in two reads and drain one
+    paginated Ramp vendor snapshot only when needed. Created vendors update the page cache;
+    mixed create/patch/archive behavior and per-item provider-failure isolation remain intact.
 
 **Verification evidence:** Each commit includes targeted regression coverage. The discriminator
 suite recorded 20 red failures followed by 36 passing cases; archive recorded seven failures
@@ -417,7 +421,7 @@ Task 10 records final branch-wide verification separately.
 
 ## Task 10: Refresh documentation and run final gates
 
-**Depends on:** Tasks 2–9 and 11–30
+**Depends on:** Tasks 2–9 and 11–31
 **Files:**
 - Modify: `.claude/rules/ramp-integration.md`
 - Modify: `.claude/rules/accounting-sync-handlers.md`

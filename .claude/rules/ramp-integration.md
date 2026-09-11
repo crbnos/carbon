@@ -385,7 +385,10 @@ lookups are failures, not missing/excluded suppliers, and cannot advance either 
 
 - **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
-  bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO.
+  bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO. Each local page
+  preloads PO/vendor mappings in two reads and, only when named suppliers remain unmapped,
+  drains one paginated Ramp vendor snapshot. Successful creates update that page cache, so
+  shared suppliers never repeat mapping or provider lookups inside the PO loop.
 - **Invoices** (`pushInvoiceDraftBill`): **release-gated off**. `spend.ts` keeps
   `RAMP_DRAFT_BILL_CONTRACT_VERIFIED = false`
   until monetary units, coding, PDF fields, and the submit response's bill identity
