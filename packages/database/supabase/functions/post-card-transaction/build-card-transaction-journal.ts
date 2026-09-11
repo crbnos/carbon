@@ -165,6 +165,17 @@ export function buildCardTransactionJournal(
     }
   };
 
+  // Header-only transaction types derive their complete journal from the
+  // card and offset accounts. Refuse unexpected persisted detail instead of
+  // silently dropping it from the GL.
+  const requireNoLines = () => {
+    if (lines.length > 0) {
+      throw new Error(
+        `Card transaction ${documentReadableId}: ${type} cannot have coding lines`,
+      );
+    }
+  };
+
   const requireOffset = (): string => {
     if (!offsetAccountId) {
       throw new Error(
@@ -218,6 +229,7 @@ export function buildCardTransactionJournal(
 
     // Statement payment: pay down the card liability from a bank asset.
     case "Payment": {
+      requireNoLines();
       const offset = requireOffset();
       const magnitude = toBase(amount);
       pushLine("debit", "liability", magnitude, {
@@ -233,6 +245,7 @@ export function buildCardTransactionJournal(
 
     // Cashback/rewards: reduce the card liability, book the offset as income.
     case "Cashback": {
+      requireNoLines();
       const offset = requireOffset();
       const magnitude = toBase(amount);
       pushLine("debit", "liability", magnitude, {

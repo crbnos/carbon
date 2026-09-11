@@ -144,6 +144,27 @@ Deno.test("Payment: DR card liability / CR bank asset", () => {
   assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
 });
 
+Deno.test("Payment rejects stored coding lines that would be ignored", () => {
+  assertThrows(
+    () =>
+      buildCardTransactionJournal(
+        base({
+          transaction: {
+            type: "Payment",
+            amount: 500,
+            cardAccountId: "card",
+            offsetAccountId: "bank",
+            currencyCode: "USD",
+            exchangeRate: 1,
+          },
+          lines: [{ accountId: "exp1", amount: 500 }],
+        }),
+      ),
+    Error,
+    "Payment cannot have coding lines",
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Cashback — reduce the card liability, book the offset as income.
 // ---------------------------------------------------------------------------
@@ -166,6 +187,27 @@ Deno.test("Cashback: DR card liability / CR revenue", () => {
   assertEquals(line(journalLines, "card")!.amount, -25); // debit liability → −
   assertEquals(line(journalLines, "income")!.amount, 25); // credit revenue → +
   assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+});
+
+Deno.test("Cashback rejects stored coding lines that would be ignored", () => {
+  assertThrows(
+    () =>
+      buildCardTransactionJournal(
+        base({
+          transaction: {
+            type: "Cashback",
+            amount: 25,
+            cardAccountId: "card",
+            offsetAccountId: "income",
+            currencyCode: "USD",
+            exchangeRate: 1,
+          },
+          lines: [{ accountId: "exp1", amount: 25 }],
+        }),
+      ),
+    Error,
+    "Cashback cannot have coding lines",
+  );
 });
 
 // ---------------------------------------------------------------------------
