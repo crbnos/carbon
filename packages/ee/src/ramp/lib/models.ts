@@ -404,6 +404,9 @@ export type RampSyncFlags = z.infer<typeof RampSyncFlagsSchema>;
 export const RampCursorsSchema = z
   .object({
     repaymentsRepaidAt: z.string().optional(),
+    // Outbound cursors remain strings so one atomic metadata-path patch can
+    // persist the full keyset. New values encode [updatedAt, id]; legacy bare
+    // timestamps remain valid and are replayed inclusively during migration.
     purchaseOrderPushUpdatedAt: z.string().optional(),
     invoicePushUpdatedAt: z.string().optional()
   })
