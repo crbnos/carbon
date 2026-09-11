@@ -651,9 +651,7 @@ export function canCreatePurchaseOrderRevision(transition: {
 
 export const purchaseReturnOrderStatusType = [
   "Draft",
-  "Confirmed",
-  "Partially Shipped",
-  "Shipped",
+  "To Ship",
   "Completed",
   "Cancelled"
 ] as const;

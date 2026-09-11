@@ -1,7 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
-  Badge,
   Button,
   Select as CarbonSelect,
   FormControl,
@@ -23,9 +22,9 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { LuCircleStop, LuLoaderCircle } from "react-icons/lu";
-import { useFetcher, useParams } from "react-router";
+import { Link, useFetcher, useParams } from "react-router";
 import type { z } from "zod";
 import {
   CustomFormFields,
@@ -57,13 +56,54 @@ type SalesReturnOrderLineFormProps = {
   line?: SalesReturnOrderLine;
   /** Return reasons from the route loader; fetched on mount when absent */
   returnReasons?: { id: string; name: string }[];
-  /** Readable ids for the linked source documents */
+  /** Ids + readable ids for the linked source documents */
   linkage?: {
+    shipmentId?: string | null;
     shipmentReadableId?: string | null;
+    salesOrderId?: string | null;
     salesOrderReadableId?: string | null;
+    salesInvoiceId?: string | null;
     salesInvoiceReadableId?: string | null;
   };
 };
+
+/** One subtle reference to a source document in the line header — a navigable
+ * link when its id is known, plain text when only the readable id is. */
+function SourceReference({
+  to,
+  label,
+  value
+}: {
+  to?: string;
+  label: string;
+  value: string;
+}) {
+  if (!to) {
+    return (
+      <span className="inline-flex items-center gap-1.5">
+        <span className="text-muted-foreground">{label}</span>
+        <span className="font-medium tabular-nums text-foreground/70">
+          {value}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <Link
+      to={to}
+      prefetch="intent"
+      className="group inline-flex items-center gap-1.5 rounded-sm transition-colors hover:text-foreground"
+    >
+      <span className="text-muted-foreground group-hover:text-foreground">
+        {label}
+      </span>
+      <span className="font-medium tabular-nums text-foreground/70 group-hover:text-foreground">
+        {value}
+      </span>
+    </Link>
+  );
+}
 
 const SalesReturnOrderLineForm = ({
   initialValues,
@@ -246,6 +286,50 @@ const SalesReturnOrderLineForm = ({
     ? !permissions.can("update", "sales")
     : !permissions.can("create", "sales");
 
+  // Once the return is confirmed, the line's item, quantity, price, and
+  // restocking fee are locked on the server (they set the credit basis and are
+  // validated against source-line caps at Confirm). Reflect that in the UI so
+  // the fields don't look editable while silently refusing to save. Return
+  // reason and disposition stay editable — Reopen the return to Draft to change
+  // anything locked.
+  const areLineFieldsLocked = isEditing && status !== "Draft";
+
+  // Source-document references shown under the line title — one subtle link
+  // each, in place of the old badges.
+  const sources = (
+    [
+      linkage?.shipmentReadableId
+        ? {
+            to: linkage.shipmentId
+              ? path.to.shipmentDetails(linkage.shipmentId)
+              : undefined,
+            label: t`Shipment`,
+            value: linkage.shipmentReadableId
+          }
+        : null,
+      linkage?.salesOrderReadableId
+        ? {
+            to: linkage.salesOrderId
+              ? path.to.salesOrderDetails(linkage.salesOrderId)
+              : undefined,
+            label: t`Sales Order`,
+            value: linkage.salesOrderReadableId
+          }
+        : null,
+      linkage?.salesInvoiceReadableId
+        ? {
+            to: linkage.salesInvoiceId
+              ? path.to.salesInvoiceDetails(linkage.salesInvoiceId)
+              : undefined,
+            label: t`Invoice`,
+            value: linkage.salesInvoiceReadableId
+          }
+        : null
+    ] as ({ to?: string; label: string; value: string } | null)[]
+  ).filter((source): source is { to?: string; label: string; value: string } =>
+    Boolean(source)
+  );
+
   return (
     <ModalCardProvider type={type}>
       <ModalCard onClose={onClose} isCollapsible={isEditing}>
@@ -273,26 +357,21 @@ const SalesReturnOrderLineForm = ({
                   <Trans>New Line</Trans>
                 )}
               </ModalCardTitle>
-              {(linkage?.shipmentReadableId ||
-                linkage?.salesOrderReadableId ||
-                linkage?.salesInvoiceReadableId) && (
-                <HStack spacing={2} className="pt-2">
-                  {linkage?.shipmentReadableId && (
-                    <Badge variant="secondary">
-                      <Trans>Shipment</Trans> {linkage.shipmentReadableId}
-                    </Badge>
-                  )}
-                  {linkage?.salesOrderReadableId && (
-                    <Badge variant="secondary">
-                      <Trans>Sales Order</Trans> {linkage.salesOrderReadableId}
-                    </Badge>
-                  )}
-                  {linkage?.salesInvoiceReadableId && (
-                    <Badge variant="secondary">
-                      <Trans>Invoice</Trans> {linkage.salesInvoiceReadableId}
-                    </Badge>
-                  )}
-                </HStack>
+              {sources.length > 0 && (
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1 pt-1 text-sm">
+                  {sources.map((source, index) => (
+                    <Fragment key={source.label}>
+                      {index > 0 && (
+                        <span className="text-muted-foreground/50">·</span>
+                      )}
+                      <SourceReference
+                        to={source.to}
+                        label={source.label}
+                        value={source.value}
+                      />
+                    </Fragment>
+                  ))}
+                </div>
               )}
             </ModalCardHeader>
             <ModalCardBody>
@@ -312,6 +391,7 @@ const SalesReturnOrderLineForm = ({
                   label={t`Item`}
                   type="Item"
                   value={itemData.itemId}
+                  isReadOnly={areLineFieldsLocked}
                   onChange={(value) => {
                     onItemChange(value?.value as string);
                   }}
@@ -321,6 +401,7 @@ const SalesReturnOrderLineForm = ({
                   label={t`Return Quantity`}
                   minValue={0}
                   step={INPUT_STEP.quantity}
+                  isReadOnly={areLineFieldsLocked}
                 />
                 <NumberControlled
                   name="unitPrice"
@@ -330,6 +411,7 @@ const SalesReturnOrderLineForm = ({
                     currencyCode,
                     currencyDecimals
                   )}
+                  isReadOnly={areLineFieldsLocked}
                   onChange={(value) =>
                     setItemData((d) => ({
                       ...d,
@@ -344,6 +426,7 @@ const SalesReturnOrderLineForm = ({
                   maxValue={1}
                   step={INPUT_STEP.percent}
                   formatOptions={INPUT_FORMAT.percent}
+                  isReadOnly={areLineFieldsLocked}
                 />
                 <Combobox
                   name="returnReasonId"

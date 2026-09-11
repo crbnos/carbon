@@ -14,7 +14,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCheckCheck,
-  LuCircleCheck,
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
@@ -85,7 +84,6 @@ const PurchaseReturnOrderHeader = () => {
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
-  const completeDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
   const creditDisclosure = useDisclosure();
 
@@ -177,7 +175,7 @@ const PurchaseReturnOrderHeader = () => {
               </Button>
             )}
 
-            {["Draft", "Confirmed"].includes(status ?? "") && (
+            {["Draft", "To Ship"].includes(status ?? "") && (
               <Button
                 variant="secondary"
                 leftIcon={<LuCircleStop />}
@@ -188,9 +186,9 @@ const PurchaseReturnOrderHeader = () => {
               </Button>
             )}
 
-            {["Confirmed", "Partially Shipped"].includes(status ?? "") && (
+            {status === "To Ship" && (
               <Button
-                variant={status === "Confirmed" ? "primary" : "secondary"}
+                variant="primary"
                 leftIcon={<LuTruck />}
                 isDisabled={
                   isCreatingDocument || !permissions.can("create", "inventory")
@@ -198,17 +196,6 @@ const PurchaseReturnOrderHeader = () => {
                 onClick={ship}
               >
                 <Trans>Ship</Trans>
-              </Button>
-            )}
-
-            {["Partially Shipped", "Shipped"].includes(status ?? "") && (
-              <Button
-                variant="primary"
-                leftIcon={<LuCircleCheck />}
-                isDisabled={!canUpdate}
-                onClick={completeDisclosure.onOpen}
-              >
-                <Trans>Complete</Trans>
               </Button>
             )}
 
@@ -293,19 +280,6 @@ const PurchaseReturnOrderHeader = () => {
           onSubmit={cancelDisclosure.onClose}
         >
           <input type="hidden" name="status" value="Cancelled" />
-        </Confirm>
-      )}
-
-      {completeDisclosure.isOpen && (
-        <Confirm
-          action={path.to.purchaseReturnOrderStatus(id)}
-          title={t`Complete ${purchaseReturnOrder.purchaseReturnOrderId}`}
-          text={t`Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed.`}
-          confirmText={t`Complete`}
-          onCancel={completeDisclosure.onClose}
-          onSubmit={completeDisclosure.onClose}
-        >
-          <input type="hidden" name="status" value="Completed" />
         </Confirm>
       )}
 

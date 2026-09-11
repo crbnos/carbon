@@ -419,19 +419,19 @@ serve(async (req: Request) => {
             .select(["quantity", "quantityReceived", "closedComplete"])
             .where("salesReturnOrderId", "=", salesReturnOrderId)
             .execute();
-          const anyReceived = remainingLines.some(
-            (l) => Number(l.quantityReceived) > 0
-          );
-          const allReceived = remainingLines.every(
-            (l) =>
-              l.closedComplete ||
-              Number(l.quantityReceived) >= Number(l.quantity)
-          );
-          const returnStatus = anyReceived
-            ? allReceived
-              ? ("Received" as const)
-              : ("Partially Received" as const)
-            : ("Confirmed" as const);
+          // Derived status (mirrors getSalesReturnOrderStatus): a void that
+          // drops received quantity below the authorized total returns the RMA
+          // to To Receive; otherwise it stays Completed.
+          const allReceived =
+            remainingLines.length > 0 &&
+            remainingLines.every(
+              (l) =>
+                l.closedComplete ||
+                Number(l.quantityReceived) >= Number(l.quantity)
+            );
+          const returnStatus = allReceived
+            ? ("Completed" as const)
+            : ("To Receive" as const);
           await trx
             .updateTable("salesReturnOrder")
             .set({ status: returnStatus, updatedBy: userId })
@@ -2291,12 +2291,9 @@ serve(async (req: Request) => {
         if (itemCostDetails.error)
           throw new Error("Failed to fetch item costs for cost resolution");
         // Allowlist, matching the create-side gate: a Draft RMA has never had
-        // its caps validated, so it must be confirmed before receiving.
-        if (
-          !["Confirmed", "Partially Received", "Received"].includes(
-            salesReturnOrder.data.status
-          )
-        ) {
+        // its caps validated, so it must be confirmed (To Receive) before
+        // receiving.
+        if (salesReturnOrder.data.status !== "To Receive") {
           throw new Error(
             `Cannot post a receipt against a return order in ${salesReturnOrder.data.status} status`
           );
@@ -2668,11 +2665,7 @@ serve(async (req: Request) => {
             .where("id", "=", salesReturnOrderId)
             .forUpdate()
             .executeTakeFirstOrThrow();
-          if (
-            !["Confirmed", "Partially Received", "Received"].includes(
-              lockedOrder.status
-            )
-          ) {
+          if (lockedOrder.status !== "To Receive") {
             throw new Error(
               `Cannot post a receipt against a return order in ${lockedOrder.status} status`
             );
@@ -2695,29 +2688,24 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          // Receipt-driven status ladder: Confirmed -> Partially Received ->
-          // Received (short-closed lines don't hold the ladder back).
+          // Derived status (mirrors getSalesReturnOrderStatus): the RMA is
+          // Completed once every line has received its authorized quantity or
+          // been short-closed, otherwise it stays To Receive.
           const allLines = await trx
             .selectFrom("salesReturnOrderLine")
             .select(["quantity", "quantityReceived", "closedComplete"])
             .where("salesReturnOrderId", "=", salesReturnOrderId)
             .execute();
-          const anyReceived = allLines.some(
-            (l) => Number(l.quantityReceived) > 0
-          );
-          const allReceived = allLines.every(
-            (l) =>
-              l.closedComplete ||
-              Number(l.quantityReceived) >= Number(l.quantity)
-          );
-          // anyReceived takes precedence (matches the void branch and
-          // shortCloseSalesReturnOrderLine): all lines short-closed with
-          // nothing received is "Confirmed", not "Received".
-          const returnStatus = anyReceived
-            ? allReceived
-              ? ("Received" as const)
-              : ("Partially Received" as const)
-            : ("Confirmed" as const);
+          const allReceived =
+            allLines.length > 0 &&
+            allLines.every(
+              (l) =>
+                l.closedComplete ||
+                Number(l.quantityReceived) >= Number(l.quantity)
+            );
+          const returnStatus = allReceived
+            ? ("Completed" as const)
+            : ("To Receive" as const);
           await trx
             .updateTable("salesReturnOrder")
             .set({ status: returnStatus, updatedBy: userId })

@@ -1244,11 +1244,7 @@ serve(async (req: Request) => {
 
         if (!salesReturnOrder.data)
           throw new Error("Sales return order not found");
-        if (
-          !["Confirmed", "Partially Received"].includes(
-            salesReturnOrder.data.status
-          )
-        )
+        if (salesReturnOrder.data.status !== "To Receive")
           throw new Error(
             `Cannot receive against a return order in ${salesReturnOrder.data.status} status`
           );
@@ -1916,12 +1912,10 @@ serve(async (req: Request) => {
           throw new Error("Sales return order not found");
         if (salesReturnOrderLines.error)
           throw new Error(salesReturnOrderLines.error.message);
-        // Goods can only go back out once they came in: the sibling return
-        // cases gate on the same received statuses.
+        // Goods can only go back out once they came in: the return must be
+        // confirmed (To Receive) or already Completed — never Draft/Cancelled.
         if (
-          !["Confirmed", "Partially Received", "Received"].includes(
-            salesReturnOrder.data.status
-          )
+          !["To Receive", "Completed"].includes(salesReturnOrder.data.status)
         )
           throw new Error(
             `Cannot create a shipment for a ${salesReturnOrder.data.status} return order`
@@ -2126,11 +2120,7 @@ serve(async (req: Request) => {
 
         if (!purchaseReturnOrder.data)
           throw new Error("Purchase return order not found");
-        if (
-          !["Confirmed", "Partially Shipped"].includes(
-            purchaseReturnOrder.data.status
-          )
-        )
+        if (purchaseReturnOrder.data.status !== "To Ship")
           throw new Error(
             `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
           );

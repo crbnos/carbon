@@ -58,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(null, message))
     );
 
-  if (!["Confirmed", "Partially Received", "Received"].includes(status ?? "")) {
+  if (!["To Receive", "Completed"].includes(status ?? "")) {
     throw await failWith(
       "Receiving can only be closed or reopened on a confirmed return order"
     );

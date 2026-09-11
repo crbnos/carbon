@@ -14,12 +14,12 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuCheckCheck,
-  LuCircleCheck,
   LuCircleStop,
   LuCreditCard,
   LuEllipsisVertical,
   LuFile,
   LuGitCompare,
+  LuLoaderCircle,
   LuPackageCheck,
   LuPanelLeft,
   LuPanelRight,
@@ -63,6 +63,7 @@ const SalesReturnOrderHeader = () => {
   const status = salesReturnOrder.status;
 
   const replacementFetcher = useFetcher<{ success: boolean }>();
+  const statusFetcher = useFetcher<{ success: boolean }>();
   const submit = useSubmit();
   const navigation = useNavigation();
   const isCreatingDocument = navigation.state !== "idle";
@@ -93,7 +94,6 @@ const SalesReturnOrderHeader = () => {
 
   const confirmDisclosure = useDisclosure();
   const cancelDisclosure = useDisclosure();
-  const completeDisclosure = useDisclosure();
   const creditDisclosure = useDisclosure();
   const deleteDisclosure = useDisclosure();
 
@@ -126,6 +126,25 @@ const SalesReturnOrderHeader = () => {
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent>
+                <DropdownMenuItem
+                  disabled={
+                    !["To Receive", "Cancelled"].includes(status ?? "") ||
+                    statusFetcher.state !== "idle" ||
+                    !canUpdate
+                  }
+                  onClick={() => {
+                    statusFetcher.submit(
+                      { status: "Draft" },
+                      {
+                        method: "post",
+                        action: path.to.salesReturnOrderStatus(id)
+                      }
+                    );
+                  }}
+                >
+                  <DropdownMenuIcon icon={<LuLoaderCircle />} />
+                  <Trans>Reopen</Trans>
+                </DropdownMenuItem>
                 <DropdownMenuItem
                   destructive
                   disabled={
@@ -166,7 +185,7 @@ const SalesReturnOrderHeader = () => {
               </Button>
             )}
 
-            {["Draft", "Confirmed"].includes(status ?? "") && (
+            {["Draft", "To Receive"].includes(status ?? "") && (
               <Button
                 variant="secondary"
                 leftIcon={<LuCircleStop />}
@@ -177,9 +196,9 @@ const SalesReturnOrderHeader = () => {
               </Button>
             )}
 
-            {["Confirmed", "Partially Received"].includes(status ?? "") && (
+            {status === "To Receive" && (
               <Button
-                variant={status === "Confirmed" ? "primary" : "secondary"}
+                variant="primary"
                 leftIcon={<LuPackageCheck />}
                 isDisabled={
                   isCreatingDocument || !permissions.can("create", "inventory")
@@ -190,9 +209,8 @@ const SalesReturnOrderHeader = () => {
               </Button>
             )}
 
-            {["Confirmed", "Partially Received", "Received"].includes(
-              status ?? ""
-            ) &&
+            {!["Draft", "Cancelled"].includes(status ?? "") &&
+              hasReceivedQuantity &&
               hasReturnToCustomerLine && (
                 <Button
                   variant="secondary"
@@ -206,17 +224,6 @@ const SalesReturnOrderHeader = () => {
                   <Trans>Ship</Trans>
                 </Button>
               )}
-
-            {["Partially Received", "Received"].includes(status ?? "") && (
-              <Button
-                variant="primary"
-                leftIcon={<LuCircleCheck />}
-                isDisabled={!canUpdate}
-                onClick={completeDisclosure.onOpen}
-              >
-                <Trans>Complete</Trans>
-              </Button>
-            )}
 
             {!["Draft", "Cancelled"].includes(status ?? "") && (
               <>
@@ -299,19 +306,6 @@ const SalesReturnOrderHeader = () => {
           onSubmit={cancelDisclosure.onClose}
         >
           <input type="hidden" name="status" value="Cancelled" />
-        </Confirm>
-      )}
-
-      {completeDisclosure.isOpen && (
-        <Confirm
-          action={path.to.salesReturnOrderStatus(id)}
-          title={t`Complete ${salesReturnOrder.salesReturnOrderId}`}
-          text={t`Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition.`}
-          confirmText={t`Complete`}
-          onCancel={completeDisclosure.onClose}
-          onSubmit={completeDisclosure.onClose}
-        >
-          <input type="hidden" name="status" value="Completed" />
         </Confirm>
       )}
 

@@ -56,18 +56,18 @@ export default function useSalesSubmodules() {
           to: path.to.salesReturnOrders,
           icon: <LuUndo2 />,
           table: "salesReturnOrder"
-        },
-        {
-          name: t`Portals`,
-          to: path.to.customerPortals,
-          role: "employee",
-          icon: <LuGlobe />
         }
       ]
     },
     {
       name: t`Configure`,
       routes: [
+        {
+          name: t`Portals`,
+          to: path.to.customerPortals,
+          role: "employee",
+          icon: <LuGlobe />
+        },
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,

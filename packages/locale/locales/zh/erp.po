@@ -1342,6 +1342,9 @@ msgstr "从库中添加…"
 msgid "Add from receipt"
 msgstr ""
 
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "添加组"
 
@@ -1359,9 +1362,6 @@ msgstr "添加行项目"
 
 msgid "Add Lines"
 msgstr "添加行"
-
-msgid "Add lines from a shipment"
-msgstr ""
 
 msgid "Add lines from document"
 msgstr "从文档添加行"
@@ -2055,14 +2055,8 @@ msgstr "确实要取消此供应商退货吗？这将把授权数量释放回源
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "您确定要更改{propertyName}属性吗？由于您使用自动生成的物料ID，这将更改该零件的零件ID及其所有相关的修订版。"
 
-msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
-msgstr "确实要完成此 RMA 吗？每行必须完全收货或短期关闭，没有待处理的已收数量。"
-
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "你确定要完成此库存转移吗？"
-
-msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
-msgstr "确实要完成此供应商退货吗？每行必须完全发货或短期关闭。"
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "确实要确认此 RMA 吗？确认授权客户退回这些行上的商品。"
@@ -3710,11 +3704,6 @@ msgstr "兼容性规则"
 msgid "Complete"
 msgstr "完成"
 
-#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
-msgid "Complete {0}"
-msgstr "完成 {0}"
-
 msgid "Complete All"
 msgstr "全部完成"
 
@@ -3901,9 +3890,6 @@ msgstr "确认密码"
 
 msgid "Confirm Skip"
 msgstr "确认跳过"
-
-msgid "Confirmed"
-msgstr "已确认"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "已确认进货 — 采购单和生产订单（上方条形）"
@@ -12119,12 +12105,6 @@ msgstr "零件替代"
 msgid "Partial"
 msgstr "部分"
 
-msgid "Partially Received"
-msgstr "部分收到"
-
-msgid "Partially Shipped"
-msgstr "部分发货"
-
 msgid "Partner"
 msgstr "合作伙伴"
 
@@ -14774,6 +14754,9 @@ msgstr "按线性问题标题搜索..."
 msgid "Search by receipt, PO, or item"
 msgstr ""
 
+msgid "Search by shipment, sales order, or item"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "搜索客户和类型..."
 
@@ -15021,6 +15004,9 @@ msgstr "选择工序"
 msgid "Select posted receipt lines from this supplier to return."
 msgstr ""
 
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "选择打印机"
 
@@ -15210,6 +15196,9 @@ msgstr "服务"
 
 msgid "Session locked"
 msgstr "会话已锁定"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr ""

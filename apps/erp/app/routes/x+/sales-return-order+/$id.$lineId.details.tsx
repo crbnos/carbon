@@ -53,21 +53,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Resolve readable ids for the linked source documents — one embedded
-  // select per link, run in parallel.
+  // Resolve internal ids + readable ids for the linked source documents — one
+  // embedded select per link, run in parallel. The internal ids drive the
+  // navigable back-links on the line form.
+  let shipmentId: string | null = null;
   let shipmentReadableId: string | null = null;
+  let salesOrderId: string | null = null;
   let salesOrderReadableId: string | null = null;
+  let salesInvoiceId: string | null = null;
   let salesInvoiceReadableId: string | null = null;
   const readableIdLookups: PromiseLike<void>[] = [];
   if (line.data.shipmentLineId) {
     readableIdLookups.push(
       client
         .from("shipmentLine")
-        .select("shipment(shipmentId)")
+        .select("shipment(id, shipmentId)")
         .eq("id", line.data.shipmentLineId)
         .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
+          shipmentId = result.data?.shipment?.id ?? null;
           shipmentReadableId = result.data?.shipment?.shipmentId ?? null;
         })
     );
@@ -76,11 +81,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableIdLookups.push(
       client
         .from("salesOrderLine")
-        .select("salesOrder(salesOrderId)")
+        .select("salesOrder(id, salesOrderId)")
         .eq("id", line.data.salesOrderLineId)
         .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
+          salesOrderId = result.data?.salesOrder?.id ?? null;
           salesOrderReadableId = result.data?.salesOrder?.salesOrderId ?? null;
         })
     );
@@ -89,11 +95,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     readableIdLookups.push(
       client
         .from("salesInvoiceLine")
-        .select("salesInvoice(invoiceId)")
+        .select("salesInvoice(id, invoiceId)")
         .eq("id", line.data.salesInvoiceLineId)
         .eq("companyId", companyId)
         .maybeSingle()
         .then((result) => {
+          salesInvoiceId = result.data?.salesInvoice?.id ?? null;
           salesInvoiceReadableId = result.data?.salesInvoice?.invoiceId ?? null;
         })
     );
@@ -104,8 +111,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     line: line.data,
     returnReasons: returnReasons.data ?? [],
     linkage: {
+      shipmentId,
       shipmentReadableId,
+      salesOrderId,
       salesOrderReadableId,
+      salesInvoiceId,
       salesInvoiceReadableId
     }
   };

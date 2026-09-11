@@ -1800,10 +1800,10 @@ serve(async (req: Request) => {
             if (salesReturnOrder.error)
               throw new Error("Failed to fetch sales return order");
             // Same allowlist as the create edge function: goods can only ship
-            // back once something was received. A Draft RMA has never had its
-            // caps validated; Cancelled/Completed are terminal.
+            // back once they came in. A Draft RMA has never had its caps
+            // validated; Cancelled cannot ship.
             if (
-              !["Partially Received", "Received"].includes(
+              !["To Receive", "Completed"].includes(
                 salesReturnOrder.data.status
               )
             )
@@ -2216,11 +2216,7 @@ serve(async (req: Request) => {
               throw new Error("Failed to fetch purchase return order");
             if (purchaseReturnOrderLines.error)
               throw new Error("Failed to fetch purchase return order lines");
-            if (
-              !["Confirmed", "Partially Shipped"].includes(
-                purchaseReturnOrder.data.status
-              )
-            )
+            if (purchaseReturnOrder.data.status !== "To Ship")
               throw new Error(
                 `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
               );
@@ -2452,11 +2448,7 @@ serve(async (req: Request) => {
                 .where("id", "=", purchaseReturnOrderId)
                 .forUpdate()
                 .executeTakeFirstOrThrow();
-              if (
-                !["Confirmed", "Partially Shipped"].includes(
-                  lockedOrder.status
-                )
-              ) {
+              if (lockedOrder.status !== "To Ship") {
                 throw new Error(
                   `Cannot ship against a return order in ${lockedOrder.status} status`
                 );
@@ -2707,28 +2699,24 @@ serve(async (req: Request) => {
                   .execute();
               }
 
-              // Ladder: Confirmed -> Partially Shipped -> Shipped
+              // Derived status (mirrors getPurchaseReturnOrderStatus): the
+              // return is Completed once every line has shipped its authorized
+              // quantity or been short-closed, otherwise it stays To Ship.
               const allLines = await trx
                 .selectFrom("purchaseReturnOrderLine")
                 .select(["quantity", "quantityShipped", "closedComplete"])
                 .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
                 .execute();
-              const anyShipped = allLines.some(
-                (l) => Number(l.quantityShipped) > 0
-              );
-              const allShipped = allLines.every(
-                (l) =>
-                  l.closedComplete ||
-                  Number(l.quantityShipped) >= Number(l.quantity)
-              );
-              // anyShipped takes precedence (matches the void branch and
-              // shortClosePurchaseReturnOrderLine): all lines short-closed
-              // with nothing shipped is "Confirmed", not "Shipped".
-              const returnStatus = anyShipped
-                ? allShipped
-                  ? ("Shipped" as const)
-                  : ("Partially Shipped" as const)
-                : ("Confirmed" as const);
+              const allShipped =
+                allLines.length > 0 &&
+                allLines.every(
+                  (l) =>
+                    l.closedComplete ||
+                    Number(l.quantityShipped) >= Number(l.quantity)
+                );
+              const returnStatus = allShipped
+                ? ("Completed" as const)
+                : ("To Ship" as const);
               await trx
                 .updateTable("purchaseReturnOrder")
                 .set({ status: returnStatus, updatedBy: userId })
@@ -4373,19 +4361,19 @@ serve(async (req: Request) => {
                 .select(["quantity", "quantityShipped", "closedComplete"])
                 .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
                 .execute();
-              const anyShipped = remainingLines.some(
-                (l) => Number(l.quantityShipped) > 0
-              );
-              const allShipped = remainingLines.every(
-                (l) =>
-                  l.closedComplete ||
-                  Number(l.quantityShipped) >= Number(l.quantity)
-              );
-              const returnStatus = anyShipped
-                ? allShipped
-                  ? ("Shipped" as const)
-                  : ("Partially Shipped" as const)
-                : ("Confirmed" as const);
+              // Derived status (mirrors getPurchaseReturnOrderStatus): a void
+              // that drops shipped quantity below the authorized total returns
+              // the order to To Ship; otherwise it stays Completed.
+              const allShipped =
+                remainingLines.length > 0 &&
+                remainingLines.every(
+                  (l) =>
+                    l.closedComplete ||
+                    Number(l.quantityShipped) >= Number(l.quantity)
+                );
+              const returnStatus = allShipped
+                ? ("Completed" as const)
+                : ("To Ship" as const);
               await trx
                 .updateTable("purchaseReturnOrder")
                 .set({ status: returnStatus, updatedBy: userId })

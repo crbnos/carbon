@@ -1342,6 +1342,9 @@ msgstr "Adicionar da biblioteca…"
 msgid "Add from receipt"
 msgstr ""
 
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "Adicionar Grupo"
 
@@ -1359,9 +1362,6 @@ msgstr "Adicionar Item de Linha"
 
 msgid "Add Lines"
 msgstr "Adicionar Linhas"
-
-msgid "Add lines from a shipment"
-msgstr ""
 
 msgid "Add lines from document"
 msgstr "Adicionar linhas do documento"
@@ -2055,14 +2055,8 @@ msgstr "Tem certeza de que deseja cancelar esta devolução de fornecedor? Isso 
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Tem a certeza de que deseja alterar a propriedade {propertyName}? Como utiliza IDs de material gerados, isto alterará o ID da peça desta peça e todas as revisões relacionadas."
 
-msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
-msgstr "Tem certeza de que deseja concluir esta RMA? Cada linha deve ser totalmente recebida ou encerrada com falta, sem nenhuma quantidade recebida pendente de disposição."
-
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "Tem a certeza de que deseja concluir esta transferência de stock?"
-
-msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
-msgstr "Tem certeza de que deseja concluir esta devolução de fornecedor? Cada linha deve ser totalmente enviada ou encerrada com falta."
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Tem certeza de que deseja confirmar esta RMA? Confirmar autoriza o cliente a devolver os produtos nas linhas."
@@ -3710,11 +3704,6 @@ msgstr "Regras de compatibilidade"
 msgid "Complete"
 msgstr "Concluir"
 
-#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
-msgid "Complete {0}"
-msgstr "Concluir {0}"
-
 msgid "Complete All"
 msgstr "Completar Tudo"
 
@@ -3901,9 +3890,6 @@ msgstr "Confirmar Senha"
 
 msgid "Confirm Skip"
 msgstr "Confirmar Salto"
-
-msgid "Confirmed"
-msgstr "Confirmado"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Estoque de entrada confirmado — pedidos de compra e produção (barras acima de zero)."
@@ -12119,12 +12105,6 @@ msgstr "Substituição de Peça"
 msgid "Partial"
 msgstr "Parcial"
 
-msgid "Partially Received"
-msgstr "Parcialmente Recebido"
-
-msgid "Partially Shipped"
-msgstr "Parcialmente Enviado"
-
 msgid "Partner"
 msgstr "Parceiro"
 
@@ -14774,6 +14754,9 @@ msgstr "Pesquisar por título do problema Linear..."
 msgid "Search by receipt, PO, or item"
 msgstr ""
 
+msgid "Search by shipment, sales order, or item"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "Pesquisar clientes e tipos..."
 
@@ -15021,6 +15004,9 @@ msgstr "Selecionar operações"
 msgid "Select posted receipt lines from this supplier to return."
 msgstr ""
 
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Selecionar Impressora"
 
@@ -15210,6 +15196,9 @@ msgstr "Serviços"
 
 msgid "Session locked"
 msgstr "Sessão bloqueada"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr ""

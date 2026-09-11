@@ -5,7 +5,12 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { PickPartial } from "@carbon/utils";
-import { datetime, EPSILON, round } from "@carbon/utils";
+import {
+  datetime,
+  EPSILON,
+  getSalesReturnOrderStatus,
+  round
+} from "@carbon/utils";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -6771,10 +6776,21 @@ export async function confirmSalesReturnOrder(
       }
     }
 
+    // Confirm releases the RMA for receiving. Status is derived, not fixed — a
+    // fresh confirm from Draft has nothing received, so it lands on "To Receive",
+    // but deriving keeps this consistent with the receipt/short-close paths.
+    const { status } = getSalesReturnOrderStatus(
+      lines.map((line) => ({
+        quantity: line.quantity,
+        quantityReceived: 0,
+        closedComplete: false
+      }))
+    );
+
     await trx
       .updateTable("salesReturnOrder")
       .set({
-        status: "Confirmed",
+        status,
         updatedBy: userId,
         updatedAt: datetime.timestamp()
       })
@@ -6791,6 +6807,63 @@ export async function confirmSalesReturnOrder(
  * loser sees the new state instead of producing a Cancelled order with
  * received stock (whose caps a fresh RMA would then double-authorize).
  */
+/**
+ * Reopen an RMA to Draft so its lines can be edited again. THROWS. Row-locks the
+ * order (serializes against a concurrent receipt posting). To Receive → Draft
+ * (un-confirm) and Cancelled → Draft (revive; the cancel guard enforces no
+ * receipt exists and nothing received, so reviving is safe). "To Receive" no
+ * longer implies nothing received (it also covers partially received), so the
+ * nothing-received invariant is enforced on the line quantities directly.
+ */
+export async function reopenSalesReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("salesReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    if (!["To Receive", "Cancelled"].includes(order.status)) {
+      throw new Error(
+        `Only a to-receive or cancelled return can be reopened — this one is ${order.status}`
+      );
+    }
+
+    // "To Receive" can be partially received; reopening one that has received
+    // stock would strand it. Refuse unless nothing has been received yet.
+    if (order.status === "To Receive") {
+      const receivedLines = await trx
+        .selectFrom("salesReturnOrderLine")
+        .select(["quantityReceived"])
+        .where("salesReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (receivedLines.some((l) => Number(l.quantityReceived) > EPSILON)) {
+        throw new Error(
+          "Cannot reopen: quantity has already been received. Void the receipt first."
+        );
+      }
+    }
+
+    await trx
+      .updateTable("salesReturnOrder")
+      .set({
+        status: "Draft",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
 export async function cancelSalesReturnOrder(
   db: Kysely<KyselyDatabase>,
   { id, companyId, userId }: { id: string; companyId: string; userId: string }
@@ -6850,82 +6923,11 @@ export async function cancelSalesReturnOrder(
 }
 
 /**
- * Guarded manual Complete (mirrors closeIssue's blocker-collection style):
- * every non-short-closed line must be fully received, and no received
- * quantity may still be Pending disposition.
- */
-export async function completeSalesReturnOrder(
-  db: Kysely<KyselyDatabase>,
-  { id, companyId, userId }: { id: string; companyId: string; userId: string }
-) {
-  return db.transaction().execute(async (trx) => {
-    const order = await trx
-      .selectFrom("salesReturnOrder")
-      .select(["status"])
-      .where("id", "=", id)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!order) throw new Error("Return order not found");
-    if (
-      !["Confirmed", "Partially Received", "Received"].includes(order.status)
-    ) {
-      throw new Error(
-        `Cannot complete a return order in ${order.status} status`
-      );
-    }
-
-    const lines = await trx
-      .selectFrom("salesReturnOrderLine")
-      .select([
-        "lineNumber",
-        "quantity",
-        "quantityReceived",
-        "disposition",
-        "closedComplete"
-      ])
-      .where("salesReturnOrderId", "=", id)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    const blockers: string[] = [];
-    for (const line of lines) {
-      const quantity = Number(line.quantity);
-      const received = Number(line.quantityReceived);
-      if (!line.closedComplete && received < quantity - EPSILON) {
-        blockers.push(
-          `Line ${line.lineNumber} is short of authorized quantity (${received} of ${quantity}) — receive the remainder or short-close the line`
-        );
-      }
-      if (received > EPSILON && line.disposition === "Pending") {
-        blockers.push(
-          `Line ${line.lineNumber} has received quantity pending disposition`
-        );
-      }
-    }
-
-    if (blockers.length > 0) {
-      throw new Error(blockers.join("; "));
-    }
-
-    await trx
-      .updateTable("salesReturnOrder")
-      .set({
-        status: "Completed",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", id)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    return { id };
-  });
-}
-
-/**
  * Short-close ("stop expecting") an RMA line — the shortClosePurchaseOrderLine
- * mechanic with the RMA status ladder.
+ * mechanic. The header status is derived from the lines afterwards, so
+ * short-closing the last open line completes the RMA (there is no separate
+ * manual Complete action, mirroring the Purchase Order). Disposition is tracked
+ * independently and does not gate completion.
  */
 export async function shortCloseSalesReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -6980,25 +6982,14 @@ export async function shortCloseSalesReturnOrderLine(
         .execute()
     ]);
 
-    if (
-      !order ||
-      !["Confirmed", "Partially Received", "Received"].includes(order.status)
-    ) {
+    // Recompute in both the To Receive and Completed working states: short-closing
+    // the last open line completes the RMA, and reopening a line on a completed
+    // RMA drops it back to To Receive.
+    if (!order || !["To Receive", "Completed"].includes(order.status)) {
       return;
     }
 
-    const anyReceived = lines.some((l) => Number(l.quantityReceived) > EPSILON);
-    const allSettled = lines.every(
-      (l) =>
-        l.closedComplete ||
-        Number(l.quantityReceived) >= Number(l.quantity) - EPSILON
-    );
-
-    const status = anyReceived
-      ? allSettled
-        ? ("Received" as const)
-        : ("Partially Received" as const)
-      : ("Confirmed" as const);
+    const { status } = getSalesReturnOrderStatus(lines);
 
     if (status !== order.status) {
       await trx
@@ -7020,112 +7011,34 @@ export async function shortCloseSalesReturnOrderLine(
  * their reversible remainders (shipped − already authorized on non-cancelled
  * RMAs). BC's "Show Reversible Lines Only".
  */
+/**
+ * Returnable shipment lines for a customer, searched + paginated in the database
+ * via the get_returnable_shipment_lines RPC. The `shipped − already-authorized
+ * > 0` filter, the text search (shipment #, sales order #, item readable id,
+ * item name), the recency ordering, and pagination all run in SQL so the "Add
+ * lines from shipment" modal stays responsive when a customer has thousands of
+ * shipment lines. Each row carries `totalCount` — the size of the full
+ * returnable set before limit/offset — so the UI can page through the rest.
+ */
 export async function getReturnableLinesForCustomer(
   client: SupabaseClient<Database>,
   companyId: string,
   customerId: string,
-  args?: { salesOrderId?: string }
+  args?: {
+    salesOrderId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
 ) {
-  let shipmentsQuery = client
-    .from("shipment")
-    .select("id, shipmentId, sourceDocumentId, sourceDocumentReadableId")
-    .eq("companyId", companyId)
-    .eq("customerId", customerId)
-    .eq("sourceDocument", "Sales Order")
-    .eq("status", "Posted");
-
-  if (args?.salesOrderId) {
-    shipmentsQuery = shipmentsQuery.eq("sourceDocumentId", args.salesOrderId);
-  }
-
-  const shipments = await shipmentsQuery;
-  if (shipments.error) return { data: null, error: shipments.error };
-  const shipmentIds = (shipments.data ?? []).map((s) => s.id);
-  if (shipmentIds.length === 0) {
-    return { data: [], error: null };
-  }
-  const shipmentById = new Map((shipments.data ?? []).map((s) => [s.id, s]));
-
-  const shipmentLines = await client
-    .from("shipmentLine")
-    .select(
-      "id, shipmentId, lineId, itemId, shippedQuantity, unitOfMeasure, item(name, readableIdWithRevision, itemTrackingType)"
-    )
-    .in("shipmentId", shipmentIds)
-    .eq("companyId", companyId);
-  if (shipmentLines.error) return { data: null, error: shipmentLines.error };
-
-  const shipmentLineIds = (shipmentLines.data ?? []).map((l) => l.id);
-  if (shipmentLineIds.length === 0) {
-    return { data: [], error: null };
-  }
-
-  const authorized = await client
-    .from("salesReturnOrderLine")
-    .select("shipmentLineId, quantity, salesReturnOrder!inner(status)")
-    .in("shipmentLineId", shipmentLineIds)
-    .eq("companyId", companyId)
-    .neq("salesReturnOrder.status", "Cancelled");
-  if (authorized.error) return { data: null, error: authorized.error };
-
-  const authorizedByShipmentLine = new Map<string, number>();
-  for (const row of authorized.data ?? []) {
-    if (!row.shipmentLineId) continue;
-    authorizedByShipmentLine.set(
-      row.shipmentLineId,
-      (authorizedByShipmentLine.get(row.shipmentLineId) ?? 0) +
-        Number(row.quantity)
-    );
-  }
-
-  // Credit basis comes from the linked sales order line
-  const salesOrderLineIds = [
-    ...new Set(
-      (shipmentLines.data ?? [])
-        .map((l) => l.lineId)
-        .filter(Boolean) as string[]
-    )
-  ];
-  const salesOrderLines =
-    salesOrderLineIds.length > 0
-      ? await client
-          .from("salesOrderLine")
-          .select("id, unitPrice, unitOfMeasureCode")
-          .in("id", salesOrderLineIds)
-          .eq("companyId", companyId)
-      : { data: [], error: null };
-  if (salesOrderLines.error) {
-    return { data: null, error: salesOrderLines.error };
-  }
-  const salesOrderLineById = new Map(
-    (salesOrderLines.data ?? []).map((l) => [l.id, l])
-  );
-
-  const rows = (shipmentLines.data ?? [])
-    .map((line) => {
-      const shipped = Number(line.shippedQuantity ?? 0);
-      const alreadyReturned = authorizedByShipmentLine.get(line.id) ?? 0;
-      const soLine = line.lineId ? salesOrderLineById.get(line.lineId) : null;
-      const shipment = shipmentById.get(line.shipmentId!);
-      return {
-        shipmentLineId: line.id,
-        shipmentReadableId: shipment?.shipmentId ?? "",
-        salesOrderReadableId: shipment?.sourceDocumentReadableId ?? "",
-        salesOrderLineId: line.lineId,
-        itemId: line.itemId!,
-        itemReadableId: line.item?.readableIdWithRevision ?? "",
-        itemName: line.item?.name ?? "",
-        itemTrackingType: line.item?.itemTrackingType ?? "Inventory",
-        shippedQuantity: shipped,
-        alreadyReturned,
-        returnableQuantity: Math.max(0, shipped - alreadyReturned),
-        unitPrice: Number(soLine?.unitPrice ?? 0),
-        unitOfMeasureCode: soLine?.unitOfMeasureCode ?? line.unitOfMeasure
-      };
-    })
-    .filter((row) => row.returnableQuantity > EPSILON);
-
-  return { data: rows, error: null };
+  return client.rpc("get_returnable_shipment_lines", {
+    company_id: companyId,
+    customer_id: customerId,
+    sales_order_id: args?.salesOrderId || undefined,
+    search: args?.search?.trim() || undefined,
+    limit_count: args?.limit ?? 5,
+    offset_count: args?.offset ?? 0
+  });
 }
 
 /**

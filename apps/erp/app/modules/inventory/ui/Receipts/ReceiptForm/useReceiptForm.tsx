@@ -72,7 +72,7 @@ export default function useReceiptForm({
           ?.from("salesReturnOrder")
           .select("id, salesReturnOrderId")
           .eq("companyId", user.company.id)
-          .or("status.eq.Confirmed, status.eq.Partially Received")
+          .eq("status", "To Receive")
           .then((response) => {
             if (response.error) {
               setError(response.error.message);

@@ -265,7 +265,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (uncoveredRows.length === 0) {
     const openExisting = nonCancelled.find((r) =>
-      ["Draft", "Confirmed", "Partially Shipped"].includes(
+      ["Draft", "To Ship"].includes(
         r.purchaseReturnOrderLine?.purchaseReturnOrder?.status ?? ""
       )
     );

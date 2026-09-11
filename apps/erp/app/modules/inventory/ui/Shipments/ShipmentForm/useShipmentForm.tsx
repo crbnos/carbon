@@ -92,7 +92,7 @@ export default function useShipmentForm({
           ?.from("salesReturnOrder")
           .select("id, salesReturnOrderId")
           .eq("companyId", user.company.id)
-          .in("status", ["Partially Received", "Received"])
+          .in("status", ["To Receive", "Completed"])
           .then((response) => {
             if (response.error) {
               setError(response.error.message);
@@ -111,7 +111,7 @@ export default function useShipmentForm({
           ?.from("purchaseReturnOrder")
           .select("id, purchaseReturnOrderId")
           .eq("companyId", user.company.id)
-          .in("status", ["Confirmed", "Partially Shipped"])
+          .in("status", ["To Ship"])
           .then((response) => {
             if (response.error) {
               setError(response.error.message);

@@ -1342,6 +1342,9 @@ msgstr "ライブラリから追加…"
 msgid "Add from receipt"
 msgstr ""
 
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "グループを追加"
 
@@ -1359,9 +1362,6 @@ msgstr "ラインアイテムを追加"
 
 msgid "Add Lines"
 msgstr "行を追加"
-
-msgid "Add lines from a shipment"
-msgstr ""
 
 msgid "Add lines from document"
 msgstr "ドキュメントから行を追加"
@@ -2055,14 +2055,8 @@ msgstr "このサプライヤー返品をキャンセルしてもよろしいで
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "本当に{propertyName}プロパティを変更してもよろしいですか？生成された材料IDを使用しているため、このパーツのパーツIDと関連するすべてのリビジョンが変更されます。"
 
-msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
-msgstr "このRMAを完了してもよろしいですか？すべての行は完全に受け取られるか短期終了となり、受け取り数量の処理待ちはありません。"
-
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "このストック転送を完了してもよろしいですか？"
-
-msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
-msgstr "このサプライヤー返品を完了してもよろしいですか？すべての行は完全に発送されるか短期終了となります。"
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "このRMAを確認してもよろしいですか？確認することで、顧客が該当行の商品を返品することが許可されます。"
@@ -3710,11 +3704,6 @@ msgstr "互換性ルール"
 msgid "Complete"
 msgstr "完了"
 
-#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
-msgid "Complete {0}"
-msgstr "{0}を完了"
-
 msgid "Complete All"
 msgstr "すべて完了"
 
@@ -3901,9 +3890,6 @@ msgstr "パスワードを確認"
 
 msgid "Confirm Skip"
 msgstr "スキップを確認"
-
-msgid "Confirmed"
-msgstr "確認済み"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "確定済み入庫在庫—購買と生産受注（ゼロより上のバー）。"
@@ -12119,12 +12105,6 @@ msgstr "部品後継切替"
 msgid "Partial"
 msgstr "一部"
 
-msgid "Partially Received"
-msgstr "部分的に受領"
-
-msgid "Partially Shipped"
-msgstr "部分的に出荷"
-
 msgid "Partner"
 msgstr "パートナー"
 
@@ -14774,6 +14754,9 @@ msgstr "Linear イシュータイトルで検索..."
 msgid "Search by receipt, PO, or item"
 msgstr ""
 
+msgid "Search by shipment, sales order, or item"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "得意先とタイプを検索..."
 
@@ -15021,6 +15004,9 @@ msgstr "作業を選択"
 msgid "Select posted receipt lines from this supplier to return."
 msgstr ""
 
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "プリンターを選択"
 
@@ -15210,6 +15196,9 @@ msgstr "サービス"
 
 msgid "Session locked"
 msgstr "セッションがロック中"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr ""

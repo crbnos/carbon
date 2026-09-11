@@ -691,7 +691,7 @@ export async function closeIssue(
       row.purchaseReturnOrderLine?.purchaseReturnOrder?.status !== "Cancelled"
   );
   const openLinkedReturns = linkedReturns.filter((row) =>
-    ["Draft", "Confirmed", "Partially Shipped"].includes(
+    ["Draft", "To Ship"].includes(
       row.purchaseReturnOrderLine?.purchaseReturnOrder?.status ?? ""
     )
   );
@@ -1019,11 +1019,7 @@ export async function closeIssue(
           ])
         );
         for (const fresh of freshReturnLines) {
-          if (
-            ["Draft", "Confirmed", "Partially Shipped"].includes(
-              fresh.status ?? ""
-            )
-          ) {
+          if (["Draft", "To Ship"].includes(fresh.status ?? "")) {
             throw new Error(
               "A linked supplier return was reopened while closing; please retry."
             );

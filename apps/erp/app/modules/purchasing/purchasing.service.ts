@@ -6,6 +6,7 @@ import {
   datetime,
   EPSILON,
   getPurchaseOrderStatus,
+  getPurchaseReturnOrderStatus,
   round
 } from "@carbon/utils";
 import type {
@@ -3610,10 +3611,21 @@ export async function confirmPurchaseReturnOrder(
       }
     }
 
+    // Confirm releases the return for shipping. Status is derived, not fixed —
+    // a fresh confirm from Draft has nothing shipped, so it lands on "To Ship",
+    // but deriving keeps this consistent with the shipment/short-close paths.
+    const { status } = getPurchaseReturnOrderStatus(
+      lines.map((line) => ({
+        quantity: line.quantity,
+        quantityShipped: 0,
+        closedComplete: false
+      }))
+    );
+
     await trx
       .updateTable("purchaseReturnOrder")
       .set({
-        status: "Confirmed",
+        status,
         updatedBy: userId,
         updatedAt: datetime.timestamp()
       })
@@ -3624,11 +3636,13 @@ export async function confirmPurchaseReturnOrder(
 }
 
 /**
- * Reopen a confirmed supplier return back to Draft so its lines can be edited.
- * THROWS. Row-locked so a shipment posting racing this reopen serializes:
- * only a "Confirmed" return (nothing shipped back yet) may reopen — once any
- * quantity has shipped ("Partially Shipped"/"Shipped") or the return is
- * terminal ("Completed"/"Cancelled"), reopening would strand shipped stock.
+ * Reopen a supplier return back to Draft so its lines can be edited. THROWS.
+ * Row-locked so a shipment posting racing this reopen serializes: only a
+ * "To Ship" return with NOTHING shipped yet (or a "Cancelled" one) may reopen —
+ * once any quantity has shipped, or the return is terminal ("Completed"),
+ * reopening would strand shipped stock. "To Ship" no longer implies nothing
+ * shipped (it also covers partially shipped), so the nothing-shipped invariant
+ * is enforced on the line quantities directly.
  *
  * No cap is released: a Draft return still counts as authorized against its
  * source lines (the confirm check excludes only "Cancelled"), so the
@@ -3648,13 +3662,29 @@ export async function reopenPurchaseReturnOrder(
       .executeTakeFirst();
 
     if (!order) throw new Error("Return order not found");
-    // Confirmed → Draft (un-confirm) and Cancelled → Draft (revive). A Cancelled
+    // To Ship → Draft (un-confirm) and Cancelled → Draft (revive). A Cancelled
     // return has no shipments and nothing shipped (the cancel guard enforces
     // that), so reviving it to Draft is safe.
-    if (!["Confirmed", "Cancelled"].includes(order.status)) {
+    if (!["To Ship", "Cancelled"].includes(order.status)) {
       throw new Error(
-        `Only a confirmed or cancelled return can be reopened — this one is ${order.status}`
+        `Only a to-ship or cancelled return can be reopened — this one is ${order.status}`
       );
+    }
+
+    // "To Ship" can be partially shipped; reopening one that has shipped stock
+    // would strand it. Refuse unless nothing has shipped yet.
+    if (order.status === "To Ship") {
+      const shippedLines = await trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["quantityShipped"])
+        .where("purchaseReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (shippedLines.some((l) => Number(l.quantityShipped) > EPSILON)) {
+        throw new Error(
+          "Cannot reopen: quantity has already shipped. Void the shipment first."
+        );
+      }
     }
 
     await trx
@@ -3736,69 +3766,10 @@ export async function cancelPurchaseReturnOrder(
 }
 
 /**
- * Guarded manual Complete (mirrors closeIssue's blocker-collection style):
- * every non-short-closed line must be fully shipped. Supplier returns have no
- * disposition stage, so there is no disposition guard.
- */
-export async function completePurchaseReturnOrder(
-  db: Kysely<KyselyDatabase>,
-  { id, companyId, userId }: { id: string; companyId: string; userId: string }
-) {
-  return db.transaction().execute(async (trx) => {
-    const order = await trx
-      .selectFrom("purchaseReturnOrder")
-      .select(["status"])
-      .where("id", "=", id)
-      .where("companyId", "=", companyId)
-      .forUpdate()
-      .executeTakeFirst();
-    if (!order) throw new Error("Return order not found");
-    if (!["Confirmed", "Partially Shipped", "Shipped"].includes(order.status)) {
-      throw new Error(
-        `Cannot complete a return order in ${order.status} status`
-      );
-    }
-
-    const lines = await trx
-      .selectFrom("purchaseReturnOrderLine")
-      .select(["lineNumber", "quantity", "quantityShipped", "closedComplete"])
-      .where("purchaseReturnOrderId", "=", id)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    const blockers: string[] = [];
-    for (const line of lines) {
-      const quantity = Number(line.quantity);
-      const shipped = Number(line.quantityShipped);
-      if (!line.closedComplete && shipped < quantity - EPSILON) {
-        blockers.push(
-          `Line ${line.lineNumber} is short of authorized quantity (${shipped} of ${quantity}) — ship the remainder or short-close the line`
-        );
-      }
-    }
-
-    if (blockers.length > 0) {
-      throw new Error(blockers.join("; "));
-    }
-
-    await trx
-      .updateTable("purchaseReturnOrder")
-      .set({
-        status: "Completed",
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .where("id", "=", id)
-      .where("companyId", "=", companyId)
-      .execute();
-
-    return { id };
-  });
-}
-
-/**
  * Short-close ("stop expecting") a supplier return line — the
- * shortClosePurchaseOrderLine mechanic with the supplier-return status ladder.
+ * shortClosePurchaseOrderLine mechanic. The header status is derived from the
+ * lines afterwards, so short-closing the last open line completes the return
+ * (there is no separate manual Complete action, mirroring the Purchase Order).
  */
 export async function shortClosePurchaseReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -3853,25 +3824,14 @@ export async function shortClosePurchaseReturnOrderLine(
         .execute()
     ]);
 
-    if (
-      !order ||
-      !["Confirmed", "Partially Shipped", "Shipped"].includes(order.status)
-    ) {
+    // Recompute in both the To Ship and Completed working states: short-closing
+    // the last open line completes the return, and reopening a line on a
+    // completed return drops it back to To Ship.
+    if (!order || !["To Ship", "Completed"].includes(order.status)) {
       return;
     }
 
-    const anyShipped = lines.some((l) => Number(l.quantityShipped) > EPSILON);
-    const allSettled = lines.every(
-      (l) =>
-        l.closedComplete ||
-        Number(l.quantityShipped) >= Number(l.quantity) - EPSILON
-    );
-
-    const status = anyShipped
-      ? allSettled
-        ? ("Shipped" as const)
-        : ("Partially Shipped" as const)
-      : ("Confirmed" as const);
+    const { status } = getPurchaseReturnOrderStatus(lines);
 
     if (status !== order.status) {
       await trx

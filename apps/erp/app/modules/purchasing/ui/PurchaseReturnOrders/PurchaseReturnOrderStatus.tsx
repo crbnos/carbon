@@ -16,22 +16,10 @@ const PurchaseReturnOrderStatus = ({
           <Trans>Draft</Trans>
         </Status>
       );
-    case "Confirmed":
+    case "To Ship":
       return (
         <Status color="blue">
-          <Trans>Confirmed</Trans>
-        </Status>
-      );
-    case "Partially Shipped":
-      return (
-        <Status color="orange">
-          <Trans>Partially Shipped</Trans>
-        </Status>
-      );
-    case "Shipped":
-      return (
-        <Status color="green">
-          <Trans>Shipped</Trans>
+          <Trans>To Ship</Trans>
         </Status>
       );
     case "Completed":

@@ -984,9 +984,7 @@ export function isQuoteLocked(status: string | null | undefined): boolean {
 
 export const salesReturnOrderStatusType = [
   "Draft",
-  "Confirmed",
-  "Partially Received",
-  "Received",
+  "To Receive",
   "Completed",
   "Cancelled"
 ] as const;

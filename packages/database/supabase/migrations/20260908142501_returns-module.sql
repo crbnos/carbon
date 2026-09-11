@@ -34,9 +34,7 @@
 DO $$ BEGIN
 CREATE TYPE "salesReturnOrderStatus" AS ENUM (
   'Draft',
-  'Confirmed',
-  'Partially Received',
-  'Received',
+  'To Receive',
   'Completed',
   'Cancelled'
 );
@@ -559,9 +557,7 @@ FOR DELETE USING (
 DO $$ BEGIN
 CREATE TYPE "purchaseReturnOrderStatus" AS ENUM (
   'Draft',
-  'Confirmed',
-  'Partially Shipped',
-  'Shipped',
+  'To Ship',
   'Completed',
   'Cancelled'
 );

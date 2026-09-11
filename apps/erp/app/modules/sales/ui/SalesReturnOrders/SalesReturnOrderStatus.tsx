@@ -14,22 +14,10 @@ const SalesReturnOrderStatus = ({ status }: SalesReturnOrderStatusProps) => {
           <Trans>Draft</Trans>
         </Status>
       );
-    case "Confirmed":
+    case "To Receive":
       return (
         <Status color="blue">
-          <Trans>Confirmed</Trans>
-        </Status>
-      );
-    case "Partially Received":
-      return (
-        <Status color="orange">
-          <Trans>Partially Received</Trans>
-        </Status>
-      );
-    case "Received":
-      return (
-        <Status color="green">
-          <Trans>Received</Trans>
+          <Trans>To Receive</Trans>
         </Status>
       );
     case "Completed":

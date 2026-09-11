@@ -76324,14 +76324,14 @@ export type Database = {
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["invoiceCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["invoiceCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -76878,14 +76878,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
@@ -82307,6 +82307,32 @@ export type Database = {
           unitPrice: number
         }[]
       }
+      get_returnable_shipment_lines: {
+        Args: {
+          company_id: string
+          customer_id: string
+          limit_count?: number
+          offset_count?: number
+          sales_order_id?: string
+          search?: string
+        }
+        Returns: {
+          alreadyReturned: number
+          itemId: string
+          itemName: string
+          itemReadableId: string
+          itemTrackingType: string
+          returnableQuantity: number
+          salesOrderLineId: string
+          salesOrderReadableId: string
+          shipmentLineId: string
+          shipmentReadableId: string
+          shippedQuantity: number
+          totalCount: number
+          unitOfMeasureCode: string
+          unitPrice: number
+        }[]
+      }
       get_sales_order_lines_by_customer_id: {
         Args: { customer_id: string }
         Returns: {
@@ -83779,13 +83805,7 @@ export type Database = {
       purchasePriceUpdateTiming:
         | "Purchase Invoice Post"
         | "Purchase Order Finalize"
-      purchaseReturnOrderStatus:
-        | "Draft"
-        | "Confirmed"
-        | "Partially Shipped"
-        | "Shipped"
-        | "Completed"
-        | "Cancelled"
+      purchaseReturnOrderStatus: "Draft" | "To Ship" | "Completed" | "Cancelled"
       purchasingRfqStatus: "Draft" | "Requested" | "Closed"
       qualityDocumentStatus: "Draft" | "Active" | "Archived"
       quoteLineStatus: "Not Started" | "In Progress" | "Complete" | "No Quote"
@@ -83869,13 +83889,7 @@ export type Database = {
         | "Approved"
         | "Reject"
         | "Request Approval"
-      salesReturnOrderStatus:
-        | "Draft"
-        | "Confirmed"
-        | "Partially Received"
-        | "Received"
-        | "Completed"
-        | "Cancelled"
+      salesReturnOrderStatus: "Draft" | "To Receive" | "Completed" | "Cancelled"
       salesRfqStatus: "Draft" | "Ready for Quote" | "Closed" | "Quoted"
       samplingPlanType: "All" | "First" | "Percentage" | "AQL"
       samplingStandard: "ANSI_Z1_4" | "ISO_2859_1"
@@ -85226,14 +85240,7 @@ export const Constants = {
         "Purchase Invoice Post",
         "Purchase Order Finalize",
       ],
-      purchaseReturnOrderStatus: [
-        "Draft",
-        "Confirmed",
-        "Partially Shipped",
-        "Shipped",
-        "Completed",
-        "Cancelled",
-      ],
+      purchaseReturnOrderStatus: ["Draft", "To Ship", "Completed", "Cancelled"],
       purchasingRfqStatus: ["Draft", "Requested", "Closed"],
       qualityDocumentStatus: ["Draft", "Active", "Archived"],
       quoteLineStatus: ["Not Started", "In Progress", "Complete", "No Quote"],
@@ -85325,14 +85332,7 @@ export const Constants = {
         "Reject",
         "Request Approval",
       ],
-      salesReturnOrderStatus: [
-        "Draft",
-        "Confirmed",
-        "Partially Received",
-        "Received",
-        "Completed",
-        "Cancelled",
-      ],
+      salesReturnOrderStatus: ["Draft", "To Receive", "Completed", "Cancelled"],
       salesRfqStatus: ["Draft", "Ready for Quote", "Closed", "Quoted"],
       samplingPlanType: ["All", "First", "Percentage", "AQL"],
       samplingStandard: ["ANSI_Z1_4", "ISO_2859_1"],

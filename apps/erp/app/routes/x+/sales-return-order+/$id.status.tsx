@@ -5,7 +5,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   cancelSalesReturnOrder,
-  completeSalesReturnOrder
+  reopenSalesReturnOrder
 } from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -22,9 +22,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const status = formData.get("status");
 
-  // Receipt-driven statuses are never set manually — only Cancelled and
-  // Completed are valid manual transitions.
-  if (status !== "Cancelled" && status !== "Completed") {
+  // Status is derived from the lines (To Receive / Completed) — the only valid
+  // manual transitions are Cancelled and Draft (reopen a to-receive return).
+  if (status !== "Cancelled" && status !== "Draft") {
     throw redirect(
       requestReferrer(request) ?? path.to.salesReturnOrderDetails(id),
       await flash(request, error(null, "Invalid status"))
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId
       });
     } else {
-      await completeSalesReturnOrder(getDatabaseClient(), {
+      await reopenSalesReturnOrder(getDatabaseClient(), {
         id,
         companyId,
         userId
@@ -67,7 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       success(
         status === "Cancelled"
           ? "Cancelled return order"
-          : "Completed return order"
+          : "Reopened return order"
       )
     )
   );

@@ -1342,6 +1342,9 @@ msgstr "Kütüphaneden ekle…"
 msgid "Add from receipt"
 msgstr ""
 
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "Grup Ekle"
 
@@ -1359,9 +1362,6 @@ msgstr "Satır Ekle"
 
 msgid "Add Lines"
 msgstr "Satır Ekle"
-
-msgid "Add lines from a shipment"
-msgstr ""
 
 msgid "Add lines from document"
 msgstr "Belgeden satır ekle"
@@ -2055,14 +2055,8 @@ msgstr "Bu tedarikçi iadesini iptal etmek istediğinizden emin misiniz? Bu, yet
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "Bu {propertyName} özelliğini değiştirmek istediğinizden emin misiniz? Üretilen malzeme kimlikleri kullandığınız için bu, parçanın ve tüm ilgili revizyonların parça kimliğini değiştirecektir."
 
-msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
-msgstr "Bu RMA'yı tamamlamak istediğinizden emin misiniz? Her satır tamamen alınmış veya kısa kapatılmış olmalı, alınan miktarların hiçbiri muhasebesi beklememelidir."
-
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "Bu stok transferini tamamlamak istediğinizden emin misiniz?"
-
-msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
-msgstr "Bu tedarikçi iadesini tamamlamak istediğinizden emin misiniz? Her satır tamamen gönderilmiş veya kısa kapatılmış olmalıdır."
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "Bu RMA'yı onaylamak istediğinizden emin misiniz? Onaylamak, müşteriye satırlardaki malları iade etme yetkisi verir."
@@ -3710,11 +3704,6 @@ msgstr "Uyumluluk Kuralları"
 msgid "Complete"
 msgstr "Tamamla"
 
-#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
-msgid "Complete {0}"
-msgstr "Tamamla {0}"
-
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
@@ -3901,9 +3890,6 @@ msgstr "Şifreyi Onayla"
 
 msgid "Confirm Skip"
 msgstr "Atlamayı Onayla"
-
-msgid "Confirmed"
-msgstr "Onaylandı"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "Teyit edildi gelen stok — Satın alma ve Üretim siparişleri (sıfırın üzerindeki çubuklar)."
@@ -12119,12 +12105,6 @@ msgstr "Parça İkamesi"
 msgid "Partial"
 msgstr "Kısmi"
 
-msgid "Partially Received"
-msgstr "Kısmen Alındı"
-
-msgid "Partially Shipped"
-msgstr "Kısmen Gönderildi"
-
 msgid "Partner"
 msgstr "İş Ortağı"
 
@@ -14774,6 +14754,9 @@ msgstr "Linear sorunu başlığı ile ara..."
 msgid "Search by receipt, PO, or item"
 msgstr ""
 
+msgid "Search by shipment, sales order, or item"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "Müşterileri ve türleri ara..."
 
@@ -15021,6 +15004,9 @@ msgstr "Operasyon seç"
 msgid "Select posted receipt lines from this supplier to return."
 msgstr ""
 
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "Yazıcı Seçin"
 
@@ -15210,6 +15196,9 @@ msgstr "Hizmetler"
 
 msgid "Session locked"
 msgstr "Oturum Kilitli"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr ""

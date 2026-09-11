@@ -1342,6 +1342,9 @@ msgstr "라이브러리에서 추가…"
 msgid "Add from receipt"
 msgstr ""
 
+msgid "Add from shipment"
+msgstr ""
+
 msgid "Add Group"
 msgstr "그룹 추가"
 
@@ -1359,9 +1362,6 @@ msgstr "라인 항목 추가"
 
 msgid "Add Lines"
 msgstr "라인 추가"
-
-msgid "Add lines from a shipment"
-msgstr ""
 
 msgid "Add lines from document"
 msgstr "문서에서 라인 추가"
@@ -2055,14 +2055,8 @@ msgstr "이 공급업체 반품을 취소하시겠습니까? 이는 허가된 �
 msgid "Are you sure you want to change the {propertyName} property? Since you use generated material IDs this will change the part ID of this part, and all related revisions."
 msgstr "{propertyName} 속성을 변경하시겠습니까? 자동 생성된 자재 ID를 사용하고 있으므로, 이 변경으로 해당 품목의 품목 ID와 관련된 모든 리비전이 변경됩니다."
 
-msgid "Are you sure you want to complete this RMA? Every line must be fully received or short-closed, with no received quantity pending disposition."
-msgstr "이 RMA를 완료하시겠습니까? 모든 라인은 완전히 수령되거나 단축 마감되어야 하며, 처리 대기 중인 수령 수량이 없어야 합니다."
-
 msgid "Are you sure you want to complete this stock transfer?"
 msgstr "이 재고 이동을 완료하시겠습니까?"
-
-msgid "Are you sure you want to complete this supplier return? Every line must be fully shipped or short-closed."
-msgstr "이 공급업체 반품을 완료하시겠습니까? 모든 라인은 완전히 배송되거나 단축 마감되어야 합니다."
 
 msgid "Are you sure you want to confirm this RMA? Confirming authorizes the customer to return the goods on the lines."
 msgstr "이 RMA를 확인하시겠습니까? 확인하면 고객이 라인상의 상품을 반품할 수 있도록 허가됩니다."
@@ -3710,11 +3704,6 @@ msgstr "호환성 규칙"
 msgid "Complete"
 msgstr "완료"
 
-#. placeholder {0}: purchaseReturnOrder.purchaseReturnOrderId
-#. placeholder {0}: salesReturnOrder.salesReturnOrderId
-msgid "Complete {0}"
-msgstr "{0} 완료"
-
 msgid "Complete All"
 msgstr "모두 완료"
 
@@ -3901,9 +3890,6 @@ msgstr "비밀번호 확인"
 
 msgid "Confirm Skip"
 msgstr "건너뛰기 확인"
-
-msgid "Confirmed"
-msgstr "확인됨"
 
 msgid "Confirmed incoming stock — purchase & production orders (bars above zero)."
 msgstr "확정된 입고 — 발주서 및 생산 지시(0 이상의 막대)."
@@ -12119,12 +12105,6 @@ msgstr "부품 대체"
 msgid "Partial"
 msgstr "부분"
 
-msgid "Partially Received"
-msgstr "부분 수령됨"
-
-msgid "Partially Shipped"
-msgstr "부분 배송됨"
-
 msgid "Partner"
 msgstr "파트너"
 
@@ -14774,6 +14754,9 @@ msgstr "linear 이슈 제목으로 검색..."
 msgid "Search by receipt, PO, or item"
 msgstr ""
 
+msgid "Search by shipment, sales order, or item"
+msgstr ""
+
 msgid "Search customers and types..."
 msgstr "고객 및 유형 검색..."
 
@@ -15021,6 +15004,9 @@ msgstr "작업 선택"
 msgid "Select posted receipt lines from this supplier to return."
 msgstr ""
 
+msgid "Select posted shipment lines to this customer to return."
+msgstr ""
+
 msgid "Select Printer"
 msgstr "프린터 선택"
 
@@ -15210,6 +15196,9 @@ msgstr "서비스"
 
 msgid "Session locked"
 msgstr "세션 잠김"
+
+msgid "Set a customer on this return to add from a shipment."
+msgstr ""
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr ""

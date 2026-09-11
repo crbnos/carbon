@@ -94143,6 +94143,61 @@ export default {
         tags: ["(rpc) jsonb_to_text_array"]
       }
     },
+    "/rpc/get_returnable_shipment_lines": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                customer_id: {
+                  format: "text",
+                  type: "string"
+                },
+                limit_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                offset_count: {
+                  format: "integer",
+                  type: "integer"
+                },
+                sales_order_id: {
+                  format: "text",
+                  type: "string"
+                },
+                search: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "customer_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_returnable_shipment_lines"]
+      }
+    },
     "/rpc/get_available_tracked_entities": {
       get: {
         parameters: [
@@ -108132,14 +108187,7 @@ export default {
         },
         status: {
           default: "Draft",
-          enum: [
-            "Draft",
-            "Confirmed",
-            "Partially Shipped",
-            "Shipped",
-            "Completed",
-            "Cancelled"
-          ],
+          enum: ["Draft", "To Ship", "Completed", "Cancelled"],
           format: 'public."purchaseReturnOrderStatus"',
           type: "string"
         },
@@ -109902,7 +109950,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -109951,7 +109999,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -110645,14 +110693,7 @@ export default {
         },
         status: {
           default: "Draft",
-          enum: [
-            "Draft",
-            "Confirmed",
-            "Partially Received",
-            "Received",
-            "Completed",
-            "Cancelled"
-          ],
+          enum: ["Draft", "To Receive", "Completed", "Cancelled"],
           format: 'public."salesReturnOrderStatus"',
           type: "string"
         },
@@ -116443,14 +116484,7 @@ export default {
           type: "string"
         },
         status: {
-          enum: [
-            "Draft",
-            "Confirmed",
-            "Partially Received",
-            "Received",
-            "Completed",
-            "Cancelled"
-          ],
+          enum: ["Draft", "To Receive", "Completed", "Cancelled"],
           format: 'public."salesReturnOrderStatus"',
           type: "string"
         },
@@ -124825,14 +124859,7 @@ export default {
           type: "string"
         },
         status: {
-          enum: [
-            "Draft",
-            "Confirmed",
-            "Partially Shipped",
-            "Shipped",
-            "Completed",
-            "Cancelled"
-          ],
+          enum: ["Draft", "To Ship", "Completed", "Cancelled"],
           format: 'public."purchaseReturnOrderStatus"',
           type: "string"
         },
