@@ -116,8 +116,17 @@ export async function recordLogin(params: {
   app: "erp" | "mes";
   /** From `ensureDeviceId`; read from the cookie when the caller omits it. */
   deviceId?: string | null;
+  /**
+   * True when a TOTP challenge still stands between this login and a session.
+   * Such a row is recorded (the attempt belongs in the audit trail) but does
+   * NOT age the device or count as a sighting — `completeMfaChallenge` clears
+   * the flag once the second factor actually succeeds. Without this, failing
+   * MFA would be enough to make an attacker's browser look established.
+   */
+  mfaPending?: boolean;
 }): Promise<{ isNewDevice: boolean }> {
   const { request, userId, email, accessToken, method, app } = params;
+  const mfaPending = params.mfaPending ?? false;
   try {
     // Right-to-left walk past our own proxies. The leftmost hop is whatever
     // the client sent — see getClientIp.
@@ -142,15 +151,21 @@ export async function recordLogin(params: {
     const deviceId = params.deviceId ?? (await getDeviceId(request));
 
     // Checked BEFORE the insert: this login's own row must not count as a
-    // previous sighting of the device.
+    // previous sighting of the device. Pending-MFA rows are excluded for the
+    // same reason the gate ignores them — an attempt that never cleared the
+    // second factor must not mark the device as already-seen, which would
+    // suppress the new-device alert for the sign-in that DID succeed.
     let isNewDevice = false;
     if (deviceId) {
-      const { count } = await serviceRole
+      const { data: seen } = await serviceRole
         .from("userLogin")
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("userId", userId)
-        .eq("deviceId", deviceId);
-      isNewDevice = (count ?? 0) === 0;
+        .eq("deviceId", deviceId)
+        .eq("mfaPending", false)
+        .limit(1)
+        .maybeSingle();
+      isNewDevice = !seen;
     }
 
     const { error } = await serviceRole.from("userLogin").insert({
@@ -162,7 +177,8 @@ export async function recordLogin(params: {
       city,
       country,
       userAgent,
-      deviceId
+      deviceId,
+      mfaPending
     });
     if (error) {
       log.warn("Failed to record login history", { error, userId, app });
@@ -174,11 +190,17 @@ export async function recordLogin(params: {
     const cutoff = new Date(
       Date.now() - RETENTION_DAYS * 24 * 60 * 60 * 1000
     ).toISOString();
-    const { error: pruneError } = await serviceRole
-      .from("userLogin")
-      .delete()
-      .eq("userId", userId)
-      .lt("createdAt", cutoff);
+    // Via RPC because the prune must NOT drop each device's earliest row: that
+    // row is what getDeviceFirstSeenAt reads, so deleting it would silently
+    // reset a long-trusted device's age and strip its ability to revoke (the
+    // device cookie outlives the retention window — 365d vs 90d — so its anchor
+    // row has to as well). Everything else, which is the IP/geo history that
+    // retention is actually about, still goes. One statement so it cannot race
+    // with a concurrent login.
+    const { error: pruneError } = await serviceRole.rpc(
+      "prune_user_login_history",
+      { p_user_id: userId, p_cutoff: cutoff }
+    );
     if (pruneError) {
       log.warn("Failed to prune login history", { error: pruneError, userId });
     }
@@ -196,6 +218,71 @@ export async function recordLogin(params: {
     log.warn("Failed to record login history", { error, userId, app });
     // Report "not new" on failure: a spurious alert is worse than a missed one,
     // and we genuinely do not know.
+    return { isNewDevice: false };
+  }
+}
+
+/**
+ * Promote this session's pending login row once the second factor succeeds.
+ * Until this runs the row is inert: it does not age the device for the revoke
+ * gate and does not count as a sighting for the new-device alert. Keyed by the
+ * GoTrue session id, which is stable from the token that minted the login.
+ *
+ * NEVER throws, for the same reason `recordLogin` does not: a verified login
+ * must not fail because its history row could not be updated.
+ */
+export async function markLoginMfaComplete(
+  ...accessTokens: (string | null | undefined)[]
+): Promise<{ isNewDevice: boolean }> {
+  try {
+    // Both the pre-challenge and post-challenge tokens: GoTrue's
+    // challengeAndVerify raises the AAL of the existing session rather than
+    // minting a new one, so these normally carry the same session_id — passing
+    // both means a future rotation cannot strand the row as permanently pending.
+    const sessionIds = [
+      ...new Set(
+        accessTokens
+          .filter((token): token is string => !!token)
+          .map(getSessionId)
+          .filter((id): id is string => !!id)
+      )
+    ];
+    if (sessionIds.length === 0) return { isNewDevice: false };
+    const serviceRole = getCarbonServiceRole();
+    const { data: promoted, error } = await serviceRole
+      .from("userLogin")
+      .update({ mfaPending: false })
+      .in("sessionId", sessionIds)
+      .eq("mfaPending", true)
+      .select("userId, deviceId");
+    if (error) {
+      log.warn("Failed to clear mfaPending on login", { error });
+      return { isNewDevice: false };
+    }
+
+    // The new-device alert is deferred to here, because the callback could not
+    // know whether the second factor would ever be cleared. Now that it has,
+    // ask whether any OTHER completed login has used this device before.
+    const row = promoted?.[0];
+    if (!row?.deviceId) return { isNewDevice: false };
+    const { data: seen } = await serviceRole
+      .from("userLogin")
+      .select("sessionId")
+      .eq("userId", row.userId)
+      .eq("deviceId", row.deviceId)
+      .eq("mfaPending", false)
+      .limit(sessionIds.length + 1);
+    // Existence, not a count — and the rows just promoted above are this very
+    // login, so they are excluded in JS rather than through a PostgREST `not.in`
+    // filter, whose value is a bare comma-joined string an id could break out of.
+    return {
+      isNewDevice: !(seen ?? []).some(
+        (candidate) =>
+          !candidate.sessionId || !sessionIds.includes(candidate.sessionId)
+      )
+    };
+  } catch (error) {
+    log.warn("Failed to clear mfaPending on login", { error });
     return { isNewDevice: false };
   }
 }

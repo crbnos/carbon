@@ -26,6 +26,7 @@ import {
   verifyAuthSession
 } from "./auth.server";
 import { setCompanyId } from "./company.server";
+import { markLoginMfaComplete } from "./login-history.server";
 import {
   getTotpFactors,
   userHasVerifiedTotpFactor,
@@ -148,6 +149,12 @@ export async function completeMfaChallenge(
       authSession: AuthSession;
       sessionCookie: string;
       redirectTo?: string;
+      /**
+       * True when this device had never completed a login for this user before.
+       * The new-device alert is deferred to here rather than sent at the
+       * callback, which could not know whether the second factor would clear.
+       */
+      isNewDevice: boolean;
     }
   | { success: false; reason: "no-session" | "invalid-code" }
 > {
@@ -195,13 +202,21 @@ export async function completeMfaChallenge(
 
   const sessionCookie = await setAuthSession(request, { authSession });
 
+  // The second factor is now proven, so this session's login row counts: it may
+  // age the device for the revoke gate and mark the device as seen.
+  const { isNewDevice } = await markLoginMfaComplete(
+    source.accessToken,
+    authSession.accessToken
+  );
+
   logAuthEvent("mfa_challenge_success", { userId: authSession.userId });
 
   return {
     success: true,
     authSession,
     sessionCookie,
-    redirectTo: pending?.redirectTo
+    redirectTo: pending?.redirectTo,
+    isNewDevice
   };
 }
 

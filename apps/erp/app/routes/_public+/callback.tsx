@@ -405,6 +405,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    // Resolved first so the row can be marked pending: a login still facing a
+    // TOTP challenge must not age the device or count as a sighting until
+    // completeMfaChallenge clears it.
+    const mfaPending = await userHasVerifiedTotpFactor(authSession.userId);
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
     const login = await recordLogin({
       request,
@@ -413,12 +417,15 @@ export async function action({ request }: ActionFunctionArgs) {
       accessToken: authSession.accessToken,
       method: deriveLoginMethod(authSession.accessToken),
       app: "erp",
-      deviceId
+      deviceId,
+      mfaPending
     });
 
     // A user with no company membership yet gets no alert — the send needs a
-    // companyId, and they have nothing to protect.
-    if (login.isNewDevice && companyId) {
+    // companyId, and they have nothing to protect. Held back while MFA is
+    // pending: the alert belongs to the sign-in that actually succeeds, and
+    // /mfa sends it there.
+    if (login.isNewDevice && companyId && !mfaPending) {
       await sendNewDeviceEmail(
         serviceRole,
         companyId,
@@ -429,7 +436,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
-    if (await userHasVerifiedTotpFactor(authSession.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession,
         redirectTo

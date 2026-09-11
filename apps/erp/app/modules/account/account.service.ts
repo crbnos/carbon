@@ -88,11 +88,15 @@ export async function getDeviceFirstSeenAt(
   deviceId: string | null
 ): Promise<string | null> {
   if (!deviceId) return null;
+  // mfaPending rows are excluded: a login that never cleared its second factor
+  // must not age the device, or failing MFA once would be enough to make an
+  // attacker's browser look older than the owner's sessions.
   const { data } = await client
     .from("userLogin")
     .select("createdAt")
     .eq("userId", userId)
     .eq("deviceId", deviceId)
+    .eq("mfaPending", false)
     .order("createdAt", { ascending: true })
     .limit(1)
     .maybeSingle();

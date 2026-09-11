@@ -37,11 +37,13 @@ import {
   LoadingBars,
   VStack
 } from "@carbon/react";
+import { parseUserAgent } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLocation } from "react-router";
+import { sendNewDeviceEmail } from "~/services/device-email.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -168,7 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // branch returns before the shared recordLogin call below.
     const { deviceId: ssoDeviceId, setCookie: ssoDeviceCookie } =
       await ensureDeviceId(request);
-    await recordLogin({
+    const ssoLogin = await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
@@ -177,6 +179,19 @@ export async function action({ request }: ActionFunctionArgs) {
       app: "mes",
       deviceId: ssoDeviceId
     });
+
+    // The IdP owns MFA here, so this login is complete as recorded — alert now.
+    if (ssoLogin.isNewDevice) {
+      const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+      await sendNewDeviceEmail(
+        serviceRole,
+        ssoCompanyId,
+        authSession.userId,
+        browser && os
+          ? `${browser} on ${os}`
+          : (browser ?? os ?? "Unknown device")
+      );
+    }
 
     // The IdP owns MFA for SSO sessions, including controlled environments
     // (user decision — attestation shifts to the IdP policy).
@@ -219,20 +234,39 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    // Resolved first so the row can be marked pending: a login still facing a
+    // TOTP challenge must not age the device or count as a sighting until
+    // completeMfaChallenge clears it.
+    const mfaPending = await userHasVerifiedTotpFactor(authSession.userId);
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
-    await recordLogin({
+    const login = await recordLogin({
       request,
       userId: authSession.userId,
       email: authSession.email,
       accessToken: authSession.accessToken,
       method: deriveLoginMethod(authSession.accessToken),
       app: "mes",
-      deviceId
+      deviceId,
+      mfaPending
     });
+
+    // Held back while MFA is pending: the alert belongs to the sign-in that
+    // actually succeeds, and /mfa sends it there.
+    if (login.isNewDevice && authSession.companyId && !mfaPending) {
+      const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+      await sendNewDeviceEmail(
+        serviceRole,
+        authSession.companyId,
+        authSession.userId,
+        browser && os
+          ? `${browser} on ${os}`
+          : (browser ?? os ?? "Unknown device")
+      );
+    }
 
     // TOTP gate: park the tokens in the pending-MFA key and challenge before
     // any full session cookie exists. The /mfa action mints the real session.
-    if (await userHasVerifiedTotpFactor(authSession.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession
       });

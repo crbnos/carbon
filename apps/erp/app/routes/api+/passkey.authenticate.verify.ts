@@ -140,6 +140,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    // Resolved first so the row can be marked pending: a login still facing a
+    // TOTP challenge must not age the device or count as a sighting until
+    // completeMfaChallenge clears it.
+    const mfaPending = await userHasVerifiedTotpFactor(credRow.userId);
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
     const login = await recordLogin({
       request,
@@ -148,7 +152,8 @@ export async function action({ request }: ActionFunctionArgs) {
       accessToken: authSession.accessToken,
       method: "passkey",
       app: "erp",
-      deviceId
+      deviceId,
+      mfaPending
     });
 
     const employeeCompanies = await getEmployeeCompanies(
@@ -163,7 +168,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // A user with no company membership yet gets no alert — the send needs a
     // companyId, and they have nothing to protect.
-    if (login.isNewDevice && authSession.companyId) {
+    // Held back while MFA is pending: the alert belongs to the sign-in that
+    // actually succeeds, and /mfa sends it there.
+    if (login.isNewDevice && authSession.companyId && !mfaPending) {
       const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
       await sendNewDeviceEmail(
         serviceRole,
@@ -183,7 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // TOTP gate: a passkey sign-in still lands at AAL1 (it is minted through
     // a server-side magic link), so an enrolled user is challenged like any
     // other login before the full session cookie exists.
-    if (await userHasVerifiedTotpFactor(credRow.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession,
         redirectTo: safeRedirect

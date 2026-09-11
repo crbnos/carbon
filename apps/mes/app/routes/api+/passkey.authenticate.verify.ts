@@ -12,9 +12,11 @@ import {
 } from "@carbon/auth/session.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
+import { parseUserAgent } from "@carbon/utils";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { sendNewDeviceEmail } from "~/services/device-email.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -137,16 +139,35 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Record the sign-in (fire-and-forget: recordLogin never throws) before
     // the TOTP gate — first-factor success is the login fact being recorded.
+    // Resolved first so the row can be marked pending: a login still facing a
+    // TOTP challenge must not age the device or count as a sighting until
+    // completeMfaChallenge clears it.
+    const mfaPending = await userHasVerifiedTotpFactor(credRow.userId);
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
-    await recordLogin({
+    const login = await recordLogin({
       request,
       userId: credRow.userId,
       email: authUser.user.email,
       accessToken: authSession.accessToken,
       method: "passkey",
       app: "mes",
-      deviceId
+      deviceId,
+      mfaPending
     });
+
+    // Held back while MFA is pending: the alert belongs to the sign-in that
+    // actually succeeds, and /mfa sends it there.
+    if (login.isNewDevice && authSession.companyId && !mfaPending) {
+      const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
+      await sendNewDeviceEmail(
+        serviceRole,
+        authSession.companyId,
+        credRow.userId,
+        browser && os
+          ? `${browser} on ${os}`
+          : (browser ?? os ?? "Unknown device")
+      );
+    }
 
     const safeRedirect =
       redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
@@ -157,7 +178,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // a server-side magic link), so an enrolled user is challenged like any
     // other login before the full session cookie exists. The /mfa route mints
     // the real session cookie AND the company cookie on success.
-    if (await userHasVerifiedTotpFactor(credRow.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession,
         redirectTo: safeRedirect

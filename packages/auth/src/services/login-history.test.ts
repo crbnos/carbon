@@ -7,22 +7,26 @@ import {
 
 const mocks = vi.hoisted(() => {
   const insert = vi.fn();
-  const lt = vi.fn();
-  const eq = vi.fn(() => ({ lt }));
-  const del = vi.fn(() => ({ eq }));
-  // The device-novelty probe: .select(...).eq(...).eq(...) resolving to a count.
-  const countEq2 = vi.fn().mockResolvedValue({ count: 0 });
-  const countEq1 = vi.fn(() => ({ eq: countEq2 }));
-  const select = vi.fn(() => ({ eq: countEq1 }));
-  const from = vi.fn(() => ({ insert, delete: del, select }));
-  const getCarbonServiceRole = vi.fn(() => ({ from }));
+  // The retention prune is one RPC so it cannot drop a device's anchor row.
+  const rpc = vi.fn().mockResolvedValue({ error: null });
+  // The device-novelty probe: an existence check, not a count —
+  // .select(id).eq(userId).eq(deviceId).eq(mfaPending).limit(1).maybeSingle()
+  const maybeSingle = vi.fn().mockResolvedValue({ data: null });
+  const limit = vi.fn(() => ({ maybeSingle }));
+  const seenEq3 = vi.fn(() => ({ limit }));
+  const seenEq2 = vi.fn(() => ({ eq: seenEq3 }));
+  const seenEq1 = vi.fn(() => ({ eq: seenEq2 }));
+  const select = vi.fn(() => ({ eq: seenEq1 }));
+  const from = vi.fn(() => ({ insert, select }));
+  const getCarbonServiceRole = vi.fn(() => ({ from, rpc }));
   return {
     insert,
-    lt,
-    eq,
-    del,
+    rpc,
     select,
-    countEq2,
+    seenEq1,
+    seenEq2,
+    seenEq3,
+    maybeSingle,
     from,
     getCarbonServiceRole
   };
@@ -64,8 +68,12 @@ function makeRequest(headers: Record<string, string>): Request {
 beforeEach(() => {
   vi.clearAllMocks();
   mocks.insert.mockResolvedValue({ error: null });
-  mocks.lt.mockResolvedValue({ error: null });
-  mocks.getCarbonServiceRole.mockReturnValue({ from: mocks.from } as any);
+  mocks.rpc.mockResolvedValue({ error: null });
+  mocks.maybeSingle.mockResolvedValue({ data: null });
+  mocks.getCarbonServiceRole.mockReturnValue({
+    from: mocks.from,
+    rpc: mocks.rpc
+  } as any);
 });
 
 const TOKEN = makeToken({
@@ -162,12 +170,13 @@ describe("recordLogin", () => {
       city: "São Paulo",
       country: "BR",
       userAgent: "Mozilla/5.0 test",
-      deviceId: null
+      deviceId: null,
+      mfaPending: false
     });
   });
 
   it("reports a device as new when it has no prior rows", async () => {
-    mocks.countEq2.mockResolvedValueOnce({ count: 0 });
+    mocks.maybeSingle.mockResolvedValueOnce({ data: null });
     await expect(
       recordLogin({
         request: makeRequest({}),
@@ -182,7 +191,7 @@ describe("recordLogin", () => {
   });
 
   it("reports a device as known when prior rows exist", async () => {
-    mocks.countEq2.mockResolvedValueOnce({ count: 3 });
+    mocks.maybeSingle.mockResolvedValueOnce({ data: { id: "prior_row" } });
     await expect(
       recordLogin({
         request: makeRequest({}),
@@ -256,15 +265,56 @@ describe("recordLogin", () => {
       app: "erp"
     });
 
-    expect(mocks.eq).toHaveBeenCalledWith("userId", "user_1");
-    const pruneCall = mocks.lt.mock.calls[0]!;
-    const [column, cutoff] = pruneCall as [string, string];
-    expect(column).toBe("createdAt");
+    // Via RPC, not a bare delete: the SQL function keeps each device's earliest
+    // row so the revoke gate's "first seen" cannot be pruned forward.
+    expect(mocks.rpc).toHaveBeenCalledWith(
+      "prune_user_login_history",
+      expect.objectContaining({ p_user_id: "user_1" })
+    );
+    const { p_cutoff: cutoff } = mocks.rpc.mock.calls[0]![1] as {
+      p_cutoff: string;
+    };
     const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
     expect(Date.now() - Date.parse(cutoff)).toBeGreaterThan(
       ninetyDaysMs - 60_000
     );
     expect(Date.now() - Date.parse(cutoff)).toBeLessThan(ninetyDaysMs + 60_000);
+  });
+
+  it("marks the row pending when a TOTP challenge still stands", async () => {
+    await recordLogin({
+      request: makeRequest({}),
+      userId: "user_1",
+      email: "jane@example.com",
+      accessToken: TOKEN,
+      method: "magic_link",
+      app: "erp",
+      deviceId: "device_1",
+      mfaPending: true
+    });
+
+    expect(mocks.insert).toHaveBeenCalledWith(
+      expect.objectContaining({ mfaPending: true })
+    );
+  });
+
+  it("ignores pending rows when deciding whether a device is new", async () => {
+    // A login that never cleared MFA must not make the device look seen, or the
+    // alert for the sign-in that DID succeed would be suppressed.
+    await recordLogin({
+      request: makeRequest({}),
+      userId: "user_1",
+      email: "jane@example.com",
+      accessToken: TOKEN,
+      method: "magic_link",
+      app: "erp",
+      deviceId: "device_1"
+    });
+
+    expect(mocks.select).toHaveBeenCalledWith("id");
+    expect(mocks.seenEq1).toHaveBeenCalledWith("userId", "user_1");
+    expect(mocks.seenEq2).toHaveBeenCalledWith("deviceId", "device_1");
+    expect(mocks.seenEq3).toHaveBeenCalledWith("mfaPending", false);
   });
 
   it("never throws when the insert fails", async () => {
