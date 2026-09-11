@@ -204,7 +204,14 @@ export async function cardTransactionFixture(
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
-        await trx.updateTable("cardTransaction").set({ status: "Draft" })
+        await trx.updateTable("cardTransaction").set({
+          status: "Draft",
+          journalId: null,
+          postedAt: null,
+          postedBy: null,
+          voidedAt: null,
+          voidedBy: null,
+        })
           .where("companyId", "=", companyId).execute();
         await trx.updateTable("journal").set({ status: "Draft" })
           .where("companyId", "=", companyId).execute();

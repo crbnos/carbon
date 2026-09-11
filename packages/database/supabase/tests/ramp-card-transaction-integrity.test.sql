@@ -98,6 +98,14 @@ BEGIN
     'cardTransaction updatedBy FK needs an index';
   ASSERT to_regclass('"cardTransactionLine_updatedBy_idx"') IS NOT NULL,
     'cardTransactionLine updatedBy FK needs an index';
+  ASSERT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conrelid = '"cardTransaction"'::regclass
+      AND conname = 'cardTransaction_lifecycle_audit_check'
+      AND contype = 'c'
+      AND convalidated
+  ), 'cardTransaction must have a validated lifecycle audit constraint';
 
   SELECT pg_get_functiondef(t.tgfoid) INTO header_guard
   FROM pg_trigger t
@@ -138,7 +146,8 @@ CREATE TYPE pg_temp.ramp_card_fixture AS (
   company_id text,
   account_id text,
   supplier_id text,
-  cost_center_id text
+  cost_center_id text,
+  journal_id text
 );
 
 CREATE FUNCTION pg_temp.seed_ramp_card_company(p_label text)
@@ -162,6 +171,11 @@ BEGIN
   INSERT INTO "costCenter" (name, "companyId", "createdBy")
     VALUES ('Ramp card cost center ' || p_label || ' ' || id(), f.company_id, 'system')
     RETURNING id INTO f.cost_center_id;
+  INSERT INTO "journal" (
+    "companyId", "journalEntryId", "postingDate", status, "createdBy"
+  ) VALUES (
+    f.company_id, 'RAMP-CARD-' || id(), DATE '2026-09-11', 'Posted', 'system'
+  ) RETURNING id INTO f.journal_id;
   RETURN f;
 END;
 $fn$;
@@ -276,6 +290,44 @@ BEGIN
 END;
 $integrity$;
 
+CREATE FUNCTION pg_temp.assert_card_lifecycle_rejected(
+  p_label text,
+  p_company_id text,
+  p_account_id text,
+  p_status "cardTransactionStatus",
+  p_posting_date date,
+  p_journal_id text,
+  p_posted_at timestamp with time zone,
+  p_posted_by text,
+  p_voided_at timestamp with time zone,
+  p_voided_by text
+) RETURNS void
+LANGUAGE plpgsql AS $fn$
+DECLARE
+  constraint_name text;
+BEGIN
+  BEGIN
+    INSERT INTO "cardTransaction" (
+      "cardTransactionId", type, status, "cardAccountId",
+      "transactionDate", "postingDate", "currencyCode", amount,
+      "journalId", "postedAt", "postedBy", "voidedAt", "voidedBy",
+      "companyId", "createdBy"
+    ) VALUES (
+      'CARD-INVALID-' || id(), 'Charge', p_status, p_account_id,
+      DATE '2026-09-11', p_posting_date, 'USD', 1,
+      p_journal_id, p_posted_at, p_posted_by, p_voided_at, p_voided_by,
+      p_company_id, 'system'
+    );
+  EXCEPTION WHEN check_violation THEN
+    GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
+    ASSERT constraint_name = 'cardTransaction_lifecycle_audit_check',
+      p_label || ' hit the wrong CHECK constraint';
+    RETURN;
+  END;
+  RAISE EXCEPTION '% was accepted', p_label;
+END;
+$fn$;
+
 DO $lifecycle$
 DECLARE
   f pg_temp.ramp_card_fixture;
@@ -284,6 +336,71 @@ DECLARE
   line_id text := 'ramp-line-lifecycle-' || id();
 BEGIN
   f := pg_temp.seed_ramp_card_company('lifecycle');
+
+  -- Bypass only the ordinary lifecycle trigger inside the outer rollback so
+  -- every nullable operand is exercised directly against the stored CHECK.
+  EXECUTE 'ALTER TABLE "cardTransaction" DISABLE TRIGGER "cardTransaction_draft_guard"';
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Draft with journalId', f.company_id, f.account_id, 'Draft',
+    DATE '2026-09-11', f.journal_id, NULL, NULL, NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Draft with postedAt', f.company_id, f.account_id, 'Draft',
+    DATE '2026-09-11', NULL, now(), NULL, NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Draft with postedBy', f.company_id, f.account_id, 'Draft',
+    DATE '2026-09-11', NULL, NULL, 'system', NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Draft with voidedAt', f.company_id, f.account_id, 'Draft',
+    DATE '2026-09-11', NULL, NULL, NULL, now(), NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Draft with voidedBy', f.company_id, f.account_id, 'Draft',
+    DATE '2026-09-11', NULL, NULL, NULL, NULL, 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Posted without postingDate', f.company_id, f.account_id, 'Posted',
+    NULL, NULL, now(), 'system', NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Posted without postedAt', f.company_id, f.account_id, 'Posted',
+    DATE '2026-09-11', NULL, NULL, 'system', NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Posted without postedBy', f.company_id, f.account_id, 'Posted',
+    DATE '2026-09-11', NULL, now(), NULL, NULL, NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Posted with voidedAt', f.company_id, f.account_id, 'Posted',
+    DATE '2026-09-11', NULL, now(), 'system', now(), NULL
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Posted with voidedBy', f.company_id, f.account_id, 'Posted',
+    DATE '2026-09-11', NULL, now(), 'system', NULL, 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Voided without postingDate', f.company_id, f.account_id, 'Voided',
+    NULL, NULL, now(), 'system', now(), 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Voided without postedAt', f.company_id, f.account_id, 'Voided',
+    DATE '2026-09-11', NULL, NULL, 'system', now(), 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Voided without postedBy', f.company_id, f.account_id, 'Voided',
+    DATE '2026-09-11', NULL, now(), NULL, now(), 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Voided without voidedAt', f.company_id, f.account_id, 'Voided',
+    DATE '2026-09-11', NULL, now(), 'system', NULL, 'system'
+  );
+  PERFORM pg_temp.assert_card_lifecycle_rejected(
+    'Voided without voidedBy', f.company_id, f.account_id, 'Voided',
+    DATE '2026-09-11', NULL, now(), 'system', now(), NULL
+  );
+  EXECUTE 'ALTER TABLE "cardTransaction" ENABLE TRIGGER "cardTransaction_draft_guard"';
 
   BEGIN
     INSERT INTO "cardTransaction" (
@@ -299,10 +416,10 @@ BEGIN
 
   INSERT INTO "cardTransaction" (
     id, "cardTransactionId", type, status, "cardAccountId",
-    "transactionDate", "currencyCode", amount, "companyId", "createdBy"
+    "transactionDate", "postingDate", "currencyCode", amount, "companyId", "createdBy"
   ) VALUES (
     header_id, 'CARD-LIFE-' || id(), 'Charge', 'Draft', f.account_id,
-    DATE '2026-09-11', 'USD', 10, f.company_id, 'system'
+    DATE '2026-09-11', DATE '2026-09-11', 'USD', 10, f.company_id, 'system'
   );
   INSERT INTO "cardTransactionLine" (
     id, "cardTransactionId", "companyId", "accountId", amount, "createdBy"
