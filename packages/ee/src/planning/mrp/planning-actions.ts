@@ -801,8 +801,39 @@ export async function generatePlanningActions(
         toleranceDays
       });
 
+      // Lot-size splitting can emit several new-supply suggestions in one
+      // period; persist ONE action per (type, period) with the summed quantity
+      // — the natural key would otherwise collide and silently drop batches.
+      const aggregated = new Map<string, ChangeCandidate>();
+      const passthrough: ChangeCandidate[] = [];
+      for (const candidate of merged) {
+        const isNewSupply =
+          (candidate.type === "Order" || candidate.type === "Make") &&
+          !candidate.purchaseOrderLineId &&
+          !candidate.jobId;
+        if (!isNewSupply) {
+          passthrough.push(candidate);
+          continue;
+        }
+        const key = `${candidate.type}${KEY_SEP}${candidate.periodId}`;
+        const current = aggregated.get(key);
+        if (current) {
+          current.suggestedQuantity += candidate.suggestedQuantity;
+          current.isASAP = current.isASAP || candidate.isASAP;
+          if (daysBetween(candidate.suggestedDate, current.suggestedDate) < 0) {
+            current.suggestedDate = candidate.suggestedDate;
+          }
+        } else {
+          aggregated.set(key, { ...candidate });
+        }
+      }
+
       const assignee = resolveAssignee(row.id, location.id);
-      for (const action of [...merged, ...changeActions]) {
+      for (const action of [
+        ...aggregated.values(),
+        ...passthrough,
+        ...changeActions
+      ]) {
         if (!action.periodId || !periodById.has(action.periodId)) continue;
         candidates.push({
           ...action,
