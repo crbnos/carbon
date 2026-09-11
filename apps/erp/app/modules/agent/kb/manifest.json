@@ -690,7 +690,9 @@
         "I edited `demandForecast` but my change was overwritten",
         "Deleting a part's projection removed more than I expected",
         "My projected quantity didn't turn into a full job/PO",
-        "A zero cell isn't saved"
+        "A zero cell isn't saved",
+        "Planning shows less demand than my forecast",
+        "A sales order in a week with no forecast still reduced a neighboring week"
       ]
     },
     {
