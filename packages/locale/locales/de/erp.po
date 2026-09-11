@@ -1586,6 +1586,9 @@ msgstr "Gesamter Zeitraum"
 msgid "All tools"
 msgstr "Alle Werkzeuge"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "Alle Typen"
 
@@ -2402,6 +2405,9 @@ msgstr "Zum Stand von:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "Als Unternehmenseigner können Sie das Eigentum an einen anderen Mitarbeiter übertragen. Dies gibt ihm vollen Zugriff auf Abrechnungs- und Verwaltungseinstellungen."
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "Aufsteigend"
 
@@ -2473,6 +2479,9 @@ msgstr "Vermögenswerte"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Vermögenswerte, Verbindlichkeiten und Eigenkapital an einem bestimmten Stichtag"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Drucker den Standorten zuweisen. Versand, Empfang und Arbeitplätze erben den Standort-Standard, wenn nicht anders vorgegeben."
 
@@ -2481,6 +2490,9 @@ msgstr "Zuweisen an"
 
 msgid "Assign to Groups"
 msgstr "Gruppen zuweisen"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "Zugewiesen"
@@ -10143,6 +10155,9 @@ msgstr "Mehrere Aufträge können gleichzeitig auf diesem Prozess laufen – z. 
 msgid "Must be in the same location"
 msgstr "Muss sich am selben Ort befinden"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "Meine Dokumente"
 
@@ -10590,6 +10605,9 @@ msgstr "Keine Konten stimmen mit Ihrer Suche überein"
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "Keine Aktionen gefunden."
 
@@ -10881,6 +10899,9 @@ msgstr "Noch keine Zahlungen."
 
 msgid "No planned or recorded time."
 msgstr "Keine geplante oder aufgezeichnete Zeit."
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "Keine Planungsdaten"
@@ -12186,6 +12207,9 @@ msgstr "Geplante Zeit"
 
 msgid "Planning"
 msgstr "Planung"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "Überprüfen & erstellen"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Überprüfen Sie die Änderungen jedes Elements, und bestätigen Sie dann – die Freigabe kann nicht rückgängig gemacht werden."
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Überprüfen Sie die Bilanz und die Gewinn- und Verlustrechnung der Periode und bestätigen Sie, dass die Zahlen korrekt aussehen. Dies ist eine manuelle Genehmigung – markieren Sie sie als erledigt, sobald Sie diese überprüft haben."
@@ -15718,6 +15748,9 @@ msgstr "Abgleich vorschlagen"
 
 msgid "Suggest with AI"
 msgstr "Mit KI vorschlagen"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Vorgeschlagene Bestellungen, die Sie noch nicht aufgegeben haben."

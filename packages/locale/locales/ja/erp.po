@@ -1586,6 +1586,9 @@ msgstr "すべての期間"
 msgid "All tools"
 msgstr "すべてのツール"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "すべてのタイプ"
 
@@ -2402,6 +2405,9 @@ msgstr "以下の日付時点:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "会社責任者として、別の従業員に所有権を譲渡できます。これにより、請求とシステム管理の設定への完全なアクセス権が与えられます。"
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "昇順"
 
@@ -2473,6 +2479,9 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -2481,6 +2490,9 @@ msgstr "割り当て先"
 
 msgid "Assign to Groups"
 msgstr "グループに割り当て"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "割り当て済み"
@@ -10143,6 +10155,9 @@ msgstr "複数のジョブがこのプロセスで同時に実行できます �
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "マイドキュメント"
 
@@ -10590,6 +10605,9 @@ msgstr "検索に一致するアカウントがありません"
 msgid "No action needed"
 msgstr "対応は不要です"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "アクションが見つかりません。"
 
@@ -10881,6 +10899,9 @@ msgstr "まだ支払いはありません。"
 
 msgid "No planned or recorded time."
 msgstr "計画時間または記録時間がありません。"
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "計画データなし"
@@ -12186,6 +12207,9 @@ msgstr "予定時間"
 
 msgid "Planning"
 msgstr "計画"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
@@ -15718,6 +15748,9 @@ msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"

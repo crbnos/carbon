@@ -1586,6 +1586,9 @@ msgstr "Все время"
 msgid "All tools"
 msgstr "Все инструменты"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "Все типы"
 
@@ -2402,6 +2405,9 @@ msgstr "По состоянию на:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "Как владелец организации, вы можете передать ответственность другому сотруднику. Это даст ему полный доступ к параметрам выставления счётов и администрирования."
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "По возрастанию"
 
@@ -2473,6 +2479,9 @@ msgstr "Активы"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Активы, обязательства и собственный капитал на определенную дату"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Назначьте принтеры местоположениям. Доставка, получение и рабочие центры наследуют значение по умолчанию для местоположения, если не переопределено."
 
@@ -2481,6 +2490,9 @@ msgstr "Назначить"
 
 msgid "Assign to Groups"
 msgstr "Назначить группам"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "Назначено"
@@ -10143,6 +10155,9 @@ msgstr "Несколько заданий могут выполняться на
 msgid "Must be in the same location"
 msgstr "Должно быть в одном месте"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "Мои документы"
 
@@ -10590,6 +10605,9 @@ msgstr "Ни один счет не соответствует вашему по
 msgid "No action needed"
 msgstr "Никаких действий не требуется"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "Действия не найдены."
 
@@ -10881,6 +10899,9 @@ msgstr "Платежей пока нет."
 
 msgid "No planned or recorded time."
 msgstr "Нет запланированного или записанного времени."
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "Нет данных планирования"
@@ -12186,6 +12207,9 @@ msgstr "Плановое время"
 
 msgid "Planning"
 msgstr "Планирование"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "Просмотр и создание"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Рассмотреть изменения каждой номенклатуры, затем подтвердить — выпуск нельзя отменить."
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Рассмотреть бухгалтерский баланс и отчет о прибылях и убытках периода и подтвердить, что цифры выглядят правильно. Это ручное утверждение — отметьте как готово как только вы их рассмотрели."
@@ -15718,6 +15748,9 @@ msgstr "Предложить совпадение"
 
 msgid "Suggest with AI"
 msgstr "Предложить с помощью ИИ"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Предложенные заказы, которые вы еще не разместили."

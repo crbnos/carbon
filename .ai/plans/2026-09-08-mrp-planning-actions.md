@@ -24,7 +24,7 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
 - [x] Task 8: planning.update extended (both routes) — IDOR bind by id+companyId+Open, commitment gates, updateJob+notify for jobs, shortClose for cancel, wire map lowercase
 - [x] Task 9: responsibleEmployee on itemPlanningValidator + ItemPlanningForm (Employee picker, all 4 item types via shared form)
 - [x] Task 10: /x/settings/planning — ResponsibleEmployeeCard tree (company→location→item-group, inherited placeholders) + RescheduleToleranceCard (0–365), writers in settings.service, nav + path registered
-- [ ] Task 11: Worklist columns + "my actions" filter + bulk apply/assign/dismiss on both planning pages
+- [x] Task 11: PlanningActionsTable worklist on both planning pages (Mine/All default Mine, type filter, bulk apply/dismiss/assign, Review-on-PO/Job links, ASAP badges); dismiss/assign route cases added
 - [ ] Task 12: Browser verification via /test (satellite dataset)
 
 ## Dependencies

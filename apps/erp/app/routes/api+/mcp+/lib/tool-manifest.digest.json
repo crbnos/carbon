@@ -605,7 +605,7 @@
     {"name":"people_upsertShift","classification":"WRITE","paramCount":12,"schema":"d1ecbe5cb610","response":"4cc67c58f3c9","injectAuth":"companyId+createdBy+updatedBy","permission":"people:create+update"},
     {"name":"production_activateAssemblyInstructionVersion","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"3797626bd17e","injectAuth":"companyId","permission":"production:update"},
     {"name":"production_assignPeopleWeek","classification":"WRITE","paramCount":5,"schema":"ea0a43e3afd6","response":"31035ceec7a6","injectAuth":"companyId","permission":"production:update"},
-    {"name":"production_assignPlanningAction","classification":"WRITE","paramCount":2,"schema":"40bfd764373e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:update"},
+    {"name":"production_assignPlanningActions","classification":"WRITE","paramCount":2,"schema":"593556a3b4be","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:update"},
     {"name":"production_autoMatchAssemblyComponents","classification":"WRITE","paramCount":1,"schema":"f9ddf194f67e","response":"41dc031a100a","injectAuth":"companyId","permission":"production:update"},
     {"name":"production_buildAssemblyToolStepLinks","classification":"WRITE","paramCount":4,"schema":"050136ded025","response":"560413db6168","injectAuth":"companyId","permission":"production:update"},
     {"name":"production_calculateJobPriority","classification":"WRITE","paramCount":4,"schema":"5f41a05ee0ca","response":"cddf8275afa1","injectAuth":"companyId","permission":"production:update"},

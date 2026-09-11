@@ -1586,6 +1586,9 @@ msgstr "सभी समय"
 msgid "All tools"
 msgstr "सभी उपकरण"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "सभी प्रकार"
 
@@ -2402,6 +2405,9 @@ msgstr "इसके अनुसार:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "कंपनी के मालिक के रूप में, आप स्वामित्व किसी अन्य कर्मचारी को स्थानांतरित कर सकते हैं। यह उन्हें बिलिंग और प्रशासनिक सेटिंग्स तक पूर्ण पहुंच देगा।"
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "आरोही"
 
@@ -2473,6 +2479,9 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -2481,6 +2490,9 @@ msgstr "को असाइन करें"
 
 msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "नियुक्त"
@@ -10143,6 +10155,9 @@ msgstr "इस प्रक्रिया पर एक ही समय मे
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
 
@@ -10590,6 +10605,9 @@ msgstr "कोई खाता आपकी खोज से मेल नही
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "कोई कार्य नहीं मिला।"
 
@@ -10881,6 +10899,9 @@ msgstr "अभी तक कोई भुगतान नहीं।"
 
 msgid "No planned or recorded time."
 msgstr "कोई नियोजित या दर्ज समय नहीं।"
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
@@ -12186,6 +12207,9 @@ msgstr "योजनाबद्ध समय"
 
 msgid "Planning"
 msgstr "योजना"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "समीक्षा और बनाएं"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि के तुलन पत्र और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही दिखते हैं। यह एक मैनुअल हस्ताक्षर बंद है — समीक्षा के बाद इसे पूरा करें।"
@@ -15718,6 +15748,9 @@ msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"

@@ -1586,6 +1586,9 @@ msgstr "전체 기간"
 msgid "All tools"
 msgstr "모든 도구"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "모든 유형"
 
@@ -2402,6 +2405,9 @@ msgstr "기준:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "회사의 책임자로서 다른 직원에게 책임을 이전할 수 있습니다. 이렇게 하면 청구 및 행정 설정에 완전히 액세스할 수 있게 됩니다."
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "오름차순"
 
@@ -2473,6 +2479,9 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
@@ -2481,6 +2490,9 @@ msgstr "할당"
 
 msgid "Assign to Groups"
 msgstr "그룹에 할당"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "배정됨"
@@ -10143,6 +10155,9 @@ msgstr "여러 작업이 이 프로세스에서 동시에 실행될 수 있습�
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "내 문서"
 
@@ -10590,6 +10605,9 @@ msgstr "검색과 일치하는 계정이 없습니다"
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "작업을 찾을 수 없습니다."
 
@@ -10881,6 +10899,9 @@ msgstr "아직 지불이 없습니다."
 
 msgid "No planned or recorded time."
 msgstr "계획되거나 기록된 시간이 없습니다."
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
@@ -12186,6 +12207,9 @@ msgstr "계획된 시간"
 
 msgid "Planning"
 msgstr "계획"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "검토 및 생성"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "기간의 재무상태표 및 손익계산서를 검토하고 수치가 올바른지 확인합니다. 이는 수동 승인입니다 — 검토한 후 완료로 표시합니다."
@@ -15718,6 +15748,9 @@ msgstr "일치 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."

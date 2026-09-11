@@ -9762,10 +9762,10 @@ export async function markPlanningActionsActioned(
  * the assignee AND marks it human-overridden so the next MRP diff-write never
  * re-resolves it from the responsibleEmployee ladder.
  */
-export async function assignPlanningAction(
+export async function assignPlanningActions(
   client: SupabaseClient<Database>,
   args: {
-    id: string;
+    ids: string[];
     companyId: string;
     assignee: string | null;
     userId: string;
@@ -9778,7 +9778,7 @@ export async function assignPlanningAction(
       assigneeOverridden: true,
       updatedBy: args.userId
     })
-    .eq("id", args.id)
+    .in("id", args.ids)
     .eq("companyId", args.companyId);
 }
 

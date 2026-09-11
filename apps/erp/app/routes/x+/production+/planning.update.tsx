@@ -5,6 +5,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
+  assignPlanningActions,
+  dismissPlanningActions,
   getPlanningAction,
   insertJob,
   markPlanningActionsActioned,
@@ -32,7 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
     bypassRls: true
   });
 
-  const { items, action, locationId, planningActionIds } = await request.json();
+  const { items, action, locationId, planningActionIds, assignee } =
+    await request.json();
 
   if (typeof locationId !== "string") {
     return data(
@@ -568,6 +571,75 @@ export async function action({ request }: ActionFunctionArgs) {
         applied,
         requiresManualAction,
         errors: errors.length > 0 ? errors : undefined
+      };
+    }
+
+    // ── Worklist mutations: dismiss suppresses a persisting need until it
+    // changes materially; assign sets assigneeOverridden so the next MRP
+    // diff-write never re-resolves the owner from the ladder.
+    case "dismiss": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+      const result = await dismissPlanningActions(client, {
+        ids: parsedIds.data,
+        companyId,
+        userId
+      });
+      if (result.error) {
+        return data(
+          { success: false, message: "Failed to dismiss planning actions" },
+          { status: 500 }
+        );
+      }
+      return {
+        success: true,
+        message: `Dismissed ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+      };
+    }
+    case "assign": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+      const parsedAssignee = z
+        .string()
+        .optional()
+        .safeParse(assignee ?? undefined);
+      if (!parsedAssignee.success) {
+        return data(
+          { success: false, message: "Invalid assignee" },
+          { status: 500 }
+        );
+      }
+      const result = await assignPlanningActions(client, {
+        ids: parsedIds.data,
+        companyId,
+        assignee: parsedAssignee.data || null,
+        userId
+      });
+      if (result.error) {
+        return data(
+          { success: false, message: "Failed to assign planning actions" },
+          { status: 500 }
+        );
+      }
+      return {
+        success: true,
+        message: `Assigned ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
       };
     }
 

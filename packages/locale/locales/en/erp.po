@@ -1586,6 +1586,9 @@ msgstr "All Time"
 msgid "All tools"
 msgstr "All tools"
 
+msgid "All types"
+msgstr "All types"
+
 msgid "All Types"
 msgstr "All Types"
 
@@ -2402,6 +2405,9 @@ msgstr "As of:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 
+msgid "ASAP"
+msgstr "ASAP"
+
 msgid "Ascending"
 msgstr "Ascending"
 
@@ -2473,6 +2479,9 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign"
+msgstr "Assign"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -2481,6 +2490,9 @@ msgstr "Assign To"
 
 msgid "Assign to Groups"
 msgstr "Assign to Groups"
+
+msgid "Assign to..."
+msgstr "Assign to..."
 
 msgid "Assigned"
 msgstr "Assigned"
@@ -10143,6 +10155,9 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
 
+msgid "My actions"
+msgstr "My actions"
+
 msgid "My Documents"
 msgstr "My Documents"
 
@@ -10590,6 +10605,9 @@ msgstr "No accounts match your search"
 msgid "No action needed"
 msgstr "No action needed"
 
+msgid "No actions assigned to you"
+msgstr "No actions assigned to you"
+
 msgid "No actions found."
 msgstr "No actions found."
 
@@ -10881,6 +10899,9 @@ msgstr "No payments yet."
 
 msgid "No planned or recorded time."
 msgstr "No planned or recorded time."
+
+msgid "No planning actions"
+msgstr "No planning actions"
 
 msgid "No planning data"
 msgstr "No planning data"
@@ -12186,6 +12207,9 @@ msgstr "Planned time"
 
 msgid "Planning"
 msgstr "Planning"
+
+msgid "Planning Actions"
+msgstr "Planning Actions"
 
 msgid "Planning Ownership"
 msgstr "Planning Ownership"
@@ -13833,6 +13857,12 @@ msgstr "Review & create"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
+
+msgid "Review on Job"
+msgstr "Review on Job"
+
+msgid "Review on PO"
+msgstr "Review on PO"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
@@ -15718,6 +15748,9 @@ msgstr "Suggest Match"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."

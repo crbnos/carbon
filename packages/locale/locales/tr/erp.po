@@ -1586,6 +1586,9 @@ msgstr "Her Zaman"
 msgid "All tools"
 msgstr "Tüm araçlar"
 
+msgid "All types"
+msgstr ""
+
 msgid "All Types"
 msgstr "Tüm Türler"
 
@@ -2402,6 +2405,9 @@ msgstr "Şu tarih itibariyle:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "Şirket sahibi olarak, sahipliği başka bir çalışana devredebilirsiniz. Bu, onlara faturalandırma ve yönetici ayarlarına tam erişim sağlayacaktır."
 
+msgid "ASAP"
+msgstr ""
+
 msgid "Ascending"
 msgstr "Artan"
 
@@ -2473,6 +2479,9 @@ msgstr "Varlıklar"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Bir tarih itibariyle varlıklar, yükümlülükler ve özkaynak"
 
+msgid "Assign"
+msgstr ""
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Yazıcıları konumlara atayın. Sevkiyat, kabul ve iş merkezleri, geçersiz kılınmadıkça konum varsayılanını miras alır."
 
@@ -2481,6 +2490,9 @@ msgstr "Ata"
 
 msgid "Assign to Groups"
 msgstr "Gruplara Ata"
+
+msgid "Assign to..."
+msgstr ""
 
 msgid "Assigned"
 msgstr "Atanmış"
@@ -10143,6 +10155,9 @@ msgstr "Bu işlem üzerinde birden fazla iş aynı anda çalışabilir — örn.
 msgid "Must be in the same location"
 msgstr "Aynı konumda olmalıdır"
 
+msgid "My actions"
+msgstr ""
+
 msgid "My Documents"
 msgstr "Belgelerim"
 
@@ -10590,6 +10605,9 @@ msgstr "Aramanızla eşleşen hesap yok"
 msgid "No action needed"
 msgstr "Yapılacak işlem yok"
 
+msgid "No actions assigned to you"
+msgstr ""
+
 msgid "No actions found."
 msgstr "İşlem bulunamadı."
 
@@ -10881,6 +10899,9 @@ msgstr "Henüz ödeme yok."
 
 msgid "No planned or recorded time."
 msgstr "Planlanan veya kaydedilen zaman yok."
+
+msgid "No planning actions"
+msgstr ""
 
 msgid "No planning data"
 msgstr "Planlama verisi yok"
@@ -12186,6 +12207,9 @@ msgstr "Planlanan Zaman"
 
 msgid "Planning"
 msgstr "Planlama"
+
+msgid "Planning Actions"
+msgstr ""
 
 msgid "Planning Ownership"
 msgstr ""
@@ -13833,6 +13857,12 @@ msgstr "İncele ve oluştur"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Her stok kartın değişikliklerini incele, sonra onayla — serbest bırakma geri alınamaz."
+
+msgid "Review on Job"
+msgstr ""
+
+msgid "Review on PO"
+msgstr ""
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Dönemin bilançosunu ve gelir tablosunu incele ve rakamların doğru göründüğünü onayla. Bu manuel bir onay işlemi — bunları inceledikten sonra bitti olarak işaretle."
@@ -15718,6 +15748,9 @@ msgstr "Eşleştirme Öner"
 
 msgid "Suggest with AI"
 msgstr "Yapay Zeka ile Öner"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr ""
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Henüz yerleştirmediğiniz önerilen siparişler."
