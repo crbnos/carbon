@@ -80943,6 +80943,19 @@ export type Database = {
         }
         Returns: undefined
       }
+      upsert_company_integration_patch: {
+        Args: {
+          p_active?: boolean
+          p_company_id: string
+          p_integration_id: string
+          p_metadata_patch?: Json
+          p_metadata_remove?: string[]
+          p_secret_patch?: Json
+          p_secret_remove?: string[]
+          p_updated_by?: string
+        }
+        Returns: Json
+      }
       upsert_integration_secret: {
         Args: { p_company_id: string; p_integration_id: string; p_secret: Json }
         Returns: string

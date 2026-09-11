@@ -8,10 +8,7 @@ import {
   type ExternalIntegrationMapping,
   type ExternalIntegrationMappingService
 } from "../../accounting/core/external-mapping";
-import {
-  persistIntegrationSecrets,
-  resolveIntegrationSecrets
-} from "../../integrations/secrets";
+import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { buildRampIdempotencyKey, RampApiError, RampClient } from "./client";
 import { RAMP_COST_CENTER_FIELD_ID } from "./coding";
 import {
@@ -22,6 +19,13 @@ import {
   RampIntegrationMetadataSchema,
   type RampVendor
 } from "./models";
+import {
+  clearRampConnectionState,
+  patchRampConnection,
+  patchRampCursor,
+  patchRampRefreshedTokens,
+  patchRampWebhook
+} from "./state";
 
 /**
  * Ramp integration service — the server-only glue between Carbon and Ramp's
@@ -124,54 +128,8 @@ async function readStoredRampMetadata(
 }
 
 /**
- * Read-merge-write against the RAW stored metadata column (which holds only the
- * secret-free config) so no sibling key — and no vaulted secret — is clobbered.
- * Clone of `storePullCursor`'s shape. Use this for NON-secret keys only
- * (`connectionId`, `webhookId`); secret keys go through
- * {@link persistIntegrationSecrets}.
- */
-async function updateStoredRampMetadata(
-  serviceRole: SupabaseClient<Database>,
-  companyId: string,
-  mutate: (metadata: Record<string, unknown>) => void
-): Promise<void> {
-  const current = await serviceRole
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", RAMP)
-    .eq("companyId", companyId)
-    .single();
-
-  if (current.error) {
-    throw new Error(
-      `Failed to read Ramp integration metadata: ${current.error.message}`
-    );
-  }
-
-  const metadata =
-    (current.data?.metadata as Record<string, unknown> | null) ?? {};
-  mutate(metadata);
-
-  const updated = await serviceRole
-    .from("companyIntegration")
-    .update({ metadata: metadata as never })
-    .eq("id", RAMP)
-    .eq("companyId", companyId);
-
-  if (updated.error) {
-    throw new Error(
-      `Failed to update Ramp integration metadata: ${updated.error.message}`
-    );
-  }
-}
-
-/**
- * Advance a single Ramp sync cursor (`metadata.cursors.<key>`) via the same
- * read-merge-write against the secret-free metadata column as
- * {@link updateStoredRampMetadata}, so no sibling cursor or config key — and no
- * vaulted secret — is clobbered. The outbound push steps (Task 10) persist their
- * `updatedAt` high-water marks through here; the repayment family (Task 9) writes
- * `repaymentsRepaidAt` the same way inside the job.
+ * Advance a single Ramp sync cursor (`metadata.cursors.<key>`) without reading
+ * or replacing any sibling state.
  */
 export async function advanceRampCursor(
   serviceRole: SupabaseClient<Database>,
@@ -179,27 +137,20 @@ export async function advanceRampCursor(
   key: keyof NonNullable<RampCursors>,
   value: string
 ): Promise<void> {
-  await updateStoredRampMetadata(serviceRole, companyId, (metadata) => {
-    const cursors = (metadata.cursors as Record<string, unknown> | null) ?? {};
-    cursors[key] = value;
-    metadata.cursors = cursors;
-  });
+  await patchRampCursor(serviceRole, companyId, key, value);
 }
 
 /**
- * Clear the stored `webhookId` and `connectionId` from the (secret-free)
- * metadata column. Called on uninstall so a later reinstall re-creates both at
- * Ramp instead of trusting ids that no longer exist there. Leaves every sibling
- * key (cursors, account-mapping config, vaulted secrets) untouched.
+ * Clear the stored `webhookId`, `connectionId`, and paired vaulted webhook
+ * secret. Called on uninstall so a later reinstall re-creates them at Ramp
+ * instead of trusting state that no longer exists there. Leaves every other
+ * sibling key (cursors, account-mapping config, OAuth secrets) untouched.
  */
 export async function clearRampConnectionMetadata(
   serviceRole: SupabaseClient<Database>,
   companyId: string
 ): Promise<void> {
-  await updateStoredRampMetadata(serviceRole, companyId, (metadata) => {
-    delete metadata.webhookId;
-    delete metadata.connectionId;
-  });
+  await clearRampConnectionState(serviceRole, companyId);
 }
 
 // /********************************************************\
@@ -239,35 +190,15 @@ function buildRampClient(
 }
 
 /**
- * Persist a refreshed oauth2 access token + expiry. Re-reads the LATEST stored
- * metadata (and re-resolves its vaulted secrets) immediately before writing, so
- * a token refresh cannot clobber sibling metadata — cursors, `webhookId`,
- * `connectionId` — that another operation wrote after the client was built.
- * Only the two token fields are overwritten; Ramp does not rotate the refresh
- * token, so it is left untouched.
+ * Persist a refreshed oauth2 access token + expiry through the atomic path
+ * patch. Ramp does not rotate the refresh token, so it is left untouched.
  */
 async function persistRefreshedRampTokens(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
   tokens: { accessToken: string; expiresAt: string }
 ): Promise<void> {
-  const stored = await readStoredRampMetadata(serviceRole, companyId);
-  if (!stored) return;
-  const latest = await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    RAMP,
-    stored
-  );
-  const current = latest as { credentials?: Record<string, unknown> };
-  await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
-    ...latest,
-    credentials: {
-      ...(current.credentials ?? {}),
-      accessToken: tokens.accessToken,
-      expiresAt: tokens.expiresAt
-    }
-  });
+  await patchRampRefreshedTokens(serviceRole, companyId, tokens);
 }
 
 /**
@@ -305,7 +236,7 @@ export async function getRampIntegration(
  * Exchange an OAuth authorization code (the Connect-flow callback) for oauth2
  * credentials, using Carbon's registered Ramp OAuth app. OAuth is the production
  * flow, so the returned credentials are pinned to `environment: "production"`.
- * The caller stores these via `upsertCompanyIntegration` (which vaults the
+ * The caller stores these via the atomic Ramp OAuth patch (which vaults the
  * access + refresh tokens) and then runs `rampOnInstall`.
  */
 export async function exchangeRampOAuthCode(
@@ -367,9 +298,7 @@ export async function ensureRampConnection(
     throw new Error("Ramp did not return a connection id");
   }
 
-  await updateStoredRampMetadata(serviceRole, companyId, (m) => {
-    m.connectionId = connectionId;
-  });
+  await patchRampConnection(serviceRole, companyId, connectionId);
 
   return { connectionId };
 }
@@ -1254,7 +1183,7 @@ export async function pushCostCenters(
  * Ensure a Ramp webhook is registered for the company. Idempotent: skips when
  * `metadata.webhookId` is already set. On create, persists the `webhookId` to the
  * metadata column and the returned signing `secret` to the vault (under the
- * `webhookSecret` SECRET_KEYS path) via {@link persistIntegrationSecrets}.
+ * `webhookSecret` SECRET_KEYS path) in the same atomic patch.
  * `originUrl` is the app origin, supplied by the caller.
  */
 export async function ensureRampWebhook(
@@ -1310,11 +1239,7 @@ export async function ensureRampWebhook(
     );
   }
 
-  // Re-vault the FULL secret bag (the vault RPC replaces, not merges) plus the
-  // new webhookSecret; persistIntegrationSecrets strips secrets back out and
-  // writes `webhookId` to the plaintext column.
-  await persistIntegrationSecrets(serviceRole, companyId, RAMP, {
-    ...resolved,
+  await patchRampWebhook(serviceRole, companyId, {
     webhookId: created.id,
     webhookSecret: created.secret
   });
