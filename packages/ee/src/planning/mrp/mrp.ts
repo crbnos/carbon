@@ -25,6 +25,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
+import { generatePlanningActions } from "./planning-actions.ts";
 
 const logger = getFunctionLogger("mrp");
 
@@ -1029,6 +1030,13 @@ export async function runMrp(
             .execute();
         }
       });
+
+      // Persist the planning action messages (spec §P1) in their own atomic
+      // transaction AFTER the forecast/actual write commits — the planning
+      // RPCs it reads see only committed data. Errors PROPAGATE: the run must
+      // not report success with stale actions (forecasts are committed and
+      // correct; actions self-heal on the next successful run).
+      await generatePlanningActions(client, db, { companyId, userId });
 
       return { success: true };
     } catch (err) {

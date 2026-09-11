@@ -7,6 +7,17 @@
 
 // Material Requirements Planning (formerly the `mrp` edge function).
 export { type MrpPayload, type MrpResult, runMrp } from "./mrp/mrp.ts";
+// Planning action messages (spec §P1): run by runMrp after Phase 7; exported
+// for callers that need to regenerate actions without a full MRP run.
+export {
+  generatePlanningActions,
+  type PlanningActionCandidate,
+  type PlanningActionType
+} from "./mrp/planning-actions.ts";
+export {
+  loadResponsibleEmployeeResolver,
+  resolveResponsibleEmployee
+} from "./mrp/responsible-employee.ts";
 // Finite scheduling (formerly reached via @carbon/database/scheduling).
 export {
   type CalendarWindow,
