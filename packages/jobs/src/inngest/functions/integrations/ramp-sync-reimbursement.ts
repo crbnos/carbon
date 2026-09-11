@@ -85,49 +85,98 @@ const REIMBURSEMENT_INVOICE_ONLY_STATES = new Set([
   "MANUALLY_REIMBURSED"
 ]);
 
-async function loadDraftStructure(
+async function validateLegacyDraft(
   tx: KyselyTx,
-  companyId: string,
-  invoiceRowId: string
-): Promise<{ hasDelivery: boolean; lineCount: number }> {
+  args: RampReimbursementInvoiceDraft,
+  invoice: Database["public"]["Tables"]["purchaseInvoice"]["Row"]
+): Promise<void> {
+  if (
+    invoice.status !== "Draft" ||
+    invoice.createdBy !== "system" ||
+    invoice.postingDate ||
+    invoice.datePaid
+  ) {
+    throw new Error(
+      "Reference-only invoice is not a valid legacy Ramp reimbursement Draft"
+    );
+  }
+  if (
+    args.supplierReference !== `RAMP-REIMB-${args.reimbursementRemoteId}` ||
+    invoice.currencyCode !== args.currencyCode ||
+    invoice.dateIssued !== args.dateIssued ||
+    invoice.dateDue !== args.dateDue ||
+    !Number.isFinite(invoice.exchangeRate) ||
+    invoice.exchangeRate <= 0
+  ) {
+    throw new Error(
+      "Legacy reimbursement Draft identity, dates or currency do not match Ramp"
+    );
+  }
+  const interaction = await tx
+    .selectFrom("supplierInteraction")
+    .select("id")
+    .where("id", "=", invoice.supplierInteractionId)
+    .where("companyId", "=", args.companyId)
+    .where("supplierId", "=", args.supplierId)
+    .executeTakeFirst();
   const delivery = await tx
     .selectFrom("purchaseInvoiceDelivery")
-    .select("id")
-    .where("id", "=", invoiceRowId)
-    .where("companyId", "=", companyId)
+    .selectAll()
+    .where("id", "=", invoice.id)
+    .where("companyId", "=", args.companyId)
     .executeTakeFirst();
   const lines = await tx
     .selectFrom("purchaseInvoiceLine")
-    .select(({ fn }) => fn.countAll<number>().as("count"))
-    .where("invoiceId", "=", invoiceRowId)
-    .where("companyId", "=", companyId)
-    .executeTakeFirstOrThrow();
-  return { hasDelivery: Boolean(delivery), lineCount: Number(lines.count) };
-}
-
-async function repairLegacyDraft(
-  tx: KyselyTx,
-  args: RampReimbursementInvoiceDraft,
-  invoiceRowId: string
-): Promise<void> {
-  const structure = await loadDraftStructure(tx, args.companyId, invoiceRowId);
-  if (structure.hasDelivery && structure.lineCount > 0) return;
-  await tx
-    .deleteFrom("purchaseInvoiceLine")
-    .where("invoiceId", "=", invoiceRowId)
+    .selectAll()
+    .where("invoiceId", "=", invoice.id)
     .where("companyId", "=", args.companyId)
+    .orderBy("sortOrder")
     .execute();
-  if (!structure.hasDelivery) {
-    await tx
-      .insertInto("purchaseInvoiceDelivery")
-      .values({
-        id: invoiceRowId,
-        companyId: args.companyId,
-        supplierShippingCost: 0
-      })
-      .execute();
+  if (
+    !interaction ||
+    !delivery ||
+    !lines.length ||
+    lines.length !== args.lines.length
+  ) {
+    throw new Error(
+      "Legacy reimbursement Draft is incomplete or does not match Ramp"
+    );
   }
-  await insertInvoiceLines(tx, args, invoiceRowId);
+  const provenance = [
+    "purchaseOrderId",
+    "purchaseOrderLineId",
+    "itemId",
+    "assetId",
+    "serviceId",
+    "locationId",
+    "storageUnitId",
+    "jobOperationId",
+    "purchaseUnitOfMeasureCode",
+    "inventoryUnitOfMeasureCode"
+  ] as const;
+  if (
+    delivery.supplierShippingCost !== 0 ||
+    lines.some((line, index) => {
+      const expected = args.lines[index]!;
+      return (
+        line.invoiceLineType !== "G/L Account" ||
+        line.accountId !== expected.accountId ||
+        line.costCenterId !== expected.costCenterId ||
+        line.description !== expected.description ||
+        line.quantity !== 1 ||
+        line.supplierUnitPrice !== expected.amount ||
+        line.exchangeRate !== invoice.exchangeRate ||
+        line.supplierTaxAmount !== 0 ||
+        line.supplierShippingCost !== 0 ||
+        line.conversionFactor !== 1 ||
+        provenance.some((field) => line[field] !== null)
+      );
+    })
+  ) {
+    throw new Error(
+      "Legacy reimbursement Draft does not match the complete Ramp lines"
+    );
+  }
 }
 
 async function insertInvoiceLines(
@@ -161,8 +210,8 @@ async function insertInvoiceLines(
 /**
  * Atomically create the reimbursement invoice Draft and its idempotency anchor.
  * A retry returns the mapped row. It may adopt the pre-transaction writer's
- * unique system reference; an incomplete legacy Draft is repaired in the same
- * transaction before it is mapped.
+ * unique system reference only when an unposted system Draft's complete
+ * structure matches Ramp. Incomplete or ambiguous documents require review.
  */
 export async function stageOrResumeRampReimbursementInvoice(
   db: Kysely<KyselyDatabase>,
@@ -189,7 +238,11 @@ export async function stageOrResumeRampReimbursementInvoice(
     let existing = mapped?.entityId
       ? await tx
           .selectFrom("purchaseInvoice")
-          .select(["id", "invoiceId", "status", "currencyCode", "exchangeRate"])
+          .selectAll()
+          .select([
+            sql<string | null>`"dateIssued"::text`.as("dateIssued"),
+            sql<string | null>`"dateDue"::text`.as("dateDue")
+          ])
           .where("id", "=", mapped.entityId)
           .where("companyId", "=", args.companyId)
           .executeTakeFirst()
@@ -201,32 +254,33 @@ export async function stageOrResumeRampReimbursementInvoice(
     if (!existing) {
       const legacy = await tx
         .selectFrom("purchaseInvoice")
-        .select(["id", "invoiceId", "status", "currencyCode", "exchangeRate"])
+        .selectAll()
+        .select([
+          sql<string | null>`"dateIssued"::text`.as("dateIssued"),
+          sql<string | null>`"dateDue"::text`.as("dateDue")
+        ])
         .where("companyId", "=", args.companyId)
         .where("supplierId", "=", args.supplierId)
         .where("supplierReference", "=", args.supplierReference)
         .limit(2)
+        .forUpdate()
         .execute();
       if (legacy.length > 1) {
         throw new Error("Ambiguous untracked Ramp reimbursement invoice");
       }
       existing = legacy[0];
-      if (
-        existing &&
-        (existing.status === "Draft" || existing.status === "Pending")
-      ) {
-        if (existing.currencyCode !== args.currencyCode) {
+      if (existing) {
+        await validateLegacyDraft(tx, args, existing);
+        const otherSource = await mapping.getExternalId(
+          "bill",
+          existing.id,
+          "ramp"
+        );
+        if (otherSource && otherSource !== args.reimbursementRemoteId) {
           throw new Error(
-            `Untracked Ramp reimbursement invoice currency ${existing.currencyCode} does not match ${args.currencyCode}`
+            "Invoice is already linked to a different Ramp source"
           );
         }
-        await repairLegacyDraft(
-          tx,
-          { ...args, exchangeRate: existing.exchangeRate },
-          existing.id
-        );
-      }
-      if (existing) {
         await mapping.link(
           "bill",
           existing.id,

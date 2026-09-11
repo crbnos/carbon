@@ -73,6 +73,7 @@ describe.skipIf(!runDatabaseTests)(
           .where("companyId", "=", fixture.companyId)
           .where("externalId", "in", [
             token,
+            token.replace("RAMP-REIMB-", ""),
             `${token}:payment`,
             `${token}:broken`
           ])
@@ -243,9 +244,11 @@ describe.skipIf(!runDatabaseTests)(
           supplierReference: token,
           currencyCode: fixture.currencyCode,
           exchangeRate: 1.25,
+          dateIssued: "2026-09-10",
+          dateDue: "2026-09-11",
           supplierInteractionId: interaction.id,
           companyId: fixture.companyId,
-          createdBy: fixture.actorId
+          createdBy: "system"
         })
         .returning("id")
         .executeTakeFirstOrThrow();
@@ -263,6 +266,7 @@ describe.skipIf(!runDatabaseTests)(
           invoiceId: legacy.id,
           invoiceLineType: "G/L Account",
           accountId: fixture.accountId,
+          description: "Ramp integration test",
           quantity: 1,
           supplierUnitPrice: 100,
           exchangeRate: 1.25,
@@ -273,6 +277,7 @@ describe.skipIf(!runDatabaseTests)(
 
       const resumed = await stageOrResumeRampReimbursementInvoice(db, {
         ...invoiceArgs(token),
+        reimbursementRemoteId: token.replace("RAMP-REIMB-", ""),
         exchangeRate: 2
       });
 
@@ -287,7 +292,7 @@ describe.skipIf(!runDatabaseTests)(
         .where("companyId", "=", fixture.companyId)
         .where("integration", "=", "ramp")
         .where("entityType", "=", "bill")
-        .where("externalId", "=", token)
+        .where("externalId", "=", token.replace("RAMP-REIMB-", ""))
         .executeTakeFirstOrThrow();
       expect(mapping.entityId).toBe(legacy.id);
       const line = await db
