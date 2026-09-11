@@ -14,7 +14,8 @@ import {
   assignPlanningActions,
   dismissPlanningActions,
   getPlanningAction,
-  markPlanningActionsActioned
+  markPlanningActionsActioned,
+  reopenPlanningActions
 } from "~/modules/production";
 import {
   insertPurchaseOrder,
@@ -633,6 +634,30 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
+        // Atomic claim BEFORE mutating: the conditional Open→Actioned update
+        // is the lock — of two concurrent applies only one sees an affected
+        // row, so the target is never double-mutated. A failed mutation
+        // reopens the claim; a crash in between leaves an Actioned row whose
+        // unmet need the next MRP run re-emits as a fresh Open action (the
+        // natural-key index ignores Actioned rows).
+        const claim = await markPlanningActionsActioned(client, {
+          ids: [planningActionId],
+          companyId,
+          userId
+        });
+        if (claim.error) {
+          errors.push(
+            `Failed to claim planning action ${planningActionId}: ${claim.error.message}`
+          );
+          continue;
+        }
+        if ((claim.data ?? []).length === 0) {
+          errors.push(
+            `Planning action ${planningActionId} was already applied`
+          );
+          continue;
+        }
+
         if (row.type === "Cancel") {
           try {
             await shortClosePurchaseOrderLine(db, {
@@ -643,6 +668,11 @@ export async function action({ request }: ActionFunctionArgs) {
               intent: "close"
             });
           } catch (err) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to close PO line for planning action ${planningActionId}: ${
                 err instanceof Error ? err.message : "unknown error"
@@ -658,6 +688,11 @@ export async function action({ request }: ActionFunctionArgs) {
             requiredDate: row.suggestedDate
           });
           if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to reschedule PO line for planning action ${planningActionId}: ${update.error.message}`
             );
@@ -682,6 +717,11 @@ export async function action({ request }: ActionFunctionArgs) {
             purchaseQuantity
           });
           if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to update PO line quantity for planning action ${planningActionId}: ${update.error.message}`
             );
@@ -689,17 +729,6 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
-        const mark = await markPlanningActionsActioned(client, {
-          ids: [planningActionId],
-          companyId,
-          userId
-        });
-        if (mark.error) {
-          errors.push(
-            `Applied but failed to mark planning action ${planningActionId} actioned: ${mark.error.message}`
-          );
-          continue;
-        }
         applied.push(planningActionId);
       }
 

@@ -13,6 +13,7 @@ import {
   notifyScheduleInputsChanged,
   productionOrderValidator,
   recalculateJobRequirements,
+  reopenPlanningActions,
   updateJob,
   updateJobStatus,
   upsertJobMethod
@@ -509,6 +510,30 @@ export async function action({ request }: ActionFunctionArgs) {
           continue;
         }
 
+        // Atomic claim BEFORE mutating: the conditional Open→Actioned update
+        // is the lock — of two concurrent applies only one sees an affected
+        // row, so the target is never double-mutated. A failed mutation
+        // reopens the claim; a crash in between leaves an Actioned row whose
+        // unmet need the next MRP run re-emits as a fresh Open action (the
+        // natural-key index ignores Actioned rows).
+        const claim = await markPlanningActionsActioned(client, {
+          ids: [planningActionId],
+          companyId,
+          userId
+        });
+        if (claim.error) {
+          errors.push(
+            `Failed to claim planning action ${planningActionId}: ${claim.error.message}`
+          );
+          continue;
+        }
+        if ((claim.data ?? []).length === 0) {
+          errors.push(
+            `Planning action ${planningActionId} was already applied`
+          );
+          continue;
+        }
+
         if (row.type === "Cancel") {
           const cancel = await updateJobStatus(client, {
             id: job.data.id,
@@ -517,6 +542,11 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedBy: userId
           });
           if (cancel.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to cancel job for planning action ${planningActionId}: ${cancel.error.message}`
             );
@@ -529,6 +559,11 @@ export async function action({ request }: ActionFunctionArgs) {
             dueDate: row.suggestedDate
           });
           if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to reschedule job for planning action ${planningActionId}: ${update.error.message}`
             );
@@ -547,6 +582,11 @@ export async function action({ request }: ActionFunctionArgs) {
             quantity: Number(row.suggestedQuantity)
           });
           if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
             errors.push(
               `Failed to update job quantity for planning action ${planningActionId}: ${update.error.message}`
             );
@@ -559,17 +599,6 @@ export async function action({ request }: ActionFunctionArgs) {
           });
         }
 
-        const mark = await markPlanningActionsActioned(client, {
-          ids: [planningActionId],
-          companyId,
-          userId
-        });
-        if (mark.error) {
-          errors.push(
-            `Applied but failed to mark planning action ${planningActionId} actioned: ${mark.error.message}`
-          );
-          continue;
-        }
         applied.push(planningActionId);
       }
 

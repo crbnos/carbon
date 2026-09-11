@@ -9964,13 +9964,23 @@ export async function dismissPlanningActions(
   client: SupabaseClient<Database>,
   args: { ids: string[]; companyId: string; userId: string }
 ) {
+  // Open-only: Actioned is terminal, and a stale worklist id must never flip
+  // an Actioned row to Dismissed (which would make it visible again and
+  // eligible for the generator's Dismissed-reopen branch).
   return client
     .from("planningAction")
     .update({ status: "Dismissed" as const, updatedBy: args.userId })
     .in("id", args.ids)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .eq("status", "Open");
 }
 
+/**
+ * Conditional claim, not a blind update: only Open rows flip to Actioned, and
+ * the claimed ids are returned. Callers applying a mutation MUST claim first
+ * and treat an empty result as "someone else already applied this" — that
+ * affected-row check is the concurrency lock for the whole apply path.
+ */
 export async function markPlanningActionsActioned(
   client: SupabaseClient<Database>,
   args: { ids: string[]; companyId: string; userId: string }
@@ -9979,7 +9989,22 @@ export async function markPlanningActionsActioned(
     .from("planningAction")
     .update({ status: "Actioned" as const, updatedBy: args.userId })
     .in("id", args.ids)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .eq("status", "Open")
+    .select("id");
+}
+
+/** Compensation for a failed apply: release a claimed (Actioned) row back to Open. */
+export async function reopenPlanningActions(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return client
+    .from("planningAction")
+    .update({ status: "Open" as const, updatedBy: args.userId })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Actioned");
 }
 
 /**

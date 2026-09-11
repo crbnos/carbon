@@ -164,8 +164,9 @@ const PlanningActionsTable = memo(
       });
     };
 
-    // Order/Make rows flow through the existing order drawer, and committed
-    // targets link out for review — neither is batch-applyable here.
+    // Order/Make rows are fulfilled by creating supply from the planning grid
+    // below (there is no worklist shortcut into the order drawer yet), and
+    // committed targets link out for review — neither is batch-applyable here.
     const isApplyable = (row: PlanningAction) => {
       const wire = WIRE_ACTION[row.type];
       return (
