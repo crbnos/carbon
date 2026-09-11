@@ -14082,7 +14082,7 @@ msgid "Resources"
 msgstr "자원"
 
 msgid "Responsible employee"
-msgstr ""
+msgstr "담당 직원"
 
 msgid "Responsible Employee"
 msgstr "담당 직원"

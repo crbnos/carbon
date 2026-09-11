@@ -14082,7 +14082,7 @@ msgid "Resources"
 msgstr "Ressources"
 
 msgid "Responsible employee"
-msgstr ""
+msgstr "Employé responsable"
 
 msgid "Responsible Employee"
 msgstr "Employé responsable"
