@@ -1,50 +1,58 @@
-import { createClient } from "@supabase/supabase-js";
-import axios from "axios";
-import crypto from "crypto";
-import fs from "fs";
-import path from "path";
+import { randomUUID } from "node:crypto";
+import fs from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
+import {
+  createScriptClient,
+  readLocalScriptConfig
+} from "./lib/local-script-config";
 
-const companyId = "N4Mk6kWM4ycK5Qj941axi4";
-const apiKey = "crbn_JLN5eYtzfoIzdkncQo3uO";
-const carbonApiUrl = "http://localhost:54321"; // https://api.carbon.ms
-const carbonPublicKey =
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0";
-
-const apiUrl = "http://localhost:3000/api/model/upload"; // https://app.carbon.ms/api/model/upload
-
-const filePath = "~/Downloads/test.stl";
+const {
+  CARBON_COMPANY_ID: companyId,
+  CARBON_API_KEY: apiKey,
+  SUPABASE_URL: carbonApiUrl,
+  SUPABASE_ANON_KEY: carbonPublicKey,
+  MODEL_UPLOAD_URL: apiUrl,
+  MODEL_FILE_PATH: filePath
+} = readLocalScriptConfig(
+  [
+    "CARBON_COMPANY_ID",
+    "CARBON_API_KEY",
+    "SUPABASE_URL",
+    "SUPABASE_ANON_KEY",
+    "MODEL_UPLOAD_URL",
+    "MODEL_FILE_PATH"
+  ],
+  process.env
+);
 
 (async () => {
-  const resolvedPath = filePath.replace("~", process.env.HOME!);
+  const resolvedPath = filePath.startsWith("~/")
+    ? path.join(homedir(), filePath.slice(2))
+    : filePath;
   const fileName = path.basename(resolvedPath);
   const fileExtension = path.extname(resolvedPath).slice(1);
   const fileBuffer = fs.readFileSync(resolvedPath);
   const fileSize = fs.statSync(resolvedPath).size;
 
-  const modelId = crypto.randomUUID();
+  const modelId = randomUUID();
   const modelPath = `${companyId}/models/${modelId}.${fileExtension}`;
 
   // 1. Upload the file to Supabase storage
-  const client = createClient(carbonApiUrl, carbonPublicKey, {
-    global: {
-      headers: {
-        "carbon-key": apiKey,
-      },
-    },
-  });
+  const client = createScriptClient(carbonApiUrl, carbonPublicKey, apiKey);
 
   const { error: uploadError } = await client.storage
     .from("private")
     .upload(modelPath, fileBuffer, {
-      contentType: "application/octet-stream",
+      contentType: "application/octet-stream"
     });
 
   if (uploadError) {
-    console.error("Storage upload failed:", uploadError);
+    process.stderr.write("Storage upload failed.\n");
     process.exit(1);
   }
 
-  console.log("File uploaded to storage:", modelPath);
+  process.stdout.write(`File uploaded to storage: ${modelPath}\n`);
 
   // 2. POST the metadata to the API
   const formData = new FormData();
@@ -53,15 +61,17 @@ const filePath = "~/Downloads/test.stl";
   formData.append("modelPath", modelPath);
   formData.append("size", String(fileSize));
 
-  const response = await axios.post(
-    "http://localhost:3000/api/model/upload",
-    formData,
-    {
-      headers: {
-        "carbon-key": apiKey,
-      },
+  const response = await fetch(apiUrl, {
+    method: "POST",
+    body: formData,
+    headers: {
+      "carbon-key": apiKey
     }
-  );
+  });
 
-  console.log(response.data);
-})();
+  if (!response.ok) throw new Error("Model metadata request failed");
+  process.stdout.write(`${await response.text()}\n`);
+})().catch(() => {
+  process.stderr.write("Model upload failed.\n");
+  process.exitCode = 1;
+});

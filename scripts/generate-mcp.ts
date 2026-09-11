@@ -14,7 +14,13 @@ import {
   buildManifestDigest,
   serializeManifestDigest
 } from "./lib/manifest-digest";
-import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
+import {
+  buildAllToolMetadataWithValidators,
+  MODULE_LIST
+} from "./lib/service-metadata";
+
+const log = (message: string) => process.stdout.write(`${message}\n`);
+const warn = (message: string) => process.stderr.write(`${message}\n`);
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
@@ -31,18 +37,21 @@ export const DIGEST_FILE = path.join(
 );
 
 export async function generateToolMetadata(): Promise<void> {
-  console.log("Generating tool metadata from service files...");
+  log("Generating tool metadata from service files...");
 
-  const { tools: allTools, registryStats, responseStats, resolutions } =
-    await buildAllToolMetadataWithValidators({
-      onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
-    });
+  const {
+    tools: allTools,
+    registryStats,
+    responseStats,
+    resolutions
+  } = await buildAllToolMetadataWithValidators({
+    onModule: (mod, count) => log(`  ✓ ${mod}: ${count} tools`)
+  });
 
   const metadata = {
-    generated: new Date().toISOString(),
     totalTools: allTools.length,
     modules: [...new Set(allTools.map((t) => t.module))].length,
-    tools: allTools,
+    tools: allTools
   };
 
   // Minified: this file is gitignored build output that only machines read, and
@@ -52,37 +61,37 @@ export async function generateToolMetadata(): Promise<void> {
     DIGEST_FILE,
     serializeManifestDigest(buildManifestDigest(allTools))
   );
-  console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
-  console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
-  console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
+  log(`\n✓ Generated metadata for ${allTools.length} tools`);
+  log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
+  log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
 
   // Schema provenance. A validator that fell back to source-text parsing still
   // produces a manifest entry, so surface it rather than letting the degrade pass
   // silently — that fallback is the only path that can publish a lossy schema.
   const fallbacks = resolutions.filter((r) => r.how !== "native");
-  console.log(
-    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/15 modules`
+  log(
+    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/${MODULE_LIST.length} modules`
   );
-  console.log(
+  log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
   );
   if (registryStats.moduleErrors.length > 0) {
-    console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
+    warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
     for (const e of registryStats.moduleErrors) {
-      console.warn(`      ${e.module}: ${e.error}`);
+      warn(`      ${e.module}: ${e.error}`);
     }
   }
   if (registryStats.conversionFailures.length > 0) {
-    console.warn(
+    warn(
       `  ⚠ ${registryStats.conversionFailures.length} validator(s) failed to convert:`
     );
     for (const f of registryStats.conversionFailures.slice(0, 10)) {
-      console.warn(`      ${f.module}.${f.name}: ${f.error}`);
+      warn(`      ${f.module}.${f.name}: ${f.error}`);
     }
   }
   if (fallbacks.length > 0) {
     const unique = [...new Set(fallbacks.map((f) => f.validatorName))];
-    console.warn(
+    warn(
       `  ⚠ ${fallbacks.length} param(s) used the source-text fallback: ${unique.slice(0, 12).join(", ")}`
     );
   }
@@ -90,7 +99,7 @@ export async function generateToolMetadata(): Promise<void> {
 
 if (require.main === module) {
   generateToolMetadata().catch((err) => {
-    console.error(err);
+    process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
     process.exit(1);
   });
 }
