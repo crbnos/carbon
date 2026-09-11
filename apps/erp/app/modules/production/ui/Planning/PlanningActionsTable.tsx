@@ -117,19 +117,26 @@ const PlanningActionsTable = memo(
       ];
     }, [actions, t]);
 
+    // Dismissed rows are suppressed from the worklist — the diff-write keeps
+    // them dormant until the underlying need changes materially (spec §P1.4)
+    const openActions = useMemo(
+      () => actions.filter((a) => a.status === "Open"),
+      [actions]
+    );
+
     const visible = useMemo(
       () =>
-        actions.filter((action) => {
+        openActions.filter((action) => {
           if (scope === "mine" && action.assignee !== user.id) return false;
           if (typeFilter && action.type !== typeFilter) return false;
           return true;
         }),
-      [actions, scope, typeFilter, user.id]
+      [openActions, scope, typeFilter, user.id]
     );
 
     const mineCount = useMemo(
-      () => actions.filter((a) => a.assignee === user.id).length,
-      [actions, user.id]
+      () => openActions.filter((a) => a.assignee === user.id).length,
+      [openActions, user.id]
     );
 
     const toggle = (id: string) => {
@@ -174,7 +181,7 @@ const PlanningActionsTable = memo(
 
     const selectedRows = visible.filter((a) => selected.has(a.id));
 
-    if (actions.length === 0) return null;
+    if (openActions.length === 0) return null;
 
     return (
       <Card className="rounded-none border-x-0 border-t-0">
@@ -204,7 +211,7 @@ const PlanningActionsTable = memo(
                 variant={scope === "all" ? "primary" : "secondary"}
                 onClick={() => setScope("all")}
               >
-                {t`All`} · {actions.length}
+                {t`All`} · {openActions.length}
               </Button>
               <div className="w-[160px]">
                 <Combobox

@@ -25,7 +25,7 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
 - [x] Task 9: responsibleEmployee on itemPlanningValidator + ItemPlanningForm (Employee picker, all 4 item types via shared form)
 - [x] Task 10: /x/settings/planning — ResponsibleEmployeeCard tree (company→location→item-group, inherited placeholders) + RescheduleToleranceCard (0–365), writers in settings.service, nav + path registered
 - [x] Task 11: PlanningActionsTable worklist on both planning pages (Mine/All default Mine, type filter, bulk apply/dismiss/assign, Review-on-PO/Job links, ASAP badges); dismiss/assign route cases added
-- [ ] Task 12: Browser verification via /test (satellite dataset)
+- [x] Task 12: browser-verified on satellite dataset — 72 actions (41 Order/27 Make/2 Expedite/2 Defer) from scheduled+manual MRP; ladder assignment→My actions 45; Review-on-PO nav to parent PO; dismissal survives regen; settings+item-tab render. Screenshots in .ai/scratch/e2e/
 
 ## Dependencies
 - Task 2 needs Task 1. Tasks 3, 4, 5 need Task 2 (types). Task 6 needs 3+4+5.
