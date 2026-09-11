@@ -27,8 +27,9 @@ const logger = getLogger("erp", "webhook-ramp");
  * SIGNING / CHALLENGE (documented defaults, PENDING Task 1 sandbox verification):
  * Ramp signs the RAW body with HMAC-SHA256 keyed by the per-webhook secret,
  * base64, in `X-Ramp-Signature`. Webhook-ownership verification arrives as a
- * body carrying a `challenge` string (or `?challenge=`), which we answer via
- * `completeWebhookVerification` and echo back. If Task 1 shows a different header
+ * signed body carrying a `challenge` string, which we answer via
+ * `completeWebhookVerification` and echo back. Query parameters are not signed
+ * and cannot supply a challenge. If Task 1 shows a different header
  * name, encoding, or challenge shape, update the marked spots here and
  * `packages/ee/src/ramp/lib/webhook.ts`.
  */
@@ -60,23 +61,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   const { metadata } = integration;
 
-  // TODO(task-1): confirm Ramp's webhook-ownership challenge shape. Handle it
-  // BEFORE signature verification — the challenge proves URL ownership and may
-  // arrive unsigned. We both call back Ramp's verify endpoint and echo the
-  // challenge, covering either convention.
-  const url = new URL(request.url);
-  const challenge = extractChallenge(body, url.searchParams.get("challenge"));
-  if (challenge) {
-    try {
-      await completeWebhookVerification(serviceRole, companyId, challenge);
-    } catch (error) {
-      // Non-fatal: still echo the challenge so an echo-based handshake passes.
-      logger.error("Ramp webhook verify callback failed", { companyId, error });
-    }
-    return { challenge };
-  }
-
-  // Real event: fail closed without a stored secret or a valid signature.
+  // Every delivery, including an ownership challenge, requires a stored secret
+  // and a valid signature before it can call Ramp or echo authenticated data.
   const signature = request.headers.get("x-ramp-signature");
   if (!signature || !metadata.webhookSecret) {
     return data({ success: false }, { status: 401 });
@@ -88,6 +74,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (!verified) {
     return data({ success: false }, { status: 401 });
+  }
+
+  const challenge = extractChallenge(body);
+  if (challenge) {
+    try {
+      await completeWebhookVerification(serviceRole, companyId, challenge);
+    } catch (error) {
+      // Non-fatal: still echo the authenticated challenge for an echo handshake.
+      logger.error("Ramp webhook verify callback failed", { companyId, error });
+    }
+    return { challenge };
   }
 
   // Parse leniently; unrecognized events are acknowledged, never rejected
@@ -119,15 +116,10 @@ function safeJsonParse(body: string): unknown {
 }
 
 /**
- * Pull a webhook-verification challenge out of the delivery. Ramp's exact shape
- * is Task-1-unverified, so we accept the common conventions: a top-level
- * `challenge` string in the body, or a `?challenge=` query param.
+ * Pull a webhook-verification challenge only from the authenticated body.
+ * Ramp's exact challenge shape still requires sandbox verification.
  */
-function extractChallenge(
-  body: string,
-  queryChallenge: string | null
-): string | null {
-  if (queryChallenge) return queryChallenge;
+function extractChallenge(body: string): string | null {
   const parsed = safeJsonParse(body);
   if (
     parsed &&
