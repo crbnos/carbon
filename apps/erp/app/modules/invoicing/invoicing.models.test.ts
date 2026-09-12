@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import {
+  invoiceSettlementDisplayAmounts,
   invoiceSettlementValidator,
+  isInvoiceFullyPaid,
   isInvoicePayable,
-  paymentValidator
+  paymentValidator,
+  toDocumentCurrency
 } from "./invoicing.models";
 
 describe("paymentValidator", () => {
@@ -189,6 +192,105 @@ describe("invoiceSettlementValidator", () => {
       sourceExchangeRate: -1
     });
     expect(r.success).toBe(false);
+  });
+});
+
+describe("toDocumentCurrency", () => {
+  it("converts base-currency invoice totals into the order currency", () => {
+    // USD base, EUR order, exchangeRate 0.9: base 1000 displays as €900.
+    expect(toDocumentCurrency(1000, 0.9)).toBe(900);
+  });
+
+  it("leaves the amount unchanged when the rate is missing or 1", () => {
+    expect(toDocumentCurrency(1000, 1)).toBe(1000);
+    expect(toDocumentCurrency(1000, null)).toBe(1000);
+    expect(toDocumentCurrency(1000, undefined)).toBe(1000);
+    expect(toDocumentCurrency(1000, 0)).toBe(1000);
+  });
+});
+
+describe("invoiceSettlementDisplayAmounts", () => {
+  it("converts sales totals from base into document currency", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 1000,
+        balance: 400,
+        paidAmount: 600,
+        exchangeRate: 0.9,
+        convertToDocument: true
+      })
+    ).toEqual({
+      invoicedAmount: 900,
+      paidAmount: 540,
+      balanceRemaining: 360
+    });
+  });
+
+  it("keeps posted cash separate from credit relief and converts both cash and balance", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 1000,
+        balance: 100,
+        paidAmount: 600,
+        exchangeRate: 0.9,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: 900, paidAmount: 540, balanceRemaining: 90 });
+  });
+
+  it("does not label a credit-only settlement as cash paid", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 100,
+        balance: 0,
+        paidAmount: 0,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: 100, paidAmount: 0, balanceRemaining: 0 });
+  });
+
+  it("preserves signed applied principal instead of clamping refunds", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: -100,
+        balance: 0,
+        paidAmount: -25,
+        exchangeRate: 0.8,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: -80, paidAmount: -20, balanceRemaining: 0 });
+  });
+
+  it("leaves purchase totals in company base", () => {
+    // unitPrice is already supplierUnitPrice * exchangeRate (810 base from
+    // 900 EUR at 0.9). Multiplying again would display 729 against a $810 total.
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 810,
+        balance: 810,
+        paidAmount: 0,
+        exchangeRate: 0.9,
+        convertToDocument: false
+      })
+    ).toEqual({
+      invoicedAmount: 810,
+      paidAmount: 0,
+      balanceRemaining: 810
+    });
+  });
+});
+
+describe("isInvoiceFullyPaid", () => {
+  it.each([
+    0.003, 0.009, 0.01
+  ])("does not hide a positive remainder of %s", (balance) => {
+    expect(isInvoiceFullyPaid(balance, 100, "Paid")).toBe(false);
+  });
+
+  it("requires zero balance and payment progress or paid status", () => {
+    expect(isInvoiceFullyPaid(0, 100)).toBe(true);
+    expect(isInvoiceFullyPaid(0, 0, "Paid")).toBe(true);
+    expect(isInvoiceFullyPaid(0, 0, "Draft")).toBe(false);
   });
 });
 

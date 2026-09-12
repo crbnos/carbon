@@ -260,6 +260,8 @@ msgstr "{count, plural, one {# conta com saldo} other {# contas com saldo}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
 
+msgid "{currencyMismatchCount, plural, one {Excludes # invoice in a different currency.} other {Excludes # invoices in a different currency.}}"
+msgstr "{currencyMismatchCount, plural, one {Exclui # fatura em uma moeda diferente.} other {Exclui # faturas em uma moeda diferente.}}"
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -2768,6 +2770,9 @@ msgstr "Backups"
 
 msgid "Balance"
 msgstr "Saldo"
+
+msgid "Balance Remaining:"
+msgstr "Saldo restante:"
 
 msgid "Balance Sheet"
 msgstr "Balanço Patrimonial"
@@ -12057,11 +12062,14 @@ msgstr "Página"
 msgid "Page {pdfViewPage} of {documentPageCount}"
 msgstr "Página {pdfViewPage} de {documentPageCount}"
 
-msgid "Paid Amount:"
-msgstr "Valor Pago:"
+msgid "Paid"
+msgstr "Pago"
 
 msgid "Paid Date"
 msgstr "Data de Pagamento"
+
+msgid "Paid:"
+msgstr "Pago:"
 
 msgid "Parameters"
 msgstr "Parâmetros"
