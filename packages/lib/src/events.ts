@@ -226,6 +226,49 @@ export type Events = {
     };
   };
 
+  // NetSuite migration — read a NetSuite account and write it into this company.
+  // Three phases in one durable step: extract (SuiteQL), map (pure), load (one
+  // transaction). Credentials are NOT in the payload: the job resolves them from
+  // the company's NetSuite integration and Supabase Vault, so a secret never
+  // lands in an Inngest event body or its run history.
+  "carbon/netsuite-migration": {
+    data: {
+      companyId: string;
+      userId: string;
+      migrationRunId: string;
+      /**
+       * Which OneWorld subsidiary to migrate. Required when the account has more
+       * than one — merging subsidiaries into a single company double-counts
+       * intercompany revenue and inventory, so the job refuses rather than guess.
+       */
+      subsidiaryId?: string | null;
+      /**
+       * Read and map, then roll the load back and report what WOULD happen.
+       * This is what the preview screen runs, and it is the same code path as
+       * the real thing — a dry run that took a different path would prove nothing.
+       */
+      dryRun?: boolean;
+    };
+  };
+
+  // Keep a completed NetSuite migration — drop the pre-migration snapshot and
+  // clear the marker.
+  "carbon/netsuite-migration-finalize": {
+    data: {
+      companyId: string;
+      migrationRunId: string;
+    };
+  };
+
+  // Undo a completed NetSuite migration — wipe and reload the pre-migration snapshot.
+  "carbon/netsuite-migration-revert": {
+    data: {
+      companyId: string;
+      userId: string;
+      migrationRunId: string;
+    };
+  };
+
   // In-place restore — replace a company's own data with one of its backups.
   // Three-step: snapshot current state to a hidden _pre-restore file, WIPE the
   // company's companyId-scoped data, then load the backup (ids preserved). A

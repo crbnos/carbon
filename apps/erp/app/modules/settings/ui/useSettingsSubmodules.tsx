@@ -13,6 +13,7 @@ import {
   LuFlaskConical,
   LuHistory,
   LuImage,
+  LuImport,
   LuKey,
   LuLandmark,
   LuLayoutDashboard,
@@ -38,7 +39,11 @@ const internalOnlyRoutes = new Set<string>([path.to.companies]);
 // mirrors `canAccessBackups`, which gates the route and the backup APIs.
 const localOrInternalRoutes = new Set<string>([
   path.to.backups,
-  path.to.demoData
+  path.to.demoData,
+  // A migration replaces a company's data wholesale and carries the same
+  // unhardened multi-tenant caveats as Backups — it stays internal-only in real
+  // deployments while that is true, and open to everyone on a local dev stack.
+  path.to.netsuiteMigration
 ]);
 
 export default function useSettingsSubmodules() {
@@ -193,6 +198,12 @@ export default function useSettingsSubmodules() {
             to: path.to.demoData,
             role: "employee",
             icon: <LuFlaskConical />
+          },
+          {
+            name: t`Migrate from NetSuite`,
+            to: path.to.netsuiteMigration,
+            role: "employee",
+            icon: <LuImport />
           },
           {
             name: t`Integrations`,

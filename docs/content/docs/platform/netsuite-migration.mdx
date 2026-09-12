@@ -1,0 +1,111 @@
+---
+title: Migrate from NetSuite
+description: Move your NetSuite account into Carbon in one click — chart of accounts, customers, suppliers, items, bills of material, stock on hand and open orders — with a preview first and a one-click undo.
+---
+
+Carbon can read your NetSuite account and write it into a Carbon company: the chart of accounts, your customers and suppliers with their addresses and contacts, your items with their costs and prices, your bills of material, what you have on hand, and the sales and purchase orders that are still open. You run it from **Settings → Migrate from NetSuite**.
+
+Two things are true throughout, and both are deliberate:
+
+- **Carbon only reads from NetSuite.** Nothing in your NetSuite account is created, changed or deleted. You can keep working in NetSuite while you evaluate Carbon.
+- **Everything Carbon writes can be undone.** Carbon saves a copy of the company first and keeps it until you decide.
+
+## Connect NetSuite
+
+The migration needs a NetSuite connection, which you set up once under **Settings → Integrations → NetSuite**.
+
+In NetSuite, go to **Setup → Company → Enable Features → SuiteCloud** and turn on **REST Web Services**, **OAuth 2.0** and **SuiteAnalytics Workbook**. That last one is the one people miss: it is what allows the queries this migration runs, and without it every read fails with a permission error.
+
+Then create an Integration record (**Setup → Integration → Manage Integrations → New**) with **Client Credentials (machine to machine) Grant** checked, and upload a public certificate under **Setup → Integration → OAuth 2.0 Client Credentials (M2M) Setup**. NetSuite shows a **Certificate ID** afterwards.
+
+<FieldTable>
+  <Field name="Account ID">From Setup → Company → Company Information. A sandbox looks like `1234567_SB1`.</Field>
+  <Field name="Client ID">From the Integration record you created.</Field>
+  <Field name="Certificate ID">Shown after you upload the public certificate. This is not the Client ID — it is the single most common thing to get wrong here.</Field>
+  <Field name="Private Key">The private key matching that certificate. RSA keys must be 3072 or 4096 bits; NetSuite rejects 2048.</Field>
+</FieldTable>
+
+Token-Based Authentication is also accepted, for accounts that already have a TBA integration record set up. Prefer OAuth 2.0 where you can: NetSuite accepts no new TBA integrations from 2027.1.
+
+<Callout type="tip" title="Give the role full subsidiary access">
+Set the integration role's Subsidiary Restriction to **All**, and give it read access to the records you want migrated. A role that silently returns fewer rows looks exactly like a company with less data — you would have no way to tell the difference from the report.
+</Callout>
+
+## Preview first
+
+The page offers **"Preview the migration"** and **"Migrate now"**. Preview does the whole thing — reads NetSuite, matches every record to Carbon, writes them — and then throws the write away. It runs the identical code, so what it reports is what a real migration does.
+
+Preview takes a few minutes on a large account. The page shows each phase as it goes, from **"Reading your NetSuite account"** through **"Writing records into Carbon"**, and keeps running if you leave the page.
+
+## Read the report
+
+Whether you previewed or migrated, the report has three parts.
+
+**What came across** — a row per record type, showing how many Carbon found in NetSuite, how many it created, how many it updated, and how many were already there. "Already there" is not a failure: it means Carbon matched something you already had, by name or by number, and left it alone rather than making a duplicate.
+
+**Records that needed a decision** — the individual records where something did not line up exactly. An item using a unit of measure this company does not have, an order whose customer did not come across, a location with an incomplete address. Each one says what Carbon did about it.
+
+**What stays in NetSuite** — the important part. A migration cannot bring everything, and this lists every limit that applies to *your* account, with what to do about each. Carbon counts the affected records where it can, so you see "412 open invoices" rather than a general warning.
+
+<Callout type="warn" title="The things most likely to matter to you">
+General ledger history and open AR/AP balances do not come across — start Carbon's ledger from an opening trial balance on your cutover date. Neither do routings and bills of process, work orders and WIP, or the individual lot and serial numbers behind your stock. Each of those has an entry in the report explaining the alternative.
+</Callout>
+
+## Keep it or put it back
+
+When a real migration finishes, the **"Migration complete"** card asks you to decide:
+
+- **"Keep"** accepts the migrated data and discards the saved copy.
+- **"Revert"** puts back exactly what was here before the migration.
+
+The choice stays open until you make it, and only one migration can be in flight per company. A migration is all-or-nothing: if anything fails partway, no rows are written at all and the card shows the error with a **"Dismiss"** button.
+
+## What Carbon does with your NetSuite records
+
+A few mapping decisions are worth knowing before you look at the result.
+
+<FieldTable>
+  <Field name="Items">Inventory and assembly items become Parts, assemblies with their bill of materials. Service items become Services and non-inventory items become Consumables. Carbon's Material and Tool types are never chosen for you, because nothing NetSuite stores tells them apart — re-type those items after the migration.</Field>
+  <Field name="Document numbers">Migrated sales and purchase orders keep their NetSuite numbers, and Carbon's own numbering continues past the highest one, so nothing collides later.</Field>
+  <Field name="Open orders">Only orders still awaiting shipment or receipt come across, carrying their remaining quantity — what NetSuite already shipped is not re-promised.</Field>
+  <Field name="Stock on hand">Arrives as one inventory receipt per item and location, dated the day you migrate. The NetSuite history behind that quantity is not replayed.</Field>
+  <Field name="Configuration">Payment terms, units, shipping methods and accounts you already have in Carbon are matched by name and left alone, so you do not end up with two of everything.</Field>
+</FieldTable>
+
+Every migrated record keeps a link back to the NetSuite record it came from. That is what lets you run the migration again — a second run updates what it created rather than duplicating it — and what lets a CSV keyed on NetSuite ids fill in anything you want to bring across by hand later.
+
+<Callout type="info" title="One subsidiary per company">
+If your NetSuite account is OneWorld with more than one subsidiary, Carbon stops and asks which one to migrate. One Carbon company holds one subsidiary; migrating them together would double-count intercompany revenue and stock. Run the migration once per subsidiary, into its own company, then link them as a company group.
+</Callout>
+
+<Callout type="info" title="Who can see this page">
+Migrate from NetSuite sits behind the same gate as Backups, since it writes across a company's whole dataset. On production deployments it is currently limited to Carbon staff; on a local development stack it is open to everyone.
+</Callout>
+
+<AgentContext>
+## Troubleshooting
+
+### Every read fails with a permission error
+The NetSuite role is missing **SuiteAnalytics Workbook**, which gates the SuiteQL queries the migration runs. Enable it under Setup → Company → Enable Features → SuiteCloud and add the permission to the integration role.
+
+### NetSuite rejects the credentials with an unhelpful error
+Three things produce a generic `invalid_client`: the **Certificate ID** field holding the Client ID instead of the certificate id NetSuite shows after upload; an RSA key that is 2048 bits (NetSuite requires 3072 or 4096); and an account id typed with the wrong separator. Carbon accepts either `1234567_SB1` or `1234567-sb1` and normalizes it, so the separator is not the problem on the Carbon side.
+
+### The report shows far fewer records than the account has
+Check the integration role's Subsidiary Restriction and its record permissions. NetSuite returns fewer rows for a restricted role with no error at all, so a partial read looks identical to a small account.
+
+### A migration is stuck on "Running"
+It keeps running even if you leave the page. After fifteen minutes the card says so and offers "Retry revert", which is safe — the saved copy of your data is kept until the revert succeeds.
+
+### I can't start a second migration
+Only one migration can be open per company. Resolve the pending one first — Keep or Revert on the card, or Dismiss if it failed.
+
+### Order dates came across blank
+NetSuite formats transaction dates as either DD/MM/YYYY or MM/DD/YYYY depending on the account's preference, and the API does not say which. Where the date is ambiguous (any day of the month up to 12), Carbon leaves it blank rather than risk a date months off, and says so in the report's notes.
+
+### Stock is there but I can't issue it
+Lot- and serial-tracked items arrive with a quantity but not the individual lot and serial records behind it. Count them in with an inventory count before issuing that stock — the report flags this as gap NS-INV-002.
+
+### An item came across as the wrong type
+NetSuite does not distinguish bar stock from a finished component, so every inventory item becomes a Part. Change the type on the item itself; it is an ordinary edit.
+</AgentContext>

@@ -25,6 +25,7 @@
     "@carbon/lib": "workspace:*",
     "@carbon/locale": "workspace:*",
     "@carbon/logger": "workspace:*",
+    "@carbon/netsuite": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/onboarding": "workspace:*",
     "@carbon/printing": "workspace:*",

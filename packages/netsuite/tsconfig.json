@@ -1,0 +1,8 @@
+{
+  "extends": "@carbon/config/tsconfig/react-library.json",
+  "compilerOptions": {
+    "strict": true
+  },
+  "include": ["src"],
+  "exclude": ["dist", "build", "node_modules"]
+}

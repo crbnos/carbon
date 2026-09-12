@@ -1,5 +1,11 @@
 {
   "title": "Platform",
   "defaultOpen": true,
-  "pages": ["self-hosting", "backups", "demo-data", "licensing"]
+  "pages": [
+    "self-hosting",
+    "backups",
+    "demo-data",
+    "netsuite-migration",
+    "licensing"
+  ]
 }

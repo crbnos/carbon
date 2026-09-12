@@ -30,6 +30,10 @@ export const SECRET_KEYS: Record<string, string[]> = {
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
   "paperless-parts": ["apiKey", "secretKey"],
+  // NetSuite carries a secret in EITHER auth variant: the OAuth 2.0 M2M private
+  // key, or the TBA consumer/token secret pair. splitSecrets omits whichever the
+  // chosen method left blank, so switching method never wipes the other's.
+  netsuite: ["privateKey", "consumerSecret", "tokenSecret"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`
   // (top-level). splitSecrets omits whichever is absent for the active provider.

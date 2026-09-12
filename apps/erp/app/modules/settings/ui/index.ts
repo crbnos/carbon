@@ -10,6 +10,7 @@ export * from "./CustomFields";
 export * from "./DemoData";
 export * from "./Integrations";
 export * from "./ItarCertifications";
+export * from "./NetSuiteMigration";
 export * from "./Printing";
 export * from "./Security";
 export * from "./Sequences";

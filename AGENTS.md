@@ -112,6 +112,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
 | **Integrations** | |
 | Jira integration | `.claude/rules/jira-integration.md` |
+| NetSuite migration (one-click import) | `.claude/rules/netsuite-migration.md` + `packages/netsuite/AGENTS.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
 | Redis (shared dev) | `.claude/rules/dev-shared-redis.md` |

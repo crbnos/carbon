@@ -282,7 +282,7 @@ export async function getCompanyRestoreRuns(
 async function readIntegrationMarker(
   client: SupabaseClient<Database>,
   companyId: string,
-  integration: "company-export" | "company-template"
+  integration: "company-export" | "company-template" | "netsuite-migration"
 ): Promise<{
   data: { meta: Record<string, unknown>; createdAt: string } | null;
   error: Error | null;
@@ -429,6 +429,97 @@ export async function getCompanyTemplateRun(
       error: meta.error ?? null,
       progress: meta.progress ?? null,
       hasSnapshot: Boolean(meta.snapshotPath)
+    },
+    error: null
+  };
+}
+
+export type MigrationRunReport = {
+  accountId: string;
+  subsidiaryId: string | null;
+  sandbox: boolean;
+  /** Rows written per plan section. */
+  counts: Record<
+    string,
+    { inserted: number; updated: number; skipped: number }
+  >;
+  /** Rows the plan held per section, whether or not they were written. */
+  extracted: Record<string, number>;
+  linked: number;
+  warnings: string[];
+  notes: string[];
+  /** Gap ids plus what they cost THIS account. The prose lives in the catalog. */
+  gaps: { id: string; count: number | null; examples: string[] }[];
+};
+
+export type NetSuiteMigrationRun = {
+  migrationRunId: string;
+  status: "running" | "ready" | "failed" | "reverting";
+  startedAt: string | null;
+  error: string | null;
+  /** Phase + done/total while the migration or revert is in flight. */
+  progress: { phase: string; done: number; total: number } | null;
+  /** True when the run only previewed — nothing was written. */
+  dryRun: boolean;
+  /** Whether a pre-migration snapshot exists yet, so Revert is only offered when
+   *  there is actually something to put back. */
+  hasSnapshot: boolean;
+  report: MigrationRunReport | null;
+  /** Set when the NetSuite account has several subsidiaries and one must be picked. */
+  subsidiaryChoices:
+    | { id: string; name: string; currencyCode: string | null }[]
+    | null;
+};
+
+/**
+ * The current NetSuite migration marker, or null when none. Written by the
+ * netsuite-migration job: absent = no migration is outstanding, "running" = in
+ * flight, "ready" = finished and waiting on a keep/revert decision, "reverting" =
+ * the undo is in flight, "failed" = it did not land and the user hasn't
+ * dismissed it yet.
+ *
+ * The metadata shape is typed here rather than imported from `@carbon/jobs` —
+ * the app must not pull job internals (and Node `Buffer` with them) into its
+ * bundle.
+ */
+export async function getNetSuiteMigrationRun(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<{ data: NetSuiteMigrationRun | null; error: Error | null }> {
+  const marker = await readIntegrationMarker(
+    client,
+    companyId,
+    "netsuite-migration"
+  );
+  if (marker.error || !marker.data) return { data: null, error: marker.error };
+
+  const meta = marker.data.meta as {
+    migrationRunId?: string;
+    status?: "running" | "ready" | "failed" | "reverting";
+    startedAt?: string;
+    error?: string;
+    progress?: { phase: string; done: number; total: number } | null;
+    snapshotPath?: string;
+    dryRun?: boolean;
+    report?: MigrationRunReport | null;
+    subsidiaryChoices?:
+      | { id: string; name: string; currencyCode: string | null }[]
+      | null;
+  };
+
+  // Only whether a snapshot EXISTS is projected, never where — the job owns its
+  // lifecycle end to end, and the client has no use for the location.
+  return {
+    data: {
+      migrationRunId: meta.migrationRunId ?? "",
+      status: meta.status ?? "running",
+      startedAt: meta.startedAt ?? marker.data.createdAt,
+      error: meta.error ?? null,
+      progress: meta.progress ?? null,
+      dryRun: Boolean(meta.dryRun),
+      hasSnapshot: Boolean(meta.snapshotPath),
+      report: meta.report ?? null,
+      subsidiaryChoices: meta.subsidiaryChoices ?? null
     },
     error: null
   };

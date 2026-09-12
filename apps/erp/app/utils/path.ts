@@ -1460,6 +1460,7 @@ export const path = {
     mfaVerify: "/api/mfa/verify",
     moveChartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/move/${id}`),
+    netsuiteMigration: `${x}/settings/netsuite`,
     newAbility: `${x}/resources/abilities/new`,
     newApiKey: `${x}/settings/api-keys/new`,
     newApprovalRule: (documentType?: string) =>
