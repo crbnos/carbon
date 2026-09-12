@@ -17,7 +17,10 @@ import { Outlet, redirect, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
-import { invoiceSettlementDisplayAmounts } from "~/modules/invoicing";
+import {
+  getInvoicePaidAmounts,
+  invoiceSettlementDisplayAmounts
+} from "~/modules/invoicing";
 import {
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
@@ -554,11 +557,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getPurchaseOrderInvoicesByIds(
-      client,
-      invoiceIds,
-      companyId
-    );
+    const [invoices, invoicePayments] = await Promise.all([
+      getPurchaseOrderInvoicesByIds(client, invoiceIds, companyId),
+      getInvoicePaidAmounts(client, companyId, "purchase", invoiceIds)
+    ]);
+    if (invoicePayments.error) {
+      throw redirect(
+        path.to.purchaseOrders,
+        await flash(
+          request,
+          error(invoicePayments.error, "Failed to load invoice payments")
+        )
+      );
+    }
 
     if (invoices.error) {
       throw redirect(
@@ -597,6 +608,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       const display = invoiceSettlementDisplayAmounts({
         total: invoice.orderTotal ?? 0,
         balance: invoice.balance,
+        paidAmount: invoice.id ? (invoicePayments.data?.[invoice.id] ?? 0) : 0,
         convertToDocument: false
       });
 

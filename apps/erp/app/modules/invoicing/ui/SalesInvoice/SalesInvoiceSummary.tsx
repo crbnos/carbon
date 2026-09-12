@@ -355,6 +355,7 @@ const SalesInvoiceSummary = ({
 
   const routeData = useRouteData<{
     salesInvoice: SalesInvoice;
+    invoicePaidAmount: number;
     salesInvoiceLines: SalesInvoiceLine[];
     salesInvoiceShipment: SalesInvoiceShipment;
   }>(path.to.salesInvoice(invoiceId));
@@ -439,7 +440,7 @@ const SalesInvoiceSummary = ({
     0,
     Number(routeData?.salesInvoice?.balance ?? invoiceTotal)
   );
-  const paidAmount = Math.max(0, Number(invoiceTotal) - balanceRemaining);
+  const paidAmount = routeData?.invoicePaidAmount ?? 0;
   const isFullyPaid = isInvoiceFullyPaid(
     balanceRemaining,
     paidAmount,
@@ -548,8 +549,7 @@ const SalesInvoiceSummary = ({
               <Trans>Total:</Trans>
             </span>
             <VStack spacing={0} className="items-end">
-              {/* Use the same view-derived total as Paid/Balance so
-                  Total ≈ Paid + Balance Remaining. */}
+              {/* Balance also reflects non-cash relief such as credit memos. */}
               <span>{formatter.format(Number(invoiceTotal))}</span>
               {shouldConvertCurrency && (
                 <span className="text-sm">

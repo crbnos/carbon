@@ -506,7 +506,7 @@ export function invoiceSettlementDisplayAmounts(args: {
   exchangeRate?: number | null;
   convertToDocument: boolean;
   // Posted cash principal, excluding memo credits, discounts and write-offs.
-  paidAmount?: number;
+  paidAmount: number;
 }): {
   invoicedAmount: number;
   paidAmount: number;
@@ -524,12 +524,9 @@ export function invoiceSettlementDisplayAmounts(args: {
     : Math.max(0, Number(args.balance ?? rawTotal));
   return {
     invoicedAmount,
-    paidAmount:
-      args.paidAmount === undefined
-        ? Math.max(0, invoicedAmount - balanceRemaining)
-        : args.convertToDocument
-          ? toDocumentCurrency(args.paidAmount, args.exchangeRate)
-          : args.paidAmount,
+    paidAmount: args.convertToDocument
+      ? toDocumentCurrency(args.paidAmount, args.exchangeRate)
+      : args.paidAmount,
     balanceRemaining
   };
 }

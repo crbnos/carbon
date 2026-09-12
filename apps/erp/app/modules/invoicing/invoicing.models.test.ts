@@ -215,6 +215,7 @@ describe("invoiceSettlementDisplayAmounts", () => {
       invoiceSettlementDisplayAmounts({
         total: 1000,
         balance: 400,
+        paidAmount: 600,
         exchangeRate: 0.9,
         convertToDocument: true
       })
@@ -267,6 +268,7 @@ describe("invoiceSettlementDisplayAmounts", () => {
       invoiceSettlementDisplayAmounts({
         total: 810,
         balance: 810,
+        paidAmount: 0,
         exchangeRate: 0.9,
         convertToDocument: false
       })
