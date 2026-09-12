@@ -59,7 +59,7 @@ field for one script. That is exactly why the catalog/compatibility logic lives 
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `trigger()`, `batchTrigger()`, `Events` type, Jira/Linear webhook schemas |
-| `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it. Server-side only (runs `information_schema` SQL) |
+| `./backups` | `src/backups/schema.ts` — catalog introspection + backup-compatibility diff (`getCompanyTableCatalog`, `reportBackupCompatibility`, `compatibilityStatus`, types), plus the re-exported `src/backups/scope.ts` — scope predicates, the export closure guard (`findExportScopeViolations`, `ExportScopeViolationError`) and the opt-in exclusion/purge (`computeScopeExclusions`, `purgeScopeViolations`). No Inngest, no logger; the ERP Backups loader computes the live restore verdict through it and the purge action deletes through it. Server-side only (runs `information_schema` SQL) |
 | `./events` | `Events` type (re-export from `@carbon/lib`) |
 | `./inngest` | Inngest client + function registrations, plus `setWorkflowDispatch` and its `WorkflowDispatch` / `DispatchContext` / `DispatchResult` types (server-only) |
 | `./worker` | Worker entry point for Inngest serve |
@@ -158,8 +158,9 @@ Routing is off the catalog's `getActionRoute(id)`, never off the shape of an id.
 
 `packages/jobs` cannot import `~/modules/*` — the dependency only runs app → package. So
 `dispatcher.ts` holds a module-level `WorkflowDispatch` slot, and the ERP app fills it at boot:
-`apps/erp/app/routes/api+/inngest.ts` calls `setWorkflowDispatch(executeFunction)` with the MCP
-direct executor from `./mcp+/lib/direct-executor`. The type is structural, so the app satisfies it
+`apps/erp/app/routes/api+/inngest.ts` registers a wrapper over `callOperation` (the Carbon API's
+canonical dispatch, `./v1+/lib/call.server`) with `authKind: "session"` — the same entry point MCP
+`call_tool` and the in-app agent use. The type is structural, so the app satisfies it
 without importing anything from here beyond the setter (re-exported from `@carbon/jobs/inngest`).
 With no dispatcher registered, create actions fail cleanly with "This step is not available in this
 environment" — they do not throw.

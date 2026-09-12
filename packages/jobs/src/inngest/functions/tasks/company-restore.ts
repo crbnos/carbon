@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { chunkArray } from "@carbon/utils";
+import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
@@ -13,12 +14,14 @@ import {
   backupNameFromSource,
   bindValue,
   canSetReplicationRole,
+  ExportScopeViolationError,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
   RESTORE_INTEGRATION,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
+  type ScopeViolation,
   selectWipeableTables,
   throttleProgress,
   wipeScopedData,
@@ -224,6 +227,17 @@ type RestoreMeta = {
    *  dimensions) — only when this company is its group's sole member. A revert
    *  must wipe + reload the same scope. */
   includeGroup?: boolean;
+  /** The backup being restored + file choice — kept so a recovery action can
+   *  restart the same restore. */
+  filePath?: string;
+  includeStorage?: "none" | "all";
+  /** Set when the pre-restore snapshot refused because the LIVE data has rows
+   *  whose NOT-NULL FK escapes company scope. */
+  reason?: "scope-violations";
+  /** Per FK EDGE — the breakdown, never summable into a row count. */
+  violations?: ScopeViolation[];
+  /** DISTINCT rows involved, per table — what the user is told. */
+  violationRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
 /** Exported: also used by `company-template.ts` when reverting a demo template. */
@@ -399,6 +413,8 @@ export const companyRestoreFunction = inngest.createFunction(
         patch: {
           status: "running",
           label: label ?? null,
+          filePath,
+          includeStorage,
           startedAt: existing?.metadata.startedAt ?? new Date().toISOString()
         }
       });
@@ -561,13 +577,28 @@ export const companyRestoreFunction = inngest.createFunction(
           companyId,
           userId,
           restoreRunId,
-          patch: { status: "failed", error: message }
+          patch: {
+            status: "failed",
+            error: message,
+            ...(err instanceof ExportScopeViolationError
+              ? {
+                  reason: "scope-violations",
+                  violations: err.violations,
+                  violationRowsByTable: err.rowsByTable
+                }
+              : {})
+          }
         });
         logger.error("Company restore failed", {
           companyId,
           restoreRunId,
           error: message
         });
+        // The snapshot guard's verdict is deterministic; a retry re-fails and
+        // flickers the marker running → failed under the user's recovery button.
+        if (err instanceof ExportScopeViolationError) {
+          throw new NonRetriableError(message, { cause: err });
+        }
         throw err;
       }
     });

@@ -33,7 +33,7 @@ import {
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
-  INVOICE_DUST_THRESHOLD,
+  isInvoiceFullyPaid,
   isPurchaseInvoiceLocked
 } from "../../invoicing.models";
 import type {
@@ -430,7 +430,7 @@ const PurchaseInvoiceSummary = ({
   const supplierTotal = supplierSubtotal + supplierTax + supplierShippingCost;
 
   // Payment progress from the purchaseInvoices view (balance already net of
-  // posted cash + memo settlements; dust-forgiven below one cent).
+  // posted cash + memo settlements).
   const invoiceTotal =
     routeData?.purchaseInvoice?.orderTotal ??
     routeData?.purchaseInvoice?.totalAmount ??
@@ -440,10 +440,11 @@ const PurchaseInvoiceSummary = ({
     Number(routeData?.purchaseInvoice?.balance ?? invoiceTotal)
   );
   const paidAmount = Math.max(0, Number(invoiceTotal) - balanceRemaining);
-  const isFullyPaid =
-    balanceRemaining < INVOICE_DUST_THRESHOLD &&
-    (paidAmount >= INVOICE_DUST_THRESHOLD ||
-      routeData?.purchaseInvoice?.status === "Paid");
+  const isFullyPaid = isInvoiceFullyPaid(
+    balanceRemaining,
+    paidAmount,
+    routeData?.purchaseInvoice?.status
+  );
 
   return (
     <Card>

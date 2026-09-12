@@ -186,6 +186,13 @@ export type Operation = z.infer<typeof jobOperationValidator> & {
   tags: string[] | null;
   workInstruction: JSONContent | null;
   reworkId: string | null;
+  // Embedded by getJobOperationsByMethodId: which operation batch (if any)
+  // this operation runs in. Only Active/Completing render a badge.
+  jobOperationBatch?: {
+    id: string;
+    readableId: string | null;
+    status: string | null;
+  } | null;
 };
 
 type ItemWithData = Item & {
@@ -258,11 +265,24 @@ function makeItem(
     id: operation.id!,
     title: (
       <VStack spacing={0}>
-        <HStack spacing={2}>
-          <h3 className="font-semibold truncate cursor-pointer">
+        <HStack spacing={2} className="w-full min-w-0">
+          <h3 className="font-semibold min-w-0 truncate cursor-pointer">
             {operation.description}
           </h3>
           {operation.reworkId && <Badge variant="red">Rework</Badge>}
+          {operation.jobOperationBatch &&
+            (operation.jobOperationBatch.status === "Active" ||
+              operation.jobOperationBatch.status === "Completing") && (
+              <Badge
+                variant={
+                  operation.jobOperationBatch.status === "Completing"
+                    ? "yellow"
+                    : "secondary"
+                }
+              >
+                {operation.jobOperationBatch.readableId}
+              </Badge>
+            )}
         </HStack>
         {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview
@@ -318,10 +338,10 @@ function makeItem(
           {projectedDate &&
             (behindDays > 0 ? (
               <Tooltip>
-                <TooltipTrigger>
-                  <span className="text-xs text-amber-500 whitespace-nowrap">
+                <TooltipTrigger asChild>
+                  <Badge variant="red">
                     <Trans>Projected {formatDate(projectedDate)}</Trans>
-                  </span>
+                  </Badge>
                 </TooltipTrigger>
                 <TooltipContent>
                   <span>

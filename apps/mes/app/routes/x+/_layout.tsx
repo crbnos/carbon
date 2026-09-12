@@ -60,6 +60,7 @@ import { ConsolePill } from "~/components/ConsolePill";
 import { PinInOverlay } from "~/components/PinInOverlay";
 import RealtimeDataProvider from "~/components/RealtimeDataProvider";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import { userContext } from "~/context";
 import { useIdle } from "~/hooks";
@@ -478,7 +479,10 @@ export default function AuthenticatedRoute() {
                     pinnedInUser={pinnedInUser}
                     timeCardEnabled={timeCardEnabled}
                   />
-                  <Outlet />
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border">
+                    <Outlet />
+                  </div>
+                  <ShortcutHelp />
                   {timeCardEnabled && (
                     <Suspense fallback={null}>
                       <Await resolve={openClockEntry}>

@@ -25,6 +25,10 @@ msgstr "{0} Aktif"
 msgid "{0} ago"
 msgstr "{0} önce"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} iş"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} örnek hata(ları) kaydedildi ve tamamlanmayacak — bunları i�
 
 msgid "+{overflow} more"
 msgstr "+{overflow} daha fazla"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Önceki bir tamamlanma işlemi bitmedi. Yeniden deneme kalan adımları devam ettirir — miktarlar çifte sayılmaz."
 
 msgid "About"
 msgstr "Hakkında"
@@ -138,6 +145,9 @@ msgstr "Bu işlemi bitirmek istediğinizden emin misiniz? Bu, bu işlem için t�
 msgid "Are you sure you want to leave this page?"
 msgstr "Bu sayfadan ayrılmak istediğinizden emin misiniz?"
 
+msgid "Assembly steps"
+msgstr "Montaj adımları"
+
 msgid "Assigned"
 msgstr "Atanmış"
 
@@ -168,6 +178,9 @@ msgstr "Lot Numarası {0}"
 
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
+
+msgid "Batched jobs"
+msgstr "Toplu işler"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hedeften {daysBehindTarget} gün geride"
@@ -265,11 +278,17 @@ msgstr "Tamamla"
 msgid "Complete All"
 msgstr "Tümünü Tamamla"
 
+msgid "Complete Batch"
+msgstr "Partiyi Tamamla"
+
 msgid "Complete passed"
 msgstr "Tamamlanan geçti"
 
 msgid "Completed"
 msgstr "Tamamlandı"
+
+msgid "Completing"
+msgstr "Tamamlanıyor"
 
 msgid "Connecting"
 msgstr "Bağlanıyor"
@@ -536,6 +555,9 @@ msgstr "Malzeme seçilmeden bitir?"
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
 
+msgid "General"
+msgstr "Genel"
+
 msgid "Go back to operation"
 msgstr "İşleme geri dön"
 
@@ -633,6 +655,9 @@ msgstr "İş emirleri"
 msgid "Keep picking"
 msgstr "Toplamaya devam et"
 
+msgid "Keyboard shortcuts"
+msgstr "Klavye kısayolları"
+
 msgid "Kit"
 msgstr "Set"
 
@@ -644,6 +669,9 @@ msgstr "Son olarak tamamlanan"
 
 msgid "Learn more"
 msgstr "Daha fazla bilgi edinin"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Bir operasyonu atlamak için 0'da bırakın — çalıştırılmadan çizelgeye geri döner, zaman veya miktar kaydedilmez."
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -723,6 +751,9 @@ msgstr "Envanterden stok kartlarını manuel kaldır"
 msgid "Mark Short"
 msgstr "Kısa Teslim Et"
 
+msgid "Mark the step done / record"
+msgstr "Adımı tamamlandı olarak işaretle / kaydet"
+
 msgid "matches"
 msgstr "eşleşir"
 
@@ -766,6 +797,9 @@ msgstr "Saatlik Çalışmalarım"
 msgid "Name"
 msgstr "Adı"
 
+msgid "Navigation"
+msgstr "Gezinti"
+
 msgid "New"
 msgstr "Yeni"
 
@@ -777,6 +811,9 @@ msgstr "En yeniden önce"
 
 msgid "Next"
 msgstr "Sonraki"
+
+msgid "Next step"
+msgstr "Sonraki adım"
 
 msgid "No"
 msgstr "Hayır"
@@ -873,6 +910,9 @@ msgstr "Seri numarası yok"
 
 msgid "No serial numbers found"
 msgstr "Seri numarası bulunamadı"
+
+msgid "No shortcuts available on this page."
+msgstr "Bu sayfada kullanılabilir kısayol yoktur."
 
 msgid "No spare parts added yet"
 msgstr "Henüz yedek parça eklenmedi"
@@ -1025,8 +1065,14 @@ msgstr "Önceki"
 msgid "Preventive"
 msgstr "Önleyici"
 
+msgid "Previous step"
+msgstr "Önceki adım"
+
 msgid "Print"
 msgstr "Yazdır"
+
+msgid "Print batch list"
+msgstr "Yazdır parti listesini"
 
 msgid "Printer Settings"
 msgstr "Yazıcı Ayarları"
@@ -1112,6 +1158,9 @@ msgstr "Alt montajı yeniden aç ve bir yedek birim oluştur"
 msgid "Result"
 msgstr "Sonuç"
 
+msgid "Retry Completion"
+msgstr "Tamamlanmayı Yeniden Dene"
+
 msgid "Rework"
 msgstr "Yeniden işleme"
 
@@ -1129,6 +1178,9 @@ msgstr "Satış Siparişi"
 
 msgid "Save"
 msgstr "Kaydet"
+
+msgid "Save the form you're editing"
+msgstr "Düzenlediğiniz formu kaydetin"
 
 msgid "Scan"
 msgstr "Tarama"
@@ -1286,6 +1338,9 @@ msgstr "Azalt"
 msgid "Short pick {itemName}"
 msgstr "Kısmi toplama {itemName}"
 
+msgid "Show this overlay"
+msgstr "Bu katmanı göster"
+
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
 
@@ -1321,6 +1376,9 @@ msgstr "Kullanılan Yedek Parçalar"
 
 msgid "Start"
 msgstr "Başlat"
+
+msgid "Start or pause the operation"
+msgstr "Operasyonu başlat veya duraklat"
 
 msgid "Station User"
 msgstr "İstasyon Kullanıcısı"
@@ -1398,6 +1456,9 @@ msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numara
 msgid "Thumbnail"
 msgstr "Küçük Resim"
 
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Zaman ve maliyet, miktara orantılı olarak işler arasında bölünür."
+
 msgid "Time Entries"
 msgstr "Zaman Girişleri"
 
@@ -1407,6 +1468,9 @@ msgstr "Çalışma Süresi: {0}"
 
 msgid "Today"
 msgstr "Bugün"
+
+msgid "Toggle the sidebar"
+msgstr "Kenar çubuğunu aç/kapat"
 
 msgid "Tools"
 msgstr "Araçlar"

@@ -8,15 +8,16 @@ import {
   CardTitle,
   cn,
   HStack,
-  useKeyboardShortcuts,
+  RadioGroup,
+  RadioGroupButton,
   useMode,
   VStack
 } from "@carbon/react";
 import type { Theme } from "@carbon/utils";
 import { themes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import { Trans } from "@lingui/react/macro";
-import { useEffect, useRef, useState } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useState } from "react";
 import { BiMoon, BiSun } from "react-icons/bi";
 import { RxCheck } from "react-icons/rx";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -34,6 +35,7 @@ import type { Theme as ThemeValue } from "~/modules/settings";
 import { themeValidator } from "~/modules/settings";
 import type { action as modeAction } from "~/root";
 import { getTheme, setTheme } from "~/services/theme.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -70,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function OnboardingTheme() {
   const { theme: initialTheme } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
 
   const mode = useMode();
   const modeFetcher = useFetcher<typeof modeAction>();
@@ -112,13 +115,13 @@ export default function OnboardingTheme() {
 
   const transition = useNavigation();
 
-  const nextRef = useRef<HTMLButtonElement>(null);
-
-  useKeyboardShortcuts({
-    Enter: () => {
-      nextRef.current?.click();
-    }
-  });
+  const onModeChange = (nextMode: string) => {
+    document.body.removeAttribute("style");
+    modeFetcher.submit(
+      { mode: nextMode },
+      { method: "post", action: path.to.root }
+    );
+  };
 
   return (
     <OnboardingCard>
@@ -134,58 +137,50 @@ export default function OnboardingTheme() {
       </CardHeader>
       <OnboardingCardContent>
         <VStack spacing={4}>
-          <HStack className="w-full justify-between">
-            <modeFetcher.Form
-              action={path.to.root}
-              method="post"
-              onSubmit={() => {
-                document.body.removeAttribute("style");
-              }}
-              className="w-full"
+          <RadioGroup
+            value={mode === "dark" ? "dark" : "light"}
+            onValueChange={onModeChange}
+            aria-label={t`Light or dark mode`}
+            className="flex w-full gap-2"
+          >
+            <RadioGroupButton
+              value="light"
+              autoFocus={mode !== "dark"}
+              className={cn(
+                "flex-1",
+                mode == "light" && "border-2 border-primary"
+              )}
             >
-              <input type="hidden" name="mode" value="light" />
-              <Button
-                variant="secondary"
-                type="submit"
-                leftIcon={<BiSun />}
-                className={cn(
-                  "w-full",
-                  mode == "light" && "border-2 border-primary"
-                )}
-              >
-                <Trans>Light</Trans>
-              </Button>
-            </modeFetcher.Form>
-            <modeFetcher.Form
-              action={path.to.root}
-              method="post"
-              onSubmit={() => {
-                document.body.removeAttribute("style");
-              }}
-              className="w-full"
+              <BiSun />
+              <Trans>Light</Trans>
+            </RadioGroupButton>
+            <RadioGroupButton
+              value="dark"
+              autoFocus={mode === "dark"}
+              className={cn(
+                "flex-1",
+                mode == "dark" && "border-2 border-primary"
+              )}
             >
-              <input type="hidden" name="mode" value="dark" />
-              <Button
-                variant="secondary"
-                leftIcon={<BiMoon />}
-                type="submit"
-                className={cn(
-                  "w-full",
-                  mode == "dark" && "border-2 border-primary"
-                )}
-              >
-                <Trans>Dark</Trans>
-              </Button>
-            </modeFetcher.Form>
-          </HStack>
-          <div className="w-full grid grid-cols-3 gap-4">
+              <BiMoon />
+              <Trans>Dark</Trans>
+            </RadioGroupButton>
+          </RadioGroup>
+          <RadioGroup
+            value={theme}
+            onValueChange={(name) => {
+              const selected = themes.find((entry) => entry.name === name);
+              if (selected) onThemeChange(selected);
+            }}
+            aria-label={t`Theme`}
+            className="w-full grid grid-cols-3 gap-4"
+          >
             {themes.map((t) => {
               const isActive = theme === t.name;
               return (
-                <Button
+                <RadioGroupButton
                   key={t.name}
-                  variant="secondary"
-                  onClick={() => onThemeChange(t)}
+                  value={t.name}
                   className={cn(
                     "justify-start",
                     isActive && "border-2 border-primary"
@@ -209,10 +204,10 @@ export default function OnboardingTheme() {
                     {isActive && <RxCheck className="h-4 w-4 text-white" />}
                   </span>
                   {t.label}
-                </Button>
+                </RadioGroupButton>
               );
             })}
-          </div>
+          </RadioGroup>
         </VStack>
       </OnboardingCardContent>
       <CardFooter>
@@ -234,7 +229,7 @@ export default function OnboardingTheme() {
           <Button
             isLoading={transition.state !== "idle"}
             isDisabled={transition.state !== "idle"}
-            ref={nextRef}
+            shortcut={ONBOARDING_SHORTCUTS.continue}
             onClick={onSubmit}
           >
             <Trans>Next</Trans>

@@ -57,13 +57,13 @@ const TOOLS = [
   {
     name: "search_tools",
     description:
-      "Search Carbon's ERP operations by name, module or classification (READ, WRITE, DESTRUCTIVE), and make the matches available to call.",
+      "Relevance-ranked search over Carbon's ERP operations by keyword, module or classification (READ, WRITE, DESTRUCTIVE); understands common abbreviations and schema field names.",
     readOnly: true
   },
   {
     name: "describe_tool",
     description:
-      "Return the full input schema and description for one operation, so its arguments can be built correctly before calling it.",
+      "Return the full contract for one or more operations — description, permission, input schema and response schema — so arguments can be built correctly before calling.",
     readOnly: true
   },
   {

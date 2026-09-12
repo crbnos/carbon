@@ -15,6 +15,7 @@ import {
   AssemblyHandler,
   buildMakeMethodDependencies
 } from "./assembly-handler.ts";
+import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
   type CalendarShiftRow,
   type CalendarWindow,
@@ -69,6 +70,7 @@ import type {
   SchedulingOptions,
   SchedulingResult
 } from "./types.ts";
+import { capacityHoldingJobStatuses } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
@@ -76,7 +78,7 @@ import {
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
-const SCHEDULING_HORIZON_DAYS = 365;
+export const SCHEDULING_HORIZON_DAYS = 365;
 
 const log = getFunctionLogger("schedule");
 
@@ -121,6 +123,7 @@ export class SchedulingEngine {
    * placements of already-run batch jobs. Defaults to just this job.
    */
   private excludeJobIds: string[];
+  private batchPlacements: Map<string, BatchPlacement> | null = null;
   /** Forecast finish (max placed end) — set after placement, persisted. */
   private projectedCompletionAt: string | null = null;
   /** True when this regen flipped the job from on-time (or unforecast) to late. */
@@ -166,6 +169,12 @@ export class SchedulingEngine {
       persist?: boolean;
       /** Batch job ids to exclude from the reservation snapshot. */
       excludeJobIds?: string[];
+      /**
+       * Pre-placed windows for RELEASED-batch member operations (from the
+       * batch pre-pass in run-schedule). Members take the window verbatim;
+       * their reservations are the pre-pass's coalesced batch rows.
+       */
+      batchPlacements?: Map<string, BatchPlacement> | null;
     }
   ) {
     this.client = options.client;
@@ -175,6 +184,7 @@ export class SchedulingEngine {
     this.userId = options.userId;
     this.now = options.now ?? Date.now();
     this.persist = options.persist ?? true;
+    this.batchPlacements = options.batchPlacements ?? null;
     this.excludeJobIds =
       options.excludeJobIds && options.excludeJobIds.length > 0
         ? options.excludeJobIds
@@ -469,15 +479,40 @@ export class SchedulingEngine {
         }
       });
 
-      // Update operations with no dependencies to Ready status (outside the
-      // rebuild txn so the advisory lock is held only for the delete/insert).
-      for (const [opId, deps] of allDependencies) {
-        if (deps.size === 0) {
-          await this.db
-            .updateTable("jobOperation")
-            .set({ status: "Ready" })
-            .where("id", "=", opId)
-            .execute();
+      // Unblock dependency-free operations to Ready (outside the rebuild txn so
+      // the advisory lock is held only for the delete/insert). Two guards keep
+      // this from RE-OPENING work that is already finished or in flight:
+      //
+      //  1. Only OPEN jobs. A terminal job (Completed/Closed/Cancelled) or a
+      //     pre-release Draft/Planned job is never re-opened by a regen. Open
+      //     work is `capacityHoldingJobStatuses`; the batch loader already
+      //     filters to these, so this is defense-in-depth for any direct caller.
+      //  2. Only resettable operation statuses. Never overwrite an operation
+      //     that is Done/Canceled (finished) or In Progress/Paused (running) —
+      //     only Ready/Waiting/Todo become Ready. Without this, a first op that
+      //     an operator already completed was flipped back to Ready, and because
+      //     `is_last_job_operation` requires EVERY op Done, the finished job
+      //     could then never auto-complete (it sat stuck as open work).
+      const jobIsOpen =
+        this.job?.status != null &&
+        (capacityHoldingJobStatuses as readonly string[]).includes(
+          this.job.status
+        );
+      if (jobIsOpen) {
+        for (const [opId, deps] of allDependencies) {
+          if (deps.size === 0) {
+            await this.db
+              .updateTable("jobOperation")
+              .set({ status: "Ready" })
+              .where("id", "=", opId)
+              .where("status", "not in", [
+                "Done",
+                "Canceled",
+                "In Progress",
+                "Paused"
+              ])
+              .execute();
+          }
         }
       }
     }
@@ -874,7 +909,8 @@ export class SchedulingEngine {
     const operations = Array.from(this.scheduledOperations.values());
     const selections =
       await this.workCenterSelector.selectWorkCentersForOperations(operations, {
-        jobDueDate: this.job?.dueDate ?? null
+        jobDueDate: this.job?.dueDate ?? null,
+        batchPlacements: this.batchPlacements
       });
 
     // Apply selections (placed timestamps → factory-day date columns)
@@ -1170,12 +1206,15 @@ export class SchedulingEngine {
       }
 
       // Rebuild this job's live capacity reservations from this run's
-      // placements (reservations are authoritative across jobs and runs)
+      // placements (reservations are authoritative across jobs and runs).
+      // Batch-tagged rows are spared: a member job's regen must never destroy
+      // the batch's coalesced reservation.
       await trx
         .deleteFrom("capacityReservation")
         .where("jobId", "=", this.jobId)
         .where("companyId", "=", this.companyId)
         .where("scenarioId", "is", null)
+        .where("jobOperationBatchId", "is", null)
         .execute();
 
       if (planned.length > 0) {

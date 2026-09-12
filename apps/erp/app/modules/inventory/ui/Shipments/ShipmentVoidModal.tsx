@@ -7,7 +7,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalOverlay,
@@ -47,14 +46,14 @@ const ShipmentVoidModal = ({ onClose }: { onClose: () => void }) => {
           <ModalTitle>
             <Trans>Void Shipment</Trans>
           </ModalTitle>
-          <ModalDescription>
+        </ModalHeader>
+        <ModalBody>
+          <p className="text-sm text-muted-foreground mb-4">
             <Trans>
               Are you sure you want to void this shipment? This action will
               reverse all inventory transactions and cannot be undone.
             </Trans>
-          </ModalDescription>
-        </ModalHeader>
-        <ModalBody>
+          </p>
           <Alert variant="destructive">
             <LuTriangleAlert className="h-4 w-4" />
             <AlertTitle>

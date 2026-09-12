@@ -20,7 +20,9 @@
     "tsx": "catalog:",
     "turbo": "2.9.6",
     "typescript": "catalog:",
-    "vite-plugin-babel-macros": "catalog:"
+    "vite": "catalog:",
+    "vite-plugin-babel-macros": "catalog:",
+    "zod": "catalog:"
   },
   "lint-staged": {
     "(apps|packages|docs)/**/*.{js,ts,jsx,tsx}": [
@@ -33,12 +35,13 @@
   "private": true,
   "scripts": {
     "build": "turbo run build",
+    "build:docs": "turbo run build --filter=docs",
     "build:erp": "turbo run build --filter=erp",
     "build:mes": "turbo run build --filter=mes",
-    "build:docs": "turbo run build --filter=docs",
+    "check:manifest": "tsx scripts/check-manifest.ts",
     "check:workflow-catalog": "tsx scripts/check-workflow-catalog.ts",
-    "ci:migrations": "pnpm --filter ci ci:migrations",
     "ci:deploy": "pnpm --filter ci ci:deploy",
+    "ci:migrations": "pnpm --filter ci ci:migrations",
     "clean": "turbo run clean && rimraf ./node_modules && rimraf ./pnpm-lock.yaml",
     "db:check:backups": "pnpm --filter @carbon/jobs db:check:backups --",
     "db:check:datasets": "pnpm --filter @carbon/database db:check:datasets --",
@@ -54,18 +57,18 @@
     "dev:packages": "turbo run dev --filter=./packages/*",
     "dev:starter": "turbo run dev --filter=./apps/starter --filter=./packages/",
     "format": "biome format --write",
-    "generate:agent-kb": "tsx scripts/generate-agent-kb.ts",
+    "generate:agent-kb": "tsx docs/scripts/generate-agent-kb.ts",
     "generate:mcp": "tsx scripts/generate-mcp.ts",
     "generate:swagger": "tsx scripts/generate-swagger-docs.ts && pnpm exec biome format ./packages/database/src/swagger-docs-schema.ts --write --files-max-size=20000000",
     "generate:types": "tsx scripts/generate-db-types.ts",
     "generate:workflow-catalog": "tsx scripts/generate-workflow-catalog.ts && pnpm exec biome check --write packages/workflows/src/catalog/",
-    "lint": "turbo run lint",
+    "install-skills": "bash .ai/scripts/install-skills.sh",
     "lingui:check": "pnpm run lingui:extract && pnpm run lingui:compile",
+    "lingui:clean": "node ./scripts/strip-po-headers.mjs",
     "lingui:compile": "lingui compile --namespace es",
     "lingui:extract": "lingui extract --clean",
-    "lingui:clean": "node ./scripts/strip-po-headers.mjs",
-    "postinstall": "pnpm --filter @carbon/documents build",
-    "install-skills": "bash .ai/scripts/install-skills.sh",
+    "lint": "turbo run lint",
+    "postinstall": "pnpm --filter @carbon/documents build && pnpm run generate:mcp",
     "prepare": "pnpm exec husky install; if [ -f .ai/scripts/install-skills.sh ]; then bash .ai/scripts/install-skills.sh; fi",
     "test": "turbo run test",
     "translate": "pnpm run lingui:extract && pnpm exec linguito translate --llm && pnpm lingui:clean",
@@ -81,6 +84,7 @@
   ],
   "packageManager": "pnpm@10.33.4",
   "dependencies": {
+    "@carbon/api": "workspace:*",
     "@opentelemetry/semantic-conventions": "1.40.0",
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",
@@ -114,7 +118,7 @@
     ],
     "patchedDependencies": {
       "@ai-sdk-tools/store@1.2.0": "patches/@ai-sdk-tools__store@1.2.0.patch",
-      "@react-router/dev@7.15.1": "patches/@react-router__dev@7.15.1.patch",
+      "@react-router/dev@7.18.0": "patches/@react-router__dev@7.18.0.patch",
       "@vercel/react-router@1.2.6": "patches/@vercel__react-router@1.2.6.patch",
       "supabase@2.89.0": "patches/supabase@2.89.0.patch"
     }

@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companyId,
       userId
     });
-    await runMRP(getCarbonServiceRole(), {
+    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
       type: "job",
       id,
       companyId,

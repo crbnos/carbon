@@ -2,13 +2,18 @@ import { ValidatedForm } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
 import { Badge, Button, HStack, LabelWithHelp } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { defaultAccountValidator } from "../../accounting.models";
 import type { AccountListItem } from "../../types";
+
+const formValidator = defaultAccountValidator.extend({
+  salesShippingRevenueAccount:
+    defaultAccountValidator.shape.salesShippingRevenueAccount.unwrap()
+});
 
 type BadgeType = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
 
@@ -53,6 +58,7 @@ const AccountDefaultsForm = ({
   const permissions = usePermissions();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
+  const [salesAccount, setSalesAccount] = useState(initialValues.salesAccount);
 
   const isDisabled = !permissions.can("update", "accounting");
 
@@ -281,11 +287,25 @@ const AccountDefaultsForm = ({
             termId: "account-default-sales"
           },
           {
+            name: "salesShippingRevenueAccount",
+            label: t`Shipping Revenue`,
+            description: t`Revenue account for shipping charged to customers`,
+            badgeType: "Revenue",
+            termId: "account-default-sales-shipping-revenue"
+          },
+          {
             name: "salesDiscountAccount",
             label: t`Sales Discounts`,
             description: t`Contra-revenue account for discounts given on sales`,
             badgeType: "Revenue",
             termId: "account-default-sales-discounts"
+          },
+          {
+            name: "customerPaymentDiscountAccount",
+            label: t`Customer Payment Discounts`,
+            description: t`Discounts given to customers for early payment`,
+            badgeType: "Revenue",
+            termId: "account-default-customer-payment-discounts"
           },
           {
             name: "realizedExchangeGainAccount",
@@ -313,6 +333,13 @@ const AccountDefaultsForm = ({
             description: t`Expense account for non-inventory purchases (services, supplies)`,
             badgeType: "Expense",
             termId: "account-default-indirect-materials-services"
+          },
+          {
+            name: "supplierPaymentDiscountAccount",
+            label: t`Supplier Payment Discounts`,
+            description: t`Discounts earned for early payment to suppliers`,
+            badgeType: "Expense",
+            termId: "account-default-supplier-payment-discounts"
           }
         ]
       },
@@ -447,20 +474,6 @@ const AccountDefaultsForm = ({
             termId: "account-default-interest"
           },
           {
-            name: "supplierPaymentDiscountAccount",
-            label: t`Supplier Payment Discounts`,
-            description: t`Discounts earned for early payment to suppliers`,
-            badgeType: "Expense",
-            termId: "account-default-supplier-payment-discounts"
-          },
-          {
-            name: "customerPaymentDiscountAccount",
-            label: t`Customer Payment Discounts`,
-            description: t`Discounts given to customers for early payment`,
-            badgeType: "Expense",
-            termId: "account-default-customer-payment-discounts"
-          },
-          {
             name: "roundingAccount",
             label: t`Rounding Account`,
             description: t`Account for small rounding differences in transactions`,
@@ -515,7 +528,7 @@ const AccountDefaultsForm = ({
 
   return (
     <ValidatedForm
-      validator={defaultAccountValidator}
+      validator={formValidator}
       method="post"
       action={path.to.accountingDefaults}
       defaultValues={initialValues}
@@ -587,7 +600,23 @@ const AccountDefaultsForm = ({
                       <div className="flex-shrink-0 w-64">
                         <Combobox
                           name={field.name}
-                          options={accountOptions[field.badgeType]}
+                          options={
+                            field.name === "salesShippingRevenueAccount"
+                              ? accountOptions.Revenue.filter(
+                                  (account) => account.value !== salesAccount
+                                )
+                              : accountOptions[field.badgeType]
+                          }
+                          onChange={
+                            field.name === "salesAccount"
+                              ? (account) =>
+                                  setSalesAccount(account?.value ?? "")
+                              : undefined
+                          }
+                          isRequired={
+                            field.name === "salesShippingRevenueAccount" ||
+                            undefined
+                          }
                           size="sm"
                         />
                       </div>

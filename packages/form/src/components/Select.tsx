@@ -139,6 +139,8 @@ export type SelectBaseProps = Omit<
   options: {
     label: string | JSX.Element;
     value: string;
+    helper?: string;
+    helperRight?: string;
   }[];
   isClearable?: boolean;
   isDisabled?: boolean;
@@ -233,7 +235,12 @@ export const SelectBase = forwardRef<HTMLButtonElement, SelectBaseProps>(
                   </div>
                 ))
               : options.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem
+                    key={option.value}
+                    value={option.value}
+                    helper={option.helper}
+                    helperRight={option.helperRight}
+                  >
                     {option.label}
                   </SelectItem>
                 ))}

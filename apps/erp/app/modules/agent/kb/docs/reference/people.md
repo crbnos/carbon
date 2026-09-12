@@ -17,7 +17,7 @@ The **Job** section is the employee master data you edit here:
   - **Title**: The person's job title within this company. This is *not* their permission role — see the callout below.
   - **Start Date**: When they started.
   - **Location**: The site they're based at.
-  - **Shift**: Their assigned work schedule (optional).
+  - **Shift**: Their assigned work schedule (optional). The scheduler reads this to know when the person is available for gated work.
   - **Manager**: Who they report to; another employee.
 
 "Job" here means a job *title*, not a production job. The `employeeJob` table is org placement — completely separate from the `job` table that holds work orders on the floor. And a person's title is separate again from what they can *do*: access is granted by their **employee type**, covered in `docs/reference/permissions`.
@@ -35,7 +35,7 @@ Departments are configuration, so they live under **Configure**. Deleting a depa
 
 ## Shifts
 
-A **shift** is a named work schedule tied to a location: a start time, an end time, and the days of the week it runs. You assign a shift to an employee through their **Job** section, and Carbon uses shift membership to answer *who's scheduled today* — it reads each employee's shift and checks whether today's day-of-week flag is on.
+A **shift** is a named work schedule tied to a location: a start time, an end time, and the days of the week it runs. You assign a shift to an employee through their **Job** section. Shift membership answers *who's scheduled today*, and it is a real `docs/reference/scheduling` input: the engine intersects each person's shift hours with a machine's operating hours to decide when ability-gated work can run, so editing a shift or a person's shift assignment queues a replan of the affected schedules.
 
   - **Shift Name**: What the schedule is called.
   - **Location**: The site the shift belongs to. Required.
@@ -43,7 +43,7 @@ A **shift** is a named work schedule tied to a location: a start time, an end ti
   - **End Time**: When it ends.
   - **Days**: Monday through Sunday toggles — the days the shift runs.
 
-Shifts are an employee-and-location concept, not a work-center one. A shift is never bound to a `docs/reference/work-centers`; it schedules *people*, and a work center's load comes from the operations scheduled onto it, not from who's on shift.
+Shifts schedule both people and machines. A shift assigned to an employee defines when that person can be scheduled; a shift assigned to a `docs/reference/work-centers` defines that station's operating hours. And for operations whose process requires an ability, who's on shift *is* the binding constraint — no qualified operator on shift means the operation waits.
 
 Deleting a shift is a soft delete — the record is marked inactive rather than removed, so historical assignments stay intact.
 

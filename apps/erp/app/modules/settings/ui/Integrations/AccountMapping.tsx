@@ -20,6 +20,7 @@ import {
   ModalHeader,
   ModalTitle,
   Spinner,
+  Subheading,
   Table,
   Tbody,
   Td,
@@ -346,16 +347,21 @@ export function AccountMapping({
         ) : (
           grouped.map((group) => (
             <div key={group.class} className="flex w-full flex-col gap-1">
-              <span className="text-[0.625rem] font-semibold uppercase tracking-wider text-muted-foreground">
-                {group.class}
-              </span>
+              <Subheading variant="heavy">{group.class}</Subheading>
               <div className="w-full rounded-lg border border-border">
                 <div className="flex w-full flex-col divide-y divide-border">
                   {group.accounts.map((account) => {
                     const mapping = mappedById.get(account.id);
                     return (
+                      // The row's ValidatedForm seeds its controlled `externalId`
+                      // Combobox from `defaultValues` only at hydration, so a row
+                      // kept mounted across revalidation never repaints when its
+                      // saved mapping changes (its own save, match-by-code, AI
+                      // suggest). Keying on the persisted external id remounts the
+                      // row exactly when the mapping changes, re-seeding it from
+                      // fresh loader data instead of requiring a full page reload.
                       <AccountMappingRowForm
-                        key={account.id}
+                        key={`${account.id}:${mapping?.externalId ?? ""}`}
                         accountId={account.id}
                         accountNumber={account.number}
                         accountName={account.name}

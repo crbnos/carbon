@@ -294,8 +294,18 @@ flows call `redis.del(getPermissionCacheKey(userId))`.
 
 ## API key auth
 
-`carbon-key: <key>` header. `requirePermissions` resolves it via service role
-(`getCompanyIdFromAPIKey` → `apiKey` lookup by `keyHash`), then:
+`carbon-key: <key>` header. `requirePermissions` resolves it through
+`getCompanyIdFromAPIKey`, which now reads via `getApiKeyRecord`
+(`packages/auth/src/services/api-key.server.ts`): a **30s Redis cache** at
+`apikey:auth:<keyHash>`, per-request memoized (`oncePerRequest`) so one HTTP call
+does one lookup even though both `requirePermissions` and the v1 scope read need
+the row. Unknown keys are cached too (the literal `"null"`), so a bad key
+hammering the endpoint doesn't hammer Postgres. Redis being down falls through to
+the DB. Busting: the api-keys settings routes call `invalidateApiKeyCache`
+(`~/modules/settings/settings.server.ts` → `bustApiKeyCache`) after an edit and
+BEFORE a delete (the keyHash is unreadable once the row is gone), so a scope
+change or revocation takes effect immediately; the worst-case lag for any other
+writer is the 30s TTL. Then:
 
 - Reject if `expiresAt` passed (401).
 - Rate-limit via `checkApiKeyRateLimit` (`@carbon/database/ratelimit`, Postgres function

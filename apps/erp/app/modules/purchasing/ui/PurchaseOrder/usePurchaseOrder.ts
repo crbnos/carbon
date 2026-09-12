@@ -60,7 +60,8 @@ export const usePurchaseOrder = () => {
 
 export const usePurchaseOrderRelatedDocuments = (
   supplierInteractionId: string,
-  isOutsideProcessing: boolean
+  isOutsideProcessing: boolean,
+  purchaseOrderId?: string
 ) => {
   const [receipts, setReceipts] = useState<
     Pick<Receipt, "id" | "receiptId" | "status">[]
@@ -71,6 +72,9 @@ export const usePurchaseOrderRelatedDocuments = (
   const [shipments, setShipments] = useState<
     Pick<Shipment, "id" | "shipmentId" | "status">[]
   >([]);
+  const [returnOrders, setReturnOrders] = useState<
+    { id: string; purchaseReturnOrderId: string; status: string }[]
+  >([]);
   const [hasError, setHasError] = useState(false);
   const retryTimeoutRef = useRef<ReturnType<typeof setTimeout>>();
 
@@ -79,22 +83,39 @@ export const usePurchaseOrderRelatedDocuments = (
   const getRelatedDocuments = useCallback(
     async (supplierInteractionId: string, attempt = 0) => {
       if (!carbon || !supplierInteractionId) return;
-      const [receipts, invoices, shipments] = await Promise.all([
-        carbon
-          .from("receipt")
-          .select("id, receiptId, status")
-          .eq("supplierInteractionId", supplierInteractionId),
-        carbon
-          .from("purchaseInvoice")
-          .select("id, invoiceId, status, datePaid, dateDue")
-          .eq("supplierInteractionId", supplierInteractionId),
-        isOutsideProcessing
-          ? carbon
-              .from("shipment")
-              .select("id, shipmentId, status")
-              .eq("supplierInteractionId", supplierInteractionId)
-          : Promise.resolve({ data: [], error: null })
-      ]);
+      const [receipts, invoices, shipments, headerReturns, lineReturns] =
+        await Promise.all([
+          carbon
+            .from("receipt")
+            .select("id, receiptId, status")
+            .eq("supplierInteractionId", supplierInteractionId),
+          carbon
+            .from("purchaseInvoice")
+            .select("id, invoiceId, status, datePaid, dateDue")
+            .eq("supplierInteractionId", supplierInteractionId),
+          isOutsideProcessing
+            ? carbon
+                .from("shipment")
+                .select("id, shipmentId, status")
+                .eq("supplierInteractionId", supplierInteractionId)
+            : Promise.resolve({ data: [], error: null }),
+          // Supplier returns linked at the header level
+          purchaseOrderId
+            ? carbon
+                .from("purchaseReturnOrder")
+                .select("id, purchaseReturnOrderId, status")
+                .eq("purchaseOrderId", purchaseOrderId)
+            : Promise.resolve({ data: [], error: null }),
+          // Supplier returns linked only through their lines
+          purchaseOrderId
+            ? carbon
+                .from("purchaseReturnOrderLine")
+                .select(
+                  "purchaseReturnOrder!purchaseReturnOrderLine_purchaseReturnOrderId_fkey(id, purchaseReturnOrderId, status), purchaseOrderLine!inner(purchaseOrderId)"
+                )
+                .eq("purchaseOrderLine.purchaseOrderId", purchaseOrderId)
+            : Promise.resolve({ data: [], error: null })
+        ]);
 
       const failed = !!receipts.error || !!invoices.error || !!shipments.error;
       // Retry transient failures before surfacing a hard error, so a network
@@ -128,6 +149,19 @@ export const usePurchaseOrderRelatedDocuments = (
         setShipments(shipments.data);
       }
 
+      if (!headerReturns.error && !lineReturns.error) {
+        const byId = new Map<
+          string,
+          { id: string; purchaseReturnOrderId: string; status: string }
+        >();
+        for (const row of headerReturns.data ?? []) byId.set(row.id, row);
+        for (const row of lineReturns.data ?? []) {
+          const order = (row as any).purchaseReturnOrder;
+          if (order) byId.set(order.id, order);
+        }
+        setReturnOrders(Array.from(byId.values()));
+      }
+
       if (willRetry) {
         retryTimeoutRef.current = setTimeout(
           () => getRelatedDocuments(supplierInteractionId, attempt + 1),
@@ -138,7 +172,7 @@ export const usePurchaseOrderRelatedDocuments = (
 
       setHasError(failed);
     },
-    [carbon, isOutsideProcessing]
+    [carbon, isOutsideProcessing, purchaseOrderId]
   );
 
   useEffect(() => {
@@ -148,5 +182,5 @@ export const usePurchaseOrderRelatedDocuments = (
     };
   }, [getRelatedDocuments, supplierInteractionId]);
 
-  return { receipts, invoices, shipments, hasError };
+  return { receipts, invoices, shipments, returnOrders, hasError };
 };

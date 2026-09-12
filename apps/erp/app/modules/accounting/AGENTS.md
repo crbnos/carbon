@@ -1,6 +1,6 @@
 # Accounting Module
 
-Chart of accounts, journal entries, general ledger, fiscal periods, currencies, payment terms, cost centers, dimensions, financial reporting (trial balance, balance sheet, income statement), fixed assets with depreciation, intercompany transactions, and external accounting sync (Xero).
+Chart of accounts, journal entries, general ledger, fiscal periods, currencies, payment terms, cost centers, dimensions, financial reporting (trial balance, balance sheet, income statement), fixed assets with depreciation, intercompany transactions, and external accounting sync (Xero, QuickBooks Online, Rillet).
 
 The reports hub lives inside the accounting module at `/x/accounting/reports` (with the module sidebar; single "Reports" sidebar item), while the report pages themselves are full-screen in their own namespace `apps/erp/app/routes/x+/reports+/` (`/x/reports/{balance-sheet,income-statement,executive-pnl,trial-balance,inventory-valuation}` — bare-outlet layout, no module sidebar; `/x/reports` redirects to the hub). Balance sheet and income statement are multi-period: a Columns filter (Monthly default / Quarterly / Yearly) buckets the selected range fiscal-aware via `computeReportPeriodBuckets` (`@carbon/utils`) and the `accountTreeBalancePeriodSeries` RPC returns per-bucket `balanceAtDate`/`netChange` in one snapshot-bounded journal scan. Trial balance stays single-period (Beginning/Debit/Credit/Ending derived from netChange by account class).
 
@@ -11,12 +11,15 @@ The **Executive P&L** (`executive-pnl.tsx`) shares the income statement's loader
 ## Key Domain Concepts
 
 - **Chart of Accounts** — hierarchical account tree. Accounts have `class` (Asset/Liability/Equity/Revenue/Expense), `incomeBalance` (Balance Sheet/Income Statement), and `accountType`. Group accounts contain children; leaf accounts post transactions. Scoped by `companyGroupId`.
-- **Journal Entries** — double-entry bookkeeping in the `journal` table. `amount > 0` = debit, `amount < 0` = credit. Lines carry dimensions and cost center allocations. Statuses: Draft → Posted → Reversed.
+- **Journal Entries** — double-entry bookkeeping in the `journal` table. `amount` uses natural balances: positive Asset/Expense is debit; positive Liability/Equity/Revenue is credit. Convert by account class before summing debit-signed amounts. Lines carry dimensions and cost center allocations. Statuses: Draft → Posted → Reversed.
 - **Fiscal Year Settings** — configurable start month for fiscal and tax years. Accounting periods auto-created via `getOrCreateAccountingPeriod`.
 - **Dimensions** — analytical tags on journal lines (Location, Department, Project, etc.). Entity-type dimensions resolve values from their source table; Custom dimensions use `dimensionValue`.
 - **Cost Centers** — hierarchical organizational units for cost allocation via `parentCostCenterId`.
 - **Fixed Assets** — capital assets with depreciation. Supports straight-line, declining balance, MACRS, and units-of-production methods. Depreciation runs generate journal entries. See `.claude/rules/fixed-asset-lifecycle.md`.
-- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries on the lowest-common-parent elimination entity, classified by `journal.eliminationKind`: `'IC Balance'` (reverse IC Receivable/Payable) and `'IC Revenue'` (reverse an intragroup sale's revenue + COGS and write the buyer's capitalized asset down to group cost — removes intragroup profit from consolidated income). The engine is **capture-driven, not GL reconstruction**: the posting edge functions (`post-sales-invoice`, `post-purchase-invoice`) record role-tagged references (`intercompanyEliminationLine`: `Control`/`Revenue`/`COGS`/`Capitalization`) when each side posts, and `generateEliminationEntries` reads them — so it writes down whatever account the BUYER capitalized (inventory OR a **fixed asset** — the latter is now in scope, was the negative-Finished-Goods bug). The writedown scales by the buyer's on-hand fraction (fixed assets: full until disposed); revenue/COGS reversal scale by the same fraction so the entry balances. `p_regenerate` reverses existing eliminations (reversing entries, never deletes) and re-derives — the workbench "Regenerate" button. Investment/NCI and seller fixed-asset disposal (deferred gain) remain out of scope. See `.ai/specs/2026-08-17-intercompany-elimination-engine.md`.
+- **Intercompany** — transactions between companies in a group. `runIntercompanyMatching` pairs them; `generateEliminations` creates reversing entries on the lowest-common-parent elimination entity, classified by `journal.eliminationKind`: `'IC Balance'` (reverse IC Receivable/Payable) and `'IC Revenue'` (reverse an intragroup sale's revenue + COGS and write the buyer's capitalized asset down to group cost — removes intragroup profit from consolidated income). The engine is **capture-driven, not GL reconstruction**: the posting edge functions (`post-sales-invoice`, `post-purchase-invoice`) record role-tagged references (`intercompanyEliminationLine`: `Control`/`Revenue`/`COGS`/`Capitalization`) when each side posts, and `generateEliminationEntries` reads them — so it writes down whatever account the BUYER capitalized (inventory OR a **fixed asset** — the latter is now in scope, was the negative-Finished-Goods bug). The writedown scales by the buyer's on-hand fraction (fixed assets: full until disposed); revenue/COGS reversal scale by the same fraction so the entry balances. `p_regenerate` reverses existing eliminations (reversing entries, never deletes) and re-derives — the workbench "Regenerate" button. Both halves of a trade record their matching amount in the trade's DOCUMENT currency rounded at internal `SCALE` — `calculateSalesIntercompanyAmount` (seller) and `round(intercompanyAmount)` (buyer). `generate_intercompany_matches` pairs them on exact NUMERIC equality with **no tolerance**, so rounding either half at settlement precision leaves every trade with sub-cent digits permanently `Unmatched` and eliminations never run. Investment/NCI and seller fixed-asset disposal (deferred gain) remain out of scope. See `.ai/specs/2026-08-17-intercompany-elimination-engine.md`.
+- **Currency translation / CTA** — `translateCompanyBalances` validates the source trial balance using natural debit/credit signs and positive finite pair rates. Missing rates fail explicitly. `applyCtaToReportPeriodSeriesForReport` resolves only the root company's CTA mapping through a server-only permission and company-group/root check; operating-company ledger reads remain RLS-scoped. The existing `applyCtaToReportPeriodSeries` service adds the calculated CTA once to the reporting root company's configured `currencyTranslationAccount`, validates its active Equity posting leaf, then rerolls intermediate groups and roots before filtering/export. Never identify CTA by account number. Financial report chart reads include inactive historical accounts and their ancestors; chart and balance RPC rows are fully paginated before calculation. Active-only filters belong to posting/configuration pickers. Balance RPC trees and period-close snapshots retain inactive posting leaves and ancestors. Report loaders reject company selections outside the available company group (404) before balance reads.
+- **Shipping revenue** — `accountDefault.salesShippingRevenueAccount` maps an active Revenue posting leaf distinct from Sales. New groups seed 4050 Shipping Revenue under Revenue; existing groups resolve a compatible leaf and backfill mappings. Nonzero invoice shipping requires a valid mapping; output tax posts separately to tax payable. The full defaults form validates once and saves both sections with one company-scoped `updateDefaultAccounts` UPDATE, so a failed mapping cannot half-save the form.
+- **Payments and refunds** — the customer/supplier determines AR/AP independently of cash direction. Customer Disbursements and supplier Receipts refund posted balance-reducing memos through `invoiceSettlement.targetMemoId`, using current cash only (no invoice targets, discounts, writeoffs, or prior credits). Ordinary payments retain invoice targets, memo-source funding, and prior cash credits. Memo availability subtracts effective source and target principal; an effective posted refund blocks memo voiding. Aging and tie-out RPCs sign unallocated refunds opposite ordinary payments and use the applying payment's cash direction for FX consumption. Target memos consume exact `sourceAmount` principal and `appliedAmount` carrying base. Unknown memo principal retains the existing exclusion contract; it is not reconstructed or raised as a report error. Payment/invoice application histories page all rows, including embedded parent statuses and refund labels, before totaling.
 - **Net Income** — computed equity line on the balance sheet, never a posted account. Uses synthetic `NET_INCOME_ACCOUNT_ID` constant.
 
 ## Safety
@@ -43,8 +46,8 @@ The **Executive P&L** (`executive-pnl.tsx`) shares the income statement's loader
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/erp typecheck
-pnpm --filter @carbon/erp test -- --testPathPattern=accounting
+pnpm exec turbo run typecheck --filter=erp
+pnpm --dir apps/erp exec vitest run app/modules/accounting
 ```
 
 ## Key Data Model
@@ -55,10 +58,10 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 | `journal` / `journalLine` | Double-entry transactions; lines carry dimension assignments |
 | `journalLineDimension` | Dimension values assigned to journal lines |
 | `accountingPeriod` | Fiscal periods. `closeStatus` (`periodCloseStatus`: Open→Locked→Closed lifecycle), `fiscalYear`/`periodNumber` (identity from the fiscal start month), `lockedAt`/`lockedBy`. Legacy `status` (Active/Inactive) is deprecated. |
-| `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty) and `accountTreeBalancePeriodSeries` (multi-period: base snapshot before the range start + one bounded scan bucketed by period ends; single uniform branch). Balance RPCs exclude Draft journals. |
+| `accountingPeriodBalance` | Cumulative per-account GL balance snapshots. `closeAccountingPeriod` calls `snapshotAccountingPeriodBalances` inside its close transaction (after the flip to Closed) to write them; `reopenAccountingPeriod` deletes them (`endingBalanceDate` ≥ period `endDate`) before flipping back to Open. Read by `accountTreeBalancesByCompany` (snapshot + delta; full-scan fallback when empty) and `accountTreeBalancePeriodSeries` (multi-period: base snapshot before the range start + one bounded scan bucketed by period ends; single uniform branch). Balance RPCs exclude Draft journals and retain inactive leaves/ancestors; the snapshot writer also includes inactive posting accounts. |
 | `periodCloseTaskDefinition` / `periodCloseTask` | NetSuite-style close checklist: company-level task templates + per-period instances (seeded via `seed-company`) |
 | `accountDefault` | Default GL account mappings (AR, AP, inventory, etc.) |
-| `currency` / `currencyCode` / `exchangeRateHistory` | Multi-currency with historical rates |
+| `currency` / `currencyCode` | Per-group currency config (decimalPlaces, active, historicalExchangeRate); rates live in the global `exchangeRate` store + per-company `exchangeRateOverride` |
 | `paymentTerm` | Payment terms (Net 30, 2/10 Net 30, etc.) |
 | `costCenter` | Hierarchical cost allocation units |
 | `dimension` / `dimensionValue` | Analytical dimensions and custom values |
@@ -80,13 +83,16 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 - `getAccountPeriodSeries` — thin wrapper for the `accountTreeBalancePeriodSeries` RPC (period ends must come from `computeReportPeriodBuckets`)
 - `getReportPins` / `upsertReportPin` — per-user pin overrides for the reports hub
 - `createJournalEntry` / `saveJournalEntryWithLines` / `postJournalEntry` / `reverseJournalEntry` — journal lifecycle
+- `createOpeningBalanceJournal` / `getExistingOpeningBalanceEntry` — Opening Balances, an **inline mode on the Chart of Accounts page** (`charts.tsx` action; the "Opening Balances" primary button toggles `openingBalanceMode` in `ChartOfAccountsTree`, replacing each leaf account's balance cell with a numeric input and hiding Add Group/Add Account; Post opens `OpeningBalancePostModal` to collect the as-of date). Posts ONE balanced journal (`journalEntrySourceType` `'Opening Balance'`) from per-account natural-balance amounts, auto-plugging the net difference to `accountDefault.retainedEarningsAccount`; reuses `getNextSequence`→`createJournalEntry`→`saveJournalEntryWithLines`→`postJournalEntry`. `getExistingOpeningBalanceEntry` returns the current **Posted** opening-balance entry (Reversed does not count), which gates re-entry: the charts loader hides the button when one exists, and the charts action re-checks server-side. `'Opening Balance'` is `syncable:false` in `@carbon/ee` POSTING_POLICY — like `Manual`, it never syncs (the external ledger owns opening balances).
 - `getOrCreateAccountingPeriod` / `getCurrentAccountingPeriod` — period management (lazy create on posting)
 - `createFiscalYearPeriods` — generate the 12 monthly periods for a fiscal year (idempotent; from `fiscalYearSettings.startMonth`)
 - `lockAccountingPeriod` / `unlockAccountingPeriod` / `closeAccountingPeriod` / `reopenAccountingPeriod` — Open↔Locked↔Closed transitions (sequential close/reopen)
 - `getPeriodCloseChecklist` / `closePeriodWithChecklist` / `completeCloseTask` / `skipCloseTask` — the close checklist (instantiates tasks, evaluates auto-checks, gates the close)
 - `getAccountingPeriodDeletability` / `deleteAccountingPeriod` — delete an empty, open period (blocks Locked/Closed or periods with journals)
 - `getFiscalCalendarCommitted` — is the fiscal calendar committed (any posting or Locked/Closed period)? Gates editing the fiscal start month
-- `getCurrencies` / `getBaseCurrency` / `getCurrencyByCode` — currency lookups
+- `getCurrencies` / `getBaseCurrency` / `getCurrencyByCode` — currency config lookups (decimals/active; no rate — `currency.exchangeRate` was dropped)
+- `getExchangeRate` / `getExchangeRates` — per-company rate resolution (RPC `get_exchange_rate(s)`: base=1, `exchangeRateOverride` wins, else global `exchangeRate` market-store ratio; missing = error, never 1)
+- `upsertExchangeRateOverride` / `deleteExchangeRateOverride` — per-company user rate pins (always beat the daily feed)
 - `translateCompanyBalances` — balance translation for multi-currency consolidation
 - `getDimensions` / `getActiveDimensionsWithValues` / `saveJournalLineDimensions` — dimension management
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
@@ -96,18 +102,18 @@ pnpm --filter @carbon/erp test -- --testPathPattern=accounting
 ## Key Exports
 
 ```typescript
-import { getCurrencyByCode, getPaymentTermsList, getDefaultAccounts } from "~/modules/accounting";
+import { getExchangeRate, getPaymentTermsList, getDefaultAccounts } from "~/modules/accounting";
 ```
 
 ## Related Modules
 
 - **purchasing** — purchase invoices post to AP; receipts create inventory GL entries
-- **sales** — sales invoices post to AR; quotes use `getCurrencyByCode` for exchange rates
-- **inventory** — inventory movements create GL entries via posting groups
-- **items** — `itemPostingGroup` maps item categories to GL accounts
+- **sales** — sales invoices post to AR; quotes use `getExchangeRate` for exchange rates
+- **inventory** — inventory movements resolve GL accounts through replenishment system and company raw-material/finished-goods defaults
+- **items** — `itemPostingGroup` supplies dimension metadata; company defaults resolve posting accounts
 - **people** — employees used as dimension values; cost center assignments
 
 ## Rules References
 
-- `.claude/rules/accounting-sync-handlers.md` — Xero sync architecture, entity syncers, Inngest functions
+- `.claude/rules/accounting-sync-handlers.md` — provider sync architecture, entity syncers, Inngest functions
 - `.claude/rules/fixed-asset-lifecycle.md` — asset statuses, depreciation methods, disposal flow

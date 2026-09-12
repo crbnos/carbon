@@ -221,6 +221,7 @@ async function renderKanbanCardPDF(
           locationName: item.locationName,
           storageUnitId: item.storageUnitId,
           storageUnitName: item.storageUnitName,
+          fromStorageUnitName: item.fromStorageUnitName,
           supplierName: item.supplierName,
           quantity: item.quantity,
           unitOfMeasureCode: item.unitOfMeasureCode,

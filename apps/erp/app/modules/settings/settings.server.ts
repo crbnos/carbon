@@ -1,3 +1,4 @@
+import { bustApiKeyCache } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -17,6 +18,42 @@ import type { customFieldValidator } from "./settings.models";
 
 const INTEGRATION_CACHE_TTL = 3600;
 const logger = getLogger("erp", "settings");
+
+/**
+ * Drop the cached auth record for an API key so a scope change or revocation
+ * takes effect immediately in the common case. An in-flight auth read can still
+ * re-prime the cache with the pre-write row, so the hard bound is the 30s TTL —
+ * callers that delete the row should bust AGAIN after the delete commits, using
+ * the returned keyHash (unreadable from the DB once the row is gone).
+ *
+ * Service-role on purpose: apiKey's RLS SELECT requires `settings_view`, but the
+ * routes that revoke or rescope a key gate on `users_update`, so the caller's own
+ * client cannot see the row and the bust would silently do nothing.
+ */
+export async function invalidateApiKeyCache(
+  id: string,
+  companyId: string
+): Promise<string | null> {
+  const { data, error } = await getCarbonServiceRole()
+    .from("apiKey")
+    .select("keyHash")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  // A failed lookup is indistinguishable from a missing row at the return type,
+  // and neither may block the revoke — log it so a stale scope surviving its TTL
+  // is diagnosable rather than silent.
+  if (error) {
+    logger.error("Failed to read api key for cache bust", {
+      error,
+      id,
+      companyId
+    });
+  }
+  if (!data?.keyHash) return null;
+  await bustApiKeyCache(data.keyHash);
+  return data.keyHash;
+}
 
 export async function clearCustomFieldsCache(companyId?: string) {
   const keys = companyId ? `customFields:${companyId}:*` : "customFields:*";
@@ -303,6 +340,10 @@ export async function upsertCompanyIntegration(
   // Split secret material out of the metadata: only the non-secret config is
   // written to the column; the secrets go to Supabase Vault. The row is upserted
   // FIRST (so it exists), then the vault RPC stamps `secretRef` onto it.
+  // `secrets` is a PARTIAL bag — splitSecrets omits untouched masked fields — so
+  // `upsert_integration_secret` MERGES it into the stored bag (an omitted secret
+  // keeps its value). A full replace here silently wiped a multi-secret
+  // integration's other credential on a partial save.
   const { config, secrets } = splitSecrets(update.id, update.metadata);
 
   const result = await client
@@ -508,7 +549,8 @@ export async function invalidateIntegrationHealthCache(
 // Server-only (needs the service-role client for the Vault RPC). Lives here rather
 // than in settings.service.ts because that file is re-exported by the client barrel;
 // a client.server import there would leak the service-role client into the browser
-// bundle. Reached by the MCP direct-executor, which imports this module server-side.
+// bundle. Reached by the Carbon API registry (api+/v1+/lib/registry.server.ts),
+// which imports this module server-side.
 export async function updateIntegrationMetadata(
   client: SupabaseClient<Database>,
   companyId: string,

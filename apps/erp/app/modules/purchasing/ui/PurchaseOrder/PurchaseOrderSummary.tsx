@@ -36,6 +36,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { isInvoiceFullyPaid } from "~/modules/invoicing";
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -487,10 +488,9 @@ const PurchaseOrderSummary = ({
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
   const currencyMismatchCount =
     routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
-  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  // Keep positive document remainders visible, including sub-cent base amounts.
   const isFullyPaid =
-    balanceRemaining < 0.01 &&
-    paidAmount >= 0.01 &&
+    isInvoiceFullyPaid(balanceRemaining, paidAmount) &&
     (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   return (

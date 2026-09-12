@@ -44,6 +44,52 @@ if (
 
 export const streamTimeout = 60_000;
 
+// Baseline security response headers (NIST 800-171 3.13.13 control-of-mobile-code
+// + SC-7/SC-8 hardening). The CSP is a deliberately SAFE SUBSET: it omits
+// default-src/script-src so it cannot break the SPA's script/style/connect
+// loading, and sets only mobile-code / injection-vector controls — object-src
+// 'none' (no plugins), base-uri 'self', frame-ancestors 'self' (no cross-origin
+// framing/clickjacking while still allowing same-origin embeds like previews).
+const BASELINE_CSP_DIRECTIVES = [
+  "object-src 'none'",
+  "base-uri 'self'",
+  "frame-ancestors 'self'"
+];
+
+// Compose the baseline CSP with any route-set policy rather than replacing it:
+// a route may attach its own directives (script-src with a nonce/hash, etc.)
+// that must survive. Keep the route's policy intact and append only the
+// baseline directives it omits (matched by directive name).
+function composeContentSecurityPolicy(existing: string | null): string {
+  if (!existing?.trim()) return BASELINE_CSP_DIRECTIVES.join("; ");
+  const present = new Set(
+    existing
+      .split(";")
+      .map((directive) => directive.trim().split(/\s+/)[0]?.toLowerCase())
+      .filter(Boolean)
+  );
+  const additions = BASELINE_CSP_DIRECTIVES.filter(
+    (directive) => !present.has(directive.split(/\s+/)[0].toLowerCase())
+  );
+  return additions.length
+    ? `${existing.replace(/;\s*$/, "")}; ${additions.join("; ")}`
+    : existing;
+}
+
+function applySecurityHeaders(headers: Headers) {
+  headers.set(
+    "Content-Security-Policy",
+    composeContentSecurityPolicy(headers.get("Content-Security-Policy"))
+  );
+  headers.set("X-Content-Type-Options", "nosniff");
+  headers.set("X-Frame-Options", "SAMEORIGIN");
+  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+  headers.set(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains"
+  );
+}
+
 /**
  * React Router v7 server error hook: fires with the actual error thrown by any
  * loader/action/render that RR catches — the "why" behind a `GET 500 …` line
@@ -84,6 +130,7 @@ export default function handleRequest(
   routerContext: EntryContext,
   _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
+  applySecurityHeaders(responseHeaders);
   return vercelHandleRequest(
     request,
     responseStatusCode,

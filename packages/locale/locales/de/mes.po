@@ -25,6 +25,10 @@ msgstr "{0} Aktiv"
 msgid "{0} ago"
 msgstr "vor {0}"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} Aufträge"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese
 
 msgid "+{overflow} more"
 msgstr "+{overflow} weitere"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Eine vorherige Fertigstellung wurde nicht abgeschlossen. Ein erneuter Versuch setzt die verbleibenden Schritte fort – Mengen werden nicht doppelt gezählt."
 
 msgid "About"
 msgstr "Über"
@@ -138,6 +145,9 @@ msgstr "Sind Sie sicher, dass Sie diesen Arbeitsgang beenden möchten? Dies been
 msgid "Are you sure you want to leave this page?"
 msgstr "Möchten Sie diese Seite wirklich verlassen?"
 
+msgid "Assembly steps"
+msgstr "Montageschritte"
+
 msgid "Assigned"
 msgstr "Zugewiesen"
 
@@ -168,6 +178,9 @@ msgstr "Chargennummer {0}"
 
 msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
+
+msgid "Batched jobs"
+msgstr "Gebündelte Aufträge"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Hinter dem Ziel um {daysBehindTarget} Tag(e)"
@@ -265,11 +278,17 @@ msgstr "Abschließen"
 msgid "Complete All"
 msgstr "Alles abschließen"
 
+msgid "Complete Batch"
+msgstr "Charge abschließen"
+
 msgid "Complete passed"
 msgstr "Bestandene abgeschlossen"
 
 msgid "Completed"
 msgstr "Abgeschlossen"
+
+msgid "Completing"
+msgstr "Abschluss läuft"
 
 msgid "Connecting"
 msgstr "Verbindung wird hergestellt"
@@ -536,6 +555,9 @@ msgstr "Mit nicht gepicktem Material abschließen?"
 msgid "Forgot to Clock Out?"
 msgstr "Vergessen auszustempeln?"
 
+msgid "General"
+msgstr "Allgemein"
+
 msgid "Go back to operation"
 msgstr "Zurück zur Operation"
 
@@ -633,6 +655,9 @@ msgstr "Fertigungsaufträge"
 msgid "Keep picking"
 msgstr "Kommissionierung fortsetzen"
 
+msgid "Keyboard shortcuts"
+msgstr "Tastaturkürzel"
+
 msgid "Kit"
 msgstr "Set"
 
@@ -644,6 +669,9 @@ msgstr "Zuletzt abgeschlossen"
 
 msgid "Learn more"
 msgstr "Erfahren Sie mehr"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Lassen Sie einen Arbeitsgang auf 0, um ihn zu überspringen — er kehrt unausgeführt in den Terminplan zurück, ohne dass Zeit oder Menge erfasst werden."
 
 msgid "Leave this page"
 msgstr "Diese Seite verlassen"
@@ -723,6 +751,9 @@ msgstr "Artikel manuell aus dem Bestand entfernen"
 msgid "Mark Short"
 msgstr "Als kurz markieren"
 
+msgid "Mark the step done / record"
+msgstr "Schritt als erledigt markieren / aufzeichnen"
+
 msgid "matches"
 msgstr "entspricht"
 
@@ -766,6 +797,9 @@ msgstr "Meine Stunden"
 msgid "Name"
 msgstr "Name"
 
+msgid "Navigation"
+msgstr "Navigation"
+
 msgid "New"
 msgstr "Neu"
 
@@ -777,6 +811,9 @@ msgstr "Neueste zuerst"
 
 msgid "Next"
 msgstr "Weiter"
+
+msgid "Next step"
+msgstr "Nächster Schritt"
 
 msgid "No"
 msgstr "Nein"
@@ -873,6 +910,9 @@ msgstr "Keine Seriennummern"
 
 msgid "No serial numbers found"
 msgstr "Keine Seriennummern gefunden"
+
+msgid "No shortcuts available on this page."
+msgstr "Auf dieser Seite sind keine Tastaturkürzel verfügbar."
 
 msgid "No spare parts added yet"
 msgstr "Noch keine Ersatzteile hinzugefügt"
@@ -1025,8 +1065,14 @@ msgstr "Zurück"
 msgid "Preventive"
 msgstr "Vorbeugend"
 
+msgid "Previous step"
+msgstr "Vorheriger Schritt"
+
 msgid "Print"
 msgstr "Drucken"
+
+msgid "Print batch list"
+msgstr "Los-Liste drucken"
 
 msgid "Printer Settings"
 msgstr "Druckereinstellungen"
@@ -1112,6 +1158,9 @@ msgstr "Baugruppe wieder öffnen und Ersatzeinheit erstellen"
 msgid "Result"
 msgstr "Ergebnis"
 
+msgid "Retry Completion"
+msgstr "Fertigstellung wiederholen"
+
 msgid "Rework"
 msgstr "Nacharbeit"
 
@@ -1129,6 +1178,9 @@ msgstr "Kundenauftrag"
 
 msgid "Save"
 msgstr "Speichern"
+
+msgid "Save the form you're editing"
+msgstr "Speichern Sie das Formular, das Sie bearbeiten"
 
 msgid "Scan"
 msgstr "Scannen"
@@ -1286,6 +1338,9 @@ msgstr "Fehlbestand"
 msgid "Short pick {itemName}"
 msgstr "Kurzkommissionierung {itemName}"
 
+msgid "Show this overlay"
+msgstr "Dieses Overlay anzeigen"
+
 msgid "Sign in with Google"
 msgstr "Mit Google anmelden"
 
@@ -1321,6 +1376,9 @@ msgstr "Verwendete Ersatzteile"
 
 msgid "Start"
 msgstr "Start"
+
+msgid "Start or pause the operation"
+msgstr "Arbeitsgang starten oder unterbrechen"
 
 msgid "Station User"
 msgstr "Stationsbenutzer"
@@ -1398,6 +1456,9 @@ msgstr "Diese Einheit wird endgültig verschrottet und es wird eine neue Serienn
 msgid "Thumbnail"
 msgstr "Vorschaubild"
 
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Zeit und Kosten werden proportional zur Menge auf die Aufträge verteilt."
+
 msgid "Time Entries"
 msgstr "Zeiteinträge"
 
@@ -1407,6 +1468,9 @@ msgstr "Arbeitszeit: {0}"
 
 msgid "Today"
 msgstr "Heute"
+
+msgid "Toggle the sidebar"
+msgstr "Seitenleiste ein-/ausblenden"
 
 msgid "Tools"
 msgstr "Werkzeuge"

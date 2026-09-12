@@ -34,6 +34,7 @@ import {
   SelectItem,
   SelectTrigger,
   SelectValue,
+  Subheading,
   Switch,
   VStack
 } from "@carbon/react";
@@ -177,9 +178,9 @@ export function SectionFormModal({
 
               {isHeader && (
                 <div className="flex w-full flex-col gap-3 rounded-md border bg-muted/30 p-3">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Subheading variant="heavy" className="block">
                     Header layout
-                  </p>
+                  </Subheading>
                   <p className="text-xs text-muted-foreground">
                     Set the logo from the Logo item under Header.
                   </p>

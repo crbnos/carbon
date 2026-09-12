@@ -57,7 +57,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
-import { INVOICE_DUST_THRESHOLD } from "~/modules/invoicing";
+import { isInvoiceFullyPaid } from "~/modules/invoicing";
 import JobStatus from "~/modules/production/ui/Jobs/JobStatus";
 import { getPrivateUrl, path } from "~/utils/path";
 import { isSalesOrderLocked } from "../../sales.models";
@@ -138,10 +138,9 @@ const SalesOrderSummary = ({
   const balanceRemaining = routeData?.invoiceSummary?.balanceRemaining ?? 0;
   const currencyMismatchCount =
     routeData?.invoiceSummary?.currencyMismatchCount ?? 0;
-  // Sub-cent dust matches invoice view forgiveness (INVOICE_DUST_THRESHOLD).
+  // Keep positive document remainders visible, including sub-cent base amounts.
   const isFullyPaid =
-    balanceRemaining < INVOICE_DUST_THRESHOLD &&
-    paidAmount >= INVOICE_DUST_THRESHOLD &&
+    isInvoiceFullyPaid(balanceRemaining, paidAmount) &&
     (routeData?.invoiceSummary?.invoicedAmount ?? 0) > 0;
 
   const linesRequireJobs = hasLinesRequiringJobs({

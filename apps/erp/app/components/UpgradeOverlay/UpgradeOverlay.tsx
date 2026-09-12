@@ -18,7 +18,7 @@ function UpgradeOverlayRoot({ children, className }: WithChildren) {
   return (
     <div
       className={cn(
-        "relative w-full h-full min-h-[calc(100dvh-var(--topbar-height))]",
+        "relative w-full h-full min-h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]",
         className
       )}
     >

@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { fetchAll } from "@carbon/database/fetch-all";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
   datetime,
@@ -27,7 +28,7 @@ import type {
   accountValidator,
   costCenterValidator,
   currencyValidator,
-  defaultBalanceSheetAccountValidator,
+  defaultAccountValidator,
   defaultIncomeAcountValidator,
   depreciationMethods,
   dimensionValidator,
@@ -258,8 +259,8 @@ export async function getFinancialStatementBalances(
     .from("accounts")
     .select("*")
     .eq("companyGroupId", companyGroupId)
-    .eq("active", true)
-    .order("number", { ascending: true });
+    .order("number", { ascending: true })
+    .order("id", { ascending: true });
 
   const balancesQuery = client.rpc("accountTreeBalancesByCompany", {
     p_company_group_id: companyGroupId,
@@ -270,12 +271,18 @@ export async function getFinancialStatementBalances(
   });
 
   const [accountsResponse, balancesResponse] = await Promise.all([
-    accountsQuery,
-    balancesQuery
+    fetchAll<Database["public"]["Views"]["accounts"]["Row"]>(
+      () => accountsQuery
+    ),
+    fetchAll<
+      Database["public"]["Functions"]["accountTreeBalancesByCompany"]["Returns"][number]
+    >(() => balancesQuery.order("accountId", { ascending: true }))
   ]);
 
-  if (accountsResponse.error) return accountsResponse;
-  if (balancesResponse.error) return balancesResponse;
+  if (accountsResponse.error)
+    return { data: null, error: accountsResponse.error };
+  if (balancesResponse.error)
+    return { data: null, error: balancesResponse.error };
 
   const balancesByAccountId = (
     balancesResponse.data as unknown as (Transaction & { accountId: string })[]
@@ -356,6 +363,16 @@ export async function getFinancialStatementBalances(
 }
 
 export async function getAccountPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  companyId: string,
+  args: { start: string; periodEnds: string[] }
+) {
+  return accountPeriodSeriesQuery(client, companyGroupId, companyId, args);
+}
+
+// Keep the exported RPC response contract while report readers page the same query.
+function accountPeriodSeriesQuery(
   client: SupabaseClient<Database>,
   companyGroupId: string,
   companyId: string,
@@ -532,6 +549,132 @@ function rollUpTranslatedGroups<
   });
 }
 
+/** Apply report-only CTA to the reporting company's configured Equity account. */
+export async function applyCtaToReportPeriodSeries(
+  client: SupabaseClient<Database>,
+  companyGroupId: string,
+  reportingCompanyId: string,
+  args: {
+    accounts: ChartPeriodSeries[];
+    bucketKeys: string[];
+    ctaByBucket: Record<string, number>;
+  }
+): Promise<{
+  data: ChartPeriodSeries[] | null;
+  error: { message: string } | null;
+}> {
+  const defaults = await client
+    .from("accountDefault")
+    .select("currencyTranslationAccount")
+    .eq("companyId", reportingCompanyId)
+    .single();
+  if (defaults.error) return { data: null, error: defaults.error };
+  const accountId = defaults.data?.currencyTranslationAccount;
+  if (!accountId) {
+    return {
+      data: null,
+      error: {
+        message: `Configure a currency translation account for company ${reportingCompanyId}`
+      }
+    };
+  }
+  const ctaAccount = args.accounts.find((account) => account.id === accountId);
+  if (!ctaAccount) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The configured currency translation account is missing from the report"
+      }
+    };
+  }
+
+  if (
+    ctaAccount.companyGroupId !== companyGroupId ||
+    ctaAccount.active !== true ||
+    ctaAccount.isGroup !== false ||
+    ctaAccount.class !== "Equity" ||
+    ctaAccount.incomeBalance !== "Balance Sheet"
+  ) {
+    return {
+      data: null,
+      error: {
+        message:
+          "The currency translation account must be an active Balance Sheet Equity posting account in this company group"
+      }
+    };
+  }
+
+  const accounts = args.accounts.map((account) => ({
+    ...account,
+    periods: Object.fromEntries(
+      Object.entries(account.periods).map(([key, cell]) => [key, { ...cell }])
+    )
+  }));
+  const translatedCta = accounts.find((account) => account.id === accountId)!;
+  const netIncome = accounts.find(
+    (account) => account.id === NET_INCOME_ACCOUNT_ID
+  );
+
+  for (const key of args.bucketKeys) {
+    const cell = translatedCta.periods[key];
+    const cta = args.ctaByBucket[key];
+    if (
+      !cell ||
+      typeof cell.translatedBalance !== "number" ||
+      !Number.isFinite(cell.translatedBalance) ||
+      typeof cta !== "number" ||
+      !Number.isFinite(cta)
+    ) {
+      return {
+        data: null,
+        error: {
+          message: `Missing or invalid currency translation values for period ${key}`
+        }
+      };
+    }
+    translatedCta.periods[key] = {
+      ...cell,
+      translatedBalance: round(cell.translatedBalance + cta)
+    };
+
+    // Single-company translation deliberately excludes the synthetic income
+    // leaf. Derive its translated values from the full income statement before
+    // rolling Equity up; the raw current-year earnings remain unchanged.
+    const incomeCell = netIncome?.periods[key];
+    if (
+      netIncome &&
+      incomeCell &&
+      typeof incomeCell.translatedBalance !== "number"
+    ) {
+      let translatedBalance = 0;
+      let translatedNetChange = 0;
+      for (const account of accounts) {
+        if (account.incomeBalance !== "Income Statement" || account.isGroup)
+          continue;
+        const sign = rootSignMultiplier(account.class);
+        translatedBalance +=
+          sign * (account.periods[key]?.translatedBalance ?? 0);
+        translatedNetChange +=
+          sign * (account.periods[key]?.translatedNetChange ?? 0);
+      }
+      netIncome.periods[key] = {
+        ...incomeCell,
+        translatedBalance: round(translatedBalance),
+        translatedNetChange: round(translatedNetChange)
+      };
+    }
+  }
+
+  return {
+    data: applyRootSignCorrectionToSeries(
+      rollUpTranslatedGroups(accounts, args.bucketKeys),
+      args.bucketKeys
+    ),
+    error: null
+  };
+}
+
 // Overlay per-bucket translated leaf balances onto the series rows.
 function overlayTranslationOnSeries<
   T extends { id: string; periods: Record<string, PeriodCell> }
@@ -660,12 +803,12 @@ export async function getFinancialStatementPeriodSeries(
     .from("accounts")
     .select("*")
     .eq("companyGroupId", companyGroupId)
-    .eq("active", true)
-    .order("number", { ascending: true });
+    .order("number", { ascending: true })
+    .order("id", { ascending: true });
 
   // The buckets helper may truncate a very wide range, so the series start is
   // the FIRST bucket's start — not whatever the caller had before bucketing.
-  const seriesQuery = getAccountPeriodSeries(
+  const seriesQuery = accountPeriodSeriesQuery(
     client,
     companyGroupId,
     companyId,
@@ -676,8 +819,16 @@ export async function getFinancialStatementPeriodSeries(
   );
 
   const [accountsResponse, seriesResponse] = await Promise.all([
-    accountsQuery,
-    seriesQuery
+    fetchAll<Database["public"]["Views"]["accounts"]["Row"]>(
+      () => accountsQuery
+    ),
+    fetchAll<
+      Database["public"]["Functions"]["accountTreeBalancePeriodSeries"]["Returns"][number]
+    >(() =>
+      seriesQuery
+        .order("accountId", { ascending: true })
+        .order("periodEnd", { ascending: true })
+    )
   ]);
 
   if (accountsResponse.error) {
@@ -832,8 +983,9 @@ export async function getConsolidatedPeriodSeries(
   // RLS `client`. Defaults to `client` (no elimination visibility) when omitted.
   eliminationClient: SupabaseClient<Database> = client
 ): Promise<{
-  data: ChartPeriodSeries[];
+  data: ChartPeriodSeries[] | null;
   ctaByBucket: Record<string, number>;
+  error: string | null;
 }> {
   const bucketKeys = args.buckets.map((b) => b.key);
   const allIds = await resolveConsolidationCompanyIds(
@@ -934,6 +1086,17 @@ export async function getConsolidatedPeriodSeries(
   const ctaByBucket: Record<string, number> = Object.fromEntries(
     bucketKeys.map((key) => [key, 0])
   );
+
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedSeriesTranslation = results.find((r) => r.translation.error);
+  if (failedSeriesTranslation?.translation.error) {
+    return {
+      data: null,
+      ctaByBucket: {},
+      error: failedSeriesTranslation.translation.error
+    };
+  }
 
   for (const { series, translation } of results) {
     if (translation.error) continue;
@@ -1057,7 +1220,8 @@ export async function getConsolidatedPeriodSeries(
       rollUpTranslatedGroups(consolidated, bucketKeys),
       bucketKeys
     ),
-    ctaByBucket
+    ctaByBucket,
+    error: null
   };
 }
 
@@ -1948,6 +2112,108 @@ export async function getCurrencyByCode(
     .eq("code", currencyCode)
     .eq("companyGroupId", companyGroupId)
     .single();
+}
+
+/**
+ * The one sanctioned answer to "how many units of `currencyCode` per 1 unit of
+ * THIS company's base currency, right now". Base currency resolves to 1 by
+ * definition; a user override wins next; otherwise the ratio of the two
+ * USD-anchored market rates. A missing rate is an ERROR — never 1.
+ */
+export async function getExchangeRate(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client.rpc("get_exchange_rate", {
+    p_company_id: companyId,
+    p_currency_code: currencyCode
+  });
+}
+
+/**
+ * Every active currency of the company's group, resolved for THIS company,
+ * with provenance: 'base' | 'override' | 'market' | 'missing'. Backs the
+ * exchange-rates settings page.
+ */
+export async function getExchangeRates(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client.rpc("get_exchange_rates", {
+    p_company_id: companyId
+  });
+}
+
+export async function upsertExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  override: {
+    companyId: string;
+    currencyCode: string;
+    rate: number;
+    createdBy: string;
+    updatedBy: string;
+  }
+) {
+  // Update-first so re-pinning a rate never rewrites the original creator.
+  const update = await client
+    .from("exchangeRateOverride")
+    .update({
+      rate: override.rate,
+      updatedBy: override.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("companyId", override.companyId)
+    .eq("currencyCode", override.currencyCode)
+    .select("id");
+
+  if (update.error) return { data: null, error: update.error };
+  if (update.data.length > 0) {
+    return { data: update.data[0] ?? null, error: null };
+  }
+
+  const insert = await client
+    .from("exchangeRateOverride")
+    .insert({
+      companyId: override.companyId,
+      currencyCode: override.currencyCode,
+      rate: override.rate,
+      createdBy: override.createdBy
+    })
+    .select("id")
+    .single();
+
+  // Two concurrent first-time pins can both miss the update and race the
+  // insert; the loser hits the (companyId, currencyCode) unique constraint.
+  // Retry as an update so the second write wins instead of erroring.
+  if (insert.error?.code === "23505") {
+    const retry = await client
+      .from("exchangeRateOverride")
+      .update({
+        rate: override.rate,
+        updatedBy: override.updatedBy,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("companyId", override.companyId)
+      .eq("currencyCode", override.currencyCode)
+      .select("id");
+    if (retry.error) return { data: null, error: retry.error };
+    return { data: retry.data[0] ?? null, error: null };
+  }
+
+  return insert;
+}
+
+export async function deleteExchangeRateOverride(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  currencyCode: string
+) {
+  return client
+    .from("exchangeRateOverride")
+    .delete()
+    .eq("companyId", companyId)
+    .eq("currencyCode", currencyCode);
 }
 
 export async function getCurrencies(
@@ -3629,30 +3895,79 @@ export async function getPaymentTermsList(
     .order("name", { ascending: true });
 }
 
-export async function updateDefaultBalanceSheetAccounts(
+/** Save both defaults sections atomically after validating the effective mapping. */
+export async function updateDefaultAccounts(
   client: SupabaseClient<Database>,
-  defaultAccounts: z.infer<typeof defaultBalanceSheetAccountValidator> & {
+  defaultAccounts: z.infer<typeof defaultAccountValidator> & {
     companyId: string;
     updatedBy: string;
   }
 ) {
+  const validation = await validateDefaultIncomeAccounts(
+    client,
+    defaultAccounts
+  );
+  if (validation.error) return { data: null, error: validation.error };
   return client
     .from("accountDefault")
     .update(defaultAccounts)
     .eq("companyId", defaultAccounts.companyId);
 }
 
-export async function updateDefaultIncomeAccounts(
+/** Validate the effective shipping mapping before either defaults section saves. */
+export async function validateDefaultIncomeAccounts(
   client: SupabaseClient<Database>,
   defaultAccounts: z.infer<typeof defaultIncomeAcountValidator> & {
     companyId: string;
-    updatedBy: string;
   }
 ) {
-  return client
-    .from("accountDefault")
-    .update(defaultAccounts)
-    .eq("companyId", defaultAccounts.companyId);
+  const [company, stored] = await Promise.all([
+    client
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", defaultAccounts.companyId)
+      .single(),
+    getDefaultAccounts(client, defaultAccounts.companyId)
+  ]);
+  if (company.error || stored.error) {
+    return { error: company.error ?? stored.error };
+  }
+  if (!company.data?.companyGroupId || !stored.data) {
+    return { error: { message: "Company account defaults not found" } };
+  }
+  const shippingId =
+    defaultAccounts.salesShippingRevenueAccount === undefined
+      ? stored.data.salesShippingRevenueAccount
+      : defaultAccounts.salesShippingRevenueAccount;
+  if (!shippingId || shippingId === defaultAccounts.salesAccount) {
+    return {
+      error: {
+        message: "Select a shipping revenue account distinct from Sales"
+      }
+    };
+  }
+  const account = await client
+    .from("account")
+    .select("id, active, isGroup, class, incomeBalance")
+    .eq("id", shippingId)
+    .eq("companyGroupId", company.data.companyGroupId)
+    .maybeSingle();
+  if (account.error) return { error: account.error };
+  if (
+    !account.data ||
+    account.data.active !== true ||
+    account.data.isGroup !== false ||
+    account.data.class !== "Revenue" ||
+    account.data.incomeBalance !== "Income Statement"
+  ) {
+    return {
+      error: {
+        message:
+          "Shipping revenue must be an active Revenue leaf account in this company group"
+      }
+    };
+  }
+  return { error: null };
 }
 
 export async function updateFiscalYearSettings(
@@ -4287,20 +4602,16 @@ export async function translateCompanyBalances(
   cta: number;
   error: string | null;
 }> {
-  // getConsolidationRates is defined in migration
-  // 20260713225803_ledger-balance-posted-filter.sql; the committed DB types
-  // regenerate from the cloud DB after deploy, hence the cast.
-  const { data: ratesData, error: ratesError } = await (
-    client.rpc as unknown as (
-      fn: string,
-      args: Record<string, unknown>
-    ) => PromiseLike<{ data: unknown; error: { message: string } | null }>
-  )("getConsolidationRates", {
-    p_company_group_id: companyGroupId,
-    p_company_id: companyId,
-    p_period_end: periodEnd,
-    p_period_start: periodStart
-  });
+  const { data: ratesData, error: ratesError } = await client.rpc(
+    "getConsolidationRates",
+    {
+      p_company_group_id: companyGroupId,
+      p_company_id: companyId,
+      p_target_currency: targetCurrency,
+      p_period_end: periodEnd,
+      p_period_start: periodStart
+    }
+  );
 
   if (ratesError) {
     return { data: null, cta: 0, error: ratesError.message };
@@ -4313,11 +4624,30 @@ export async function translateCompanyBalances(
         averageRate: number;
         historicalRate: number;
       }
+    | null
     | undefined;
 
-  const sameCurrency = rates?.sourceCurrency === targetCurrency;
+  if (!rates) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Missing consolidation rates for company ${companyId}`
+    };
+  }
+  if (
+    typeof rates.sourceCurrency !== "string" ||
+    !rates.sourceCurrency.trim()
+  ) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Missing source currency for company ${companyId}`
+    };
+  }
+
+  const sameCurrency = rates.sourceCurrency === targetCurrency;
   const rateFor = (consolidatedRate: string | null): number => {
-    if (sameCurrency || !rates) return 1;
+    if (sameCurrency) return 1;
     switch (consolidatedRate) {
       case "Average":
         return Number(rates.averageRate);
@@ -4329,9 +4659,12 @@ export async function translateCompanyBalances(
     }
   };
 
-  const rows: TranslatedBalance[] = [];
-  let totalTranslatedAssets = 0;
-  let totalTranslatedLiabilitiesAndEquity = 0;
+  const leaves: Array<{
+    account: (typeof balances)[number];
+    localBalance: number;
+    sign: number;
+  }> = [];
+  let sourceDebitMinusCredit = 0;
 
   for (const account of balances) {
     // Leaf accounts only, and never the synthetic Net Income line — its
@@ -4339,8 +4672,55 @@ export async function translateCompanyBalances(
     // too would double-count net income in the CTA.
     if (account.isGroup || account.id === NET_INCOME_ACCOUNT_ID) continue;
 
+    let sign: number;
+    switch (account.class) {
+      case "Asset":
+      case "Expense":
+        sign = 1;
+        break;
+      case "Liability":
+      case "Equity":
+      case "Revenue":
+        sign = -1;
+        break;
+      default:
+        return {
+          data: null,
+          cta: 0,
+          error: `Invalid account class for account ${account.id}`
+        };
+    }
+    const localBalance = Number(account.balanceAtDate);
+    if (!Number.isFinite(localBalance)) {
+      return {
+        data: null,
+        cta: 0,
+        error: `Invalid source balance for account ${account.id}`
+      };
+    }
+    sourceDebitMinusCredit += sign * localBalance;
+    leaves.push({ account, localBalance, sign });
+  }
+
+  if (!isBalanced(sourceDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
+    return {
+      data: null,
+      cta: 0,
+      error: `Source balances for company ${companyId} do not balance (off by ${round(sourceDebitMinusCredit)})`
+    };
+  }
+
+  const rows: TranslatedBalance[] = [];
+  let translatedDebitMinusCredit = 0;
+  for (const { account, localBalance, sign } of leaves) {
     const exchangeRate = rateFor(account.consolidatedRate);
-    const localBalance = Number(account.balanceAtDate ?? 0);
+    if (!Number.isFinite(exchangeRate) || exchangeRate <= 0) {
+      return {
+        data: null,
+        cta: 0,
+        error: `Invalid ${account.consolidatedRate ?? "Current"} consolidation rate for account ${account.id}`
+      };
+    }
     const translatedBalance = round(localBalance * exchangeRate);
 
     rows.push({
@@ -4350,18 +4730,13 @@ export async function translateCompanyBalances(
       translatedBalance
     });
 
-    if (account.class === "Asset") {
-      totalTranslatedAssets += translatedBalance;
-    } else {
-      // Liability, Equity, Revenue, Expense (but income statement
-      // accounts net to retained earnings on balance sheet)
-      totalTranslatedLiabilitiesAndEquity += translatedBalance;
-    }
+    translatedDebitMinusCredit += sign * translatedBalance;
   }
 
-  // CTA = translated assets - translated (liabilities + equity)
-  // A balanced sheet means assets = liabilities + equity + CTA
-  const cta = totalTranslatedAssets - totalTranslatedLiabilitiesAndEquity;
+  // Natural balances become debit-minus-credit with Asset/Expense positive
+  // and Liability/Equity/Revenue negative. The translated residual is the
+  // additional Equity balance; report-tree presentation signs do not apply.
+  const cta = round(translatedDebitMinusCredit);
 
   return { data: rows, cta, error: null };
 }
@@ -4483,6 +4858,13 @@ export async function getConsolidatedBalances(
   const allBalances = results.map((r) => r.balances);
   const translations = results.map((r) => r.translation);
 
+  // A subsidiary whose translation failed must fail the consolidation loudly —
+  // silently excluding it produces a wrong consolidated total with no signal.
+  const failedTranslation = translations.find((t) => t.error);
+  if (failedTranslation?.error) {
+    return { data: null, cta: 0, error: failedTranslation.error };
+  }
+
   // Build a map of translated balances per account, summed across companies
   const translationByAccount = new Map<
     string,
@@ -4563,7 +4945,11 @@ export async function getConsolidatedBalances(
     };
   });
 
-  return { data: applyRootSignCorrection(consolidated), cta: totalCta };
+  return {
+    data: applyRootSignCorrection(consolidated),
+    cta: totalCta,
+    error: null
+  };
 }
 
 // -- Intercompany --
@@ -4732,21 +5118,26 @@ export async function getIntercompanyBalance(
   });
 }
 
+/**
+ * Market-rate history for the chart on the exchange-rates page. Reads the
+ * platform-global "exchangeRate" store (USD-anchored), newest ~6 months of
+ * daily rows, ascending for the chart.
+ */
 export async function getExchangeRateHistory(
   client: SupabaseClient<Database>,
-  companyGroupId: string,
   currencyCode: string
 ) {
-  const sixMonthsAgo = new Date();
-  sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6);
-
-  return client
-    .from("exchangeRateHistory")
+  const result = await client
+    .from("exchangeRate")
     .select("effectiveDate, rate")
-    .eq("companyGroupId", companyGroupId)
     .eq("currencyCode", currencyCode)
-    .gte("effectiveDate", sixMonthsAgo.toISOString().split("T")[0])
-    .order("effectiveDate", { ascending: true });
+    .order("effectiveDate", { ascending: false })
+    .limit(180);
+
+  return {
+    data: result.data ? [...result.data].reverse() : result.data,
+    error: result.error
+  };
 }
 
 // -- Journal Entries --
@@ -5097,6 +5488,199 @@ export async function postJournalEntry(
     .eq("id", id)
     .select("id")
     .single();
+}
+
+// Returns `{ id }` of the company's current posted Opening Balance journal
+// entry, or null. Callers only need existence — this is the re-entry gate. Only
+// status='Posted' blocks a new set; a Reversed entry lets the user enter a fresh
+// one.
+export async function getExistingOpeningBalanceEntry(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  const entry = await client
+    .from("journal")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("sourceType", "Opening Balance")
+    .eq("status", "Posted")
+    .order("createdAt", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (entry.error) return { data: null, error: entry.error };
+  return { data: entry.data ? { id: entry.data.id } : null, error: null };
+}
+
+// Posts the company's opening balances as a single balanced journal entry
+// (sourceType 'Opening Balance'). Each `balances` row carries one signed
+// natural-balance amount for a posting account; the net difference is plugged to
+// the Retained Earnings default account so debits equal credits. Reuses the
+// manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
+// postJournalEntry (which validates the balance and resolves the period).
+export async function createOpeningBalanceJournal(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    postingDate: string;
+    balances: Array<{ accountId: string; amount: number }>;
+  }
+) {
+  const { companyId, companyGroupId, userId, postingDate, balances } = args;
+
+  const entered = balances.filter((b) => b.amount !== 0);
+  if (entered.length === 0) {
+    return { data: null, error: { message: "No opening balances entered" } };
+  }
+
+  // Guard here — not only in the route — so every caller (the route action AND
+  // the MCP-exposed tool) is protected. Opening balances are entered once; an
+  // un-reversed posted entry must be reversed before a new set is posted.
+  const existing = await getExistingOpeningBalanceEntry(client, companyId);
+  if (existing.error) return { data: null, error: existing.error };
+  if (existing.data) {
+    return {
+      data: null,
+      error: {
+        message:
+          "An opening balance entry already exists — reverse it before entering new balances"
+      }
+    };
+  }
+
+  // Retained Earnings is the balancing plug.
+  const defaults = await getDefaultAccounts(client, companyId);
+  if (defaults.error) return { data: null, error: defaults.error };
+  const retainedEarningsAccount = defaults.data?.retainedEarningsAccount;
+  if (!retainedEarningsAccount) {
+    return {
+      data: null,
+      error: {
+        message:
+          "No Retained Earnings account is configured in Default Accounts"
+      }
+    };
+  }
+
+  // Account classes turn each signed natural-balance amount into debit/credit
+  // (saveJournalEntryWithLines re-derives the stored amount from debit/credit).
+  const accountIds = [...new Set(entered.map((b) => b.accountId))];
+  const accounts = await client
+    .from("account")
+    .select("id, class")
+    .in("id", accountIds)
+    // Scope to the caller's chart of accounts (company-group). A foreign id then
+    // resolves to no class and aborts below with "Account not found", so a
+    // crafted payload can't post against another tenant's accounts.
+    .eq("companyGroupId", companyGroupId);
+  if (accounts.error) return { data: null, error: accounts.error };
+  const classById = new Map(
+    accounts.data.map((a) => [
+      a.id,
+      a.class as Database["public"]["Enums"]["glAccountClass"]
+    ])
+  );
+
+  const isNaturalDebit = (cls: Database["public"]["Enums"]["glAccountClass"]) =>
+    cls === "Asset" || cls === "Expense";
+
+  // Sum in "debit positive" space so the plug's sign is unambiguous.
+  let netDebitMinusCredit = 0;
+  const lines: Array<{ accountId: string; debit: number; credit: number }> = [];
+  for (const b of entered) {
+    const cls = classById.get(b.accountId);
+    if (!cls) {
+      return {
+        data: null,
+        error: { message: `Account not found: ${b.accountId}` }
+      };
+    }
+    const isDebit = isNaturalDebit(cls) ? b.amount >= 0 : b.amount < 0;
+    const magnitude = Math.abs(b.amount);
+    const debit = isDebit ? magnitude : 0;
+    const credit = isDebit ? 0 : magnitude;
+    netDebitMinusCredit += debit - credit;
+    lines.push({ accountId: b.accountId, debit, credit });
+  }
+
+  // Plug to Retained Earnings unless the entered lines already balance (shared
+  // tolerance, no literal). More debit ⇒ the plug is a credit, and vice-versa.
+  if (!isBalanced(netDebitMinusCredit, 0, JOURNAL_BALANCE_TOLERANCE)) {
+    lines.push({
+      accountId: retainedEarningsAccount,
+      debit: netDebitMinusCredit < 0 ? -netDebitMinusCredit : 0,
+      credit: netDebitMinusCredit > 0 ? netDebitMinusCredit : 0
+    });
+  }
+
+  const journalEntryId = await getNextSequence(
+    client,
+    "journalEntry",
+    companyId
+  );
+  if (journalEntryId.error || !journalEntryId.data) {
+    return {
+      data: null,
+      error: journalEntryId.error ?? {
+        message: "Failed to allocate journal entry number"
+      }
+    };
+  }
+
+  const created = await createJournalEntry(client, {
+    journalEntryId: journalEntryId.data as string,
+    sourceType: "Opening Balance",
+    companyId,
+    createdBy: userId,
+    postingDate,
+    description: "Opening balances"
+  });
+  if (created.error || !created.data) {
+    return {
+      data: null,
+      error: created.error ?? { message: "Failed to create journal entry" }
+    };
+  }
+  const id = created.data.id;
+
+  // No transaction spans create → save → post (these reuse the supabase-client
+  // JE helpers), so on any failure roll back the Draft header we just created —
+  // journalLine cascades (ON DELETE CASCADE). Otherwise an orphan 'Opening
+  // Balance' Draft lingers that the Posted-only re-entry gate can't see, and the
+  // user would accumulate one per retry (e.g. an as-of date in a Closed period).
+  const rollbackDraft = () =>
+    client.from("journal").delete().eq("id", id).eq("status", "Draft");
+
+  const saved = await saveJournalEntryWithLines(client, {
+    journalEntryId: id,
+    postingDate,
+    description: "Opening balances",
+    updatedBy: userId,
+    lines,
+    companyId,
+    companyGroupId
+  });
+  if (saved.error) {
+    await rollbackDraft();
+    return { data: null, error: saved.error };
+  }
+
+  const posted = await postJournalEntry(client, id, userId);
+  if (posted.error) {
+    await rollbackDraft();
+    // A unique violation on journal_one_posted_opening_balance_per_company means
+    // a concurrent request already posted the company's opening balances — the
+    // atomic backstop for the check-then-post race.
+    const message =
+      (posted.error as { code?: string }).code === "23505"
+        ? "An opening balance entry already exists — reverse it before entering new balances"
+        : posted.error.message;
+    return { data: null, error: { message } };
+  }
+
+  return { data: { id }, error: null };
 }
 
 export async function reverseJournalEntry(

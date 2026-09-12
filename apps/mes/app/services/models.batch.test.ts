@@ -1,0 +1,111 @@
+import { describe, expect, it } from "vitest";
+import { completeJobOperationBatchValidator } from "./models";
+
+// The Complete Batch form submits variable-length per-member quantities as a
+// nested array (ValidatedForm), with quantity/scrap coerced from form strings via
+// zfd.numeric. The validator must parse that shape into a typed array the
+// batch-operations edge fn "complete" path consumes. See
+// .ai/specs/2026-08-21-job-operation-batching.md.
+describe("completeJobOperationBatchValidator", () => {
+  it("parses per-member quantities and optional scrap", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [
+        { jobOperationId: "op_1", quantity: 5 },
+        { jobOperationId: "op_2", quantity: 20, scrapQuantity: 2 },
+        { jobOperationId: "op_3", quantity: 10 }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.batchId).toBe("bat_1");
+      expect(result.data.members).toHaveLength(3);
+      expect(result.data.members[1]).toEqual({
+        jobOperationId: "op_2",
+        quantity: 20,
+        scrapQuantity: 2
+      });
+    }
+  });
+
+  it("coerces numeric strings from the form (zfd.numeric)", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [{ jobOperationId: "op_1", quantity: "7", scrapQuantity: "1" }]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.members[0]).toEqual({
+        jobOperationId: "op_1",
+        quantity: 7,
+        scrapQuantity: 1
+      });
+    }
+  });
+
+  it("rejects an empty members array", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: []
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a missing batchId", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      members: [{ jobOperationId: "op_1", quantity: 5 }]
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("rejects a negative quantity", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [{ jobOperationId: "op_1", quantity: -1 }]
+    });
+    expect(result.success).toBe(false);
+  });
+
+  // An excluded ("Not in this run") member's quantity input is disabled, so its
+  // NumberControlled is omitted from FormData entirely — the member arrives with
+  // NO `quantity` key. The validator must accept that (quantity is optional); the
+  // route then forces the excluded member to 0. This is the revert-guard for
+  // making `quantity` optional.
+  it("accepts an excluded member with no quantity key", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [
+        { jobOperationId: "op_1", quantity: 5 },
+        { jobOperationId: "op_2", excluded: "true" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.members[1].quantity).toBeUndefined();
+      expect(result.data.members[1].excluded).toBe("true");
+    }
+  });
+
+  // "Not in this run" travels as a string flag from a Hidden input (the same
+  // idiom as productionEventValidator's `exclusive`); the route maps
+  // `excluded === "true"` to a boolean before invoking the edge fn. An empty
+  // string (row included) must parse as absent, not as a truthy flag.
+  it("parses the excluded string flag per member", () => {
+    const result = completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [
+        { jobOperationId: "op_1", quantity: 5, excluded: "" },
+        { jobOperationId: "op_2", quantity: 0, excluded: "true" }
+      ]
+    });
+
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.members[0].excluded).toBeUndefined();
+      expect(result.data.members[1].excluded).toBe("true");
+    }
+  });
+});

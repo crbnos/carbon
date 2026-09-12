@@ -59,7 +59,8 @@ const CreatableMultiSelect = forwardRef<
       value,
       options,
       selected,
-      isReadOnly,
+      isReadOnly: isReadOnlyProp,
+      disabled,
       placeholder,
       emptyMessage,
       label,
@@ -77,6 +78,9 @@ const CreatableMultiSelect = forwardRef<
     ref
   ) => {
     const { t } = useLingui();
+    // Treat the native `disabled` prop as equivalent to `isReadOnly` — the type
+    // accepts it (extends button props), so honor it rather than swallow it.
+    const isReadOnly = isReadOnlyProp || disabled;
     const [open, setOpen] = useState(false);
     const [search, setSearch] = useState("");
 
@@ -107,14 +111,20 @@ const CreatableMultiSelect = forwardRef<
       >
         {isInlinePreview && Array.isArray(value) && value.length > 0 && (
           <span
-            className="flex flex-grow line-clamp-1 items-center cursor-pointer"
-            onClick={() => setOpen(true)}
+            className={cn(
+              "flex flex-grow line-clamp-1 items-center cursor-pointer",
+              isReadOnly && "cursor-default opacity-50"
+            )}
+            onClick={isReadOnly ? undefined : () => setOpen(true)}
           >
             {inline(value, options, maxPreview)}
           </span>
         )}
 
-        <Popover open={open} onOpenChange={setOpen}>
+        <Popover
+          open={open}
+          onOpenChange={(next) => setOpen(isReadOnly ? false : next)}
+        >
           <PopoverTrigger asChild>
             {inline ? (
               <IconButton
@@ -132,7 +142,9 @@ const CreatableMultiSelect = forwardRef<
                 }
                 ref={ref}
                 isDisabled={isReadOnly}
-                onClick={() => setOpen(true)}
+                onClick={() => {
+                  if (!isReadOnly) setOpen(true);
+                }}
               />
             ) : (
               <CommandTrigger

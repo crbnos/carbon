@@ -18,7 +18,7 @@ import {
   getLineTotal,
   getTotal
 } from "../utils/sales-invoice";
-import { getMoneyFormatter } from "../utils/shared";
+import { getMoneyFormatter, getRateFormatter } from "../utils/shared";
 import ExternalNotes from "./components/ExternalNotes";
 import {
   EmailThemeProvider,
@@ -60,6 +60,14 @@ const SalesInvoiceEmail = ({
 
   const currencyCode = salesInvoice.currencyCode ?? company.baseCurrencyCode;
   const formatter = getMoneyFormatter(locale, currencyDecimals, currencyCode);
+  // A unit price is a RATE, not a settlement amount: the currency's
+  // decimals are its FLOOR, not its ceiling, so a sub-cent price does not
+  // print as 0.00. The PDFs already split these two kinds.
+  const rateFormatter = getRateFormatter(
+    locale,
+    currencyDecimals,
+    currencyCode
+  );
   const preview = (
     <Preview>{`${salesInvoice.invoiceId} from ${company.name}`}</Preview>
   );
@@ -253,7 +261,7 @@ const SalesInvoiceEmail = ({
                   <Text className="text-xs font-semibold">
                     {line.invoiceLineType === "Comment"
                       ? "-"
-                      : formatter.format(line.convertedUnitPrice ?? 0)}
+                      : rateFormatter.format(line.convertedUnitPrice ?? 0)}
                   </Text>
                 </Column>
                 <Column className="text-right pr-5 align-top w-[100px]">

@@ -31,6 +31,73 @@ export function round(
   return shift(fn(shift(value, scale)), -scale);
 }
 
+/** Round every part to `scale` so the results sum EXACTLY to `target`, moving at
+ *  most ONE minor unit per part (largest-remainder / Hamilton apportionment).
+ *
+ *  Independently rounding N parts leaves a residual of up to N/2 minor units.
+ *  Concentrating that residual on a single part is what breaks a part's own
+ *  relative/absolute pair — a tax line stops matching its own `taxPercent`, and
+ *  a provider that re-derives `amount = net × percent` rejects the document.
+ *  Spreading it one unit at a time keeps every part within a minor unit of its
+ *  exact value, which is the bound those provider checks assume.
+ *
+ *  Parts rounded furthest DOWN receive the surplus first; parts rounded furthest
+ *  UP give a unit back first. Ties resolve by index so the result is stable.
+ *  Refuses when the residual exceeds one unit per part — that is a real
+ *  disagreement between the parts and the target, not a rounding artifact. */
+export function distributeRoundingResidual(
+  exactValues: number[],
+  target: number,
+  scale: number = SCALE
+): number[] {
+  const rounded = exactValues.map((value) => round(value, scale));
+  if (!Number.isFinite(target) || rounded.some((v) => !Number.isFinite(v))) {
+    throw new Error("Rounding residual inputs must be finite");
+  }
+  const sum = rounded.reduce((total, value) => total + value, 0);
+  // Compare in whole minor units: the residual is an exact integer count of
+  // them, so this never inherits the float noise of the sum itself.
+  const residualUnits = Math.round(shift(target - sum, scale));
+  if (residualUnits === 0) return rounded;
+  if (Math.abs(residualUnits) > exactValues.length) {
+    throw new Error(
+      `Rounding residual of ${residualUnits} unit(s) exceeds ${exactValues.length} part(s)`
+    );
+  }
+  const unit = shift(1, -scale);
+  const direction = Math.sign(residualUnits);
+  const order = exactValues
+    .map((value, index) => ({ index, error: value - rounded[index]! }))
+    // Surplus goes to the most under-rounded part; a deficit is taken from the
+    // most over-rounded one.
+    .sort((a, b) => direction * (b.error - a.error) || a.index - b.index);
+  let placed = 0;
+  for (const { index } of order) {
+    if (placed === Math.abs(residualUnits)) break;
+    const next = round(rounded[index]! + direction * unit, scale);
+    // A part may not cross zero. One minor unit is a rounding correction on a
+    // part that is nearly its rounded value; on a part that rounds to ~0 it
+    // would instead REVERSE the part's economic direction — a +0.001 tax
+    // becoming -0.01 against positive revenue, which is the negative-tax-on-
+    // positive-revenue shape this whole helper exists to prevent. Skip such a
+    // part and give the unit to the next-most-deserving one.
+    if (exactValues[index]! !== 0 && next !== 0 && Math.sign(next) !== Math.sign(exactValues[index]!)) {
+      continue;
+    }
+    rounded[index] = next;
+    placed += 1;
+  }
+  if (placed !== Math.abs(residualUnits)) {
+    // Every remaining candidate would have to flip sign, so the target
+    // genuinely disagrees with the parts rather than merely rounding away
+    // from them.
+    throw new Error(
+      `Rounding residual of ${residualUnits} unit(s) cannot be placed without reversing a part's sign`
+    );
+  }
+  return rounded;
+}
+
 /** The extra whole units to make/procure to cover scrap at `rate`. Ceils to
  *  whole units — you cannot make a third of a part to throw away — while the
  *  fractional target itself is NEVER rounded (callers add the two).

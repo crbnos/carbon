@@ -20,6 +20,9 @@ import type {
   getJobMakeMethodById,
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
+  getJobOperationBatchEvents,
+  getJobOperationBatches,
+  getJobOperationBatchWithMembers,
   getJobOperations,
   getJobPurchaseOrderLines,
   getMaintenanceDispatch,
@@ -39,7 +42,8 @@ import type {
   getProductionPlanning,
   getProductionProjections,
   getProductionQuantities,
-  getScrapReasons
+  getScrapReasons,
+  JobOperationBatchListMember
 } from "./production.service";
 
 export type ActiveProductionEvent = NonNullable<
@@ -194,6 +198,75 @@ export type ProductionPlanningItem = NonNullable<
 export type ScrapReason = NonNullable<
   Awaited<ReturnType<typeof getScrapReasons>>["data"]
 >[number];
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatches>>["data"]
+>[number] & {
+  // Merged into the row by the batches loader (getJobOperationBatchMemberStats).
+  memberCount?: number;
+  totalQuantity?: number;
+  // Header work center, falling back to the members' shared one.
+  workCenterName?: string | null;
+  // Member rows for the expandable sub-list (getJobOperationBatchMembers).
+  members?: JobOperationBatchListMember[];
+};
+
+export type JobOperationBatchDetail = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchWithMembers>>["data"]
+>;
+
+export type JobOperationBatchEvent = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatchEvents>>["data"]
+>[number];
+
+// Material properties of one BOM line, as returned by get_batchable_operations.
+export type BatchMaterial = {
+  itemReadableId: string | null;
+  description: string | null;
+  quantity: number | null;
+  formId: string | null;
+  formName: string | null;
+  substanceId: string | null;
+  substanceName: string | null;
+  gradeId: string | null;
+  gradeName: string | null;
+  dimensionId: string | null;
+  dimensionName: string | null;
+  finishId: string | null;
+  finishName: string | null;
+};
+
+// A candidate operation for the batch builder. The base shape is the
+// get_batchable_operations RPC row; the batchable-operations API route enriches
+// each with the op's setupTime/setupUnit/dueDate (for the setup-saving and
+// due-spread chips), which the RPC does not return.
+export type BatchCandidate = {
+  id: string;
+  jobId: string;
+  jobReadableId: string | null;
+  jobDueDate: string | null;
+  jobStatus: string | null;
+  itemReadableId: string | null;
+  itemDescription: string | null;
+  description: string | null;
+  operationQuantity: number | null;
+  status: string | null;
+  workCenterId: string | null;
+  jobOperationBatchId: string | null;
+  batchReadableId: string | null;
+  batchStatus: "Active" | "Completing" | "Completed" | null;
+  batchWorkCenterId: string | null;
+  materials: BatchMaterial[];
+  // Enriched by the API route (absent on the raw RPC row).
+  setupTime: number | null;
+  setupUnit: string | null;
+  laborTime: number | null;
+  laborUnit: string | null;
+  machineTime: number | null;
+  machineUnit: string | null;
+  dueDate: string | null;
+  thumbnailPath: string | null;
+};
 
 // --- Assembly Instructions ---------------------------------------------
 

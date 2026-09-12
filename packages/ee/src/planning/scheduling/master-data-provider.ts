@@ -100,6 +100,8 @@ export type LiveReservation = {
   jobId: string;
   /** Human-readable job number (job."jobId", e.g. J000001) for conflict messages */
   readableJobId: string;
+  /** Set on a coalesced batch reservation (the batch pre-pass owns those rows). */
+  jobOperationBatchId: string | null;
 };
 
 /** A process that requires an ability, with its 1:1 linked ability. */
@@ -263,6 +265,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .leftJoin("location", "location.id", "job.locationId")
       .select([
         "job.id",
+        "job.status",
         "job.dueDate",
         "job.deadlineType",
         "job.locationId",
@@ -483,6 +486,7 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
         "cr.startAt",
         "cr.endAt",
         "cr.jobId",
+        "cr.jobOperationBatchId",
         "j.jobId as readableJobId"
       ])
       .where("cr.companyId", "=", this.companyId)
@@ -493,15 +497,30 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .where("cr.endAt", ">", msToInstantIso(fromDate));
     // Exclude the whole batch: each engine run sees only non-batch reservations
     // plus the in-run placements of already-run batch jobs (no pre-clear step).
+    // Rows tagged with a jobOperationBatchId are never excluded: a batch
+    // reservation is already placed and must stay visible to member jobs' runs.
     if (excludeJobIds.length > 0) {
-      query = query.where("cr.jobId", "not in", excludeJobIds);
+      query = query.where((eb) =>
+        eb.or([
+          eb("cr.jobId", "not in", excludeJobIds),
+          eb("cr.jobOperationBatchId", "is not", null)
+        ])
+      );
     }
     const rows = await query
       // Reservations are only deleted when their job is rescheduled, so
       // rows from jobs outside these statuses linger (terminal jobs) or
       // pre-date release (Draft/Planned) — neither may hold capacity
-      // against live jobs
-      .where("j.status", "in", [...capacityHoldingJobStatuses])
+      // against live jobs. A BATCH-tagged row is the exception: the batch
+      // holds capacity by virtue of the BATCH being released, and its anchor
+      // job may legitimately still be Draft/Planned (a Released batch pulls
+      // members ahead of their jobs).
+      .where((eb) =>
+        eb.or([
+          eb("j.status", "in", [...capacityHoldingJobStatuses]),
+          eb("cr.jobOperationBatchId", "is not", null)
+        ])
+      )
       .execute();
 
     return rows.map((r) => ({
@@ -510,7 +529,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       startAt: toInstantMs(r.startAt as unknown as Date | string),
       endAt: toInstantMs(r.endAt as unknown as Date | string),
       jobId: r.jobId,
-      readableJobId: r.readableJobId
+      readableJobId: r.readableJobId,
+      jobOperationBatchId: r.jobOperationBatchId ?? null
     }));
   }
 

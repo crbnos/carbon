@@ -10,11 +10,8 @@ import { useRouteData } from "~/hooks";
 import type { AccountListItem } from "~/modules/accounting";
 import {
   defaultAccountValidator,
-  defaultBalanceSheetAccountValidator,
-  defaultIncomeAcountValidator,
   getDefaultAccounts,
-  updateDefaultBalanceSheetAccounts,
-  updateDefaultIncomeAccounts
+  updateDefaultAccounts
 } from "~/modules/accounting";
 import { AccountDefaultsForm } from "~/modules/accounting/ui/AccountDefaults";
 import type { Handle } from "~/utils/handle";
@@ -65,38 +62,19 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const incomeValidation = defaultIncomeAcountValidator.safeParse(
-      validation.data
-    );
-    const balanceValidation = defaultBalanceSheetAccountValidator.safeParse(
-      validation.data
-    );
-
-    if (!incomeValidation.success || !balanceValidation.success) {
-      throw new Error("Failed to parse default accounts");
-    }
-
-    const [updateIncome, updateBalance] = await Promise.all([
-      updateDefaultIncomeAccounts(client, {
-        ...incomeValidation.data,
-        companyId,
-        updatedBy: userId
-      }),
-      updateDefaultBalanceSheetAccounts(client, {
-        ...balanceValidation.data,
-        companyId,
-        updatedBy: userId
-      })
-    ]);
-
-    if (updateIncome.error || updateBalance.error) {
+    const result = await updateDefaultAccounts(client, {
+      ...validation.data,
+      companyId,
+      updatedBy: userId
+    });
+    if (result.error) {
       return data(
         {},
         await flash(
           request,
           error(
-            updateIncome.error || updateBalance.error,
-            "Failed to update default accounts"
+            result.error,
+            result.error.message || "Failed to update default accounts"
           )
         )
       );
@@ -119,7 +97,7 @@ export default function AccountDefaultsRoute() {
   }>(path.to.accounting);
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height))]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"

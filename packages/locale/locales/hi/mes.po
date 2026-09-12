@@ -25,6 +25,10 @@ msgstr "{0} सक्रिय"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} नौकरियां"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} नमूना विफलता(एं) दर्ज की �
 
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
 msgid "About"
 msgstr "के बारे में"
@@ -138,6 +145,9 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to leave this page?"
 msgstr "क्या आप वाकई इस पृष्ठ को छोड़ना चाहते हैं?"
 
+msgid "Assembly steps"
+msgstr "असेंबली चरण"
+
 msgid "Assigned"
 msgstr "निर्दिष्ट"
 
@@ -168,6 +178,9 @@ msgstr "बैच नंबर {0}"
 
 msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
+
+msgid "Batched jobs"
+msgstr "बैच की गई नौकरियां"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
@@ -265,11 +278,17 @@ msgstr "पूर्ण करें"
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
 
+msgid "Complete Batch"
+msgstr "बैच पूरा करें"
+
 msgid "Complete passed"
 msgstr "उत्तीर्ण को पूर्ण करें"
 
 msgid "Completed"
 msgstr "पूर्ण"
+
+msgid "Completing"
+msgstr "पूर्ण हो रहा है"
 
 msgid "Connecting"
 msgstr "जुड़ रहा है"
@@ -536,6 +555,9 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
+msgid "General"
+msgstr "सामान्य"
+
 msgid "Go back to operation"
 msgstr "ऑपरेशन पर वापस जाएं"
 
@@ -633,6 +655,9 @@ msgstr "जॉब"
 msgid "Keep picking"
 msgstr "पिकिंग जारी रखें"
 
+msgid "Keyboard shortcuts"
+msgstr "कीबोर्ड शॉर्टकट"
+
 msgid "Kit"
 msgstr "किट"
 
@@ -644,6 +669,9 @@ msgstr "अंतिम पूर्ण"
 
 msgid "Learn more"
 msgstr "अधिक जानें"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "एक ऑपरेशन को 0 पर छोड़ दें इसे स्किप करने के लिए — यह शेड्यूल में अंजाम न दिए गए रूप में वापस आता है, कोई समय या मात्रा दर्ज नहीं होती।"
 
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
@@ -723,6 +751,9 @@ msgstr "इन्वेंटरी से मैनुअल रूप से �
 msgid "Mark Short"
 msgstr "कम चिह्नित करें"
 
+msgid "Mark the step done / record"
+msgstr "चरण को हो गया चिह्नित करें / रिकॉर्ड करें"
+
 msgid "matches"
 msgstr "मेल खाता है"
 
@@ -766,6 +797,9 @@ msgstr "मेरे घंटे"
 msgid "Name"
 msgstr "नाम"
 
+msgid "Navigation"
+msgstr "नेविगेशन"
+
 msgid "New"
 msgstr "नया"
 
@@ -777,6 +811,9 @@ msgstr "सबसे नया पहले"
 
 msgid "Next"
 msgstr "अगला"
+
+msgid "Next step"
+msgstr "अगला चरण"
 
 msgid "No"
 msgstr "नहीं"
@@ -873,6 +910,9 @@ msgstr "कोई सीरियल नंबर नहीं"
 
 msgid "No serial numbers found"
 msgstr "कोई सीरियल नंबर नहीं मिला"
+
+msgid "No shortcuts available on this page."
+msgstr "इस पृष्ठ पर कोई शॉर्टकट उपलब्ध नहीं हैं।"
 
 msgid "No spare parts added yet"
 msgstr "अभी तक कोई स्पेयर पार्ट्स नहीं जोड़े गए हैं"
@@ -1025,8 +1065,14 @@ msgstr "पिछला"
 msgid "Preventive"
 msgstr "निवारक"
 
+msgid "Previous step"
+msgstr "पिछला चरण"
+
 msgid "Print"
 msgstr "प्रिंट करें"
+
+msgid "Print batch list"
+msgstr "बैच सूची प्रिंट करें"
 
 msgid "Printer Settings"
 msgstr "प्रिंटर सेटिंग्स"
@@ -1112,6 +1158,9 @@ msgstr "सब-असेंबली को फिर से खोलें औ
 msgid "Result"
 msgstr "परिणाम"
 
+msgid "Retry Completion"
+msgstr "समापन पुनः प्रयास करें"
+
 msgid "Rework"
 msgstr "पुनः कार्य"
 
@@ -1129,6 +1178,9 @@ msgstr "विक्रय आदेश"
 
 msgid "Save"
 msgstr "सहेजें"
+
+msgid "Save the form you're editing"
+msgstr "जो फॉर्म आप संपादित कर रहे हैं उसे सहेजें"
 
 msgid "Scan"
 msgstr "स्कैन करें"
@@ -1286,6 +1338,9 @@ msgstr "कम"
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
 
+msgid "Show this overlay"
+msgstr "यह ओवरले दिखाएं"
+
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
 
@@ -1321,6 +1376,9 @@ msgstr "उपयोग किए गए स्पेयर पार्ट्�
 
 msgid "Start"
 msgstr "शुरू करें"
+
+msgid "Start or pause the operation"
+msgstr "ऑपरेशन को शुरू करें या रोकें"
 
 msgid "Station User"
 msgstr "स्टेशन उपयोगकर्ता"
@@ -1398,6 +1456,9 @@ msgstr "इस इकाई को स्थायी रूप से स्क
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "समय और लागत को मात्रा के अनुपात में कार्यों में विभाजित किया जाता है।"
+
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"
 
@@ -1407,6 +1468,9 @@ msgstr "समय काम किया: {0}"
 
 msgid "Today"
 msgstr "आज"
+
+msgid "Toggle the sidebar"
+msgstr "साइडबार को टॉगल करें"
 
 msgid "Tools"
 msgstr "उपकरण"

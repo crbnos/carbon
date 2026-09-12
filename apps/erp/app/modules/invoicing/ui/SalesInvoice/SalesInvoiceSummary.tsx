@@ -32,7 +32,7 @@ import {
 import { useItems } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
-  INVOICE_DUST_THRESHOLD,
+  isInvoiceFullyPaid,
   isSalesInvoiceLocked
 } from "../../invoicing.models";
 import type {
@@ -416,9 +416,11 @@ const SalesInvoiceSummary = ({
       return acc + lineTaxAmount;
     }, 0) ?? 0;
 
-  const shippingCost =
-    (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
-    (routeData?.salesInvoice?.exchangeRate ?? 1);
+  // `salesInvoiceShipment.shippingCost` is stored in BASE currency, like every
+  // other raw column on this side -- the `salesInvoices` view adds it straight
+  // onto a base subtotal built from `unitPrice`. So the base figure is the
+  // stored value and only the customer-facing one converts.
+  const shippingCost = routeData?.salesInvoiceShipment?.shippingCost ?? 0;
 
   const customerShippingCost =
     (routeData?.salesInvoiceShipment?.shippingCost ?? 0) *
@@ -428,7 +430,7 @@ const SalesInvoiceSummary = ({
   const customerTotal = customerSubtotal + customerTax + customerShippingCost;
 
   // Payment progress from the salesInvoices view (balance already net of
-  // posted cash + memo settlements; dust-forgiven below one cent).
+  // posted cash + memo settlements).
   const invoiceTotal =
     routeData?.salesInvoice?.invoiceTotal ??
     routeData?.salesInvoice?.totalAmount ??
@@ -438,10 +440,11 @@ const SalesInvoiceSummary = ({
     Number(routeData?.salesInvoice?.balance ?? invoiceTotal)
   );
   const paidAmount = Math.max(0, Number(invoiceTotal) - balanceRemaining);
-  const isFullyPaid =
-    balanceRemaining < INVOICE_DUST_THRESHOLD &&
-    (paidAmount >= INVOICE_DUST_THRESHOLD ||
-      routeData?.salesInvoice?.status === "Paid");
+  const isFullyPaid = isInvoiceFullyPaid(
+    balanceRemaining,
+    paidAmount,
+    routeData?.salesInvoice?.status
+  );
 
   return (
     <Card>

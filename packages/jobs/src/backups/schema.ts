@@ -141,6 +141,25 @@ export type Manifest = {
   tables: Array<{ name: string; rows: number; columns: string[] }>;
   storage: Array<{ path: string; size: number; included: boolean }>;
   excludedTables: string[];
+  /**
+   * Rows deliberately left out because a NOT-NULL FK escaped company scope
+   * ("violation") or pointed at such a row ("cascade"). Absent/empty = full
+   * export. Written only when the export ran with `skipCorrupted`.
+   */
+  excludedRows?: Array<{
+    table: string;
+    column: string;
+    refTable: string;
+    rows: number;
+    cause: "violation" | "cascade";
+  }>;
+  /**
+   * DISTINCT rows excluded, per table. `excludedRows` is per FK EDGE and
+   * double-counts a row that violated several of its foreign keys, so this is
+   * the only field a total may be summed from. Absent on backups taken before
+   * it existed — treat as "unknown", not zero.
+   */
+  excludedRowsByTable?: Array<{ table: string; rows: number }>;
 };
 
 /**
@@ -572,3 +591,7 @@ export function compatibilityStatus(report: {
   if (report.blocked) return "not-restorable";
   return report.findings.length > 0 ? "restorable-with-changes" : "ready";
 }
+
+// Scope predicates, the export closure guard and the opt-in exclusion/purge —
+// re-exported so `@carbon/jobs/backups` stays the one import surface.
+export * from "./scope";

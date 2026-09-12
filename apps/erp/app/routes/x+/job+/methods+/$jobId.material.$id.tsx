@@ -11,6 +11,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobMaterial
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -125,7 +126,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     if (validation.data.jobOperationId) {
       promises.push(
-        recalculateJobOperationDependencies(client, {
+        recalculateJobOperationDependencies(client, getDatabaseClient(), {
           jobId,
           companyId,
           userId

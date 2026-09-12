@@ -25,9 +25,11 @@ import { parseDate } from "@internationalized/date";
 import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
+import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import type { StorageItem } from "~/types";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -987,25 +989,11 @@ export async function getJob(client: SupabaseClient<Database>, id: string) {
   return client.from("jobs").select("*").eq("id", id).single();
 }
 
-// Lazy Node Kysely handle for the IN-PROCESS scheduling engine. Built through a
-// dynamic import so this module — which is ALSO bundled for the browser (it is
-// imported by client components via the module barrel) — never STATICALLY pulls
-// in `pg` or a `.server` module. Same tactic as notifyScheduleInputsChanged's
-// `await import("@carbon/jobs")` below. A modest dedicated pool: a regen uses one
-// connection at a time (sequential per job).
-let schedulingDbPromise: Promise<Kysely<KyselyDatabase>> | undefined;
-function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
-  if (!schedulingDbPromise) {
-    schedulingDbPromise = (async () => {
-      const { getPostgresClient, getPostgresConnectionPool } = await import(
-        "@carbon/database/client"
-      );
-      const { PostgresDriver } = await import("kysely");
-      return getPostgresClient(getPostgresConnectionPool(5), PostgresDriver);
-    })();
-  }
-  return schedulingDbPromise;
-}
+// The IN-PROCESS scheduling/MRP engines need a Node Kysely handle. It is built
+// in `~/services/database.server` (getDatabaseClient) and passed in as `db` by
+// the route action — NEVER constructed here. This module is also bundled for the
+// browser (imported by client components via the module barrel), so it must not
+// pull in `pg`/`kysely`. Enforced by the no-db-client-in-service conformance check.
 
 // Read-only "best case" what-if: runs the job first in its location's schedule
 // IN-PROCESS (persists nothing) and returns the projected completion +
@@ -1013,6 +1001,7 @@ function getSchedulingDb(): Promise<Kysely<KyselyDatabase>> {
 // (e.g. not Ready/In Progress/Paused).
 export async function getJobExpediteForecast(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobId: string,
   companyId: string,
   userId: string
@@ -1032,7 +1021,7 @@ export async function getJobExpediteForecast(
   try {
     const { runExpediteWhatIf } = await import("@carbon/ee/planning");
     const expedite = await runExpediteWhatIf({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId,
@@ -1124,9 +1113,10 @@ export async function getCapacityReservationsForResources(
   let query = client
     .from("capacityReservation")
     .select(
-      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder,
+      `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason)`
+       jobOperation(description, hasConflict, conflictReason),
+       jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
     .is("scenarioId", null)
@@ -1226,14 +1216,19 @@ export async function getJobsBySalesOrderLine(
 
 export async function getJobsList(
   client: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  statuses?: Database["public"]["Enums"]["jobStatus"][]
 ) {
   return fetchAllFromTable<{
     id: string;
     jobId: string;
-  }>(client, "job", "id, jobId", (query) =>
-    query.eq("companyId", companyId).order("jobId")
-  );
+  }>(client, "job", "id, jobId", (query) => {
+    let filtered = query.eq("companyId", companyId);
+    if (statuses && statuses.length > 0) {
+      filtered = filtered.in("status", statuses);
+    }
+    return filtered.order("jobId");
+  });
 }
 
 export async function getJobMakeMethodById(
@@ -1859,7 +1854,7 @@ export async function getJobOperationsByMethodId(
   return client
     .from("jobOperation")
     .select(
-      "*, jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
+      "*, jobOperationBatch(id, readableId, status), jobOperationTool(*, jobOperationToolStep(jobOperationStepId)), jobOperationParameter(*), jobOperationStep(*, jobOperationStepRecord(*), jobOperationStepSlide(*))"
     )
     .eq("jobMakeMethodId", jobMakeMethodId)
     .order("order", { ascending: true });
@@ -2519,6 +2514,7 @@ export async function getTrackedEntitiesByJobId(
  */
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     jobId: string;
     companyId: string;
@@ -2543,7 +2539,7 @@ export async function recalculateJobOperationDependencies(
   try {
     const { runLocationSchedule } = await import("@carbon/ee/planning");
     const data = await runLocationSchedule({
-      db: await getSchedulingDb(),
+      db,
       client,
       locationId: job.locationId,
       companyId: params.companyId,
@@ -2591,6 +2587,7 @@ export async function recalculateJobMakeMethodRequirements(
 
 export async function runMRP(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     type:
       | "company"
@@ -2610,7 +2607,7 @@ export async function runMRP(
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
     const { runMrp } = await import("@carbon/ee/planning");
-    const data = await runMrp(client, await getSchedulingDb(), params);
+    const data = await runMrp(client, db, params);
     return { data, error: null };
   } catch (err) {
     return {
@@ -3663,11 +3660,23 @@ export async function duplicateJobOperationStep(
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -3939,13 +3948,14 @@ export async function setJobOperationToolStepLink(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
-  type: "itemToJob" | "quoteLineToJob",
+  type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3957,12 +3967,13 @@ export async function upsertJobMethod(
   }
 ) {
   const body: {
-    type: "itemToJob" | "quoteLineToJob";
+    type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
     targetId: string;
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -3984,6 +3995,11 @@ export async function upsertJobMethod(
     body.configuration = jobMethod.configuration;
   }
 
+  // A specific source method version (itemToJob only); absent = active method
+  if (jobMethod.versionId) {
+    body.versionId = jobMethod.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMethod.parts !== undefined) {
     body.parts = jobMethod.parts;
@@ -3993,7 +4009,15 @@ export async function upsertJobMethod(
     body
   });
   if (getMethodResult.error) {
-    return getMethodResult;
+    return {
+      data: null,
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          getMethodResult.error,
+          "Failed to get job method"
+        )
+      } as PostgrestError
+    };
   }
   return recalculateJobRequirements(client, {
     id: jobMethod.targetId,
@@ -4010,6 +4034,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4027,6 +4052,7 @@ export async function upsertJobMaterialMakeMethod(
     companyId: string;
     userId: string;
     configuration?: Record<string, unknown>;
+    versionId?: string;
     parts?: {
       billOfMaterial: boolean;
       billOfProcess: boolean;
@@ -4048,6 +4074,11 @@ export async function upsertJobMaterialMakeMethod(
     body.configuration = jobMaterial.configuration;
   }
 
+  // A specific source method version; absent = active method
+  if (jobMaterial.versionId) {
+    body.versionId = jobMaterial.versionId;
+  }
+
   // Only add parts if it exists
   if (jobMaterial.parts !== undefined) {
     body.parts = jobMaterial.parts;
@@ -4060,7 +4091,12 @@ export async function upsertJobMaterialMakeMethod(
   if (error) {
     return {
       data: null,
-      error: { message: "Failed to pull method" } as PostgrestError
+      error: {
+        message: await getEdgeFunctionErrorMessage(
+          error,
+          "Failed to pull method"
+        )
+      } as PostgrestError
     };
   }
 
@@ -5791,6 +5827,319 @@ export async function notifyScheduleInputsChanged(
   });
 }
 
+// --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
+// Execution lives in MES (the operation view's batch mode); ERP composes
+// batches on the schedule board, mutates them via the batch-operations edge fn,
+// and lists past/active batches at /x/production/batches.
+
+// Count of operations that COULD be batched but aren't yet — unbatched ops on a
+// batchable process, still open (Todo/Ready/Waiting), on a live (non-terminal)
+// job. Mirrors the unbatched-candidate branch of get_batchable_operations (the
+// batch builder's candidate query) so the dashboard number matches what the
+// builder surfaces. Head count only — no rows. !inner turns the nested filters
+// on process/job into real join predicates that constrain the count.
+export async function getUnbatchedBatchableOperationCount(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, process!inner(batchable), job!inner(status)", {
+      count: "exact",
+      head: true
+    })
+    .eq("companyId", companyId)
+    .is("jobOperationBatchId", null)
+    .eq("process.batchable", true)
+    .in("status", ["Todo", "Ready", "Waiting"])
+    .not("job.status", "in", "(Completed,Closed,Cancelled)");
+}
+
+export async function getJobOperationBatches(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("jobOperationBatch")
+    .select("*, process(name), workCenter(name)", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("readableId", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+// The members' shared work-center name: null when they disagree (or none are
+// set), the single distinct name when they all agree. The list stats and the
+// detail drawer both fall back to this when the batch has no header work center
+// (a board-created batch has no header WC until its card is dragged), so they
+// must agree on what "shared" means — drop nullish first, then require exactly
+// one distinct name.
+function deriveSharedWorkCenterName(
+  names: (string | null | undefined)[]
+): string | null {
+  const distinct = new Set(names.filter((n): n is string => Boolean(n)));
+  return distinct.size === 1 ? ([...distinct][0] as string) : null;
+}
+
+// Member count + summed quantity per batch, for the batches list. One query for
+// the page's batch ids, tallied in TS (the storage-rules count pattern — no
+// PostgREST aggregate embeds in this repo). Also derives the members' shared
+// work-center name: a batch created from the board carries no header work
+// center until it is dragged, but when every member sits on one work center
+// that IS the batch's work center — the board itself falls back the same way.
+export async function getJobOperationBatchMemberStats(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  >;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select("jobOperationBatchId, operationQuantity, workCenter(name)")
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const stats: Record<
+    string,
+    {
+      memberCount: number;
+      totalQuantity: number;
+      workCenterName: string | null;
+    }
+  > = {};
+  // Collect each batch's member work-center names, then derive the shared one
+  // once (same rule the detail drawer uses via deriveSharedWorkCenterName).
+  const memberWorkCenterNames: Record<string, (string | null)[]> = {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    const entry = (stats[op.jobOperationBatchId] ??= {
+      memberCount: 0,
+      totalQuantity: 0,
+      workCenterName: null
+    });
+    entry.memberCount += 1;
+    entry.totalQuantity += op.operationQuantity ?? 0;
+    (memberWorkCenterNames[op.jobOperationBatchId] ??= []).push(
+      op.workCenter?.name ?? null
+    );
+  }
+  for (const [batchId, entry] of Object.entries(stats)) {
+    entry.workCenterName = deriveSharedWorkCenterName(
+      memberWorkCenterNames[batchId] ?? []
+    );
+  }
+  return { data: stats, error: null };
+}
+
+// One flattened member row per batch member, for the batches list's expandable
+// sub-rows (mirrors the ECO change-notices table). Fields match what the sub-row
+// and the detail drawer's member table show: job link, item, and quantity.
+export type JobOperationBatchListMember = {
+  id: string;
+  jobId: string | null;
+  jobReadableId: string | null;
+  itemReadableId: string | null;
+  itemName: string | null;
+  thumbnailPath: string | null;
+  operationQuantity: number;
+  quantityComplete: number;
+  quantityScrapped: number;
+};
+
+// Members for every batch on the page in ONE query, grouped by batch id in TS
+// (same no-N+1 pattern as getJobOperationBatchMemberStats — collect ids, one
+// .in(), tally). getJobOperationBatchWithMembers is single-batch and would be
+// N+1 across the list, so the list uses this leaner grouped read instead.
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  batchIds: string[]
+): Promise<{
+  data: Record<string, JobOperationBatchListMember[]>;
+  error: unknown;
+}> {
+  if (batchIds.length === 0) return { data: {}, error: null };
+  const result = await client
+    .from("jobOperation")
+    .select(
+      "id, jobOperationBatchId, operationQuantity, quantityComplete, quantityScrapped, job(id, jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+  if (result.error) return { data: {}, error: result.error };
+  const members: Record<string, JobOperationBatchListMember[]> = {};
+  for (const op of result.data ?? []) {
+    if (!op.jobOperationBatchId) continue;
+    (members[op.jobOperationBatchId] ??= []).push({
+      id: op.id,
+      jobId: op.job?.id ?? null,
+      jobReadableId: op.job?.jobId ?? null,
+      itemReadableId: op.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: op.jobMakeMethod?.item?.name ?? null,
+      thumbnailPath: op.jobMakeMethod?.item?.thumbnailPath ?? null,
+      operationQuantity: op.operationQuantity ?? 0,
+      quantityComplete: op.quantityComplete ?? 0,
+      quantityScrapped: op.quantityScrapped ?? 0
+    });
+  }
+  return { data: members, error: null };
+}
+
+export async function getJobOperationBatchWithMembers(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*, process(name, batchType), workCenter(name), location(name)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  const members = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  // Header work center when assigned; else the members' shared one (a
+  // board-created batch has no header WC until its card is dragged). Uses the
+  // same derivation as the list stats so the two never disagree.
+  const workCenterName =
+    batch.data.workCenter?.name ??
+    deriveSharedWorkCenterName(
+      (members.data ?? []).map((m) => m.workCenter?.name)
+    );
+  return {
+    data: { ...batch.data, workCenterName, members: members.data ?? [] },
+    error: members.error
+  };
+}
+
+// The batch's production events: the live aggregate run while Active, and the
+// per-member slices after completion (slices keep the jobOperationBatchId tag).
+export async function getJobOperationBatchEvents(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  return client
+    .from("productionEvent")
+    .select(
+      "id, type, startTime, endTime, duration, employeeId, jobOperationId"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .order("startTime", { ascending: true });
+}
+
+export async function getBatchableOperations(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { locationId: string; processId: string }
+) {
+  const result = await client.rpc("get_batchable_operations", {
+    location_id: args.locationId,
+    process_id: args.processId
+  });
+  // The RPC is SECURITY INVOKER so RLS already scopes the read; filtering on
+  // the returned companyId column is defense in depth against a caller passing
+  // another tenant's location/process ids.
+  if (result.data) {
+    result.data = result.data.filter((row) => row.companyId === companyId);
+  }
+  return result;
+}
+
+export async function getBatchableProcesses(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("process")
+    .select("id, name, batchable, batchType, batchRules")
+    .eq("companyId", companyId)
+    .eq("batchable", true)
+    .eq("active", true)
+    .order("name");
+}
+
+export async function createJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    jobOperationIds: string[];
+    locationId: string;
+    workCenterId?: string | null;
+    notes?: string | null;
+    // Create & Release: insert the batch already 'Active' (on the floor);
+    // omitted/false creates it 'Planned'.
+    release?: boolean;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "create", ...args }
+  });
+}
+
+export async function updateJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: {
+    type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
+    batchId: string;
+    jobOperationIds?: string[];
+    workCenterId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { type, ...rest } = args;
+  return client.functions.invoke("batch-operations", {
+    body: { type, ...rest }
+  });
+}
+
+export async function releaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "release", ...args }
+  });
+}
+
+export async function unreleaseJobOperationBatch(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string; userId: string }
+) {
+  return client.functions.invoke("batch-operations", {
+    body: { type: "unrelease", ...args }
+  });
+}
+
 // --- Assembly Instructions ---------------------------------------------
 
 export async function getAssemblyInstruction(
@@ -6079,6 +6428,10 @@ export async function copyAssemblyInstructionAsVersion(
         parentStepId: step.parentStepId
           ? (stepIdMap.get(step.parentStepId) ?? null)
           : null,
+        // Lineage across versions: a step copied from v1 roots at v1's step, and
+        // a v3 copied from v2 still roots at v1 — the chain stays flat so
+        // COALESCE("rootStepId", "id") identifies the group at any depth.
+        rootStepId: step.rootStepId ?? step.id,
         companyId,
         createdBy: userId
       };
@@ -6139,9 +6492,17 @@ export async function copyAssemblyInstructionAsVersion(
  */
 export async function activateAssemblyInstructionVersion(
   client: SupabaseClient<Database>,
-  args: { id: string; companyId: string; userId: string }
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    // Node Kysely handle for the per-operation re-sync. Built by the route
+    // action (getDatabaseClient) and passed in — never constructed here; this
+    // module is bundled for the browser (see the note above getJob).
+    db: Kysely<KyselyDatabase>;
+  }
 ) {
-  const { id, companyId, userId } = args;
+  const { id, companyId, userId, db } = args;
 
   const target = await client
     .from("assemblyInstruction")
@@ -6218,6 +6579,79 @@ export async function activateAssemblyInstructionVersion(
         .update({ assemblyInstructionId: id })
         .in("id", staleOpIds);
       if (repoint.error) return repoint;
+
+      // Migrate step markers v(old) -> v(new) by lineage group before syncing.
+      // Without this the job's steps still point at the old version's step ids,
+      // MES cannot match them (AssemblyView findIndex -> -1), and playback
+      // silently degrades to a static model on every step.
+      const [oldStepRows, newStepRows] = await Promise.all([
+        client
+          .from("assemblyInstructionStep")
+          .select("id, rootStepId")
+          .in("assemblyInstructionId", otherVersionIds)
+          .eq("companyId", companyId),
+        client
+          .from("assemblyInstructionStep")
+          .select("id, rootStepId")
+          .eq("assemblyInstructionId", id)
+          .eq("companyId", companyId)
+      ]);
+      if (oldStepRows.error) return oldStepRows;
+      if (newStepRows.error) return newStepRows;
+
+      const remap = planAssemblyStepMarkerRemap(
+        oldStepRows.data ?? [],
+        newStepRows.data ?? []
+      );
+
+      // One statement, one transaction: the repoint above has already committed,
+      // so until every marker moves, these operations point at the new version
+      // while their steps still name the old one — precisely the state MES reads
+      // as "no playback". Migrating them row by row would expose that window on
+      // every activation, and an error midway would leave the operation split
+      // across two versions with no rollback and no way to re-run (the new
+      // version is Published by then, so it is no longer a "stale" source).
+      if (remap.size > 0) {
+        const pairs = sql.join(
+          [...remap].map(
+            ([oldStepId, newStepId]) => sql`(${oldStepId}, ${newStepId})`
+          )
+        );
+        await db.transaction().execute(async (trx) => {
+          await sql`
+            UPDATE "jobOperationStep" AS s
+            SET "assemblyInstructionStepId" = r."newStepId"
+            FROM (VALUES ${pairs}) AS r("oldStepId", "newStepId")
+            WHERE s."assemblyInstructionStepId" = r."oldStepId"
+              AND s."companyId" = ${companyId}
+              AND s."operationId" = ANY(${staleOpIds})
+          `.execute(trx);
+        });
+      }
+
+      // Reconcile added/deleted steps. Marker-matched steps UPDATE in place, so
+      // jobOperationStepRecord survives. Isolated per operation so one failure
+      // cannot abort the activation.
+      for (const operationId of staleOpIds) {
+        try {
+          await syncAssemblyInstructionToOperation(db, {
+            assemblyInstructionId: id,
+            operationId,
+            companyId,
+            userId
+          });
+        } catch (error) {
+          // The remap already restored playback for surviving steps, so this
+          // only leaves added/deleted steps unreconciled on one operation —
+          // recoverable from the job. Logged so a systematic failure is visible.
+          logger.error("Failed to re-sync assembly steps after activation", {
+            assemblyInstructionId: id,
+            operationId,
+            companyId,
+            error
+          });
+        }
+      }
     }
   }
 
@@ -6792,11 +7226,23 @@ export async function getAssemblyInstructionStepSlides(
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         companyId: string;
         createdBy: string;
       })
-    | (Omit<z.infer<typeof operationStepSlideValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof operationStepSlideValidator>,
+        "id" | "annotations"
+      > & {
+        annotations?: z.infer<
+          typeof operationStepSlideValidator
+        >["annotations"];
         id: string;
         updatedBy: string;
         updatedAt: string;
@@ -7650,14 +8096,103 @@ function plainTextToTiptap(text: string) {
  * permissions) belong to the route — Kysely bypasses RLS.
  */
 /**
+ * Maps a job step's marker from an OLD instruction version's step id to the
+ * equivalent step id in the NEWLY-ACTIVATED version, by lineage group
+ * (COALESCE(rootStepId, id) — the same idiom as rootInstructionId).
+ *
+ * A step that survives across versions keeps its identity even when reordered
+ * or retitled, so the caller can UPDATE it in place and preserve the operator's
+ * completion records. Steps with no counterpart in the new version are left
+ * unmapped — the caller's re-sync then treats them as stale. Pure so the
+ * remapping is unit-testable.
+ *
+ * `oldSteps` spans EVERY older sibling version, so several of them can share a
+ * lineage root and collapse onto the same new step id. That is safe only
+ * because a job operation's markers all come from a single version (both
+ * writers — the step insert and planOrphanStepAdoption — only ever write ids
+ * from the instruction being synced), so at most one of those entries can match
+ * any given row. There is no unique constraint enforcing it.
+ */
+export function planAssemblyStepMarkerRemap(
+  oldSteps: { id: string; rootStepId: string | null }[],
+  newSteps: { id: string; rootStepId: string | null }[]
+): Map<string, string> {
+  const newIdByRoot = new Map<string, string>();
+  for (const step of newSteps) {
+    const root = step.rootStepId ?? step.id;
+    // First writer wins: a well-formed version has one step per lineage group.
+    if (!newIdByRoot.has(root)) newIdByRoot.set(root, step.id);
+  }
+
+  const remap = new Map<string, string>();
+  for (const step of oldSteps) {
+    const root = step.rootStepId ?? step.id;
+    const newId = newIdByRoot.get(root);
+    if (newId && newId !== step.id) remap.set(step.id, newId);
+  }
+  return remap;
+}
+
+/**
+ * The name a synced job step is written with. `title` is nullable on the
+ * instruction step but `name` is NOT NULL on the job step, so a null title
+ * becomes a positional placeholder. Adoption below must compare against this
+ * same value, not the raw title — otherwise a null-titled step's job step is
+ * named "Step 3" and can never be matched back to its source.
+ */
+function assemblyStepName(title: string | null, index: number) {
+  return title || `Step ${index + 1}`;
+}
+
+/**
+ * Re-adopts job steps orphaned by the assemblyInstructionStepId ON DELETE SET
+ * NULL cascade (deleting an instruction step nulls the marker on every live
+ * job synced from it). Without this a re-sync treats them as hand-authored and
+ * inserts duplicates beside them.
+ *
+ * Deliberately conservative: an orphan is claimed only when it matches a source
+ * step on BOTH sortOrder and name AND no already-marked step claims that source
+ * step. Genuinely hand-authored steps match no source step and are untouched;
+ * ambiguous cases are left alone rather than guessed at.
+ */
+export function planOrphanStepAdoption(
+  sourceSteps: { id: string; title: string | null; sortOrder: number | null }[],
+  orphanSteps: { id: string; name: string | null; sortOrder: number | null }[],
+  claimedSourceIds: Set<string>
+): Map<string, string> {
+  const adoption = new Map<string, string>();
+  const takenOrphans = new Set<string>();
+
+  sourceSteps.forEach((source, index) => {
+    if (claimedSourceIds.has(source.id)) return;
+    const sourceName = assemblyStepName(source.title, index);
+    const match = orphanSteps.find(
+      (orphan) =>
+        !takenOrphans.has(orphan.id) &&
+        orphan.sortOrder === source.sortOrder &&
+        orphan.name === sourceName
+    );
+    if (match) {
+      adoption.set(match.id, source.id);
+      takenOrphans.add(match.id);
+    }
+  });
+  return adoption;
+}
+
+/**
  * Marker-based step reconciliation for the assembly→BoP sync. Given the current
  * source step ids and the operation's existing synced steps (each carrying the
  * `assemblyInstructionStepId` provenance marker), decide which source maps onto
  * an existing target (update) vs. is new (insert), and which existing synced
  * steps are stale — their source step was removed, so they must be deleted
- * (cascading their slides/links). Hand-authored steps (null marker) are excluded
- * by the caller's `assemblyInstructionStepId is not null` filter; a null marker
- * here is treated as stale. Pure so the reconciliation is unit-testable.
+ * (cascading their slides/links).
+ *
+ * The caller passes only marked steps: hand-authored steps (NULL marker) are
+ * filtered out, and orphans re-adopted by planOrphanStepAdoption arrive here
+ * already carrying the marker they were adopted onto. A null marker reaching
+ * this function is therefore treated as stale. Pure so the reconciliation is
+ * unit-testable.
  */
 export function planAssemblyStepMarkerSync(
   sourceStepIds: string[],
@@ -7853,13 +8388,55 @@ export async function syncAssemblyInstructionToOperation(
       }
     }
 
-    const existingSynced = await trx
+    const existingSteps = await trx
       .selectFrom(stepTable)
-      .select(["id", "assemblyInstructionStepId"])
+      .select(["id", "assemblyInstructionStepId", "name", "sortOrder"])
       .where("operationId", "=", operationId)
       .where("companyId", "=", companyId)
-      .where("assemblyInstructionStepId", "is not", null)
       .execute();
+
+    const existingSynced = existingSteps.filter(
+      (step) => step.assemblyInstructionStepId !== null
+    );
+
+    // Re-adopt steps orphaned by the ON DELETE SET NULL cascade so a re-sync
+    // heals them instead of inserting duplicates beside them.
+    const adoption = planOrphanStepAdoption(
+      sourceSteps.map((step) => ({
+        id: step.id,
+        title: step.title,
+        sortOrder: step.sortOrder
+      })),
+      existingSteps
+        .filter((step) => step.assemblyInstructionStepId === null)
+        .map((step) => ({
+          id: step.id,
+          name: step.name,
+          sortOrder: step.sortOrder
+        })),
+      new Set(
+        existingSynced
+          .map((step) => step.assemblyInstructionStepId)
+          .filter((id): id is string => id !== null)
+      )
+    );
+
+    for (const [orphanId, sourceStepId] of adoption) {
+      await trx
+        .updateTable(stepTable)
+        .set({ assemblyInstructionStepId: sourceStepId })
+        .where("id", "=", orphanId)
+        .where("companyId", "=", companyId)
+        .execute();
+      const orphan = existingSteps.find((step) => step.id === orphanId);
+      if (orphan) {
+        existingSynced.push({
+          ...orphan,
+          assemblyInstructionStepId: sourceStepId
+        });
+      }
+    }
+
     const { targetIdBySourceId, staleTargetIds } = planAssemblyStepMarkerSync(
       sourceSteps.map((step) => step.id),
       existingSynced
@@ -7880,7 +8457,7 @@ export async function syncAssemblyInstructionToOperation(
 
     for (const [index, source] of sourceSteps.entries()) {
       const payload = {
-        name: source.title || `Step ${index + 1}`,
+        name: assemblyStepName(source.title, index),
         type: source.type ?? "Task",
         description:
           source.description ??
@@ -8523,16 +9100,7 @@ export async function getInspectionDocuments(
   companyId: string,
   args?: { search: string | null } & GenericQueryFilters
 ) {
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (
-        columns: string,
-        options?: { count?: "exact" | "planned" | "estimated"; head?: boolean }
-      ) => any;
-    };
-  };
-
-  let query = documentClient
+  let query = client
     .from("inspectionDocuments")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);

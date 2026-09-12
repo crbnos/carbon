@@ -155,8 +155,11 @@ import { generateHTML, HTML } from "./HTML";
 import type {
   Modifier,
   Shortcut,
-  ShortcutDefinition
+  ShortcutDefinition,
+  ShortcutInput,
+  ShortcutKeyMapEntry
 } from "./hooks/useShortcutKeys";
+import { KeyboardKeys, useShortcutKeyMap } from "./hooks/useShortcutKeys";
 import { IconButton } from "./IconButton";
 import type { InputProps } from "./Input";
 import {
@@ -261,7 +264,7 @@ import {
 } from "./Popover";
 import { Progress } from "./Progress";
 import { PulsingDot } from "./PulsingDot";
-import { RadioGroup, RadioGroupItem } from "./Radio";
+import { RadioGroup, RadioGroupButton, RadioGroupItem } from "./Radio";
 import {
   ResizableHandle,
   ResizablePanel,
@@ -281,6 +284,8 @@ import {
   SelectValue
 } from "./Select";
 import { Separator } from "./Separator";
+import type { ShortcutHelpEntry } from "./ShortcutHelpOverlay";
+import { ShortcutHelpKeys, ShortcutHelpOverlay } from "./ShortcutHelpOverlay";
 import { ShortcutKey, shortcutKeyVariants } from "./ShortcutKey";
 import {
   Sidebar,
@@ -313,7 +318,10 @@ import { Slider } from "./Slider";
 import { Spinner } from "./Spinner";
 import { SplitButton } from "./SplitButton";
 import { Status } from "./Status";
+import type { SubheadingProps } from "./Subheading";
+import { Subheading } from "./Subheading";
 import { Switch } from "./Switch";
+import { SHORTCUTS } from "./shortcuts";
 import { Table, TableCaption, Tbody, Td, Tfoot, Th, Thead, Tr } from "./Table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./Tabs";
 import type { TextareaProps } from "./Textarea";
@@ -340,9 +348,12 @@ import {
   usePickOrderOptions
 } from "./TrackedEntityPicker";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
+import { TurnstileChallenge } from "./Turnstile";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
+import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
 import { copyToClipboard } from "./utils/dom";
+import { isEditableTarget } from "./utils/keyboard";
 import { getValidChildren, reactNodeToString } from "./utils/react";
 import { VStack } from "./VStack";
 
@@ -550,6 +561,7 @@ export {
   Progress,
   PulsingDot,
   RadioGroup,
+  RadioGroupButton,
   RadioGroupItem,
   ResizableHandle,
   ResizablePanel,
@@ -567,7 +579,15 @@ export {
   SelectTrigger,
   SelectValue,
   Separator,
+  KeyboardKeys,
+  SHORTCUTS,
+  ShortcutHelpKeys,
+  ShortcutHelpOverlay,
   ShortcutKey,
+  hasOpenDialog,
+  isEditableTarget,
+  isInsideTopmostDialog,
+  useShortcutKeyMap,
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -596,6 +616,7 @@ export {
   Spinner,
   SplitButton,
   Status,
+  Subheading,
   Switch,
   Table,
   TableCaption,
@@ -613,6 +634,7 @@ export {
   TimePicker,
   Toaster,
   Toggle,
+  TurnstileChallenge,
   ToggleGroup,
   ToggleGroupItem,
   TrackedEntityPicker,
@@ -659,6 +681,10 @@ export type {
   OperatingSystemPlatform,
   Shortcut,
   ShortcutDefinition,
+  ShortcutHelpEntry,
+  ShortcutInput,
+  ShortcutKeyMapEntry,
+  SubheadingProps,
   TextareaProps,
   ExpiredEntityPolicy,
   TrackedEntityOption,

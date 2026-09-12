@@ -79,7 +79,7 @@ const CompanyForm = ({ company }: CompanyFormProps) => {
             <Currency
               name="baseCurrencyCode"
               label={t`Base Currency`}
-              disabled={true}
+              isReadOnly
             />
             <Timezone name="timezone" label={t`Timezone`} />
             <PhoneInput

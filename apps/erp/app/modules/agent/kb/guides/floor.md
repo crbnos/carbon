@@ -8,7 +8,7 @@ Time to build. You release the first production job to the shop floor, along wit
 
 The released work lands on the MES "Schedule" board, a Kanban with one column per work center. Each column holds the operations queued at that center, sorted by dispatch priority so the operator always sees what to run next. The Display popover lets each station tune its own board, toggling empty work centers on or off and showing or hiding the customer, description, due date, duration, progress, status, sales order, and thumbnail on each card. Filters narrow it further, by work center, process, tag, or assignee.
 
-The MES board is a live read of the schedule, so operators can filter and focus but they don't drag work to reschedule it. Rebalancing the plan, moving an operation to a different work center or shifting a job's dates so Carbon reschedules it, happens on the `guides/plan`, where a planner owns the sequence. What lands here is the result.
+The MES board is a live read of the schedule, so operators can filter and focus but they don't drag work to reschedule it. Rebalancing the plan, moving an operation to a different work center or shifting a job's dates so Carbon reschedules it, happens on the `docs/reference/scheduling`, where a planner owns the sequence. What lands here is the result.
 
 ## Operations & work centers
 

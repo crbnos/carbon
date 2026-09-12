@@ -96,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isLocked = isPurchaseOrderLocked(purchaseOrder.data?.status);
 
   // If locked, require delete permission; otherwise require update permission
-  const { client, companyGroupId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     ...(isLocked ? { delete: "purchasing" } : { update: "purchasing" })
   });
 
@@ -116,24 +116,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const result = await updatePurchaseOrder(
-    client,
-    {
-      id: orderId,
-      status: validation.data.status,
-      supplierId: validation.data.supplierId,
-      currencyCode: validation.data.currencyCode,
-      orderDate: validation.data.orderDate,
-      supplierContactId: validation.data.supplierContactId || null,
-      supplierLocationId: validation.data.supplierLocationId || null,
-      supplierReference: validation.data.supplierReference,
-      purchaseOrderType: validation.data.purchaseOrderType,
-      notes: validation.data.notes,
-      customFields: setCustomFields(formData),
-      updatedBy: userId
-    },
-    companyGroupId
-  );
+  const result = await updatePurchaseOrder(client, {
+    id: orderId,
+    status: validation.data.status,
+    supplierId: validation.data.supplierId,
+    currencyCode: validation.data.currencyCode,
+    orderDate: validation.data.orderDate,
+    supplierContactId: validation.data.supplierContactId || null,
+    supplierLocationId: validation.data.supplierLocationId || null,
+    supplierReference: validation.data.supplierReference,
+    purchaseOrderType: validation.data.purchaseOrderType,
+    notes: validation.data.notes,
+    customFields: setCustomFields(formData),
+    updatedBy: userId
+  });
   if (result.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),

@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { AiOutlinePartition } from "react-icons/ai";
 import { FaCodePullRequest } from "react-icons/fa6";
 import {
+  LuArrowDownToDot,
   LuArrowLeftRight,
   LuAtom,
   LuBanknote,
@@ -599,6 +600,8 @@ export const JournalEntrySourceTypeIcon = ({
   switch (sourceType) {
     case "Manual":
       return <LuBookOpen className={className} />;
+    case "Opening Balance":
+      return <LuArrowDownToDot className={className} />;
     case "Purchase Receipt":
       return <LuHandCoins className={className} />;
     case "Purchase Invoice":
@@ -610,6 +613,10 @@ export const JournalEntrySourceTypeIcon = ({
     case "Sales Shipment":
       return <LuTruck className={className} />;
     case "Sales Return":
+      return <LuRotateCcw className={className} />;
+    case "Sales Return Receipt":
+      return <LuRotateCcw className={className} />;
+    case "Purchase Return Shipment":
       return <LuRotateCcw className={className} />;
     case "Transfer Receipt":
       return <LuArrowLeftRight className={className} />;

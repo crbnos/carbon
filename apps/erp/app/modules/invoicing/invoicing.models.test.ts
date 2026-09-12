@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementDisplayAmounts,
   invoiceSettlementValidator,
+  isInvoiceFullyPaid,
   isInvoicePayable,
   paymentValidator,
   toDocumentCurrency
@@ -31,6 +32,38 @@ describe("paymentValidator", () => {
       supplierId: "supp1"
     });
     expect(r.success).toBe(true);
+  });
+
+  it("accepts a customer refund disbursement", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement"
+      }).success
+    ).toBe(true);
+  });
+
+  it("accepts a supplier refund receipt", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined,
+        supplierId: "supp1"
+      }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    "Receipt",
+    "Disbursement"
+  ])("rejects ambiguous %s counterparty", (paymentType) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType,
+        supplierId: "supp1"
+      }).success
+    ).toBe(false);
   });
 
   it("rejects a Receipt missing customer", () => {
@@ -192,6 +225,41 @@ describe("invoiceSettlementDisplayAmounts", () => {
     });
   });
 
+  it("keeps posted cash separate from credit relief and converts both cash and balance", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 1000,
+        balance: 100,
+        paidAmount: 600,
+        exchangeRate: 0.9,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: 900, paidAmount: 540, balanceRemaining: 90 });
+  });
+
+  it("does not label a credit-only settlement as cash paid", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: 100,
+        balance: 0,
+        paidAmount: 0,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: 100, paidAmount: 0, balanceRemaining: 0 });
+  });
+
+  it("preserves signed applied principal instead of clamping refunds", () => {
+    expect(
+      invoiceSettlementDisplayAmounts({
+        total: -100,
+        balance: 0,
+        paidAmount: -25,
+        exchangeRate: 0.8,
+        convertToDocument: true
+      })
+    ).toEqual({ invoicedAmount: -80, paidAmount: -20, balanceRemaining: 0 });
+  });
+
   it("leaves purchase totals in company base", () => {
     // unitPrice is already supplierUnitPrice * exchangeRate (810 base from
     // 900 EUR at 0.9). Multiplying again would display 729 against a $810 total.
@@ -210,6 +278,20 @@ describe("invoiceSettlementDisplayAmounts", () => {
   });
 });
 
+describe("isInvoiceFullyPaid", () => {
+  it.each([
+    0.003, 0.009, 0.01
+  ])("does not hide a positive remainder of %s", (balance) => {
+    expect(isInvoiceFullyPaid(balance, 100, "Paid")).toBe(false);
+  });
+
+  it("requires zero balance and payment progress or paid status", () => {
+    expect(isInvoiceFullyPaid(0, 100)).toBe(true);
+    expect(isInvoiceFullyPaid(0, 0, "Paid")).toBe(true);
+    expect(isInvoiceFullyPaid(0, 0, "Draft")).toBe(false);
+  });
+});
+
 describe("isInvoicePayable", () => {
   it("is payable when posted with a real outstanding balance", () => {
     expect(isInvoicePayable("Partially Paid", 25)).toBe(true);
@@ -217,9 +299,9 @@ describe("isInvoicePayable", () => {
     expect(isInvoicePayable("Overdue", 100)).toBe(true);
   });
 
-  it("forgives a sub-cent dust balance (not payable)", () => {
-    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(false);
-    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(false);
+  it("keeps positive foreign document remainders payable below a base cent", () => {
+    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(true);
+    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(true);
   });
 
   it("is not payable when fully paid or zero balance", () => {
@@ -237,4 +319,20 @@ describe("isInvoicePayable", () => {
     expect(isInvoicePayable(null, null)).toBe(false);
     expect(isInvoicePayable(undefined, undefined)).toBe(false);
   });
+});
+
+it("retains exact document principal when its rounded base is zero", () => {
+  const result = invoiceSettlementValidator.safeParse({
+    paymentId: "pay",
+    targetSalesInvoiceId: "inv",
+    appliedAmount: 0,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceAmount: 0.01,
+    sourceExchangeRate: 100000,
+    targetExchangeRate: 100000,
+    appliedDate: "2026-09-07"
+  });
+  expect(result.success).toBe(true);
+  if (result.success) expect(result.data).toHaveProperty("sourceAmount", 0.01);
 });

@@ -1,5 +1,5 @@
 import { error, success } from "@carbon/auth";
-import { requirePermissions } from "@carbon/auth/auth.server";
+import { bustApiKeyCache, requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { useLingui } from "@lingui/react/macro";
@@ -9,6 +9,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
 import { deleteApiKey } from "~/modules/settings";
+import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -32,6 +33,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Bust BEFORE the delete — the keyHash is unreadable once the row is gone.
+  const keyHash = await invalidateApiKeyCache(id, companyId);
+
   const { error: deleteApiKeyError } = await deleteApiKey(client, id);
   if (deleteApiKeyError) {
     throw redirect(
@@ -39,6 +43,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await flash(request, error(deleteApiKeyError, "Failed to delete API key"))
     );
   }
+
+  // Bust again now the row is gone: an auth read racing the first bust could
+  // have re-primed the cache with the still-live row.
+  if (keyHash) await bustApiKeyCache(keyHash);
 
   throw redirect(
     `${path.to.apiKeys}?${getParams(request)}`,

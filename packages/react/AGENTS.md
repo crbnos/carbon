@@ -36,7 +36,9 @@ pnpm --filter @carbon/react lint
 import { Button, Card, HStack, VStack, IconButton, cn } from "@carbon/react";
 ```
 
-- **Button** variants: `primary | secondary | solid | active | destructive | ghost | outline | link`; sizes: `sm | md | lg`
+- **Button** variants: `primary | secondary | solid | active | destructive | ghost | outline | link`; sizes: `sm | md | lg`; `shortcut` / `hideShortcutKey` / `shortcutGuard` bind a hotkey with a keycap badge (topmost-dialog guarded)
+- **Shortcuts**: combos are named constants — shared `SHORTCUTS` in `src/shortcuts.ts`, never string literals at call sites. `useShortcutKeys` (one binding) and `useShortcutKeyMap` (entries array, dev-warns on duplicates) both delegate to react-hotkeys-hook — never add a hand-rolled keydown listener; `useShortcutSequence` (`g`-then-letter) is the lone exception (no library sequence support). `isEditableTarget` (the one editable-target check), `ShortcutHelpOverlay` (the `?` overlay; apps declare entries). Enter vs ⌘Enter and badge visibility are design decisions — see `.claude/rules/conventions-ui.md` § Keyboard shortcuts
+- **Choice screens**: `ChoiceCardGroup` (card radios, `autoFocus` focuses the selected card) and `RadioGroupButton` (radio styled as a secondary Button) give one tab stop + arrow-key select; Enter stays free for the screen's continue action
 - **Layout**: `VStack` / `HStack` with numeric `spacing` prop (maps to `space-y-*`/`space-x-*`)
 - **Overlays**: `Drawer`, `Modal`, `ModalDrawer` (unified drawer/modal), `BottomSheet`, `Popover`
 - **Data**: `Table` (TanStack), chart components via sub-exports (`@carbon/react/Chart`)

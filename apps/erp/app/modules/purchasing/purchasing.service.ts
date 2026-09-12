@@ -2,18 +2,29 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
+import {
+  datetime,
+  EPSILON,
+  getPurchaseOrderStatus,
+  getPurchaseReturnOrderStatus,
+  round
+} from "@carbon/utils";
 import type {
+  PostgrestError,
   PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import type { z } from "zod";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getCurrencyByCode } from "../accounting/accounting.ee.service";
+import {
+  getCurrencyByCode,
+  getExchangeRate
+} from "../accounting/accounting.ee.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import {
   canApproveRequest,
@@ -27,6 +38,9 @@ import type {
   purchaseOrderStatusType,
   purchaseOrderTypeType,
   purchaseOrderValidator,
+  purchaseReturnOrderLineValidator,
+  purchaseReturnOrderStatusType,
+  purchaseReturnOrderValidator,
   purchasingRfqStatusType,
   selectedLinesValidator,
   supplierAccountingValidator,
@@ -1501,6 +1515,21 @@ export async function insertPurchaseOrder(
     purchaseOrderId = seq.data;
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  let exchangeRate = 1;
+  let exchangeRateUpdatedAt = new Date().toISOString();
+  if (input.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      input.companyId,
+      input.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(client, input.companyId, input.supplierId),
@@ -1525,20 +1554,6 @@ export async function insertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
-
-  let exchangeRate = 1;
-  let exchangeRateUpdatedAt = new Date().toISOString();
-  if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
-      client,
-      input.companyGroupId,
-      input.currencyCode
-    );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
-  }
 
   const locationId = input.locationId ?? purchaser?.data?.locationId ?? null;
 
@@ -1619,8 +1634,7 @@ export async function updatePurchaseOrder(
     purchaseOrderType?: (typeof purchaseOrderTypeType)[number];
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -1629,16 +1643,22 @@ export async function updatePurchaseOrder(
 
   let exchangeRate: number | undefined;
   let exchangeRateUpdatedAt: string | undefined;
-  if (updates.currencyCode && companyGroupId) {
-    const currency = await getCurrencyByCode(
+  if (updates.currencyCode) {
+    const existing = await client
+      .from("purchaseOrder")
+      .select("companyId")
+      .eq("id", id)
+      .single();
+    if (existing.error) return { data: null, error: existing.error };
+
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -1690,6 +1710,22 @@ export async function upsertPurchaseOrder(
       .select("id, purchaseOrderId");
   }
 
+  // Resolve the rate BEFORE inserting the supplier interaction — a resolver
+  // failure must not leave an orphaned interaction row behind.
+  if (purchaseOrder.currencyCode) {
+    const rate = await getExchangeRate(
+      client,
+      purchaseOrder.companyId,
+      purchaseOrder.currencyCode
+    );
+    if (rate.error) return { data: null, error: rate.error };
+    purchaseOrder.exchangeRate = rate.data;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  } else {
+    purchaseOrder.exchangeRate = 1;
+    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
+  }
+
   const [supplierInteraction, supplierPayment, supplierShipping, purchaser] =
     await Promise.all([
       insertSupplierInteraction(
@@ -1715,21 +1751,6 @@ export async function upsertPurchaseOrder(
 
   const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
     supplierShipping.data;
-
-  if (purchaseOrder.currencyCode) {
-    const currency = await getCurrencyByCode(
-      client,
-      purchaseOrder.companyGroupId,
-      purchaseOrder.currencyCode
-    );
-    if (currency.data) {
-      purchaseOrder.exchangeRate = currency.data.exchangeRate ?? undefined;
-      purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-    }
-  } else {
-    purchaseOrder.exchangeRate = 1;
-    purchaseOrder.exchangeRateUpdatedAt = new Date().toISOString();
-  }
 
   const locationId =
     purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;
@@ -1822,6 +1843,47 @@ export async function upsertPurchaseOrderDelivery(
     .single();
 }
 
+const PURCHASE_ORDER_LINE_ITEM_TYPES = [
+  "Part",
+  "Material",
+  "Tool",
+  "Service",
+  "Consumable",
+  "Fixture"
+];
+
+/**
+ * Force the mutually-exclusive reference columns (`itemId`, `accountId`,
+ * `assetId`) to match the line's `purchaseOrderLineType`, nulling the ones that
+ * don't apply. `purchaseOrderLineType_check` requires exactly one of these set
+ * per type, but the form only submits the active tab's field and `sanitize()`
+ * turns *absent* keys into nothing (not null), so switching a G/L Account or
+ * Fixed Asset line to an item type would otherwise leave a stale `accountId`/
+ * `assetId` on the row and violate the check (23514). Setting the inapplicable
+ * ids to explicit `null` clears them on update and hardens every caller (form,
+ * public API, MCP) at once.
+ */
+function normalizePurchaseOrderLineReferences<
+  T extends {
+    purchaseOrderLineType: string;
+    itemId?: string | null;
+    accountId?: string | null;
+    assetId?: string | null;
+  }
+>(line: T): T {
+  if (PURCHASE_ORDER_LINE_ITEM_TYPES.includes(line.purchaseOrderLineType)) {
+    return { ...line, accountId: null, assetId: null };
+  }
+  if (line.purchaseOrderLineType === "G/L Account") {
+    return { ...line, itemId: null, assetId: null };
+  }
+  if (line.purchaseOrderLineType === "Fixed Asset") {
+    return { ...line, itemId: null, accountId: null };
+  }
+  // Comment (and any other non-reference type) carries no reference id.
+  return { ...line, itemId: null, accountId: null, assetId: null };
+}
+
 export async function upsertPurchaseOrderLine(
   client: SupabaseClient<Database>,
   purchaseOrderLine:
@@ -1836,11 +1898,13 @@ export async function upsertPurchaseOrderLine(
         customFields?: Json;
       })
 ) {
-  if ("id" in purchaseOrderLine) {
+  const normalized = normalizePurchaseOrderLineReferences(purchaseOrderLine);
+
+  if ("id" in normalized) {
     return client
       .from("purchaseOrderLine")
-      .update(sanitize(purchaseOrderLine))
-      .eq("id", purchaseOrderLine.id)
+      .update(sanitize(normalized))
+      .eq("id", normalized.id)
       .select("id")
       .single();
   }
@@ -1848,7 +1912,7 @@ export async function upsertPurchaseOrderLine(
   const existing = await client
     .from("purchaseOrderLine")
     .select("sortOrder")
-    .eq("purchaseOrderId", purchaseOrderLine.purchaseOrderId);
+    .eq("purchaseOrderId", normalized.purchaseOrderId);
 
   const maxSortOrder = (existing.data ?? []).reduce(
     (max, row) => Math.max(max, row.sortOrder ?? 0),
@@ -1857,7 +1921,7 @@ export async function upsertPurchaseOrderLine(
 
   return client
     .from("purchaseOrderLine")
-    .insert([{ ...purchaseOrderLine, sortOrder: maxSortOrder + 1 }])
+    .insert([{ ...normalized, sortOrder: maxSortOrder + 1 }])
     .select("id")
     .single();
 }
@@ -2098,15 +2162,14 @@ export async function insertSupplierQuote(
   let exchangeRate = 1;
   let exchangeRateUpdatedAt = new Date().toISOString();
   if (input.currencyCode) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      input.companyGroupId,
+      input.companyId,
       input.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   const supplierInteraction = await insertSupplierInteraction(
@@ -2179,8 +2242,7 @@ export async function updateSupplierQuote(
     supplierLocationId?: string | null;
     notes?: string | null;
     customFields?: Json;
-  },
-  companyGroupId?: string
+  }
 ): Promise<{
   data: { id: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
@@ -2192,7 +2254,7 @@ export async function updateSupplierQuote(
 
   const existing = await client
     .from("supplierQuote")
-    .select("currencyCode")
+    .select("currencyCode, companyId")
     .eq("id", id)
     .single();
 
@@ -2200,18 +2262,16 @@ export async function updateSupplierQuote(
 
   if (
     updates.currencyCode &&
-    companyGroupId &&
     existing.data.currencyCode !== updates.currencyCode
   ) {
-    const currency = await getCurrencyByCode(
+    const rate = await getExchangeRate(
       client,
-      companyGroupId,
+      existing.data.companyId,
       updates.currencyCode
     );
-    if (currency.data) {
-      exchangeRate = currency.data.exchangeRate ?? 1;
-      exchangeRateUpdatedAt = new Date().toISOString();
-    }
+    if (rate.error) return { data: null, error: rate.error };
+    exchangeRate = rate.data;
+    exchangeRateUpdatedAt = new Date().toISOString();
   }
 
   return client
@@ -2256,15 +2316,14 @@ export async function upsertSupplierQuote(
 ) {
   if ("createdBy" in supplierQuote) {
     if (supplierQuote.currencyCode) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        supplierQuote.companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     } else {
       supplierQuote.exchangeRate = 1;
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
@@ -2342,15 +2401,14 @@ export async function upsertSupplierQuote(
       supplierQuote.currencyCode &&
       currencyCode !== supplierQuote.currencyCode
     ) {
-      const currency = await getCurrencyByCode(
+      const rate = await getExchangeRate(
         client,
-        supplierQuote.companyGroupId,
+        companyId,
         supplierQuote.currencyCode
       );
-      if (currency.data) {
-        supplierQuote.exchangeRate = currency.data.exchangeRate ?? undefined;
-        supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
-      }
+      if (rate.error) return { data: null, error: rate.error };
+      supplierQuote.exchangeRate = rate.data;
+      supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
     const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
       supplierQuote;
@@ -3037,4 +3095,1304 @@ export async function getDefaultAttachmentsForPO(
       path: `${prefix}/${f.name}`
     }));
   });
+}
+
+// ─── Purchase Return Orders (Supplier Returns) ───
+
+export async function getPurchaseReturnOrders(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+    supplierId: string | null;
+  }
+) {
+  let query = client
+    .from("purchaseReturnOrders")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `purchaseReturnOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof purchaseReturnOrderStatusType)[number]
+    );
+  }
+
+  if (args.supplierId) {
+    query = query.eq("supplierId", args.supplierId);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getPurchaseReturnOrder(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string
+) {
+  return client
+    .from("purchaseReturnOrders")
+    .select("*")
+    .eq("id", purchaseReturnOrderId)
+    .single();
+}
+
+export async function getPurchaseReturnOrderLines(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("purchaseReturnOrderLine")
+    .select(
+      "*, returnReason(name), item(name, readableIdWithRevision, itemTrackingType, thumbnailPath)"
+    )
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+}
+
+export async function getPurchaseReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client
+    .from("purchaseReturnOrderLine")
+    .select("*")
+    .eq("id", lineId)
+    .single();
+}
+
+export async function getPurchaseReturnOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineIds: string[]
+) {
+  return client
+    .from("purchaseReturnOrderLineTrackedEntity")
+    .select("*, trackedEntity(id, readableId, status, quantity)")
+    .in("purchaseReturnOrderLineId", lineIds);
+}
+
+export async function insertPurchaseReturnOrder(
+  client: SupabaseClient<Database>,
+  input: {
+    supplierId: string;
+    companyId: string;
+    companyGroupId: string;
+    createdBy: string;
+    purchaseReturnOrderId?: string;
+    orderDate: string;
+    supplierLocationId?: string;
+    supplierContactId?: string;
+    supplierReference?: string;
+    locationId?: string;
+    purchaseOrderId?: string;
+    currencyCode?: string;
+    expirationDate?: string;
+    assignee?: string;
+    customFields?: Json;
+  }
+): Promise<{
+  data: { id: string; purchaseReturnOrderId: string } | null;
+  error: PostgrestError | null;
+}> {
+  let purchaseReturnOrderId: string;
+  if (input.purchaseReturnOrderId) {
+    purchaseReturnOrderId = input.purchaseReturnOrderId;
+  } else {
+    const seq = await client.rpc("get_next_sequence", {
+      sequence_name: "purchaseReturnOrder",
+      company_id: input.companyId
+    });
+    if (seq.error || !seq.data) {
+      return {
+        data: null,
+        error:
+          seq.error ??
+          ({
+            message: "Failed to generate return order sequence"
+          } as PostgrestError)
+      };
+    }
+    purchaseReturnOrderId = seq.data;
+  }
+
+  let currencyCode = input.currencyCode;
+  if (!currencyCode) {
+    const [supplier, company] = await Promise.all([
+      client
+        .from("supplier")
+        .select("currencyCode")
+        .eq("id", input.supplierId)
+        .single(),
+      client
+        .from("company")
+        .select("baseCurrencyCode")
+        .eq("id", input.companyId)
+        .single()
+    ]);
+    currencyCode =
+      supplier.data?.currencyCode ?? company.data?.baseCurrencyCode ?? "USD";
+  }
+
+  let exchangeRate = 1;
+  if (currencyCode) {
+    // Main's currency refactor: rates come from the get_exchange_rate RPC
+    // (base=1, per-company override, else global market store) — the old
+    // currency.exchangeRate column was dropped.
+    const exchangeRateResult = await getExchangeRate(
+      client,
+      input.companyId,
+      currencyCode
+    );
+    if (exchangeRateResult.error) {
+      return { data: null, error: exchangeRateResult.error };
+    }
+    exchangeRate = exchangeRateResult.data;
+  }
+
+  const order = await client
+    .from("purchaseReturnOrder")
+    .insert({
+      purchaseReturnOrderId,
+      supplierId: input.supplierId,
+      supplierLocationId: input.supplierLocationId,
+      supplierContactId: input.supplierContactId,
+      supplierReference: input.supplierReference ?? null,
+      locationId: input.locationId,
+      purchaseOrderId: input.purchaseOrderId,
+      currencyCode,
+      exchangeRate,
+      orderDate: input.orderDate,
+      expirationDate: input.expirationDate,
+      assignee: input.assignee,
+      companyId: input.companyId,
+      createdBy: input.createdBy,
+      customFields: input.customFields
+    })
+    .select("id, purchaseReturnOrderId")
+    .single();
+
+  return order;
+}
+
+export async function updatePurchaseReturnOrder(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrder: Omit<
+    z.infer<typeof purchaseReturnOrderValidator>,
+    "id" | "purchaseReturnOrderId" | "status"
+  > & {
+    id: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const { id, ...update } = purchaseReturnOrder;
+  return client
+    .from("purchaseReturnOrder")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function upsertPurchaseReturnOrderLine(
+  client: SupabaseClient<Database>,
+  line:
+    | (Omit<
+        z.infer<typeof purchaseReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<
+        z.infer<typeof purchaseReturnOrderLineValidator>,
+        "id" | "trackedEntityIds"
+      > & {
+        id: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in line) {
+    const existing = await client
+      .from("purchaseReturnOrderLine")
+      .select("lineNumber")
+      .eq("purchaseReturnOrderId", line.purchaseReturnOrderId)
+      .eq("companyId", line.companyId)
+      .order("lineNumber", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    return client
+      .from("purchaseReturnOrderLine")
+      .insert([
+        {
+          ...line,
+          lineNumber: (existing.data?.lineNumber ?? 0) + 1
+        }
+      ])
+      .select("id")
+      .single();
+  }
+  const { id, ...update } = line;
+  return client
+    .from("purchaseReturnOrderLine")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deletePurchaseReturnOrder(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string
+) {
+  return client
+    .from("purchaseReturnOrder")
+    .delete()
+    .eq("id", purchaseReturnOrderId);
+}
+
+export async function deletePurchaseReturnOrderLine(
+  client: SupabaseClient<Database>,
+  lineId: string
+) {
+  return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
+}
+
+export async function setPurchaseReturnOrderLineTrackedEntities(
+  client: SupabaseClient<Database>,
+  lineId: string,
+  companyId: string,
+  entityIds: string[],
+  userId: string
+) {
+  const deleteExisting = await client
+    .from("purchaseReturnOrderLineTrackedEntity")
+    .delete()
+    .eq("purchaseReturnOrderLineId", lineId)
+    .eq("companyId", companyId);
+  if (deleteExisting.error) return deleteExisting;
+  if (entityIds.length === 0) return deleteExisting;
+
+  return client.from("purchaseReturnOrderLineTrackedEntity").insert(
+    entityIds.map((trackedEntityId) => ({
+      purchaseReturnOrderLineId: lineId,
+      trackedEntityId,
+      quantity: 1,
+      companyId,
+      createdBy: userId
+    }))
+  );
+}
+
+export async function getPurchaseReturnOrderShipments(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("shipment")
+    .select("id, shipmentId, status, postingDate, createdAt")
+    .eq("sourceDocumentId", purchaseReturnOrderId)
+    .eq("sourceDocument", "Purchase Return Order")
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getPurchaseReturnOrderCredits(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("memo")
+    .select("id, memoId, status, amount, currencyCode, memoDate, postingDate")
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: false });
+}
+
+export async function getPurchaseReturnOrderIssues(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string,
+  companyId: string
+) {
+  return client
+    .from("nonConformancePurchaseReturnOrderLine")
+    .select(
+      "id, purchaseReturnOrderLineId, nonConformance(id, nonConformanceId, name, status)"
+    )
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Confirm a supplier return. The reversible-quantity cap is a transactional
+ * invariant: the governing SOURCE rows (receipt/PO/invoice lines) are
+ * row-locked so two concurrent confirms against the same source line
+ * serialize, and the aggregates are re-read under that lock
+ * (replaceInvoiceSettlements pattern).
+ */
+export async function confirmPurchaseReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId }: { id: string; companyId: string },
+  userId: string
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    if (order.status !== "Draft") {
+      throw new Error(
+        `Cannot confirm a return order in ${order.status} status`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("purchaseReturnOrderLine")
+      .select([
+        "id",
+        "lineNumber",
+        "quantity",
+        "purchaseOrderLineId",
+        "receiptLineId",
+        "purchaseInvoiceLineId"
+      ])
+      .where("purchaseReturnOrderId", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .execute();
+
+    if (lines.length === 0) {
+      throw new Error("Cannot confirm a return order with no lines");
+    }
+
+    // Reversible caps, checked per source-line link under a row lock on the
+    // governing source row. Blind lines (no links) skip the check.
+    const checks: {
+      lineNumbers: number[];
+      requested: number;
+      linkColumn:
+        | "receiptLineId"
+        | "purchaseOrderLineId"
+        | "purchaseInvoiceLineId";
+      linkId: string;
+    }[] = [];
+
+    const byLink = new Map<string, (typeof checks)[number]>();
+    for (const line of lines) {
+      const linkColumn = line.receiptLineId
+        ? ("receiptLineId" as const)
+        : line.purchaseOrderLineId
+          ? ("purchaseOrderLineId" as const)
+          : line.purchaseInvoiceLineId
+            ? ("purchaseInvoiceLineId" as const)
+            : null;
+      if (!linkColumn) continue;
+      const linkId = line[linkColumn]!;
+      const key = `${linkColumn}:${linkId}`;
+      const existing = byLink.get(key);
+      if (existing) {
+        existing.requested += Number(line.quantity);
+        existing.lineNumbers.push(line.lineNumber);
+      } else {
+        const check = {
+          lineNumbers: [line.lineNumber],
+          requested: Number(line.quantity),
+          linkColumn,
+          linkId
+        };
+        byLink.set(key, check);
+        checks.push(check);
+      }
+    }
+
+    for (const check of checks) {
+      // Lock the governing source row, then read its received base. Receipt
+      // line quantities are already inventory units; PO/invoice lines are in
+      // purchase units and convert via conversionFactor.
+      let base = 0;
+      if (check.linkColumn === "receiptLineId") {
+        const src = await trx
+          .selectFrom("receiptLine")
+          .select(["receivedQuantity"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base = Number(src?.receivedQuantity ?? 0);
+      } else if (check.linkColumn === "purchaseOrderLineId") {
+        const src = await trx
+          .selectFrom("purchaseOrderLine")
+          .select(["quantityReceived", "conversionFactor"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base =
+          Number(src?.quantityReceived ?? 0) *
+          Number(src?.conversionFactor ?? 1);
+      } else {
+        const src = await trx
+          .selectFrom("purchaseInvoiceLine")
+          .select(["quantity", "conversionFactor"])
+          .where("id", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .forUpdate()
+          .executeTakeFirst();
+        base = Number(src?.quantity ?? 0) * Number(src?.conversionFactor ?? 1);
+      }
+
+      // Everything already authorized against this source line by OTHER
+      // non-cancelled return orders (re-read under the source-row lock).
+      // A PO-line check must ALSO count returns linked via a receipt line OF
+      // that PO line: receipt-linked and PO-linked returns draw on the same
+      // received base, and per-column counting let the two link types jointly
+      // over-authorize the same goods. (A line carrying both links matches
+      // the OR once — rows are counted, not columns.) The receipt-line check
+      // deliberately does NOT count PO-linked returns the other way: they
+      // cannot be attributed to one receipt line of a multi-receipt PO line,
+      // and blocking on them would refuse legitimate returns.
+      let siblingReceiptLineIds: string[] = [];
+      if (check.linkColumn === "purchaseOrderLineId") {
+        const receiptLinesOfPoLine = await trx
+          .selectFrom("receiptLine")
+          .select(["id"])
+          .where("lineId", "=", check.linkId)
+          .where("companyId", "=", companyId)
+          .execute();
+        siblingReceiptLineIds = receiptLinesOfPoLine.map((r) => r.id);
+      }
+
+      const others = await trx
+        .selectFrom("purchaseReturnOrderLine")
+        .innerJoin(
+          "purchaseReturnOrder",
+          "purchaseReturnOrder.id",
+          "purchaseReturnOrderLine.purchaseReturnOrderId"
+        )
+        .select(({ fn }) => [
+          fn
+            .coalesce(
+              fn.sum("purchaseReturnOrderLine.quantity"),
+              sql<number>`0`
+            )
+            .as("authorized")
+        ])
+        .where((eb) =>
+          siblingReceiptLineIds.length > 0
+            ? eb.or([
+                eb(
+                  `purchaseReturnOrderLine.${check.linkColumn}`,
+                  "=",
+                  check.linkId
+                ),
+                eb(
+                  "purchaseReturnOrderLine.receiptLineId",
+                  "in",
+                  siblingReceiptLineIds
+                )
+              ])
+            : eb(
+                `purchaseReturnOrderLine.${check.linkColumn}`,
+                "=",
+                check.linkId
+              )
+        )
+        .where("purchaseReturnOrderLine.companyId", "=", companyId)
+        .where("purchaseReturnOrder.status", "!=", "Cancelled")
+        .where("purchaseReturnOrder.id", "!=", id)
+        .executeTakeFirst();
+
+      const alreadyAuthorized = Number(others?.authorized ?? 0);
+      const cap = base - alreadyAuthorized;
+      if (check.requested > cap + EPSILON) {
+        throw new Error(
+          `Line ${check.lineNumbers.join(", ")}: cannot authorize ${
+            check.requested
+          } — only ${Math.max(0, cap)} of ${base} remains returnable for the linked document line`
+        );
+      }
+    }
+
+    // Confirm releases the return for shipping. Status is derived, not fixed —
+    // a fresh confirm from Draft has nothing shipped, so it lands on "To Ship",
+    // but deriving keeps this consistent with the shipment/short-close paths.
+    const { status } = getPurchaseReturnOrderStatus(
+      lines.map((line) => ({
+        quantity: line.quantity,
+        quantityShipped: 0,
+        closedComplete: false
+      }))
+    );
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
+ * Reopen a supplier return back to Draft so its lines can be edited. THROWS.
+ * Row-locked so a shipment posting racing this reopen serializes: only a
+ * "To Ship" return with NOTHING shipped yet (or a "Cancelled" one) may reopen —
+ * once any quantity has shipped, or the return is terminal ("Completed"),
+ * reopening would strand shipped stock. "To Ship" no longer implies nothing
+ * shipped (it also covers partially shipped), so the nothing-shipped invariant
+ * is enforced on the line quantities directly.
+ *
+ * No cap is released: a Draft return still counts as authorized against its
+ * source lines (the confirm check excludes only "Cancelled"), so the
+ * authorization it holds is unchanged — only its editability.
+ */
+export async function reopenPurchaseReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["id", "status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!order) throw new Error("Return order not found");
+    // To Ship → Draft (un-confirm) and Cancelled → Draft (revive). A Cancelled
+    // return has no shipments and nothing shipped (the cancel guard enforces
+    // that), so reviving it to Draft is safe.
+    if (!["To Ship", "Cancelled"].includes(order.status)) {
+      throw new Error(
+        `Only a to-ship or cancelled return can be reopened — this one is ${order.status}`
+      );
+    }
+
+    // "To Ship" can be partially shipped; reopening one that has shipped stock
+    // would strand it. Refuse unless nothing has shipped yet.
+    if (order.status === "To Ship") {
+      const shippedLines = await trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["quantityShipped"])
+        .where("purchaseReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute();
+      if (shippedLines.some((l) => Number(l.quantityShipped) > EPSILON)) {
+        throw new Error(
+          "Cannot reopen: quantity has already shipped. Void the shipment first."
+        );
+      }
+    }
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status: "Draft",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/**
+ * Cancel a supplier return. THROWS. A Kysely transaction that locks the order
+ * row first — post-shipment re-checks the order status under the same lock, so
+ * a shipment posting racing this cancel serializes: whichever commits first
+ * wins, and the loser sees the new state instead of producing a Cancelled
+ * order with shipped stock (whose caps and Issue coverage then vanish).
+ */
+export async function cancelPurchaseReturnOrder(
+  db: Kysely<KyselyDatabase>,
+  { id, companyId, userId }: { id: string; companyId: string; userId: string }
+) {
+  return db.transaction().execute(async (trx) => {
+    const order = await trx
+      .selectFrom("purchaseReturnOrder")
+      .select(["status"])
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!order) throw new Error("Return order not found");
+    if (["Completed", "Cancelled"].includes(order.status)) {
+      throw new Error(`Cannot cancel a return order in ${order.status} status`);
+    }
+
+    const [shipments, lines] = await Promise.all([
+      trx
+        .selectFrom("shipment")
+        .select(["id"])
+        .where("sourceDocumentId", "=", id)
+        .where("sourceDocument", "=", "Purchase Return Order")
+        .where("companyId", "=", companyId)
+        .where("status", "!=", "Voided")
+        .execute(),
+      trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["quantityShipped"])
+        .where("purchaseReturnOrderId", "=", id)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    if (shipments.length > 0) {
+      throw new Error(
+        "Cannot cancel: a shipment exists for this return order. Delete or void it first."
+      );
+    }
+    if (lines.some((l) => Number(l.quantityShipped) > 0)) {
+      throw new Error("Cannot cancel: quantity has already been shipped");
+    }
+
+    await trx
+      .updateTable("purchaseReturnOrder")
+      .set({
+        status: "Cancelled",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", id)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { id };
+  });
+}
+
+/**
+ * Short-close ("stop expecting") a supplier return line — the
+ * shortClosePurchaseOrderLine mechanic. The header status is derived from the
+ * lines afterwards, so short-closing the last open line completes the return
+ * (there is no separate manual Complete action, mirroring the Purchase Order).
+ */
+export async function shortClosePurchaseReturnOrderLine(
+  db: Kysely<KyselyDatabase>,
+  {
+    lineId,
+    purchaseReturnOrderId,
+    companyId,
+    userId,
+    intent
+  }: {
+    lineId: string;
+    purchaseReturnOrderId: string;
+    companyId: string;
+    userId: string;
+    intent: "close" | "reopen";
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("purchaseReturnOrderLine")
+      .select(["id"])
+      .where("id", "=", lineId)
+      .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+
+    if (!line) throw new Error("Return order line not found");
+
+    await trx
+      .updateTable("purchaseReturnOrderLine")
+      .set({
+        closedComplete: intent === "close",
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .where("id", "=", lineId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    const [order, lines] = await Promise.all([
+      trx
+        .selectFrom("purchaseReturnOrder")
+        .select(["status"])
+        .where("id", "=", purchaseReturnOrderId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      trx
+        .selectFrom("purchaseReturnOrderLine")
+        .select(["quantity", "quantityShipped", "closedComplete"])
+        .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ]);
+
+    // Recompute in both the To Ship and Completed working states: short-closing
+    // the last open line completes the return, and reopening a line on a
+    // completed return drops it back to To Ship.
+    if (!order || !["To Ship", "Completed"].includes(order.status)) {
+      return;
+    }
+
+    const { status } = getPurchaseReturnOrderStatus(lines);
+
+    if (status !== order.status) {
+      await trx
+        .updateTable("purchaseReturnOrder")
+        .set({
+          status,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", purchaseReturnOrderId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+  });
+}
+
+/**
+ * "From document" picker source: posted receipt lines for the supplier with
+ * their reversible remainders (received − already authorized on non-cancelled
+ * supplier returns). BC's "Show Reversible Lines Only".
+ */
+/**
+ * Returnable receipt lines for a supplier, searched + paginated in the database
+ * via the get_returnable_receipt_lines RPC. The `received − already-authorized
+ * > 0` filter, the text search (receipt #, PO #, item readable id, item name),
+ * the recency ordering, and pagination all run in SQL so the "Add lines from
+ * receipt" modal stays responsive when a supplier has thousands of receipt
+ * lines. Each row carries `totalCount` — the size of the full returnable set
+ * before limit/offset — so the UI can page through the rest.
+ */
+export async function getReturnableLinesForSupplier(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierId: string,
+  args?: {
+    purchaseOrderId?: string;
+    search?: string;
+    limit?: number;
+    offset?: number;
+  }
+) {
+  return client.rpc("get_returnable_receipt_lines", {
+    company_id: companyId,
+    supplier_id: supplierId,
+    purchase_order_id: args?.purchaseOrderId || undefined,
+    search: args?.search?.trim() || undefined,
+    limit_count: args?.limit ?? 5,
+    offset_count: args?.offset ?? 0
+  });
+}
+
+/**
+ * Entity picker source for supplier return lines: serials/batches on hand
+ * that were received from this supplier. Provenance is the Receipt attribute
+ * (written by the receipt tracking route) resolved to the receipt's supplier
+ * — no code writes a Supplier attribute onto tracked entities.
+ */
+export async function getReturnableEntitiesForSupplier(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierId: string,
+  itemId: string
+) {
+  const receipts = await client
+    .from("receipt")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("supplierId", supplierId)
+    .eq("status", "Posted");
+  if (receipts.error) {
+    return { data: null, error: receipts.error };
+  }
+  const receiptIds = (receipts.data ?? []).map((r) => r.id);
+  if (receiptIds.length === 0) {
+    return { data: [], error: null };
+  }
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, quantity, status, attributes")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .eq("status", "Available")
+    .in("attributes ->> Receipt", receiptIds);
+}
+
+/**
+ * The Available tracked entities that came in on ONE receipt line, for the item.
+ * Used to pre-select the batch/serial when a return line is added from a specific
+ * receipt — provenance is the `Receipt Line` attribute stamped at receipt.
+ */
+export async function getReturnableEntitiesForReceiptLine(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  itemId: string,
+  receiptLineId: string
+) {
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, quantity, status")
+    .eq("companyId", companyId)
+    .eq("itemId", itemId)
+    .eq("status", "Available")
+    .eq("attributes ->> Receipt Line", receiptLineId);
+}
+
+/**
+ * Per-line creditable pool = shipped − already credited. Draft memos count
+ * against the pool (two Drafts must not double-credit); the VIEW's displayed
+ * quantityCredited still derives from Posted memos only.
+ */
+export async function getCreditableQuantitiesForPurchaseReturn(
+  client: SupabaseClient<Database>,
+  purchaseReturnOrderId: string,
+  companyId: string
+) {
+  const lines = await client
+    .from("purchaseReturnOrderLine")
+    .select("id, lineNumber, quantityShipped, unitPrice, restockFeePercent")
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .order("lineNumber");
+  if (lines.error) return { data: null, error: lines.error };
+  const lineIds = (lines.data ?? []).map((l) => l.id);
+  if (lineIds.length === 0) return { data: [], error: null };
+
+  const credits = await client
+    .from("purchaseReturnOrderCreditLine")
+    .select("purchaseReturnOrderLineId, quantity, memo!inner(status)")
+    .in("purchaseReturnOrderLineId", lineIds)
+    .eq("companyId", companyId)
+    .neq("memo.status", "Voided");
+  if (credits.error) return { data: null, error: credits.error };
+
+  const creditedByLine = new Map<string, number>();
+  for (const row of credits.data ?? []) {
+    creditedByLine.set(
+      row.purchaseReturnOrderLineId,
+      (creditedByLine.get(row.purchaseReturnOrderLineId) ?? 0) +
+        Number(row.quantity)
+    );
+  }
+
+  return {
+    data: (lines.data ?? []).map((line) => {
+      const shipped = Number(line.quantityShipped);
+      const credited = creditedByLine.get(line.id) ?? 0;
+      return {
+        purchaseReturnOrderLineId: line.id,
+        lineNumber: line.lineNumber,
+        quantityShipped: shipped,
+        quantityCredited: credited,
+        creditableQuantity: Math.max(0, shipped - credited),
+        unitPrice: Number(line.unitPrice),
+        restockFeePercent: Number(line.restockFeePercent)
+      };
+    }),
+    error: null
+  };
+}
+
+/**
+ * Issue supplier credit: one AP memo + per-line purchaseReturnOrderCreditLine
+ * breakdown. Cap = shipped − already credited over NON-VOIDED memos,
+ * validated under a row lock. Amount rounded once at the currency's
+ * decimals. Returns the memo id.
+ *
+ * The memo is a **Debit** memo (the `debitMemo` DR- sequence), NOT a Credit
+ * memo. `direction` alone decides the control side for both AR and AP
+ * (`buildMemoJournal`): a Credit memo CREDITS the control account, which on
+ * AP — a liability — would INCREASE what we owe the supplier. Returning goods
+ * must reduce it, so the control leg has to be a debit. That also makes the
+ * reason leg CREDIT GRNI, clearing the debit the return shipment posted
+ * (DR GRNI / CR Inventory) so the suspense account nets to zero over the
+ * cycle. Net effect: DR AP / CR Inventory, which is the SAP/NetSuite/D365
+ * vendor-return pattern. The sales side is the mirror image and correctly
+ * stays `Credit` (crediting AR, an asset, reduces it).
+ *
+ * The rest of invoicing already assumes this: `getAvailableCredits` and
+ * `getCompanyHasOpenCredits` select supplier memos with
+ * `direction = "Debit"`, so a Credit-direction memo here is also invisible to
+ * "Apply Credit" on a supplier invoice.
+ */
+export async function createPurchaseReturnOrderCredit(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    purchaseReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId,
+    memoDate,
+    lines
+  }: {
+    purchaseReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+    memoDate: string;
+    lines: { purchaseReturnOrderLineId: string; quantity: number }[];
+  }
+) {
+  const order = await client
+    .from("purchaseReturnOrder")
+    .select(
+      "id, status, supplierId, currencyCode, exchangeRate, purchaseReturnOrderId"
+    )
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) throw new Error("Return order not found");
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    throw new Error(
+      `Cannot issue credit for a return order in ${order.data.status} status`
+    );
+  }
+
+  const currency = await getCurrencyByCode(
+    client,
+    companyGroupId,
+    order.data.currencyCode
+  );
+  const decimalPlaces = currency.data?.decimalPlaces ?? 2;
+
+  const seq = await client.rpc("get_next_sequence", {
+    sequence_name: "debitMemo",
+    company_id: companyId
+  });
+  if (seq.error || !seq.data) {
+    throw new Error("Failed to allocate debit memo number");
+  }
+  const memoId = seq.data;
+
+  const requested = new Map(
+    lines
+      .filter((l) => l.quantity > 0)
+      .map((l) => [l.purchaseReturnOrderLineId, l.quantity])
+  );
+  if (requested.size === 0) {
+    throw new Error("Nothing to credit");
+  }
+
+  return db.transaction().execute(async (trx) => {
+    const orderLines = await trx
+      .selectFrom("purchaseReturnOrderLine")
+      .select([
+        "id",
+        "lineNumber",
+        "quantityShipped",
+        "unitPrice",
+        "restockFeePercent"
+      ])
+      .where("purchaseReturnOrderId", "=", purchaseReturnOrderId)
+      .where("companyId", "=", companyId)
+      .where("id", "in", [...requested.keys()])
+      .forUpdate()
+      .execute();
+
+    if (orderLines.length !== requested.size) {
+      throw new Error(
+        "One or more credit lines do not belong to this return order"
+      );
+    }
+
+    const credited = await trx
+      .selectFrom("purchaseReturnOrderCreditLine")
+      .innerJoin("memo", "memo.id", "purchaseReturnOrderCreditLine.memoId")
+      .select(({ fn }) => [
+        "purchaseReturnOrderCreditLine.purchaseReturnOrderLineId",
+        fn
+          .coalesce(
+            fn.sum("purchaseReturnOrderCreditLine.quantity"),
+            sql<number>`0`
+          )
+          .as("credited")
+      ])
+      .where("purchaseReturnOrderCreditLine.purchaseReturnOrderLineId", "in", [
+        ...requested.keys()
+      ])
+      .where("purchaseReturnOrderCreditLine.companyId", "=", companyId)
+      .where("memo.status", "!=", "Voided")
+      .groupBy("purchaseReturnOrderCreditLine.purchaseReturnOrderLineId")
+      .execute();
+    const creditedByLine = new Map(
+      credited.map((row) => [
+        row.purchaseReturnOrderLineId,
+        Number(row.credited)
+      ])
+    );
+
+    let total = 0;
+    const creditLineValues: {
+      memoId: string;
+      purchaseReturnOrderLineId: string;
+      quantity: number;
+      unitPrice: number;
+      restockFee: number;
+      companyId: string;
+      createdBy: string;
+    }[] = [];
+
+    for (const line of orderLines) {
+      const quantity = requested.get(line.id)!;
+      const shipped = Number(line.quantityShipped ?? 0);
+      const alreadyCredited = creditedByLine.get(line.id) ?? 0;
+      const creditable = shipped - alreadyCredited;
+      if (quantity > creditable + EPSILON) {
+        throw new Error(
+          `Line ${line.lineNumber}: cannot credit ${quantity} — only ${Math.max(
+            0,
+            creditable
+          )} of ${shipped} shipped remains creditable`
+        );
+      }
+      const unitPrice = Number(line.unitPrice ?? 0);
+      const feePercent = Number(line.restockFeePercent ?? 0);
+      const gross = quantity * unitPrice;
+      const restockFee = gross * feePercent;
+      total += gross - restockFee;
+      creditLineValues.push({
+        memoId: "",
+        purchaseReturnOrderLineId: line.id,
+        quantity,
+        unitPrice,
+        restockFee,
+        companyId,
+        createdBy: userId
+      });
+    }
+
+    if (total <= 0) {
+      throw new Error("Credit amount must be positive");
+    }
+
+    const memo = await trx
+      .insertInto("memo")
+      .values({
+        memoId,
+        direction: "Debit",
+        status: "Draft",
+        supplierId: order.data.supplierId,
+        memoDate,
+        currencyCode: order.data.currencyCode,
+        exchangeRate: order.data.exchangeRate ?? 1,
+        amount: round(total, decimalPlaces),
+        reference: order.data.purchaseReturnOrderId,
+        purchaseReturnOrderId,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    await trx
+      .insertInto("purchaseReturnOrderCreditLine")
+      .values(creditLineValues.map((v) => ({ ...v, memoId: memo.id })))
+      .execute();
+
+    return memo.id;
+  });
+}
+
+/**
+ * Create Replacement Purchase Order: a draft PO from the return lines,
+ * priced from the linked PO line (purchase-UOM price + conversion factor
+ * copied) else the supplierPart default. One replacement per return.
+ */
+export async function createReplacementPurchaseOrder(
+  client: SupabaseClient<Database>,
+  {
+    purchaseReturnOrderId,
+    companyId,
+    companyGroupId,
+    userId
+  }: {
+    purchaseReturnOrderId: string;
+    companyId: string;
+    companyGroupId: string;
+    userId: string;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: PostgrestError | null;
+}> {
+  const order = await client
+    .from("purchaseReturnOrder")
+    .select("*")
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId)
+    .single();
+  if (order.error) return { data: null, error: order.error };
+  if (["Draft", "Cancelled"].includes(order.data.status)) {
+    return {
+      data: null,
+      error: {
+        message: `Cannot create a replacement for a ${order.data.status} return order`
+      } as PostgrestError
+    };
+  }
+  if (order.data.replacementPurchaseOrderId) {
+    return {
+      data: { id: order.data.replacementPurchaseOrderId },
+      error: null
+    };
+  }
+
+  const lines = await client
+    .from("purchaseReturnOrderLine")
+    .select("*, item(type)")
+    .eq("purchaseReturnOrderId", purchaseReturnOrderId)
+    .eq("companyId", companyId);
+  if (lines.error) return { data: null, error: lines.error };
+  if ((lines.data ?? []).length === 0) {
+    return {
+      data: null,
+      error: { message: "Return order has no lines" } as PostgrestError
+    };
+  }
+
+  const linkedPoLineIds = (lines.data ?? [])
+    .map((l) => l.purchaseOrderLineId)
+    .filter(Boolean) as string[];
+  const poLines =
+    linkedPoLineIds.length > 0
+      ? await client
+          .from("purchaseOrderLine")
+          .select(
+            "id, supplierUnitPrice, conversionFactor, purchaseUnitOfMeasureCode, inventoryUnitOfMeasureCode"
+          )
+          .in("id", linkedPoLineIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (poLines.error) return { data: null, error: poLines.error };
+  const poLineById = new Map((poLines.data ?? []).map((l) => [l.id, l]));
+
+  const supplierParts = await client
+    .from("supplierPart")
+    .select("itemId, unitPrice, conversionFactor, supplierUnitOfMeasureCode")
+    .eq("supplierId", order.data.supplierId)
+    .eq("companyId", companyId)
+    .in(
+      "itemId",
+      (lines.data ?? []).map((l) => l.itemId)
+    );
+  if (supplierParts.error) {
+    return { data: null, error: supplierParts.error };
+  }
+  const supplierPartByItem = new Map(
+    (supplierParts.data ?? []).map((sp) => [sp.itemId, sp])
+  );
+
+  const purchaseOrder = await insertPurchaseOrder(client, {
+    supplierId: order.data.supplierId,
+    companyId,
+    companyGroupId,
+    createdBy: userId,
+    currencyCode: order.data.currencyCode,
+    locationId: order.data.locationId ?? undefined,
+    supplierContactId: order.data.supplierContactId ?? undefined,
+    supplierLocationId: order.data.supplierLocationId ?? undefined,
+    supplierReference: order.data.purchaseReturnOrderId
+  });
+  if (purchaseOrder.error || !purchaseOrder.data) {
+    return { data: null, error: purchaseOrder.error };
+  }
+  const purchaseOrderId = purchaseOrder.data.id;
+
+  const lineTypeFor = (
+    itemType: string | null | undefined
+  ): Database["public"]["Enums"]["purchaseOrderLineType"] => {
+    switch (itemType) {
+      case "Part":
+      case "Material":
+      case "Tool":
+      case "Consumable":
+      case "Service":
+        return itemType;
+      default:
+        return "Part";
+    }
+  };
+
+  const replacementLines = (lines.data ?? []).map((line) => {
+    const poLine = line.purchaseOrderLineId
+      ? poLineById.get(line.purchaseOrderLineId)
+      : null;
+    const supplierPart = supplierPartByItem.get(line.itemId);
+    const conversionFactor = Number(
+      poLine?.conversionFactor ?? supplierPart?.conversionFactor ?? 1
+    );
+    // supplierUnitPrice is the supplier-currency figure; the PO line's
+    // unitPrice generated column is base currency and would double-convert
+    const unitPrice = Number(
+      poLine?.supplierUnitPrice ??
+        supplierPart?.unitPrice ??
+        Number(line.unitPrice) * conversionFactor
+    );
+    const purchaseQuantity =
+      conversionFactor > 0
+        ? Number(line.quantity) / conversionFactor
+        : Number(line.quantity);
+
+    return {
+      purchaseOrderId,
+      purchaseOrderLineType: lineTypeFor(line.item?.type),
+      itemId: line.itemId,
+      purchaseQuantity,
+      supplierUnitPrice: unitPrice,
+      conversionFactor,
+      purchaseUnitOfMeasureCode:
+        poLine?.purchaseUnitOfMeasureCode ??
+        supplierPart?.supplierUnitOfMeasureCode ??
+        line.unitOfMeasureCode,
+      inventoryUnitOfMeasureCode:
+        poLine?.inventoryUnitOfMeasureCode ?? line.unitOfMeasureCode,
+      companyId,
+      createdBy: userId
+    };
+  });
+
+  const insertLines = await client
+    .from("purchaseOrderLine")
+    .insert(replacementLines);
+  if (insertLines.error) {
+    await deletePurchaseOrder(client, purchaseOrderId);
+    return { data: null, error: insertLines.error };
+  }
+
+  const link = await client
+    .from("purchaseReturnOrder")
+    .update({
+      replacementPurchaseOrderId: purchaseOrderId,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", purchaseReturnOrderId)
+    .eq("companyId", companyId);
+  if (link.error) return { data: null, error: link.error };
+
+  return { data: { id: purchaseOrderId }, error: null };
 }

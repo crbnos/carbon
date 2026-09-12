@@ -32,7 +32,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!status || !purchaseOrderStatusType.includes(status)) {
     throw redirect(
-      path.to.quote(id),
+      path.to.purchaseOrder(id),
       await flash(request, error(null, "Invalid status"))
     );
   }
@@ -157,7 +157,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
         if (!isRequester && !isApprover) {
           throw redirect(
-            requestReferrer(request) ?? path.to.quote(id),
+            requestReferrer(request) ?? path.to.purchaseOrder(id),
             await flash(
               request,
               error(
@@ -225,7 +225,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (update.error) {
     throw redirect(
-      requestReferrer(request) ?? path.to.quote(id),
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
       await flash(
         request,
         error(update.error, "Failed to update purchasing order status")
@@ -234,7 +234,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Planned") {
-    await runMRP(serviceRole, {
+    await runMRP(serviceRole, getDatabaseClient(), {
       type: "purchaseOrder",
       id,
       companyId,
@@ -243,7 +243,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    requestReferrer(request) ?? path.to.quote(id),
+    requestReferrer(request) ?? path.to.purchaseOrder(id),
     await flash(request, success("Updated purchasing order status"))
   );
 }

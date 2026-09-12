@@ -15,6 +15,7 @@ import {
   getQuote,
   getSalesOrder,
   getSalesOrderInvoiceLines,
+  getSalesOrderInvoicePaymentsByIds,
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
   getSalesOrderRelatedItems
@@ -66,7 +67,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw redirect(path.to.salesOrders);
   }
 
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  if (opportunity.error) {
+    throw new Error(
+      `Failed to get opportunity record for sales order ${orderId} (opportunityId: ${
+        salesOrder.data?.opportunityId ?? "null"
+      }): ${opportunity.error.message}`
+    );
+  }
+
+  if (!salesOrder.data?.opportunityId) {
+    throw new Error(
+      `Sales order ${orderId} has no opportunityId; the opportunity record is missing`
+    );
+  }
+
+  if (!opportunity.data) {
+    throw new Error(
+      `No opportunity found with id ${salesOrder.data.opportunityId} referenced by sales order ${orderId}`
+    );
+  }
 
   const serviceRole = getCarbonServiceRole();
   const [quote, customer, companySettings, invoiceLines] = await Promise.all([
@@ -102,11 +121,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(
-      client,
-      invoiceIds,
-      companyId
-    );
+    const [invoices, payments] = await Promise.all([
+      getSalesOrderInvoicesByIds(client, invoiceIds, companyId),
+      getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+    ]);
 
     if (invoices.error) {
       throw redirect(
@@ -115,6 +133,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           request,
           error(invoices.error, "Failed to load sales invoice totals")
         )
+      );
+    }
+
+    if (payments.error) {
+      throw redirect(
+        path.to.salesOrder(orderId),
+        await flash(
+          request,
+          error(payments.error, "Failed to load sales invoice payments")
+        )
+      );
+    }
+
+    const paidBaseByInvoiceId = new Map<string, number>();
+    for (const payment of payments.data ?? []) {
+      if (!payment.targetSalesInvoiceId) continue;
+      paidBaseByInvoiceId.set(
+        payment.targetSalesInvoiceId,
+        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
+          payment.appliedAmount
       );
     }
 
@@ -146,6 +184,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         total: invoice.invoiceTotal ?? 0,
         balance: invoice.balance,
         exchangeRate: invoice.exchangeRate,
+        paidAmount: invoice.id ? (paidBaseByInvoiceId.get(invoice.id) ?? 0) : 0,
         convertToDocument: true
       });
 
@@ -189,14 +228,14 @@ export default function SalesOrderRoute() {
 
   return (
     <PanelProvider>
-      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full">
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <SalesOrderHeader />
-        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               explorer={<SalesOrderExplorer />}
               content={
-                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>

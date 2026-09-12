@@ -20,6 +20,7 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures
@@ -207,6 +208,13 @@ export async function seedCompanyReferenceData(
     );
   }
 
+  for (const name of returnReasons) {
+    await client.query(
+      `INSERT INTO "returnReason" (name, "inventoryValueZero", "companyId", "createdBy") VALUES ($1, false, $2, 'system')`,
+      [name, companyId]
+    );
+  }
+
   for (const pt of paymentTerms) {
     await client.query(
       `INSERT INTO "paymentTerm" (name, "daysDue", "calculationMethod", "daysDiscount", "discountPercentage", "companyId", "createdBy")
@@ -299,9 +307,9 @@ export async function seedCompanyReferenceData(
 
   for (const c of currencies) {
     await client.query(
-      `INSERT INTO currency (code, "exchangeRate", "decimalPlaces", "companyGroupId", "createdBy")
-       VALUES ($1, $2, $3, $4, 'system')`,
-      [c.code, c.exchangeRate, c.decimalPlaces, companyGroupId]
+      `INSERT INTO currency (code, "decimalPlaces", "companyGroupId", "createdBy")
+       VALUES ($1, $2, $3, 'system')`,
+      [c.code, c.decimalPlaces, companyGroupId]
     );
   }
 

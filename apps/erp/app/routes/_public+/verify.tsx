@@ -180,7 +180,7 @@ export default function VerifyRoute() {
               </Alert>
             )}
 
-            <InputOTP name="code" label="" />
+            <InputOTP name="code" label="" autoFocus />
 
             <Button type="button" variant="link" size="sm" asChild>
               <Link to="/login">

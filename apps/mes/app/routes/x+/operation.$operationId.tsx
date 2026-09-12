@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { activeJobStatuses } from "@carbon/database";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
@@ -12,11 +13,13 @@ import {
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobMethodBomIdMap,
+  getJobOperationBatch,
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
   getNextIncompleteSerialEntity,
   getNonConformanceActions,
+  getProductionEventsForBatch,
   getProductionEventsForJobOperation,
   getProductionQuantitiesForJobOperation,
   getThumbnailPathByItemId,
@@ -43,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const [events, quantities, job, operation] = await Promise.all([
+  let [events, quantities, job, operation] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
       operationId,
       userId
@@ -83,6 +86,64 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
   if (resolveOperationView(op?.operationType) === "inspection") {
     throw redirect(path.to.inspection(operationId) + url.search);
+  }
+
+  // Batch membership. get_job_operation_by_id omits jobOperationBatchId, so read
+  // it directly. When the op belongs to a batch that is still Active/Completing,
+  // the operation view runs in batch mode: it shows the shared batch timer and
+  // completes the whole batch. A Completed batch was already re-sliced per member
+  // — it renders as a plain operation view.
+  const batchMembership = await serviceRole
+    .from("jobOperation")
+    .select("jobOperationBatchId")
+    .eq("id", operationId)
+    .single();
+  let batch: Awaited<ReturnType<typeof getJobOperationBatch>>["data"] | null =
+    null;
+  const batchId = batchMembership.data?.jobOperationBatchId ?? null;
+  if (batchId) {
+    const batchResult = await getJobOperationBatch(
+      serviceRole,
+      batchId,
+      companyId
+    );
+    // Floor rule: a batched operation is only floor-visible once its batch
+    // has been released (Active/Completing). A Planned batch stays off the
+    // floor regardless of its members' job statuses.
+    if (batchResult.data?.status === "Planned") {
+      throw redirect(
+        path.to.operations,
+        await flash(
+          request,
+          error(
+            null,
+            "This operation is part of a batch that has not been released to the floor"
+          )
+        )
+      );
+    }
+    if (
+      batchResult.data &&
+      (batchResult.data.status === "Active" ||
+        batchResult.data.status === "Completing")
+    ) {
+      batch = batchResult.data;
+      // Read the batch's events (all members' timers) instead of this op's.
+      events = await getProductionEventsForBatch(serviceRole, batchId);
+    }
+  } else if (
+    !job.data.status ||
+    !(activeJobStatuses as readonly string[]).includes(job.data.status)
+  ) {
+    // Floor rule: an unbatched operation is only floor-visible while its job
+    // is released (Ready/In Progress/Paused).
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(null, "This operation's job has not been released to the floor")
+      )
+    );
   }
 
   const [
@@ -158,6 +219,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   return {
+    batch,
     bomIdMap: Object.fromEntries(bomIdMap),
     events: events.data ?? [],
     quantities: (quantities.data ?? []).reduce(
@@ -218,6 +280,7 @@ export default function OperationRoute() {
   if (!operationId) throw new Error("Operation ID is required");
 
   const {
+    batch,
     events,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
@@ -238,6 +301,7 @@ export default function OperationRoute() {
   return (
     <JobOperation
       key={`job-operation-${operationId}`}
+      batch={batch}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
       autoSelectMaterialWithoutPickingList={

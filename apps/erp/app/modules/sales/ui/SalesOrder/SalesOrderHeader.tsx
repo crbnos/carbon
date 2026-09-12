@@ -1,3 +1,4 @@
+import type { Database } from "@carbon/database";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -14,7 +15,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -40,7 +40,8 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { Await, Link, useFetcher, useParams } from "react-router";
@@ -57,6 +58,7 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
+import { SalesReturnOrderStatus } from "~/modules/sales/ui/SalesReturnOrders";
 import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { useCustomers } from "~/stores/customers";
@@ -122,16 +124,16 @@ const SalesOrderConfirmModal = ({
         >
           <ModalHeader>
             <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Are you sure you want to confirm this sales order? Confirming
-                the order will affect on order quantities used to calculate
-                supply and demand.
-              </Trans>
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  Are you sure you want to confirm this sales order? Confirming
+                  the order will affect on order quantities used to calculate
+                  supply and demand.
+                </Trans>
+              </p>
               {canEmail && (
                 <SelectControlled
                   label={t`Send Via`}
@@ -193,6 +195,11 @@ const SalesOrderHeader = () => {
       jobs: Job[];
       shipments: Shipment[];
       invoices: SalesInvoice[];
+      salesReturnOrders: {
+        id: string;
+        salesReturnOrderId: string;
+        status: Database["public"]["Enums"]["salesReturnOrderStatus"];
+      }[];
     }>;
     defaultCc: string[];
   }>(path.to.salesOrder(orderId));
@@ -449,6 +456,8 @@ const SalesOrderHeader = () => {
                 {(relatedItems) => {
                   const shipments = relatedItems?.shipments || [];
                   const invoices = relatedItems?.invoices || [];
+                  const salesReturnOrders =
+                    relatedItems?.salesReturnOrders || [];
                   return (
                     <>
                       {shipments.length > 0 ? (
@@ -591,6 +600,38 @@ const SalesOrderHeader = () => {
                         >
                           <Trans>Invoice</Trans>
                         </Button>
+                      )}
+                      {salesReturnOrders.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              leftIcon={<LuUndo2 />}
+                              rightIcon={<LuChevronDown />}
+                              variant="secondary"
+                            >
+                              <Trans>RMAs</Trans>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {salesReturnOrders.map((returnOrder) => (
+                              <DropdownMenuItem key={returnOrder.id} asChild>
+                                <Link
+                                  to={path.to.salesReturnOrder(returnOrder.id)}
+                                >
+                                  <DropdownMenuIcon icon={<LuUndo2 />} />
+                                  <HStack spacing={8}>
+                                    <span>
+                                      {returnOrder.salesReturnOrderId}
+                                    </span>
+                                    <SalesReturnOrderStatus
+                                      status={returnOrder.status}
+                                    />
+                                  </HStack>
+                                </Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       )}
                     </>
                   );

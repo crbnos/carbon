@@ -16,7 +16,7 @@ import {
   useSubmit
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { getCurrencyByCode } from "~/modules/accounting";
+import { getExchangeRate } from "~/modules/accounting";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import type { SalesOrderLine } from "~/modules/sales";
 import {
@@ -50,13 +50,10 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId, companyGroupId } = await requirePermissions(
-    request,
-    {
-      view: "sales",
-      bypassRls: true
-    }
-  );
+  const { client, companyId } = await requirePermissions(request, {
+    view: "sales",
+    bypassRls: true
+  });
 
   const { quoteId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -96,7 +93,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getCompanySettings(client, companyId)
   ]);
 
-  if (!opportunity.data) throw new Error("Failed to get opportunity record");
+  if (opportunity.error) {
+    throw new Error(
+      `Failed to get opportunity record for quote ${quoteId} (opportunityId: ${
+        quote.data?.opportunityId ?? "null"
+      }): ${opportunity.error.message}`
+    );
+  }
+
+  if (!quote.data?.opportunityId) {
+    throw new Error(
+      `The quote ${quoteId} has no opportunityId; the opportunity record is missing`
+    );
+  }
+
+  if (!opportunity.data) {
+    throw new Error(
+      `No opportunity found with id ${quote.data.opportunityId} referenced by quote ${quoteId}`
+    );
+  }
 
   if (companyId !== quote.data?.companyId) {
     throw redirect(path.to.quotes);
@@ -121,14 +136,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   let exchangeRate = 1;
   if (quote.data?.currencyCode) {
-    const presentationCurrency = await getCurrencyByCode(
+    const presentationExchangeRate = await getExchangeRate(
       client,
-      companyGroupId,
+      companyId,
       quote.data.currencyCode
     );
-    if (presentationCurrency.data?.exchangeRate) {
-      exchangeRate = presentationCurrency.data.exchangeRate;
-    }
+    // A missing LIVE rate must not make the quote unopenable — this page hosts
+    // the refresh button that fixes it. Fall back to the document's own stamped
+    // snapshot (the PDF routes' policy); writes still refuse.
+    exchangeRate =
+      presentationExchangeRate.error || presentationExchangeRate.data === null
+        ? (quote.data.exchangeRate ?? 1)
+        : presentationExchangeRate.data;
   }
 
   let salesOrderLines: PostgrestResponse<SalesOrderLine> | null = null;
@@ -239,14 +258,14 @@ export default function QuoteRoute() {
   return (
     <DndContext onDragEnd={handleDragEnd}>
       <PanelProvider key={quoteId}>
-        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height))] overflow-hidden w-full ">
+        <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full ">
           <QuoteHeader />
-          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-hidden w-full">
+          <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
             <div className="flex flex-grow overflow-hidden">
               <ResizablePanels
                 explorer={<QuoteExplorer methods={methods} />}
                 content={
-                  <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height))] overflow-y-auto scrollbar-hide w-full">
+                  <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
                     <VStack spacing={4} className="p-4">
                       <Outlet />
                     </VStack>
