@@ -1,7 +1,9 @@
 # Onshape: the Carbon panel (push-only element app)
 
-- **Status:** Implemented on `feat/onshape-app` (pending review)
-- **Date:** 2026-08-28
+- **Status:** Implemented on `feat/onshape-app` (PR #1591, pending review)
+- **Date:** 2026-08-28; amended 2026-09-13 (own integration, push defaults,
+  Draft on released methods, three-page panel)
+- **User docs:** `docs/content/docs/integrations/cad.mdx`
 - **Author:** Raul (with Claude)
 
 ## Problem
@@ -24,6 +26,31 @@ instead of acting once when a person says "this is ready".
 - Frugal with Onshape API quota (private apps debit the app owner annually).
 
 ## Architecture
+
+### Its own integration: `onshape-v2` (2026-09-09)
+
+The panel shared the `onshape` `companyIntegration` row with the pull-shaped
+integration, so two unrelated features shared one OAuth grant, one credential
+blob and one mapping namespace. They are now two integrations: `onshape`
+keeps the webhook sync, `onshape-v2` ("Onshape V2") is the panel. Separate
+grant, row and `externalIntegrationMapping` namespace; a company can run
+either, both, or neither. Ids in `packages/ee/src/onshape/lib/integration-id.ts`;
+reads that ask "is this in Carbon?" consider both namespaces, v2 first.
+
+Deployment requirements the split adds:
+
+- `ONSHAPE_V2_OAUTH_REDIRECT_URL` = `<erp>/api/integrations/onshape-v2/oauth`,
+  registered as a second redirect URI on the same Onshape OAuth application
+  (alongside `ONSHAPE_OAUTH_REDIRECT_URL` = `<erp>/api/integrations/onshape/oauth`).
+  Install and callback for both ids share one handler
+  (`onshape-oauth.server.ts`).
+- Migration `20260909174511_onshape-v2-integration.sql` seeds the integration
+  row. `credentials` required, `baseUrl` optional.
+- The V2 integration form carries no settings; the panel's Settings page owns
+  them.
+- Onshape side, unchanged: extension of location Element right panel with the
+  action URL carrying `documentId, wv, wvId, elementId, partNumber, revision,
+  nodeId, occurrencePath, configuration, server`; users subscribed to the app.
 
 ### Panel and auth
 
@@ -57,7 +84,13 @@ instead of acting once when a person says "this is ready".
   `release:<releaseId>:<partNumber>`.
 - Onshape-origin BOM lines: entityType `methodMaterial` with
   `metadata.makeMethodId` — a push replaces exactly those lines and leaves
-  manual lines alone. Released (Active) methods are refused.
+  manual lines alone.
+- Released (Active) methods are not edited and not refused (2026-09-13): the
+  push takes a Draft version (`ensureDraftMakeMethod`, reusing an existing
+  Draft, else copy + new version) and writes there; nothing live moves until a
+  person releases it. Mappings are re-derived onto the copy's new line ids by
+  natural key (`correlateCopiedLines`: component item, then `order`),
+  conservatively — an unpaired line is treated as manual and kept.
 - Onshape-owned item fields (`readableId`, `name`, `description`, `revision`,
   thumbnail, model): the item update path drops them for mapped items; the
   item page shows one `ExternalSourceCard` (Open in Onshape, Detach).
@@ -125,15 +158,43 @@ the number, the change notice `openDate` is the company's day (not UTC), and
 the panel patches its part list from the apply response instead of re-reading
 status.
 
+### Push defaults (2026-09-13)
+
+A push used to invent replenishment, method, tracking type and unit from
+constants. They are now company settings on the integration metadata
+(`defaultUnitOfMeasureCode`, `defaultReplenishmentSystem`,
+`defaultMethodTypeForMake`, `defaultMethodTypeForBuy`,
+`defaultItemTrackingType`), parsed by the pure, fail-soft
+`packages/ee/src/onshape/panel/preferences.ts` — a malformed row yields the
+documented defaults (Make / Make to Order / Pull from Inventory / Inventory /
+unit resolved from the company's list), because a plan must always build.
+`reconcilePushDefaults` keeps the replenishment↔method pair one the Part form
+would accept; purchased BOM rows are always Buy. Edited on the panel's
+Settings page (`panel.preferences` POST). Release behaviour — record a change
+notice, make new revisions the default — is per push on the review, not a
+default.
+
+### Three pages (2026-09-13)
+
+Parts/Assembly, Releases, Settings behind a pinned tab strip; pages that do
+not apply to the element are hidden. Assembly BOM has Structured (tree) and
+Flat (distinct part numbers, quantity multiplied through) views, both built
+client-side from status data (`bom-view.ts`). Settings = Connection (company
+and user the session belongs to), Push defaults, Custom fields, one pinned
+Save. Creating a custom field from the panel was removed; fields are created
+in Carbon and selected in the panel.
+
 ### Custom fields (property map, 2026-08-31)
 
 One explicit map per company on the integration metadata: Onshape property →
 Carbon `part` custom field, with per-mapping ownership (`owned` = written on
 every push and locked in the ERP, like name/description; `default` = filled at
 create, editable in the review, Carbon's afterwards). Configured from the
-panel's Fields section, which lists the live Onshape property schema (union
-across the element's parts) next to the company's part fields, creates fields
-inline (type derived from the value type), and saves the whole map. Values are
+panel's Settings page, which lists the live Onshape property schema (union
+across the element's parts) next to the company's part fields — only
+properties with a Carbon type to map onto (string/enum→Text, bool→Yes/No,
+int/double→Numeric, date→Date), unless already mapped — and saves the whole
+map. (Inline field creation was removed 2026-09-13.) Values are
 resolved at plan time (parts: one depth=2 metadata read, verified live;
 assembly: root only, from the read the plan already makes; releases and BOM
 children: none in v1) and written at apply into `part.customFields` (keyed by

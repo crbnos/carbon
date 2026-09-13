@@ -10,7 +10,40 @@ paths:
 
 The Carbon app embedded in Onshape's element right panel. Push-only: users
 trigger everything from Onshape; Carbon never pulls automatically. Design spec:
-`.ai/specs/2026-08-28-onshape-app.md`.
+`.ai/specs/2026-08-28-onshape-app.md`. User-facing setup and behaviour:
+`docs/content/docs/integrations/cad.mdx`.
+
+## Two integrations — `onshape` and `onshape-v2`
+
+The panel is its own integration, `onshape-v2` ("Onshape V2",
+`packages/ee/src/onshape/config-v2.tsx`). `onshape` stays the pull-shaped
+original (released-asset webhook sync, `config.tsx`). Separate OAuth grant,
+separate `companyIntegration` row, separate `externalIntegrationMapping`
+namespace; a company can run either, both, or neither. Intended to be
+temporary while v2 replaces v1.
+
+- Ids live in `packages/ee/src/onshape/lib/integration-id.ts`. Every panel read
+  and write passes one explicitly (`getOnshapeClient(id)` defaults to v1 for
+  the untouched v1 callers). A bare `"onshape"` literal in panel code is a bug.
+- Reads that answer "is this already in Carbon?" (status, the item page's
+  `ExternalSourceCard`, `items.service.ts`) look in BOTH namespaces,
+  `ONSHAPE_INTEGRATION_IDS`, v2 first. Writes name exactly one.
+- Same Onshape OAuth app, same scopes (`OAuth2Read OAuth2Write`), two redirect
+  URIs: `ONSHAPE_OAUTH_REDIRECT_URL` → `/api/integrations/onshape/oauth`,
+  `ONSHAPE_V2_OAUTH_REDIRECT_URL` → `/api/integrations/onshape-v2/oauth`. Both
+  must be registered on the Onshape app. Install + callback for both ids are one
+  handler parameterised by id (`apps/erp/app/modules/settings/onshape-oauth.server.ts`);
+  each install route checks ITS OWN redirect var and answers "Onshape OAuth not
+  configured" (500) when missing.
+- Migration `20260909174511_onshape-v2-integration.sql` seeds the `integration`
+  row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
+  not — the panel's Settings page may write metadata before any grant exists.
+- The V2 integration form has NO settings (`settingGroups: []`); the push
+  defaults moved to the panel's Settings page, which writes the same
+  `companyIntegration.metadata` keys through `panel.preferences`.
+- `beginOAuthPopup` (`packages/ee/src/oauth-popup.ts`) opens the popup inside
+  the click, before the install fetch — opening after the await was silently
+  blocked.
 
 ## Auth — why the panel has its own credential
 
@@ -31,7 +64,7 @@ iframe. So:
   (a redirect inside the iframe is meaningless).
 - Tokens never appear in URLs. postMessage targets `window.location.origin`.
 
-## Identity — externalIntegrationMapping (integration "onshape")
+## Identity — externalIntegrationMapping (integration `onshape-v2` for panel writes)
 
 | Entity | externalId |
 |---|---|
@@ -42,8 +75,19 @@ iframe. So:
 
 BOM pushes are a **diff, not a rebuild**: delete only lines whose mapping rows a
 previous push wrote (matched by `metadata->>makeMethodId`), insert fresh ones,
-leave manual lines untouched. Released (Active) make methods are refused with an
-error naming the part.
+leave manual lines untouched.
+
+**Released (Active) make methods are never edited and no longer refused.** The
+push takes a Draft version (`ensureDraftMakeMethod`,
+`apps/erp/app/modules/settings/onshape-draft-method.server.ts`: reuse the
+newest existing Draft, else `copyMakeMethod` + `upsertMakeMethodVersion`) and
+writes there. Idempotent — a second push finds the same Draft. The copy has new
+line ids and no mappings, so `correlateCopiedLines`
+(`packages/ee/src/onshape/panel/method-version.ts`) re-derives the
+Onshape-origin mappings by natural key (component item, then `order` within a
+component) and leaves anything it cannot pair unmapped — an unmapped line reads
+as manual and is preserved. Pairing wrongly is the failure that matters. The
+push result reports `New Draft version, not yet live: …`.
 
 A line already carrying the right component is UPDATED in place, and one whose
 push-owned columns (`quantity`, `order`, `materialMakeMethodId`) already match
@@ -83,9 +127,21 @@ assemblies whose method is not released).
   `mergeItemEdits` (enum whitelist, the ERP's replenishment↔method interlock
   duplicated as `VALID_METHOD_TYPES_BY_REPLENISHMENT`, unit must be one of the
   company's). Adopt/update never take edits: the owned-field lock stays true.
-- `proposeItem` holds the defaults the routes used to hardcode (Make / Make to
-  Order / Inventory, purchased BOM rows Buy / Pull from Inventory) and picks
-  the unit from the company's list ("EA" is not seeded by any migration).
+- `proposeItem` takes the company's **push defaults** from
+  `parsePushDefaults(companyIntegration.metadata)`
+  (`packages/ee/src/onshape/panel/preferences.ts`, pure, total, fail-soft —
+  a malformed row yields `DEFAULT_PUSH_DEFAULTS`: Make / Make to Order /
+  Pull from Inventory for purchased rows / Inventory / unit null). Null unit
+  means "resolve from the company's list at plan time" ("EA" is not seeded by
+  any migration, and a stored code can stop existing). `reconcilePushDefaults`
+  enforces the replenishment↔method interlock; a purchased BOM row is always
+  Buy. Keys: `defaultUnitOfMeasureCode`, `defaultReplenishmentSystem`,
+  `defaultMethodTypeForMake`, `defaultMethodTypeForBuy`,
+  `defaultItemTrackingType` (`PUSH_DEFAULT_SETTING_NAMES`). Release behaviour
+  (record a change notice, make new revisions default) is deliberately NOT a
+  default — it is chosen per push on the release review (`push-release` takes
+  `changeNotice` and `makeDefault`). `panel.me` returns the defaults + unit list
+  with identity (one read per session).
 - APPLY re-resolves items by readableId before creating: `upsertPart` reads
   the new id back from the `parts` view, which is the WRONG row when another
   revision of that number exists, so a "create" whose number now exists
@@ -151,8 +207,11 @@ Fields section.
   not own are never touched.
 - The OAuth callback spreads the existing metadata, so reconnecting Onshape
   keeps the map (it used to rebuild the column from scratch).
-- Fields POST needs settings update; creating a field inline also needs
-  settings create (the settings UI's own gate for field creation).
+- Fields POST needs settings update. Creating a custom field from the panel is
+  GONE: the field is created in Carbon and selected in the panel (hence the
+  section's own Refresh). Only properties with a Carbon type to map onto are
+  listed (string/enum→Text, bool→Yes/No, int/double→Numeric, date→Date) unless
+  already mapped.
 
 ## Push release
 
@@ -230,6 +289,28 @@ every line it just wrote.
   is one Inngest job: `onshape-panel-sync`, `elementKind`
   `partstudio | assembly | drawing`, retries 1, per-item concurrency 1 —
   every execution spends live quota.
+
+## Panel layout — three pages, one Save
+
+Tab strip pinned at the top (`Tabs` is the outermost element): **Parts /
+Assembly** (label follows the element kind; hidden on a drawing), **Releases**
+(needs a `documentId`), **Settings** (always; it is the company, not the
+element). A page that vanishes when Onshape moves the panel to another element
+falls back to the first available.
+
+- Assembly BOM has two client-side views built from the status route's dotted
+  item numbers (`packages/ee/src/onshape/panel/bom-view.ts`, pure and total):
+  **Structured** (tree, top level collapsed) and **Flat** (one row per distinct
+  part number, quantity multiplied through ancestors; sub-assemblies kept).
+  No second Onshape call. Assembly plans are always `depth: "all"` from the UI;
+  the route still accepts `top`.
+- Settings = Connection (company + user the token belongs to, Sign out),
+  Push defaults, Custom fields (property map; only when the element has parts).
+  ONE pinned Save (`SettingsActionBar`) writes only the sections that differ
+  from what was last loaded; both writes land in the same integration row and
+  both need `settings: update` (`me.canEditSettings`).
+- Every action disabled while a read or write is in flight; a Refresh keeps
+  rows on screen instead of collapsing to a spinner.
 
 ## Panel layout — the scroll container is load-bearing
 
