@@ -6,6 +6,7 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { ONSHAPE_MAPPING_NAMESPACES } from "@carbon/ee/onshape/integration-id";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
@@ -3862,7 +3863,9 @@ export async function upsertPart(
     .select("id")
     .eq("entityType", "item")
     .eq("entityId", part.id)
-    .eq("integration", "onshape")
+    // Either Onshape integration owning the item locks the same fields.
+    .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
+    .limit(1)
     .maybeSingle();
   if (externalSource.data) {
     item.name = undefined;

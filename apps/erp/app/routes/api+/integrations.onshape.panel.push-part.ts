@@ -19,6 +19,7 @@ import {
 } from "@carbon/ee";
 import {
   loadPartCustomFieldDefinitions,
+  ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
   selectInBatches,
   takePanelPlan
@@ -525,7 +526,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
-      .eq("integration", "onshape")
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
       .eq("entityType", "item")
       .eq("entityId", itemId);
     const clearedByExternal = clearedByItem.error
@@ -534,7 +535,7 @@ export async function action({ request }: ActionFunctionArgs) {
           .from("externalIntegrationMapping")
           .delete()
           .eq("companyId", companyId)
-          .eq("integration", "onshape")
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
           .eq("externalId", externalId);
     if (clearedByItem.error || clearedByExternal?.error) {
@@ -549,7 +550,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const inserted = await client.from("externalIntegrationMapping").insert({
       entityType: "item",
       entityId: itemId,
-      integration: "onshape",
+      integration: ONSHAPE_V2_INTEGRATION_ID,
       externalId,
       metadata: {
         documentId,
@@ -611,7 +612,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("externalIntegrationMapping")
         .delete()
         .eq("companyId", companyId)
-        .eq("integration", "onshape")
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "item")
         .eq("externalId", externalId);
       results.push({

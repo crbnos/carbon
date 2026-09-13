@@ -154,7 +154,17 @@ export function IntegrationCard({
     } else if (integration.settings.some((setting) => setting.required)) {
       navigate(path.to.integration(integration.id));
     } else if (integration.onClientInstall) {
-      await integration.onClientInstall?.();
+      // An install that cannot start has to say so: it used to reject into
+      // nothing, so a misconfigured OAuth route read as a dead button.
+      try {
+        await integration.onClientInstall();
+      } catch (error) {
+        toast.error(
+          error instanceof Error
+            ? error.message
+            : `Couldn't start the ${integration.name} connection`
+        );
+      }
     } else {
       const formData = new FormData();
       fetcher.submit(formData, {

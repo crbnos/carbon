@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -27,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
-    .eq("integration", "onshape")
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
     .eq("entityType", "item")
     .eq("entityId", itemId);
 
