@@ -16,6 +16,7 @@ import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
   loadPartCustomFieldDefinitions,
+  ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   readPartProperties
 } from "@carbon/ee/onshape";
@@ -23,7 +24,6 @@ import { sql } from "kysely";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { upsertCustomField } from "~/modules/settings/settings.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export const config = {
@@ -64,7 +64,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
   const { documentId, wv, wvId, elementId } = parsed.data;
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
+  const onshape = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     return data(
       { error: "Onshape is not connected for this company" },
@@ -134,7 +139,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client
       .from("companyIntegration")
       .select("metadata")
-      .eq("id", "onshape")
+      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
       .eq("companyId", companyId)
       .maybeSingle(),
     loadPartCustomFieldDefinitions(client, companyId)
@@ -178,23 +183,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 }
 
-const entrySchema = z
-  .object({
-    onshapePropertyId: z.string().min(1),
-    onshapeName: z.string(),
-    valueType: z.string().min(1),
-    mode: z.enum(["owned", "default"]),
-    carbonFieldId: z.string().min(1).optional(),
-    create: z
-      .object({
-        name: z.string().trim().min(1),
-        dataTypeId: z.number().int(),
-        listOptions: z.array(z.string().min(1)).optional()
-      })
-      .optional()
-  })
-  // A mapping needs a target: an existing field or one to create, never both.
-  .refine((entry) => !!entry.carbonFieldId !== !!entry.create);
+/*
+ * A mapping needs an existing Carbon field. The panel cannot create one:
+ * defining a custom field is a settings change with its own form, and a
+ * second place to define one is a second set of rules to keep in step.
+ */
+const entrySchema = z.object({
+  onshapePropertyId: z.string().min(1),
+  onshapeName: z.string(),
+  valueType: z.string().min(1),
+  mode: z.enum(["owned", "default"]),
+  carbonFieldId: z.string().min(1)
+});
 
 const payloadSchema = z.object({
   entries: z
@@ -226,13 +226,11 @@ function duplicates(values: string[]): Set<string> {
  * (an empty array clears the map), so there is no partial-update ambiguity:
  * what was posted is the map.
  *
- * Entries may create their Carbon field inline; creation is validated fully
- * before the first write, but a create that fails mid-list leaves earlier
- * created fields in place — they are plain custom field definitions, harmless
- * unmapped, and the retried save maps them by id (the GET re-lists them).
+ * The only write is the map itself — every target must already exist — so
+ * this cannot half-succeed.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "settings"
   });
 
@@ -244,73 +242,37 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { entries } = parsed.data;
 
-  // Creating fields is a settings CREATE elsewhere in the ERP (the settings
-  // custom-fields route); editing the map alone is an update. Hold the panel
-  // to the same split so it cannot mint fields a settings-update-only user
-  // could not create through Settings.
-  if (entries.some((entry) => entry.create)) {
-    await requirePermissions(request, { create: "settings" });
-  }
-
-  // ---- Validate before any write ------------------------------------------
+  // ---- Validate before the write ------------------------------------------
   const fieldErrors: FieldError[] = [];
+
+  // A value type with no Carbon target cannot be mapped at all. The editor
+  // hides those rows, so this is the guard for a hand-made payload.
   for (const entry of entries) {
-    if (!entry.create) continue;
     // `MAPPABLE_VALUE_TYPES` is a plain object, so an inherited key like
-    // "constructor" would hand back a function and throw on `.includes`.
-    const allowed = Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)
-      ? MAPPABLE_VALUE_TYPES[entry.valueType]
-      : undefined;
-    if (!allowed) {
+    // "constructor" would hand back a function rather than a type list.
+    if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
       fieldErrors.push({
         key: entry.onshapePropertyId,
         errors: [`${entry.valueType} properties cannot be mapped`]
-      });
-    } else if (!allowed.includes(entry.create.dataTypeId)) {
-      fieldErrors.push({
-        key: entry.onshapePropertyId,
-        errors: [`A ${entry.valueType} property cannot fill this kind of field`]
       });
     }
   }
 
   // Two entries resolving to one Carbon field make a single property's value
-  // win by array order, silently. Two creates of the same name collide the
-  // same way, since the second adopts the field the first made (below).
+  // win by array order, silently.
   const duplicateFieldIds = duplicates(
-    entries
-      .map((entry) => entry.carbonFieldId)
-      .filter((id): id is string => !!id)
-  );
-  const duplicateCreateNames = duplicates(
-    entries
-      .map((entry) => entry.create?.name)
-      .filter((name): name is string => !!name)
+    entries.map((entry) => entry.carbonFieldId)
   );
   for (const entry of entries) {
-    if (entry.carbonFieldId && duplicateFieldIds.has(entry.carbonFieldId)) {
+    if (duplicateFieldIds.has(entry.carbonFieldId)) {
       fieldErrors.push({
         key: entry.onshapePropertyId,
         errors: ["Another property already maps to this Carbon field"]
       });
     }
-    if (entry.create && duplicateCreateNames.has(entry.create.name)) {
-      fieldErrors.push({
-        key: entry.onshapePropertyId,
-        errors: [
-          `Another mapping already creates a field named "${entry.create.name}"`
-        ]
-      });
-    }
   }
 
-  const existingIds = [
-    ...new Set(
-      entries
-        .map((entry) => entry.carbonFieldId)
-        .filter((id): id is string => !!id)
-    )
-  ];
+  const existingIds = [...new Set(entries.map((entry) => entry.carbonFieldId))];
   if (existingIds.length > 0) {
     const existing = await client
       .from("customField")
@@ -323,7 +285,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     const found = new Set((existing.data ?? []).map((row) => row.id));
     for (const entry of entries) {
-      if (entry.carbonFieldId && !found.has(entry.carbonFieldId)) {
+      if (!found.has(entry.carbonFieldId)) {
         fieldErrors.push({
           key: entry.onshapePropertyId,
           errors: ["The mapped Carbon field no longer exists"]
@@ -338,86 +300,13 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Create the new fields ----------------------------------------------
-  const createdIdByPropertyId = new Map<string, string>();
-  for (const entry of entries) {
-    if (!entry.create) continue;
-    const created = await upsertCustomField(client, {
-      name: entry.create.name,
-      table: "part",
-      dataTypeId: entry.create.dataTypeId,
-      listOptions: entry.create.listOptions,
-      required: false,
-      companyId,
-      createdBy: userId
-    });
-    // `upsertCustomField` inserts without returning the row; the unique key
-    // (table, name, companyId) makes this read-back unambiguous.
-    const row = await client
-      .from("customField")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("table", "part")
-      .eq("name", entry.create.name)
-      .maybeSingle();
-    if (row.error) {
-      return data(
-        { error: "Failed to read the created field back" },
-        { status: 500 }
-      );
-    }
-    // A create the unique constraint refused because the name is already
-    // taken resolves to the field that holds the name, rather than erroring:
-    // a save retried after a partial create would otherwise loop forever on
-    // 422s for the fields its own earlier attempt created.
-    if (!row.data) {
-      return data(
-        {
-          error: "Some field mappings are not valid",
-          fieldErrors: [
-            {
-              key: entry.onshapePropertyId,
-              errors: [
-                created.error?.message ?? "The field could not be created"
-              ]
-            }
-          ]
-        },
-        { status: 422 }
-      );
-    }
-    createdIdByPropertyId.set(entry.onshapePropertyId, row.data.id);
-  }
-
   const mapEntries: PropertyMapEntry[] = entries.map((entry) => ({
     onshapePropertyId: entry.onshapePropertyId,
     onshapeName: entry.onshapeName,
     valueType: entry.valueType,
-    carbonFieldId: (entry.carbonFieldId ??
-      createdIdByPropertyId.get(entry.onshapePropertyId)) as string,
+    carbonFieldId: entry.carbonFieldId,
     mode: entry.mode
   }));
-
-  // Adopting an existing field by name can land on a field another entry
-  // maps explicitly, which no pre-write check could see. Same rule: one
-  // Carbon field, one Onshape property.
-  const collidingFieldIds = duplicates(
-    mapEntries.map((entry) => entry.carbonFieldId)
-  );
-  if (collidingFieldIds.size > 0) {
-    return data(
-      {
-        error: "Some field mappings are not valid",
-        fieldErrors: mapEntries
-          .filter((entry) => collidingFieldIds.has(entry.carbonFieldId))
-          .map((entry) => ({
-            key: entry.onshapePropertyId,
-            errors: ["Another property already maps to this Carbon field"]
-          }))
-      },
-      { status: 422 }
-    );
-  }
 
   // ---- Write the map ------------------------------------------------------
   // Only this key is written, and the merge happens in the database. The
@@ -438,7 +327,7 @@ export async function action({ request }: ActionFunctionArgs) {
           mapEntries
         )}::jsonb, true)::json`
       })
-      .where("id", "=", "onshape")
+      .where("id", "=", ONSHAPE_V2_INTEGRATION_ID)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     updatedRows = updated.numUpdatedRows;
