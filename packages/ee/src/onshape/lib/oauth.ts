@@ -6,16 +6,20 @@ import {
   getAppUrl,
   ONSHAPE_CLIENT_ID,
   ONSHAPE_CLIENT_SECRET,
-  ONSHAPE_OAUTH_REDIRECT_URL
+  ONSHAPE_OAUTH_REDIRECT_URL,
+  ONSHAPE_V2_OAUTH_REDIRECT_URL
 } from "@carbon/env";
 import {
   normalizeOnshapeUrl,
   ONSHAPE_DEFAULT_BASE_URL,
   ONSHAPE_DEFAULT_OAUTH_URL,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH,
-  type OnshapeIntegrationId
+  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH
 } from "./connection";
+import {
+  ONSHAPE_V2_INTEGRATION_ID,
+  type OnshapeOAuthIntegrationId
+} from "./integration-id";
 
 /**
  * Where to authorize, which client to authorize as, and which API host the
@@ -59,7 +63,7 @@ function oauthEndpoints(oauthUrl: string) {
  * (`resolveIntegrationSecrets`) — the Government client secret is one of them.
  */
 export function getOnshapeOAuthConfig(
-  integrationId: OnshapeIntegrationId,
+  integrationId: OnshapeOAuthIntegrationId,
   metadata: Record<string, unknown> | null | undefined
 ): OnshapeOAuthConfig | null {
   if (integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID) {
@@ -85,17 +89,19 @@ export function getOnshapeOAuthConfig(
     };
   }
 
-  if (
-    !ONSHAPE_CLIENT_ID ||
-    !ONSHAPE_CLIENT_SECRET ||
-    !ONSHAPE_OAUTH_REDIRECT_URL
-  ) {
+  // The panel authorizes against the same public app as `onshape`, through a
+  // second redirect URI registered on it, so the two grants stay separate.
+  const redirectUri =
+    integrationId === ONSHAPE_V2_INTEGRATION_ID
+      ? ONSHAPE_V2_OAUTH_REDIRECT_URL
+      : ONSHAPE_OAUTH_REDIRECT_URL;
+  if (!ONSHAPE_CLIENT_ID || !ONSHAPE_CLIENT_SECRET || !redirectUri) {
     return null;
   }
   return {
     clientId: ONSHAPE_CLIENT_ID,
     clientSecret: ONSHAPE_CLIENT_SECRET,
-    redirectUri: ONSHAPE_OAUTH_REDIRECT_URL,
+    redirectUri,
     baseUrl: ONSHAPE_DEFAULT_BASE_URL,
     ...oauthEndpoints(ONSHAPE_DEFAULT_OAUTH_URL)
   };

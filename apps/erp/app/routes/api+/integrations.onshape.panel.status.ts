@@ -11,6 +11,7 @@ import {
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
   getOnshapeClient,
+  ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   selectInBatches
 } from "@carbon/ee/onshape";
@@ -48,7 +49,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
+  const onshape = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     return data(
       { error: "Onshape is not connected for this company" },
@@ -156,7 +162,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .from("externalIntegrationMapping")
         .select("entityId, externalId, lastSyncedAt")
         .eq("companyId", companyId)
-        .eq("integration", "onshape")
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "item")
         .eq("externalId", externalIdForAssembly(documentId, elementId))
         .maybeSingle(),
@@ -165,7 +171,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           .from("externalIntegrationMapping")
           .select("entityId, externalId, lastSyncedAt")
           .eq("companyId", companyId)
-          .eq("integration", "onshape")
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
           .in("externalId", batch)
       ),
@@ -263,7 +269,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .from("externalIntegrationMapping")
       .select("entityId, externalId, lastSyncedAt")
       .eq("companyId", companyId)
-      .eq("integration", "onshape")
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
       .eq("entityType", "item")
       .like("externalId", `${documentId}:${elementId}:%`),
     (async () => {

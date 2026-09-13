@@ -7,6 +7,7 @@ import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
+import { OnshapeV2 } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -60,6 +61,7 @@ export const integrations = [
   Mount,
   Onshape,
   OnshapeGovernment,
+  OnshapeV2,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -74,12 +76,13 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
-export { openOAuthPopup } from "./oauth-popup";
+export { beginOAuthPopup, openOAuthPopup } from "./oauth-popup";
 export {
   Logo as OnshapeLogo,
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
+export { OnshapeV2 } from "./onshape/config-v2";
 export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.

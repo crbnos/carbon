@@ -6,7 +6,7 @@ import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
-import { openOAuthPopup } from "../oauth-popup";
+import { beginOAuthPopup } from "../oauth-popup";
 import {
   normalizeOnshapeUrl,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
@@ -64,21 +64,28 @@ export const Onshape = defineIntegration({
   }),
   actions: [backfillAction],
   onClientInstall: async () => {
-    const response = await fetch("/api/integrations/onshape/install").then(
-      (res) => res.json()
-    );
-
-    const { url, error } = response as { url?: string; error?: string };
-    if (!url) {
-      // The integrations page turns `?integration=&error=` into a toast — the
-      // same place a failed callback lands (see integration-errors.ts).
-      window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error ?? "unexpected"}`;
-      return;
+    // Opened here, inside the click, so the browser still holds user
+    // activation; the fetch below can take as long as it needs.
+    const popup = beginOAuthPopup();
+    let error = "unexpected";
+    try {
+      const response = await fetch("/api/integrations/onshape/install");
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body?.url) {
+        // The callback (api/integrations/onshape/oauth) posts an
+        // OAuthPopupResult back to this window and closes the popup;
+        // IntegrationCard listens for it.
+        popup.navigate(body.url);
+        return;
+      }
+      error = body?.error ?? error;
+    } catch {
+      // Fall through to the error toast below.
     }
-
-    // The callback (api/integrations/onshape/oauth) posts an OAuthPopupResult
-    // back to this window and closes the popup; IntegrationCard listens for it.
-    openOAuthPopup(url);
+    popup.close();
+    // The integrations page turns `?integration=&error=` into a toast — the
+    // same place a failed callback lands (see integration-errors.ts).
+    window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error}`;
   }
 });
 

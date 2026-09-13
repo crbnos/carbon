@@ -12,8 +12,11 @@ import {
 import {
   exchangeOnshapeAuthorizationCode,
   getConflictingOnshapeIntegration,
+  isOnshapeIntegrationId,
+  ONSHAPE_INTEGRATION_ID,
   ONSHAPE_OAUTH_SCOPES,
-  type OnshapeIntegrationId
+  type OnshapeIntegrationId,
+  type OnshapeOAuthIntegrationId
 } from "@carbon/ee/onshape";
 import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
@@ -38,10 +41,11 @@ function integrationsUrl(request: Request) {
 }
 
 /**
- * The OAuth callback for both Onshape integrations — the public app
- * (`/api/integrations/onshape/oauth`) and a Government customer's private app
- * (`/api/integrations/onshape-government/oauth`). Only where the client comes
- * from differs, and `loadOnshapeOAuthConfig` owns that.
+ * The OAuth callback for every Onshape integration — the public app
+ * (`/api/integrations/onshape/oauth`), a Government customer's private app
+ * (`/api/integrations/onshape-government/oauth`) and the panel
+ * (`/api/integrations/onshape-v2/oauth`). Only where the client comes from
+ * differs, and `loadOnshapeOAuthConfig` owns that.
  *
  * Onshape reaches this by redirecting the user's browser — inside the popup
  * `Onshape.onClientInstall` opened, or the whole tab when the connect started
@@ -58,7 +62,7 @@ export async function completeOnshapeAuthorization({
   companyId
 }: {
   request: Request;
-  integrationId: OnshapeIntegrationId;
+  integrationId: OnshapeOAuthIntegrationId;
   userId: string;
   companyId: string;
 }) {
@@ -76,14 +80,18 @@ export async function completeOnshapeAuthorization({
     { integrationId, userId, companyId }
   );
 
-  // Both integrations declare the same codes, each with its own copy.
+  // Both sync connections declare the same codes, each with its own copy. The
+  // panel authorizes against the public app, so its failures read as Onshape's.
+  const errorCopy: OnshapeIntegrationId = isOnshapeIntegrationId(integrationId)
+    ? integrationId
+    : ONSHAPE_INTEGRATION_ID;
   const connectionFailed = (
     reason: IntegrationErrorCode<OnshapeIntegrationId>
   ) =>
     withCookie(
       oauthPopupResponse(
         { integration: integrationId, ok: false, error: reason },
-        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(integrationId, reason)}`
+        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(errorCopy, reason)}`
       ),
       consumedState.cookie
     );
@@ -121,14 +129,16 @@ export async function completeOnshapeAuthorization({
 
   const serviceRole = getCarbonServiceRole();
 
-  // A company holds one Onshape connection at a time; two would leave every
-  // background job guessing which tenant to talk to.
+  // A company holds one Onshape sync connection at a time; two would leave
+  // every background job guessing which tenant to talk to. The panel holds its
+  // own grant beside either and is not part of that rule.
   if (
-    await getConflictingOnshapeIntegration(
+    isOnshapeIntegrationId(integrationId) &&
+    (await getConflictingOnshapeIntegration(
       serviceRole,
       companyId,
       integrationId
-    )
+    ))
   ) {
     return connectionFailed("connection-conflict");
   }
