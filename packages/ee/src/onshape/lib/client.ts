@@ -844,8 +844,7 @@ export class OnshapeClient {
  */
 const REFRESH_MARGIN_SECONDS = 120;
 const REFRESH_LOCK_TTL_SECONDS = 20;
-const REFRESH_WAIT_ATTEMPTS = 20;
-const REFRESH_WAIT_MS = 150;
+const REFRESH_WAIT_MS = 250;
 
 export async function getOnshapeClient(
   client: SupabaseClient<Database>,
@@ -914,16 +913,27 @@ export async function getOnshapeClient(
    */
   const refreshNow = async (): Promise<string | null> => {
     if (!credentials.refreshToken) return null;
-    const lockKey = `onshape-token-refresh:${companyId}`;
+    // Per integration, not per company: `onshape` and `onshape-v2` hold
+    // separate refresh tokens, and a v1 refresh in flight must not make a v2
+    // caller wait for a v2 token that nobody is fetching.
+    const lockKey = `onshape-token-refresh:${companyId}:${integrationId}`;
     const held = await redis
       .set(lockKey, "1", "EX", REFRESH_LOCK_TTL_SECONDS, "NX")
       .catch(() => null);
 
     if (held !== "OK") {
-      // Someone else is refreshing. Wait for them and re-read what they
-      // stored rather than spending our own (now stale) refresh token.
-      for (let attempt = 0; attempt < REFRESH_WAIT_ATTEMPTS; attempt++) {
-        await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+      /*
+       * Someone else is refreshing. Wait for them and re-read what they stored
+       * rather than spending our own (now stale) refresh token.
+       *
+       * The wait follows the lock holder, not a fixed count of polls. It used
+       * to give up after about three seconds, which an Onshape token exchange
+       * plus a vault write can outlast — and the loser then reported the
+       * connection as missing. In practice that was the panel's first open
+       * after a token expired: two tabs read at once, and one showed "Onshape
+       * is not connected" while the other loaded, until Retry.
+       */
+      const readToken = async () => {
         const current = (await resolveIntegrationSecrets(
           serviceRole,
           companyId,
@@ -932,7 +942,20 @@ export async function getOnshapeClient(
           integrationRow.secretRef
         ).catch(() => null)) as Record<string, any> | null;
         const token = current?.credentials?.accessToken;
-        if (token && token !== accessToken) return token;
+        return token && token !== accessToken ? (token as string) : null;
+      };
+      const deadline = Date.now() + REFRESH_LOCK_TTL_SECONDS * 1000;
+      while (Date.now() < deadline) {
+        await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+        const token = await readToken();
+        if (token) return token;
+        // Unreadable lock state reads as still held: waiting is the safe side.
+        const stillHeld = await redis.exists(lockKey).catch(() => 1);
+        if (!stillHeld) {
+          // Released between the read above and now: one last look, since the
+          // holder persists before it releases.
+          return readToken();
+        }
       }
       return null;
     }
