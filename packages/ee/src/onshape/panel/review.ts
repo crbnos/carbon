@@ -75,6 +75,8 @@ export type ReleaseReview = ReviewBase & {
   kind: "release";
   plan: ReleasePlan;
   changeNotice: ChangeNoticeEdit | null;
+  /** Whether this push records a change notice. Decided per push, not by config. */
+  createChangeNotice: boolean;
   makeDefault: boolean;
   /** Assemblies whose BOM the plan could not read; their lines are empty. */
   warnings: string[];
@@ -135,6 +137,7 @@ export function createReview(input: {
         kind: "release",
         plan,
         changeNotice: plan.changeNotice ? { ...plan.changeNotice } : null,
+        createChangeNotice: plan.changeNotice !== null,
         makeDefault: plan.makeDefault,
         warnings: input.warnings ?? []
       };
@@ -361,6 +364,7 @@ export type ReleaseApplyBody = {
   planId: string;
   edits: Record<string, ItemEdit>;
   changeNotice: ChangeNoticeEdit | null;
+  createChangeNotice: boolean;
   makeDefault: boolean;
 };
 
@@ -427,7 +431,12 @@ export function applyRequestBody(
       return {
         planId: review.planId,
         edits: pickEdits(review.edits, keys),
-        changeNotice: review.plan.changeNotice ? review.changeNotice : null,
+        changeNotice:
+          review.plan.changeNotice && review.createChangeNotice
+            ? review.changeNotice
+            : null,
+        createChangeNotice:
+          review.plan.changeNotice !== null && review.createChangeNotice,
         makeDefault: review.makeDefault
       };
     }
