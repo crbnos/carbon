@@ -22,8 +22,6 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  ToggleGroup,
-  ToggleGroupItem,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
@@ -2399,42 +2397,38 @@ function AssemblyBomList({
   const allOpen = parents.length > 0 && parents.every((i) => open.has(i));
 
   return (
-    <VStack spacing={2} className="w-full">
+    /*
+     * Two views of the same list are tabs in Carbon — `TabsList` switches views
+     * inside a card or drawer across the app (`QuoteLinePricingHistory`,
+     * `OpportunityNotes`, `IntegrationForm`). This used to be a pill-styled
+     * `ToggleGroup` copied from `DateSelect`, the one place in the app that
+     * styles one that way; `ToggleGroup` elsewhere is for filters, and this is
+     * not a filter. Sized down so it reads as subordinate to the page tabs.
+     */
+    <Tabs
+      value={view}
+      onValueChange={(value) =>
+        (value === "structured" || value === "flat") && setView(value)
+      }
+      className="flex w-full flex-col gap-2"
+    >
       <HStack className="w-full justify-between">
-        {/*
-         * Carbon's segmented control, as `DateSelect` renders one: a pill on
-         * `bg-muted` with the active item lifted onto `bg-active`. Not the
-         * page tabs above it — those are navigation between pages, this
-         * chooses how one list is drawn — and not the bare `toggleVariants`
-         * default, which is a filter chip rather than a segmented control.
-         */}
-        <ToggleGroup
-          type="single"
-          value={view}
-          /* Radix allows deselecting the active item, which would leave the
-             list with no view at all. An empty value keeps the current one. */
-          onValueChange={(value) =>
-            (value === "structured" || value === "flat") && setView(value)
-          }
-          disabled={disabled}
-          className="gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
-        >
-          {(["structured", "flat"] as const).map((value) => (
-            <ToggleGroupItem
-              key={value}
-              value={value}
-              className={cn(
-                "h-7 rounded-full px-3 text-xs font-medium capitalize",
-                "bg-transparent text-muted-foreground",
-                "hover:bg-active hover:text-active-foreground hover:data-[state=on]:bg-active",
-                "data-[state=on]:bg-active data-[state=on]:text-active-foreground data-[state=on]:shadow-sm",
-                "transition-all duration-200"
-              )}
-            >
-              {value}
-            </ToggleGroupItem>
-          ))}
-        </ToggleGroup>
+        <TabsList className="p-0.5">
+          <TabsTrigger
+            value="structured"
+            disabled={disabled}
+            className="px-2.5 py-0.5 text-xs"
+          >
+            Structured
+          </TabsTrigger>
+          <TabsTrigger
+            value="flat"
+            disabled={disabled}
+            className="px-2.5 py-0.5 text-xs"
+          >
+            Flat
+          </TabsTrigger>
+        </TabsList>
         {view === "structured" && parents.length > 0 ? (
           <Button
             variant="link"
@@ -2447,70 +2441,74 @@ function AssemblyBomList({
         ) : null}
       </HStack>
 
-      <ul className="w-full divide-y divide-border rounded-md border border-border">
-        {view === "structured"
-          ? structured.map((row) => (
-              <li key={row.line.index} className="px-3 py-1.5">
-                <div className="flex items-center justify-between gap-2">
-                  <HStack
-                    spacing={1}
-                    className="min-w-0"
-                    style={{ paddingLeft: `${(row.level - 1) * 14}px` }}
-                  >
-                    {row.hasChildren ? (
-                      <button
-                        type="button"
-                        onClick={() => toggle(row.line.index)}
-                        disabled={disabled}
-                        aria-expanded={row.open}
-                        aria-label={`${row.open ? "Collapse" : "Expand"} ${
-                          row.line.partNumber ?? row.line.index
-                        }`}
-                        className="shrink-0 text-muted-foreground transition-transform hover:text-foreground active:scale-[0.96] active:duration-75"
-                      >
-                        <LuChevronRight
-                          className={cn(
-                            "size-3.5 transition-transform",
-                            row.open && "rotate-90"
-                          )}
-                        />
-                      </button>
-                    ) : (
-                      /* Leaves keep the chevron's width so part numbers stay
+      {/* One panel for whichever view is active, so the active tab's
+          `aria-controls` points at a panel that exists. */}
+      <TabsContent value={view} className="w-full">
+        <ul className="w-full divide-y divide-border rounded-md border border-border">
+          {view === "structured"
+            ? structured.map((row) => (
+                <li key={row.line.index} className="px-3 py-1.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <HStack
+                      spacing={1}
+                      className="min-w-0"
+                      style={{ paddingLeft: `${(row.level - 1) * 14}px` }}
+                    >
+                      {row.hasChildren ? (
+                        <button
+                          type="button"
+                          onClick={() => toggle(row.line.index)}
+                          disabled={disabled}
+                          aria-expanded={row.open}
+                          aria-label={`${row.open ? "Collapse" : "Expand"} ${
+                            row.line.partNumber ?? row.line.index
+                          }`}
+                          className="shrink-0 text-muted-foreground transition-transform hover:text-foreground active:scale-[0.96] active:duration-75"
+                        >
+                          <LuChevronRight
+                            className={cn(
+                              "size-3.5 transition-transform",
+                              row.open && "rotate-90"
+                            )}
+                          />
+                        </button>
+                      ) : (
+                        /* Leaves keep the chevron's width so part numbers stay
                          on one column instead of stepping in and out. */
-                      <span className="size-3.5 shrink-0" aria-hidden />
-                    )}
-                    <BomLineText
-                      line={row.line}
-                      quantity={row.line.quantity}
-                      note={
-                        row.hasChildren && !row.open
-                          ? `${row.descendantCount} inside`
-                          : null
-                      }
-                    />
-                  </HStack>
+                        <span className="size-3.5 shrink-0" aria-hidden />
+                      )}
+                      <BomLineText
+                        line={row.line}
+                        quantity={row.line.quantity}
+                        note={
+                          row.hasChildren && !row.open
+                            ? `${row.descendantCount} inside`
+                            : null
+                        }
+                      />
+                    </HStack>
+                    <PartStateBadge state={row.line.state} />
+                  </div>
+                </li>
+              ))
+            : flat.map((row) => (
+                <li
+                  key={row.line.partNumber ?? row.line.index}
+                  className="flex items-center justify-between gap-2 px-3 py-1.5"
+                >
+                  <BomLineText
+                    line={row.line}
+                    quantity={row.totalQuantity}
+                    note={
+                      row.occurrences > 1 ? `${row.occurrences} places` : null
+                    }
+                  />
                   <PartStateBadge state={row.line.state} />
-                </div>
-              </li>
-            ))
-          : flat.map((row) => (
-              <li
-                key={row.line.partNumber ?? row.line.index}
-                className="flex items-center justify-between gap-2 px-3 py-1.5"
-              >
-                <BomLineText
-                  line={row.line}
-                  quantity={row.totalQuantity}
-                  note={
-                    row.occurrences > 1 ? `${row.occurrences} places` : null
-                  }
-                />
-                <PartStateBadge state={row.line.state} />
-              </li>
-            ))}
-      </ul>
-    </VStack>
+                </li>
+              ))}
+        </ul>
+      </TabsContent>
+    </Tabs>
   );
 }
 
