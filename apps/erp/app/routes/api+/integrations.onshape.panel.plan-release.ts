@@ -12,6 +12,7 @@ import {
   getOnshapeClient,
   loadActiveMakeMethods,
   loadPlanOptions,
+  ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   selectInBatches
 } from "@carbon/ee/onshape";
@@ -59,7 +60,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { documentId, releaseId } = parsed.data;
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
+  const onshape = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     return data(
       { error: "Onshape is not connected for this company" },

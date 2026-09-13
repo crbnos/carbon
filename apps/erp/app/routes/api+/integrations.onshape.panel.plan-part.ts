@@ -11,6 +11,7 @@ import {
   getOnshapeClient,
   loadPartCustomFieldDefinitions,
   loadPlanOptions,
+  ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   readPartProperties,
   selectInBatches
@@ -67,7 +68,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { documentId, wv, wvId, elementId } = parsed.data;
   const partIds = [...new Set(parsed.data.partIds)];
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
+  const onshape = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     return data(
       { error: "Onshape is not connected for this company" },
@@ -109,7 +115,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("externalIntegrationMapping")
       .select("entityId, externalId, lastSyncedAt, metadata")
       .eq("companyId", companyId)
-      .eq("integration", "onshape")
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
       .eq("entityType", "item")
       .like("externalId", `${documentId}:${elementId}:%`),
     selectInBatches(partNumbers, (batch) =>
@@ -127,7 +133,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("companyIntegration")
       .select("metadata")
-      .eq("id", "onshape")
+      .eq("id", ONSHAPE_V2_INTEGRATION_ID)
       .eq("companyId", companyId)
       .maybeSingle()
   ]);

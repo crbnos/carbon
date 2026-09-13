@@ -7,6 +7,7 @@ import type {
   ProposedItem,
   ReleasePlan
 } from "./plan";
+import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
 import type { PlanCustomField } from "./properties";
 import { BOOLEAN_TRUE } from "./properties";
 import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
@@ -35,7 +36,8 @@ const options = {
   unitsOfMeasure: [
     { code: "EA", name: "Each" },
     { code: "M", name: "Meter" }
-  ]
+  ],
+  defaults: DEFAULT_PUSH_DEFAULTS
 };
 
 const proposed = (over: Partial<ProposedItem> = {}): ProposedItem => ({
@@ -686,7 +688,19 @@ describe("applyRequestBody", () => {
         "PAD-005": { unitOfMeasureCode: "M" }
       },
       changeNotice: { name: "ECO-12", description: "Tolerance change" },
+      createChangeNotice: true,
       makeDefault: false
+    });
+  });
+
+  it("drops the change notice when the review opted out of one", () => {
+    const review: ReleaseReview = {
+      ...releaseReview(),
+      createChangeNotice: false
+    };
+    expect(applyRequestBody(review)).toMatchObject({
+      changeNotice: null,
+      createChangeNotice: false
     });
   });
 

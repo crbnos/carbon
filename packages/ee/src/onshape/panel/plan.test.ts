@@ -13,13 +13,15 @@ import {
   pickAdoptTarget,
   proposeItem
 } from "./plan";
+import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
 import type { PanelRelease } from "./releases";
 
 const options = {
   unitsOfMeasure: [
     { code: "EA", name: "Each" },
     { code: "M", name: "Meter" }
-  ]
+  ],
+  defaults: DEFAULT_PUSH_DEFAULTS
 };
 
 const node = (over: Partial<OnshapeBomNode> = {}): OnshapeBomNode => ({
@@ -65,9 +67,17 @@ describe("proposeItem", () => {
 
   it("never proposes a unit the company lacks", () => {
     expect(
-      defaultUnitOfMeasureCode({ unitsOfMeasure: [{ code: "PC", name: "x" }] })
+      defaultUnitOfMeasureCode({
+        unitsOfMeasure: [{ code: "PC", name: "x" }],
+        defaults: DEFAULT_PUSH_DEFAULTS
+      })
     ).toBe("PC");
-    expect(defaultUnitOfMeasureCode({ unitsOfMeasure: [] })).toBe("EA");
+    expect(
+      defaultUnitOfMeasureCode({
+        unitsOfMeasure: [],
+        defaults: DEFAULT_PUSH_DEFAULTS
+      })
+    ).toBe("EA");
   });
 });
 
