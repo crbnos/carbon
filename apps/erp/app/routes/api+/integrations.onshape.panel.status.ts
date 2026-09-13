@@ -190,8 +190,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (lineMappings.error || rootMapping.error || items.error) {
       return data(
         {
-          error:
-            "Carbon couldn't read its items for this assembly. Press Refresh to try again."
+          error: "Carbon couldn't read its items for this assembly. Try again."
         },
         { status: 500 }
       );
@@ -220,8 +219,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (mappedResult.error) {
       return data(
         {
-          error:
-            "Carbon couldn't read its items for this assembly. Press Refresh to try again."
+          error: "Carbon couldn't read its items for this assembly. Try again."
         },
         { status: 500 }
       );
@@ -302,8 +300,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (mappings.error || matches.error) {
     return data(
       {
-        error:
-          "Carbon couldn't read its items for these parts. Press Refresh to try again."
+        error: "Carbon couldn't read its items for these parts. Try again."
       },
       { status: 500 }
     );
@@ -322,8 +319,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (mappedResult.error) {
     return data(
       {
-        error:
-          "Carbon couldn't read its items for these parts. Press Refresh to try again."
+        error: "Carbon couldn't read its items for these parts. Try again."
       },
       { status: 500 }
     );

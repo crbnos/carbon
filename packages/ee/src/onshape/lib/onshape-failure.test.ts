@@ -27,7 +27,7 @@ describe("onshapeFailure", () => {
     const failure = onshapeFailure(timeout, "bom");
     expect(failure.status).toBe(504);
     expect(failure.body.error).toMatch(/still building this BOM/);
-    expect(failure.body.error).toMatch(/Refresh/);
+    expect(failure.body.error).toMatch(/try again/i);
   });
 
   it("gives other timeouts the generic wording", () => {
