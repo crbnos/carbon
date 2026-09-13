@@ -21,6 +21,7 @@ import {
   loadActiveMakeMethods,
   loadMethodLineOwnership,
   loadPartCustomFieldDefinitions,
+  ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
   selectInBatches,
   takePanelPlan
@@ -32,6 +33,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
+import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
 
 export const config = {
   runtime: "nodejs"
@@ -66,6 +68,12 @@ type PushSummary = {
   /** Lines already correct, left untouched — reported so a no-op push says so. */
   linesUnchanged: number;
   methodsTouched: number;
+  /**
+   * Levels whose released method was superseded by a new Draft version this
+   * push authored into. Reported because the push changed nothing live: a
+   * person still has to release the draft for it to take effect.
+   */
+  draftVersionsCreated: string[];
   skipped: string[];
   errors: string[];
 };
@@ -228,6 +236,7 @@ export async function action({ request }: ActionFunctionArgs) {
     linesWritten: 0,
     linesUnchanged: 0,
     methodsTouched: 0,
+    draftVersionsCreated: [],
     skipped: [...plan.skipped],
     errors: []
   };
@@ -516,16 +525,55 @@ export async function action({ request }: ActionFunctionArgs) {
     companyId,
     parentItemIds
   );
+  // Resolve the method each level will be written into BEFORE ownership is
+  // read. A released method is never edited in place — Carbon supersedes a
+  // live method with a new Draft version — so the push authors into a draft
+  // instead of refusing, which is what lets a shipped product (whose
+  // sub-assemblies are all released) be pushed at all. Ownership is keyed by
+  // method id, so a draft created after that read would look like it owned no
+  // lines and the push would duplicate every one.
+  const targetMethodByItemId = new Map<string, string>();
+  const methodErrorByItemId = new Map<string, string>();
+  for (const planned of plan.methods) {
+    const parentItem = itemByReadableId.get(planned.parentPartNumber);
+    if (!parentItem) continue;
+    if (targetMethodByItemId.has(parentItem.id)) continue;
+    const method = methodByItemId.get(parentItem.id);
+    if (!method) continue; // reported in the write loop
+    if (method.status !== "Active") {
+      targetMethodByItemId.set(parentItem.id, method.id);
+      continue;
+    }
+    const draft = await ensureDraftMakeMethod(client, {
+      itemId: parentItem.id,
+      activeMethodId: method.id,
+      companyId,
+      userId
+    });
+    if (!draft.ok) {
+      methodErrorByItemId.set(parentItem.id, draft.error);
+      continue;
+    }
+    targetMethodByItemId.set(parentItem.id, draft.id);
+    if (draft.created) {
+      summary.draftVersionsCreated.push(
+        draft.version === null
+          ? planned.parentPartNumber
+          : `${planned.parentPartNumber} (version ${draft.version})`
+      );
+    }
+  }
+
   // A failed read here must stop the line writes: with the existing
   // Onshape-origin lines unknown, a rewrite would duplicate every one.
   let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
   try {
-    ownership = await loadMethodLineOwnership(
-      client,
-      serviceRole,
-      companyId,
-      [...methodByItemId.values()].map((method) => method.id)
-    );
+    ownership = await loadMethodLineOwnership(client, serviceRole, companyId, [
+      ...new Set([
+        ...[...methodByItemId.values()].map((method) => method.id),
+        ...targetMethodByItemId.values()
+      ])
+    ]);
   } catch (error) {
     return data(
       {
@@ -549,9 +597,10 @@ export async function action({ request }: ActionFunctionArgs) {
       summary.errors.push(`${parentLabel}: no make method found`);
       continue;
     }
-    if (method.status === "Active") {
+    const methodId = targetMethodByItemId.get(parentItem.id);
+    if (!methodId) {
       summary.errors.push(
-        `${parentLabel}: make method is released; pushing to released methods lands with releases`
+        `${parentLabel}: ${methodErrorByItemId.get(parentItem.id) ?? "no make method to write to"}`
       );
       continue;
     }
@@ -572,7 +621,7 @@ export async function action({ request }: ActionFunctionArgs) {
     // Components pair by item id, FIFO, so a BOM that lists the same component
     // on two rows keeps both lines and their Carbon-owned data.
     const reusableByItemId = new Map<string, MappedLineRow[]>();
-    for (const row of ownership.mappedRows.get(method.id) ?? []) {
+    for (const row of ownership.mappedRows.get(methodId) ?? []) {
       const queue = reusableByItemId.get(row.itemId) ?? [];
       queue.push(row);
       reusableByItemId.set(row.itemId, queue);
@@ -613,7 +662,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const childMethod = childMade ? methodByItemId.get(childItem.id) : null;
       const lineSyncedAt = datetime.timestamp();
       const lineMetadata = {
-        makeMethodId: method.id,
+        makeMethodId: methodId,
         documentId,
         elementId,
         partNumber: write.partNumber,
@@ -685,7 +734,7 @@ export async function action({ request }: ActionFunctionArgs) {
         row: {
           itemId: childItem.id,
           quantity: write.quantity,
-          makeMethodId: method.id,
+          makeMethodId: methodId,
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
             (childItem.defaultMethodType as "Make to Order" | null) ??
@@ -735,7 +784,7 @@ export async function action({ request }: ActionFunctionArgs) {
             pendingInserts.map((pending, index) => ({
               entityType: "methodMaterial",
               entityId: inserted.data[index].id,
-              integration: "onshape",
+              integration: ONSHAPE_V2_INTEGRATION_ID,
               metadata: pending.metadata as Json,
               lastSyncedAt: pending.syncedAt,
               companyId,
@@ -791,9 +840,9 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("externalIntegrationMapping")
       .select("id")
       .eq("companyId", companyId)
-      .eq("integration", "onshape")
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
       .eq("entityType", "methodMaterial")
-      .eq("metadata->>makeMethodId", method.id);
+      .eq("metadata->>makeMethodId", methodId);
     if (methodMappings.error) {
       summary.errors.push(
         `${parentLabel}: could not read the existing line ownership records (${methodMappings.error.message})`
@@ -830,7 +879,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
-    .eq("integration", "onshape")
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
     .eq("entityType", "item")
     .eq("entityId", rootItem.id);
   if (clearedByItem.error) {
@@ -842,7 +891,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
-    .eq("integration", "onshape")
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
     .eq("entityType", "item")
     .eq("externalId", assemblyExternalId);
   if (clearedByElement.error) {
@@ -855,7 +904,7 @@ export async function action({ request }: ActionFunctionArgs) {
     .insert({
       entityType: "item",
       entityId: rootItem.id,
-      integration: "onshape",
+      integration: ONSHAPE_V2_INTEGRATION_ID,
       externalId: assemblyExternalId,
       metadata: {
         documentId,
@@ -966,7 +1015,7 @@ async function linkChildParts(
           .from("externalIntegrationMapping")
           .select("entityId")
           .eq("companyId", input.companyId)
-          .eq("integration", "onshape")
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
           .in("entityId", batch)
     ),
@@ -977,7 +1026,7 @@ async function linkChildParts(
           .from("externalIntegrationMapping")
           .select("externalId")
           .eq("companyId", input.companyId)
-          .eq("integration", "onshape")
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
           .in("externalId", batch)
     )
@@ -1007,7 +1056,7 @@ async function linkChildParts(
     .map((candidate) => ({
       entityType: "item" as const,
       entityId: candidate.itemId,
-      integration: "onshape",
+      integration: ONSHAPE_V2_INTEGRATION_ID,
       externalId: candidate.externalId,
       metadata: {
         documentId: candidate.source.documentId,

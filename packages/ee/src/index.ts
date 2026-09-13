@@ -102,6 +102,7 @@ export {
   PANEL_SESSION_MESSAGE,
   parsePanelContext
 } from "./onshape/panel/messages";
+export { correlateCopiedLines } from "./onshape/panel/method-version";
 export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
 export { OnshapePanel } from "./onshape/panel/Panel";
 export type {
