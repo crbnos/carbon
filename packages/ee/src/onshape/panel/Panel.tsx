@@ -1570,6 +1570,33 @@ export function OnshapePanel({
         ? "Parts"
         : "Push";
 
+  /*
+   * Before sign-in the panel IS the sign-in: `availableTabs` is empty until
+   * there is a session, every pane renders null, and the only thing to say is
+   * who is asking and how to answer. Returning here rather than threading the
+   * empty Tabs shell around it is what lets the block own the full height —
+   * inside the scrolling body it centred within its own content box, which
+   * left it stranded near the top of a tall, empty panel.
+   *
+   * Every hook has already run above; this is the last branch before render.
+   */
+  if (session.status === "signed-out" || session.status === "unknown") {
+    return (
+      <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6 p-4">
+        {!serverOrigin ? (
+          <Alert variant="destructive">
+            <LuTriangleAlert />
+            <AlertTitle>Open this panel from Onshape</AlertTitle>
+          </Alert>
+        ) : null}
+        <PanelSignIn
+          onSignIn={signIn}
+          disabled={session.status === "unknown"}
+        />
+      </div>
+    );
+  }
+
   return (
     /*
      * Three bands: a header that stays put, one scrolling body, and whatever
@@ -1628,12 +1655,6 @@ export function OnshapePanel({
         ) : null}
 
         <ContextSummary context={context} />
-
-        {session.status === "signed-out" || session.status === "unknown" ? (
-          <Button onClick={signIn} isDisabled={session.status === "unknown"}>
-            Sign in to Carbon
-          </Button>
-        ) : null}
 
         {session.status === "loading" ? (
           <PanelLoading>Connecting to Carbon…</PanelLoading>
@@ -4350,6 +4371,45 @@ function ItemActionBadge({ action }: { action: "create" | "reuse" }) {
     <Status color="green" disableTooltip>
       Reuse
     </Status>
+  );
+}
+
+/**
+ * The whole panel before sign-in: the Carbon mark and the way in, centred.
+ *
+ * Nothing else belongs here. A lone button in the top-left of an otherwise
+ * blank column read as a half-loaded page rather than a deliberate state; the
+ * caller centres this in the panel.
+ *
+ * The mark, the light/dark pair and the `w-24` are lifted from Carbon's own
+ * sign-in surfaces (`_oauth+/authorize.tsx`, `_public+/invite.$code.tsx`,
+ * `_public+/verify.tsx`) so this reads as the same product asking. It is
+ * served from the app's own origin, which the panel is framed from, so the
+ * absolute path resolves without the panel bundling an asset of its own.
+ */
+function PanelSignIn({
+  onSignIn,
+  disabled
+}: {
+  onSignIn: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <div className="flex w-full max-w-[220px] flex-col items-center gap-6">
+      <img
+        src="/carbon-mark-light.svg"
+        alt="Carbon"
+        className="w-24 dark:hidden"
+      />
+      <img
+        src="/carbon-mark-dark.svg"
+        alt="Carbon"
+        className="hidden w-24 dark:block"
+      />
+      <Button className="w-full" onClick={onSignIn} isDisabled={disabled}>
+        Sign in to Carbon
+      </Button>
+    </div>
   );
 }
 
