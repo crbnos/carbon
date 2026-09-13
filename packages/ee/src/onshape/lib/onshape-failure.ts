@@ -12,7 +12,8 @@ const logger = getLogger("ee", "onshape", "panel");
  * common failure in the product, a cold BOM read, reached the user as a raw
  * timeout when the true cause is Onshape building the BOM on demand and the
  * fix is to press Refresh. This maps each cause to a sentence that says what
- * happened and what to do. The original text is logged here, so a translated
+ * happened and what to do — worded to fit whichever button sits beside it,
+ * Retry in a load failure or Refresh in a header. The original text is logged here, so a translated
  * message never costs the detail someone debugging needs.
  *
  * Status codes are chosen for the panel, not echoed from Onshape. In
@@ -49,15 +50,15 @@ export function onshapeFailure(
         body: {
           error:
             read === "bom"
-              ? "Onshape is still building this BOM. It can take a minute the first time — press Refresh to try again."
-              : "Onshape didn't answer in time. Press Refresh to try again."
+              ? "Onshape is still building this BOM. It can take a minute the first time — try again shortly."
+              : "Onshape didn't answer in time. Try again."
         }
       };
     }
     return {
       status: 502,
       body: {
-        error: "Carbon couldn't reach Onshape. Press Refresh to try again."
+        error: "Carbon couldn't reach Onshape. Try again."
       }
     };
   }

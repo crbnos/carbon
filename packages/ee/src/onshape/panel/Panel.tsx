@@ -653,6 +653,25 @@ function PanelListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 /**
+ * What to say when a request threw instead of answering.
+ *
+ * `fetch` rejects with a TypeError when the request never completed — offline,
+ * DNS, a dropped connection — and each browser's wording for it ("Failed to
+ * fetch", "Load failed", "NetworkError when attempting to fetch resource") is
+ * machine text. Matched on the wording as well as the type, so a TypeError that
+ * is a genuine bug still reports itself rather than blaming the network.
+ */
+function thrownMessage(error: unknown): string {
+  if (
+    error instanceof TypeError &&
+    /fetch|network|load failed/i.test(error.message)
+  ) {
+    return "Carbon couldn't be reached. Check your connection and try again.";
+  }
+  return error instanceof Error ? error.message : String(error);
+}
+
+/**
  * A warning listing things, bounded.
  *
  * Skipped BOM components arrive one per occurrence, so a real assembly lists
@@ -743,7 +762,10 @@ function PanelLoadError({
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {failure.message}
-        {stale ? " Showing what was loaded before." : null}
+        {/* Its own line: a message without a full stop ran straight into it. */}
+        {stale ? (
+          <span className="mt-1 block">Showing what was loaded before.</span>
+        ) : null}
       </AlertDescription>
       {onRetry ? (
         <HStack className="mt-2">
@@ -880,6 +902,7 @@ export function OnshapePanel({
       setParts({ status: "idle" });
       setReleases({ status: "idle" });
       setFields({ status: "closed" });
+      setSettingsSaved(false);
       setTab("push");
     }
   }, [session.status]);
@@ -887,6 +910,8 @@ export function OnshapePanel({
   const loadParts = useCallback(
     async (token: string) => {
       if (!canLoadParts) return;
+      // A refusal was about the BOM as it was; a re-read may have changed it.
+      setAssemblyTooLarge(null);
       const fail = (message: string, forbidden: boolean) =>
         setParts((current) =>
           current.status === "ready" ||
@@ -944,7 +969,7 @@ export function OnshapePanel({
           setParts({ status: "idle" });
           return;
         }
-        fail(error instanceof Error ? error.message : String(error), false);
+        fail(thrownMessage(error), false);
       }
     },
     [canLoadParts, context, paths.status]
@@ -987,7 +1012,7 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        fail(error instanceof Error ? error.message : String(error), false);
+        fail(thrownMessage(error), false);
       }
     },
     [context.documentId, paths.releases]
@@ -1062,7 +1087,7 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        fail(error instanceof Error ? error.message : String(error), false);
+        fail(thrownMessage(error), false);
       }
     },
     [canLoadParts, context, paths.fields]
@@ -1100,7 +1125,7 @@ export function OnshapePanel({
         setSession({
           status: "error",
           token,
-          message: error instanceof Error ? error.message : String(error)
+          message: thrownMessage(error)
         });
       }
     },
@@ -1193,9 +1218,7 @@ export function OnshapePanel({
           return;
         }
         setReview(null);
-        setPartsOutcome(
-          failedOutcome(error instanceof Error ? error.message : String(error))
-        );
+        setPartsOutcome(failedOutcome(thrownMessage(error)));
       } finally {
         setPushing(null);
       }
@@ -1269,9 +1292,7 @@ export function OnshapePanel({
           return;
         }
         setReview(null);
-        setAssemblyOutcome(
-          failedOutcome(error instanceof Error ? error.message : String(error))
-        );
+        setAssemblyOutcome(failedOutcome(thrownMessage(error)));
       } finally {
         setPushing(null);
       }
@@ -1320,9 +1341,7 @@ export function OnshapePanel({
         setReview(null);
         setReleaseOutcome((prev) => ({
           ...prev,
-          [releaseId]: failedOutcome(
-            error instanceof Error ? error.message : String(error)
-          )
+          [releaseId]: failedOutcome(thrownMessage(error))
         }));
       } finally {
         setPushingReleaseId(null);
@@ -1423,7 +1442,7 @@ export function OnshapePanel({
         setReview({
           ...current,
           applying: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: thrownMessage(error)
         });
       }
     },
@@ -1647,7 +1666,7 @@ export function OnshapePanel({
         setFields({
           ...current,
           saving: false,
-          error: error instanceof Error ? error.message : String(error)
+          error: thrownMessage(error)
         });
         return false;
       }
@@ -1754,7 +1773,7 @@ export function OnshapePanel({
       setPushDefaults({
         ...current,
         saving: false,
-        error: error instanceof Error ? error.message : String(error)
+        error: thrownMessage(error)
       });
       return false;
     }
@@ -1908,7 +1927,7 @@ export function OnshapePanel({
     return (
       <div className="flex h-full min-h-0 flex-col items-center justify-center gap-6 p-4">
         {!serverOrigin ? (
-          <Alert variant="destructive">
+          <Alert variant="warning" className="max-w-sm">
             <LuTriangleAlert />
             <AlertTitle>Open this panel from Onshape</AlertTitle>
           </Alert>
@@ -1980,8 +1999,10 @@ export function OnshapePanel({
       ) : null}
 
       <VStack spacing={4} className="min-h-0 flex-1 overflow-y-auto p-4">
+        {/* Not broken, just opened outside its host: a warning, as on the
+            sign-in screen. */}
         {!serverOrigin ? (
-          <Alert variant="destructive">
+          <Alert variant="warning">
             <LuTriangleAlert />
             <AlertTitle>Open this panel from Onshape</AlertTitle>
           </Alert>
@@ -2296,7 +2317,7 @@ function AssemblySection({
             <LuTriangleAlert />
             <AlertTitle>Couldn't read this assembly's part number</AlertTitle>
             <AlertDescription>
-              Onshape didn't return it this time. Press Refresh to try again.
+              Onshape didn't return it this time. Refresh to try again.
             </AlertDescription>
           </Alert>
         ) : (
