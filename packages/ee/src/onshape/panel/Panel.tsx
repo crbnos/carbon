@@ -24,7 +24,6 @@ import {
   TabsTrigger,
   ToggleGroup,
   ToggleGroupItem,
-  toast,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
@@ -339,7 +338,13 @@ export type OnshapePanelMe = {
 
 type SessionState =
   | { status: "unknown" }
-  | { status: "signed-out" }
+  /**
+   * `popupBlocked`: the browser refused the sign-in window. That is still the
+   * signed-out state — the way forward is the same button — not a Carbon
+   * error; it used to render as "Carbon is not reachable" with a Retry that
+   * did nothing, since there was no token to retry with.
+   */
+  | { status: "signed-out"; popupBlocked?: boolean }
   | { status: "loading"; token: string }
   | { status: "signed-in"; token: string; me: OnshapePanelMe }
   | { status: "error"; token: string | null; message: string };
@@ -388,19 +393,65 @@ type ReleasePushSummary = {
   errors: string[];
 };
 
-function partOutcome(result: PartApplyResult): string {
+/**
+ * What happened to one part, with its severity carried alongside the words.
+ *
+ * It used to be a bare string rendered in muted grey whatever it said, so
+ * "Created" and "Item saved but the Onshape link failed; push again" looked
+ * identical. The assembly and release pushes had already been moved off that
+ * shape; the part push had not.
+ */
+type PartRowOutcome = { kind: "ok" | "skipped" | "error"; text: string };
+
+function partOutcome(result: PartApplyResult): PartRowOutcome {
   switch (result.action) {
     case "created":
-      return "Created";
+      return { kind: "ok", text: "Created" };
     case "adopted":
-      return "Linked";
+      return { kind: "ok", text: "Linked" };
     case "updated":
-      return "Updated";
+      return { kind: "ok", text: "Updated" };
     case "unchanged":
-      return "Up to date";
+      return { kind: "ok", text: "Up to date" };
+    case "skipped":
+      return { kind: "skipped", text: "Skipped" };
     default:
-      return result.message ?? result.action;
+      // The full message goes in the section's alert; the row only has to
+      // say that this is the one that failed.
+      return { kind: "error", text: "Failed" };
   }
+}
+
+/** The section-level summary of a part push, in the shape the others use. */
+function partsOutcomeText(
+  results: PartApplyResult[],
+  rows: Array<{ partId: string; partNumber: string | null }>,
+  warnings: string[]
+): PushOutcome {
+  const label = (r: PartApplyResult) =>
+    rows.find((row) => row.partId === r.partId)?.partNumber ??
+    r.readableId ??
+    r.partId;
+  const count = (action: PartApplyResult["action"]) =>
+    results.filter((r) => r.action === action).length;
+  const parts = [
+    [count("created"), "created"],
+    [count("adopted"), "linked"],
+    [count("updated"), "updated"],
+    [count("unchanged"), "already up to date"]
+  ]
+    .filter(([n]) => (n as number) > 0)
+    .map(([n, what]) => `${n} ${what}`);
+  return {
+    text: parts.length > 0 ? `Parts: ${parts.join(", ")}` : "",
+    skipped: results
+      .filter((r) => r.action === "skipped")
+      .map((r) => `${label(r)}: ${r.message ?? "skipped"}`),
+    errors: results
+      .filter((r) => r.action === "error")
+      .map((r) => `${label(r)}: ${r.message ?? "failed"}`),
+    warnings
+  };
 }
 
 /**
@@ -413,6 +464,11 @@ type PushOutcome = {
   text: string;
   skipped: string[];
   errors: string[];
+  /**
+   * Went through, but something about it needs checking — e.g. a value that
+   * landed in a List custom field whose option could not be added.
+   */
+  warnings?: string[];
   /**
    * Things that went through but the user has to know about — a released
    * method superseded by a Draft version, which takes effect only once
@@ -433,8 +489,7 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
         (unchanged > 0 ? ` (${unchanged} unchanged)` : "");
   const text =
     `${s.itemsCreated} items created, ${s.itemsReused} reused, ` +
-    `${lines} across ${s.methodsTouched} methods` +
-    (s.skipped.length > 0 ? ` · ${s.skipped.join(" · ")}` : "");
+    `${lines} across ${s.methodsTouched} methods`;
   const drafts = s.draftVersionsCreated ?? [];
   return {
     text,
@@ -448,13 +503,14 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
 }
 
 function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
-  const tail = s.skipped.length > 0 ? ` · ${s.skipped.join(" · ")}` : "";
+  // Skipped items are not appended to this line: it becomes the title of a
+  // success alert, and "PN-77: drawing has no matching model item" read as a
+  // clause of the success. They render as their own warning.
   const text = s.alreadyPushed
-    ? "Revisions already in Carbon — BOMs refreshed" + tail
+    ? "Revisions already in Carbon — BOMs refreshed"
     : `${s.revisionsCreated} revisions + ${s.itemsCreated} new items, ` +
       `${s.linesWritten} BOM lines` +
-      (s.changeNotice ? ` · change notice ${s.changeNotice}` : "") +
-      tail;
+      (s.changeNotice ? ` · change notice ${s.changeNotice}` : "");
   return { text, skipped: s.skipped, errors: s.errors };
 }
 
@@ -495,6 +551,40 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
             <ul className="list-disc space-y-1 pl-4">
               {(outcome.notes ?? []).map((note) => (
                 <li key={note}>{note}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {outcome.skipped.length > 0 ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {outcome.skipped.length === 1
+              ? "1 thing was skipped"
+              : `${outcome.skipped.length} things were skipped`}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc space-y-1 pl-4">
+              {outcome.skipped.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {(outcome.warnings ?? []).length > 0 ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {(outcome.warnings ?? []).length === 1
+              ? "1 thing to check"
+              : `${(outcome.warnings ?? []).length} things to check`}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc space-y-1 pl-4">
+              {(outcome.warnings ?? []).map((item) => (
+                <li key={item}>{item}</li>
               ))}
             </ul>
           </AlertDescription>
@@ -665,7 +755,11 @@ export function OnshapePanel({
     !!context.elementId;
   const canPush = canLoadParts && (context.wv === "w" || context.wv === "v");
   const [pushing, setPushing] = useState<Set<string> | null>(null);
-  const [pushOutcome, setPushOutcome] = useState<Record<string, string>>({});
+  const [pushOutcome, setPushOutcome] = useState<
+    Record<string, PartRowOutcome>
+  >({});
+  /** The part push's section-level result: counts, problems, warnings. */
+  const [partsOutcome, setPartsOutcome] = useState<PushOutcome | null>(null);
 
   // The Fields editor (Onshape properties → Carbon custom fields). One shared
   // section for the whole panel: the map is company-wide, not per element.
@@ -713,6 +807,8 @@ export function OnshapePanel({
     setFields({ status: "closed" });
     // A refusal or outcome is about the element it was produced for.
     setAssemblyOutcome(null);
+    setPartsOutcome(null);
+    setPushOutcome({});
     setAssemblyTooLarge(null);
     setTab("push");
   }, [elementScope, documentScope]);
@@ -1001,6 +1097,7 @@ export function OnshapePanel({
     async (token: string, partIds: string[]) => {
       if (!canPush || partIds.length === 0) return;
       setPushing(new Set(partIds));
+      setPartsOutcome(null);
       try {
         const response = await panelFetch(token, paths.planPart, {
           method: "POST",
@@ -1017,11 +1114,15 @@ export function OnshapePanel({
           | PlanResponse<PartPlan>
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
-          const message =
-            "error" in body ? body.error : `Carbon answered ${response.status}`;
+          // One failure, so one alert. Copying the message onto every selected
+          // row said the same sentence fourteen times in grey.
           setReview(null);
-          setPushOutcome(
-            Object.fromEntries(partIds.map((id) => [id, message]))
+          setPartsOutcome(
+            failedOutcome(
+              "error" in body
+                ? body.error
+                : `Carbon answered ${response.status}`
+            )
           );
           return;
         }
@@ -1038,9 +1139,10 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        const message = error instanceof Error ? error.message : String(error);
         setReview(null);
-        setPushOutcome(Object.fromEntries(partIds.map((id) => [id, message])));
+        setPartsOutcome(
+          failedOutcome(error instanceof Error ? error.message : String(error))
+        );
       } finally {
         setPushing(null);
       }
@@ -1202,7 +1304,7 @@ export function OnshapePanel({
           body: JSON.stringify(applyRequestBody(current))
         });
         const body = (await response.json()) as
-          | { results: PartApplyResult[] }
+          | { results: PartApplyResult[]; warnings?: string[] }
           | { summary: AssemblyPushSummary | ReleasePushSummary }
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
@@ -1230,6 +1332,15 @@ export function OnshapePanel({
               results.map((r) => [r.partId, partOutcome(r)])
             )
           }));
+          // The route computes `warnings` and says they must NOT be silent;
+          // they were never read here, so they were.
+          setPartsOutcome(
+            partsOutcomeText(
+              results,
+              current.plan.rows,
+              "warnings" in body ? (body.warnings ?? []) : []
+            )
+          );
           setParts((prev) =>
             prev.status === "ready"
               ? {
@@ -1626,15 +1737,29 @@ export function OnshapePanel({
    * silently drop a property map the user also edited. Both sections keep
    * their own error, so a partial failure says which half to look at.
    */
+  /*
+   * The outcome of a save is reported in the Save bar itself, not a toast.
+   * The toaster sits bottom-right, which in a panel this narrow is on top of
+   * the very bar the user just pressed; and a failure rendered only at the top
+   * of its section could be a long scroll away from the button.
+   */
+  const [settingsSaved, setSettingsSaved] = useState(false);
   const saveSettings = async (token: string) => {
     if (settingsBusy) return;
+    setSettingsSaved(false);
     const wrote: boolean[] = [];
     if (pushDefaultsDirty) wrote.push(await savePushDefaults(token));
     if (fieldsDirty) wrote.push(await saveFields(token));
-    if (wrote.length > 0 && wrote.every(Boolean)) {
-      toast.success("Settings saved");
-    }
+    setSettingsSaved(wrote.length > 0 && wrote.every(Boolean));
   };
+  const settingsSaveFailure =
+    pushDefaults.status === "editing" && pushDefaults.error
+      ? fields.status === "ready" && fields.error
+        ? "Push defaults and the property map couldn't be saved — see above."
+        : "Push defaults couldn't be saved — see above."
+      : fields.status === "ready" && fields.error
+        ? "The property map couldn't be saved — see above."
+        : null;
 
   /*
    * Selecting Fields is what loads it, so opening the panel still costs one
@@ -1662,14 +1787,11 @@ export function OnshapePanel({
       "carbon-onshape-auth",
       `popup=yes,width=${width},height=${height},left=${left},top=${top}`
     );
-    if (!popup) {
-      setSession({
-        status: "error",
-        token: null,
-        message:
-          "The sign-in window was blocked. Allow pop-ups for this page and try again."
-      });
-    }
+    setSession(
+      popup
+        ? { status: "signed-out" }
+        : { status: "signed-out", popupBlocked: true }
+    );
   };
 
   const signOut = async () => {
@@ -1736,6 +1858,15 @@ export function OnshapePanel({
           <Alert variant="destructive">
             <LuTriangleAlert />
             <AlertTitle>Open this panel from Onshape</AlertTitle>
+          </Alert>
+        ) : null}
+        {session.status === "signed-out" && session.popupBlocked ? (
+          <Alert variant="warning" className="max-w-sm">
+            <LuTriangleAlert />
+            <AlertTitle>Your browser blocked the sign-in window</AlertTitle>
+            <AlertDescription>
+              Allow pop-ups for this page, then press Sign in to Carbon again.
+            </AlertDescription>
           </Alert>
         ) : null}
         <PanelSignIn
@@ -1819,6 +1950,8 @@ export function OnshapePanel({
                 size="sm"
                 variant="secondary"
                 onClick={() => session.token && loadMe(session.token)}
+                // Never render a button that does nothing.
+                isDisabled={!session.token}
               >
                 Retry
               </Button>
@@ -1913,6 +2046,7 @@ export function OnshapePanel({
                   canPush={canPush}
                   pushing={pushing}
                   pushOutcome={pushOutcome}
+                  outcome={partsOutcome}
                   onRefresh={() => loadParts(session.token)}
                   onPush={(partIds) => planParts(session.token, partIds)}
                 />
@@ -2027,6 +2161,8 @@ export function OnshapePanel({
           dirty={pushDefaultsDirty || fieldsDirty}
           busy={settingsBusy}
           saving={settingsSaving}
+          saved={settingsSaved && !(pushDefaultsDirty || fieldsDirty)}
+          failure={settingsSaveFailure}
           onSave={() => saveSettings(session.token)}
         />
       ) : null}
@@ -2361,6 +2497,7 @@ function PartsSection({
   pushing,
   locked,
   pushOutcome,
+  outcome,
   onRefresh,
   onPush
 }: {
@@ -2378,7 +2515,8 @@ function PartsSection({
   pushing: Set<string> | null;
   /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
-  pushOutcome: Record<string, string>;
+  pushOutcome: Record<string, PartRowOutcome>;
+  outcome: PushOutcome | null;
   onRefresh: () => void;
   onPush: (partIds: string[]) => void;
 }) {
@@ -2442,6 +2580,8 @@ function PartsSection({
         />
       ) : null}
 
+      {outcome ? <PushOutcomeView outcome={outcome} /> : null}
+
       {parts.status === "ready" && rows.length === 0 ? (
         <PanelEmpty>This element has no parts</PanelEmpty>
       ) : null}
@@ -2470,8 +2610,17 @@ function PartsSection({
               </div>
               <HStack spacing={2} className="shrink-0">
                 {pushOutcome[part.partId] ? (
-                  <span className="text-xs text-muted-foreground">
-                    {pushOutcome[part.partId]}
+                  <span
+                    className={cn(
+                      "text-xs",
+                      pushOutcome[part.partId]?.kind === "error"
+                        ? "font-medium text-destructive"
+                        : pushOutcome[part.partId]?.kind === "skipped"
+                          ? "text-amber-600 dark:text-amber-400"
+                          : "text-muted-foreground"
+                    )}
+                  >
+                    {pushOutcome[part.partId]?.text}
                   </span>
                 ) : null}
                 <PartStateBadge state={part.state} />
@@ -2894,7 +3043,9 @@ function PushDefaultsSection({
 }) {
   if (state.status !== "editing") return null;
   const { draft } = state;
-  const busy = state.saving;
+  // Read-only without `settings.update`, as the property map already is:
+  // editing five selects only to find there is no Save was a dead end.
+  const busy = state.saving || !me.canEditSettings;
   return (
     <PanelSettingsSection
       title="Push defaults"
@@ -3249,7 +3400,7 @@ function ReviewError({
 }
 
 function toneClass(tone: MethodDescription["tone"]): string {
-  if (tone === "destructive") return "text-xs text-destructive";
+  if (tone === "warning") return "text-xs text-amber-600 dark:text-amber-400";
   if (tone === "muted") return "text-xs text-muted-foreground";
   return "text-xs";
 }
@@ -3269,16 +3420,31 @@ function SettingsActionBar({
   dirty,
   busy,
   saving,
+  saved,
+  failure,
   onSave
 }: {
   canEdit: boolean;
   dirty: boolean;
   busy: boolean;
   saving: boolean;
+  /** The last save wrote everything it tried to, and nothing is dirty since. */
+  saved: boolean;
+  /** Which half of the last save failed, when one did. */
+  failure: string | null;
   onSave: () => void;
 }) {
   return (
     <div className="w-full shrink-0 border-t border-border bg-background px-4 py-2">
+      {canEdit && failure ? (
+        <p className="pb-2 text-xs font-medium text-destructive">{failure}</p>
+      ) : null}
+      {canEdit && saved && !failure ? (
+        <p className="flex items-center gap-1 pb-2 text-xs text-muted-foreground">
+          <LuCircleCheck className="size-3" />
+          Saved — new pushes use these settings.
+        </p>
+      ) : null}
       {canEdit ? (
         <Button
           className="w-full"
@@ -3508,8 +3674,13 @@ function RowCustomFields({
           </p>
         );
       })}
+      {/* A value that cannot coerce is reported and skipped, never written —
+          a warning about this field, not an error in the push. */}
       {problems?.map((problem) => (
-        <p key={problem} className="text-xs text-destructive w-full">
+        <p
+          key={problem}
+          className="w-full text-xs text-amber-600 dark:text-amber-400"
+        >
           {problem}
         </p>
       ))}
@@ -3769,6 +3940,16 @@ function RowDisclosure({
   defaultOpen?: boolean;
 }) {
   const [open, setOpen] = useState(!!defaultOpen);
+  /*
+   * `defaultOpen` is how a 422 opens the rows it names — but the row mounts as
+   * soon as it is selected, long before the apply answers, and `useState` only
+   * reads its initial value once. So the flag flipping true after the response
+   * was ignored, and the user got "Some edits are not valid" with the invalid
+   * row still collapsed. Opening follows the flag; closing stays the user's.
+   */
+  useEffect(() => {
+    if (defaultOpen) setOpen(true);
+  }, [defaultOpen]);
   return (
     /*
      * Deliberately NOT a <details>. That element only HIDES its children —
@@ -4288,9 +4469,61 @@ function AssemblyReviewSection({
         </>
       ) : null}
 
+      {/*
+       * What the push will NOT write, and what it writes somewhere that is not
+       * live, are both decided before Push — so they sit above it, not inside a
+       * collapsed "Make methods" disclosure nobody had reason to open. A user
+       * used to push, see a green success, and never learn four components
+       * were left out of the BOM.
+       */}
+      {(() => {
+        const described = plan.methods.map((method) =>
+          describeMethod(method, review.excluded)
+        );
+        const wontWrite = [
+          ...described.filter((d) => d.tone === "warning").map((d) => d.text),
+          ...plan.skipped
+        ];
+        const drafts = described.filter((d) => d.tone === "notice");
+        return (
+          <>
+            {wontWrite.length > 0 ? (
+              <Alert variant="warning">
+                <LuTriangleAlert />
+                <AlertTitle>
+                  {wontWrite.length === 1
+                    ? "1 thing won't be written"
+                    : `${wontWrite.length} things won't be written`}
+                </AlertTitle>
+                <AlertDescription>
+                  <ul className="list-disc space-y-1 pl-4">
+                    {wontWrite.map((line, index) => (
+                      <li key={`${index}-${line}`}>{line}</li>
+                    ))}
+                  </ul>
+                </AlertDescription>
+              </Alert>
+            ) : null}
+            {drafts.length > 0 ? (
+              <Alert variant="info">
+                <LuInfo />
+                <AlertTitle>
+                  {drafts.length === 1
+                    ? "1 released method gets a new Draft version"
+                    : `${drafts.length} released methods get new Draft versions`}
+                </AlertTitle>
+                <AlertDescription>
+                  Nothing live changes until someone releases them in Carbon.
+                </AlertDescription>
+              </Alert>
+            ) : null}
+          </>
+        );
+      })()}
+
       <details className="w-full">
         <summary className="cursor-pointer px-1 text-xs font-medium text-muted-foreground">
-          Make methods ({plan.methods.length})
+          Make methods · {plan.methods.length}
         </summary>
         <VStack spacing={1} className="mt-1 w-full">
           {plan.methods.map((method) => {
@@ -4304,14 +4537,6 @@ function AssemblyReviewSection({
               </p>
             );
           })}
-          {plan.skipped.map((line, index) => (
-            <p
-              key={`${index}-${line}`}
-              className="text-xs text-muted-foreground"
-            >
-              {line}
-            </p>
-          ))}
         </VStack>
       </details>
 
@@ -4418,11 +4643,51 @@ function ReleaseReviewSection({
       <p className="text-xs text-muted-foreground w-full">
         {plan.releaseName ?? "Release"}
       </p>
-      {review.warnings.map((warning) => (
-        <p key={warning} className="text-xs text-destructive w-full">
-          {warning}
-        </p>
-      ))}
+      {/*
+       * Not a failure: the route deliberately keeps going when a BOM cannot be
+       * read, and the apply leaves that method exactly as it is. Red prose
+       * with no consequence stated read as "this push is broken".
+       */}
+      {review.warnings.length > 0 ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {review.warnings.length === 1
+              ? "Couldn't read 1 BOM from Onshape"
+              : `Couldn't read ${review.warnings.length} BOMs from Onshape`}
+          </AlertTitle>
+          <AlertDescription>
+            <ul className="list-disc space-y-1 pl-4">
+              {review.warnings.map((warning) => (
+                <li key={warning}>{warning}</li>
+              ))}
+            </ul>
+            <p className="mt-1">
+              Their BOM lines in Carbon will be left as they are. Cancel and
+              review again to retry.
+            </p>
+          </AlertDescription>
+        </Alert>
+      ) : null}
+      {plan.items.some((item) => item.methodStatus === "active") ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {(() => {
+              const n = plan.items.filter(
+                (item) => item.methodStatus === "active"
+              ).length;
+              return n === 1
+                ? "1 item is released in Carbon"
+                : `${n} items are released in Carbon`;
+            })()}
+          </AlertTitle>
+          <AlertDescription>
+            This push won't change their BOM lines. Open a change notice in
+            Carbon to modify them.
+          </AlertDescription>
+        </Alert>
+      ) : null}
 
       <ul className="w-full divide-y divide-border rounded-md border border-border">
         {plan.items.map((item) => (
@@ -4446,8 +4711,8 @@ function ReleaseReviewSection({
               <ReleasePlanBadge item={item} />
             </div>
             {item.methodStatus === "active" ? (
-              <p className="text-xs text-destructive mt-1">
-                released in Carbon — BOM lines will not be applied
+              <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">
+                Released — BOM lines won't change
               </p>
             ) : null}
             {item.action === "create" && item.proposed

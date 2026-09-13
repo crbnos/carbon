@@ -518,9 +518,14 @@ export function normalizeWarnings(value: unknown): string[] {
 // Rendering helpers
 // ---------------------------------------------------------------------------
 
+/**
+ * `warning`: this method will NOT be written — the reviewer must see it before
+ * pushing. `notice`: it will be written, into a new Draft version, so nothing
+ * live changes until someone releases it. Neither is an error.
+ */
 export type MethodDescription = {
   text: string;
-  tone: "normal" | "muted" | "destructive";
+  tone: "normal" | "muted" | "notice" | "warning";
 };
 
 /**
@@ -536,25 +541,30 @@ export function describeMethod(
   if (excluded.has(parent)) {
     return { text: `${parent} · excluded`, tone: "muted" };
   }
-  if (method.status === "active") {
-    return {
-      text: `${parent} · released in Carbon — lines will not be applied`,
-      tone: "destructive"
-    };
-  }
   if (method.status === "missing") {
-    return { text: `${parent} · no make method`, tone: "destructive" };
+    return {
+      text: `${parent} · no make method in Carbon, so its lines won't be written`,
+      tone: "warning"
+    };
   }
   const added = method.writes.filter(
     (line) => !excluded.has(line.partNumber)
   ).length;
+  const counts =
+    `${added} added, ${method.replaces.length} replaced, ` +
+    `${method.keeps.length} manual kept`;
+  // A released method is not skipped: the push writes a new Draft version of
+  // it (see `ensureDraftMakeMethod`). This used to say "lines will not be
+  // applied", which stopped being true when that landed — and told reviewers
+  // to expect a no-op from a push that does write.
+  if (method.status === "active") {
+    return {
+      text: `${parent} · released in Carbon — new Draft version: ${counts}`,
+      tone: "notice"
+    };
+  }
   const label = method.status === "new" ? "new method" : "Draft";
-  return {
-    text:
-      `${parent} · ${label}: ${added} added, ${method.replaces.length} replaced, ` +
-      `${method.keeps.length} manual kept`,
-    tone: "normal"
-  };
+  return { text: `${parent} · ${label}: ${counts}`, tone: "normal" };
 }
 
 export type PartApplyResult = {
