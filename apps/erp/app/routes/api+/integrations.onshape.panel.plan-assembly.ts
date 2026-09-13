@@ -20,6 +20,7 @@ import {
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
+  onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
 import type { ActionFunctionArgs } from "react-router";
@@ -105,12 +106,8 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     bom = await onshape.client.getBillOfMaterialsIn(document, elementId);
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error, "bom");
+    return data(failure.body, { status: failure.status });
   }
 
   // The indented BOM never carries the assembly's own row; its identity comes
@@ -158,13 +155,21 @@ export async function action({ request }: ActionFunctionArgs) {
     const subAssemblies = lines.filter(
       (node) => node.children.length > 0
     ).length;
+    /*
+     * The advice has to be something the panel can actually do. It used to say
+     * "push the sub-assemblies first, then this one", which could not work:
+     * this count is over the WHOLE tree regardless of what is already in
+     * Carbon, so the parent is refused just the same afterwards. A level-only
+     * push is the real way out, and `code` lets the panel offer it as a button.
+     */
     return data(
       {
+        code: "too-large" as const,
         error:
-          `This assembly has ${partNumbers.length} distinct parts, and one push handles up to ${MAX_PLAN_PARTS}. ` +
+          `It has ${partNumbers.length.toLocaleString("en-US")} distinct part numbers; one push handles ${MAX_PLAN_PARTS.toLocaleString("en-US")}. ` +
           (subAssemblies > 0
-            ? `Push its ${subAssemblies} sub-assemblies from their own tabs first, then push this one — Carbon links each level to the one below it.`
-            : "Split it into sub-assemblies in Onshape, push those first, then push this one.")
+            ? `Push this level on its own — its ${subAssemblies} sub-assemblies become single lines, and each can then be pushed from its own tab in Onshape.`
+            : "Split it into sub-assemblies in Onshape, then push this level on its own.")
       },
       { status: 422 }
     );
@@ -327,7 +332,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const created = await createPanelPlan({ companyId, userId, plan: stored });
   if (!created) {
     return data(
-      { error: "Could not save the review; try again" },
+      { error: "Carbon couldn't save this review. Try again." },
       { status: 503 }
     );
   }

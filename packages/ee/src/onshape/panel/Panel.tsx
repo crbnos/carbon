@@ -124,6 +124,12 @@ export type PanelAssemblyStatus = {
   root: {
     partNumber: string | null;
     name: string | null;
+    /**
+     * Onshape's element metadata could not be read, so a null part number
+     * says nothing about the assembly itself. Optional so an older status
+     * response still type-checks.
+     */
+    identityUnavailable?: boolean;
     state: "linked" | "matched" | "missing";
     itemId: string | null;
     lastSyncedAt: string | null;
@@ -138,23 +144,50 @@ export type PanelAssemblyStatus = {
  * cursor left them, and the list does not collapse and reflow. Only a first
  * read has nothing to show, and that is the one case that draws a skeleton.
  */
+/**
+ * Why a read failed. `forbidden` is the one failure a Retry cannot fix and the
+ * one that is not an error in anything: it renders as a warning naming the
+ * permission problem, with no Retry to press.
+ */
+type LoadFailure = { message: string; forbidden: boolean };
+
+/*
+ * `refreshFailure` is a Refresh that failed while rows were already on screen.
+ * The rows stay: a transient blip used to replace a hundred-row BOM with an
+ * error, destroying exactly the thing the user was reading.
+ */
 type PanelStatusState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "ready"; rows: PanelPartStatus[]; refreshing?: boolean }
+  | {
+      status: "ready";
+      rows: PanelPartStatus[];
+      refreshing?: boolean;
+      refreshFailure?: LoadFailure;
+    }
   | {
       status: "ready-assembly";
       assembly: PanelAssemblyStatus;
       refreshing?: boolean;
+      refreshFailure?: LoadFailure;
     }
-  | { status: "ready-other"; refreshing?: boolean }
-  | { status: "error"; message: string };
+  | {
+      status: "ready-other";
+      refreshing?: boolean;
+      refreshFailure?: LoadFailure;
+    }
+  | { status: "error"; message: string; forbidden?: boolean };
 
 type PanelReleasesState =
   | { status: "idle" }
   | { status: "loading" }
-  | { status: "ready"; releases: PanelRelease[]; refreshing?: boolean }
-  | { status: "error"; message: string };
+  | {
+      status: "ready";
+      releases: PanelRelease[];
+      refreshing?: boolean;
+      refreshFailure?: LoadFailure;
+    }
+  | { status: "error"; message: string; forbidden?: boolean };
 
 /** A property of the current element as the fields route lists it. */
 type PanelFieldsProperty = {
@@ -216,11 +249,18 @@ type PanelFieldsState =
       saving: boolean;
       /** A re-read is in flight; the rows on screen are the previous ones. */
       refreshing?: boolean;
+      /** A re-read failed; the rows on screen are the previous ones. */
+      refreshFailure?: LoadFailure;
       error: string | null;
+      /**
+       * The save landed but the field list could not be re-read. Not an
+       * error: the map is saved, and only the editor's options may be stale.
+       */
+      warning?: string;
       /** Per-property 422 errors, keyed by onshapePropertyId. */
       fieldErrors: Record<string, string[]>;
     }
-  | { status: "error"; message: string };
+  | { status: "error"; message: string; forbidden?: boolean };
 
 /**
  * The panel's pages. `push` is the current element — an assembly or a part
@@ -314,7 +354,12 @@ type PlanResponse<P> = {
 };
 
 /** Every panel error body is `{ error }`; a 422 apply adds per-row errors. */
-type PanelErrorResponse = { error: string; fieldErrors?: ApplyFieldError[] };
+type PanelErrorResponse = {
+  error: string;
+  fieldErrors?: ApplyFieldError[];
+  /** A machine-readable refusal the panel answers with an action, not just text. */
+  code?: "too-large";
+};
 
 type AssemblyPushSummary = {
   itemsCreated: number;
@@ -519,6 +564,61 @@ function PanelListSkeleton({ rows = 5 }: { rows?: number }) {
   );
 }
 
+/**
+ * A read that failed, in the one shape every section uses.
+ *
+ * A permission denial is a warning with no Retry — nothing is broken, and
+ * retrying cannot help. Anything else is destructive with a Retry in the alert
+ * itself, beside the message it answers. `stale` marks a failed Refresh over
+ * rows that are still on screen, which must say those rows are the old ones.
+ */
+function PanelLoadError({
+  title,
+  failure,
+  stale,
+  retrying,
+  onRetry
+}: {
+  title: string;
+  failure: LoadFailure;
+  stale?: boolean;
+  retrying?: boolean;
+  onRetry?: () => void;
+}) {
+  if (failure.forbidden) {
+    return (
+      <Alert variant="warning">
+        <LuTriangleAlert />
+        <AlertTitle>You don't have permission for this</AlertTitle>
+        <AlertDescription>{failure.message}</AlertDescription>
+      </Alert>
+    );
+  }
+  return (
+    <Alert variant="destructive">
+      <LuTriangleAlert />
+      <AlertTitle>{title}</AlertTitle>
+      <AlertDescription>
+        {failure.message}
+        {stale ? " Showing what was loaded before." : null}
+      </AlertDescription>
+      {onRetry ? (
+        <HStack className="mt-2">
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={onRetry}
+            isDisabled={retrying}
+            isLoading={retrying}
+          >
+            Retry
+          </Button>
+        </HStack>
+      ) : null}
+    </Alert>
+  );
+}
+
 function PanelEmpty({ children }: { children: ReactNode }) {
   return (
     <HStack
@@ -611,6 +711,9 @@ export function OnshapePanel({
     // draft is the whole company map: left open across a move it would edit
     // one element's map against another element's property list.
     setFields({ status: "closed" });
+    // A refusal or outcome is about the element it was produced for.
+    setAssemblyOutcome(null);
+    setAssemblyTooLarge(null);
     setTab("push");
   }, [elementScope, documentScope]);
 
@@ -618,6 +721,16 @@ export function OnshapePanel({
   useEffect(() => {
     if (session.status === "signed-out") {
       setReview(null);
+      /*
+       * Everything read under the old session goes with it. The next sign-in
+       * can be a different user or company, and `showTab` only reloads a
+       * section that is `closed` or `error` — so a kept property map was shown
+       * for, and saved against, the wrong company; and a section abandoned
+       * mid-read by a 401 stayed `loading` or `saving` with no way out.
+       */
+      setParts({ status: "idle" });
+      setReleases({ status: "idle" });
+      setFields({ status: "closed" });
       setTab("push");
     }
   }, [session.status]);
@@ -625,11 +738,23 @@ export function OnshapePanel({
   const loadParts = useCallback(
     async (token: string) => {
       if (!canLoadParts) return;
+      const fail = (message: string, forbidden: boolean) =>
+        setParts((current) =>
+          current.status === "ready" ||
+          current.status === "ready-assembly" ||
+          current.status === "ready-other"
+            ? {
+                ...current,
+                refreshing: false,
+                refreshFailure: { message, forbidden }
+              }
+            : { status: "error", message, forbidden }
+        );
       setParts((current) =>
         current.status === "ready" ||
         current.status === "ready-assembly" ||
         current.status === "ready-other"
-          ? { ...current, refreshing: true }
+          ? { ...current, refreshing: true, refreshFailure: undefined }
           : { status: "loading" }
       );
       try {
@@ -651,13 +776,10 @@ export function OnshapePanel({
           kind: (body as { kind?: string }).kind
         });
         if (!response.ok || "error" in body) {
-          setParts({
-            status: "error",
-            message:
-              "error" in body
-                ? body.error
-                : `Carbon answered ${response.status}`
-          });
+          fail(
+            "error" in body ? body.error : `Carbon answered ${response.status}`,
+            response.status === 403
+          );
           return;
         }
         if (body.kind === "assembly" && body.assembly) {
@@ -673,10 +795,7 @@ export function OnshapePanel({
           setParts({ status: "idle" });
           return;
         }
-        setParts({
-          status: "error",
-          message: error instanceof Error ? error.message : String(error)
-        });
+        fail(error instanceof Error ? error.message : String(error), false);
       }
     },
     [canLoadParts, context, paths.status]
@@ -685,9 +804,19 @@ export function OnshapePanel({
   const loadReleases = useCallback(
     async (token: string) => {
       if (!context.documentId) return;
+      const fail = (message: string, forbidden: boolean) =>
+        setReleases((current) =>
+          current.status === "ready"
+            ? {
+                ...current,
+                refreshing: false,
+                refreshFailure: { message, forbidden }
+              }
+            : { status: "error", message, forbidden }
+        );
       setReleases((current) =>
         current.status === "ready"
-          ? { ...current, refreshing: true }
+          ? { ...current, refreshing: true, refreshFailure: undefined }
           : { status: "loading" }
       );
       try {
@@ -697,13 +826,10 @@ export function OnshapePanel({
           | { releases: PanelRelease[] }
           | { error: string };
         if (!response.ok || "error" in body) {
-          setReleases({
-            status: "error",
-            message:
-              "error" in body
-                ? body.error
-                : `Carbon answered ${response.status}`
-          });
+          fail(
+            "error" in body ? body.error : `Carbon answered ${response.status}`,
+            response.status === 403
+          );
           return;
         }
         setReleases({ status: "ready", releases: body.releases });
@@ -712,10 +838,7 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        setReleases({
-          status: "error",
-          message: error instanceof Error ? error.message : String(error)
-        });
+        fail(error instanceof Error ? error.message : String(error), false);
       }
     },
     [context.documentId, paths.releases]
@@ -724,9 +847,30 @@ export function OnshapePanel({
   const loadFields = useCallback(
     async (token: string) => {
       if (!canLoadParts) return;
+      /*
+       * Every landing commits only while this read is still the one the
+       * section is waiting for: hiding it, or a move to another element,
+       * leaves `closed` behind and must not be undone when the answer arrives.
+       * A Refresh keeps the previous rows on screen and so stays `ready` with
+       * `refreshing` set — that is also a read in flight. Both the response
+       * path and the throw path go through this; the throw path once checked
+       * only `loading`, so a Refresh that threw spun forever and disabled Save.
+       */
+      const fail = (message: string, forbidden: boolean) =>
+        setFields((current) =>
+          current.status === "ready" && current.refreshing
+            ? {
+                ...current,
+                refreshing: false,
+                refreshFailure: { message, forbidden }
+              }
+            : current.status === "loading"
+              ? { status: "error", message, forbidden }
+              : current
+        );
       setFields((current) =>
         current.status === "ready"
-          ? { ...current, refreshing: true }
+          ? { ...current, refreshing: true, refreshFailure: undefined }
           : { status: "loading" }
       );
       try {
@@ -740,28 +884,13 @@ export function OnshapePanel({
         const body = (await response.json()) as
           | PanelFieldsData
           | { error: string };
-        /*
-         * Every landing commits only while this read is still the one the
-         * section is waiting for: hiding it, or a move to another element,
-         * leaves `closed` behind and must not be undone when the answer
-         * arrives. A Refresh keeps the previous rows on screen and so stays
-         * `ready` with `refreshing` set — that is also a read in flight, and
-         * leaving it out was the bug that made Refresh spin forever.
-         */
         const awaitingRead = (current: PanelFieldsState) =>
           current.status === "loading" ||
           (current.status === "ready" && !!current.refreshing);
         if (!response.ok || "error" in body) {
-          setFields((current) =>
-            awaitingRead(current)
-              ? {
-                  status: "error",
-                  message:
-                    "error" in body
-                      ? body.error
-                      : `Carbon answered ${response.status}`
-                }
-              : current
+          fail(
+            "error" in body ? body.error : `Carbon answered ${response.status}`,
+            response.status === 403
           );
           return;
         }
@@ -784,14 +913,7 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        setFields((current) =>
-          current.status === "loading"
-            ? {
-                status: "error",
-                message: error instanceof Error ? error.message : String(error)
-              }
-            : current
-        );
+        fail(error instanceof Error ? error.message : String(error), false);
       }
     },
     [canLoadParts, context, paths.fields]
@@ -929,20 +1051,25 @@ export function OnshapePanel({
   const [assemblyOutcome, setAssemblyOutcome] = useState<PushOutcome | null>(
     null
   );
+  /** The plan route refused the whole tree as too large; holds its message. */
+  const [assemblyTooLarge, setAssemblyTooLarge] = useState<string | null>(null);
   /*
-   * Always the whole tree. The route still takes a `depth`, and a `top` plan
-   * is still a valid thing to hold — it writes the root's BOM and leaves each
-   * sub-assembly as one line pointing at its own make method — but choosing
-   * per push was a question the panel could not help anyone answer: the cost
-   * it trades away (one request's size) is invisible until the push is too
-   * big, and the result it trades away (a real BOM below the top level) is
-   * the thing the user came for.
+   * The whole tree by default. Choosing a depth per push was a question the
+   * panel could not help anyone answer: the cost it trades away (one request's
+   * size) is invisible until the push is too big, and the result it trades away
+   * (a real BOM below the top level) is the thing the user came for.
+   *
+   * So `top` is offered only at the moment it is the answer — when the route
+   * refuses the whole tree as too large. The refusal counts distinct part
+   * numbers across the WHOLE tree whatever is already in Carbon, so pushing
+   * sub-assemblies first never lowers it; a level-only push is the one way out.
    */
   const planAssembly = useCallback(
-    async (token: string) => {
+    async (token: string, depth: AssemblyPlanDepth = "all") => {
       if (!canPush) return;
       setPushing(new Set(["__assembly__"]));
       setAssemblyOutcome(null);
+      setAssemblyTooLarge(null);
       try {
         const response = await panelFetch(token, paths.planAssembly, {
           method: "POST",
@@ -952,7 +1079,7 @@ export function OnshapePanel({
             wv: context.wv,
             wvId: context.wvId,
             elementId: context.elementId,
-            depth: "all" satisfies AssemblyPlanDepth
+            depth
           })
         });
         const body = (await response.json()) as
@@ -960,6 +1087,10 @@ export function OnshapePanel({
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
           setReview(null);
+          if ("error" in body && body.code === "too-large") {
+            setAssemblyTooLarge(body.error);
+            return;
+          }
           setAssemblyOutcome(
             failedOutcome(
               "error" in body
@@ -1153,7 +1284,8 @@ export function OnshapePanel({
         review.plan.rows.map((row) => row.partId)
       );
     } else if (review.kind === "assembly") {
-      void planAssembly(token);
+      // The same depth the expired review was built at, not the default.
+      void planAssembly(token, review.plan.depth);
     } else {
       void planRelease(token, review.plan.releaseId);
     }
@@ -1289,7 +1421,13 @@ export function OnshapePanel({
     async (token: string): Promise<boolean> => {
       if (fields.status !== "ready" || fields.saving) return false;
       const current = fields;
-      setFields({ ...current, saving: true, error: null, fieldErrors: {} });
+      setFields({
+        ...current,
+        saving: true,
+        error: null,
+        warning: undefined,
+        fieldErrors: {}
+      });
       try {
         const response = await panelFetch(token, paths.fields, {
           method: "POST",
@@ -1297,7 +1435,11 @@ export function OnshapePanel({
           body: JSON.stringify({ entries: current.entries })
         });
         const body = (await response.json()) as
-          | { map: PropertyMapEntry[] }
+          | {
+              map: PropertyMapEntry[];
+              definitions: PlanCustomFieldDefinition[] | null;
+              warning?: string;
+            }
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
           setFields({
@@ -1319,10 +1461,17 @@ export function OnshapePanel({
         // drift from the row.
         setFields({
           ...current,
-          data: { ...current.data, map: body.map },
+          data: {
+            ...current.data,
+            map: body.map,
+            // Null when the save landed but the re-read failed: keep the
+            // definitions already on screen rather than emptying every select.
+            definitions: body.definitions ?? current.data.definitions
+          },
           entries: body.map.map((entry) => ({ ...entry })),
           saving: false,
           error: null,
+          warning: body.warning,
           fieldErrors: {}
         });
         return true;
@@ -1726,7 +1875,10 @@ export function OnshapePanel({
                     busy={!!pushing}
                     refreshing={!!parts.refreshing}
                     outcome={assemblyOutcome}
+                    tooLarge={assemblyTooLarge}
+                    refreshFailure={parts.refreshFailure}
                     onPush={() => planAssembly(session.token)}
+                    onPushLevel={() => planAssembly(session.token, "top")}
                     onRefresh={() => loadParts(session.token)}
                   />
                 )
@@ -1850,6 +2002,7 @@ export function OnshapePanel({
                       state={fields}
                       onMap={mapFieldsProperty}
                       onMode={setFieldsMode}
+                      onRetry={() => loadFields(session.token)}
                     />
                   )}
                 </PanelSettingsSection>
@@ -1888,7 +2041,10 @@ function AssemblySection({
   refreshing,
   locked,
   outcome,
+  tooLarge,
+  refreshFailure,
   onPush,
+  onPushLevel,
   onRefresh
 }: {
   assembly: PanelAssemblyStatus;
@@ -1899,7 +2055,13 @@ function AssemblySection({
   /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
   outcome: PushOutcome | null;
+  /** The whole-tree push was refused as too large: the route's message. */
+  tooLarge: string | null;
+  /** A Refresh failed; the BOM on screen is the one loaded before it. */
+  refreshFailure?: LoadFailure;
   onPush: () => void;
+  /** Plan the root's own BOM only — the way out of a too-large refusal. */
+  onPushLevel: () => void;
   onRefresh: () => void;
 }) {
   return (
@@ -1937,10 +2099,56 @@ function AssemblySection({
         </HStack>
       </HStack>
 
+      {/* Two different causes, two different fixes: one is in Onshape, the
+          other is a read that will probably succeed on Refresh. */}
       {!assembly.root.partNumber ? (
-        <Alert variant="destructive">
+        assembly.root.identityUnavailable ? (
+          <Alert variant="warning">
+            <LuTriangleAlert />
+            <AlertTitle>Couldn't read this assembly's part number</AlertTitle>
+            <AlertDescription>
+              Onshape didn't return it this time. Press Refresh to try again.
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert variant="warning">
+            <LuTriangleAlert />
+            <AlertTitle>This assembly has no part number</AlertTitle>
+            <AlertDescription>
+              Set one on the assembly in Onshape, then press Refresh.
+            </AlertDescription>
+          </Alert>
+        )
+      ) : null}
+
+      {refreshFailure ? (
+        <PanelLoadError
+          title="Couldn't refresh the BOM"
+          failure={refreshFailure}
+          stale
+          retrying={refreshing}
+          onRetry={onRefresh}
+        />
+      ) : null}
+
+      {/* A refusal, not a failure: nothing is broken, and it carries the one
+          action that gets the user past it. */}
+      {tooLarge ? (
+        <Alert variant="warning">
           <LuTriangleAlert />
-          <AlertTitle>The assembly has no part number</AlertTitle>
+          <AlertTitle>This assembly is too large for one push</AlertTitle>
+          <AlertDescription>{tooLarge}</AlertDescription>
+          <HStack className="mt-2">
+            <Button
+              size="sm"
+              variant="secondary"
+              onClick={onPushLevel}
+              isDisabled={busy || locked || refreshing}
+              isLoading={busy}
+            >
+              Push this level only
+            </Button>
+          </HStack>
         </Alert>
       ) : null}
 
@@ -2159,8 +2367,13 @@ function PartsSection({
   parts:
     | { status: "idle" }
     | { status: "loading" }
-    | { status: "ready"; rows: PanelPartStatus[]; refreshing?: boolean }
-    | { status: "error"; message: string };
+    | {
+        status: "ready";
+        rows: PanelPartStatus[];
+        refreshing?: boolean;
+        refreshFailure?: LoadFailure;
+      }
+    | { status: "error"; message: string; forbidden?: boolean };
   canPush: boolean;
   pushing: Set<string> | null;
   /** A review is open elsewhere: a second push would replace it unseen. */
@@ -2212,11 +2425,21 @@ function PartsSection({
       ) : null}
 
       {parts.status === "error" ? (
-        <Alert variant="destructive">
-          <LuTriangleAlert />
-          <AlertTitle>Couldn't load part status</AlertTitle>
-          <AlertDescription>{parts.message}</AlertDescription>
-        </Alert>
+        <PanelLoadError
+          title="Couldn't load part status"
+          failure={{ message: parts.message, forbidden: !!parts.forbidden }}
+          onRetry={onRefresh}
+        />
+      ) : null}
+
+      {parts.status === "ready" && parts.refreshFailure ? (
+        <PanelLoadError
+          title="Couldn't refresh part status"
+          failure={parts.refreshFailure}
+          stale
+          retrying={!!parts.refreshing}
+          onRetry={onRefresh}
+        />
       ) : null}
 
       {parts.status === "ready" && rows.length === 0 ? (
@@ -2319,11 +2542,24 @@ function ReleasesSection({
       ) : null}
 
       {releases.status === "error" ? (
-        <Alert variant="destructive">
-          <LuTriangleAlert />
-          <AlertTitle>Couldn't load releases</AlertTitle>
-          <AlertDescription>{releases.message}</AlertDescription>
-        </Alert>
+        <PanelLoadError
+          title="Couldn't load releases"
+          failure={{
+            message: releases.message,
+            forbidden: !!releases.forbidden
+          }}
+          onRetry={onRefresh}
+        />
+      ) : null}
+
+      {releases.status === "ready" && releases.refreshFailure ? (
+        <PanelLoadError
+          title="Couldn't refresh releases"
+          failure={releases.refreshFailure}
+          stale
+          retrying={!!releases.refreshing}
+          onRetry={onRefresh}
+        />
       ) : null}
 
       {releases.status === "ready" && releases.releases.length === 0 ? (
@@ -2409,11 +2645,13 @@ function ReleasesSection({
 function FieldsSection({
   state,
   onMap,
-  onMode
+  onMode,
+  onRetry
 }: {
   state: Exclude<PanelFieldsState, { status: "closed" }>;
   onMap: (property: PanelFieldsProperty, selection: string) => void;
   onMode: (propertyId: string, mode: "owned" | "default") => void;
+  onRetry: () => void;
 }) {
   if (state.status === "loading") {
     /*
@@ -2430,11 +2668,11 @@ function FieldsSection({
   }
   if (state.status === "error") {
     return (
-      <Alert variant="destructive">
-        <LuTriangleAlert />
-        <AlertTitle>Couldn't load properties</AlertTitle>
-        <AlertDescription>{state.message}</AlertDescription>
-      </Alert>
+      <PanelLoadError
+        title="Couldn't load properties"
+        failure={{ message: state.message, forbidden: !!state.forbidden }}
+        onRetry={onRetry}
+      />
     );
   }
   const { data } = state;
@@ -2471,6 +2709,22 @@ function FieldsSection({
     }));
   return (
     <VStack spacing={2} className="w-full">
+      {state.refreshFailure ? (
+        <PanelLoadError
+          title="Couldn't refresh properties"
+          failure={state.refreshFailure}
+          stale
+          retrying={!!state.refreshing}
+          onRetry={onRetry}
+        />
+      ) : null}
+      {state.warning ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>Custom field list may be out of date</AlertTitle>
+          <AlertDescription>{state.warning}</AlertDescription>
+        </Alert>
+      ) : null}
       {state.error ? (
         <Alert variant="destructive">
           <LuTriangleAlert />

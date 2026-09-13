@@ -14,6 +14,7 @@ import {
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
+  onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
 import type { ActionFunctionArgs } from "react-router";
@@ -79,12 +80,8 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     revisions = await onshape.client.getDocumentRevisions(documentId);
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error);
+    return data(failure.body, { status: failure.status });
   }
 
   const release = groupRevisionsIntoReleases(revisions.items ?? []).find(
@@ -189,7 +186,7 @@ export async function action({ request }: ActionFunctionArgs) {
       bomLinesByElementId[item.elementId] = null;
       warnings.push(
         `${item.partNumber} Rev ${item.revision}: ${
-          error instanceof Error ? error.message : "Onshape BOM request failed"
+          onshapeFailure(error, "bom").body.error
         }`
       );
     }
@@ -238,7 +235,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const saved = await createPanelPlan({ companyId, userId, plan: stored });
   if (!saved) {
     return data(
-      { error: "Could not save the review — try again" },
+      { error: "Carbon couldn't save this review. Try again." },
       { status: 503 }
     );
   }
