@@ -778,14 +778,21 @@ describe("describeMethod", () => {
     });
   });
 
-  it("flags active and missing methods as destructive", () => {
-    expect(describeMethod(method({ status: "active" }), new Set())).toEqual({
-      text: "ASM-001 · released in Carbon — lines will not be applied",
-      tone: "destructive"
+  it("describes a released method as a new Draft version, with its counts", () => {
+    // The push writes a Draft copy rather than skipping a released method, so
+    // the review must not promise a no-op.
+    const described = describeMethod(method({ status: "active" }), new Set());
+    expect(described).toEqual({
+      text: "ASM-001 · released in Carbon — new Draft version: 2 added, 0 replaced, 0 manual kept",
+      tone: "notice"
     });
+    expect(described.text).not.toMatch(/will not be applied/);
+  });
+
+  it("warns that a method missing in Carbon won't be written", () => {
     expect(describeMethod(method({ status: "missing" }), new Set())).toEqual({
-      text: "ASM-001 · no make method",
-      tone: "destructive"
+      text: "ASM-001 · no make method in Carbon, so its lines won't be written",
+      tone: "warning"
     });
   });
 
