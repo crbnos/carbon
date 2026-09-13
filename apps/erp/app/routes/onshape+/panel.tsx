@@ -42,6 +42,7 @@ export default function OnshapePanelRoute() {
         session: path.to.api.onShapePanelSession,
         status: path.to.api.onShapePanelStatus,
         fields: path.to.api.onShapePanelFields,
+        preferences: path.to.api.onShapePanelPreferences,
         planPart: path.to.api.onShapePanelPlanPart,
         planAssembly: path.to.api.onShapePanelPlanAssembly,
         planRelease: path.to.api.onShapePanelPlanRelease,
