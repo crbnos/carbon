@@ -1010,21 +1010,33 @@ export async function action({ request }: ActionFunctionArgs) {
   for (const target of assetTargets) {
     // The event id makes a retried apply idempotent per item + element: the
     // job spends live quota on every execution.
-    await trigger(
-      "onshape-panel-sync",
-      {
-        companyId,
-        userId,
-        itemId: target.itemId,
-        documentId: plan.documentId,
-        wvm: "v",
-        wvmId: target.item.versionId,
-        elementId: target.item.elementId,
-        elementKind: target.kind,
-        assetBaseName: `${target.item.partNumber}-${target.item.revision}`
-      },
-      { id: `${planId}:${target.itemId}:${target.item.elementId}` }
-    );
+    //
+    // Guarded per target, for the reason push-assembly gives: the writes have
+    // landed, so a queue failure is a partial success, not a failed push —
+    // and one target failing must not stop the rest being queued.
+    try {
+      await trigger(
+        "onshape-panel-sync",
+        {
+          companyId,
+          userId,
+          itemId: target.itemId,
+          documentId: plan.documentId,
+          wvm: "v",
+          wvmId: target.item.versionId,
+          elementId: target.item.elementId,
+          elementKind: target.kind,
+          assetBaseName: `${target.item.partNumber}-${target.item.revision}`
+        },
+        { id: `${planId}:${target.itemId}:${target.item.elementId}` }
+      );
+    } catch {
+      summary.errors.push(
+        `${target.item.partNumber} Rev ${target.item.revision}: pushed, but the ${
+          target.kind === "drawing" ? "drawing" : "model"
+        } export couldn't be queued. Push again to retry the export.`
+      );
+    }
   }
 
   return data({ summary }, { headers: { "Cache-Control": "no-store" } });
