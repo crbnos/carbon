@@ -942,21 +942,32 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // One export per applied plan: a retried apply with the same plan and item
   // is the same event to Inngest.
-  await trigger(
-    "onshape-panel-sync",
-    {
-      companyId,
-      userId,
-      itemId: rootItem.id,
-      documentId,
-      wvm: wv,
-      wvmId: wvId,
-      elementId,
-      elementKind: "assembly",
-      assetBaseName: root.partNumber
-    },
-    { id: `${planId}:${rootItem.id}:${elementId}` }
-  );
+  //
+  // Guarded: every write above has already landed. Unguarded, a queue failure
+  // escaped the action, the panel got a non-JSON error page, and a push that
+  // wrote everything read as "Couldn't push" — inviting a second push. It is
+  // a partial success and reports as one, as the part route already does.
+  try {
+    await trigger(
+      "onshape-panel-sync",
+      {
+        companyId,
+        userId,
+        itemId: rootItem.id,
+        documentId,
+        wvm: wv,
+        wvmId: wvId,
+        elementId,
+        elementKind: "assembly",
+        assetBaseName: root.partNumber
+      },
+      { id: `${planId}:${rootItem.id}:${elementId}` }
+    );
+  } catch {
+    summary.errors.push(
+      `${root.partNumber}: pushed, but the model export couldn't be queued. Push again to retry the export.`
+    );
+  }
 
   return data({ summary }, { headers: { "Cache-Control": "no-store" } });
 }

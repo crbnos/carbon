@@ -18,6 +18,7 @@ import {
   loadPartCustomFieldDefinitions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
+  onshapeFailure,
   readPartProperties
 } from "@carbon/ee/onshape";
 import { sql } from "kysely";
@@ -123,12 +124,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error);
+    return data(failure.body, { status: failure.status });
   }
 
   // The map lives on the integration's metadata; `getOnshapeClient` read the
@@ -342,22 +339,24 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Definitions re-read so a field created above appears with its id — the
-  // panel swaps its editor state for this response wholesale. The map is
-  // saved by now, so a throw here is reported as what it is: the refresh
-  // failed, not the save.
-  let definitions: PlanCustomFieldDefinition[];
+  /*
+   * Definitions are re-read so the editor shows the fields as they now stand.
+   * The map is saved by this point, so a failure here is NOT a failed save and
+   * must not answer like one: a 500 made the panel say "Couldn't save the map"
+   * about a saved map, keep the draft dirty, and invite a second save. It is a
+   * 200 with the definitions missing and a warning saying exactly that.
+   */
+  let definitions: PlanCustomFieldDefinition[] | null = null;
+  let warning: string | undefined;
   try {
     definitions = await loadPartCustomFieldDefinitions(client, companyId);
   } catch {
-    return data(
-      { error: "The map was saved but the custom fields could not be read" },
-      { status: 500 }
-    );
+    warning =
+      "Saved. The custom field list couldn't be refreshed — press Refresh to see the latest fields.";
   }
 
   return data(
-    { map: mapEntries, definitions },
+    { map: mapEntries, definitions, ...(warning ? { warning } : {}) },
     { headers: { "Cache-Control": "no-store" } }
   );
 }

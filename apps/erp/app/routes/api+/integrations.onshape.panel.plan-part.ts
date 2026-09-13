@@ -13,6 +13,7 @@ import {
   loadPlanOptions,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
+  onshapeFailure,
   readPartProperties,
   selectInBatches
 } from "@carbon/ee/onshape";
@@ -91,12 +92,8 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     parts = await onshape.client.getPartsInElement(document, elementId);
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error);
+    return data(failure.body, { status: failure.status });
   }
   // Hidden parts are not shown in the panel, so they cannot be pushed either.
   parts = parts.filter((part) => !part.isHidden);
@@ -227,13 +224,8 @@ export async function action({ request }: ActionFunctionArgs) {
       // A property read that fails would silently break the owned-field
       // promise if the plan went out without values, so it fails the plan
       // the same way the part-list read does.
-      return data(
-        {
-          error:
-            error instanceof Error ? error.message : "Onshape request failed"
-        },
-        { status: 502 }
-      );
+      const failure = onshapeFailure(error);
+      return data(failure.body, { status: failure.status });
     }
     for (const row of resolvable) {
       const resolved = resolveMappedFields({
@@ -265,7 +257,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const stored = await createPanelPlan({ companyId, userId, plan });
   if (!stored) {
     return data(
-      { error: "Carbon could not store this review — try again" },
+      { error: "Carbon couldn't save this review. Try again." },
       { status: 503 }
     );
   }

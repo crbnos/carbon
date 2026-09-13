@@ -58,5 +58,37 @@ export async function panelFetch(
     clearPanelSessionToken();
     throw new PanelUnauthorizedError();
   }
-  return response;
+  return normalizeErrorBody(response);
+}
+
+/** Copy a permission denial can carry, whatever the server's body said. */
+export const PANEL_FORBIDDEN_MESSAGE =
+  "Your Carbon account doesn't have permission for this. Ask an admin in Carbon to grant it.";
+
+/**
+ * Every caller reads a failed response as `{ error }` JSON, and two kinds of
+ * failure are not JSON: a permission denial (`requirePermissions` throws a
+ * plain-text "Forbidden") and anything a gateway or the framework answers with
+ * an HTML page. `response.json()` then threw, the catch rendered the parser's
+ * own message, and a user without a permission saw
+ * `Unexpected token 'F', "Forbidden" is not valid JSON` in every section.
+ *
+ * Normalising here fixes all eleven call sites at once instead of teaching each
+ * to parse defensively. A successful response is never touched.
+ */
+async function normalizeErrorBody(response: Response): Promise<Response> {
+  if (response.ok) return response;
+  const isJson = (response.headers.get("Content-Type") ?? "").includes(
+    "application/json"
+  );
+  if (response.status !== 403 && isJson) return response;
+
+  const error =
+    response.status === 403
+      ? PANEL_FORBIDDEN_MESSAGE
+      : `Carbon returned an unexpected response (HTTP ${response.status}). Try again.`;
+  return new Response(JSON.stringify({ error, status: response.status }), {
+    status: response.status,
+    headers: { "Content-Type": "application/json" }
+  });
 }

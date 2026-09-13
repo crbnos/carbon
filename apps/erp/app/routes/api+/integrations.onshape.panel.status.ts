@@ -13,6 +13,7 @@ import {
   getOnshapeClient,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
+  onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
@@ -81,12 +82,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
           ? "partstudio"
           : "other";
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error);
+    return data(failure.body, { status: failure.status });
   }
 
   if (kind === "other") {
@@ -98,13 +95,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       bom = await onshape.client.getBillOfMaterialsIn(document, elementId);
     } catch (error) {
-      return data(
-        {
-          error:
-            error instanceof Error ? error.message : "Onshape request failed"
-        },
-        { status: 502 }
-      );
+      const failure = onshapeFailure(error, "bom");
+      return data(failure.body, { status: failure.status });
     }
 
     const { root: bomRoot, lines } = parseBomTree(bom);
@@ -112,6 +104,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // metadata (one cached call).
     let rootPartNumber = bomRoot?.partNumber ?? null;
     let rootName = bomRoot?.name ?? null;
+    // Kept non-fatal — the BOM itself read fine — but no longer silent. A null
+    // part number used to mean either "Onshape has none" or "we never managed
+    // to ask", and the panel answered both by telling the user to fix their
+    // Onshape data.
+    let rootIdentityUnavailable = false;
     try {
       const metadata = await onshape.client.getElementMetadata(
         document,
@@ -121,7 +118,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         metadataProperty(metadata, "Part number") ?? rootPartNumber;
       rootName = metadataProperty(metadata, "Name") ?? rootName;
     } catch {
-      // Identity stays null; the panel asks for a part number.
+      rootIdentityUnavailable = true;
     }
     const flat: PanelAssemblyLineInput[] = [];
     const walk = (nodes: ReturnType<typeof parseBomTree>["lines"]) => {
@@ -184,9 +181,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
     ]);
 
-    if (lineMappings.error) {
+    /*
+     * Every read is checked, not just the mappings. `selectInBatches` returns
+     * `{ data: [], error }` on a failure, which is indistinguishable from "no
+     * rows" — so an unchecked item read rendered every line "Not in Carbon",
+     * and the user's reasonable next step was to push parts that already exist.
+     */
+    if (lineMappings.error || rootMapping.error || items.error) {
       return data(
-        { error: "Failed to read Onshape mappings" },
+        {
+          error:
+            "Carbon couldn't read its items for this assembly. Press Refresh to try again."
+        },
         { status: 500 }
       );
     }
@@ -211,6 +217,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("companyId", companyId)
         .in("id", batch)
     );
+    if (mappedResult.error) {
+      return data(
+        {
+          error:
+            "Carbon couldn't read its items for this assembly. Press Refresh to try again."
+        },
+        { status: 500 }
+      );
+    }
     const mappedItems = mappedResult.data as PanelItemRow[];
     const allItems = [...assemblyItems, ...mappedItems];
 
@@ -231,6 +246,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
           root: {
             partNumber: rootPartNumber,
             name: rootName,
+            identityUnavailable: rootIdentityUnavailable,
             state: rootLinkedItem
               ? ("linked" as const)
               : rootItem
@@ -256,12 +272,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     parts = await onshape.client.getPartsInElement(document, elementId);
   } catch (error) {
-    return data(
-      {
-        error: error instanceof Error ? error.message : "Onshape request failed"
-      },
-      { status: 502 }
-    );
+    const failure = onshapeFailure(error);
+    return data(failure.body, { status: failure.status });
   }
 
   const [mappings, matches] = await Promise.all([
@@ -286,8 +298,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })()
   ]);
 
-  if (mappings.error) {
-    return data({ error: "Failed to read Onshape mappings" }, { status: 500 });
+  // As on the assembly path: a failed batch read looks like "no rows".
+  if (mappings.error || matches.error) {
+    return data(
+      {
+        error:
+          "Carbon couldn't read its items for these parts. Press Refresh to try again."
+      },
+      { status: 500 }
+    );
   }
 
   const mappedItemIds = (mappings.data ?? [])
@@ -300,6 +319,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .in("id", batch)
   );
+  if (mappedResult.error) {
+    return data(
+      {
+        error:
+          "Carbon couldn't read its items for these parts. Press Refresh to try again."
+      },
+      { status: 500 }
+    );
+  }
   const mappedItems = mappedResult.data as PanelItemRow[];
 
   const statuses = buildPartStatuses({
