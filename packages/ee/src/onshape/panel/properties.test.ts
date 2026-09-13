@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import type { PropertyMapEntry } from "./properties";
 import {
+  CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
+  MAPPABLE_VALUE_TYPES,
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   missingListOptions,
@@ -8,6 +11,7 @@ import {
   parsePropertyMap,
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
+  propertyMapEqual,
   resolveMappedFields
 } from "./properties";
 
@@ -336,5 +340,107 @@ describe("mergeCustomFieldValues / missingListOptions", () => {
   it("lists unseen options for list fields only", () => {
     expect(missingListOptions(listField, ["A", "C", "C", null])).toEqual(["C"]);
     expect(missingListOptions(textField, ["A"])).toEqual([]);
+  });
+});
+
+describe("MAPPABLE_VALUE_TYPES", () => {
+  /*
+   * The supported set is a product decision, not an implementation detail:
+   * one Carbon type per Onshape value type, every textual type on Text. A
+   * pushed property is reference data Onshape owns, so Carbon holds a
+   * faithful copy rather than a constrained one.
+   */
+  it("offers exactly one target per value type", () => {
+    expect(MAPPABLE_VALUE_TYPES).toEqual({
+      STRING: [CUSTOM_FIELD_DATA_TYPES.text],
+      ENUM: [CUSTOM_FIELD_DATA_TYPES.text],
+      BOOL: [CUSTOM_FIELD_DATA_TYPES.boolean],
+      INT: [CUSTOM_FIELD_DATA_TYPES.numeric],
+      DOUBLE: [CUSTOM_FIELD_DATA_TYPES.numeric],
+      DATE: [CUSTOM_FIELD_DATA_TYPES.date],
+      OBJECT: [CUSTOM_FIELD_DATA_TYPES.text]
+    });
+  });
+
+  it("never offers a List target, so no new map can constrain a value", () => {
+    for (const targets of Object.values(MAPPABLE_VALUE_TYPES)) {
+      expect(targets).not.toContain(CUSTOM_FIELD_DATA_TYPES.list);
+    }
+  });
+
+  it("leaves the unsupported types out rather than coercing them", () => {
+    for (const valueType of ["COMPUTED", "CATEGORY", "USER", "BLOB"]) {
+      expect(Object.hasOwn(MAPPABLE_VALUE_TYPES, valueType)).toBe(false);
+    }
+  });
+
+  /* A List field a legacy map still points at keeps its option sync. */
+  it("still fills a legacy List field's missing options", () => {
+    expect(missingListOptions(listField, ["A", "C"])).toEqual(["C"]);
+  });
+});
+
+describe("propertyMapEqual", () => {
+  const entry = (onshapePropertyId: string, carbonFieldId: string) => ({
+    onshapePropertyId,
+    carbonFieldId,
+    mode: "owned" as const
+  });
+
+  it("ignores the order the entries arrive in", () => {
+    // Editing one row moves it to the end of the draft, so a positional
+    // comparison would call every map dirty after a single click.
+    expect(
+      propertyMapEqual(
+        [entry("p1", "f1"), entry("p2", "f2")],
+        [entry("p2", "f2"), entry("p1", "f1")]
+      )
+    ).toBe(true);
+  });
+
+  it("notices a remapped field, a changed mode, and a removed row", () => {
+    const base = [entry("p1", "f1"), entry("p2", "f2")];
+    expect(propertyMapEqual(base, [entry("p1", "f9"), entry("p2", "f2")])).toBe(
+      false
+    );
+    expect(
+      propertyMapEqual(base, [
+        { ...entry("p1", "f1"), mode: "default" },
+        entry("p2", "f2")
+      ])
+    ).toBe(false);
+    expect(propertyMapEqual(base, [entry("p1", "f1")])).toBe(false);
+  });
+
+  it("notices a row mapped to a different property id", () => {
+    expect(propertyMapEqual([entry("p1", "f1")], [entry("p2", "f1")])).toBe(
+      false
+    );
+  });
+
+  it("ignores the display fields a load refreshes from Onshape", () => {
+    // onshapeName and valueType are re-read on every load; a rename in
+    // Onshape is not an unsaved decision by the user. Typed as the stored
+    // entry, which is what both callers actually hand it.
+    const stored: PropertyMapEntry[] = [
+      { ...entry("p1", "f1"), onshapeName: "Vendor", valueType: "STRING" }
+    ];
+    const renamed: PropertyMapEntry[] = [
+      { ...entry("p1", "f1"), onshapeName: "Supplier", valueType: "ENUM" }
+    ];
+    expect(propertyMapEqual(stored, renamed)).toBe(true);
+  });
+
+  it("holds for two empty maps", () => {
+    expect(propertyMapEqual([], [])).toBe(true);
+  });
+
+  it("does not call a duplicated key equal to two distinct ones", () => {
+    expect(
+      propertyMapEqual(
+        [entry("p1", "f1"), entry("p1", "f1")],
+        [entry("p1", "f1"), entry("p2", "f1")]
+      )
+    ).toBe(false);
   });
 });

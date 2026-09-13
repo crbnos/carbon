@@ -83,14 +83,25 @@ export const CUSTOM_FIELD_DATA_TYPES = {
  * Which Carbon data types an Onshape value type may map onto. First entry is
  * what "Create field" provisions. Types absent here (USER, BLOB, computed
  * OBJECTs other than Material's display name) are not mappable.
+ *
+ * One target per value type, and every textual type lands on Text. A pushed
+ * property is REFERENCE data: Onshape is where it is authored and validated,
+ * and Carbon holds a copy for someone to read on the item. A List target
+ * would constrain a value Carbon does not own — Onshape's option set can gain
+ * a value mid-push, and a free-text property pointed at a dropdown turns the
+ * list into a bin for its typos. Text keeps the copy faithful.
+ *
+ * Numbers and dates keep their real types rather than becoming text, because
+ * Carbon sorts, filters and renders those columns by type; a numeric shipped
+ * as text sorts "10" before "9".
  */
 export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
-  STRING: [CUSTOM_FIELD_DATA_TYPES.text, CUSTOM_FIELD_DATA_TYPES.list],
+  STRING: [CUSTOM_FIELD_DATA_TYPES.text],
   BOOL: [CUSTOM_FIELD_DATA_TYPES.boolean],
   INT: [CUSTOM_FIELD_DATA_TYPES.numeric],
   DOUBLE: [CUSTOM_FIELD_DATA_TYPES.numeric],
   DATE: [CUSTOM_FIELD_DATA_TYPES.date],
-  ENUM: [CUSTOM_FIELD_DATA_TYPES.list, CUSTOM_FIELD_DATA_TYPES.text],
+  ENUM: [CUSTOM_FIELD_DATA_TYPES.text],
   // Material and similar objects map as their display name.
   OBJECT: [CUSTOM_FIELD_DATA_TYPES.text]
 };
@@ -276,6 +287,46 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
 }
 
 /**
+ * What a mapping decision is, for comparing two maps.
+ *
+ * Looser than `PropertyMapEntry` because the editor's draft carries an
+ * unmapped row as an entry with no field yet; `onshapeName` and `valueType`
+ * are display, re-read from Onshape on every load, and a change in either is
+ * not a decision the user made.
+ */
+type PropertyMapDecision = {
+  onshapePropertyId: string;
+  carbonFieldId?: string;
+  mode: "owned" | "default";
+};
+
+/**
+ * Whether two property maps say the same thing, order ignored.
+ *
+ * The Settings page has one Save for the whole page, so it has to know
+ * whether the map has anything to write. Order is ignored because editing one
+ * row moves it to the end of the draft — comparing positionally would call
+ * every map dirty after a single click, and the save posts the whole map.
+ */
+export function propertyMapEqual(
+  a: readonly PropertyMapDecision[],
+  b: readonly PropertyMapDecision[]
+): boolean {
+  if (a.length !== b.length) return false;
+  const index = new Map(a.map((entry) => [entry.onshapePropertyId, entry]));
+  for (const entry of b) {
+    const other = index.get(entry.onshapePropertyId);
+    if (!other) return false;
+    if (other.carbonFieldId !== entry.carbonFieldId) return false;
+    if (other.mode !== entry.mode) return false;
+  }
+  // Equal lengths plus every `b` key present in `a` leaves no room for a
+  // duplicate key to hide a difference: a duplicate in `b` would have to
+  // match a key `a` also holds twice, and the map keeps only one of those.
+  return index.size === a.length;
+}
+
+/**
  * Resolve one object's properties through the map: the fields apply would
  * write (with coercion problems surfaced, not silently dropped) and the
  * valued properties nothing maps yet — the review shows those as "not
@@ -411,7 +462,15 @@ export function mergeCustomFieldValues(
   return out;
 }
 
-/** List options a List field is missing for the values about to be written. */
+/**
+ * List options a List field is missing for the values about to be written.
+ *
+ * No new mapping can target a List field — every textual type maps to Text
+ * (see MAPPABLE_VALUE_TYPES) — so this only ever fires for a map written
+ * before that narrowing. It stays because those maps still push: a value
+ * written to a List field whose options do not include it renders blank in
+ * every table that reads the field as a select.
+ */
 export function missingListOptions(
   definition: PlanCustomFieldDefinition,
   values: Array<string | number | boolean | null>
