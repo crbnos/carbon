@@ -655,6 +655,61 @@ function PanelListSkeleton({ rows = 5 }: { rows?: number }) {
 }
 
 /**
+ * A warning listing things, bounded.
+ *
+ * Skipped BOM components arrive one per occurrence, so a real assembly lists
+ * the same fastener dozens of times: a 300-line assembly produced a 314-item
+ * alert several screens tall, burying the Push bar it was meant to inform.
+ * Identical lines fold into one with a count, and only the first few show
+ * until asked. The title counts occurrences, since that is what the push
+ * leaves out.
+ */
+const CAPPED_WARNING_VISIBLE = 6;
+
+function CappedWarningList({
+  title,
+  lines
+}: {
+  title: (count: number) => string;
+  lines: string[];
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const folded = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const line of lines) counts.set(line, (counts.get(line) ?? 0) + 1);
+    return [...counts.entries()];
+  }, [lines]);
+  const visible = expanded ? folded : folded.slice(0, CAPPED_WARNING_VISIBLE);
+  const hidden = folded.length - visible.length;
+  return (
+    <Alert variant="warning">
+      <LuTriangleAlert />
+      <AlertTitle>{title(lines.length)}</AlertTitle>
+      <AlertDescription>
+        <ul className="list-disc space-y-1 pl-4">
+          {visible.map(([line, count]) => (
+            <li key={line}>
+              {line}
+              {count > 1 ? ` (×${count})` : null}
+            </li>
+          ))}
+        </ul>
+        {hidden > 0 || expanded ? (
+          <Button
+            variant="link"
+            size="sm"
+            className="mt-1 h-auto p-0"
+            onClick={() => setExpanded((current) => !current)}
+          >
+            {expanded ? "Show fewer" : `Show ${hidden} more`}
+          </Button>
+        ) : null}
+      </AlertDescription>
+    </Alert>
+  );
+}
+
+/**
  * A read that failed, in the one shape every section uses.
  *
  * A permission denial is a warning with no Retry — nothing is broken, and
@@ -4488,21 +4543,14 @@ function AssemblyReviewSection({
         return (
           <>
             {wontWrite.length > 0 ? (
-              <Alert variant="warning">
-                <LuTriangleAlert />
-                <AlertTitle>
-                  {wontWrite.length === 1
+              <CappedWarningList
+                title={(n) =>
+                  n === 1
                     ? "1 thing won't be written"
-                    : `${wontWrite.length} things won't be written`}
-                </AlertTitle>
-                <AlertDescription>
-                  <ul className="list-disc space-y-1 pl-4">
-                    {wontWrite.map((line, index) => (
-                      <li key={`${index}-${line}`}>{line}</li>
-                    ))}
-                  </ul>
-                </AlertDescription>
-              </Alert>
+                    : `${n} things won't be written`
+                }
+                lines={wontWrite}
+              />
             ) : null}
             {drafts.length > 0 ? (
               <Alert variant="info">
