@@ -112,11 +112,17 @@ OAuth credentials for each connector, all optional, set only the ones you use.
 <EnvVar name="JIRA_CLIENT_SECRET" type="string">Jira OAuth client secret.</EnvVar>
 <EnvVar name="SLACK_CLIENT_ID" type="string">Slack OAuth client id.</EnvVar>
 <EnvVar name="SLACK_CLIENT_SECRET" type="string">Slack OAuth client secret.</EnvVar>
-<EnvVar name="ONSHAPE_CLIENT_ID" type="string">Onshape OAuth client id.</EnvVar>
+<EnvVar name="ONSHAPE_CLIENT_ID" type="string">Onshape OAuth client id. Shared by both Onshape integrations; neither card appears without it.</EnvVar>
 <EnvVar name="ONSHAPE_CLIENT_SECRET" type="string">Onshape OAuth client secret.</EnvVar>
+<EnvVar name="ONSHAPE_OAUTH_REDIRECT_URL" type="url">Callback for the pull integration (`onshape`): `https://<erp-host>/api/integrations/onshape/oauth`. Must be registered on the Onshape OAuth application.</EnvVar>
+<EnvVar name="ONSHAPE_V2_OAUTH_REDIRECT_URL" type="url">Callback for the panel integration (`onshape-v2`): `https://<erp-host>/api/integrations/onshape-v2/oauth`. Register it as a second redirect URI on the same Onshape application. Without it the Onshape V2 Connect button fails with "Onshape isn't configured".</EnvVar>
 <EnvVar name="EXCHANGE_RATES_API_KEY" type="string">Currency exchange-rate feed.</EnvVar>
 <EnvVar name="GOOGLE_PLACES_API_KEY" type="string">Address autocomplete.</EnvVar>
 </EnvVars>
+
+The Onshape panel also needs an extension registered on the Onshape application and the
+panel's users subscribed to it — see [CAD](/docs/integrations/cad). Panel sessions and push
+reviews are held in Redis, so `REDIS_URL` is required for the panel to work.
 
 ## Infrastructure — SST
 
