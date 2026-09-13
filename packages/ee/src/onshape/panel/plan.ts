@@ -1,5 +1,6 @@
 import type { OnshapeElementPart } from "../lib/client";
 import type { OnshapeBomNode } from "./bom";
+import type { OnshapePushDefaults } from "./preferences";
 import type { PlanCustomField, UnmappedProperty } from "./properties";
 import type { PanelRelease, PanelReleaseItem } from "./releases";
 import { isModelReleaseItem } from "./releases";
@@ -64,7 +65,11 @@ export const ITEM_NAME_MAX_LENGTH = 255;
 export const ITEM_DESCRIPTION_MAX_LENGTH = 2000;
 
 export type PlanUnitOfMeasure = { code: string; name: string };
-export type PlanOptions = { unitsOfMeasure: PlanUnitOfMeasure[] };
+export type PlanOptions = {
+  unitsOfMeasure: PlanUnitOfMeasure[];
+  /** The company's configured push defaults; see `./preferences`. */
+  defaults: OnshapePushDefaults;
+};
 
 /** The row a create would write, before and after the user's edits. */
 export type ProposedItem = {
@@ -182,6 +187,11 @@ export type PlanLine = {
 /** "EA" when the company has it, else its first unit — never a code it lacks. */
 export function defaultUnitOfMeasureCode(options: PlanOptions): string {
   const codes = options.unitsOfMeasure.map((u) => u.code);
+  // The configured unit wins, but only while the company still has it: a unit
+  // the settings name and the company deleted would fail the same validation
+  // `mergeItemEdits` applies to a user's edit.
+  const configured = options.defaults.unitOfMeasureCode;
+  if (configured && codes.includes(configured)) return configured;
   if (codes.includes("EA")) return "EA";
   return codes[0] ?? "EA";
 }
@@ -204,14 +214,19 @@ export function proposeItem(
   const purchased = input.purchased === true;
   const name = (input.name ?? "").trim();
   const description = (input.description ?? "").trim();
+  const defaults = options.defaults;
   return {
     readableId: input.partNumber,
     revision: (input.revision ?? "").trim() || "0",
     name: name === "" ? input.partNumber : name,
     description: description === "" ? null : description,
-    replenishmentSystem: purchased ? "Buy" : "Make",
-    defaultMethodType: purchased ? "Pull from Inventory" : "Make to Order",
-    itemTrackingType: "Inventory",
+    // A purchased BOM row is Buy whatever the company designs its own parts
+    // as — Onshape already told us it is bought, and that is not a preference.
+    replenishmentSystem: purchased ? "Buy" : defaults.replenishmentSystem,
+    defaultMethodType: purchased
+      ? defaults.methodTypeForBuy
+      : defaults.methodTypeForMake,
+    itemTrackingType: defaults.itemTrackingType,
     unitOfMeasureCode: defaultUnitOfMeasureCode(options)
   };
 }
@@ -1068,10 +1083,11 @@ export function buildReleasePlan({
     createdAt: release.createdAt,
     items: planItems,
     children,
+    // Always proposed, never forced: the review step decides whether the
+    // notice is written and what it is called. The engineer already named the
+    // release, so that name carries over rather than being prefixed.
     changeNotice: createsAnything
       ? {
-          // The engineer already named the release; a prefix would only
-          // double the word ("Onshape release Release WB-100 A").
           name: release.releaseName ?? `Onshape release ${release.releaseId}`,
           description: null
         }

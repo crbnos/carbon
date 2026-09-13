@@ -20,6 +20,7 @@ import type { StoredReleasePlan } from "@carbon/ee/onshape";
 import {
   chunkFilterValues,
   loadActiveMakeMethods,
+  ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
   selectInBatches,
   takePanelPlan
@@ -65,7 +66,8 @@ const payloadSchema = z.object({
     })
     .nullable()
     .optional(),
-  makeDefault: z.boolean().optional()
+  makeDefault: z.boolean().optional(),
+  createChangeNotice: z.boolean().optional()
 });
 
 type PushSummary = {
@@ -175,6 +177,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan = stored.plan as StoredReleasePlan;
   const makeDefault = parsed.data.makeDefault ?? plan.makeDefault;
+  // Whether to record a change notice is the review's call. The plan proposes
+  // one whenever the push creates something; an older client that does not send
+  // the flag keeps the previous behaviour.
+  const createChangeNotice =
+    parsed.data.createChangeNotice ?? plan.changeNotice !== null;
 
   // ---- Merge the review's edits before any write --------------------------
   // Items and children are keyed by part number; the two sets are disjoint
@@ -623,7 +630,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("externalIntegrationMapping")
         .select("entityId")
         .eq("companyId", companyId)
-        .eq("integration", "onshape")
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "methodMaterial")
         .in("metadata->>makeMethodId", batch)
     );
@@ -708,7 +715,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("externalIntegrationMapping")
         .select("id, entityId")
         .eq("companyId", companyId)
-        .eq("integration", "onshape")
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "methodMaterial")
         .in("metadata->>makeMethodId", batch)
     );
@@ -813,7 +820,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .insert({
           entityType: "methodMaterial",
           entityId: inserted.data.id,
-          integration: "onshape",
+          integration: ONSHAPE_V2_INTEGRATION_ID,
           metadata: {
             makeMethodId: methodId,
             documentId: plan.documentId,
@@ -846,7 +853,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("externalIntegrationMapping")
       .delete()
       .eq("companyId", companyId)
-      .eq("integration", "onshape")
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
       .eq("entityType", "item")
       .eq("entityId", row.id);
     const clearedByExternal = clearedByItem.error
@@ -855,7 +862,7 @@ export async function action({ request }: ActionFunctionArgs) {
           .from("externalIntegrationMapping")
           .delete()
           .eq("companyId", companyId)
-          .eq("integration", "onshape")
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
           .eq("entityType", "item")
           .eq("externalId", externalId);
     if (clearedByItem.error || clearedByExternal?.error) {
@@ -875,7 +882,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .insert({
         entityType: "item",
         entityId: row.id,
-        integration: "onshape",
+        integration: ONSHAPE_V2_INTEGRATION_ID,
         externalId,
         metadata: {
           kind: "release",
@@ -923,7 +930,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // ---- Pass 4: one Draft change notice for what this push created ---------
-  if (created.length > 0) {
+  if (created.length > 0 && createChangeNotice) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
     );
