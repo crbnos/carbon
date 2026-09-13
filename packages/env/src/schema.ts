@@ -414,6 +414,11 @@ export const schema = define({
     description: "Onshape OAuth callback URL",
     type: url
   },
+  ONSHAPE_V2_OAUTH_REDIRECT_URL: {
+    group: "onshape",
+    description: "Onshape V2 (panel) OAuth callback URL",
+    type: url
+  },
 
   // ── ramp ──────────────────────────────────────────────────────────────────
   RAMP_CLIENT_ID: {

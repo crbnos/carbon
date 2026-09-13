@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { ONSHAPE_MAPPING_NAMESPACES } from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
   Button,
@@ -52,10 +53,14 @@ export function ExternalSourceCard({
       .select("externalId, lastSyncedAt, metadata")
       .eq("entityType", "item")
       .eq("entityId", itemId)
-      .eq("integration", "onshape")
-      .maybeSingle()
+      // Either Onshape integration may own this item while both are
+      // installable, so the card matches on both namespaces and takes the
+      // first row — ONSHAPE_MAPPING_NAMESPACES is ordered v2-first.
+      .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
+      .limit(1)
       .then(({ data }) => {
-        if (!cancelled) setMapping((data as ExternalSourceMapping) ?? null);
+        if (!cancelled)
+          setMapping((data?.[0] as ExternalSourceMapping) ?? null);
       });
     return () => {
       cancelled = true;

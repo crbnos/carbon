@@ -5,7 +5,11 @@ import {
   isModelReleaseItem,
   resolveReleaseStates
 } from "@carbon/ee";
-import { getOnshapeClient, selectInBatches } from "@carbon/ee/onshape";
+import {
+  getOnshapeClient,
+  ONSHAPE_V2_INTEGRATION_ID,
+  selectInBatches
+} from "@carbon/ee/onshape";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -32,7 +36,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data({ error: "Missing Onshape context" }, { status: 400 });
   }
 
-  const onshape = await getOnshapeClient(client, companyId, userId);
+  const onshape = await getOnshapeClient(
+    client,
+    companyId,
+    userId,
+    ONSHAPE_V2_INTEGRATION_ID
+  );
   if (onshape.error || !onshape.client) {
     return data(
       { error: "Onshape is not connected for this company" },

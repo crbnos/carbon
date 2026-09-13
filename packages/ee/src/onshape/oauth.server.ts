@@ -7,8 +7,9 @@ import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { resolveIntegrationSecrets } from "../integrations/secrets";
 import {
   getConflictingOnshapeIntegration,
-  type OnshapeIntegrationId
+  isOnshapeIntegrationId
 } from "./lib/connection";
+import type { OnshapeOAuthIntegrationId } from "./lib/integration-id";
 import {
   getOnshapeAuthorizeUrl,
   getOnshapeOAuthConfig,
@@ -23,7 +24,7 @@ import {
  */
 export async function loadOnshapeOAuthConfig(
   companyId: string,
-  integrationId: OnshapeIntegrationId
+  integrationId: OnshapeOAuthIntegrationId
 ): Promise<OnshapeOAuthConfig | null> {
   const serviceRole = getCarbonServiceRole();
   const integration = await serviceRole
@@ -58,27 +59,29 @@ export type OnshapeAuthorizationStart =
   | { ok: false; reason: "not-configured" | "connection-conflict" };
 
 /**
- * Start the OAuth round trip for an Onshape connection: resolve its client,
- * refuse while the OTHER Onshape connection is active, and issue the state the
- * callback will consume. The state is bound to this browser, user, company and
- * integration — otherwise anyone could hand a victim a callback URL carrying
- * their own Onshape code and link the victim's company to the attacker's
- * account.
+ * Start the OAuth round trip for an Onshape integration: resolve its client,
+ * refuse a sync connection while the OTHER one is active (the panel holds its
+ * own grant beside either), and issue the state the callback will consume. The
+ * state is bound to this browser, user, company and integration — otherwise
+ * anyone could hand a victim a callback URL carrying their own Onshape code and
+ * link the victim's company to the attacker's account.
  */
 export async function beginOnshapeAuthorization(
   request: Request,
   params: {
-    integrationId: OnshapeIntegrationId;
+    integrationId: OnshapeOAuthIntegrationId;
     userId: string;
     companyId: string;
   }
 ): Promise<OnshapeAuthorizationStart> {
-  const conflict = await getConflictingOnshapeIntegration(
-    getCarbonServiceRole(),
-    params.companyId,
-    params.integrationId
-  );
-  if (conflict) return { ok: false, reason: "connection-conflict" };
+  if (isOnshapeIntegrationId(params.integrationId)) {
+    const conflict = await getConflictingOnshapeIntegration(
+      getCarbonServiceRole(),
+      params.companyId,
+      params.integrationId
+    );
+    if (conflict) return { ok: false, reason: "connection-conflict" };
+  }
 
   const config = await loadOnshapeOAuthConfig(
     params.companyId,

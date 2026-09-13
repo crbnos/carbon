@@ -17,11 +17,12 @@ import {
 } from "../../integrations/secrets";
 import {
   getOnshapeIntegration,
-  ONSHAPE_DEFAULT_BASE_URL,
-  type OnshapeIntegrationId
+  isOnshapeIntegrationId,
+  ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
 
 const logger = getLogger("ee", "onshape");
@@ -849,13 +850,29 @@ const REFRESH_WAIT_MS = 150;
 export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
-  userId: string
+  userId: string,
+  /**
+   * Which Onshape grant to authenticate as. The panel passes its own
+   * (`onshape-v2`). Omitted, or a sync id, it is the company's sync connection
+   * — the public app or a Government private app, whichever is connected — so
+   * existing callers are unchanged.
+   */
+  requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
-  // Either Onshape connection — the public app or a Government private app.
-  // Past authorization they are the same API, just on a different host.
-  const integration = await getOnshapeIntegration(client, companyId);
+  // Either sync connection — the public app or a Government private app.
+  // Past authorization they are the same API, just on a different host. The
+  // panel's grant is its own row.
+  const integration =
+    requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
+      ? await client
+          .from("companyIntegration")
+          .select("*")
+          .eq("id", requestedIntegrationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await getOnshapeIntegration(client, companyId);
 
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
@@ -868,7 +885,7 @@ export async function getOnshapeClient(
   // the service-role client (the passed `client` may be RLS-scoped).
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
   const serviceRole = getCarbonServiceRole();
-  const integrationId: OnshapeIntegrationId = integration.data.id;
+  const integrationId = integration.data.id as OnshapeOAuthIntegrationId;
   const metadata = (await resolveIntegrationSecrets(
     serviceRole,
     companyId,

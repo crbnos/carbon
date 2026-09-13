@@ -8,6 +8,7 @@ export * from "./connection";
 export * from "./data";
 export * from "./document.type";
 export * from "./element.type";
+export * from "./integration-id";
 export * from "./oauth";
 export * from "./panel-plan-data";
 export * from "./panel-plan-store";
