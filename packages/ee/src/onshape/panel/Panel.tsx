@@ -2088,6 +2088,11 @@ type ReviewSectionProps<R extends ReviewState> = {
 /**
  * The push button, pinned to the bottom of the scrolling body, so the number
  * of items about to be written stays in view however long the summary runs.
+ *
+ * `-bottom-4` cancels the body's `p-4`: sticky pins to the scrollport inset by
+ * its padding, so `bottom-0` left a 16px strip below the bar where rows
+ * scrolled past. It is the last child of every review, so nothing sits in
+ * that padding at the end of the list.
  */
 function ReviewActionBar({
   review,
@@ -2100,7 +2105,7 @@ function ReviewActionBar({
 }) {
   const count = applyCount(review);
   return (
-    <div className="sticky bottom-0 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-background px-4 py-2">
+    <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-background px-4 py-2">
       <Button
         className="w-full"
         onClick={onApply}
