@@ -12,6 +12,7 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
 import {
+  IntegrationSecretUnavailableError,
   persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
@@ -876,22 +877,29 @@ export async function getOnshapeClient(
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
   }
-  // Captured so the refresh closure below keeps the narrowing.
-  const integrationRow = integration.data;
-
   // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
   // back so we read `metadata.credentials` the same as before. Vault RPCs require
   // the service-role client (the passed `client` may be RLS-scoped).
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
   const serviceRole = getCarbonServiceRole();
   const integrationId = integration.data.id as OnshapeOAuthIntegrationId;
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    integrationId,
-    integration.data.metadata,
-    integration.data.secretRef
-  )) as Record<string, any>;
+  // A row with no vaulted secret is a company that saved panel settings but
+  // never connected: that is "not connected", not a server error.
+  let metadata: Record<string, any>;
+  try {
+    metadata = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      integrationId,
+      integration.data.metadata,
+      integration.data.secretRef
+    )) as Record<string, any>;
+  } catch (error) {
+    if (error instanceof IntegrationSecretUnavailableError) {
+      return { client: null, error: "Onshape credentials not found" };
+    }
+    throw error;
+  }
   const credentials = metadata?.credentials;
 
   if (!credentials?.accessToken) {
@@ -933,13 +941,26 @@ export async function getOnshapeClient(
        * after a token expired: two tabs read at once, and one showed "Onshape
        * is not connected" while the other loaded, until Retry.
        */
+      /*
+       * Re-read the ROW, not the copy loaded when this request started. The
+       * resolver only reaches the database for vaulted secrets; given the old
+       * copy, anything still inline came back unchanged, so a waiter never saw
+       * the holder's new token and reported the connection as missing.
+       */
       const readToken = async () => {
+        const row = await serviceRole
+          .from("companyIntegration")
+          .select("metadata, secretRef")
+          .eq("id", integrationId)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (row.error || !row.data) return null;
         const current = (await resolveIntegrationSecrets(
           serviceRole,
           companyId,
           integrationId,
-          integrationRow.metadata,
-          integrationRow.secretRef
+          row.data.metadata,
+          row.data.secretRef
         ).catch(() => null)) as Record<string, any> | null;
         const token = current?.credentials?.accessToken;
         return token && token !== accessToken ? (token as string) : null;
