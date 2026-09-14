@@ -2178,30 +2178,14 @@ function ReviewHeader({
  * to change it there and review again — the panel does not keep a second
  * editor for data Onshape already edits.
  */
-function ReviewSummary({
-  counts,
-  usesDefaults
-}: {
-  counts: Array<[number, string]>;
-  /** Something is created, so the push defaults decide its settings. */
-  usesDefaults: boolean;
-}) {
+function ReviewSummary({ counts }: { counts: Array<[number, string]> }) {
   const parts = counts
     .filter(([n]) => n > 0)
     .map(([n, label]) => `${n} ${label}`);
   return (
-    <VStack spacing={1} className="w-full">
-      <p className="text-sm">
-        {parts.length > 0 ? parts.join(" · ") : "Nothing to change"}
-      </p>
-      <p className="text-xs text-muted-foreground">
-        Names, part numbers and properties come from Onshape. To change one,
-        change it in Onshape and review again.
-        {usesDefaults
-          ? " New items take their settings from the Onshape V2 integration in Carbon."
-          : ""}
-      </p>
-    </VStack>
+    <p className="w-full text-sm">
+      {parts.length > 0 ? parts.join(" · ") : "Nothing to change"}
+    </p>
   );
 }
 
@@ -2327,7 +2311,6 @@ function PartReviewSection({
               [count("unchanged"), "up to date"],
               [count("skip-no-part-number"), "skipped"]
             ]}
-            usesDefaults={count("create") > 0}
           />
 
           {conflicts.length > 0 ? (
@@ -2477,7 +2460,6 @@ function AssemblyReviewSection({
             plan.methods.length === 1 ? "BOM written" : "BOMs written"
           ]
         ]}
-        usesDefaults={created > 0}
       />
 
       {conflicts.length > 0 ? (
@@ -2722,7 +2704,6 @@ function ReleaseReviewSection({
           [count("create") + childrenCreated, "created"],
           [count("reuse"), "already in Carbon"]
         ]}
-        usesDefaults={count("create") + childrenCreated > 0}
       />
       {outcomes.length > 0 ? (
         <p className="w-full text-xs text-muted-foreground">
