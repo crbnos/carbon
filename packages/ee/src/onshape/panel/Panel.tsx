@@ -41,7 +41,6 @@ import type { PanelRelease } from "./releases";
 import type {
   ApplyFieldError,
   AssemblyReview,
-  MethodDescription,
   PartApplyResult,
   PartReview,
   ReleaseReview,
@@ -2151,12 +2150,6 @@ function ReviewError({
   );
 }
 
-function toneClass(tone: MethodDescription["tone"]): string {
-  if (tone === "warning") return "text-xs text-amber-600 dark:text-amber-400";
-  if (tone === "muted") return "text-xs text-muted-foreground";
-  return "text-xs";
-}
-
 /** Title and Cancel, shared by every review. */
 function ReviewHeader({
   busy,
@@ -2434,8 +2427,7 @@ function AssemblyReviewSection({
 
   /*
    * What the push will NOT write, and what it writes somewhere that is not
-   * live, are both decided before Push — so they sit above it rather than
-   * inside the collapsed method list.
+   * live, are both decided before Push — so they sit above it.
    */
   const described = plan.methods.map((method) =>
     describeMethod(method, review.excluded)
@@ -2445,6 +2437,11 @@ function AssemblyReviewSection({
     ...plan.skipped
   ];
   const drafts = described.filter((d) => d.tone === "notice");
+  // Lines someone added by hand in Carbon survive a push, so that BOM will
+  // not match Onshape afterwards. Always zero on a first push.
+  const keepsManual = plan.methods.filter(
+    (method) => method.status !== "missing" && method.keeps.length > 0
+  );
 
   return (
     <VStack spacing={2} className="w-full">
@@ -2499,6 +2496,21 @@ function AssemblyReviewSection({
           </AlertTitle>
           <AlertDescription>
             Nothing live changes until someone releases them in Carbon.
+          </AlertDescription>
+        </Alert>
+      ) : null}
+
+      {keepsManual.length > 0 ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>
+            {keepsManual.length === 1
+              ? "1 BOM keeps lines added by hand in Carbon"
+              : `${keepsManual.length} BOMs keep lines added by hand in Carbon`}
+          </AlertTitle>
+          <AlertDescription>
+            {keepsManual.map((method) => method.parentPartNumber).join(", ")}{" "}
+            won't match Onshape after this push.
           </AlertDescription>
         </Alert>
       ) : null}
@@ -2586,22 +2598,6 @@ function AssemblyReviewSection({
           </li>
         ))}
       </ul>
-
-      <details className="w-full">
-        <summary className="cursor-pointer px-1 text-xs font-medium text-muted-foreground">
-          Make methods · {plan.methods.length}
-        </summary>
-        <VStack spacing={1} className="mt-1 w-full">
-          {described.map((description, index) => (
-            <p
-              key={plan.methods[index]?.parentPartNumber ?? index}
-              className={toneClass(description.tone)}
-            >
-              {description.text}
-            </p>
-          ))}
-        </VStack>
-      </details>
 
       <ReviewActionBar
         review={review}
