@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import { z } from "zod";
 import { inngest } from "../../client";
 import {
@@ -52,6 +53,9 @@ export const onshapePanelSyncFunction = inngest.createFunction(
         syncOnshapeDrawingAssetsToItem(carbon, {
           companyId: payload.companyId,
           userId: payload.userId,
+          // The panel pushes on its own connection; without this the export used the
+          // original integration and failed for a company that only uses the panel.
+          integrationId: ONSHAPE_V2_INTEGRATION_ID,
           itemId: payload.itemId,
           sourceDocument: "Part",
           documentId: payload.documentId,
@@ -67,6 +71,9 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       syncOnshapeElementAssetsToItem(carbon, {
         companyId: payload.companyId,
         userId: payload.userId,
+        // The panel pushes on its own connection; without this the export used the
+        // original integration and failed for a company that only uses the panel.
+        integrationId: ONSHAPE_V2_INTEGRATION_ID,
         itemId: payload.itemId,
         sourceDocument: "Part",
         documentId: payload.documentId,
