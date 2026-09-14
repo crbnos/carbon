@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { onShapeDataValidator } from "@carbon/ee/onshape";
+import { getOnshapeClient, onShapeDataValidator } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -16,6 +16,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const documentId = formData.get("documentId");
   const versionId = formData.get("versionId");
   const elementId = formData.get("elementId");
+
+  const configuration = formData.get("configuration");
 
   const makeMethodId = formData.get("makeMethodId");
   const rows = formData.get("rows");
@@ -43,6 +45,43 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     const parsed = onShapeDataValidator.parse(JSON.parse(rows as string));
     const serviceRole = await getCarbonServiceRole();
+
+    // Persist BOTH forms. The encoded string is what re-runs Onshape API calls; the
+    // parameter map is what re-hydrates the picker on reopen — which is the whole reason
+    // v1 needs no decodeConfiguration endpoint. Encoding failure here is non-fatal: the
+    // BOM has already been fetched and reviewed by the user, so losing the audit trail is
+    // strictly better than losing the import.
+    let configurationParameters:
+      | Record<string, string | number | boolean>
+      | undefined;
+    let encodedConfiguration: string | undefined;
+    if (typeof configuration === "string" && configuration.length > 0) {
+      try {
+        configurationParameters = JSON.parse(configuration);
+        const parameters = Object.entries(configurationParameters ?? {}).map(
+          ([parameterId, parameterValue]) => ({
+            parameterId,
+            parameterValue: String(parameterValue)
+          })
+        );
+        if (parameters.length > 0) {
+          const onshape = await getOnshapeClient(client, companyId, userId);
+          if (onshape.client) {
+            const encoded = await onshape.client.encodeConfiguration(
+              documentId as string,
+              elementId as string,
+              parameters,
+              versionId as string
+            );
+            encodedConfiguration = encoded.encodedId;
+          }
+        }
+      } catch (error) {
+        logger.error("Failed to encode Onshape configuration for mapping", {
+          error
+        });
+      }
+    }
 
     const sync = await serviceRole.functions.invoke("sync", {
       body: {
@@ -79,7 +118,11 @@ export async function action({ request }: ActionFunctionArgs) {
       metadata: {
         documentId: documentId as string,
         versionId: versionId as string,
-        elementId: elementId as string
+        elementId: elementId as string,
+        ...(encodedConfiguration
+          ? { configuration: encodedConfiguration }
+          : {}),
+        ...(configurationParameters ? { configurationParameters } : {})
       },
       lastSyncedAt: new Date().toISOString(),
       companyId
