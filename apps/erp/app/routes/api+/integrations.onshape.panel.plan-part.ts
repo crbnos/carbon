@@ -2,6 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { PartPlan, PlanItemRow, PlanMappingRow } from "@carbon/ee";
 import {
   buildPartPlan,
+  normalizeConfiguration,
   parsePropertyMap,
   resolveMappedFields
 } from "@carbon/ee";
@@ -31,6 +32,8 @@ const payloadSchema = z.object({
   wv: z.enum(["w", "v"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1),
+  /** The Part Studio configuration the panel was opened in; absent = default. */
+  configuration: z.string().nullish(),
   partIds: z.array(z.string().min(1)).min(1).max(50)
 });
 
@@ -67,6 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid plan payload" }, { status: 400 });
   }
   const { documentId, wv, wvId, elementId } = parsed.data;
+  const configuration = normalizeConfiguration(parsed.data.configuration);
   const partIds = [...new Set(parsed.data.partIds)];
 
   const onshape = await getOnshapeClient(
@@ -90,7 +94,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let parts: Awaited<ReturnType<typeof onshape.client.getPartsInElement>>;
   try {
-    parts = await onshape.client.getPartsInElement(document, elementId);
+    parts = await onshape.client.getPartsInElement(
+      document,
+      elementId,
+      configuration
+    );
   } catch (error) {
     const failure = onshapeFailure(error);
     return data(failure.body, { status: failure.status });
@@ -183,6 +191,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const rows = buildPartPlan({
     documentId,
     elementId,
+    configuration,
     parts,
     requestedPartIds: partIds,
     mappings: mappingRows,
@@ -217,7 +226,8 @@ export async function action({ request }: ActionFunctionArgs) {
           onshape.client,
           document,
           elementId,
-          resolvable.map((row) => row.partId)
+          resolvable.map((row) => row.partId),
+          configuration
         )
       ]);
     } catch (error) {
@@ -251,6 +261,7 @@ export async function action({ request }: ActionFunctionArgs) {
     wv,
     wvId,
     elementId,
+    configuration,
     rows,
     options
   };

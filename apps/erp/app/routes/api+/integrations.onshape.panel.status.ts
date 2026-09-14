@@ -6,6 +6,7 @@ import {
   externalIdForAssembly,
   externalIdForBomLine,
   metadataProperty,
+  normalizeConfiguration,
   parseBomTree
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
@@ -40,6 +41,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const wv = url.searchParams.get("wv");
   const wvId = url.searchParams.get("wvId");
   const elementId = url.searchParams.get("elementId");
+  // The element's configuration as the panel was opened on it. Part of every
+  // identity key, and of the Onshape reads: a configured part's part number
+  // depends on it.
+  const configuration = normalizeConfiguration(
+    url.searchParams.get("configuration")
+  );
 
   if (
     !documentId ||
@@ -93,7 +100,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (kind === "assembly") {
     let bom: unknown;
     try {
-      bom = await onshape.client.getBillOfMaterialsIn(document, elementId);
+      bom = await onshape.client.getBillOfMaterialsIn(
+        document,
+        elementId,
+        configuration
+      );
     } catch (error) {
       const failure = onshapeFailure(error, "bom");
       return data(failure.body, { status: failure.status });
@@ -112,7 +123,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     try {
       const metadata = await onshape.client.getElementMetadata(
         document,
-        elementId
+        elementId,
+        configuration
       );
       rootPartNumber =
         metadataProperty(metadata, "Part number") ?? rootPartNumber;
@@ -161,7 +173,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
         .eq("companyId", companyId)
         .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "item")
-        .eq("externalId", externalIdForAssembly(documentId, elementId))
+        .eq(
+          "externalId",
+          externalIdForAssembly(documentId, elementId, configuration)
+        )
         .maybeSingle(),
       selectInBatches(lineExternalIds, (batch) =>
         client
@@ -268,7 +283,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   let parts: Awaited<ReturnType<typeof onshape.client.getPartsInElement>>;
   try {
-    parts = await onshape.client.getPartsInElement(document, elementId);
+    parts = await onshape.client.getPartsInElement(
+      document,
+      elementId,
+      configuration
+    );
   } catch (error) {
     const failure = onshapeFailure(error);
     return data(failure.body, { status: failure.status });
@@ -329,6 +348,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const statuses = buildPartStatuses({
     documentId,
     elementId,
+    configuration,
     parts,
     mappings: mappings.data ?? [],
     items: [...((matches.data ?? []) as PanelItemRow[]), ...mappedItems]

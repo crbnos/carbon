@@ -6,12 +6,13 @@ import {
   bomLineItemType,
   defaultUnitOfMeasureCode,
   externalIdForAssembly,
-  externalIdForPart,
+  externalIdForBomLine,
   flattenNodes,
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   mergeEditsForCreates,
   missingListOptions,
+  normalizeConfiguration,
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
@@ -149,6 +150,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan = stored.plan;
   const { documentId, wv, wvId, elementId, root, options } = plan;
+  // Absent on a plan stored before configurations were considered: default.
+  const configuration = plan.configuration ?? null;
 
   if (excluded.has(root.partNumber)) {
     return data(
@@ -869,7 +872,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // ---- Assembly item mapping + child part links --------------------------
   const pushedAt = datetime.timestamp();
-  const assemblyExternalId = externalIdForAssembly(documentId, elementId);
+  const assemblyExternalId = externalIdForAssembly(
+    documentId,
+    elementId,
+    configuration
+  );
   // Both deletes clear the way for one canonical row: by item (an older link
   // for this item, including one the legacy sync wrote with no externalId)
   // and by externalId (this element pointing at some other item). Two rows
@@ -909,6 +916,7 @@ export async function action({ request }: ActionFunctionArgs) {
       metadata: {
         documentId,
         elementId,
+        configuration,
         wv,
         wvId,
         kind: "assembly",
@@ -930,15 +938,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Link child parts to their source part studios when the BOM names them,
   // without clobbering a link an explicit part push already made.
-  const childLinkError = await linkChildParts(client, serviceRole, {
+  const childLinkProblems = await linkChildParts(client, serviceRole, {
     companyId,
     userId,
     nodes: allNodes,
     itemByReadableId
   });
-  if (childLinkError) {
-    summary.errors.push(childLinkError);
-  }
+  summary.errors.push(...childLinkProblems);
 
   // One export per applied plan: a retried apply with the same plan and item
   // is the same event to Inngest.
@@ -959,6 +965,7 @@ export async function action({ request }: ActionFunctionArgs) {
         wvmId: wvId,
         elementId,
         elementKind: "assembly",
+        ...(configuration ? { configuration } : {}),
         assetBaseName: root.partNumber
       },
       { id: `${planId}:${rootItem.id}:${elementId}` }
@@ -994,18 +1001,14 @@ async function linkChildParts(
   const seen = new Set<string>();
   for (const node of input.nodes) {
     const source = node.itemSource;
-    if (!node.partNumber || !source?.documentId || !source.elementId) {
-      continue;
-    }
+    if (!node.partNumber) continue;
+    // Part rows key by partId, sub-assembly rows by their element, and both
+    // by configuration — the same key status and plan read.
+    const externalId = externalIdForBomLine(source);
+    if (!source || !externalId) continue;
     const item = input.itemByReadableId.get(node.partNumber);
     if (!item || seen.has(item.id)) continue;
     seen.add(item.id);
-
-    // Part rows name a partId; sub-assembly rows name only their element, and
-    // key the way that element's own push would, so one row serves both views.
-    const externalId = source.partId
-      ? externalIdForPart(source.documentId, source.elementId, source.partId)
-      : externalIdForAssembly(source.documentId, source.elementId);
     candidates.push({
       itemId: item.id,
       externalId,
@@ -1013,14 +1016,45 @@ async function linkChildParts(
       source
     });
   }
-  if (candidates.length === 0) return null;
+  if (candidates.length === 0) return [];
+
+  /*
+   * One Onshape source claimed by two Carbon items cannot be linked to either
+   * with confidence. The configuration in the key separates a configured
+   * part's variants, so this is now the rare case — two part numbers on the
+   * very same source — and it is reported rather than guessed at.
+   */
+  const itemsByExternalId = new Map<string, Set<string>>();
+  for (const candidate of candidates) {
+    const items = itemsByExternalId.get(candidate.externalId) ?? new Set();
+    items.add(candidate.itemId);
+    itemsByExternalId.set(candidate.externalId, items);
+  }
+  const problems: string[] = [];
+  const ambiguous = new Set(
+    [...itemsByExternalId.entries()]
+      .filter(([, items]) => items.size > 1)
+      .map(([externalId]) => externalId)
+  );
+  for (const externalId of ambiguous) {
+    const numbers = candidates
+      .filter((candidate) => candidate.externalId === externalId)
+      .map((candidate) => candidate.partNumber);
+    problems.push(
+      `${numbers.join(" and ")} come from the same Onshape part, so neither was linked to it`
+    );
+  }
+  const unambiguous = candidates.filter(
+    (candidate) => !ambiguous.has(candidate.externalId)
+  );
+  if (unambiguous.length === 0) return problems;
 
   // `externalId` is `documentId:elementId:partId` — 53 to 58 characters, the
   // longest value the panel ever filters on, so this pair is the first thing
   // an assembly of any size breaks. Batched on encoded bytes, not on a count.
   const [byEntity, byExternal] = await Promise.all([
     selectInBatches(
-      candidates.map((candidate) => candidate.itemId),
+      unambiguous.map((candidate) => candidate.itemId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
@@ -1031,7 +1065,7 @@ async function linkChildParts(
           .in("entityId", batch)
     ),
     selectInBatches(
-      candidates.map((candidate) => candidate.externalId),
+      unambiguous.map((candidate) => candidate.externalId),
       (batch) =>
         serviceRole
           .from("externalIntegrationMapping")
@@ -1046,9 +1080,12 @@ async function linkChildParts(
   // an empty set would mean "nothing is linked", and the insert below would
   // then claim links an explicit part push already owns. Refuse instead.
   if (byEntity.error || byExternal.error) {
-    return `could not link child parts to their part studios: ${
-      (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
-    }`;
+    return [
+      ...problems,
+      `child parts were not linked to Onshape: ${
+        (byEntity.error ?? byExternal.error)?.message ?? "lookup failed"
+      }`
+    ];
   }
   const linkedItemIds = new Set(
     (byEntity.data ?? []).map((row) => row.entityId)
@@ -1058,7 +1095,7 @@ async function linkChildParts(
   );
 
   const linkedAt = datetime.timestamp();
-  const rows = candidates
+  const rows = unambiguous
     .filter(
       (candidate) =>
         !linkedItemIds.has(candidate.itemId) &&
@@ -1073,6 +1110,7 @@ async function linkChildParts(
         documentId: candidate.source.documentId,
         elementId: candidate.source.elementId,
         partId: candidate.source.partId ?? null,
+        configuration: normalizeConfiguration(candidate.source.configuration),
         kind: candidate.source.partId ? "part" : "assembly",
         partNumber: candidate.partNumber,
         viaAssemblyPush: true,
@@ -1083,11 +1121,28 @@ async function linkChildParts(
       companyId: input.companyId,
       createdBy: input.userId
     }));
-  if (rows.length > 0) {
-    const linked = await client.from("externalIntegrationMapping").insert(rows);
-    if (linked.error) {
-      return `child parts were not linked to their part studios (${linked.error.message}); pushing one of those studios will create a duplicate item`;
-    }
+  if (rows.length === 0) return problems;
+
+  /*
+   * One insert for the common case. It is all-or-nothing, so when it is
+   * refused the rows go again one at a time: a single row the database
+   * rejects — a link written by a concurrent push, say — used to leave every
+   * other part in the assembly unlinked and showing as a conflict.
+   */
+  const linked = await client.from("externalIntegrationMapping").insert(rows);
+  if (!linked.error) return problems;
+
+  const failed: string[] = [];
+  for (const row of rows) {
+    const single = await client.from("externalIntegrationMapping").insert(row);
+    if (single.error) failed.push(row.metadata.partNumber);
   }
-  return null;
+  if (failed.length > 0) {
+    problems.push(
+      `${failed.length} part${failed.length === 1 ? "" : "s"} could not be linked to Onshape (${failed
+        .slice(0, 5)
+        .join(", ")}${failed.length > 5 ? ", …" : ""}); push again to retry`
+    );
+  }
+  return problems;
 }

@@ -266,13 +266,24 @@ every line it just wrote.
   must be treated as null (`parsePanelContext`).
 - Extensions render only for users **subscribed** to the app (private store
   entry + "Get for free") — an OAuth grant alone shows nothing.
-- Configurations are not carried anywhere: `getBillOfMaterials` and
-  `getBillOfMaterialsIn` both hardcode their query strings with no
-  `configuration` slot, no externalId contains one, and nothing writes one to
-  mapping metadata (the release grouping parses it off a revision row and
-  drops it). So a non-default configuration silently resolves to the DEFAULT
-  BOM and collapses onto the default item — verified live on the v2 branch,
-  where pushing WB-100-LR overwrote WB-100.A's model file undetectably.
+- Configurations are part of identity. A configured part is one partId whose
+  variants can carry different part numbers, so the configuration is appended
+  to every mapping key when it is not the default:
+  `documentId:elementId:partId[:configuration]`, `…:assembly[:configuration]`
+  (`normalizeConfiguration` / `externalIdFor*` in `panel/status.ts`). The
+  default configuration ("default", empty, absent) adds nothing, so keys written
+  before this still match. BOM rows carry it in `itemSource.configuration`; the
+  panel sends its launch `configuration` to status, plan-part and plan-assembly,
+  which pass it to the Onshape reads (BOM, parts, metadata) and store it on the
+  plan; the push routes key and export with it (`onshape-panel-sync` passes it to
+  the GLTF translation). Without it, two variants in one BOM claimed one key and
+  the unique mapping index rejected the whole child-link insert.
+- Child links (`linkChildParts` in push-assembly) skip a source claimed by two
+  items and report it, and fall back to one insert per row when the bulk insert
+  is refused, so one bad row cannot unlink the rest. Remaining edge: two
+  configurations sharing ONE part number map to one item, which gets only the
+  first source's link; the other row shows Conflict. The thumbnail is still read
+  unconfigured.
 - Quota: private apps debit the app owner's annual quota; **publicly listed**
   App Store apps are exempt. Production ships as a public listing.
 
