@@ -2013,8 +2013,6 @@ export function OnshapePanel({
           </Alert>
         ) : null}
 
-        <ContextSummary context={context} />
-
         {session.status === "loading" ? (
           <PanelLoading>Connecting to Carbon…</PanelLoading>
         ) : null}
@@ -4988,8 +4986,8 @@ function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
 /**
  * Linked: pushed from this Onshape part. Conflict: Carbon has an item with the
  * same part number that was never linked to it — equal numbers are not proof
- * of the same part, and a push would write into that item. New: Carbon has
- * nothing, and a push creates it.
+ * of the same part, and a push would write into that item. Unlinked: Carbon
+ * has nothing for it, and a push creates it.
  */
 function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
   if (state === "linked")
@@ -5006,7 +5004,7 @@ function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
     );
   return (
     <Status color="gray" disableTooltip>
-      New
+      Unlinked
     </Status>
   );
 }
@@ -5076,36 +5074,5 @@ function PanelSignIn({
         Sign in to Carbon
       </Button>
     </div>
-  );
-}
-
-/**
- * What the user is looking at: the part number, revision and configuration,
- * and only when they are set.
- *
- * The raw Onshape ids are deliberately absent. They are 24-character hex —
- * three wrapped rows of noise above the content someone came for — and the
- * panel is not where you debug: an id worth quoting in a bug report is in the
- * document's own URL.
- */
-function ContextSummary({ context }: { context: OnshapePanelContext }) {
-  const named: Array<[string, string | null]> = [
-    ["Part number", context.partNumber],
-    ["Revision", context.revision],
-    ["Configuration", context.configuration]
-  ];
-
-  const visible = named.filter(([, value]) => value);
-  if (visible.length === 0) return null;
-
-  return (
-    <dl className="grid w-full grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
-      {visible.map(([label, value]) => (
-        <div key={label} className="contents">
-          <dt className="text-muted-foreground">{label}</dt>
-          <dd className="truncate font-mono">{value}</dd>
-        </div>
-      ))}
-    </dl>
   );
 }
