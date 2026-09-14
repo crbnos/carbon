@@ -5,6 +5,7 @@ import { join } from "node:path";
 import type { Database } from "@carbon/database";
 import type { OnshapeClient, OnshapeTranslation } from "@carbon/ee/onshape";
 import { getOnshapeClient } from "@carbon/ee/onshape";
+import type { OnshapeIntegrationId } from "@carbon/ee/onshape/integration-id";
 import { getFileSizeLimit } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -33,6 +34,9 @@ type DocumentSourceType = Database["public"]["Enums"]["documentSourceType"];
 export interface SyncOnshapeElementInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
+  // Which Onshape connection to export through. The panel pushes on
+  // `onshape-v2`; released-asset sync keeps the original default.
+  integrationId?: OnshapeIntegrationId;
   itemId: string; // resolved Carbon item (caller guarantees it exists)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
@@ -211,7 +215,12 @@ export async function syncOnshapeElementAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeElementInput
 ): Promise<AttachOnshapeAssetsResult & { thumbnailAttached: boolean }> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    input.integrationId
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
   }
@@ -302,6 +311,8 @@ export async function syncOnshapeElementAssetsToItem(
 export interface SyncOnshapeDrawingInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
+  // As on SyncOnshapeElementInput: the connection to export through.
+  integrationId?: OnshapeIntegrationId;
   itemId: string; // resolved Carbon item (the model this drawing documents)
   sourceDocument: DocumentSourceType; // e.g. "Part"
   documentId: string;
@@ -321,7 +332,12 @@ export async function syncOnshapeDrawingAssetsToItem(
   carbon: CarbonClient,
   input: SyncOnshapeDrawingInput
 ): Promise<AttachOnshapeAssetsResult> {
-  const onshape = await getOnshapeClient(carbon, input.companyId, input.userId);
+  const onshape = await getOnshapeClient(
+    carbon,
+    input.companyId,
+    input.userId,
+    input.integrationId
+  );
   if (onshape.error || !onshape.client) {
     throw new Error(`getOnshapeClient failed: ${onshape.error ?? "no client"}`);
   }
