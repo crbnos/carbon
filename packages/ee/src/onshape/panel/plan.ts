@@ -7,7 +7,8 @@ import { isModelReleaseItem } from "./releases";
 import {
   externalIdForAssembly,
   externalIdForBomLine,
-  externalIdForPart
+  externalIdForPart,
+  normalizeConfiguration
 } from "./status";
 
 /**
@@ -379,6 +380,12 @@ export type PartPlan = {
   wv: "w" | "v";
   wvId: string;
   elementId: string;
+  /**
+   * The Part Studio configuration the parts were read in, null for the
+   * default. Part of every mapping key the apply writes. Optional so a plan
+   * stored before configurations were considered still applies as default.
+   */
+  configuration?: string | null;
   rows: PartPlanRow[];
   options: PlanOptions;
 };
@@ -386,6 +393,7 @@ export type PartPlan = {
 export function buildPartPlan({
   documentId,
   elementId,
+  configuration = null,
   parts,
   requestedPartIds,
   mappings,
@@ -394,6 +402,7 @@ export function buildPartPlan({
 }: {
   documentId: string;
   elementId: string;
+  configuration?: string | null;
   parts: OnshapeElementPart[];
   requestedPartIds: string[];
   mappings: PlanMappingRow[];
@@ -430,7 +439,7 @@ export function buildPartPlan({
     };
 
     const mapping = mappingByExternalId.get(
-      externalIdForPart(documentId, elementId, partId)
+      externalIdForPart(documentId, elementId, partId, configuration)
     );
     // A mapping whose item is gone is not a link (entityId has no FK).
     const linked = mapping ? itemById.get(mapping.entityId) : undefined;
@@ -609,6 +618,8 @@ export type AssemblyPlan = {
   wv: "w" | "v";
   wvId: string;
   elementId: string;
+  /** The assembly configuration the BOM was read in, null for the default. */
+  configuration?: string | null;
   root: AssemblyPlanRoot;
   /** Every distinct BOM part number below the root. */
   items: AssemblyPlanItem[];
@@ -654,7 +665,8 @@ export function buildAssemblyPlan({
   manualLinesByMethodId,
   options,
   depth = "all",
-  linkedItemIdByExternalId = new Map()
+  linkedItemIdByExternalId = new Map(),
+  configuration = null
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -684,6 +696,8 @@ export function buildAssemblyPlan({
    * item is a conflict. Omitted, every reuse is one.
    */
   linkedItemIdByExternalId?: Map<string, string>;
+  /** The assembly configuration the BOM was read in. */
+  configuration?: string | null;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
@@ -728,7 +742,7 @@ export function buildAssemblyPlan({
   const rootConflict =
     !!rootItem &&
     linkedItemIdByExternalId.get(
-      externalIdForAssembly(documentId, elementId)
+      externalIdForAssembly(documentId, elementId, configuration)
     ) !== rootItem.id;
   const planRoot: AssemblyPlanRoot = {
     partNumber: root.partNumber,
@@ -855,6 +869,7 @@ export function buildAssemblyPlan({
       wv,
       wvId,
       elementId,
+      configuration: normalizeConfiguration(configuration),
       root: planRoot,
       items: planItems,
       methods,
@@ -882,6 +897,7 @@ export function buildAssemblyPlan({
     wv,
     wvId,
     elementId,
+    configuration: normalizeConfiguration(configuration),
     root: planRoot,
     items: planItems,
     // One method: the root's. `addMethod` recursed into the children, so drop
