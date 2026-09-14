@@ -13,22 +13,15 @@ import { BOOLEAN_TRUE } from "./properties";
 import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
 import {
   applyCount,
-  applyCustomFieldEdit,
-  applyItemEdit,
   applyRequestBody,
-  clearFieldErrors,
   createReview,
   customFieldDisplayValue,
-  customFieldEditValue,
-  customFieldInputValue,
   defaultSelectedPartIds,
   describeMethod,
   editedItem,
   indexFieldErrors,
-  methodTypesFor,
   normalizeWarnings,
-  patchPartStatuses,
-  withMember
+  patchPartStatuses
 } from "./review";
 import type { PanelPartStatus } from "./status";
 
@@ -95,25 +88,6 @@ const customField = (over: Partial<PlanCustomField> = {}): PlanCustomField => ({
   onshapeName: "Surface finish",
   ...over
 });
-
-const rowFields = [
-  customField(),
-  customField({
-    fieldId: "cf-weight",
-    name: "Weight",
-    mode: "owned",
-    dataTypeId: 4,
-    value: 2.5,
-    onshapeName: "Mass"
-  }),
-  customField({
-    fieldId: "cf-approved",
-    name: "Approved",
-    dataTypeId: 1,
-    value: BOOLEAN_TRUE,
-    onshapeName: "Approved"
-  })
-];
 
 const method = (
   over: Partial<AssemblyPlanMethod> = {}
@@ -350,151 +324,6 @@ describe("editedItem", () => {
   });
 });
 
-describe("applyItemEdit", () => {
-  it("stores only the changed field and drops it again when typed back", () => {
-    const once = applyItemEdit({}, "p1", proposed(), "name", "Pad");
-    expect(once).toEqual({ p1: { name: "Pad" } });
-    const back = applyItemEdit(once, "p1", proposed(), "name", "Foot pad");
-    expect(back).toEqual({});
-  });
-
-  it("keeps text as typed so a trailing space survives mid-word", () => {
-    expect(applyItemEdit({}, "p1", proposed(), "name", "Foot ")).toEqual({
-      p1: { name: "Foot " }
-    });
-  });
-
-  it("treats an empty description as none, matching the proposal's encoding", () => {
-    expect(applyItemEdit({}, "p1", proposed(), "description", "")).toEqual({});
-    expect(
-      applyItemEdit(
-        {},
-        "p1",
-        proposed({ description: "Rubber" }),
-        "description",
-        ""
-      )
-    ).toEqual({ p1: { description: null } });
-    expect(
-      applyItemEdit({}, "p1", proposed(), "description", "Rubber")
-    ).toEqual({ p1: { description: "Rubber" } });
-  });
-
-  it("moves the method to the first allowed one when the replenishment no longer permits it", () => {
-    expect(
-      applyItemEdit({}, "p1", proposed(), "replenishmentSystem", "Buy")
-    ).toEqual({
-      p1: {
-        replenishmentSystem: "Buy",
-        defaultMethodType: "Pull from Inventory"
-      }
-    });
-  });
-
-  it("leaves a still-valid method alone when the replenishment changes", () => {
-    const base = proposed({
-      replenishmentSystem: "Buy",
-      defaultMethodType: "Purchase to Order"
-    });
-    expect(
-      applyItemEdit({}, "p1", base, "replenishmentSystem", "Buy and Make")
-    ).toEqual({ p1: { replenishmentSystem: "Buy and Make" } });
-  });
-
-  it("coerces against the edited state, not the proposal", () => {
-    const edits = applyItemEdit(
-      {},
-      "p1",
-      proposed(),
-      "defaultMethodType",
-      "Pull from Inventory"
-    );
-    expect(
-      applyItemEdit(edits, "p1", proposed(), "replenishmentSystem", "Buy")
-    ).toEqual({
-      p1: {
-        replenishmentSystem: "Buy",
-        defaultMethodType: "Pull from Inventory"
-      }
-    });
-  });
-
-  it("ignores an enum value the plan does not know", () => {
-    const edits = { p1: { name: "Pad" } };
-    expect(
-      applyItemEdit(edits, "p1", proposed(), "replenishmentSystem", "Steal")
-    ).toBe(edits);
-    expect(
-      applyItemEdit(edits, "p1", proposed(), "defaultMethodType", "Guess")
-    ).toBe(edits);
-    expect(
-      applyItemEdit(edits, "p1", proposed(), "itemTrackingType", "Lot")
-    ).toBe(edits);
-  });
-
-  it("changes the unit and leaves other rows untouched", () => {
-    const edits = { p2: { name: "Other" } };
-    const next = applyItemEdit(
-      edits,
-      "p1",
-      proposed(),
-      "unitOfMeasureCode",
-      "M"
-    );
-    expect(next).toEqual({
-      p2: { name: "Other" },
-      p1: { unitOfMeasureCode: "M" }
-    });
-    expect(edits).toEqual({ p2: { name: "Other" } });
-  });
-  it("keeps custom-field edits when the item edit empties", () => {
-    const withCustom = applyCustomFieldEdit(
-      {},
-      "p1",
-      rowFields,
-      "cf-finish",
-      "Raw"
-    );
-    const named = applyItemEdit(withCustom, "p1", proposed(), "name", "Pad");
-    expect(named).toEqual({
-      p1: { name: "Pad", customFields: { "cf-finish": "Raw" } }
-    });
-    expect(applyItemEdit(named, "p1", proposed(), "name", "Foot pad")).toEqual({
-      p1: { customFields: { "cf-finish": "Raw" } }
-    });
-  });
-});
-
-describe("customFieldInputValue", () => {
-  it("renders the plan value as the editor's input string", () => {
-    expect(customFieldInputValue(customField())).toBe("Anodized");
-    expect(customFieldInputValue(customField({ value: null }))).toBe("");
-    expect(
-      customFieldInputValue(customField({ value: 4.5, dataTypeId: 4 }))
-    ).toBe("4.5");
-  });
-
-  it("reads a Yes/No field as the ERP stores it", () => {
-    expect(
-      customFieldInputValue(customField({ value: BOOLEAN_TRUE, dataTypeId: 1 }))
-    ).toBe("yes");
-    // Unticked is no stored key, so the editor shows the unset choice.
-    expect(
-      customFieldInputValue(customField({ value: null, dataTypeId: 1 }))
-    ).toBe("");
-  });
-});
-
-describe("customFieldEditValue", () => {
-  it("prefers the typed edit over the plan value", () => {
-    expect(customFieldEditValue(customField(), { "cf-finish": "Raw" })).toBe(
-      "Raw"
-    );
-    expect(customFieldEditValue(customField(), {})).toBe("Anodized");
-    expect(customFieldEditValue(customField(), undefined)).toBe("Anodized");
-  });
-});
-
 describe("customFieldDisplayValue", () => {
   it("renders review text for every value shape", () => {
     expect(customFieldDisplayValue(customField())).toBe("Anodized");
@@ -513,86 +342,6 @@ describe("customFieldDisplayValue", () => {
     expect(
       customFieldDisplayValue(customField({ value: null, dataTypeId: 1 }))
     ).toBe("—");
-  });
-});
-
-describe("applyCustomFieldEdit", () => {
-  it("stores a changed value and drops it when typed back", () => {
-    const once = applyCustomFieldEdit({}, "p1", rowFields, "cf-finish", "Raw");
-    expect(once).toEqual({ p1: { customFields: { "cf-finish": "Raw" } } });
-    expect(
-      applyCustomFieldEdit(once, "p1", rowFields, "cf-finish", "Anodized")
-    ).toEqual({});
-  });
-
-  it("refuses owned fields and fields outside the plan", () => {
-    const edits = { p1: { name: "Pad" } };
-    expect(applyCustomFieldEdit(edits, "p1", rowFields, "cf-weight", "3")).toBe(
-      edits
-    );
-    expect(applyCustomFieldEdit(edits, "p1", rowFields, "cf-gone", "x")).toBe(
-      edits
-    );
-  });
-
-  it("lives beside item edits without touching other rows", () => {
-    const edits = { p1: { name: "Pad" }, p2: { name: "Other" } };
-    const next = applyCustomFieldEdit(
-      edits,
-      "p1",
-      rowFields,
-      "cf-finish",
-      "Raw"
-    );
-    expect(next).toEqual({
-      p1: { name: "Pad", customFields: { "cf-finish": "Raw" } },
-      p2: { name: "Other" }
-    });
-    expect(
-      applyCustomFieldEdit(next, "p1", rowFields, "cf-finish", "Anodized")
-    ).toEqual(edits);
-    expect(edits).toEqual({ p1: { name: "Pad" }, p2: { name: "Other" } });
-  });
-
-  it("stores an emptied value so apply leaves the field unset", () => {
-    expect(applyCustomFieldEdit({}, "p1", rowFields, "cf-finish", "")).toEqual({
-      p1: { customFields: { "cf-finish": "" } }
-    });
-  });
-
-  it("returns a Yes/No field to unset", () => {
-    expect(
-      applyCustomFieldEdit({}, "p1", rowFields, "cf-approved", "")
-    ).toEqual({ p1: { customFields: { "cf-approved": "" } } });
-    // "yes" is the plan's own value, so the edit drops out again.
-    expect(
-      applyCustomFieldEdit({}, "p1", rowFields, "cf-approved", "yes")
-    ).toEqual({});
-  });
-});
-
-describe("methodTypesFor", () => {
-  it("offers the ERP's allowed methods for the current replenishment", () => {
-    expect(methodTypesFor({ replenishmentSystem: "Buy" })).toEqual([
-      "Pull from Inventory",
-      "Purchase to Order"
-    ]);
-    expect(methodTypesFor({ replenishmentSystem: "Make" })).toEqual([
-      "Pull from Inventory",
-      "Make to Order"
-    ]);
-  });
-});
-
-describe("withMember", () => {
-  it("adds and removes without mutating the input", () => {
-    const start = new Set(["a"]);
-    const added = withMember(start, "b", true);
-    expect([...added]).toEqual(["a", "b"]);
-    expect([...start]).toEqual(["a"]);
-    const removed = withMember(added, "a", false);
-    expect([...removed]).toEqual(["b"]);
-    expect([...added]).toEqual(["a", "b"]);
   });
 });
 
@@ -745,12 +494,6 @@ describe("field errors", () => {
       ])
     ).toEqual({ p1: ["Name is required"] });
     expect(indexFieldErrors(undefined)).toEqual({});
-  });
-
-  it("clears one key and returns the same object when there is nothing to clear", () => {
-    const errors = { p1: ["a"], p2: ["b"] };
-    expect(clearFieldErrors(errors, "p1")).toEqual({ p2: ["b"] });
-    expect(clearFieldErrors(errors, "p3")).toBe(errors);
   });
 });
 

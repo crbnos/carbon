@@ -56,15 +56,6 @@ export const DEFAULT_PUSH_DEFAULTS: OnshapePushDefaults = {
   itemTrackingType: "Inventory"
 };
 
-/** The settings keys this module owns, for the metadata write path. */
-export const PUSH_DEFAULT_SETTING_NAMES = [
-  "defaultUnitOfMeasureCode",
-  "defaultReplenishmentSystem",
-  "defaultMethodTypeForMake",
-  "defaultMethodTypeForBuy",
-  "defaultItemTrackingType"
-] as const;
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -163,24 +154,4 @@ function reconcileMethodType(
   // Every replenishment system has at least one allowed method, but the type
   // of a readonly index is still `| undefined`.
   return allowed[0] ?? DEFAULT_PUSH_DEFAULTS.methodTypeForMake;
-}
-
-/**
- * Whether two sets of defaults are the same choice.
- *
- * The Settings page has one Save for the whole page, so it has to know
- * whether this section has anything to write — a save that posts an unchanged
- * body is a write the audit trail records for nothing.
- */
-export function pushDefaultsEqual(
-  a: OnshapePushDefaults,
-  b: OnshapePushDefaults
-): boolean {
-  return (
-    a.unitOfMeasureCode === b.unitOfMeasureCode &&
-    a.replenishmentSystem === b.replenishmentSystem &&
-    a.methodTypeForMake === b.methodTypeForMake &&
-    a.methodTypeForBuy === b.methodTypeForBuy &&
-    a.itemTrackingType === b.itemTrackingType
-  );
 }

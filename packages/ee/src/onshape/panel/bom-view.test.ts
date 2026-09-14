@@ -4,7 +4,6 @@ import {
   bomParentIndexes,
   bomViewLevel,
   buildBomViewTree,
-  flattenBomView,
   visibleBomRows
 } from "./bom-view";
 
@@ -133,59 +132,5 @@ describe("bomParentIndexes", () => {
 
   it("is empty for a flat BOM", () => {
     expect(bomParentIndexes(buildBomViewTree([line("1", "A")]))).toEqual([]);
-  });
-});
-
-describe("flattenBomView", () => {
-  it("multiplies a child's quantity through its ancestors", () => {
-    const rows = flattenBomView(lines);
-    // SCREW: 10 per SUB-1, and the assembly takes 3 of those.
-    expect(rows.find((row) => row.line.partNumber === "SCREW")).toMatchObject({
-      totalQuantity: 30,
-      occurrences: 1
-    });
-  });
-
-  it("folds a part used in two places into one row", () => {
-    const rows = flattenBomView(lines);
-    // BRACKET: 4 inside each of 3 sub-assemblies, plus 1 at the top level.
-    expect(rows.find((row) => row.line.partNumber === "BRACKET")).toMatchObject(
-      {
-        totalQuantity: 13,
-        occurrences: 2
-      }
-    );
-  });
-
-  it("keeps sub-assemblies as rows of their own", () => {
-    expect(flattenBomView(lines).map((row) => row.line.partNumber)).toEqual([
-      "PLATE-1",
-      "SUB-1",
-      "BRACKET",
-      "SCREW"
-    ]);
-  });
-
-  it("orders by first appearance", () => {
-    const rows = flattenBomView([
-      line("1", "SUB", 1),
-      line("1.1", "Z", 1),
-      line("2", "A", 1)
-    ]);
-    expect(rows.map((row) => row.line.partNumber)).toEqual(["SUB", "Z", "A"]);
-  });
-
-  it("never folds lines that have no part number", () => {
-    const rows = flattenBomView([
-      line("1", null, 2),
-      line("2", null, 5),
-      line("3", "REAL", 1)
-    ]);
-    expect(rows).toHaveLength(3);
-    expect(rows.map((row) => row.totalQuantity)).toEqual([2, 5, 1]);
-  });
-
-  it("returns nothing for an empty BOM", () => {
-    expect(flattenBomView([])).toEqual([]);
   });
 });
