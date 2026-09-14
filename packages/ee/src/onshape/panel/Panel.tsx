@@ -2715,7 +2715,10 @@ function ReleaseReviewSection({
       </p>
       <ReviewSummary
         counts={[
-          [count("revision"), "new revisions"],
+          [
+            count("revision"),
+            count("revision") === 1 ? "new revision" : "new revisions"
+          ],
           [count("create") + childrenCreated, "created"],
           [count("reuse"), "already in Carbon"]
         ]}
