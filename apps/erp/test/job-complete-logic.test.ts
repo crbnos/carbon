@@ -3,7 +3,9 @@ import { describe, expect, it } from "vitest";
 // does not transform (see batching-migration-guards.test.ts).
 import {
   getDefaultSerialCompleteQuantity,
+  getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
+  getSerialsToReceive,
   isFractionalSerialQuantity,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
@@ -49,6 +51,19 @@ describe("getReceivableSerialUnits", () => {
     ).toEqual(["SN-0004"]);
   });
 
+  it("never offers units the job already received", () => {
+    expect(
+      getReceivableSerialUnits(
+        [
+          unit({ readableId: "SN-0001", status: "Available" }),
+          unit({ readableId: "SN-0002", status: "Available" }),
+          unit({ readableId: "SN-0003" })
+        ],
+        new Set(["SN-0001", "SN-0002"])
+      )
+    ).toEqual(["SN-0003"]);
+  });
+
   it("keeps the quantity locked when a unit has no serial number yet", () => {
     expect(
       getReceivableSerialUnits([
@@ -64,13 +79,34 @@ describe("getReceivableSerialUnits", () => {
     ).toBeNull();
   });
 
-  it("returns null when nothing can be received", () => {
+  it("returns null when nothing is left to receive", () => {
     expect(getReceivableSerialUnits([])).toBeNull();
     expect(
       getReceivableSerialUnits([
         unit({ readableId: "SN-0001", status: "Consumed" })
       ])
     ).toBeNull();
+    expect(
+      getReceivableSerialUnits(
+        [unit({ readableId: "SN-0001", status: "Available" })],
+        new Set(["SN-0001"])
+      )
+    ).toBeNull();
+  });
+});
+
+describe("getFinishedUnreceivedQuantity", () => {
+  it("counts units finished on the shop floor that were not received", () => {
+    expect(
+      getFinishedUnreceivedQuantity(
+        [
+          unit({ readableId: "SN-0001", status: "Available" }),
+          unit({ readableId: "SN-0002", status: "Available" }),
+          unit({ readableId: "SN-0003" })
+        ],
+        new Set(["SN-0001"])
+      )
+    ).toBe(1);
   });
 });
 
@@ -78,8 +114,9 @@ describe("getDefaultSerialCompleteQuantity", () => {
   it("defaults to the units finished on the shop floor", () => {
     expect(
       getDefaultSerialCompleteQuantity({
-        availableQuantity: 1,
+        finishedUnreceivedQuantity: 1,
         jobQuantity: 3,
+        priorReceivedQuantity: 0,
         receivableSerialCount: 3
       })
     ).toBe(1);
@@ -88,8 +125,9 @@ describe("getDefaultSerialCompleteQuantity", () => {
   it("defaults to the job quantity when nothing was finished on the shop floor", () => {
     expect(
       getDefaultSerialCompleteQuantity({
-        availableQuantity: 0,
+        finishedUnreceivedQuantity: 0,
         jobQuantity: 3,
+        priorReceivedQuantity: 0,
         receivableSerialCount: 3
       })
     ).toBe(3);
@@ -98,11 +136,53 @@ describe("getDefaultSerialCompleteQuantity", () => {
   it("never defaults above the units that can be received", () => {
     expect(
       getDefaultSerialCompleteQuantity({
-        availableQuantity: 0,
+        finishedUnreceivedQuantity: 0,
         jobQuantity: 5,
+        priorReceivedQuantity: 0,
         receivableSerialCount: 2
       })
     ).toBe(2);
+  });
+
+  it("adds new units on top of what a partial completion already received", () => {
+    // 2 of 3 received earlier; the dialog must offer the cumulative 3, not 2,
+    // or the database computes a delta of 0 and the third unit is never received.
+    expect(
+      getDefaultSerialCompleteQuantity({
+        finishedUnreceivedQuantity: 0,
+        jobQuantity: 3,
+        priorReceivedQuantity: 2,
+        receivableSerialCount: 1
+      })
+    ).toBe(3);
+  });
+
+  it("adds newly finished units on top of what was already received", () => {
+    expect(
+      getDefaultSerialCompleteQuantity({
+        finishedUnreceivedQuantity: 1,
+        jobQuantity: 4,
+        priorReceivedQuantity: 2,
+        receivableSerialCount: 2
+      })
+    ).toBe(3);
+  });
+});
+
+describe("getSerialsToReceive", () => {
+  const receivable = ["SN-0003", "SN-0004"];
+
+  it("previews only the units this completion adds", () => {
+    expect(getSerialsToReceive(receivable, 3, 2)).toEqual(["SN-0003"]);
+    expect(getSerialsToReceive(receivable, 4, 2)).toEqual([
+      "SN-0003",
+      "SN-0004"
+    ]);
+  });
+
+  it("previews nothing when the quantity adds no units", () => {
+    expect(getSerialsToReceive(receivable, 2, 2)).toEqual([]);
+    expect(getSerialsToReceive(receivable, 1, 2)).toEqual([]);
   });
 });
 

@@ -90,7 +90,9 @@ import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
   getDefaultSerialCompleteQuantity,
+  getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
+  getSerialsToReceive,
   isFractionalSerialQuantity
 } from "./job-complete-logic";
 
@@ -1139,12 +1141,14 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
-  // Serial units the completion can receive, in the order
+  // Serial units the completion can still receive, in the order
   // complete_job_to_inventory receives them. Null when the quantity is not
   // chosen per serial unit.
   const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
     null
   );
+  // The completed quantity is cumulative; this much was already received.
+  const priorReceivedQuantity = job?.quantityReceivedToInventory ?? 0;
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1184,11 +1188,19 @@ function JobCompleteModal({
       makeMethod.data?.requiresSerialTracking ||
       makeMethod.data?.requiresBatchTracking
     ) {
-      const trackedEntities = await carbon
-        .from("trackedEntity")
-        .select("*")
-        .eq("attributes->>Job Make Method", makeMethod.data?.id!)
-        .order("createdAt", { ascending: true });
+      const [trackedEntities, receipts] = await Promise.all([
+        carbon
+          .from("trackedEntity")
+          .select("*")
+          .eq("attributes->>Job Make Method", makeMethod.data?.id!)
+          .order("createdAt", { ascending: true }),
+        carbon
+          .from("itemLedger")
+          .select("trackedEntityId")
+          .eq("documentType", "Job Receipt")
+          .eq("documentId", job?.id!)
+          .not("trackedEntityId", "is", null)
+      ]);
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
@@ -1198,8 +1210,13 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
+        const receivedEntityIds = new Set(
+          (receipts.data ?? []).flatMap((receipt) =>
+            receipt.trackedEntityId ? [receipt.trackedEntityId] : []
+          )
+        );
         const serialUnits = makeMethod.data?.requiresSerialTracking
-          ? getReceivableSerialUnits(trackedEntities.data)
+          ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
           : null;
 
         if (serialUnits) {
@@ -1208,8 +1225,12 @@ function JobCompleteModal({
           setReceivableSerials(serialUnits);
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
-              availableQuantity,
+              finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
+                trackedEntities.data,
+                receivedEntityIds
+              ),
               jobQuantity: job?.quantity ?? 0,
+              priorReceivedQuantity,
               receivableSerialCount: serialUnits.length
             })
           );
@@ -1334,8 +1355,12 @@ function JobCompleteModal({
                   value={quantityComplete}
                   onChange={(value) => setQuantityComplete(value)}
                   isDisabled={hasTrackedQuantity}
-                  minValue={0}
-                  maxValue={receivableSerials?.length}
+                  minValue={receivableSerials ? priorReceivedQuantity : 0}
+                  maxValue={
+                    receivableSerials
+                      ? priorReceivedQuantity + receivableSerials.length
+                      : undefined
+                  }
                   helperText={
                     hasTrackedQuantity
                       ? t`Quantity is derived from completed serials/batches in MES and cannot be edited.`
@@ -1362,16 +1387,18 @@ function JobCompleteModal({
                 )}
 
                 {receivableSerials &&
-                  quantityComplete > 0 &&
+                  quantityComplete > priorReceivedQuantity &&
                   !hasFractionalSerialQuantity && (
                     <VStack spacing={1} className="w-full">
                       <span className="text-xs text-muted-foreground">
                         <Trans>Serial numbers received</Trans>
                       </span>
                       <span className="text-sm">
-                        {receivableSerials
-                          .slice(0, quantityComplete)
-                          .join(", ")}
+                        {getSerialsToReceive(
+                          receivableSerials,
+                          quantityComplete,
+                          priorReceivedQuantity
+                        ).join(", ")}
                       </span>
                     </VStack>
                   )}
@@ -1522,7 +1549,10 @@ function JobCompleteModal({
                   // consumes nothing; the database refuses it as well.
                   (job.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
-                  hasFractionalSerialQuantity
+                  hasFractionalSerialQuantity ||
+                  // A received serial unit cannot be un-received.
+                  (receivableSerials !== null &&
+                    quantityComplete < priorReceivedQuantity)
                 }
               >
                 <Trans>Complete Job</Trans>

@@ -3723,7 +3723,7 @@ msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
-msgstr "इस जॉब को पूर्ण करने से पहले MES में सीरीज़/बैच पूर्ण करें, या इसे स्वचालित रूप से पूर्ण करने के लिए हर ऑपरेशन को हो गया के रूप में चिह्नित करें।"
+msgstr "इस जॉब को पूर्ण करने से पहले MES में सीरियल नंबर/बैच पूर्ण करें, या इसे स्वचालित रूप से पूर्ण करने के लिए हर ऑपरेशन को हो गया के रूप में चिह्नित करें।"
 
 msgid "Complete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर पूरा करें"

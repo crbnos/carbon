@@ -1,5 +1,10 @@
 // Pure logic for the job Complete dialog. No JSX or lingui, so it can be unit
 // tested directly (apps/erp/test/job-complete-logic.test.ts).
+//
+// The completed quantity is CUMULATIVE: complete_job_to_inventory receives the
+// difference between it and what the job has already received. Everything here
+// works on the units the job has not received yet, so the dialog and the
+// database always agree on which units a completion takes.
 
 export type JobSerialUnit = {
   id: string;
@@ -11,20 +16,32 @@ export type JobSerialUnit = {
 
 const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
 
+function isUnreceived(
+  entity: JobSerialUnit,
+  receivedEntityIds: ReadonlySet<string>
+) {
+  return (
+    !NON_RECEIVABLE_SERIAL_STATUSES.includes(entity.status) &&
+    !receivedEntityIds.has(entity.id)
+  );
+}
+
 /**
- * The serial numbers a job completion can receive, in the order
+ * The serial numbers a job completion can still receive, in the order
  * complete_job_to_inventory receives them: units finished on the shop floor
- * (Available) first, then reserved units, each by serial number.
+ * (Available) first, then reserved units, each by serial number. Units the job
+ * already received are excluded.
  *
- * Returns null unless every receivable unit is already a numbered, single-unit
+ * Returns null unless every unit left to receive is a numbered, single-unit
  * serial. A job still holding an unsplit placeholder has no serial numbers to
  * receive yet, so its quantity stays locked to what the shop floor finished.
  */
 export function getReceivableSerialUnits(
-  trackedEntities: JobSerialUnit[]
+  trackedEntities: JobSerialUnit[],
+  receivedEntityIds: ReadonlySet<string> = new Set()
 ): string[] | null {
-  const receivable = trackedEntities.filter(
-    (entity) => !NON_RECEIVABLE_SERIAL_STATUSES.includes(entity.status)
+  const receivable = trackedEntities.filter((entity) =>
+    isUnreceived(entity, receivedEntityIds)
   );
 
   if (
@@ -48,23 +65,55 @@ export function getReceivableSerialUnits(
     .map((entity) => entity.readableId as string);
 }
 
+/** Units finished on the shop floor that the job has not received yet. */
+export function getFinishedUnreceivedQuantity(
+  trackedEntities: JobSerialUnit[],
+  receivedEntityIds: ReadonlySet<string> = new Set()
+): number {
+  return trackedEntities
+    .filter(
+      (entity) =>
+        entity.status === "Available" && !receivedEntityIds.has(entity.id)
+    )
+    .reduce((total, entity) => total + entity.quantity, 0);
+}
+
 /**
- * The quantity the dialog opens at for a job whose serial units are numbered:
- * the units already finished on the shop floor, or else the job quantity,
- * never more than the units that can be received.
+ * The cumulative quantity the dialog opens at for a job whose serial units are
+ * numbered: what the job already received, plus the units finished on the shop
+ * floor, or else the rest of the job quantity, never more than can be received.
  */
 export function getDefaultSerialCompleteQuantity({
-  availableQuantity,
+  finishedUnreceivedQuantity,
   jobQuantity,
+  priorReceivedQuantity,
   receivableSerialCount
 }: {
-  availableQuantity: number;
+  finishedUnreceivedQuantity: number;
   jobQuantity: number;
+  priorReceivedQuantity: number;
   receivableSerialCount: number;
 }): number {
-  return availableQuantity > 0
-    ? availableQuantity
-    : Math.min(jobQuantity, receivableSerialCount);
+  const newUnits =
+    finishedUnreceivedQuantity > 0
+      ? finishedUnreceivedQuantity
+      : Math.min(
+          Math.max(jobQuantity - priorReceivedQuantity, 0),
+          receivableSerialCount
+        );
+  return priorReceivedQuantity + Math.min(newUnits, receivableSerialCount);
+}
+
+/** The serial numbers a completion at this cumulative quantity will receive. */
+export function getSerialsToReceive(
+  receivableSerials: string[],
+  quantity: number,
+  priorReceivedQuantity: number
+): string[] {
+  return receivableSerials.slice(
+    0,
+    Math.max(quantity - priorReceivedQuantity, 0)
+  );
 }
 
 /** Serial units are received one at a time; the database refuses a fraction. */

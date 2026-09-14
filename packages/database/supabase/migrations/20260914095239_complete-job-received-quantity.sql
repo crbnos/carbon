@@ -11,7 +11,12 @@
 --     job already received), never a unit this job has already received;
 --   * take units already finished on the shop floor (Available) first, then by
 --     serial number; never a Consumed, Rejected or Scrapped unit;
---   * flip only the received units to Available.
+--   * flip only the received units to Available;
+--   * refuse the completion when fewer single-unit serials are left than the
+--     units being completed, or when the cumulative quantity would drop below
+--     what the job already received.
+-- The job row is locked first so two concurrent completions cannot compute the
+-- same receipt delta.
 -- Refuse a fractional completion quantity for serial-tracked items.
 -- And refuse a completion quantity <= 0 for stocked items: receiving nothing while
 -- marking the job Completed is how the unit/material mismatch arose. Non-Inventory
@@ -88,16 +93,20 @@ DECLARE
   v_prior_qty NUMERIC;
   v_prior_value NUMERIC;
   v_new_unit_cost NUMERIC;
+  v_serial_unit_ids TEXT[];
   v_company_today DATE := company_today(p_company_id);
 BEGIN
   -- Never let a NULL user reach NOT NULL audit columns; fall back to the job creator
   p_user_id := COALESCE(p_user_id, (SELECT "createdBy" FROM "job" WHERE id = p_job_id));
 
-  -- Fetch job details
+  -- Fetch job details. The row lock makes a concurrent completion wait and then
+  -- read this completion's cumulative quantity, so both cannot compute the same
+  -- receipt delta.
   SELECT "itemId", "quantityReceivedToInventory", "jobId", "locationId", "salesOrderLineId", "companyId"
   INTO STRICT v_item_id, v_prior_quantity_received, v_job_id_readable, v_job_location_id, v_sales_order_line_id, v_job_company_id
   FROM "job"
-  WHERE id = p_job_id;
+  WHERE id = p_job_id
+  FOR UPDATE;
 
   -- SECURITY DEFINER bypasses RLS: bind the call to the job's own company so a
   -- caller can never complete another tenant's job or post into a mismatched
@@ -140,6 +149,14 @@ BEGIN
   IF v_job_make_method."requiresSerialTracking"
      AND p_quantity_complete <> trunc(p_quantity_complete) THEN
     RAISE EXCEPTION 'Quantity completed must be a whole number for serial-tracked job %', v_job_id_readable;
+  END IF;
+
+  -- The quantity is cumulative and a received serial unit cannot be un-received,
+  -- so a serial job cannot be completed at less than it has already received.
+  IF v_job_make_method."requiresSerialTracking"
+     AND p_quantity_complete < COALESCE(v_prior_quantity_received, 0) THEN
+    RAISE EXCEPTION 'Quantity completed cannot be lower than the % already received for serial-tracked job %',
+      COALESCE(v_prior_quantity_received, 0), v_job_id_readable;
   END IF;
 
   -- Update job status. quantityReceivedToInventory is CUMULATIVE (not the
@@ -230,12 +247,16 @@ BEGIN
     -- Receive exactly the newly completed units: units finished on the shop floor
     -- (Available) first, then by serial number. A unit this job already received
     -- is never received again, so re-completion cannot double-count. Rejected
-    -- (failed inspection) and Scrapped units never enter stock.
-    FOR v_tracked_entity IN
-      SELECT te.*
+    -- (failed inspection) and Scrapped units never enter stock. Only single-unit
+    -- records are units: an unsplit placeholder holding several units cannot be
+    -- received as one. The candidates are locked so a concurrent completion
+    -- cannot take the same units.
+    v_serial_unit_ids := ARRAY(
+      SELECT te.id
       FROM "trackedEntity" te
       WHERE te.attributes->>'Job Make Method' = v_job_make_method.id
         AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+        AND te.quantity = 1
         AND NOT EXISTS (
           SELECT 1
           FROM "itemLedger" il
@@ -248,8 +269,17 @@ BEGIN
         te."readableId" NULLS LAST,
         te."createdAt",
         te.id
-      LIMIT GREATEST(v_quantity_received_to_inventory, 0)
-    LOOP
+      FOR UPDATE OF te
+    );
+
+    -- Receiving fewer units than completed would leave the job's received
+    -- quantity ahead of the ledger.
+    IF COALESCE(array_length(v_serial_unit_ids, 1), 0) < v_quantity_received_to_inventory THEN
+      RAISE EXCEPTION 'Job % has % serial unit(s) left to receive, fewer than the % being completed',
+        v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
+    END IF;
+
+    FOR v_unit_index IN 1..v_quantity_received_to_inventory::INTEGER LOOP
       INSERT INTO "itemLedger" (
         "entryType", "documentType", "documentId", "companyId",
         "itemId", quantity, "locationId", "storageUnitId",
@@ -257,12 +287,12 @@ BEGIN
       ) VALUES (
         'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
         v_item_id, 1, p_location_id, p_storage_unit_id,
-        v_tracked_entity.id, p_user_id
+        v_serial_unit_ids[v_unit_index], p_user_id
       );
 
       UPDATE "trackedEntity"
       SET status = 'Available'
-      WHERE id = v_tracked_entity.id;
+      WHERE id = v_serial_unit_ids[v_unit_index];
     END LOOP;
 
   ELSE

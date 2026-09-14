@@ -3723,7 +3723,7 @@ msgid "Complete Job"
 msgstr "Completa Lavoro"
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
-msgstr "Completa i seriali/lotti in MES prima di completare questo ordine di produzione, oppure contrassegna ogni operazione come Fatto per completarlo automaticamente."
+msgstr "Completa i seriali/lotti in MES prima di completare questo ordine di produzione, oppure contrassegna ogni operazione come completata per completarlo automaticamente."
 
 msgid "Complete Stock Transfer"
 msgstr "Completa Trasferimento Magazzino"

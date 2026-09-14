@@ -37,15 +37,20 @@ serial J000002-01 and issued 0 of 30 materials; completing at 1 twice received i
    - receive `p_quantity_complete - prior received` of them, ordering `Available` first (finished
      on the shop floor app), then by `readableId`, then `createdAt`;
    - flip only the received units to `Available`;
-   - never receive the same unit twice, so re-completion is safe.
+   - never receive the same unit twice, so re-completion is safe;
+   - lock the job row first, so concurrent completions cannot compute the same delta;
+   - refuse when fewer single-unit serials are left than the units being completed, and
+     when the cumulative quantity would drop below what was already received.
    The auto-complete path (`sync_finish_job_operation`) calls the same function and is fixed
    with it.
 2. **Refuse completion at quantity ≤ 0** in `complete_job_to_inventory` (and therefore every
    caller: ERP route, MCP tool, auto-complete) except Non-Inventory items, which keep current
    behavior. The fully-scrapped auto-complete branch never calls the function and is untouched.
 3. **Dialog.** For a serial job whose serials are already split into quantity-1 units, unlock
-   Quantity Completed: default to the `Available` count when > 0, else the job quantity, capped
-   at the receivable units; list the serials that will be received. Keep the lock when the job
+   Quantity Completed. The quantity is cumulative, like the database: units the job already
+   received are excluded, the default is what was received plus the unreceived `Available`
+   units (else the rest of the job quantity), the field runs from the received quantity to
+   received + receivable, and the preview lists only the units this completion adds. Keep the lock when the job
    still has an unsplit placeholder (no serial sequence) — receiving those needs serial numbers,
    which is out of scope. Complete Job is disabled at quantity ≤ 0 for stocked items; the
    validator is unchanged, since Non-Inventory completions may still submit 0.

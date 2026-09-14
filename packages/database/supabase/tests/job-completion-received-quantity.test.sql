@@ -5,13 +5,14 @@
 BEGIN;
 SET LOCAL statement_timeout = '60s';
 
--- A job for p_item_id with p_quantity units. For a serial item the job's serial
--- placeholder is split into numbered single units (<job>-01, -02, ...), as the
--- item serial sequence does at job creation. Every job consumes 2 of p_part_id
--- per unit, pulled from inventory.
+-- A job for p_item_id with p_quantity units. For a serial item, p_split splits
+-- the job's serial placeholder into numbered single units (<job>-01, -02, ...),
+-- as the item serial sequence does at job creation; otherwise the placeholder is
+-- left as created. Every job consumes 2 of p_part_id per unit, pulled from
+-- inventory.
 CREATE FUNCTION pg_temp.make_job(
   p_company_id text, p_location_id text, p_item_id text, p_part_id text,
-  p_readable_id text, p_quantity numeric
+  p_readable_id text, p_quantity numeric, p_split boolean DEFAULT true
 ) RETURNS text LANGUAGE plpgsql AS $fn$
 DECLARE
   v_job_id text;
@@ -31,7 +32,7 @@ BEGIN
       'Part', 2, 2 * p_quantity, p_company_id, 'system');
 
   SELECT * INTO v_seed FROM "trackedEntity" WHERE attributes->>'Job Make Method' = v_make_method_id;
-  IF v_seed.id IS NOT NULL THEN
+  IF v_seed.id IS NOT NULL AND p_split THEN
     UPDATE "trackedEntity" SET quantity = 1, "readableId" = p_readable_id || '-01' WHERE id = v_seed.id;
     FOR n IN 2..p_quantity::int LOOP
       INSERT INTO "trackedEntity" ("sourceDocument", "sourceDocumentId", "sourceDocumentReadableId",
@@ -62,7 +63,7 @@ $fn$;
 
 -- "<serial>:<status>:<units received>" for every serial on the job, by serial number.
 CREATE FUNCTION pg_temp.serials(p_job_id text) RETURNS text LANGUAGE sql AS $fn$
-  SELECT string_agg(te."readableId" || ':' || te.status || ':' ||
+  SELECT string_agg(COALESCE(te."readableId", 'unnumbered') || ':' || te.status || ':' ||
       COALESCE((SELECT sum(il.quantity) FROM "itemLedger" il
         WHERE il."trackedEntityId" = te.id AND il."documentType" = 'Job Receipt'
           AND il."documentId" = p_job_id), 0)::int,
@@ -129,6 +130,12 @@ BEGIN
   ASSERT pg_temp.serials(v_job) = 'SJ-01:Available:1,SJ-02:Available:1,SJ-03:Available:1', 'Re-completion must not receive a unit twice: ' || pg_temp.serials(v_job);
   ASSERT pg_temp.issued(v_job) = 6, 'Re-completion must not consume again: ' || pg_temp.issued(v_job);
 
+  -- The quantity is cumulative: it cannot drop below what was already received.
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error LIKE 'Quantity completed cannot be lower than the 3 already received%', 'Lowering a serial job below its receipts must be refused, got: ' || COALESCE(v_error, 'success');
+  SELECT "quantityComplete", "quantityReceivedToInventory" INTO v_row FROM job WHERE id = v_job;
+  ASSERT v_row."quantityComplete" = 3 AND v_row."quantityReceivedToInventory" = 3, 'A refused lower quantity must leave the job at 3';
+
   -- A unit finished on the shop floor is received ahead of lower serial numbers.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'MJ', 3);
   UPDATE "trackedEntity" SET status = 'Available' WHERE "readableId" = 'MJ-03' AND "companyId" = v_company_id;
@@ -136,12 +143,28 @@ BEGIN
   ASSERT v_error IS NULL, 'Mixed job at 1 failed: ' || COALESCE(v_error, '');
   ASSERT pg_temp.serials(v_job) = 'MJ-01:Reserved:0,MJ-02:Reserved:0,MJ-03:Available:1', 'The shop-floor unit must be received first: ' || pg_temp.serials(v_job);
 
-  -- A scrapped unit is never received.
+  -- A scrapped unit is never received, and completing more units than are left
+  -- is refused rather than recording units the ledger never received.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'XJ', 2);
   UPDATE "trackedEntity" SET status = 'Scrapped' WHERE "readableId" = 'XJ-01' AND "companyId" = v_company_id;
   v_error := pg_temp.try_complete(v_job, 2);
-  ASSERT v_error IS NULL, 'Scrap job at 2 failed: ' || COALESCE(v_error, '');
+  ASSERT v_error LIKE 'Job XJ has 1 serial unit(s) left to receive, fewer than the 2 being completed%', 'Completing more units than are left must be refused, got: ' || COALESCE(v_error, 'success');
+  ASSERT pg_temp.serials(v_job) = 'XJ-01:Scrapped:0,XJ-02:Reserved:0', 'A refused completion must not receive units: ' || pg_temp.serials(v_job);
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error IS NULL, 'Scrap job at 1 failed: ' || COALESCE(v_error, '');
   ASSERT pg_temp.serials(v_job) = 'XJ-01:Scrapped:0,XJ-02:Available:1', 'A scrapped unit must not be received: ' || pg_temp.serials(v_job);
+
+  -- An unsplit placeholder holding several units cannot be received as one unit.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'UJ', 2, false);
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error LIKE 'Job UJ has 0 serial unit(s) left to receive, fewer than the 2 being completed%', 'An unsplit multi-unit placeholder must be refused, got: ' || COALESCE(v_error, 'success');
+
+  -- A single-unit job without a serial sequence still completes (e.g. every
+  -- operation marked Done), receiving its one unnumbered unit.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'OJ', 1, false);
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error IS NULL, 'Single-unit unsplit job at 1 failed: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.serials(v_job) = 'unnumbered:Available:1', 'The single unnumbered unit must be received once: ' || pg_temp.serials(v_job);
 
   -- Inventory-tracked job: fractions are allowed, zero is refused.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'IJ', 2);
@@ -158,7 +181,7 @@ BEGIN
   ASSERT v_error IS NULL, 'Non-Inventory job at 0 must be allowed, got: ' || COALESCE(v_error, '');
   ASSERT (SELECT status FROM job WHERE id = v_job) = 'Completed', 'Non-Inventory job must complete';
 
-  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, inventory, non-inventory)';
+  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, unsplit placeholders, inventory, non-inventory)';
 END;
 $cases$;
 ROLLBACK;

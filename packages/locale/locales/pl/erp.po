@@ -3723,7 +3723,7 @@ msgid "Complete Job"
 msgstr "Ukończ zadanie"
 
 msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
-msgstr "Ukończ numery seryjne/partie w MES przed zakończeniem tego zlecenia produkcyjnego lub oznacz każdą operację jako Gotowe, aby zakończyć je automatycznie."
+msgstr "Zakończ produkcję sztuk z numerami seryjnymi/partii w MES przed zakończeniem tego zlecenia produkcyjnego lub oznacz każdą operację jako zakończoną, aby zakończyć je automatycznie."
 
 msgid "Complete Stock Transfer"
 msgstr "Ukończ Transfer Zapasów"
