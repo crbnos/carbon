@@ -3,6 +3,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { PlanItemRow } from "@carbon/ee";
 import {
   buildAssemblyPlan,
+  externalIdForAssembly,
+  externalIdForBomLine,
   flattenNodes,
   metadataProperty,
   parseBomTree,
@@ -219,11 +221,46 @@ export async function action({ request }: ActionFunctionArgs) {
     .filter((item) => parentPartNumbers.has(item.readableId))
     .map((item) => item.id);
 
+  // The links the status badges read, so the review can tell a reuse the user
+  // already linked from one found by part number alone (a conflict).
+  const linkExternalIds = [
+    ...new Set(
+      [
+        externalIdForAssembly(documentId, elementId),
+        ...flattenNodes(lines).map((node) =>
+          externalIdForBomLine(node.itemSource ?? null)
+        )
+      ].filter((id): id is string => !!id)
+    )
+  ];
+
   const serviceRole = getCarbonServiceRole();
-  const [options, methodByItemId] = await Promise.all([
+  const [options, methodByItemId, links] = await Promise.all([
     loadPlanOptions(client, companyId),
-    loadActiveMakeMethods(client, companyId, parentItemIds)
+    loadActiveMakeMethods(client, companyId, parentItemIds),
+    selectInBatches(linkExternalIds, (batch) =>
+      client
+        .from("externalIntegrationMapping")
+        .select("entityId, externalId")
+        .eq("companyId", companyId)
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("entityType", "item")
+        .in("externalId", batch)
+    )
   ]);
+  // A failed read would mark every reuse a conflict; say so instead.
+  if (links.error) {
+    return data(
+      { error: "Carbon couldn't read its Onshape links. Try again." },
+      { status: 500 }
+    );
+  }
+  const linkedItemIdByExternalId = new Map<string, string>();
+  for (const link of links.data ?? []) {
+    if (link.externalId) {
+      linkedItemIdByExternalId.set(link.externalId, link.entityId);
+    }
+  }
   let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
   try {
     ownership = await loadMethodLineOwnership(
@@ -261,7 +298,8 @@ export async function action({ request }: ActionFunctionArgs) {
     mappedLinesByMethodId: ownership.mapped,
     manualLinesByMethodId: ownership.manual,
     options,
-    depth
+    depth,
+    linkedItemIdByExternalId
   });
 
   // ---- Root custom fields (property map) ---------------------------------
