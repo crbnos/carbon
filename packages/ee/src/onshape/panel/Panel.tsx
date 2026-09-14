@@ -685,10 +685,14 @@ const CAPPED_WARNING_VISIBLE = 6;
 
 function CappedWarningList({
   title,
-  lines
+  lines,
+  description,
+  variant = "warning"
 }: {
   title: (count: number) => string;
   lines: string[];
+  description?: string;
+  variant?: "warning" | "destructive";
 }) {
   const [expanded, setExpanded] = useState(false);
   const folded = useMemo(() => {
@@ -699,10 +703,11 @@ function CappedWarningList({
   const visible = expanded ? folded : folded.slice(0, CAPPED_WARNING_VISIBLE);
   const hidden = folded.length - visible.length;
   return (
-    <Alert variant="warning">
+    <Alert variant={variant}>
       <LuTriangleAlert />
       <AlertTitle>{title(lines.length)}</AlertTitle>
       <AlertDescription>
+        {description ? <p className="mb-1">{description}</p> : null}
         <ul className="list-disc space-y-1 pl-4">
           {visible.map(([line, count]) => (
             <li key={line}>
@@ -2678,7 +2683,7 @@ function PartsSection({
                     ? ` → ${part.item.readableId}`
                     : ""}
                   {part.state === "matched" && part.item
-                    ? ` · matches ${part.item.readableId}`
+                    ? " · number already used in Carbon"
                     : ""}
                 </p>
               </div>
@@ -3881,7 +3886,8 @@ function CustomFieldLine({
 const PART_PLAN_GROUPS = [
   { action: "create", label: "New" },
   { action: "update", label: "Update" },
-  { action: "adopt", label: "Link" },
+  { action: "adopt", label: "Conflict" },
+  { action: "reuse", label: "Linked" },
   { action: "unchanged", label: "Up to date" },
   { action: "skip-no-part-number", label: "Skipped" }
 ] as const;
@@ -4061,8 +4067,8 @@ function PartPlanBadge({ row }: { row: PartPlanRow }) {
       );
     case "adopt":
       return (
-        <Status color="yellow" disableTooltip>
-          Link to {row.item?.readableId ?? row.partNumber}
+        <Status color="red" disableTooltip>
+          Conflict
         </Status>
       );
     case "update":
@@ -4296,6 +4302,27 @@ function PartReviewSection({
             ))
           )}
 
+          {(() => {
+            const conflicts = plan.rows.filter(
+              (row) => row.action === "adopt" && review.selected.has(row.partId)
+            );
+            return conflicts.length > 0 ? (
+              <CappedWarningList
+                variant="destructive"
+                title={(n) =>
+                  n === 1
+                    ? "1 part shares a part number with an existing Carbon item"
+                    : `${n} parts share a part number with an existing Carbon item`
+                }
+                description="Pushing links them and overwrites their name, description and Onshape-owned custom fields with Onshape's. If any of them is a different part, untick it or renumber it in Onshape."
+                lines={conflicts.map(
+                  (row) =>
+                    `${row.partNumber} · ${row.item?.name ?? row.name} in Carbon`
+                )}
+              />
+            ) : null;
+          })()}
+
           <ReviewActionBar
             review={review}
             replanning={replanning}
@@ -4305,6 +4332,15 @@ function PartReviewSection({
       )}
     </VStack>
   );
+}
+
+/** Which review chip an assembly item falls under. */
+function assemblyItemGroup(item: {
+  action: "create" | "reuse";
+  conflict?: boolean;
+}): PartPlanGroupKey {
+  if (item.action === "create") return "create";
+  return item.conflict ? "adopt" : "reuse";
 }
 
 function AssemblyReviewSection({
@@ -4342,14 +4378,13 @@ function AssemblyReviewSection({
   );
 
   /*
-   * An assembly item is either created or reused, so its two groups reuse the
-   * part plan's "create"/"adopt" chips rather than inventing a second
-   * vocabulary for the same idea.
+   * An assembly item is created, reused through a link, or reused by part
+   * number alone — the part plan's New / Linked / Conflict chips.
    */
   const counts = useMemo(() => {
     const out: Record<string, number> = {};
     for (const item of plan.items) {
-      const key = item.action === "create" ? "create" : "adopt";
+      const key = assemblyItemGroup(item);
       out[key] = (out[key] ?? 0) + 1;
     }
     return out;
@@ -4358,8 +4393,7 @@ function AssemblyReviewSection({
   const visible = useMemo(() => {
     const needle = query.trim().toLowerCase();
     return plan.items.filter((item) => {
-      const key = item.action === "create" ? "create" : "adopt";
-      if (group !== "all" && group !== key) return false;
+      if (group !== "all" && group !== assemblyItemGroup(item)) return false;
       if (!needle) return true;
       return (
         (item.name ?? "").toLowerCase().includes(needle) ||
@@ -4413,6 +4447,7 @@ function AssemblyReviewSection({
             <div className="shrink-0">
               <ItemActionBadge
                 action={plan.root.action === "create" ? "create" : "reuse"}
+                conflict={plan.root.conflict}
               />
             </div>
           </div>
@@ -4522,6 +4557,7 @@ function AssemblyReviewSection({
                       <div className="shrink-0">
                         <ItemActionBadge
                           action={item.action === "create" ? "create" : "reuse"}
+                          conflict={item.conflict}
                         />
                       </div>
                     </div>
@@ -4559,8 +4595,30 @@ function AssemblyReviewSection({
           ...plan.skipped
         ];
         const drafts = described.filter((d) => d.tone === "notice");
+        const conflicts = [
+          ...(plan.root.conflict
+            ? [`${plan.root.partNumber} · ${plan.root.name ?? "this assembly"}`]
+            : []),
+          ...plan.items
+            .filter((item) => item.conflict)
+            .map((item) =>
+              item.name ? `${item.partNumber} · ${item.name}` : item.partNumber
+            )
+        ];
         return (
           <>
+            {conflicts.length > 0 ? (
+              <CappedWarningList
+                variant="destructive"
+                title={(n) =>
+                  n === 1
+                    ? "1 part shares a part number with an existing Carbon item"
+                    : `${n} parts share a part number with an existing Carbon item`
+                }
+                description={`Pushing links them to these Onshape parts and uses them in the BOM. Any that are assemblies get Onshape's BOM lines written into their make methods${plan.root.conflict ? ", and the assembly's Onshape-owned custom fields are overwritten" : ""}. If any of them is a different part, renumber it in Onshape before pushing.`}
+                lines={conflicts}
+              />
+            ) : null}
             {wontWrite.length > 0 ? (
               <CappedWarningList
                 title={(n) =>
@@ -4927,28 +4985,50 @@ function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
   );
 }
 
+/**
+ * Linked: pushed from this Onshape part. Conflict: Carbon has an item with the
+ * same part number that was never linked to it — equal numbers are not proof
+ * of the same part, and a push would write into that item. New: Carbon has
+ * nothing, and a push creates it.
+ */
 function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
   if (state === "linked")
     return (
       <Status color="green" disableTooltip>
-        In Carbon
+        Linked
       </Status>
     );
   if (state === "matched")
     return (
-      <Status color="yellow" disableTooltip>
-        Match found
+      <Status color="red" disableTooltip>
+        Conflict
       </Status>
     );
   return (
     <Status color="gray" disableTooltip>
-      Not in Carbon
+      New
     </Status>
   );
 }
 
-/** Create / Reuse, the two outcomes an assembly or release component has. */
-function ItemActionBadge({ action }: { action: "create" | "reuse" }) {
+/**
+ * Create / Reuse, the two outcomes an assembly or release component has — and
+ * Conflict, a reuse found by part number alone.
+ */
+function ItemActionBadge({
+  action,
+  conflict
+}: {
+  action: "create" | "reuse";
+  conflict?: boolean;
+}) {
+  if (action === "reuse" && conflict) {
+    return (
+      <Status color="red" disableTooltip>
+        Conflict
+      </Status>
+    );
+  }
   return action === "create" ? (
     <Status color="blue" disableTooltip>
       Create
