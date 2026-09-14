@@ -3722,6 +3722,9 @@ msgstr "Complete all quantities on kanban complete scan"
 msgid "Complete Job"
 msgstr "Complete Job"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+
 msgid "Complete Stock Transfer"
 msgstr "Complete Stock Transfer"
 
@@ -11418,6 +11421,9 @@ msgstr "Nothing"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Nothing at this location matches \"{0}\"."
 
+msgid "Nothing completed in MES yet"
+msgstr "Nothing completed in MES yet"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Nothing else at this location has stock to pull from."
 
@@ -15182,6 +15188,9 @@ msgstr "Serial Numbers"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Serial numbers are only generated for serial- or batch-tracked items."
 
+msgid "Serial numbers received"
+msgstr "Serial numbers received"
+
 msgid "Serial numbers to return"
 msgstr "Serial numbers to return"
 
@@ -15193,6 +15202,9 @@ msgstr "Serial tracking"
 
 msgid "Serial Tracking"
 msgstr "Serial Tracking"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "Serial-tracked jobs must be completed in whole units."
 
 msgid "Serial/Batch #"
 msgstr "Serial/Batch #"

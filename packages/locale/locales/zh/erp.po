@@ -3722,6 +3722,9 @@ msgstr "完成看板扫码时完成所有数量"
 msgid "Complete Job"
 msgstr "完成工作"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "请先在MES中完成序列号/批次再完成此工单，或将每道工序标记为完成以自动完成该工单。"
+
 msgid "Complete Stock Transfer"
 msgstr "完成库存转移"
 
@@ -11418,6 +11421,9 @@ msgstr "无"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "此位置处没有与\"{0}\"匹配的内容。"
 
+msgid "Nothing completed in MES yet"
+msgstr "MES中尚未完成任何内容"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "此位置没有其他可提取的库存。"
 
@@ -15182,6 +15188,9 @@ msgstr "序列号"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "序列号仅为序列号或批次跟踪的物料生成。"
 
+msgid "Serial numbers received"
+msgstr "已接收的序列号"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "序列号追踪"
 
 msgid "Serial Tracking"
 msgstr "序列追踪"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "按序列号跟踪的工单必须以整数单位完成。"
 
 msgid "Serial/Batch #"
 msgstr "序列号/批次 #"

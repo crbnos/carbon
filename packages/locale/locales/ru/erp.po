@@ -3722,6 +3722,9 @@ msgstr "Завершить все количества при сканирова
 msgid "Complete Job"
 msgstr "Завершить работу"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "Завершите серийные номера/партии в MES перед завершением этого производственного заказа или отметьте каждую операцию как Готово, чтобы он завершился автоматически."
+
 msgid "Complete Stock Transfer"
 msgstr "Завершить передачу запасов"
 
@@ -11418,6 +11421,9 @@ msgstr "Ничего"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "В этом месте нет ничего, соответствующего \"{0}\"."
 
+msgid "Nothing completed in MES yet"
+msgstr "В MES пока ничего не завершено"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "На этом месте больше нечего извлекать из запаса."
 
@@ -15182,6 +15188,9 @@ msgstr "Серийные номера"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Серийные номера генерируются только для серийных или партионно отслеживаемых товаров."
 
+msgid "Serial numbers received"
+msgstr "Принятые серийные номера"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "Отслеживание серийных номеров"
 
 msgid "Serial Tracking"
 msgstr "Отслеживание по серийным номерам"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "Производственные заказы с учётом по серийным номерам должны завершаться целыми единицами."
 
 msgid "Serial/Batch #"
 msgstr "Серийный номер/Партия №"

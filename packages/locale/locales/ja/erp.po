@@ -3722,6 +3722,9 @@ msgstr "かんばんスキャン完了時にすべての数量を完了する"
 msgid "Complete Job"
 msgstr "ジョブを完了"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "この製造指図を完了する前にMESでシリアル/バッチを完了するか、すべての工程を完了にして自動的に完了させてください。"
+
 msgid "Complete Stock Transfer"
 msgstr "在庫移動を完了"
 
@@ -11418,6 +11421,9 @@ msgstr "なし"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "この場所には\"{0}\"に一致するものはありません。"
 
+msgid "Nothing completed in MES yet"
+msgstr "MESでまだ何も完了していません"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "この場所には他に引き出す在庫がありません。"
 
@@ -15182,6 +15188,9 @@ msgstr "シリアル番号"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "シリアル番号は、シリアルまたはバッチ追跡アイテムに対してのみ生成されます。"
 
+msgid "Serial numbers received"
+msgstr "受け入れたシリアル番号"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "シリアルトラッキング"
 
 msgid "Serial Tracking"
 msgstr "シリアル追跡"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "シリアル番号で管理される製造指図は、整数単位で完了する必要があります。"
 
 msgid "Serial/Batch #"
 msgstr "シリアル/バッチ #"

@@ -3722,6 +3722,9 @@ msgstr "कानबान पूर्ण स्कैन पर सभी म�
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "इस जॉब को पूर्ण करने से पहले MES में सीरीज़/बैच पूर्ण करें, या इसे स्वचालित रूप से पूर्ण करने के लिए हर ऑपरेशन को हो गया के रूप में चिह्नित करें।"
+
 msgid "Complete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर पूरा करें"
 
@@ -11418,6 +11421,9 @@ msgstr "कुछ नहीं"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "इस स्थान पर कुछ भी \"{0}\" से मेल नहीं खाता।"
 
+msgid "Nothing completed in MES yet"
+msgstr "MES में अभी तक कुछ भी पूर्ण नहीं हुआ"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "इस स्थान पर कोई अन्य स्टॉक नहीं है जहां से खींचा जा सकता है।"
 
@@ -15182,6 +15188,9 @@ msgstr "सीरियल नंबर"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "सीरियल नंबर केवल सीरियल या बैच-ट्रैक किए गए आइटम के लिए उत्पन्न होते हैं।"
 
+msgid "Serial numbers received"
+msgstr "प्राप्त सीरियल नंबर"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "सीरियल ट्रैकिंग"
 
 msgid "Serial Tracking"
 msgstr "सीरियल ट्रैकिंग"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "सीरियल नंबर से ट्रैक किए गए जॉब पूरी इकाइयों में पूरे किए जाने चाहिए।"
 
 msgid "Serial/Batch #"
 msgstr "सीरीज़/बैच #"

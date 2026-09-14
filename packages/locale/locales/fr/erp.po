@@ -3722,6 +3722,9 @@ msgstr "Terminer toutes les quantités lors du scan de clôture du kanban"
 msgid "Complete Job"
 msgstr "Terminer le travail"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "Terminez les numéros de série/lots dans MES avant de terminer cet ordre de fabrication, ou marquez chaque opération comme Fait pour le terminer automatiquement."
+
 msgid "Complete Stock Transfer"
 msgstr "Terminer le transfert de stock"
 
@@ -11418,6 +11421,9 @@ msgstr "Rien"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Rien à cet emplacement ne correspond à \"{0}\"."
 
+msgid "Nothing completed in MES yet"
+msgstr "Rien n'a encore été terminé dans MES"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Aucun autre article à cet endroit n'a de stock à prélever."
 
@@ -15182,6 +15188,9 @@ msgstr "Numéros de série"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Les numéros de série ne sont générés que pour les articles suivis en série ou en lot."
 
+msgid "Serial numbers received"
+msgstr "Numéros de série réceptionnés"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "Suivi des numéros de série"
 
 msgid "Serial Tracking"
 msgstr "Suivi en série"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "Les ordres de fabrication suivis par numéro de série doivent être terminés en unités entières."
 
 msgid "Serial/Batch #"
 msgstr "Numéro de série/lot"

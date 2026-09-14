@@ -1114,6 +1114,51 @@ function JobExpediteModal({
   );
 }
 
+const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
+
+/**
+ * The serial numbers a job completion can receive, in the order
+ * complete_job_to_inventory receives them: units finished on the shop floor
+ * (Available) first, then reserved units, each by serial number.
+ *
+ * Returns null unless every receivable unit is already a numbered, single-unit
+ * serial. A job still holding an unsplit placeholder has no serial numbers to
+ * receive yet, so its quantity stays locked to what the shop floor finished.
+ */
+function getReceivableSerialUnits(
+  trackedEntities: {
+    id: string;
+    status: string;
+    quantity: number;
+    readableId: string | null;
+    createdAt: string;
+  }[]
+): string[] | null {
+  const receivable = trackedEntities.filter(
+    (entity) => !NON_RECEIVABLE_SERIAL_STATUSES.includes(entity.status)
+  );
+
+  if (
+    receivable.length === 0 ||
+    receivable.some((entity) => entity.quantity !== 1 || !entity.readableId)
+  ) {
+    return null;
+  }
+
+  const statusRank = (status: string) =>
+    status === "Available" ? 0 : status === "Reserved" ? 1 : 2;
+
+  return [...receivable]
+    .sort(
+      (a, b) =>
+        statusRank(a.status) - statusRank(b.status) ||
+        (a.readableId ?? "").localeCompare(b.readableId ?? "") ||
+        a.createdAt.localeCompare(b.createdAt) ||
+        a.id.localeCompare(b.id)
+    )
+    .map((entity) => entity.readableId as string);
+}
+
 function JobCompleteModal({
   job,
   onClose,
@@ -1134,6 +1179,12 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
+  // Serial units the completion can receive, in the order
+  // complete_job_to_inventory receives them. Null when the quantity is not
+  // chosen per serial unit.
+  const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
+    null
+  );
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1146,6 +1197,11 @@ function JobCompleteModal({
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
+  // Serial units are received one at a time; the database refuses a fraction.
+  const hasFractionalSerialQuantity =
+    receivableSerials !== null &&
+    Number.isFinite(quantityComplete) &&
+    !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
     if (!carbon) return;
@@ -1183,8 +1239,23 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        setQuantityComplete(availableQuantity);
-        setHasTrackedQuantity(true);
+        const serialUnits = makeMethod.data?.requiresSerialTracking
+          ? getReceivableSerialUnits(trackedEntities.data)
+          : null;
+
+        if (serialUnits) {
+          // Every unit already exists as a numbered serial, so the quantity can
+          // be chosen here even when nothing was finished on the shop floor.
+          setReceivableSerials(serialUnits);
+          setQuantityComplete(
+            availableQuantity > 0
+              ? availableQuantity
+              : Math.min(job?.quantity ?? 0, serialUnits.length)
+          );
+        } else {
+          setQuantityComplete(availableQuantity);
+          setHasTrackedQuantity(true);
+        }
       }
     }
 
@@ -1302,12 +1373,47 @@ function JobCompleteModal({
                   value={quantityComplete}
                   onChange={(value) => setQuantityComplete(value)}
                   isDisabled={hasTrackedQuantity}
+                  minValue={0}
+                  maxValue={receivableSerials?.length}
                   helperText={
                     hasTrackedQuantity
                       ? t`Quantity is derived from completed serials/batches in MES and cannot be edited.`
-                      : undefined
+                      : hasFractionalSerialQuantity
+                        ? t`Serial-tracked jobs must be completed in whole units.`
+                        : undefined
                   }
                 />
+
+                {hasTrackedQuantity && !(quantityComplete > 0) && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Nothing completed in MES yet</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Complete serials/batches in MES before completing this
+                        job, or mark every operation Done to complete it
+                        automatically.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {receivableSerials &&
+                  quantityComplete > 0 &&
+                  !hasFractionalSerialQuantity && (
+                    <VStack spacing={1} className="w-full">
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>Serial numbers received</Trans>
+                      </span>
+                      <span className="text-sm">
+                        {receivableSerials
+                          .slice(0, quantityComplete)
+                          .join(", ")}
+                      </span>
+                    </VStack>
+                  )}
 
                 {hasLeftover && (
                   <>
@@ -1447,7 +1553,17 @@ function JobCompleteModal({
                 <Trans>Cancel</Trans>
               </Button>
 
-              <Button type="submit" isDisabled={hasLeftover && !leftoverAction}>
+              <Button
+                type="submit"
+                isDisabled={
+                  (hasLeftover && !leftoverAction) ||
+                  // Completing a stocked item at zero receives nothing and
+                  // consumes nothing; the database refuses it as well.
+                  (job.itemTrackingType !== "Non-Inventory" &&
+                    !(quantityComplete > 0)) ||
+                  hasFractionalSerialQuantity
+                }
+              >
                 <Trans>Complete Job</Trans>
               </Button>
             </ModalFooter>

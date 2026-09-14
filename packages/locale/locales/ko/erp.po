@@ -3722,6 +3722,9 @@ msgstr "칸반 완료 스캔에서 모든 수량을 완료 처리"
 msgid "Complete Job"
 msgstr "작업 완료"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "이 작업 지시를 완료하기 전에 MES에서 일련번호/배치를 완료하거나, 모든 공정을 완료로 표시하여 자동으로 완료되도록 하세요."
+
 msgid "Complete Stock Transfer"
 msgstr "재고 이동 완료"
 
@@ -11418,6 +11421,9 @@ msgstr "없음"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "이 위치에서 \"{0}\"와 일치하는 항목이 없습니다."
 
+msgid "Nothing completed in MES yet"
+msgstr "MES에서 아직 완료된 항목이 없습니다"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "이 위치에는 더 이상 가져올 재고가 없습니다."
 
@@ -15182,6 +15188,9 @@ msgstr "시리얼 번호"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "시리얼 번호는 시리얼 또는 배치 추적 항목에만 생성됩니다."
 
+msgid "Serial numbers received"
+msgstr "입고된 시리얼 번호"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "일련번호 추적"
 
 msgid "Serial Tracking"
 msgstr "일련번호 추적"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "시리얼 번호로 추적되는 작업 지시는 정수 단위로 완료해야 합니다."
 
 msgid "Serial/Batch #"
 msgstr "일련번호/배치 #"

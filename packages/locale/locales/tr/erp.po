@@ -3722,6 +3722,9 @@ msgstr "Kanban tamamlama taramasında tüm miktarları tamamla"
 msgid "Complete Job"
 msgstr "İşi Tamamla"
 
+msgid "Complete serials/batches in MES before completing this job, or mark every operation Done to complete it automatically."
+msgstr "Bu iş emrini tamamlamadan önce MES'te seri numaralarını/partileri tamamlayın veya otomatik olarak tamamlanması için her operasyonu Bitti olarak işaretleyin."
+
 msgid "Complete Stock Transfer"
 msgstr "Stok Transferini Tamamla"
 
@@ -11418,6 +11421,9 @@ msgstr "Hiçbir şey"
 msgid "Nothing at this location matches \"{0}\"."
 msgstr "Bu konumda \"{0}\" ile eşleşen hiçbir şey yok."
 
+msgid "Nothing completed in MES yet"
+msgstr "MES'te henüz hiçbir şey tamamlanmadı"
+
 msgid "Nothing else at this location has stock to pull from."
 msgstr "Bu konumda çekilecek başka hiçbir stok yok."
 
@@ -15182,6 +15188,9 @@ msgstr "Seri Numaraları"
 msgid "Serial numbers are only generated for serial- or batch-tracked items."
 msgstr "Seri numaraları yalnızca seri- veya batch-izlenen öğeler için oluşturulur."
 
+msgid "Serial numbers received"
+msgstr "Teslim alınan seri numaraları"
+
 msgid "Serial numbers to return"
 msgstr ""
 
@@ -15193,6 +15202,9 @@ msgstr "Seri numarası takibi"
 
 msgid "Serial Tracking"
 msgstr "Seri Takibi"
+
+msgid "Serial-tracked jobs must be completed in whole units."
+msgstr "Seri numarasıyla izlenen iş emirleri tam birimler halinde tamamlanmalıdır."
 
 msgid "Serial/Batch #"
 msgstr "Seri/Parti No"
