@@ -227,12 +227,10 @@ export const path = {
         generatePath(
           `${api}/integrations/onshape/d/${documentId}/v/${versionId}/elements`
         ),
-      onShapePanelFields: `${api}/integrations/onshape/panel/fields`,
       onShapePanelMe: `${api}/integrations/onshape/panel/me`,
       onShapePanelPlanAssembly: `${api}/integrations/onshape/panel/plan-assembly`,
       onShapePanelPlanPart: `${api}/integrations/onshape/panel/plan-part`,
       onShapePanelPlanRelease: `${api}/integrations/onshape/panel/plan-release`,
-      onShapePanelPreferences: `${api}/integrations/onshape/panel/preferences`,
       onShapePanelPushAssembly: `${api}/integrations/onshape/panel/push-assembly`,
       onShapePanelPushPart: `${api}/integrations/onshape/panel/push-part`,
       onShapePanelPushRelease: `${api}/integrations/onshape/panel/push-release`,

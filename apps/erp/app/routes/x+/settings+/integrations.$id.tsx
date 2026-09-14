@@ -844,6 +844,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // (Ramp's account-mapping `dynamicOptions` are computed above, before the
   // not-installed early return, so the install form has them too.)
 
+  // Onshape V2's default unit is a code from this company's own list.
+  if (integrationId === "onshape-v2") {
+    const units = await client
+      .from("unitOfMeasure")
+      .select("code, name")
+      .eq("companyId", companyId)
+      .order("name");
+    if (units.error) {
+      logger.error("Failed to load units of measure for Onshape V2", {
+        error: units.error
+      });
+    } else {
+      dynamicOptions.defaultUnitOfMeasureCode = (units.data ?? []).map(
+        (unit) => ({ value: unit.code, label: `${unit.code} · ${unit.name}` })
+      );
+    }
+  }
+
   // Provider chart of accounts for the Account Mapping tab. Xero manual
   // journals reference accounts by code, so only coded accounts are
   // mappable.

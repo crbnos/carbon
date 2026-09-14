@@ -7,13 +7,14 @@
  * definitions (`customField`, table "part") whose values live as JSON on the
  * row, keyed by field id. The bridge is one explicit map per company, stored
  * on the Onshape integration's settings metadata: which Onshape property
- * feeds which Carbon field, and who owns the value afterwards.
+ * feeds which Carbon field.
  *
- * `mode` per mapping:
- * - "owned": Onshape writes the field on every push and the ERP treats it
- *   like name/description — locked while the item is linked.
- * - "default": Onshape fills it at create (editable in the review); Carbon
- *   owns it afterwards and pushes never touch it again.
+ * Onshape always wins: every mapped field is written on every push, and a
+ * property emptied in Onshape empties the Carbon field. There is one mode,
+ * "owned". A stored "default" entry, from before the review stopped being
+ * editable, is read as owned — the panel no longer offers a second place to
+ * edit data Onshape already edits. The `mode` field stays on the types so the
+ * merge helpers keep one shape.
  *
  * Everything here is pure so the plan a user reviewed is the plan that runs.
  */
@@ -260,15 +261,17 @@ export function coerceOnshapeValue(
   }
 }
 
-/** The stored property map, tolerating absent/malformed metadata. */
+/**
+ * The stored property map, tolerating absent/malformed metadata. Every entry
+ * reads as owned, whatever mode is stored.
+ */
 export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
   const raw = isRecord(metadata) ? metadata.propertyMap : null;
   if (!Array.isArray(raw)) return [];
   const out: PropertyMapEntry[] = [];
   for (const entry of raw) {
     if (!isRecord(entry)) continue;
-    const { onshapePropertyId, onshapeName, valueType, carbonFieldId, mode } =
-      entry;
+    const { onshapePropertyId, onshapeName, valueType, carbonFieldId } = entry;
     if (
       typeof onshapePropertyId !== "string" ||
       typeof carbonFieldId !== "string"
@@ -280,50 +283,10 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
       onshapeName: typeof onshapeName === "string" ? onshapeName : "",
       valueType: typeof valueType === "string" ? valueType : "STRING",
       carbonFieldId,
-      mode: mode === "default" ? "default" : "owned"
+      mode: "owned"
     });
   }
   return out;
-}
-
-/**
- * What a mapping decision is, for comparing two maps.
- *
- * Looser than `PropertyMapEntry` because the editor's draft carries an
- * unmapped row as an entry with no field yet; `onshapeName` and `valueType`
- * are display, re-read from Onshape on every load, and a change in either is
- * not a decision the user made.
- */
-type PropertyMapDecision = {
-  onshapePropertyId: string;
-  carbonFieldId?: string;
-  mode: "owned" | "default";
-};
-
-/**
- * Whether two property maps say the same thing, order ignored.
- *
- * The Settings page has one Save for the whole page, so it has to know
- * whether the map has anything to write. Order is ignored because editing one
- * row moves it to the end of the draft — comparing positionally would call
- * every map dirty after a single click, and the save posts the whole map.
- */
-export function propertyMapEqual(
-  a: readonly PropertyMapDecision[],
-  b: readonly PropertyMapDecision[]
-): boolean {
-  if (a.length !== b.length) return false;
-  const index = new Map(a.map((entry) => [entry.onshapePropertyId, entry]));
-  for (const entry of b) {
-    const other = index.get(entry.onshapePropertyId);
-    if (!other) return false;
-    if (other.carbonFieldId !== entry.carbonFieldId) return false;
-    if (other.mode !== entry.mode) return false;
-  }
-  // Equal lengths plus every `b` key present in `a` leaves no room for a
-  // duplicate key to hide a difference: a duplicate in `b` would have to
-  // match a key `a` also holds twice, and the map keeps only one of those.
-  return index.size === a.length;
 }
 
 /**

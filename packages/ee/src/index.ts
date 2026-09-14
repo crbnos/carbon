@@ -156,7 +156,6 @@ export {
 export type { OnshapePushDefaults } from "./onshape/panel/preferences";
 export {
   DEFAULT_PUSH_DEFAULTS,
-  PUSH_DEFAULT_SETTING_NAMES,
   parsePushDefaults,
   reconcilePushDefaults
 } from "./onshape/panel/preferences";

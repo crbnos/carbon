@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  DEFAULT_PUSH_DEFAULTS,
-  parsePushDefaults,
-  pushDefaultsEqual
-} from "./preferences";
+import { DEFAULT_PUSH_DEFAULTS, parsePushDefaults } from "./preferences";
 
 describe("parsePushDefaults", () => {
   it("returns the documented defaults for anything that is not an object", () => {
@@ -65,42 +61,5 @@ describe("parsePushDefaults", () => {
       defaultMethodTypeForMake: "Make to Order"
     });
     expect(parsed.methodTypeForMake).toBe("Make to Order");
-  });
-});
-
-describe("pushDefaultsEqual", () => {
-  it("is true for the same choices", () => {
-    expect(
-      pushDefaultsEqual(DEFAULT_PUSH_DEFAULTS, { ...DEFAULT_PUSH_DEFAULTS })
-    ).toBe(true);
-  });
-
-  it("notices a change in any one field", () => {
-    const changes: Array<Partial<typeof DEFAULT_PUSH_DEFAULTS>> = [
-      { unitOfMeasureCode: "EA" },
-      { replenishmentSystem: "Buy" },
-      { methodTypeForMake: "Pull from Inventory" },
-      { methodTypeForBuy: "Purchase to Order" },
-      { itemTrackingType: "Non-Inventory" }
-    ];
-    for (const change of changes) {
-      expect(
-        pushDefaultsEqual(DEFAULT_PUSH_DEFAULTS, {
-          ...DEFAULT_PUSH_DEFAULTS,
-          ...change
-        })
-      ).toBe(false);
-    }
-  });
-
-  it("separates a chosen unit from no unit at all", () => {
-    // Null is a real choice — resolve from the company's list at plan time —
-    // so it must not compare equal to a code.
-    expect(
-      pushDefaultsEqual(
-        { ...DEFAULT_PUSH_DEFAULTS, unitOfMeasureCode: null },
-        { ...DEFAULT_PUSH_DEFAULTS, unitOfMeasureCode: "" }
-      )
-    ).toBe(false);
   });
 });

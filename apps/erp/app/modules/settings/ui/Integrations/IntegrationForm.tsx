@@ -468,10 +468,17 @@ function getOptionIcon(
   settingName: string,
   optionValue: string
 ): JSX.Element | null {
-  if (settingName === "methodType") {
+  if (
+    settingName === "methodType" ||
+    settingName === "defaultMethodTypeForMake" ||
+    settingName === "defaultMethodTypeForBuy"
+  ) {
     return <MethodIcon type={optionValue} />;
   }
-  if (settingName === "trackingType") {
+  if (
+    settingName === "trackingType" ||
+    settingName === "defaultItemTrackingType"
+  ) {
     return <TrackingTypeIcon type={optionValue} />;
   }
 
