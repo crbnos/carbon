@@ -515,6 +515,73 @@ describe("buildAssemblyPlan", () => {
     // A purchased-marked row that has children is still made.
     expect(plan.root.proposed).toBeNull();
   });
+
+  describe("conflicts", () => {
+    const conflictNodes = [
+      node({
+        index: "1",
+        partNumber: "LEG-003",
+        name: "Leg",
+        itemSource: { documentId: "d2", elementId: "ps", partId: "JHD" }
+      }),
+      node({
+        index: "2",
+        partNumber: "HDW-010",
+        name: "Bolt",
+        itemSource: { documentId: "d2", elementId: "ps", partId: "JKD" }
+      }),
+      node({ index: "3", partNumber: "PAD-005", name: "Pad" }),
+      node({ index: "4", partNumber: "TOP-001", name: "Top" })
+    ];
+    const build = (links: Array<[string, string]>) =>
+      buildAssemblyPlan({
+        documentId: "d",
+        wv: "w",
+        wvId: "w1",
+        elementId: "e",
+        root: {
+          partNumber: "WB-100",
+          name: null,
+          description: null,
+          revision: null
+        },
+        nodes: conflictNodes,
+        items: [
+          { id: "wb", readableId: "WB-100", revision: "0", name: "Workbench" },
+          { id: "leg", readableId: "LEG-003", revision: "0", name: "Leg" },
+          { id: "hdw", readableId: "HDW-010", revision: "0", name: "Bolt" },
+          { id: "pad", readableId: "PAD-005", revision: "0", name: "Pad" }
+        ],
+        methodByItemId: new Map(),
+        mappedLinesByMethodId: new Map(),
+        manualLinesByMethodId: new Map(),
+        options,
+        linkedItemIdByExternalId: new Map(links)
+      });
+
+    it("marks a reuse found by part number alone, never a linked one or a create", () => {
+      const plan = build([
+        ["d:e:assembly", "wb"],
+        ["d2:ps:JHD", "leg"],
+        // Linked, but to a different item than the number resolves to.
+        ["d2:ps:JKD", "someone-else"]
+      ]);
+      expect(plan.root.conflict).toBeUndefined();
+      expect(
+        Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]))
+      ).toEqual({
+        "LEG-003": undefined,
+        "HDW-010": true,
+        // No itemSource: nothing to link through, so it can only conflict.
+        "PAD-005": true,
+        "TOP-001": undefined
+      });
+    });
+
+    it("treats an unlinked reused root as a conflict", () => {
+      expect(build([]).root.conflict).toBe(true);
+    });
+  });
 });
 
 describe("buildReleasePlan", () => {
