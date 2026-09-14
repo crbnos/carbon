@@ -88,6 +88,11 @@ import { isJobLocked, jobCompleteValidator } from "../../production.models";
 import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
+import {
+  getDefaultSerialCompleteQuantity,
+  getReceivableSerialUnits,
+  isFractionalSerialQuantity
+} from "./job-complete-logic";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -1114,51 +1119,6 @@ function JobExpediteModal({
   );
 }
 
-const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
-
-/**
- * The serial numbers a job completion can receive, in the order
- * complete_job_to_inventory receives them: units finished on the shop floor
- * (Available) first, then reserved units, each by serial number.
- *
- * Returns null unless every receivable unit is already a numbered, single-unit
- * serial. A job still holding an unsplit placeholder has no serial numbers to
- * receive yet, so its quantity stays locked to what the shop floor finished.
- */
-function getReceivableSerialUnits(
-  trackedEntities: {
-    id: string;
-    status: string;
-    quantity: number;
-    readableId: string | null;
-    createdAt: string;
-  }[]
-): string[] | null {
-  const receivable = trackedEntities.filter(
-    (entity) => !NON_RECEIVABLE_SERIAL_STATUSES.includes(entity.status)
-  );
-
-  if (
-    receivable.length === 0 ||
-    receivable.some((entity) => entity.quantity !== 1 || !entity.readableId)
-  ) {
-    return null;
-  }
-
-  const statusRank = (status: string) =>
-    status === "Available" ? 0 : status === "Reserved" ? 1 : 2;
-
-  return [...receivable]
-    .sort(
-      (a, b) =>
-        statusRank(a.status) - statusRank(b.status) ||
-        (a.readableId ?? "").localeCompare(b.readableId ?? "") ||
-        a.createdAt.localeCompare(b.createdAt) ||
-        a.id.localeCompare(b.id)
-    )
-    .map((entity) => entity.readableId as string);
-}
-
 function JobCompleteModal({
   job,
   onClose,
@@ -1197,11 +1157,10 @@ function JobCompleteModal({
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
-  // Serial units are received one at a time; the database refuses a fraction.
-  const hasFractionalSerialQuantity =
-    receivableSerials !== null &&
-    Number.isFinite(quantityComplete) &&
-    !Number.isInteger(quantityComplete);
+  const hasFractionalSerialQuantity = isFractionalSerialQuantity(
+    receivableSerials,
+    quantityComplete
+  );
 
   const getJobData = async () => {
     if (!carbon) return;
@@ -1248,9 +1207,11 @@ function JobCompleteModal({
           // be chosen here even when nothing was finished on the shop floor.
           setReceivableSerials(serialUnits);
           setQuantityComplete(
-            availableQuantity > 0
-              ? availableQuantity
-              : Math.min(job?.quantity ?? 0, serialUnits.length)
+            getDefaultSerialCompleteQuantity({
+              availableQuantity,
+              jobQuantity: job?.quantity ?? 0,
+              receivableSerialCount: serialUnits.length
+            })
           );
         } else {
           setQuantityComplete(availableQuantity);
