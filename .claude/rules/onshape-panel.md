@@ -307,7 +307,7 @@ first available.
 - Status badges: Linked (green), Conflict (red — same part number, no link),
   Unlinked (grey).
 - Reviews are summaries: one line of counts, the conflict / won't-write / Draft
-  alerts, and read-only rows (proposed settings, owned-field changes, mapped
+  / manual-lines-kept alerts, and read-only rows (no per-method line list) (proposed settings, owned-field changes, mapped
   custom field values). No search, filter chips, tick boxes or editors.
 - Every action disabled while a read or write is in flight; a Refresh keeps
   rows on screen instead of collapsing to a spinner.
