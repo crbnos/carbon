@@ -37,10 +37,14 @@ temporary while v2 replaces v1.
   configured" (500) when missing.
 - Migration `20260909174511_onshape-v2-integration.sql` seeds the `integration`
   row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
-  not — the panel's Settings page may write metadata before any grant exists.
-- The V2 integration form has NO settings (`settingGroups: []`); the push
-  defaults moved to the panel's Settings page, which writes the same
-  `companyIntegration.metadata` keys through `panel.preferences`.
+  not — the integration settings form may write metadata before any grant exists.
+- The V2 integration form holds the five push defaults (`config-v2.tsx`,
+  "Push defaults" group). The unit dropdown's options are the company's units,
+  loaded in `x+/settings+/integrations.$id.tsx` as `dynamicOptions`. The generic
+  save spreads existing metadata under the form values, so `propertyMap`,
+  `credentials` and the vaulted tokens survive a save.
+- `onshape-v2` is in `SECRET_KEYS`: its tokens live in Supabase Vault
+  (migration `20260914101621_onshape-v2-vault-secrets.sql` moved existing ones).
 - `beginOAuthPopup` (`packages/ee/src/oauth-popup.ts`) opens the popup inside
   the click, before the install fetch — opening after the await was silently
   blocked.
@@ -108,7 +112,7 @@ Pushes never write on the first request. PLAN
 and Carbon, builds the plan with the pure builders in
 `packages/ee/src/onshape/panel/plan.ts`, stores it and returns
 `{ planId, expiresAt, plan }`. APPLY (`push-{part,assembly,release}`) takes the
-stored plan and the user's edits/selection and writes — it makes NO Onshape
+stored plan and writes — it makes NO Onshape
 call; every read a push needs is already in the plan. A completed push costs
 the same Onshape reads as before, spent at review time — a review that is
 cancelled or expires has spent them (part 1, assembly 2, release 1 + N
@@ -122,11 +126,11 @@ assemblies whose method is not released).
   returns null when Redis did
   not take the write (`@carbon/kv` is fail-soft) → the PLAN request answers
   503. A missing/expired/foreign plan at apply → 410.
-- Editable at CREATE only: name, description, replenishmentSystem,
-  defaultMethodType, itemTrackingType, unitOfMeasureCode — validated by
-  `mergeItemEdits` (enum whitelist, the ERP's replenishment↔method interlock
-  duplicated as `VALID_METHOD_TYPES_BY_REPLENISHMENT`, unit must be one of the
-  company's). Adopt/update never take edits: the owned-field lock stays true.
+- The review is READ-ONLY. The panel sends no edits, no exclusions and every
+  pushable row; values change in Onshape (identity, properties) or in the push
+  defaults (item settings), then the user reviews again. The apply routes still
+  accept `edits`/`excluded`/`selected` and validate them with `mergeItemEdits`,
+  so an older panel keeps working — but nothing in the product sends them.
 - `proposeItem` takes the company's **push defaults** from
   `parsePushDefaults(companyIntegration.metadata)`
   (`packages/ee/src/onshape/panel/preferences.ts`, pure, total, fail-soft —
@@ -137,11 +141,11 @@ assemblies whose method is not released).
   enforces the replenishment↔method interlock; a purchased BOM row is always
   Buy. Keys: `defaultUnitOfMeasureCode`, `defaultReplenishmentSystem`,
   `defaultMethodTypeForMake`, `defaultMethodTypeForBuy`,
-  `defaultItemTrackingType` (`PUSH_DEFAULT_SETTING_NAMES`). Release behaviour
-  (record a change notice, make new revisions default) is deliberately NOT a
-  default — it is chosen per push on the release review (`push-release` takes
-  `changeNotice` and `makeDefault`). `panel.me` returns the defaults + unit list
-  with identity (one read per session).
+  `defaultItemTrackingType`. Release behaviour is fixed, not configurable: a
+  release push records the plan's change notice when it creates revisions, and
+  new revisions become the default (`push-release` still takes `changeNotice`
+  and `makeDefault`; the panel sends the plan's values). `panel.me` returns only
+  `{ userId, email, company }`.
 - APPLY re-resolves items by readableId before creating: `upsertPart` reads
   the new id back from the `parts` view, which is the WRONG row when another
   revision of that number exists, so a "create" whose number now exists
@@ -173,18 +177,18 @@ assemblies whose method is not released).
 ## Custom fields — the property map
 
 Onshape properties flow into Carbon custom fields through ONE explicit map per
-company, `companyIntegration.metadata.propertyMap`. The save writes ONLY that
-key (`jsonb_set` through Kysely): the same column holds `credentials`, and the
-token refresh and the settings save are full-column read-modify-writers that
-would otherwise revert a saved map. Entry:
+company, `companyIntegration.metadata.propertyMap`. Entry:
 `{ onshapePropertyId, onshapeName, valueType, carbonFieldId, mode }`.
-Pure logic in `packages/ee/src/onshape/panel/properties.ts` (tested); the
-Fields editor is `api+/integrations.onshape.panel.fields.ts` + the panel's
-Fields section.
+Pure logic in `packages/ee/src/onshape/panel/properties.ts` (tested).
 
-- `mode: "owned"` (default): Onshape writes the field on every push — locked
-  like name/description. `"default"`: filled at create only, editable in the
-  review, Carbon's afterwards.
+- THERE IS NO EDITOR. The panel's Fields editor and its route were removed; an
+  existing map keeps working. Where editing should live is undecided: the
+  editor listed the open document's properties, and Carbon's settings page has
+  no document and the client has no company property-schema call.
+- ONE mode: `parsePropertyMap` reads every entry as `owned` — Onshape writes the
+  field on every push. A stored `"default"` is treated as owned. Nothing on the
+  item page locks mapped custom fields; they stay editable until the next push
+  overwrites them.
 - Values are read at plan: parts via `readPartProperties` (one metadata read
   at `depth=2`, verified live to nest `parts.items[].properties`; per-part
   fallback exists), assembly ROOT from the element-metadata read the plan
@@ -207,11 +211,6 @@ Fields section.
   not own are never touched.
 - The OAuth callback spreads the existing metadata, so reconnecting Onshape
   keeps the map (it used to rebuild the column from scratch).
-- Fields POST needs settings update. Creating a custom field from the panel is
-  GONE: the field is created in Carbon and selected in the panel (hence the
-  section's own Refresh). Only properties with a Carbon type to map onto are
-  listed (string/enum→Text, bool→Yes/No, int/double→Numeric, date→Date) unless
-  already mapped.
 
 ## Push release
 
@@ -290,25 +289,26 @@ every line it just wrote.
   `partstudio | assembly | drawing`, retries 1, per-item concurrency 1 —
   every execution spends live quota.
 
-## Panel layout — three pages, one Save
+## Panel layout — two pages, no settings
 
-Tab strip pinned at the top (`Tabs` is the outermost element): **Parts /
-Assembly** (label follows the element kind; hidden on a drawing), **Releases**
-(needs a `documentId`), **Settings** (always; it is the company, not the
-element). A page that vanishes when Onshape moves the panel to another element
-falls back to the first available.
+The panel shows status and pushes; it edits nothing. Anything a user would
+change lives in Onshape or on the Onshape V2 integration page in Carbon.
 
-- Assembly BOM has two client-side views built from the status route's dotted
-  item numbers (`packages/ee/src/onshape/panel/bom-view.ts`, pure and total):
-  **Structured** (tree, top level collapsed) and **Flat** (one row per distinct
-  part number, quantity multiplied through ancestors; sub-assemblies kept).
-  No second Onshape call. Assembly plans are always `depth: "all"` from the UI;
-  the route still accepts `top`.
-- Settings = Connection (company + user the token belongs to, Sign out),
-  Push defaults, Custom fields (property map; only when the element has parts).
-  ONE pinned Save (`SettingsActionBar`) writes only the sections that differ
-  from what was last loaded; both writes land in the same integration row and
-  both need `settings: update` (`me.canEditSettings`).
+Top band pinned (`Tabs` is the outermost element): **Parts / Assembly** (label
+follows the element kind; hidden on a drawing), **Releases** (needs a
+`documentId`), and on the right the Carbon company plus Sign out. A page that
+vanishes when Onshape moves the panel to another element falls back to the
+first available.
+
+- Assembly BOM is the structured tree only (top level collapsed, Expand all),
+  built from the status route's dotted item numbers
+  (`packages/ee/src/onshape/panel/bom-view.ts`). Assembly plans are
+  `depth: "all"` unless the too-large refusal offers "Push this level only".
+- Status badges: Linked (green), Conflict (red — same part number, no link),
+  Unlinked (grey).
+- Reviews are summaries: one line of counts, the conflict / won't-write / Draft
+  alerts, and read-only rows (proposed settings, owned-field changes, mapped
+  custom field values). No search, filter chips, tick boxes or editors.
 - Every action disabled while a read or write is in flight; a Refresh keeps
   rows on screen instead of collapsing to a spinner.
 
@@ -329,11 +329,6 @@ height, or giving the panel its own scroller, both fix it; the panel owns its
 scroller because that is also what lets the header and the push button stay put.
 Never reintroduce `min-h-screen`/`min-h-dvh` on the panel shell.
 
-A row's editor and custom fields live behind `RowDisclosure` and MOUNT only when
-opened. A hundred selected create rows previously built six Radix Selects each
-before the list could paint. Keep new per-row controls inside the disclosure.
-
-`PlanToolbar` (search, action-group chips, bulk select) is shared by the part and
-assembly reviews. Bulk selection acts on the FILTERED rows, never the whole plan.
-There is no virtualization and none is needed while the editors stay lazy — the
-rows themselves are a checkbox, two lines of text and a badge.
+Review rows are text and a badge, with no controls, so a 300-row review needs
+no virtualization. Adding an interactive control per row would bring that back
+into question — the removed editors mounted six Radix Selects per row.

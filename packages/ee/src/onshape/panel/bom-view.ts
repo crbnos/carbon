@@ -1,21 +1,14 @@
 /**
- * Two ways to read an assembly's BOM in the panel, the same two Onshape's own
- * BOM table offers.
+ * The assembly's BOM as the panel shows it: Onshape's structured view.
  *
  * The status route hands the panel one pre-order array of lines, each carrying
  * Onshape's dotted item number ("1", "1.1", "1.1.2") — the same `index`
  * `parseBomTree` assigns. That is enough to rebuild the hierarchy on the
- * client, so neither view costs a second Onshape call.
+ * client, so the view costs no second Onshape call.
  *
  * Structured is the tree, collapsed to the top level. A real assembly runs to
  * hundreds of rows and the panel is about twenty tall, so showing every level
  * at once is unreadable; a sub-assembly opens when someone asks for it.
- *
- * Flat is one row per distinct part number with the quantity rolled up through
- * its ancestors, which is what "how many of these does this assembly take"
- * means. Sub-assemblies stay in the flat list even though their own contents
- * are listed too: each one becomes a Carbon item, so dropping them would
- * understate the push.
  *
  * Everything here is pure and total. A malformed index (a level that skips, a
  * parent that never appeared) resolves to a top-level row rather than throwing
@@ -135,54 +128,4 @@ export function bomParentIndexes<T extends BomViewLine>(
   };
   walk(nodes);
   return out;
-}
-
-export type FlatBomRow<T extends BomViewLine> = {
-  /** The first line that contributed, for the name, part number and state. */
-  line: T;
-  /** Quantity across the whole assembly, multiplied through the ancestors. */
-  totalQuantity: number;
-  /** BOM rows folded into this one. */
-  occurrences: number;
-};
-
-/**
- * One row per distinct part number, in order of first appearance.
- *
- * A line with no part number cannot be folded together with anything — there is
- * nothing to match on — so each one stays its own row.
- */
-export function flattenBomView<T extends BomViewLine>(
-  lines: T[]
-): FlatBomRow<T>[] {
-  const tree = buildBomViewTree(lines);
-  const rows: FlatBomRow<T>[] = [];
-  const byKey = new Map<string, FlatBomRow<T>>();
-
-  const walk = (list: BomViewNode<T>[], multiplier: number) => {
-    for (const node of list) {
-      const quantity = node.line.quantity * multiplier;
-      // Both sides are prefixed, so a part number that happens to read like an
-      // item number cannot fold two unrelated rows together.
-      const key = node.line.partNumber
-        ? `p:${node.line.partNumber}`
-        : `i:${node.line.index}`;
-      const existing = byKey.get(key);
-      if (existing) {
-        existing.totalQuantity += quantity;
-        existing.occurrences += 1;
-      } else {
-        const row: FlatBomRow<T> = {
-          line: node.line,
-          totalQuantity: quantity,
-          occurrences: 1
-        };
-        byKey.set(key, row);
-        rows.push(row);
-      }
-      walk(node.children, quantity);
-    }
-  };
-  walk(tree, 1);
-  return rows;
 }
