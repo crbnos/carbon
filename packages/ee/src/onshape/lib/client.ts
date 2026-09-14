@@ -16,6 +16,7 @@ import {
   persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import { normalizeConfiguration } from "../panel/status";
 import {
   getOnshapeIntegration,
   isOnshapeIntegrationId,
@@ -160,6 +161,15 @@ export interface OnshapeRevision {
   configuration?: string | null;
   isObsolete?: boolean;
   [key: string]: unknown;
+}
+
+/**
+ * `&configuration=…` for a non-default configuration, nothing for the default:
+ * an unconfigured read keeps the URL (and so the dev cache key) it always had.
+ */
+function configurationQuery(configuration?: string | null): string {
+  const normalized = normalizeConfiguration(configuration);
+  return normalized ? `&configuration=${encodeURIComponent(normalized)}` : "";
 }
 
 // Typed API error so callers can detect rate limiting (status 429) and honor
@@ -563,11 +573,12 @@ export class OnshapeClient {
   /** Indented multi-level BOM of an assembly at w/v/m. One call. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
-    elementId: string
+    elementId: string,
+    configuration?: string | null
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false`
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
     );
   }
 
@@ -577,11 +588,12 @@ export class OnshapeClient {
    */
   async getElementMetadata(
     document: OnshapeDocument,
-    elementId: string
+    elementId: string,
+    configuration?: string | null
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=1`
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=1${configurationQuery(configuration)}`
     );
   }
 
@@ -594,11 +606,12 @@ export class OnshapeClient {
    */
   async getElementMetadataWithParts(
     document: OnshapeDocument,
-    elementId: string
+    elementId: string,
+    configuration?: string | null
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=2`
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=2${configurationQuery(configuration)}`
     );
   }
 
@@ -606,22 +619,24 @@ export class OnshapeClient {
   async getPartMetadata(
     document: OnshapeDocument,
     elementId: string,
-    partId: string
+    partId: string,
+    configuration?: string | null
   ): Promise<Record<string, unknown>> {
     return this.request<Record<string, unknown>>(
       "GET",
-      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false`
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false${configurationQuery(configuration)}`
     );
   }
 
   /** Parts of one element at a workspace, version or microversion. One call. */
   async getPartsInElement(
     document: OnshapeDocument,
-    elementId: string
+    elementId: string,
+    configuration?: string | null
   ): Promise<OnshapeElementPart[]> {
     return this.request<OnshapeElementPart[]>(
       "GET",
-      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?includePropertyDefaults=true`
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?includePropertyDefaults=true${configurationQuery(configuration)}`
     );
   }
 

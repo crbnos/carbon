@@ -772,6 +772,11 @@ export function OnshapePanel({
           wvId: context.wvId as string,
           elementId: context.elementId as string
         });
+        // A configured part's part number, and so its identity in Carbon,
+        // depends on the configuration the element is open in.
+        if (context.configuration) {
+          query.set("configuration", context.configuration);
+        }
         const response = await panelFetch(token, `${paths.status}?${query}`);
         const body = (await response.json()) as
           | { kind: "partstudio"; parts: PanelPartStatus[] }
@@ -932,6 +937,7 @@ export function OnshapePanel({
             wv: context.wv,
             wvId: context.wvId,
             elementId: context.elementId,
+            configuration: context.configuration,
             partIds
           })
         });
@@ -1004,6 +1010,7 @@ export function OnshapePanel({
             wv: context.wv,
             wvId: context.wvId,
             elementId: context.elementId,
+            configuration: context.configuration,
             depth
           })
         });

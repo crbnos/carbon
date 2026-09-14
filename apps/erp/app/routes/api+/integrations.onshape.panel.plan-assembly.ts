@@ -7,6 +7,7 @@ import {
   externalIdForBomLine,
   flattenNodes,
   metadataProperty,
+  normalizeConfiguration,
   parseBomTree,
   parseProperties,
   parsePropertyMap,
@@ -39,7 +40,9 @@ const payloadSchema = z.object({
   wvId: z.string().min(1),
   elementId: z.string().min(1),
   /** Omitted by older panels, which only ever pushed the whole tree. */
-  depth: z.enum(["all", "top"]).default("all")
+  depth: z.enum(["all", "top"]).default("all"),
+  /** The assembly configuration the panel was opened in; absent = default. */
+  configuration: z.string().nullish()
 });
 
 /**
@@ -84,6 +87,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Invalid plan payload" }, { status: 400 });
   }
   const { documentId, wv, wvId, elementId, depth } = parsed.data;
+  const configuration = normalizeConfiguration(parsed.data.configuration);
 
   const onshape = await getOnshapeClient(
     client,
@@ -106,7 +110,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   let bom: unknown;
   try {
-    bom = await onshape.client.getBillOfMaterialsIn(document, elementId);
+    bom = await onshape.client.getBillOfMaterialsIn(
+      document,
+      elementId,
+      configuration
+    );
   } catch (error) {
     const failure = onshapeFailure(error, "bom");
     return data(failure.body, { status: failure.status });
@@ -125,7 +133,8 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     elementMetadata = await onshape.client.getElementMetadata(
       document,
-      elementId
+      elementId,
+      configuration
     );
     rootPartNumber =
       metadataProperty(elementMetadata, "Part number") ?? rootPartNumber;
@@ -226,7 +235,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const linkExternalIds = [
     ...new Set(
       [
-        externalIdForAssembly(documentId, elementId),
+        externalIdForAssembly(documentId, elementId, configuration),
         ...flattenNodes(lines).map((node) =>
           externalIdForBomLine(node.itemSource ?? null)
         )
@@ -299,7 +308,8 @@ export async function action({ request }: ActionFunctionArgs) {
     manualLinesByMethodId: ownership.manual,
     options,
     depth,
-    linkedItemIdByExternalId
+    linkedItemIdByExternalId,
+    configuration
   });
 
   // ---- Root custom fields (property map) ---------------------------------

@@ -27,6 +27,8 @@ export type OnshapeBomNode = {
     partId?: string;
     wvmType?: string;
     wvmId?: string;
+    /** Onshape's configuration string; "default" for the default one. */
+    configuration?: string;
   } | null;
   children: OnshapeBomNode[];
 };
@@ -88,7 +90,8 @@ export function parseBomTree(payload: unknown): {
             elementId: cell(source.elementId) ?? undefined,
             partId: cell(source.partId) ?? undefined,
             wvmType: cell(source.wvmType) ?? undefined,
-            wvmId: cell(source.wvmId) ?? undefined
+            wvmId: cell(source.wvmId) ?? undefined,
+            configuration: cell(source.configuration) ?? undefined
           }
         : null,
       children: []

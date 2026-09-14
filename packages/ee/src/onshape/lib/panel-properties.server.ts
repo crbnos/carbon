@@ -17,11 +17,16 @@ export async function readPartProperties(
   client: OnshapeClient,
   document: OnshapeDocument,
   elementId: string,
-  partIds: string[]
+  partIds: string[],
+  configuration?: string | null
 ): Promise<Map<string, OnshapePropertyValue[]>> {
   const byPartId =
     partPropertiesFromElementMetadata(
-      await client.getElementMetadataWithParts(document, elementId)
+      await client.getElementMetadataWithParts(
+        document,
+        elementId,
+        configuration
+      )
     ) ?? new Map<string, OnshapePropertyValue[]>();
 
   // The nested payload can carry only some of the requested parts; taking it
@@ -34,7 +39,12 @@ export async function readPartProperties(
       byPartId.set(
         partId,
         parseProperties(
-          await client.getPartMetadata(document, elementId, partId)
+          await client.getPartMetadata(
+            document,
+            elementId,
+            partId,
+            configuration
+          )
         )
       );
     } catch {

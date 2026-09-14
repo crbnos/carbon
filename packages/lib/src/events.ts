@@ -671,6 +671,8 @@ export type Events = {
       elementId: string;
       elementKind: "partstudio" | "assembly" | "drawing";
       partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
       assetBaseName?: string;
     };
   };

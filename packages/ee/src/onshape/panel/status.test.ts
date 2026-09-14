@@ -4,7 +4,8 @@ import {
   buildPartStatuses,
   externalIdForAssembly,
   externalIdForBomLine,
-  externalIdForPart
+  externalIdForPart,
+  normalizeConfiguration
 } from "./status";
 
 const item = (id: string, readableId: string) => ({
@@ -223,5 +224,118 @@ describe("externalIdForBomLine", () => {
     expect(
       externalIdForBomLine({ documentId: "d1", elementId: "sub-el" })
     ).toBe(externalIdForAssembly("d1", "sub-el"));
+  });
+});
+
+describe("configurations in identity", () => {
+  it("reads the default configuration as no configuration, however it arrives", () => {
+    for (const value of [null, undefined, "", "  ", "default", "Default"]) {
+      expect(normalizeConfiguration(value)).toBeNull();
+    }
+  });
+
+  it("decodes a configuration passed URL-encoded", () => {
+    expect(normalizeConfiguration("List_abc%3DLarge")).toBe("List_abc=Large");
+    expect(normalizeConfiguration("List_abc=Large")).toBe("List_abc=Large");
+  });
+
+  it("keeps the default key unchanged, so links written before still match", () => {
+    expect(externalIdForPart("d", "e", "p", "default")).toBe("d:e:p");
+    expect(externalIdForAssembly("d", "e", null)).toBe("d:e:assembly");
+  });
+
+  it("gives each configuration of one part its own key", () => {
+    const large = externalIdForBomLine({
+      documentId: "d",
+      elementId: "e",
+      partId: "RvED",
+      configuration: "List_abc=Large"
+    });
+    const standard = externalIdForBomLine({
+      documentId: "d",
+      elementId: "e",
+      partId: "RvED",
+      configuration: "default"
+    });
+    expect(large).toBe("d:e:RvED:List_abc=Large");
+    expect(standard).toBe("d:e:RvED");
+    expect(large).not.toBe(standard);
+  });
+
+  it("links two configurations of one part to their own items", () => {
+    const statuses = buildAssemblyLineStatuses({
+      lines: [
+        {
+          index: "1",
+          level: 1,
+          partNumber: "DOOR-L",
+          name: "Door",
+          quantity: 1,
+          purchased: false,
+          itemSource: {
+            documentId: "d",
+            elementId: "e",
+            partId: "RvED",
+            configuration: "List_abc=Large"
+          }
+        },
+        {
+          index: "2",
+          level: 1,
+          partNumber: "DOOR-D",
+          name: "Door",
+          quantity: 1,
+          purchased: false,
+          itemSource: {
+            documentId: "d",
+            elementId: "e",
+            partId: "RvED",
+            configuration: "default"
+          }
+        }
+      ],
+      mappings: [
+        {
+          entityId: "large",
+          externalId: "d:e:RvED:List_abc=Large",
+          lastSyncedAt: null
+        },
+        { entityId: "default", externalId: "d:e:RvED", lastSyncedAt: null }
+      ],
+      items: [item("large", "DOOR-L"), item("default", "DOOR-D")]
+    });
+    expect(
+      statuses.map((line) => [line.partNumber, line.state, line.itemId])
+    ).toEqual([
+      ["DOOR-L", "linked", "large"],
+      ["DOOR-D", "linked", "default"]
+    ]);
+  });
+
+  it("keys a Part Studio's parts by the configuration it is open in", () => {
+    const [part] = buildPartStatuses({
+      documentId: "d",
+      elementId: "e",
+      configuration: "List_abc=Large",
+      parts: [
+        {
+          partId: "RvED",
+          name: "Door",
+          partNumber: "DOOR-L",
+          isHidden: false
+        } as never
+      ],
+      mappings: [
+        { entityId: "default", externalId: "d:e:RvED", lastSyncedAt: null },
+        {
+          entityId: "large",
+          externalId: "d:e:RvED:List_abc=Large",
+          lastSyncedAt: null
+        }
+      ],
+      items: [item("large", "DOOR-L"), item("default", "DOOR-D")]
+    });
+    expect(part?.state).toBe("linked");
+    expect(part?.item?.id).toBe("large");
   });
 });

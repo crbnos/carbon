@@ -77,6 +77,23 @@ describe("parseBomTree", () => {
     ]);
   });
 
+  it("keeps the row's configuration, which a configured part's identity needs", () => {
+    const { lines } = parseBomTree({
+      headers: H,
+      rows: [
+        row("1", "A-1", 1, "Made", {
+          itemSource: {
+            documentId: "d1",
+            elementId: "e1",
+            partId: "p1",
+            configuration: "List_abc=Large"
+          }
+        })
+      ]
+    });
+    expect(lines[0]?.itemSource?.configuration).toBe("List_abc=Large");
+  });
+
   it("tolerates an empty payload", () => {
     const { root, lines } = parseBomTree(null);
     expect(root).toBeNull();

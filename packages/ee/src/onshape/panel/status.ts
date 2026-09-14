@@ -26,18 +26,63 @@ export type PanelPartStatus = {
   lastSyncedAt: string | null;
 };
 
+/**
+ * An Onshape configuration as it takes part in identity, or null for the
+ * default one.
+ *
+ * A configured part is ONE Onshape part (one partId) whose variants can carry
+ * different part numbers — a door in Large and in Default is two Carbon items.
+ * So the configuration is part of what identifies a Carbon item's Onshape
+ * source; without it two items claim the same key and the unique mapping index
+ * rejects the second.
+ *
+ * The default configuration is null so every key written before configurations
+ * were considered still matches: Onshape reports it as "default" (the BOM's
+ * `itemSource.configuration`) or as nothing at all. Values may arrive
+ * URL-encoded from the panel's launch parameters, so they are decoded first.
+ */
+export function normalizeConfiguration(
+  configuration: string | null | undefined
+): string | null {
+  if (typeof configuration !== "string") return null;
+  let value = configuration.trim();
+  try {
+    value = decodeURIComponent(value).trim();
+  } catch {
+    // Not URL-encoded (a stray "%"): use it as it came.
+  }
+  if (value === "" || value.toLowerCase() === "default") return null;
+  return value;
+}
+
+function withConfiguration(key: string, configuration?: string | null) {
+  const normalized = normalizeConfiguration(configuration);
+  return normalized ? `${key}:${normalized}` : key;
+}
+
 /** Mapping key for an assembly element pushed as a whole. */
-export function externalIdForAssembly(documentId: string, elementId: string) {
-  return `${documentId}:${elementId}:assembly`;
+export function externalIdForAssembly(
+  documentId: string,
+  elementId: string,
+  configuration?: string | null
+) {
+  return withConfiguration(
+    `${documentId}:${elementId}:assembly`,
+    configuration
+  );
 }
 
 /** The one mapping key every panel write uses. */
 export function externalIdForPart(
   documentId: string,
   elementId: string,
-  partId: string
+  partId: string,
+  configuration?: string | null
 ) {
-  return `${documentId}:${elementId}:${partId}`;
+  return withConfiguration(
+    `${documentId}:${elementId}:${partId}`,
+    configuration
+  );
 }
 
 export type PanelMappingRow = {
@@ -56,12 +101,15 @@ export type PanelItemRow = {
 export function buildPartStatuses({
   documentId,
   elementId,
+  configuration = null,
   parts,
   mappings,
   items
 }: {
   documentId: string;
   elementId: string;
+  /** The Part Studio configuration the parts were read in. */
+  configuration?: string | null;
   parts: OnshapeElementPart[];
   mappings: PanelMappingRow[];
   items: PanelItemRow[];
@@ -76,7 +124,7 @@ export function buildPartStatuses({
     .filter((part) => !part.isHidden)
     .map((part) => {
       const mapping = mappingByExternalId.get(
-        externalIdForPart(documentId, elementId, part.partId)
+        externalIdForPart(documentId, elementId, part.partId, configuration)
       );
       const linkedItem = mapping ? itemById.get(mapping.entityId) : undefined;
       if (mapping && linkedItem) {
@@ -141,6 +189,7 @@ export type PanelAssemblyLineInput = {
     documentId?: string;
     elementId?: string;
     partId?: string;
+    configuration?: string;
   } | null;
 };
 
@@ -160,9 +209,14 @@ export function externalIdForBomLine(
     ? externalIdForPart(
         itemSource.documentId,
         itemSource.elementId,
-        itemSource.partId
+        itemSource.partId,
+        itemSource.configuration
       )
-    : externalIdForAssembly(itemSource.documentId, itemSource.elementId);
+    : externalIdForAssembly(
+        itemSource.documentId,
+        itemSource.elementId,
+        itemSource.configuration
+      );
 }
 
 export function buildAssemblyLineStatuses({
