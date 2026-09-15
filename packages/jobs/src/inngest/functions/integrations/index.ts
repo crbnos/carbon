@@ -8,6 +8,7 @@ export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { onshapeBackfillFunction } from "./onshape-backfill";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";
+export { rilletImportContactsFunction } from "./rillet-import-contacts";
 export {
   slackDocumentAssignmentUpdateFunction,
   slackDocumentCreatedFunction,

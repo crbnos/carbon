@@ -582,6 +582,18 @@ export type Events = {
     };
   };
 
+  // Rillet contact import (the integration's "Import customers & vendors"
+  // action): pull Rillet Customers and Vendors into Carbon and link them
+  "carbon/rillet-import-contacts": {
+    data: {
+      companyId: string;
+      entityTypes?: {
+        customers?: boolean;
+        vendors?: boolean;
+      };
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

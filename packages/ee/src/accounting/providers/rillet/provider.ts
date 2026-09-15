@@ -230,9 +230,18 @@ export function buildRilletIdempotencyKey(args: {
 // \********************************************************/
 
 /**
- * Entities Rillet syncs in v1 — every one of them PUSH-ONLY (Carbon →
- * Rillet). Rillet is the ledger of record for what Carbon pushes; pulling
- * master data back is a follow-up.
+ * Entities whose AUTOMATIC sync is PUSH-ONLY (Carbon → Rillet). Carbon is
+ * the system of record for all of them, so no sweep, webhook or event ever
+ * pulls one on its own.
+ *
+ * `customer` and `vendor` are still pullable ON DEMAND: the "Import
+ * customers & vendors" action (`rillet-import-contacts`) enqueues explicit
+ * `pull-from-accounting` ledger operations, which the drain routes to the
+ * syncer's pull path regardless of this direction — the same override the
+ * inbound webhook path uses. `owner: "carbon"` below is what keeps that
+ * safe: `BaseEntitySyncer.pullBatchFromAccounting` skips a record that is
+ * already linked, so a re-import can seed new Rillet contacts but can never
+ * overwrite a Carbon-owned one.
  */
 export const RILLET_PUSH_ONLY_ENTITIES = [
   "customer",
