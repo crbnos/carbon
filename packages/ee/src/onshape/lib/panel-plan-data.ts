@@ -51,7 +51,13 @@ export async function loadPlanOptions(
   };
 }
 
-/** The active make method per item id (activeMakeMethods view), one query. */
+/**
+ * The active make method per item id (activeMakeMethods view), one query.
+ *
+ * Throws on a failed read: an empty map reads as "no method" for every item,
+ * so a plan would call every existing method missing and an apply would skip
+ * or flatten every BOM. Callers answer 500.
+ */
 export async function loadActiveMakeMethods(
   client: Client,
   companyId: string,
@@ -66,6 +72,9 @@ export async function loadActiveMakeMethods(
       .eq("companyId", companyId)
       .in("itemId", batch)
   );
+  if (rows.error) {
+    throw new Error(`Failed to read make methods: ${rows.error.message}`);
+  }
   const byItemId = new Map<string, PlanMethodRow>();
   for (const row of rows.data ?? []) {
     if (row.id && row.itemId) {
@@ -170,9 +179,27 @@ export async function loadMethodLineOwnership(
       .eq("companyId", companyId)
       .in("id", batch)
   );
+  // Without it every line's part number falls back to an item uuid, which the
+  // review shows as the component of each replaced and kept line.
+  if (items.error) {
+    throw new Error(
+      `Failed to read the existing BOM lines: ${items.error.message}`
+    );
+  }
   const readableIdByItemId = new Map(
     (items.data ?? []).map((item) => [item.id, item.readableId])
   );
+
+  // Appended in place: a method with n lines would otherwise copy its list n
+  // times over.
+  const append = <T>(map: Map<string, T[]>, key: string, value: T) => {
+    const list = map.get(key);
+    if (list) {
+      list.push(value);
+    } else {
+      map.set(key, [value]);
+    }
+  };
 
   for (const line of lines.data ?? []) {
     const methodId = line.makeMethodId;
@@ -183,26 +210,17 @@ export async function loadMethodLineOwnership(
     };
     const mappingId = mappingByLineId.get(line.id);
     if (mappingId) {
-      result.mapped.set(methodId, [
-        ...(result.mapped.get(methodId) ?? []),
-        planLine
-      ]);
-      result.mappedRows.set(methodId, [
-        ...(result.mappedRows.get(methodId) ?? []),
-        {
-          mappingId,
-          lineId: line.id,
-          itemId: line.itemId,
-          quantity: line.quantity,
-          order: line.order,
-          materialMakeMethodId: line.materialMakeMethodId
-        }
-      ]);
+      append(result.mapped, methodId, planLine);
+      append(result.mappedRows, methodId, {
+        mappingId,
+        lineId: line.id,
+        itemId: line.itemId,
+        quantity: line.quantity,
+        order: line.order,
+        materialMakeMethodId: line.materialMakeMethodId
+      });
     } else {
-      result.manual.set(methodId, [
-        ...(result.manual.get(methodId) ?? []),
-        planLine
-      ]);
+      append(result.manual, methodId, planLine);
     }
   }
   return result;
