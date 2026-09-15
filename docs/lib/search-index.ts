@@ -7,7 +7,7 @@ import {
   glossaryEntries,
   termSlug,
 } from "@carbon/glossary";
-import { guideSource, source } from "@/lib/source";
+import { changelogSource, guideSource, source } from "@/lib/source";
 import { operationLabel, toolModules } from "@/lib/tools-data";
 
 const GLOSSARY_URL = "/docs/glossary";
@@ -175,6 +175,8 @@ export function buildSearchIndexes(): AdvancedIndex[] {
     ...mdxIndexes(otherDocs, "docs", "Reference"),
     ...(glossaryPage ? [glossaryIndex(glossaryPage)] : []),
     ...mdxIndexes(guideSource.getPages(), "guide", "Guide"),
+    // No surface pill of its own — entries surface under "All" (tag undefined).
+    ...mdxIndexes(changelogSource.getPages(), "changelog", "Changelog"),
     ...resourceIndexes(),
     ...toolIndexes(),
   ];

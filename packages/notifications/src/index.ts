@@ -59,6 +59,11 @@ export enum NotificationEvent {
 // `notification.topic` column, so renaming any of these is a migration.
 export enum NotificationTopic {
   Approval = "approval",
+  // Product updates from Carbon (docs.carbon.ms/changelog). Not a document
+  // topic and not in USER_FACING_NOTIFICATION_TOPICS — it has its own card on
+  // the notification-settings page. channel 'email' = the newsletter (opt-in:
+  // no row means off).
+  Changelog = "changelog",
   General = "general",
   Inventory = "inventory",
   Items = "items",

@@ -3434,6 +3434,12 @@ msgstr "변경 유형"
 msgid "Changed By"
 msgstr "변경자"
 
+msgid "Changelog"
+msgstr "변경 로그"
+
+msgid "Changelog newsletter"
+msgstr "변경 로그 뉴스레터"
+
 msgid "Changes"
 msgstr "변경 사항"
 

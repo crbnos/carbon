@@ -102,6 +102,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
 | PDF generation | `.claude/rules/pdf-generation-patterns.md` + `packages/documents/AGENTS.md` |
+| Email templates (notification / transactional / broadcast design) | `.claude/rules/email-design.md` + `packages/documents/AGENTS.md` |
 | Printing system | `.claude/rules/printing-system.md` + `packages/printing/AGENTS.md` |
 | CSV import/export | `.claude/rules/csv-import-system.md` + `.claude/rules/table-csv-export.md` |
 | Billing / Stripe | `.claude/rules/billing-system.md` + `packages/stripe/AGENTS.md` |
