@@ -1,4 +1,4 @@
-import { useCarbon } from "@carbon/auth";
+import { SUPABASE_URL, useCarbon } from "@carbon/auth";
 import {
   Combobox,
   DateTimePicker,
@@ -34,20 +34,27 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  createResizedImageThumbnail,
   documentHasImages,
+  getThumbnailPath,
+  isSupportedSlideImagePath,
   parseMentionsFromDocument,
   stripSpecialCharacters,
   tiptapToText
 } from "@carbon/utils";
+import { ModelPreview } from "@carbon/viewer/model-preview";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { nanoid } from "nanoid";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  LuBox,
+  LuCamera,
   LuChevronDown,
   LuChevronRight,
   LuCircleCheck,
   LuFile,
+  LuImageOff,
   LuPaperclip,
   LuTrash
 } from "react-icons/lu";
@@ -62,6 +69,18 @@ import type { JobOperationStep } from "~/services/types";
 import { useItems, usePeople } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import FileDropzone from "../../FileDropzone";
+
+// Render metadata for a 3D model slide, resolved by the loader from modelUpload
+// (same shape the assembly view consumes).
+export type StepSlideModel = {
+  id: string;
+  name: string | null;
+  modelPath: string | null;
+  thumbnailPath: string | null;
+  glbPath: string | null;
+  optimizedModelPath?: string | null;
+  processingStatus?: string | null;
+};
 
 // Reference-image annotation pins (mirrors ImageZoomViewer's Annotation shape). The
 // slide row stores these as JSON, so we cast when passing them to the viewer.
@@ -91,12 +110,18 @@ function hasStepDescription(
   return documentHasImages(doc);
 }
 
+/**
+ * One step of the operator's procedure: its type icon, name, record/complete
+ * controls, reference slides (images, 3D models, and an explicit placeholder for
+ * an image stored in a format no browser can paint) and its description.
+ */
 export function StepsListItem({
   activeStep,
   step,
   compact = false,
   operationId,
   className,
+  slideModels,
   onRecord,
   onDelete
 }: {
@@ -105,6 +130,7 @@ export function StepsListItem({
   compact?: boolean;
   operationId?: string;
   className: string;
+  slideModels?: Record<string, StepSlideModel> | null;
   onRecord: (step: JobOperationStep) => void;
   onDelete: (step: JobOperationStep) => void;
 }) {
@@ -122,25 +148,71 @@ export function StepsListItem({
     defaultIsOpen: hasDescription
   });
 
-  // Reference images ("slides") attached to this step in the Bill of Process. A slide
-  // is image XOR model; only image slides (imagePath) render here — model slides need a
-  // modelUpload join the standard-view loader doesn't fetch, so they're skipped.
-  const imageSlides = (step.jobOperationStepSlide ?? [])
-    .filter((slide) => !!slide.imagePath)
+  // Reference slides attached to this step in the Bill of Process, in planner order.
+  // A slide is image XOR model, and both render here: an image opens the zoom viewer
+  // with its pins, a model opens the 3D preview. An image whose stored format no
+  // browser can paint (rows written before the upload gate) becomes an explicit
+  // placeholder rather than a broken <img>.
+  const slideTiles = (step.jobOperationStepSlide ?? [])
+    .slice()
     .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((slide) => ({
-      id: slide.id,
-      url: getPrivateUrl(slide.imagePath as string),
-      caption: slide.caption,
-      // Slides copied from the method (get-method) can persist annotations as a
-      // non-array JSON value ({}), so normalize before the viewer calls .map().
-      annotations: Array.isArray(slide.annotations)
-        ? (slide.annotations as SlideAnnotation[])
-        : []
-    }));
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+    .map((slide) => {
+      if (slide.modelUploadId) {
+        const model = slideModels?.[slide.modelUploadId] ?? null;
+        return {
+          kind: "model" as const,
+          id: slide.id,
+          caption: slide.caption,
+          name: model?.name ?? null,
+          thumbnailUrl: model?.thumbnailPath
+            ? getPrivateUrl(model.thumbnailPath)
+            : null,
+          // Prefer the assembler-converted GLB, then the optimiser's recorded
+          // artifact. Never guess a path: a non-null glbUrl switches ModelPreview
+          // to its server tier and disables the raw WASM fallback entirely, so a
+          // speculative URL that 404s leaves the operator with "Couldn't load the
+          // 3D model" instead of the model. Null here = parse the raw upload.
+          glbUrl: model?.glbPath
+            ? getPrivateUrl(model.glbPath)
+            : model?.optimizedModelPath
+              ? getPrivateUrl(model.optimizedModelPath)
+              : null,
+          rawUrl: model?.modelPath ? getPrivateUrl(model.modelPath) : null,
+          converting:
+            model?.processingStatus === "Queued" ||
+            model?.processingStatus === "Processing"
+        };
+      }
+      if (!isSupportedSlideImagePath(slide.imagePath)) {
+        return {
+          kind: "unsupported" as const,
+          id: slide.id,
+          caption: slide.caption
+        };
+      }
+      return {
+        kind: "image" as const,
+        id: slide.id,
+        url: getPrivateUrl(slide.imagePath as string),
+        thumbnailUrl: getPrivateUrl(
+          getThumbnailPath(slide.imagePath as string)
+        ),
+        caption: slide.caption,
+        // Slides copied from the method (get-method) can persist annotations as a
+        // non-array JSON value ({}), so normalize before the viewer calls .map().
+        annotations: Array.isArray(slide.annotations)
+          ? (slide.annotations as SlideAnnotation[])
+          : []
+      };
+    });
+  const imageSlides = slideTiles.filter((tile) => tile.kind === "image");
+  const modelSlides = slideTiles.filter((tile) => tile.kind === "model");
+  const [viewerSlideId, setViewerSlideId] = useState<string | null>(null);
+  const [modelSlideId, setModelSlideId] = useState<string | null>(null);
   const activeSlide =
-    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
+    imageSlides.find((slide) => slide.id === viewerSlideId) ?? null;
+  const activeModel =
+    modelSlides.find((slide) => slide.id === modelSlideId) ?? null;
 
   if (!operationId) return null;
   const record = step.jobOperationStepRecord.find(
@@ -282,28 +354,84 @@ export function StepsListItem({
           )}
         </div>
       </div>
-      {imageSlides.length > 0 && (
+      {slideTiles.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
-          {imageSlides.map((slide, i) => (
-            <button
-              key={slide.id}
-              type="button"
-              aria-label={slide.caption || `Reference image ${i + 1}`}
-              title={slide.caption ?? undefined}
-              onClick={() => setViewerIndex(i)}
-              className={cn(
-                "relative flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40",
+          {slideTiles.map((slide, i) => {
+            const tileClass = cn(
+              "relative flex h-24 w-32 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted/40",
+              slide.kind !== "unsupported" &&
                 "transition-transform active:scale-[0.96]"
-              )}
-            >
-              <img
-                src={slide.url}
-                alt={slide.caption || ""}
-                className="h-full w-full object-cover"
-                loading="lazy"
-              />
-            </button>
-          ))}
+            );
+            if (slide.kind === "unsupported") {
+              return (
+                <div
+                  key={slide.id}
+                  title={slide.caption ?? undefined}
+                  className={cn(tileClass, "flex-col gap-1 px-2 text-center")}
+                >
+                  <LuImageOff className="size-5 text-muted-foreground" />
+                  <span className="text-[10px] leading-tight text-muted-foreground">
+                    <Trans>Image format not supported</Trans>
+                  </span>
+                </div>
+              );
+            }
+            if (slide.kind === "model") {
+              return (
+                <button
+                  key={slide.id}
+                  type="button"
+                  aria-label={
+                    slide.caption || slide.name || `Reference model ${i + 1}`
+                  }
+                  title={slide.caption ?? slide.name ?? undefined}
+                  onClick={() => setModelSlideId(slide.id)}
+                  className={tileClass}
+                >
+                  {slide.thumbnailUrl ? (
+                    <img
+                      src={slide.thumbnailUrl}
+                      alt={slide.caption || slide.name || ""}
+                      className="h-full w-full object-contain"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <LuBox className="size-8 text-muted-foreground" />
+                  )}
+                  <span className="pointer-events-none absolute left-1 top-1 rounded bg-muted px-1 text-[10px] font-semibold text-muted-foreground">
+                    3D
+                  </span>
+                  {slide.converting && (
+                    <span className="pointer-events-none absolute bottom-1 left-1 rounded bg-muted px-1 text-[10px] text-muted-foreground">
+                      <Trans>Converting…</Trans>
+                    </span>
+                  )}
+                </button>
+              );
+            }
+            return (
+              <button
+                key={slide.id}
+                type="button"
+                aria-label={slide.caption || `Reference image ${i + 1}`}
+                title={slide.caption ?? undefined}
+                onClick={() => setViewerSlideId(slide.id)}
+                className={tileClass}
+              >
+                <img
+                  src={slide.thumbnailUrl}
+                  onError={(e) => {
+                    if (e.currentTarget.src !== slide.url) {
+                      e.currentTarget.src = slide.url;
+                    }
+                  }}
+                  alt={slide.caption || ""}
+                  className="h-full w-full object-cover"
+                  loading="lazy"
+                />
+              </button>
+            );
+          })}
         </div>
       )}
       {disclosure.isOpen && hasDescription && (
@@ -316,12 +444,41 @@ export function StepsListItem({
       )}
       {mentionIds.length > 0 && <ItemsSummaryTable itemsIds={mentionIds} />}
       <ImageZoomViewer
-        open={viewerIndex !== null}
+        open={activeSlide !== null}
         src={activeSlide?.url ?? null}
         caption={activeSlide?.caption}
         annotations={activeSlide?.annotations ?? []}
-        onClose={() => setViewerIndex(null)}
+        onClose={() => setViewerSlideId(null)}
       />
+      {/* 3D model slides: the same viewer the assembly view uses, in a modal so the
+          step list stays a list. Mounted only while open — the viewer pulls a WASM
+          tier the operator shouldn't pay for on every step. */}
+      <Modal
+        open={activeModel !== null}
+        onOpenChange={(open) => {
+          if (!open) setModelSlideId(null);
+        }}
+      >
+        <ModalContent size="xlarge">
+          <ModalHeader>
+            <ModalTitle>
+              {activeModel?.caption || activeModel?.name || t`3D model`}
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            {activeModel && (
+              <div className="h-[60vh] w-full overflow-hidden rounded-lg border">
+                <ModelPreview
+                  key={`slide-model-${activeModel.id}`}
+                  glbUrl={activeModel.glbUrl}
+                  rawUrl={activeModel.rawUrl}
+                  className="rounded-none"
+                />
+              </div>
+            )}
+          </ModalBody>
+        </ModalContent>
+      </Modal>
     </div>
   );
 }
@@ -365,6 +522,56 @@ function ItemsSummaryTable({ itemsIds }: { itemsIds: string[] }) {
         )}
       </Tbody>
     </Table>
+  );
+}
+
+function RecordedFilePreview({ path: filePath }: { path: string }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const isImage = isSupportedSlideImagePath(filePath);
+  const url = getPrivateUrl(filePath);
+  const thumbnailUrl = getPrivateUrl(getThumbnailPath(filePath));
+
+  if (isImage) {
+    return (
+      <>
+        <button
+          type="button"
+          onClick={() => setIsOpen(true)}
+          className="relative inline-block size-8 rounded border overflow-hidden shrink-0 hover:opacity-80 align-middle transition-opacity"
+          aria-label="View recorded photo"
+        >
+          <img
+            src={thumbnailUrl}
+            onError={(e) => {
+              if (e.currentTarget.src !== url) {
+                e.currentTarget.src = url;
+              }
+            }}
+            alt=""
+            className="size-full object-cover"
+            loading="lazy"
+          />
+        </button>
+        <ImageZoomViewer
+          open={isOpen}
+          src={url}
+          annotations={[]}
+          onClose={() => setIsOpen(false)}
+        />
+      </>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+      aria-label="View recorded file"
+    >
+      <LuPaperclip className="size-4" />
+    </a>
   );
 }
 
@@ -422,14 +629,12 @@ export function PreviewStepRecord({
       )}
       {step.type === "File" && record?.value && (
         <div className="flex justify-end gap-2 text-sm">
-          <LuPaperclip className="size-4 text-muted-foreground" />
+          <RecordedFilePreview path={record.value} />
         </div>
       )}
       {step.type === "Inspection" && (
         <div className="flex justify-end gap-2 items-center text-sm">
-          {record?.value && (
-            <LuPaperclip className="size-4 text-muted-foreground" />
-          )}
+          {record?.value && <RecordedFilePreview path={record.value} />}
           <Checkbox checked={record?.booleanValue ?? false} />
         </div>
       )}
@@ -459,6 +664,7 @@ export function RecordModal({
   const { company } = useUser();
   const [file, setFile] = useState<File | null>(null);
   const [filePath, setFilePath] = useState<string | null>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
   // Bumped on every drop/remove so a stale in-flight upload can't set state
   const uploadIdRef = useRef(0);
   const fetcher = useFetcher<{ success: boolean }>();
@@ -469,11 +675,40 @@ export function RecordModal({
     setFilePath(null);
   };
 
+  const MAX_FILE_SIZE_BYTES = 20 * 1024 * 1024; // 20 MB limit
+
   const onDrop = async (acceptedFiles: File[]) => {
     if (!acceptedFiles[0] || !carbon) return;
     const fileUpload = acceptedFiles[0];
-    const uploadId = ++uploadIdRef.current;
 
+    if (fileUpload.size > MAX_FILE_SIZE_BYTES) {
+      toast.error(t`File size exceeds 20 MB limit`);
+      return;
+    }
+
+    if (attribute.fileTypes && attribute.fileTypes.length > 0) {
+      const allowed = attribute.fileTypes.map((t) =>
+        t.toLowerCase().trim().replace(/^\./, "")
+      );
+      const fileExt = (fileUpload.name.split(".").pop() ?? "").toLowerCase();
+      const mimeMatches = attribute.fileTypes.some((t) => {
+        if (t.includes("/")) {
+          if (t.endsWith("/*")) {
+            return fileUpload.type.startsWith(t.slice(0, -2));
+          }
+          return fileUpload.type === t;
+        }
+        return false;
+      });
+      if (!allowed.includes(fileExt) && !mimeMatches) {
+        toast.error(
+          t`File type not accepted. Allowed: ${attribute.fileTypes.join(", ")}`
+        );
+        return;
+      }
+    }
+
+    const uploadId = ++uploadIdRef.current;
     setFile(fileUpload);
     toast.info(t`Uploading ${fileUpload.name}`);
 
@@ -495,6 +730,26 @@ export function RecordModal({
     } else if (upload.data?.path) {
       toast.success(t`Uploaded: ${fileUpload.name}`);
       setFilePath(upload.data.path);
+
+      if (
+        fileUpload.type.startsWith("image/") ||
+        isSupportedSlideImagePath(fileUpload.name)
+      ) {
+        try {
+          const thumbFile = await createResizedImageThumbnail(
+            fileUpload,
+            SUPABASE_URL
+          );
+          if (thumbFile && carbon) {
+            const thumbPath = getThumbnailPath(upload.data.path);
+            await carbon.storage.from("private").upload(thumbPath, thumbFile, {
+              upsert: true
+            });
+          }
+        } catch {
+          // Non-fatal
+        }
+      }
     }
   };
 
@@ -510,6 +765,50 @@ export function RecordModal({
 
   const [booleanControlled, setBooleanControlled] = useState(
     record?.booleanValue ?? false
+  );
+
+  const fileAttachmentInput = file ? (
+    <div className="flex flex-col gap-2 items-center justify-center py-4 w-full">
+      {file.type.startsWith("image/") ? (
+        <div className="relative size-24 rounded border overflow-hidden">
+          <img
+            src={URL.createObjectURL(file)}
+            alt=""
+            className="size-full object-cover"
+          />
+        </div>
+      ) : (
+        <LuFile className="size-10 text-muted-foreground" />
+      )}
+      <p className="text-sm text-muted-foreground">{file.name}</p>
+      <Button variant="secondary" size="sm" onClick={removeFile}>
+        <Trans>Remove</Trans>
+      </Button>
+    </div>
+  ) : (
+    <div className="flex flex-col gap-2 items-center w-full">
+      <FileDropzone onDrop={onDrop} />
+      <input
+        ref={cameraInputRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={(e) => {
+          const picked = e.target.files?.[0];
+          if (picked) onDrop([picked]);
+        }}
+      />
+      <Button
+        type="button"
+        variant="secondary"
+        onClick={() => cameraInputRef.current?.click()}
+        className="flex items-center gap-2 w-full justify-center"
+      >
+        <LuCamera className="size-4" />
+        <Trans>Take Photo</Trans>
+      </Button>
+    </div>
   );
 
   return (
@@ -609,37 +908,10 @@ export function RecordModal({
                   }))}
                 />
               )}
-              {attribute.type === "File" &&
-                (file ? (
-                  <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                    <LuFile className="size-10 text-muted-foreground" />
-                    <p className="text-sm text-muted-foreground">{file.name}</p>
-                    <Button variant="secondary" size="sm" onClick={removeFile}>
-                      <Trans>Remove</Trans>
-                    </Button>
-                  </div>
-                ) : (
-                  <FileDropzone onDrop={onDrop} />
-                ))}
+              {attribute.type === "File" && fileAttachmentInput}
               {attribute.type === "Inspection" && (
                 <>
-                  {file ? (
-                    <div className="flex flex-col gap-2 items-center justify-center py-6 w-full">
-                      <LuFile className="size-10 text-muted-foreground" />
-                      <p className="text-sm text-muted-foreground">
-                        {file.name}
-                      </p>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        onClick={removeFile}
-                      >
-                        Remove
-                      </Button>
-                    </div>
-                  ) : (
-                    <FileDropzone onDrop={onDrop} />
-                  )}
+                  {fileAttachmentInput}
                   <div className="flex items-center justify-between py-4 w-full">
                     <span className="text-sm font-medium">
                       <Trans>Passed Inspection</Trans>

@@ -67,6 +67,9 @@ msgstr "{fails} sampled failure(s) are recorded and will NOT be completed — re
 msgid "+{overflow} more"
 msgstr "+{overflow} more"
 
+msgid "3D model"
+msgstr "3D model"
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 
@@ -308,6 +311,9 @@ msgstr "Consumed expired"
 msgid "Continue"
 msgstr "Continue"
 
+msgid "Converting…"
+msgstr "Converting…"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Cost of unplanned maintenance, last {0} days"
@@ -524,6 +530,13 @@ msgstr "Features"
 msgid "File size exceeds 10MB limit"
 msgstr "File size exceeds 10MB limit"
 
+msgid "File size exceeds 20 MB limit"
+msgstr "File size exceeds 20 MB limit"
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr "File type not accepted. Allowed: {0}"
+
 msgid "Files"
 msgstr "Files"
 
@@ -581,6 +594,9 @@ msgstr "Ideas, suggestions or problems?"
 
 msgid "Idle for"
 msgstr "Idle for"
+
+msgid "Image format not supported"
+msgstr "Image format not supported"
 
 msgid "Impact"
 msgstr "Impact"
@@ -1422,6 +1438,9 @@ msgstr "Switch Operator"
 
 msgid "Tag"
 msgstr "Tag"
+
+msgid "Take Photo"
+msgstr "Take Photo"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."

@@ -1041,6 +1041,9 @@ msgstr "승인 통과"
 msgid "Accepted {0}"
 msgstr "수락됨 {0}"
 
+msgid "Accepted File Types"
+msgstr ""
+
 msgid "Account"
 msgstr "계정"
 
@@ -6108,6 +6111,9 @@ msgstr "다음으로 복제..."
 msgid "Duration"
 msgstr "기간"
 
+msgid "e.g. .png, .jpg, .pdf"
+msgstr ""
+
 msgid "e.g. +1 555 123 4567"
 msgstr "예: +1 555 123 4567"
 
@@ -7728,6 +7734,9 @@ msgstr "양식"
 msgid "Format"
 msgstr "형식"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "현장 배치 엔지니어"
 
@@ -8147,6 +8156,9 @@ msgstr "일정을 짤 수 없는 공정이 있습니다"
 
 msgid "Headers"
 msgstr "헤더"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "도움말"
@@ -16620,6 +16632,9 @@ msgstr "테스트 값"
 
 msgid "Text size"
 msgstr "글자 크기"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "해당 이름은 이미 다른 단계에서 사용 중입니다."

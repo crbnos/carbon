@@ -44,7 +44,11 @@ import {
   useRouteData,
   useShortcutKeys
 } from "@carbon/react";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import {
+  formatDurationMilliseconds,
+  getThumbnailPath,
+  isSupportedSlideImagePath
+} from "@carbon/utils";
 import type {
   AssemblyStep,
   CameraPose,
@@ -1095,10 +1099,11 @@ export function AssemblyView({
       ? (stepSlides[selected]?.caption ?? null)
       : null;
   // Annotation pins for the shown slide (empty for the finished-item view).
-  const selectedAnnotations =
-    typeof selected === "number"
-      ? (stepSlides[selected]?.annotations ?? [])
-      : [];
+  const slideAnnotations =
+    typeof selected === "number" ? stepSlides[selected]?.annotations : null;
+  const selectedAnnotations: SlideAnnotation[] = Array.isArray(slideAnnotations)
+    ? (slideAnnotations as SlideAnnotation[])
+    : [];
 
   // Smart hotspots: link a pin's toolId to the step's tools. `toolNameById` names a pin's
   // tool on hover; `pinSeqByToolId` lets the Tools sidebar badge each tool with the pin
@@ -3087,9 +3092,35 @@ function StepCompleteAction({
         ? recordedDisplay.split("/").pop() || recordedDisplay
         : recordedDisplay;
 
+    const isImageFile =
+      type === "File" &&
+      !!recordedDisplay &&
+      isSupportedSlideImagePath(recordedDisplay);
+
     return (
       <div className="flex h-full items-center gap-2 rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-3 py-2">
         <LuCheck className="size-4 shrink-0 text-emerald-500" />
+        {isImageFile && (
+          <a
+            href={getPrivateUrl(recordedDisplay!)}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="relative size-6 shrink-0 rounded border overflow-hidden hover:opacity-80 transition-opacity"
+            title="View photo"
+          >
+            <img
+              src={getPrivateUrl(getThumbnailPath(recordedDisplay!))}
+              onError={(e) => {
+                if (e.currentTarget.src !== getPrivateUrl(recordedDisplay!)) {
+                  e.currentTarget.src = getPrivateUrl(recordedDisplay!);
+                }
+              }}
+              alt=""
+              className="size-full object-cover"
+              loading="lazy"
+            />
+          </a>
+        )}
         {displayText ? (
           <TruncatedTooltipText
             tooltip={recordedDisplay}

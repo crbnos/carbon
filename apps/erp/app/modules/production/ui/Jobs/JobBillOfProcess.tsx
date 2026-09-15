@@ -125,7 +125,11 @@ import UnitOfMeasure, {
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import InfiniteScroll from "~/components/InfiniteScroll";
 import { ConfirmDelete } from "~/components/Modals";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidesEditor,
+  uploadStepSlideImage,
+  uploadStepSlideModel
+} from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
   SortableList,
@@ -1159,7 +1163,7 @@ function StepsForm({
   tools: OperationTool[];
 }) {
   const fetcher = useFetcher<typeof newJobOperationParameterAction>();
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const revalidator = useRevalidator();
   const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
@@ -1336,20 +1340,21 @@ function StepsForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       setDraftSlides((prev) => [
         ...prev,
         {
           id: nanoid(),
-          imagePath: result.data.path,
+          imagePath: result.path,
           modelUploadId: null,
           caption: "",
           size: "medium",
@@ -1532,6 +1537,7 @@ function StepsForm({
               minValue: 0,
               maxValue: 0,
               listValues: [],
+              fileTypes: [],
               sortOrder:
                 steps.reduce((acc, a) => Math.max(acc, a.sortOrder ?? 0), 0) +
                 1,
@@ -1632,6 +1638,13 @@ function StepsForm({
               )}
               {type === "List" && (
                 <ArrayInput name="listValues" label={t`List Options`} />
+              )}
+              {(type === "File" || type === "Inspection") && (
+                <ArrayInput
+                  name="fileTypes"
+                  label={t`Accepted File Types`}
+                  placeholder={t`e.g. .png, .jpg, .pdf`}
+                />
               )}
 
               <SlidesEditor
@@ -1939,7 +1952,7 @@ function JobStepSlides({
   step: JobOperationStep;
   isDisabled: boolean;
 }) {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const fetcher = useFetcher();
   const captionFetcher = useFetcher();
   const { carbon } = useCarbon();
@@ -1963,18 +1976,19 @@ function JobStepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       const fd = new FormData();
       fd.append("stepId", step.id);
-      fd.append("imagePath", result.data.path);
+      fd.append("imagePath", result.path);
       fd.append("sortOrder", String(nextSortOrder()));
       fetcher.submit(fd, {
         method: "post",
@@ -2294,6 +2308,13 @@ function StepsListItem({
             )}
             {type === "List" && (
               <ArrayInput name="listValues" label={t`List Options`} />
+            )}
+            {(type === "File" || type === "Inspection") && (
+              <ArrayInput
+                name="fileTypes"
+                label={t`Accepted File Types`}
+                placeholder={t`e.g. .png, .jpg, .pdf`}
+              />
             )}
             <JobStepSlides step={attribute} isDisabled={isDisabled} />
             <JobStepParts

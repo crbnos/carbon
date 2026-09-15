@@ -115,3 +115,191 @@ export const supportedModelTypes = [
   "stl",
   "stp"
 ];
+
+// Image formats a step slide may use. The gate is decode support in EVERY
+// browser the MES runs on — a slide is served byte-for-byte from storage and
+// painted in an <img>, so anything Chrome/Firefox can't decode is a grey box on
+// the shop floor with no error anywhere in the stack.
+//
+// Deliberately excluded:
+//   heic/heif — Safari-only decoder (the payload is HEVC, which Chrome and
+//     Firefox have never shipped). The iPhone camera default, so this is the
+//     one users actually hit; iOS Safari's own photo picker hands the page a
+//     JPEG, but a desktop upload of the original does not.
+//   tiff, jxl — Safari-only for the same practical reason.
+//   svg    — renders everywhere, but the preview route serves it from the app's
+//     own origin with no CSP or Content-Disposition, so an SVG opened in a tab
+//     executes script with the viewer's session. Not worth the XSS surface for
+//     a reference photo.
+export const supportedSlideImageTypes = [
+  "avif",
+  "gif",
+  "jpeg",
+  "jpg",
+  "png",
+  "webp"
+];
+
+/**
+ * Whether a stored slide path (or filename) ends in a format the browser can
+ * paint. Used at upload time to reject, and at render time to show an explicit
+ * "unsupported format" placeholder for rows written before the gate existed.
+ *
+ * @param path Storage path or filename; a missing path is not supported.
+ * @returns True when the extension is in {@link supportedSlideImageTypes}.
+ */
+export function isSupportedSlideImagePath(
+  path: string | null | undefined
+): boolean {
+  if (!path) return false;
+  const ext = path.toLowerCase().split(".").pop();
+  return !!ext && supportedSlideImageTypes.includes(ext);
+}
+
+/**
+ * Magic-number sniff for the allowed slide formats. `accept` is only a picker
+ * filter and the browser's `file.type` is derived from the extension, so a
+ * renamed `.heic` → `.jpg` passes both — reading the container header is the
+ * only check that catches it. Identification only: the bytes are never decoded
+ * or rewritten, and this stays a synchronous pure function (the caller does the
+ * I/O and passes the header in).
+ *
+ * @param header The file's first bytes — 12 minimum, {@link SLIDE_IMAGE_HEADER_BYTES} covers every case.
+ * @returns The canonical extension to store the file under, or null when the
+ *   header matches nothing a browser can paint.
+ */
+export function sniffSlideImageType(header: Uint8Array): string | null {
+  if (header.length < 12) return null;
+
+  const startsWith = (...bytes: number[]) =>
+    bytes.every((byte, index) => header[index] === byte);
+  const asciiAt = (offset: number, text: string) =>
+    text
+      .split("")
+      .every((char, i) => header[offset + i] === char.charCodeAt(0));
+
+  if (startsWith(0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a)) return "png";
+  if (startsWith(0xff, 0xd8, 0xff)) return "jpg";
+  if (startsWith(0x47, 0x49, 0x46, 0x38)) return "gif";
+  // RIFF....WEBP
+  if (asciiAt(0, "RIFF") && asciiAt(8, "WEBP")) return "webp";
+  // ISO-BMFF: ....ftyp<brand>. AVIF and HEIC share the container, so the major
+  // brand is what separates a paintable file from a Safari-only one. Only the
+  // major brand is read, never the compatible-brands list, so an AVIF written
+  // with a generic `mif1` major brand is rejected too — erring toward a clear
+  // "unsupported" message is the right failure, since the alternative direction
+  // lets a HEIC through and ends as a grey box on the shop floor.
+  if (asciiAt(4, "ftyp")) {
+    const brand = String.fromCharCode(...header.slice(8, 12)).toLowerCase();
+    if (brand === "avif" || brand === "avis") return "avif";
+    return null;
+  }
+  return null;
+}
+
+/** Bytes of a file's head to read before calling {@link sniffSlideImageType}. */
+export const SLIDE_IMAGE_HEADER_BYTES = 16;
+
+/**
+ * Resolves the paired thumbnail path for an image.
+ * E.g., `company/parts/abc.jpg` -> `company/parts/abc.thumb.jpg`
+ */
+export function getThumbnailPath(path: string): string {
+  const lastDot = path.lastIndexOf(".");
+  if (lastDot === -1) return `${path}.thumb`;
+  return `${path.slice(0, lastDot)}.thumb${path.slice(lastDot)}`;
+}
+
+/**
+ * Checks whether a storage path is a generated thumbnail.
+ */
+export function isThumbnailPath(path: string): boolean {
+  return path.includes(".thumb.");
+}
+
+/**
+ * Generates a resized thumbnail for an image file.
+ * Attempts to use the Supabase image-resizer edge function if supabaseUrl is provided,
+ * and falls back to client-side HTML canvas when running in a browser environment.
+ *
+ * @param file The original image file
+ * @param supabaseUrl Optional base URL for Supabase (e.g. SUPABASE_URL)
+ * @param maxDimension Target maximum dimension (width or height), default 400
+ * @returns Resized File or null if resizing failed/unsupported
+ */
+export async function createResizedImageThumbnail(
+  file: File,
+  supabaseUrl?: string,
+  maxDimension = 400
+): Promise<File | null> {
+  // 1. Try edge function if URL provided
+  if (supabaseUrl) {
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("height", String(maxDimension));
+      formData.append("contained", "true");
+
+      const response = await fetch(
+        `${supabaseUrl}/functions/v1/image-resizer`,
+        {
+          method: "POST",
+          body: formData
+        }
+      );
+
+      if (response.ok) {
+        const contentType =
+          response.headers.get("Content-Type") || "image/jpeg";
+        const isJpg = contentType.includes("image/jpeg");
+        const blob = await response.blob();
+        return new File([blob], `thumb.${isJpg ? "jpg" : "png"}`, {
+          type: contentType
+        });
+      }
+    } catch {
+      // Fallback to canvas below
+    }
+  }
+
+  // 2. Browser canvas fallback
+  if (typeof window !== "undefined" && typeof document !== "undefined") {
+    try {
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = reject;
+        img.src = objectUrl;
+      });
+      URL.revokeObjectURL(objectUrl);
+
+      const ratio = Math.min(
+        maxDimension / img.width,
+        maxDimension / img.height,
+        1
+      );
+      const width = Math.max(1, Math.round(img.width * ratio));
+      const height = Math.max(1, Math.round(img.height * ratio));
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+
+      ctx.drawImage(img, 0, 0, width, height);
+
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/jpeg", 0.85)
+      );
+      if (!blob) return null;
+
+      return new File([blob], "thumb.jpg", { type: "image/jpeg" });
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}

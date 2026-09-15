@@ -1041,6 +1041,9 @@ msgstr "स्वीकृति उत्तीर्ण"
 msgid "Accepted {0}"
 msgstr "{0} को स्वीकृत"
 
+msgid "Accepted File Types"
+msgstr ""
+
 msgid "Account"
 msgstr "खाता"
 
@@ -6108,6 +6111,9 @@ msgstr "...को डुप्लिकेट करें"
 msgid "Duration"
 msgstr "अवधि"
 
+msgid "e.g. .png, .jpg, .pdf"
+msgstr ""
+
 msgid "e.g. +1 555 123 4567"
 msgstr "उदा. +1 555 123 4567"
 
@@ -7728,6 +7734,9 @@ msgstr "फॉर्म"
 msgid "Format"
 msgstr "प्रारूप"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "अग्रपंक्ति में तैनात इंजीनियर"
 
@@ -8147,6 +8156,9 @@ msgstr "ऐसे ऑपरेशन हैं जिन्हें शेड�
 
 msgid "Headers"
 msgstr "हेडर"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "मदद"
@@ -16620,6 +16632,9 @@ msgstr "परीक्षण मान"
 
 msgid "Text size"
 msgstr "पाठ आकार"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "वह नाम पहले से ही एक अन्य चरण द्वारा उपयोग किया जा रहा है।"

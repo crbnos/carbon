@@ -1041,6 +1041,9 @@ msgstr "Accettazione superata"
 msgid "Accepted {0}"
 msgstr "Accettata il {0}"
 
+msgid "Accepted File Types"
+msgstr ""
+
 msgid "Account"
 msgstr "Conto"
 
@@ -6109,6 +6112,9 @@ msgstr "Duplica in..."
 msgid "Duration"
 msgstr "Durata"
 
+msgid "e.g. .png, .jpg, .pdf"
+msgstr ""
+
 msgid "e.g. +1 555 123 4567"
 msgstr "ad es. +1 555 123 4567"
 
@@ -7728,6 +7734,9 @@ msgstr "Modulo"
 msgid "Format"
 msgstr "Formato"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "Ingegnere dispiegato in prima linea"
 
@@ -8147,6 +8156,9 @@ msgstr "Ha operazioni che non possono essere programmate"
 
 msgid "Headers"
 msgstr "Intestazioni"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "Aiuto"
@@ -16619,6 +16631,9 @@ msgstr "Valore di Test"
 
 msgid "Text size"
 msgstr "Dimensione testo"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "Quel nome è già utilizzato da un altro passaggio."

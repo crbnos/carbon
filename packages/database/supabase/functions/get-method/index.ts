@@ -99,7 +99,7 @@ async function copyStepSlides(
       caption: sl.caption,
       sortOrder: sl.sortOrder,
       size: sl.size,
-      annotations: sl.annotations,
+      annotations: Array.isArray(sl.annotations) ? sl.annotations : [],
       companyId,
       createdBy: userId,
     }];
@@ -7924,7 +7924,9 @@ async function insertAssemblyDataForJobOperation(
         caption: slide.caption,
         sortOrder: slide.sortOrder ?? 1,
         size: slide.size ?? "medium",
-        annotations: JSON.stringify(slide.annotations ?? []),
+        annotations: JSON.stringify(
+          Array.isArray(slide.annotations) ? slide.annotations : [],
+        ),
         companyId,
         createdBy: userId,
       });

@@ -67,6 +67,9 @@ msgstr "{fails} erfasste Fehler werden NICHT abgeschlossen – beheben Sie diese
 msgid "+{overflow} more"
 msgstr "+{overflow} weitere"
 
+msgid "3D model"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Eine vorherige Fertigstellung wurde nicht abgeschlossen. Ein erneuter Versuch setzt die verbleibenden Schritte fort – Mengen werden nicht doppelt gezählt."
 
@@ -308,6 +311,9 @@ msgstr "Verbrauchte abgelaufen"
 msgid "Continue"
 msgstr "Weiter"
 
+msgid "Converting…"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"
@@ -524,6 +530,13 @@ msgstr "Merkmale"
 msgid "File size exceeds 10MB limit"
 msgstr "Dateigröße überschreitet das Limit von 10 MB"
 
+msgid "File size exceeds 20 MB limit"
+msgstr ""
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr ""
+
 msgid "Files"
 msgstr "Dateien"
 
@@ -581,6 +594,9 @@ msgstr "Ideen, Vorschläge oder Probleme?"
 
 msgid "Idle for"
 msgstr "Untätig seit"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Auswirkung"
@@ -1422,6 +1438,9 @@ msgstr "Werker wechseln"
 
 msgid "Tag"
 msgstr "Tag"
+
+msgid "Take Photo"
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Die abgeschlossene Menge für diesen Arbeitsgang ist geringer als die erforderliche Menge von {targetQuantity}."

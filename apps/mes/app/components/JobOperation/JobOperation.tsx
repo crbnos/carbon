@@ -146,6 +146,7 @@ import { QualityIssueModal } from "./components/QualityIssueModal";
 import { QuantityModal } from "./components/QuantityModal";
 import { ReworkModal } from "./components/ReworkModal";
 import { SerialSelectorModal } from "./components/SerialSelectorModal";
+import type { StepSlideModel } from "./components/Step";
 import {
   DeleteStepRecordModal,
   RecordModal,
@@ -185,6 +186,7 @@ type JobOperationProps = {
   procedure: Promise<{
     attributes: JobOperationStep[];
     parameters: JobOperationParameter[];
+    slideModels: Record<string, StepSlideModel>;
   }>;
   job: Job;
   thumbnailPath: string | null;
@@ -1183,6 +1185,9 @@ export const JobOperation = ({
                                       key={`step-${step.id}`}
                                       activeStep={activeStep}
                                       step={step}
+                                      slideModels={
+                                        resolvedProcedure.slideModels
+                                      }
                                       onRecord={onRecordStepRecord}
                                       onDelete={onDeleteStepRecord}
                                       operationId={operationId}
@@ -2298,6 +2303,9 @@ export const JobOperation = ({
                                             key={`step-${step.id}`}
                                             activeStep={activeStep}
                                             step={step}
+                                            slideModels={
+                                              resolvedProcedure.slideModels
+                                            }
                                             compact={true}
                                             onRecord={onRecordStepRecord}
                                             onDelete={onDeleteStepRecord}

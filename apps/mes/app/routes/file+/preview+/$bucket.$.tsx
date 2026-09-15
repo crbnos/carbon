@@ -1,6 +1,8 @@
+import { getCompaniesForUser } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { isPathOwnedByCompanies } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const log = getLogger("mes");
@@ -46,7 +48,7 @@ const supportedFileTypes: Record<string, string> = {
 };
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
   const { bucket } = params;
   let path = params["*"];
 
@@ -75,13 +77,15 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     ? (supportedFileTypes[effectiveType] ?? "application/octet-stream")
     : undefined;
 
-  // Authorize against the companyId as a full path segment (prefix or
-  // slash-bounded), not a loose substring — `.includes(companyId)` lets
+  // Authorize against any company the user is a member of as a full path segment
+  // (prefix or slash-bounded), not a loose substring — `.includes(companyId)` lets
   // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
   const decodedPath = decodeURIComponent(path);
-  const ownsPath =
-    decodedPath.startsWith(`${companyId}/`) ||
-    decodedPath.includes(`/${companyId}/`);
+  const userCompanies = new Set([
+    companyId,
+    ...(await getCompaniesForUser(client, userId))
+  ]);
+  const ownsPath = isPathOwnedByCompanies(decodedPath, userCompanies);
   if (!ownsPath) {
     return new Response(null, { status: 403 });
   }

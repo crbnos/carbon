@@ -16,7 +16,6 @@ import {
   getJobOperationById,
   getJobOperationProcedure,
   getKanbanByJobId,
-  getModelUploadsByIds,
   getNcrsByJobOperationId,
   getNonConformanceActions,
   getProductionEventsForJobOperation,
@@ -105,26 +104,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getAssemblyPlaybackByOperationId(serviceRole, operationId)
   ]);
 
-  // 3D model slides reference modelUpload rows; resolve their render metadata
-  // (glbPath / modelPath / thumbnail) in one query.
-  const slideModelIds = Array.from(
-    new Set(
-      procedure.attributes.flatMap((step) =>
-        (step.jobOperationStepSlide ?? []).map((slide) => slide.modelUploadId)
-      )
-    )
-  ).filter((id): id is string => !!id);
-
-  const [quantities, workCenter, kanban, slideModelUploads] = await Promise.all(
-    [
-      getProductionQuantitiesForJobOperation(serviceRole, operationId),
-      getWorkCenter(serviceRole, op.workCenterId),
-      job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null,
-      slideModelIds.length > 0
-        ? getModelUploadsByIds(serviceRole, slideModelIds)
-        : null
-    ]
-  );
+  // 3D model slides reference modelUpload rows; getJobOperationProcedure resolves
+  // their render metadata (glbPath / modelPath / thumbnail) in one query, shared
+  // with the standard operation view.
+  const [quantities, workCenter, kanban] = await Promise.all([
+    getProductionQuantitiesForJobOperation(serviceRole, operationId),
+    getWorkCenter(serviceRole, op.workCenterId),
+    job.data.id ? getKanbanByJobId(serviceRole, job.data.id) : null
+  ]);
 
   const productionQuantities = (quantities.data ?? []).reduce(
     (acc, curr) => {
@@ -270,9 +257,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       (op as { itemModelPath?: string | null }).itemModelPath ??
       (job.data as { modelPath?: string | null }).modelPath ??
       null,
-    slideModels: Object.fromEntries(
-      (slideModelUploads?.data ?? []).map((model) => [model.id, model])
-    ),
+    slideModels: procedure.slideModels,
     assemblyPlayback
   };
 }

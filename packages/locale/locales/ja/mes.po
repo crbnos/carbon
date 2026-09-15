@@ -67,6 +67,9 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
 
+msgid "3D model"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "前回の完了は終了しませんでした。再試行により残りのステップが再開されます。数量は二重計算されません。"
 
@@ -308,6 +311,9 @@ msgstr "消費期限切れ"
 msgid "Continue"
 msgstr "続行"
 
+msgid "Converting…"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "過去{0}日間の未計画保全原価"
@@ -524,6 +530,13 @@ msgstr "機能"
 msgid "File size exceeds 10MB limit"
 msgstr "ファイルサイズが10MBの制限を超えています"
 
+msgid "File size exceeds 20 MB limit"
+msgstr ""
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr ""
+
 msgid "Files"
 msgstr "ファイル"
 
@@ -581,6 +594,9 @@ msgstr "アイデア、提案、または問題はありますか？"
 
 msgid "Idle for"
 msgstr "待機時間"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "影響"
@@ -1422,6 +1438,9 @@ msgstr "作業者を切り替える"
 
 msgid "Tag"
 msgstr "タグ"
+
+msgid "Take Photo"
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"

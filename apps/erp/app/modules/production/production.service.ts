@@ -8589,7 +8589,9 @@ export async function syncAssemblyInstructionToOperation(
           caption: slide.caption,
           sortOrder: slide.sortOrder ?? 1,
           size: slide.size ?? "medium",
-          annotations: JSON.stringify(slide.annotations ?? []),
+          annotations: JSON.stringify(
+            Array.isArray(slide.annotations) ? slide.annotations : []
+          ),
           companyId,
           createdBy: userId
         });

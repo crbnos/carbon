@@ -104,7 +104,11 @@ import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidesEditor,
+  uploadStepSlideImage,
+  uploadStepSlideModel
+} from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
   SortableList,
@@ -1880,7 +1884,7 @@ function AttributesForm({
   onConfigure?: (c: Configuration) => void;
   itemMentions: { id: string; label: string }[];
 }) {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const fetcher = useFetcher<typeof newMethodOperationParameterAction>();
   const sortOrderFetcher = useFetcher<{ success: boolean }>();
   const [type, setType] = useState<OperationStep["type"]>("Task");
@@ -2037,20 +2041,21 @@ function AttributesForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       setDraftSlides((prev) => [
         ...prev,
         {
           id: nanoid(),
-          imagePath: result.data.path,
+          imagePath: result.path,
           modelUploadId: null,
           caption: "",
           size: "medium",
@@ -2230,6 +2235,7 @@ function AttributesForm({
               minValue: 0,
               maxValue: 0,
               listValues: [],
+              fileTypes: [],
               sortOrder:
                 steps.reduce((acc, a) => Math.max(acc, a.sortOrder ?? 0), 0) +
                 1,
@@ -2320,6 +2326,13 @@ function AttributesForm({
               )}
               {type === "List" && (
                 <ArrayInput name="listValues" label={t`List Options`} />
+              )}
+              {(type === "File" || type === "Inspection") && (
+                <ArrayInput
+                  name="fileTypes"
+                  label={t`Accepted File Types`}
+                  placeholder={t`e.g. .png, .jpg, .pdf`}
+                />
               )}
 
               <SlidesEditor
@@ -2753,6 +2766,13 @@ function AttributesListItem({
             {type === "List" && (
               <ArrayInput name="listValues" label={t`List Options`} />
             )}
+            {(type === "File" || type === "Inspection") && (
+              <ArrayInput
+                name="fileTypes"
+                label={t`Accepted File Types`}
+                placeholder={t`e.g. .png, .jpg, .pdf`}
+              />
+            )}
             <StepSlides step={attribute} isDisabled={isDisabled} />
             <StepParts
               step={attribute}
@@ -3096,7 +3116,7 @@ function StepSlides({
   step: OperationStep;
   isDisabled: boolean;
 }) {
-  const { t } = useLingui();
+  const { i18n, t } = useLingui();
   const fetcher = useFetcher();
   const captionFetcher = useFetcher();
   const { carbon } = useCarbon();
@@ -3120,18 +3140,19 @@ function StepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
-      const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
-      if (result.error || !result.data) {
-        toast.error(t`Failed to upload image`);
+      const result = await uploadStepSlideImage(
+        carbon,
+        companyId,
+        file,
+        "parts"
+      );
+      if (result.error) {
+        toast.error(i18n._(result.error));
         return;
       }
       const fd = new FormData();
       fd.append("stepId", step.id);
-      fd.append("imagePath", result.data.path);
+      fd.append("imagePath", result.path);
       fd.append("sortOrder", String(nextSortOrder()));
       fetcher.submit(fd, {
         method: "post",

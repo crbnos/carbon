@@ -1041,6 +1041,9 @@ msgstr "验收合格"
 msgid "Accepted {0}"
 msgstr "已接受 {0}"
 
+msgid "Accepted File Types"
+msgstr ""
+
 msgid "Account"
 msgstr "账户"
 
@@ -6108,6 +6111,9 @@ msgstr "复制到..."
 msgid "Duration"
 msgstr "时长"
 
+msgid "e.g. .png, .jpg, .pdf"
+msgstr ""
+
 msgid "e.g. +1 555 123 4567"
 msgstr "例：+1 555 123 4567"
 
@@ -7729,6 +7735,9 @@ msgstr "表单"
 msgid "Format"
 msgstr "格式"
 
+msgid "Format can't be displayed — re-upload as JPEG or PNG"
+msgstr ""
+
 msgid "Forward deployed engineer"
 msgstr "驻场工程师"
 
@@ -8148,6 +8157,9 @@ msgstr "有无法排程的工序"
 
 msgid "Headers"
 msgstr "标头"
+
+msgid "HEIC photos can't be displayed in a browser. On iPhone, Settings → Camera → Formats → Most Compatible saves photos as JPEG."
+msgstr ""
 
 msgid "Help"
 msgstr "帮助"
@@ -16621,6 +16633,9 @@ msgstr "测试值"
 
 msgid "Text size"
 msgstr "文本大小"
+
+msgid "That file isn't an image browsers can display. Use JPEG, PNG, WebP, AVIF or GIF."
+msgstr ""
 
 msgid "That name is already used by another step."
 msgstr "该名称已被另一个步骤使用。"

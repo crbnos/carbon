@@ -67,6 +67,9 @@ msgstr "{fails} नमूना विफलता(एं) दर्ज की �
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
 
+msgid "3D model"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "एक पिछला समापन पूरा नहीं हुआ। पुनः प्रयास करने से शेष चरण जारी रहते हैं — मात्राएँ दोगुनी नहीं गिनी जाती हैं।"
 
@@ -308,6 +311,9 @@ msgstr "खपत की गई समाप्त"
 msgid "Continue"
 msgstr "जारी रखें"
 
+msgid "Converting…"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "अनियोजित रखरखाव की लागत, पिछले {0} दिन"
@@ -524,6 +530,13 @@ msgstr "विशेषताएं"
 msgid "File size exceeds 10MB limit"
 msgstr "फ़ाइल का आकार 10MB की सीमा से अधिक है"
 
+msgid "File size exceeds 20 MB limit"
+msgstr ""
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr ""
+
 msgid "Files"
 msgstr "फ़ाइलें"
 
@@ -581,6 +594,9 @@ msgstr "विचार, सुझाव या समस्याएं?"
 
 msgid "Idle for"
 msgstr "के लिए निष्क्रिय"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "प्रभाव"
@@ -1422,6 +1438,9 @@ msgstr "ऑपरेटर स्विच करें"
 
 msgid "Tag"
 msgstr "टैग"
+
+msgid "Take Photo"
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"

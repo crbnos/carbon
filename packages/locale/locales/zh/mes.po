@@ -67,6 +67,9 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
 
+msgid "3D model"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "之前的完成未完成。重试会恢复剩余步骤 — 数量不会重复计数。"
 
@@ -308,6 +311,9 @@ msgstr "已消耗已过期"
 msgid "Continue"
 msgstr "继续"
 
+msgid "Converting…"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "过去 {0} 天的计划外维护成本"
@@ -524,6 +530,13 @@ msgstr "特性"
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
 
+msgid "File size exceeds 20 MB limit"
+msgstr ""
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr ""
+
 msgid "Files"
 msgstr "文件"
 
@@ -581,6 +594,9 @@ msgstr "有想法、建议或问题？"
 
 msgid "Idle for"
 msgstr "闲置时间"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "影响"
@@ -1422,6 +1438,9 @@ msgstr "切换操作员"
 
 msgid "Tag"
 msgstr "标签"
+
+msgid "Take Photo"
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"

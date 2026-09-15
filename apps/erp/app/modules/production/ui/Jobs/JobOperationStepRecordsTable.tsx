@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { Checkbox, cn } from "@carbon/react";
+import { getThumbnailPath, isSupportedSlideImagePath } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
@@ -131,41 +132,97 @@ const JobOperationStepRecordsTable = memo(
                     {employees.find((e) => e.id === record.userValue)?.name}
                   </p>
                 );
-              case "File":
-                if (record.value) {
+              case "File": {
+                const filePath = record.value;
+                if (filePath) {
+                  const isImage = isSupportedSlideImagePath(filePath);
+                  const fileName = filePath.split("/").pop() || "View File";
                   return (
-                    <div className="flex gap-2 text-xs">
-                      <LuPaperclip className="size-4 text-muted-foreground" />
+                    <div className="flex items-center gap-2 text-xs">
+                      {isImage ? (
+                        <a
+                          href={getPrivateUrl(filePath)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="relative size-8 shrink-0 rounded border overflow-hidden hover:opacity-80 transition-opacity"
+                          title={fileName}
+                        >
+                          <img
+                            src={getPrivateUrl(getThumbnailPath(filePath))}
+                            onError={(e) => {
+                              if (
+                                e.currentTarget.src !== getPrivateUrl(filePath)
+                              ) {
+                                e.currentTarget.src = getPrivateUrl(filePath);
+                              }
+                            }}
+                            alt=""
+                            className="size-full object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ) : (
+                        <LuPaperclip className="size-4 text-muted-foreground" />
+                      )}
                       <a
-                        href={getPrivateUrl(record.value)}
+                        href={getPrivateUrl(filePath)}
                         target="_blank"
                         rel="noopener noreferrer"
+                        className="hover:underline"
                       >
-                        View File
+                        {fileName}
                       </a>
                     </div>
                   );
                 }
                 return null;
-              case "Inspection":
+              }
+              case "Inspection": {
+                const filePath = record.value;
                 return (
                   <div className="flex gap-2 items-center text-sm">
-                    {record.value && (
-                      <>
-                        <LuPaperclip className="size-4 text-muted-foreground" />
+                    {filePath && (
+                      <div className="flex items-center gap-1.5 text-xs">
+                        {isSupportedSlideImagePath(filePath) ? (
+                          <a
+                            href={getPrivateUrl(filePath)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="relative size-7 shrink-0 rounded border overflow-hidden hover:opacity-80 transition-opacity"
+                            title="View attachment"
+                          >
+                            <img
+                              src={getPrivateUrl(getThumbnailPath(filePath))}
+                              onError={(e) => {
+                                if (
+                                  e.currentTarget.src !==
+                                  getPrivateUrl(filePath)
+                                ) {
+                                  e.currentTarget.src = getPrivateUrl(filePath);
+                                }
+                              }}
+                              alt=""
+                              className="size-full object-cover"
+                              loading="lazy"
+                            />
+                          </a>
+                        ) : (
+                          <LuPaperclip className="size-4 text-muted-foreground" />
+                        )}
                         <a
-                          href={getPrivateUrl(record.value)}
+                          href={getPrivateUrl(filePath)}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs"
+                          className="hover:underline"
                         >
                           View File
                         </a>
-                      </>
+                      </div>
                     )}
                     <Checkbox checked={record.booleanValue ?? false} />
                   </div>
                 );
+              }
               default:
                 return null;
             }

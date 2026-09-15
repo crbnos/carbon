@@ -67,6 +67,9 @@ msgstr "{fails} записанных отказов будут НЕ заверш
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
 
+msgid "3D model"
+msgstr ""
+
 msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
 msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
@@ -308,6 +311,9 @@ msgstr "Израсходовано - истек срок"
 msgid "Continue"
 msgstr "Продолжить"
 
+msgid "Converting…"
+msgstr ""
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Себестоимость внепланового техобслуживания за последние {0} дней"
@@ -524,6 +530,13 @@ msgstr "Характеристики"
 msgid "File size exceeds 10MB limit"
 msgstr "Размер файла превышает ограничение в 10 МБ"
 
+msgid "File size exceeds 20 MB limit"
+msgstr ""
+
+#. placeholder {0}: attribute.fileTypes.join(", ")
+msgid "File type not accepted. Allowed: {0}"
+msgstr ""
+
 msgid "Files"
 msgstr "Файлы"
 
@@ -581,6 +594,9 @@ msgstr "Идеи, предложения или проблемы?"
 
 msgid "Idle for"
 msgstr "Простой в течение"
+
+msgid "Image format not supported"
+msgstr ""
 
 msgid "Impact"
 msgstr "Влияние"
@@ -1422,6 +1438,9 @@ msgstr "Сменить оператора"
 
 msgid "Tag"
 msgstr "Тег"
+
+msgid "Take Photo"
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
