@@ -2,12 +2,14 @@ import { describe, expect, it } from "vitest";
 // Import the logic module directly — the ERP barrels drag lingui macros vitest
 // does not transform (see batching-migration-guards.test.ts).
 import {
+  checkReceiptsBeforeComplete,
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialsToReceive,
   hasUnsplitSerialPlaceholder,
   isFractionalSerialQuantity,
+  type JobReceiptSnapshot,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
 
@@ -231,5 +233,47 @@ describe("isFractionalSerialQuantity", () => {
 
   it("ignores an emptied input", () => {
     expect(isFractionalSerialQuantity(["SN-0001"], Number.NaN)).toBe(false);
+  });
+});
+
+describe("checkReceiptsBeforeComplete", () => {
+  const shown: JobReceiptSnapshot = {
+    quantityReceivedToInventory: 2,
+    trackedEntityIds: ["te-1", "te-2"]
+  };
+
+  it("submits when the receipts are unchanged", () => {
+    expect(
+      checkReceiptsBeforeComplete(shown, {
+        quantityReceivedToInventory: 2,
+        trackedEntityIds: ["te-2", "te-1"]
+      })
+    ).toBe("submit");
+  });
+
+  it("asks for review when another completion received more", () => {
+    expect(
+      checkReceiptsBeforeComplete(shown, {
+        quantityReceivedToInventory: 3,
+        trackedEntityIds: ["te-1", "te-2", "te-3"]
+      })
+    ).toBe("review");
+  });
+
+  it("asks for review when different units were received", () => {
+    expect(
+      checkReceiptsBeforeComplete(shown, {
+        quantityReceivedToInventory: 2,
+        trackedEntityIds: ["te-1", "te-3"]
+      })
+    ).toBe("review");
+  });
+
+  it("asks for review when the dialog shows no receipts", () => {
+    expect(checkReceiptsBeforeComplete(null, shown)).toBe("review");
+  });
+
+  it("reports unreadable receipts instead of submitting", () => {
+    expect(checkReceiptsBeforeComplete(shown, null)).toBe("unreadable");
   });
 });

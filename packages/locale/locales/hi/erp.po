@@ -13467,6 +13467,9 @@ msgstr "प्राप्ति अनुरोधित तिथि"
 msgid "Receipts"
 msgstr "रसीदें"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "इस डायलॉग के खुले रहने के दौरान प्राप्तियाँ बदल गईं"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "प्राप्ति, शिपमेंट, विक्रय चालान, क्रय चालान, भुगतान, और जमा/नामे ज्ञापन जो अभी भी ड्राफ्ट या लंबित हैं, उन्हें पोस्ट किया जाना चाहिए या अमान्य किया जाना चाहिए — दोनों दस्तावेज़ इस अवधि में दिनांकित और बिना दिनांक के दस्तावेज़ जो पोस्ट होने पर इसमें एक तिथि प्राप्त करेंगे। जब तक वे पोस्ट नहीं होते, उनकी राशियाँ सामान्य खाता बही में नहीं हैं, इसलिए अवधि को कम दिखाया जाएगा।"
 
@@ -19200,6 +19203,9 @@ msgstr "इन पंक्तियों का अर्थ क्या ह�
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "यह फील्ड परिवर्तन से पहले क्या रखता था। कुछ नहीं के लिए खाली छोड़ दें।"
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "इस जॉब ने इन्वेंटरी में जो प्राप्त किया है वह बदल गया है। मात्रा की समीक्षा करें और जॉब को फिर से पूरा करें।"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "यह प्राप्ति क्या पूरी कर रही है — एक क्रय आदेश, एक वापसी, एक इनबाउंड स्थानांतरण, या कोई पैरेंट नहीं है ऐसी एक मैनुअल प्राप्ति।"

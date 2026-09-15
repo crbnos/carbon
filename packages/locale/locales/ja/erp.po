@@ -13467,6 +13467,9 @@ msgstr "入荷希望納期"
 msgid "Receipts"
 msgstr "領収書"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "このダイアログを開いている間に入荷が変更されました"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "入荷、出荷、売上請求書、仕入先請求書、支払、およびクレジット/デビットメモは、まだ下書きまたは待機中である場合は、転記または取消される必要があります。この期間に日付けられた文書と、転記時にこの期間に日付けを受け取る無期限文書の両方。転記されるまで、それらの金額は総勘定元帳に含まれていないため、期間が過少計上されます。"
 
@@ -19200,6 +19203,9 @@ msgstr "これらの行が何を意味するか"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "変更前にこのフィールドが保持していたもの。何もない場合は空白のままにしてください。"
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "この製造指図の在庫への受け入れ内容が変更されました。数量を確認し、もう一度製造指図を完了してください。"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "この領収書が満たしているもの — 発注書、返品、受信転送、または親のない手動領収書。"

@@ -13467,6 +13467,9 @@ msgstr "Wunschtermin Wareneingang"
 msgid "Receipts"
 msgstr "Quittungen"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "Wareneingänge haben sich geändert, während dieser Dialog geöffnet war"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Wareneingang, Lieferung, Ausgangsrechnung, Eingangsrechnung, Zahlung und Gut-/Lastschrift, die sich noch in Entwurf oder Ausstehend befinden, müssen gebucht oder storniert werden – sowohl Dokumente, die in diesem Zeitraum datiert sind, als auch undatierte Dokumente, die bei der Buchung in diesem Zeitraum ein Datum erhalten würden. Solange sie nicht gebucht sind, sind ihre Beträge nicht im Hauptbuch enthalten, daher wäre der Zeitraum untererfasst."
 
@@ -19200,6 +19203,9 @@ msgstr "Was diese Zeilen bedeuten"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Was dieses Feld vor der Änderung enthielt. Leer lassen für keine Änderung."
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "Die für diesen Fertigungsauftrag in den Bestand eingelagerte Menge hat sich geändert. Prüfen Sie die Menge und schließen Sie den Fertigungsauftrag erneut ab."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Was dieser Beleg erfüllt — eine Bestellung, eine Rücksendung, eine eingehende Übertragung oder ein manueller Beleg ohne übergeordneter Beleg."

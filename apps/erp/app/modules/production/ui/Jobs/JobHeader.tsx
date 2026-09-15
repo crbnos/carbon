@@ -39,7 +39,8 @@ import {
   today
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import type { FormEvent } from "react";
+import { useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuBlocks,
@@ -89,12 +90,14 @@ import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
+  checkReceiptsBeforeComplete,
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialsToReceive,
   hasUnsplitSerialPlaceholder,
-  isFractionalSerialQuantity
+  isFractionalSerialQuantity,
+  type JobReceiptSnapshot
 } from "./job-complete-logic";
 
 const JobHeader = () => {
@@ -1122,18 +1125,17 @@ function JobExpediteModal({
   );
 }
 
-type JobReceipts = {
-  quantityReceivedToInventory: number;
-  trackedEntityIds: string[];
-};
-
 // What the job has received as of now, from api+/production.job.$jobId.receipts.
 // Null when it cannot be read; the dialog then offers a retry, not the form.
-async function getJobReceipts(jobId: string): Promise<JobReceipts | null> {
+async function getJobReceipts(
+  jobId: string
+): Promise<JobReceiptSnapshot | null> {
   try {
     const response = await fetch(path.to.api.jobReceipts(jobId));
     if (!response.ok) return null;
-    const body = (await response.json()) as { receipts: JobReceipts | null };
+    const body = (await response.json()) as {
+      receipts: JobReceiptSnapshot | null;
+    };
     return body.receipts;
   } catch {
     return null;
@@ -1152,6 +1154,14 @@ function JobCompleteModal({
   const { carbon } = useCarbon();
   const [loading, setLoading] = useState(true);
   const [hasReceiptsError, setHasReceiptsError] = useState(false);
+  // The receipts the form below was built from, re-checked on submit.
+  const [shownReceipts, setShownReceipts] = useState<JobReceiptSnapshot | null>(
+    null
+  );
+  const [hasReceiptsChanged, setHasReceiptsChanged] = useState(false);
+  const [isCheckingReceipts, setIsCheckingReceipts] = useState(false);
+  const isCheckingReceiptsRef = useRef(false);
+  const isMountedRef = useRef(false);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
     string | undefined
@@ -1196,7 +1206,9 @@ function JobCompleteModal({
     quantityComplete
   );
 
-  const getJobData = async () => {
+  // currentReceipts: receipts the submit check just read, so they are not read
+  // twice.
+  const getJobData = async (currentReceipts?: JobReceiptSnapshot) => {
     if (!carbon) return;
 
     const [pickMethod, makeMethod, receipts] = await Promise.all([
@@ -1212,7 +1224,7 @@ function JobCompleteModal({
         .eq("jobId", job?.id!)
         .is("parentMaterialId", null)
         .single(),
-      getJobReceipts(job?.id!)
+      currentReceipts ?? getJobReceipts(job?.id!)
     ]);
 
     // Read now rather than from the job route: a receipt may have been made
@@ -1225,7 +1237,6 @@ function JobCompleteModal({
       return;
     }
     const currentReceivedQuantity = receipts.quantityReceivedToInventory;
-    setPriorReceivedQuantity(currentReceivedQuantity);
 
     if (
       makeMethod.data?.requiresSerialTracking ||
@@ -1250,10 +1261,14 @@ function JobCompleteModal({
           ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
           : null;
 
+        // Each branch sets all of the serial state: this also runs again when
+        // the receipts changed while the dialog was open.
         if (serialUnits) {
           // Every unit already exists as a numbered serial, so the quantity can
           // be chosen here even when nothing was finished on the shop floor.
           setReceivableSerials(serialUnits);
+          setHasTrackedQuantity(false);
+          setHasSerialPlaceholder(false);
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
               finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
@@ -1266,6 +1281,7 @@ function JobCompleteModal({
             })
           );
         } else {
+          setReceivableSerials(null);
           setQuantityComplete(availableQuantity);
           setHasTrackedQuantity(true);
           setHasSerialPlaceholder(
@@ -1279,6 +1295,11 @@ function JobCompleteModal({
       }
     }
 
+    // Set with the serial state, after the last read, so the form never pairs
+    // the new received quantity with the previous serial preview.
+    setPriorReceivedQuantity(currentReceivedQuantity);
+    setShownReceipts(receipts);
+
     flushSync(() => {
       setDefaultStorageUnitId(
         pickMethod.data?.defaultStorageUnitId ?? undefined
@@ -1289,14 +1310,55 @@ function JobCompleteModal({
   };
 
   useMount(() => {
-    if (!job) return;
-    getJobData();
+    isMountedRef.current = true;
+    if (job) getJobData();
+    return () => {
+      isMountedRef.current = false;
+    };
   });
 
   const retryJobData = () => {
     setHasReceiptsError(false);
     setLoading(true);
     getJobData();
+  };
+
+  // The quantity bounds and serial preview come from the receipts read when the
+  // dialog opened. Another completion can receive units meanwhile, and
+  // complete_job_to_inventory would then reject the cumulative quantity or
+  // receive different serials than shown. Read the receipts again first; if they
+  // changed, reload the dialog and ask the user to confirm again.
+  const checkReceiptsAndSubmit = async (event: FormEvent) => {
+    if (isCheckingReceiptsRef.current) {
+      event.preventDefault();
+      return;
+    }
+    isCheckingReceiptsRef.current = true;
+    setIsCheckingReceipts(true);
+    try {
+      const currentReceipts = await getJobReceipts(job?.id!);
+      // Closed while reading: the user cancelled, so nothing is submitted.
+      if (!isMountedRef.current) {
+        event.preventDefault();
+        return;
+      }
+      const check = checkReceiptsBeforeComplete(shownReceipts, currentReceipts);
+      if (check === "submit") {
+        onClose();
+        return;
+      }
+
+      event.preventDefault();
+      if (check === "unreadable" || !currentReceipts) {
+        setHasReceiptsError(true);
+        return;
+      }
+      setHasReceiptsChanged(true);
+      await getJobData(currentReceipts);
+    } finally {
+      isCheckingReceiptsRef.current = false;
+      setIsCheckingReceipts(false);
+    }
   };
 
   // Update leftover quantities when action changes
@@ -1369,7 +1431,7 @@ function JobCompleteModal({
             method="post"
             action={path.to.jobComplete(job.id!)}
             validator={jobCompleteValidator}
-            onSubmit={onClose}
+            onSubmit={(_data, event) => checkReceiptsAndSubmit(event)}
             defaultValues={{
               quantityComplete: job.quantity ?? 0,
               salesOrderId: job.salesOrderId ?? undefined,
@@ -1411,6 +1473,20 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
+                {hasReceiptsChanged && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Receipts changed while this dialog was open</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        What this job has received to inventory changed. Review
+                        the quantity and complete the job again.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
                 {!makeToOrder && (
                   <>
                     <Location
@@ -1627,7 +1703,9 @@ function JobCompleteModal({
 
               <Button
                 type="submit"
+                isLoading={isCheckingReceipts}
                 isDisabled={
+                  isCheckingReceipts ||
                   (hasLeftover && !leftoverAction) ||
                   // Completing a stocked item at zero receives nothing and
                   // consumes nothing; the database refuses it as well.

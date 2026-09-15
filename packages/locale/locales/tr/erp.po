@@ -13467,6 +13467,9 @@ msgstr "Talep Edilen Teslim Tarihi"
 msgid "Receipts"
 msgstr "Makbuzlar"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "Bu pencere açıkken mal kabuller değişti"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Hala Taslak veya Beklemede olan mal kabuller, sevkiyatlar, satış faturaları, alış faturaları, ödemeler ve alacak/borç muhasebe fişleri muhasebeleştirilmeli veya hükümsüz kılınmalıdır — hem bu dönemde tarihli belgeler hem de muhasebeleştirildiğinde bu dönemde tarih alacak tarihi olmayan belgeler. Muhasebeleştirilene kadar, tutarları büyük defterde yoktur, bu nedenle dönem eksik gösterilecektir."
 
@@ -19200,6 +19203,9 @@ msgstr "Bu satırların anlamı"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Bu alanın değişiklikten önceki değeri. Hiçbir şey için boş bırakın."
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "Bu iş emrinin envantere teslim aldığı miktar değişti. Miktarı gözden geçirin ve iş emrini yeniden tamamlayın."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Bu makbuzun yerine getirdiği — satın alma siparişi, geri dönüş, gelen transfer veya ebeveynleri olmayan manuel makbuz."

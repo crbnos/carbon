@@ -13467,6 +13467,9 @@ msgstr "收货要求日期"
 msgid "Receipts"
 msgstr "收据"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "此对话框打开期间收货已变更"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "还处于草稿或待处理状态的收货、发货、销售发票、采购发票、付款以及借方/贷方备忘录必须过账或作废——包括本期日期的文件和未日期但过账时会获得本期日期的文件。在它们过账之前，它们的金额不在总账中，因此本期将被低估。"
 
@@ -19200,6 +19203,9 @@ msgstr "这些行的含义"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "此字段在更改之前持有的内容。留空表示无。"
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "此工单已收货入库的内容已变更。请检查数量并重新完成工单。"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "此收据正在履行 — 采购订单、退货、入库转移或无父级的手动收据。"

@@ -13467,6 +13467,9 @@ msgstr "Запрошенная дата получения"
 msgid "Receipts"
 msgstr "Квитанции"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "Поступления изменились, пока это окно было открыто"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Поступления, отгрузки, счета-фактуры выданные, счета-фактуры полученные, платежи и кредит-ноты/дебет-ноты, которые остаются в статусе Черновик или В ожидании, должны быть проведены или аннулированы — как документы, датированные в этом периоде, так и недатированные документы, которые получат дату при проведении в этом периоде. Пока они не проведены, их суммы не включены в главную книгу, поэтому период будет занижен."
 
@@ -19200,6 +19203,9 @@ msgstr "Что означают эти строки"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Что содержало это поле до изменения. Оставьте пусто, если ничего нет."
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "Изменилось то, что по этому производственному заказу поступило на склад. Проверьте количество и снова завершите производственный заказ."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Что исполняет это Поступление — Заказ поставщику, возврат, входящее Перемещение или ручное Поступление без родителя."

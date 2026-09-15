@@ -13467,6 +13467,9 @@ msgstr "Date de réception demandée"
 msgid "Receipts"
 msgstr "Reçus"
 
+msgid "Receipts changed while this dialog was open"
+msgstr "Les réceptions ont changé pendant que cette boîte de dialogue était ouverte"
+
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Les réceptions, expéditions, factures de vente, factures d'achat, paiements et mémos de crédit/débit restant en brouillon ou en attente doivent être comptabilisés ou invalidés — à la fois les documents datés de cette période et les documents sans date qui recevraient une date à la comptabilisation. Jusqu'à leur comptabilisation, leurs montants ne sont pas dans le grand livre, la période serait donc incomplète."
 
@@ -19200,6 +19203,9 @@ msgstr "Ce que ces lignes signifient"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Ce que ce champ contenait avant la modification. Laissez vide pour rien."
+
+msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
+msgstr "Ce que cet ordre de fabrication a reçu en stock a changé. Vérifiez la quantité et terminez à nouveau l'ordre de fabrication."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Ce que cette réception remplit — un bon de commande, un retour, un transfert entrant, ou une réception manuelle sans parent."

@@ -136,6 +136,36 @@ export function getSerialsToReceive(
   );
 }
 
+/** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
+export type JobReceiptSnapshot = {
+  quantityReceivedToInventory: number;
+  trackedEntityIds: string[];
+};
+
+/**
+ * Re-checked right before the dialog completes the job. Its quantity bounds and
+ * serial preview come from the receipts read when it opened, and another
+ * completion can receive units while it is open. "submit" when nothing changed,
+ * "review" when the dialog must reload and ask again, "unreadable" when the
+ * receipts could not be read.
+ */
+export function checkReceiptsBeforeComplete(
+  shown: JobReceiptSnapshot | null,
+  current: JobReceiptSnapshot | null
+): "submit" | "review" | "unreadable" {
+  if (!current) return "unreadable";
+  if (!shown) return "review";
+  if (shown.quantityReceivedToInventory !== current.quantityReceivedToInventory)
+    return "review";
+
+  const shownIds = new Set(shown.trackedEntityIds);
+  const currentIds = new Set(current.trackedEntityIds);
+  const sameIds =
+    shownIds.size === currentIds.size &&
+    [...currentIds].every((id) => shownIds.has(id));
+  return sameIds ? "submit" : "review";
+}
+
 /** Serial units are received one at a time; the database refuses a fraction. */
 export function isFractionalSerialQuantity(
   receivableSerials: string[] | null,
