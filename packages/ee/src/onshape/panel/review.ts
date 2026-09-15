@@ -189,7 +189,12 @@ export type ReleaseApplyBody = {
   planId: string;
   edits: Record<string, ItemEdit>;
   changeNotice: ChangeNoticeEdit | null;
-  createChangeNotice: boolean;
+  /**
+   * Sent only when the plan proposed a notice, so there was a choice to make.
+   * Omitted otherwise: the apply then records one if the push creates
+   * something the plan did not foresee (a row that vanished since review).
+   */
+  createChangeNotice?: boolean;
   makeDefault: boolean;
 };
 
@@ -260,8 +265,9 @@ export function applyRequestBody(
           review.plan.changeNotice && review.createChangeNotice
             ? review.changeNotice
             : null,
-        createChangeNotice:
-          review.plan.changeNotice !== null && review.createChangeNotice,
+        ...(review.plan.changeNotice !== null
+          ? { createChangeNotice: review.createChangeNotice }
+          : {}),
         makeDefault: review.makeDefault
       };
     }

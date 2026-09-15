@@ -177,11 +177,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan = stored.plan as StoredReleasePlan;
   const makeDefault = parsed.data.makeDefault ?? plan.makeDefault;
-  // Whether to record a change notice is the review's call. The plan proposes
-  // one whenever the push creates something; an older client that does not send
-  // the flag keeps the previous behaviour.
-  const createChangeNotice =
-    parsed.data.createChangeNotice ?? plan.changeNotice !== null;
+  // Whether to record a change notice is the review's call when the review had
+  // one to decide on. A client that sends no flag — including the panel, for a
+  // plan that proposed none — gets one whenever this push creates something:
+  // the default is resolved after the writes, because a row that vanished
+  // since the review turns into a create that the plan could not foresee.
+  const createChangeNoticeChoice = parsed.data.createChangeNotice;
 
   // ---- Merge the review's edits before any write --------------------------
   // Items and children are keyed by part number; the two sets are disjoint
@@ -234,13 +235,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const changeNoticeValues = changeNoticeMerge.changeNotice;
 
-  // One-shot from here: a concurrent apply of the same review finds nothing.
-  if (!(await takePanelPlan(planId, { companyId, userId }))) {
-    return data(
-      { error: "This review has expired — review again" },
-      { status: 410 }
-    );
-  }
+  // The plan is taken further down, after the reads that every write depends
+  // on: a failed read before any write answers 500 with the review still in
+  // place, instead of burning the one-shot plan on a push that wrote nothing.
 
   const modelItems = plan.items.filter(isModelReleaseItem);
   const drawingItems = plan.items.filter((item) => !isModelReleaseItem(item));
@@ -370,8 +367,105 @@ export async function action({ request }: ActionFunctionArgs) {
   const bases = await selectInBatches(baseIds, (batch) =>
     client.from("item").select("*").eq("companyId", companyId).in("id", batch)
   );
+  // A failed batch reads as "no base", which skipped every revision while
+  // the rest of the release was written: a partial push.
+  if (bases.error) {
+    return data(
+      { error: "Failed to read the base revisions" },
+      { status: 500 }
+    );
+  }
   for (const row of bases.data as FullItem[]) {
     fullBaseById.set(row.id, row);
+  }
+
+  // ---- The base revisions' Onshape lines, read before any write ----------
+  // `createRevision` copies the base method's lines onto the new revision,
+  // with new ids and no mapping rows. The ones a panel push wrote to the base
+  // are identified here — by the base's mapping rows, then by item + order +
+  // quantity — so pass 2 can remove the copies before writing the released
+  // BOM. Read now, while nothing is written: once the revision exists, a
+  // failed read leaves copies that look manual and are never replaced.
+  const assemblyBaseIds = [
+    ...new Set(
+      decisions.flatMap((decision) =>
+        decision.kind === "revision" && decision.item.elementType === 1
+          ? [decision.base.id]
+          : []
+      )
+    )
+  ];
+  const lineKey = (line: { itemId: string; order: number; quantity: number }) =>
+    `${line.itemId}:${line.order}:${line.quantity}`;
+  let baseMethodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    baseMethodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      assemblyBaseIds
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the base revisions' make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const serviceRole = getCarbonServiceRole();
+  const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
+  const baseMethodIds = [
+    ...new Set([...baseMethodByItemId.values()].map((method) => method.id))
+  ];
+  if (baseMethodIds.length > 0) {
+    const baseMapped = await selectInBatches(baseMethodIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("entityId")
+        .eq("companyId", companyId)
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("entityType", "methodMaterial")
+        .in("metadata->>makeMethodId", batch)
+    );
+    const baseLines = baseMapped.error
+      ? null
+      : await selectInBatches(
+          baseMapped.data.map((mapping) => mapping.entityId),
+          (batch) =>
+            client
+              .from("methodMaterial")
+              .select("makeMethodId, itemId, order, quantity")
+              .eq("companyId", companyId)
+              .in("id", batch)
+        );
+    const baseReadError = baseMapped.error ?? baseLines?.error;
+    if (baseReadError || !baseLines) {
+      return data(
+        {
+          error: `Couldn't identify the Onshape lines on the base revisions (${
+            baseReadError?.message ?? "read failed"
+          }); nothing was written. Try again.`
+        },
+        { status: 500 }
+      );
+    }
+    for (const line of baseLines.data) {
+      const keys =
+        copiedKeysByBaseMethodId.get(line.makeMethodId) ?? new Set<string>();
+      keys.add(lineKey(line));
+      copiedKeysByBaseMethodId.set(line.makeMethodId, keys);
+    }
+  }
+
+  // One-shot from here: a concurrent apply of the same review finds nothing.
+  if (!(await takePanelPlan(planId, { companyId, userId }))) {
+    return data(
+      { error: "This review has expired — review again" },
+      { status: 410 }
+    );
   }
 
   for (const decision of decisions) {
@@ -461,15 +555,33 @@ export async function action({ request }: ActionFunctionArgs) {
   summary.alreadyPushed = created.length === 0;
 
   // ---- Pass 2: BOMs for released assemblies -------------------------------
-  const serviceRole = getCarbonServiceRole();
+  // Every read the BOM writes depend on is made before the first delete. A
+  // failure among them skips the BOM writes for the whole release and says
+  // so: deleting or inserting on a partial read is how released BOMs end up
+  // with duplicated or orphaned lines.
+  let bomReadFailure: string | null = null;
 
   // Active make methods for every target and every base in one query. The
   // map is reused by the change notice below: nothing this route writes
   // changes which method is active.
-  const methodByItemId = await loadActiveMakeMethods(client, companyId, [
-    ...[...revisionItemByPartNumber.values()].map((row) => row.id),
-    ...created.flatMap((entry) => (entry.baseItemId ? [entry.baseItemId] : []))
-  ]);
+  const methodByItemId = new Map(baseMethodByItemId);
+  try {
+    for (const [itemId, method] of await loadActiveMakeMethods(
+      client,
+      companyId,
+      [
+        ...[...revisionItemByPartNumber.values()].map((row) => row.id),
+        ...created.flatMap((entry) =>
+          entry.baseItemId ? [entry.baseItemId] : []
+        )
+      ]
+    )) {
+      methodByItemId.set(itemId, method);
+    }
+  } catch (error) {
+    bomReadFailure =
+      error instanceof Error ? error.message : "failed to read make methods";
+  }
 
   // 2a — which assemblies take their BOM. Status is re-checked here: a method
   // released between review and apply is refused, as it always was.
@@ -482,9 +594,9 @@ export async function action({ request }: ActionFunctionArgs) {
     baseMethodId: string | null;
   };
   const bomTargets: BomTarget[] = [];
-  for (const item of modelItems.filter(
-    (candidate) => candidate.elementType === 1
-  )) {
+  for (const item of bomReadFailure
+    ? []
+    : modelItems.filter((candidate) => candidate.elementType === 1)) {
     const target = revisionItemByPartNumber.get(item.partNumber);
     if (!target) continue; // creation failed above; error already recorded
     const label = `${item.partNumber} Rev ${item.revision}`;
@@ -604,126 +716,106 @@ export async function action({ request }: ActionFunctionArgs) {
       )
     )
   ];
-  for (const [itemId, method] of await loadActiveMakeMethods(
-    client,
-    companyId,
-    madeChildItemIds
-  )) {
-    methodByItemId.set(itemId, method);
+  if (!bomReadFailure) {
+    try {
+      for (const [itemId, method] of await loadActiveMakeMethods(
+        client,
+        companyId,
+        madeChildItemIds
+      )) {
+        methodByItemId.set(itemId, method);
+      }
+    } catch (error) {
+      // Written without them, every sub-assembly line would carry a null
+      // child-method pointer and flatten the released tree.
+      bomReadFailure =
+        error instanceof Error
+          ? error.message
+          : "failed to read the sub-assemblies' make methods";
+    }
   }
 
-  // 2c — clear what the release replaces, in bulk across every target.
+  // 2c — the reads that decide what the release replaces, then the deletes.
   // First the revision copies: `createRevision` carried the base method's
-  // lines over, and the ones a panel push wrote to the BASE method (found
-  // through the base method's mapping rows, matched by item + order +
-  // quantity) would duplicate the released BOM below; manual lines stay.
+  // lines over, and the ones a panel push wrote to the BASE method (keyed
+  // before any write, above) would duplicate the released BOM below; manual
+  // lines stay. Then the lines a previous release push wrote to the targets.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
     bomTargets.flatMap(
       (target): Array<[string, string]> =>
         target.baseMethodId ? [[target.methodId, target.baseMethodId]] : []
     )
   );
-  const baseMethodIds = [...new Set(baseMethodIdByTargetMethodId.values())];
-  if (baseMethodIds.length > 0) {
-    const baseMapped = await selectInBatches(baseMethodIds, (batch) =>
-      serviceRole
-        .from("externalIntegrationMapping")
-        .select("entityId")
-        .eq("companyId", companyId)
-        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-        .eq("entityType", "methodMaterial")
-        .in("metadata->>makeMethodId", batch)
-    );
-    // This whole block exists to stop the released BOM being written on top
-    // of the lines the revision copy already carried over. A failed read
-    // degrades to "nothing to dedupe", which is precisely the case that
-    // doubles every line — so report it rather than proceeding blind.
-    if (baseMapped.error) {
-      summary.errors.push(
-        `Could not identify the Onshape lines copied from the base revisions (${baseMapped.error.message}); released BOMs may contain duplicates`
-      );
-    }
-    const baseLineIds = (baseMapped.data ?? []).map(
-      (mapping) => mapping.entityId
-    );
-    if (baseLineIds.length > 0) {
-      const lineKey = (line: {
-        itemId: string;
-        order: number;
-        quantity: number;
-      }) => `${line.itemId}:${line.order}:${line.quantity}`;
-      const [baseLines, copies] = await Promise.all([
-        selectInBatches(baseLineIds, (batch) =>
-          client
-            .from("methodMaterial")
-            .select("makeMethodId, itemId, order, quantity")
-            .eq("companyId", companyId)
-            .in("id", batch)
-        ),
-        selectInBatches([...baseMethodIdByTargetMethodId.keys()], (batch) =>
+  const copyTargetMethodIds = [...baseMethodIdByTargetMethodId.entries()]
+    .filter(([, baseMethodId]) => copiedKeysByBaseMethodId.has(baseMethodId))
+    .map(([targetMethodId]) => targetMethodId);
+  const targetMethodIds = bomTargets.map((target) => target.methodId);
+  const [copies, mapped] = bomReadFailure
+    ? [null, null]
+    : await Promise.all([
+        selectInBatches(copyTargetMethodIds, (batch) =>
           client
             .from("methodMaterial")
             .select("id, makeMethodId, itemId, order, quantity")
             .eq("companyId", companyId)
             .in("makeMethodId", batch)
+        ),
+        selectInBatches(targetMethodIds, (batch) =>
+          serviceRole
+            .from("externalIntegrationMapping")
+            .select("id, entityId")
+            .eq("companyId", companyId)
+            .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+            .eq("entityType", "methodMaterial")
+            .in("metadata->>makeMethodId", batch)
         )
       ]);
-      if (baseLines.error || copies.error) {
-        summary.errors.push(
-          `Could not compare the copied lines against the base revisions (${
-            (baseLines.error ?? copies.error)?.message ?? "read failed"
-          }); released BOMs may contain duplicates`
-        );
-      }
-      const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
-      for (const line of baseLines.data ?? []) {
-        const keys =
-          copiedKeysByBaseMethodId.get(line.makeMethodId) ?? new Set<string>();
-        keys.add(lineKey(line));
-        copiedKeysByBaseMethodId.set(line.makeMethodId, keys);
-      }
-      const toDelete = (copies.data ?? [])
-        .filter((line) => {
-          const baseMethodId = baseMethodIdByTargetMethodId.get(
-            line.makeMethodId
-          );
-          return (
-            !!baseMethodId &&
-            copiedKeysByBaseMethodId.get(baseMethodId)?.has(lineKey(line))
-          );
-        })
-        .map((line) => line.id);
-      for (const batch of chunkFilterValues(toDelete)) {
-        const deduped = await client
-          .from("methodMaterial")
-          .delete()
-          .in("id", batch);
-        if (deduped.error) {
-          summary.errors.push(
-            `Could not remove the lines copied from the base revisions (${deduped.error.message}); released BOMs may contain duplicates`
-          );
-        }
-      }
+  if (!bomReadFailure && (copies?.error || mapped?.error)) {
+    bomReadFailure =
+      (copies?.error ?? mapped?.error)?.message ?? "failed to read BOM lines";
+  }
+
+  if (bomReadFailure) {
+    // A revision created from a base with Onshape lines has those lines
+    // copied onto it, and without the BOM pass nothing removed them.
+    const carriesCopies = created.some((entry) => {
+      const baseMethod = entry.baseItemId
+        ? baseMethodByItemId.get(entry.baseItemId)
+        : undefined;
+      return !!baseMethod && copiedKeysByBaseMethodId.has(baseMethod.id);
+    });
+    summary.errors.push(
+      `The released BOMs were not written: Carbon couldn't read what they replace (${bomReadFailure}). Push the release again.${
+        carriesCopies
+          ? " A revision this push created still carries its base revision's lines — check its bill of materials before pushing again."
+          : ""
+      }`
+    );
+    bomTargets.length = 0;
+  }
+
+  const toDelete = (copies?.data ?? [])
+    .filter((line) => {
+      const baseMethodId = baseMethodIdByTargetMethodId.get(line.makeMethodId);
+      return (
+        !!baseMethodId &&
+        copiedKeysByBaseMethodId.get(baseMethodId)?.has(lineKey(line))
+      );
+    })
+    .map((line) => line.id);
+  for (const batch of bomReadFailure ? [] : chunkFilterValues(toDelete)) {
+    const deduped = await client
+      .from("methodMaterial")
+      .delete()
+      .in("id", batch);
+    if (deduped.error) {
+      summary.errors.push(
+        `Could not remove the lines copied from the base revisions (${deduped.error.message}); released BOMs may contain duplicates`
+      );
     }
   }
 
-  // Then the lines a previous release push wrote to the target methods.
-  const targetMethodIds = bomTargets.map((target) => target.methodId);
-  if (targetMethodIds.length > 0) {
-    const mapped = await selectInBatches(targetMethodIds, (batch) =>
-      serviceRole
-        .from("externalIntegrationMapping")
-        .select("id, entityId")
-        .eq("companyId", companyId)
-        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-        .eq("entityType", "methodMaterial")
-        .in("metadata->>makeMethodId", batch)
-    );
-    if (mapped.error) {
-      summary.errors.push(
-        `Could not find the lines a previous release push wrote (${mapped.error.message}); this push may add a second copy of them`
-      );
-    }
+  if (mapped && !bomReadFailure) {
     for (const batch of chunkFilterValues(
       mapped.data.map((mapping) => mapping.entityId)
     )) {
@@ -930,7 +1022,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // ---- Pass 4: one Draft change notice for what this push created ---------
-  if (created.length > 0 && createChangeNotice) {
+  // An explicit choice from the review stands; without one, creating anything
+  // records a notice — including creates the plan did not propose.
+  if (created.length > 0 && (createChangeNoticeChoice ?? true)) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
     );
