@@ -3073,6 +3073,37 @@ export async function getDefaultAttachmentsForPO(
   });
 }
 
+/**
+ * Apply a planning-action schedule/quantity change to an UNCOMMITTED PO line
+ * (parent status Draft/Planned — the caller gates on isPurchaseOrderLocked).
+ * `purchaseQuantity` is in PURCHASE units — the caller converts from inventory
+ * units via the line's conversionFactor.
+ */
+export async function updatePurchaseOrderLineSchedule(
+  client: SupabaseClient<Database>,
+  args: {
+    lineId: string;
+    companyId: string;
+    userId: string;
+    requiredDate?: string;
+    purchaseQuantity?: number;
+  }
+) {
+  return client
+    .from("purchaseOrderLine")
+    .update({
+      ...(args.requiredDate !== undefined
+        ? { requiredDate: args.requiredDate }
+        : {}),
+      ...(args.purchaseQuantity !== undefined
+        ? { purchaseQuantity: args.purchaseQuantity }
+        : {}),
+      updatedBy: args.userId
+    })
+    .eq("id", args.lineId)
+    .eq("companyId", args.companyId);
+}
+
 // ─── Purchase Return Orders (Supplier Returns) ───
 
 export async function getPurchaseReturnOrders(

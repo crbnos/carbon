@@ -69,6 +69,29 @@ export const jobStatus = [
   "Due Today" // deprecated
 ] as const;
 
+export const planningActionType = [
+  "Order",
+  "Make",
+  "Expedite",
+  "Defer",
+  "Cancel",
+  "Increase",
+  "Decrease"
+] as const;
+
+export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
+
+export const planningActionDismissValidator = z.object({
+  ids: z
+    .array(z.string().min(1))
+    .min(1, { message: "Select at least one action" })
+});
+
+export const planningActionAssignValidator = z.object({
+  id: z.string().min(1, { message: "Action is required" }),
+  assignee: zfd.text(z.string().optional())
+});
+
 export const JOB_LOCKED_STATUSES = [
   "Completed",
   "Closed",

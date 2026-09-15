@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { Status } from "@carbon/react";
+import { computePlanningOrders } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { Trans } from "@lingui/react/macro";
 import { z } from "zod";
@@ -172,319 +173,35 @@ function calculateOrders({ itemPlanning, periods }: BaseOrderParams): {
     return reserveOrders;
   }
 
-  if (itemPlanning.reorderingPolicy === "Manual Reorder") {
-    const emptyOrders: {
-      startDate: string;
-      dueDate: string;
-      quantity: number;
-      periodId: string;
-      isASAP: boolean;
-      policyName?: string;
-      triggerValues?: {
-        projectedStock?: number;
-        safetyStock?: number;
-        reorderPoint?: number;
-        reorderQuantity?: number;
-        lotSize?: number;
-        leadTime?: number;
-      };
-    }[] = [];
-    ordersCache.set(cacheKey, emptyOrders);
-    return emptyOrders;
-  }
+  // The four-policy sizing math is shared with the MRP engine — the single
+  // source of truth is computePlanningOrders in @carbon/utils (parity-tested
+  // against the SQL calculate_quantity_to_order). This component only supplies
+  // the projections (weekN columns) and the local "today".
+  const projections = periods.map(
+    (_, i) => (itemPlanning[`week${i + 1}` as "week1"] as number) || 0
+  );
 
-  const orders: {
-    startDate: string;
-    dueDate: string;
-    quantity: number;
-    periodId: string;
-    isASAP: boolean;
-    policyName?: string;
-    triggerValues?: {
-      projectedStock?: number;
-      safetyStock?: number;
-      reorderPoint?: number;
-      reorderQuantity?: number;
-      lotSize?: number;
-      leadTime?: number;
-    };
-  }[] = [];
+  const orders = computePlanningOrders({
+    reorderingPolicy: itemPlanning.reorderingPolicy,
+    periods,
+    projections,
+    todayDate: today(getLocalTimeZone()).toString(),
+    params: {
+      reorderPoint: itemPlanning.reorderPoint,
+      reorderQuantity: itemPlanning.reorderQuantity,
+      minimumOrderQuantity: itemPlanning.minimumOrderQuantity,
+      maximumOrderQuantity: itemPlanning.maximumOrderQuantity,
+      orderMultiple: itemPlanning.orderMultiple,
+      lotSize: itemPlanning.lotSize,
+      maximumInventoryQuantity: itemPlanning.maximumInventoryQuantity,
+      demandAccumulationPeriod: itemPlanning.demandAccumulationPeriod,
+      demandAccumulationSafetyStock: itemPlanning.demandAccumulationSafetyStock,
+      leadTime: itemPlanning.leadTime
+    }
+  });
 
-  const {
-    demandAccumulationPeriod,
-    demandAccumulationSafetyStock,
-    leadTime,
-    lotSize,
-    maximumInventoryQuantity,
-    maximumOrderQuantity,
-    minimumOrderQuantity,
-    orderMultiple,
-    reorderPoint,
-    reorderQuantity
-  } = itemPlanning;
-
-  const todaysDate = today(getLocalTimeZone());
-  let orderedQuantity = 0;
-
-  switch (itemPlanning.reorderingPolicy) {
-    case "Demand-Based Reorder":
-      // Process periods in chunks of demandAccumulationPeriod.
-      //
-      // End-of-window sizing: only fire an order when the LAST period in
-      // the window dips below safety stock, and size it to lift the
-      // end-of-window projection back to safety. Mirrors the SQL
-      // `calculate_quantity_to_order` DBR branch exactly so this client
-      // calculator and the server-side `quantityToOrder` column agree.
-      //
-      // Trade-off: this hides mid-window dips that recover (e.g. PO lands
-      // late in the window). Acceptable here because the server uses the
-      // same convention and the planning UI relies on the two being in
-      // sync.
-      for (let i = 0; i < periods.length; i += demandAccumulationPeriod) {
-        const windowEnd = Math.min(
-          i + demandAccumulationPeriod,
-          periods.length
-        );
-
-        // Track first dip (for the order's trigger date) AND walk
-        // end-of-window projection (for sizing). The end-of-window value
-        // survives because we overwrite on every iteration — same as the
-        // SQL function.
-        let firstDipIndex = -1;
-        let endOfWindowProjection = 0;
-        for (let j = i; j < windowEnd; j++) {
-          const periodKey = `week${j + 1}` as "week1";
-          const periodProjection = (itemPlanning[periodKey] as number) || 0;
-          const effective = periodProjection + orderedQuantity;
-          if (
-            firstDipIndex === -1 &&
-            effective < demandAccumulationSafetyStock
-          ) {
-            firstDipIndex = j;
-          }
-          endOfWindowProjection = effective;
-        }
-
-        // Skip the window unless end-of-window is below safety.
-        if (endOfWindowProjection >= demandAccumulationSafetyStock) continue;
-        // Defensive: if end < safety we should have found a dip, but
-        // fall back to window start so we never emit an undated order.
-        if (firstDipIndex === -1) firstDipIndex = i;
-
-        const currentPeriod = periods[firstDipIndex];
-
-        {
-          let totalOrderQuantity = Math.max(
-            0,
-            demandAccumulationSafetyStock - endOfWindowProjection
-          );
-
-          // Apply lot sizing rules
-          if (maximumOrderQuantity > 0) {
-            totalOrderQuantity = Math.min(
-              totalOrderQuantity,
-              maximumOrderQuantity
-            );
-          }
-          totalOrderQuantity = Math.max(
-            totalOrderQuantity,
-            minimumOrderQuantity
-          );
-
-          if (orderMultiple > 0) {
-            totalOrderQuantity =
-              Math.ceil(totalOrderQuantity / orderMultiple) * orderMultiple;
-          }
-
-          // If we have a lot size and need to split orders
-          if (lotSize > 0 && totalOrderQuantity > lotSize) {
-            const numberOfBatches = Math.ceil(totalOrderQuantity / lotSize);
-            const daysInPeriod = 7; // Assuming weekly periods
-
-            for (let batch = 0; batch < numberOfBatches; batch++) {
-              const batchQuantity = Math.min(
-                lotSize,
-                totalOrderQuantity - batch * lotSize
-              );
-
-              // Spread due dates evenly across the period
-              const dueDateOffset = Math.floor(
-                (batch * daysInPeriod) / numberOfBatches
-              );
-              const dueDate = parseDate(currentPeriod.startDate).add({
-                days: dueDateOffset
-              });
-              const startDate = dueDate.subtract({ days: leadTime });
-
-              orders.push({
-                startDate: startDate.toString(),
-                dueDate: dueDate.toString(),
-                quantity: batchQuantity,
-                periodId: currentPeriod.id,
-                isASAP: startDate.compare(todaysDate) < 0,
-                policyName: "Demand-Based Reorder",
-                triggerValues: {
-                  projectedStock: endOfWindowProjection,
-                  safetyStock: demandAccumulationSafetyStock,
-                  lotSize,
-                  leadTime
-                }
-              });
-            }
-          } else {
-            // Single order for the period
-            const orderQuantity =
-              lotSize > 0
-                ? Math.min(totalOrderQuantity, lotSize)
-                : totalOrderQuantity;
-
-            const dueDate = parseDate(currentPeriod.startDate);
-            const startDate = dueDate.subtract({ days: leadTime });
-
-            orders.push({
-              startDate: startDate.toString(),
-              dueDate: dueDate.toString(),
-              quantity: orderQuantity,
-              periodId: currentPeriod.id,
-              isASAP: startDate.compare(todaysDate) < 0,
-              policyName: "Demand-Based Reorder",
-              triggerValues: {
-                projectedStock: endOfWindowProjection,
-                safetyStock: demandAccumulationSafetyStock,
-                lotSize,
-                leadTime
-              }
-            });
-          }
-
-          orderedQuantity += totalOrderQuantity;
-        }
-      }
-
-      ordersCache.set(cacheKey, orders);
-      return orders;
-    case "Fixed Reorder Quantity":
-      for (let i = 0; i < periods.length; i++) {
-        const period = periods[i];
-        const periodKey = `week${i + 1}` as "week1";
-        const projectedQuantity = (itemPlanning[periodKey] as number) || 0;
-
-        // Check if we need to order based on reorder point
-        let remainingQuantityNeeded =
-          reorderPoint - (projectedQuantity + orderedQuantity);
-
-        let day = 0;
-        let maxIterations = 100; // Safety counter to prevent infinite loops
-        while (remainingQuantityNeeded > 0 && day < 5 && maxIterations-- > 0) {
-          const dueDate = parseDate(period.startDate).add({ days: day });
-          const startDate = dueDate.subtract({
-            days: leadTime
-          });
-
-          // If reorder quantity is 0, order the same quantity as the reorder point
-          const orderQuantity =
-            reorderQuantity > 0 ? reorderQuantity : reorderPoint;
-
-          orders.push({
-            startDate: startDate.toString(),
-            dueDate: dueDate.toString(),
-            quantity: orderQuantity,
-            periodId: period.id,
-            isASAP: startDate.compare(todaysDate) < 0,
-            policyName: "Fixed Reorder Quantity",
-            triggerValues: {
-              projectedStock: projectedQuantity + orderedQuantity,
-              reorderPoint,
-              reorderQuantity,
-              leadTime
-            }
-          });
-          day++;
-          orderedQuantity += orderQuantity;
-          remainingQuantityNeeded =
-            reorderPoint - (projectedQuantity + orderedQuantity);
-        }
-      }
-
-      ordersCache.set(cacheKey, orders);
-      return orders;
-    case "Maximum Quantity":
-      for (let i = 0; i < periods.length; i++) {
-        const period = periods[i];
-        const periodKey = `week${i + 1}` as "week1";
-        const projectedQuantity = (itemPlanning[periodKey] as number) || 0;
-
-        // Check if we need to order based on reorder point
-        let remainingQuantityNeeded =
-          reorderPoint - (projectedQuantity + orderedQuantity);
-
-        let day = 0;
-        let maxIterations = 100; // Safety counter to prevent infinite loops
-        while (remainingQuantityNeeded > 0 && day < 5 && maxIterations-- > 0) {
-          const dueDate = parseDate(period.startDate).add({ days: day });
-          const startDate = dueDate.subtract({
-            days: leadTime
-          });
-
-          // Calculate required quantity up to maximum inventory
-          const requiredQuantity =
-            maximumInventoryQuantity - (projectedQuantity + orderedQuantity);
-
-          // If reorder quantity is 0, use reorder point as the base order quantity
-          let orderQuantity =
-            reorderQuantity > 0
-              ? Math.max(minimumOrderQuantity, requiredQuantity)
-              : reorderPoint;
-
-          // Ensure orderQuantity is positive to prevent infinite loop
-          if (orderQuantity <= 0) {
-            break;
-          }
-
-          // Round to nearest multiple if specified
-          if (orderMultiple && orderMultiple > 1) {
-            orderQuantity =
-              Math.ceil(orderQuantity / orderMultiple) * orderMultiple;
-          }
-
-          // Only apply lot size if it's greater than 0
-          if (lotSize > 0) {
-            orderQuantity = Math.ceil(orderQuantity / lotSize) * lotSize;
-          }
-
-          // Apply maximum order quantity only if it's greater than 0
-          if (maximumOrderQuantity > 0) {
-            orderQuantity = Math.min(orderQuantity, maximumOrderQuantity);
-          }
-
-          orders.push({
-            startDate: startDate.toString(),
-            dueDate: dueDate.toString(),
-            quantity: orderQuantity,
-            periodId: period.id,
-            isASAP:
-              startDate.compare(todaysDate) < 0 &&
-              projectedQuantity + orderedQuantity < 0,
-            policyName: "Maximum Quantity",
-            triggerValues: {
-              projectedStock: projectedQuantity + orderedQuantity,
-              reorderPoint,
-              leadTime,
-              reorderQuantity
-            }
-          });
-          day++;
-          orderedQuantity += orderQuantity;
-          remainingQuantityNeeded =
-            reorderPoint - (projectedQuantity + orderedQuantity);
-        }
-      }
-      ordersCache.set(cacheKey, orders);
-      return orders;
-    default:
-      ordersCache.set(cacheKey, orders);
-      return orders;
-  }
+  ordersCache.set(cacheKey, orders);
+  return orders;
 }
 
 // Export function to clear the cache if needed (e.g., after MRP runs)

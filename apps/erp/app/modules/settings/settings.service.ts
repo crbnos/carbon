@@ -1597,3 +1597,103 @@ export async function upsertWebhook(
   }
   return client.from("webhook").update(sanitize(webhook)).eq("id", webhook.id);
 }
+
+// ── Planning ownership + tolerance (spec §P1.3 / §P1.6) ────────────────────
+// The responsibleEmployee ladder's configurable rungs: company default →
+// per-location → per-(location, item group). The item-group tier is
+// LOCATION-SPECIFIC, stored sparsely in itemPostingGroupResponsibility — an
+// inheritance tree (the printer AssignmentsCard model), never a matrix.
+
+export async function getItemPostingGroupResponsibilities(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("itemPostingGroupResponsibility")
+    .select("id, locationId, itemPostingGroupId, responsibleEmployee")
+    .eq("companyId", companyId);
+}
+
+export async function setDefaultResponsibleEmployee(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; employeeId: string | null }
+) {
+  return client
+    .from("companySettings")
+    .update({ defaultResponsibleEmployee: args.employeeId })
+    .eq("id", args.companyId);
+}
+
+export async function setLocationResponsibleEmployee(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    employeeId: string | null;
+    userId: string;
+  }
+) {
+  return client
+    .from("location")
+    .update({ responsibleEmployee: args.employeeId, updatedBy: args.userId })
+    .eq("id", args.locationId)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * Upsert one (location, item group) ownership cell; clearing the employee
+ * DELETES the row (unset → inherit up the tree, matching printers).
+ */
+export async function upsertItemPostingGroupResponsibility(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    itemPostingGroupId: string;
+    employeeId: string | null;
+    userId: string;
+  }
+) {
+  if (!args.employeeId) {
+    return client
+      .from("itemPostingGroupResponsibility")
+      .delete()
+      .eq("companyId", args.companyId)
+      .eq("locationId", args.locationId)
+      .eq("itemPostingGroupId", args.itemPostingGroupId);
+  }
+  return client.from("itemPostingGroupResponsibility").upsert(
+    {
+      companyId: args.companyId,
+      locationId: args.locationId,
+      itemPostingGroupId: args.itemPostingGroupId,
+      responsibleEmployee: args.employeeId,
+      createdBy: args.userId,
+      updatedBy: args.userId
+    },
+    { onConflict: "companyId,locationId,itemPostingGroupId" }
+  );
+}
+
+export async function setRescheduleToleranceDays(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; days: number }
+) {
+  return client
+    .from("companySettings")
+    .update({ rescheduleToleranceDays: args.days })
+    .eq("id", args.companyId);
+}
+
+export async function setForecastConsumptionWindow(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; backwardPeriods: number; forwardPeriods: number }
+) {
+  return client
+    .from("companySettings")
+    .update({
+      forecastConsumptionBackwardPeriods: args.backwardPeriods,
+      forecastConsumptionForwardPeriods: args.forwardPeriods
+    })
+    .eq("id", args.companyId);
+}

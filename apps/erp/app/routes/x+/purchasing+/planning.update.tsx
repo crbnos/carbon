@@ -1,14 +1,31 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { applyRate, SCALE, taxableBase } from "@carbon/utils";
+import {
+  applyRate,
+  RoundingMode,
+  round,
+  SCALE,
+  taxableBase
+} from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import {
+  assignPlanningActions,
+  dismissPlanningActions,
+  getPlanningAction,
+  markPlanningActionsActioned,
+  reopenPlanningActions
+} from "~/modules/production";
+import {
   insertPurchaseOrder,
+  isPurchaseOrderLocked,
   plannedOrderValidator,
+  shortClosePurchaseOrderLine,
+  updatePurchaseOrderLineSchedule,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
 
@@ -27,7 +44,8 @@ export async function action({ request }: ActionFunctionArgs) {
       bypassRls: true
     });
 
-  const { items, action, locationId } = await request.json();
+  const { items, action, locationId, planningActionIds, assignee } =
+    await request.json();
 
   if (typeof locationId !== "string") {
     return data(
@@ -516,11 +534,303 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
+    // ── Apply a persisted planning action to its target PO line (spec §P1.5).
+    // IDOR guard: the request carries ONLY planningActionIds — the type, target
+    // and proposal values come from the persisted row, loaded by id+companyId
+    // and required to be Open. The commitment gate re-reads the parent PO
+    // status; a locked (sent) PO is never silently edited.
+    // "apply" batches a mixed selection in ONE request (the client has a
+    // single fetcher, so per-type requests would supersede each other) — each
+    // row's own persisted type decides what happens to it.
+    case "apply":
+    case "expedite":
+    case "defer":
+    case "increase":
+    case "decrease":
+    case "cancel": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+
+      const wireToType: Record<string, string> = {
+        expedite: "Expedite",
+        defer: "Defer",
+        increase: "Increase",
+        decrease: "Decrease",
+        cancel: "Cancel"
+      };
+      const changeActionTypes = new Set(Object.values(wireToType));
+
+      const db = getDatabaseClient();
+      const applied: string[] = [];
+      const requiresManualAction: {
+        id: string;
+        purchaseOrderId: string | null;
+      }[] = [];
+      const errors: string[] = [];
+
+      for (const planningActionId of parsedIds.data) {
+        const actionRow = await getPlanningAction(client, {
+          id: planningActionId,
+          companyId
+        });
+        if (actionRow.error || !actionRow.data) {
+          errors.push(`Planning action ${planningActionId} not found`);
+          continue;
+        }
+        const row = actionRow.data;
+        if (row.status !== "Open") {
+          errors.push(`Planning action ${planningActionId} is not open`);
+          continue;
+        }
+        if (
+          action === "apply"
+            ? !changeActionTypes.has(row.type)
+            : wireToType[action] !== row.type
+        ) {
+          errors.push(
+            action === "apply"
+              ? `Planning action ${planningActionId} is a ${row.type}, which Apply cannot batch`
+              : `Planning action ${planningActionId} is a ${row.type}, not ${wireToType[action]}`
+          );
+          continue;
+        }
+        if (!row.purchaseOrderLineId) {
+          errors.push(
+            `Planning action ${planningActionId} does not target a purchase order line`
+          );
+          continue;
+        }
+
+        const line = await client
+          .from("purchaseOrderLine")
+          .select(
+            "id, purchaseOrderId, conversionFactor, purchaseOrder!inner(id, status)"
+          )
+          .eq("id", row.purchaseOrderLineId)
+          .eq("companyId", companyId)
+          .single();
+        if (line.error || !line.data) {
+          errors.push(
+            `Purchase order line for planning action ${planningActionId} not found`
+          );
+          continue;
+        }
+
+        const poStatus = line.data.purchaseOrder?.status;
+        if (!poStatus || isPurchaseOrderLocked(poStatus)) {
+          // committed supply — surface "Review on PO" instead of editing
+          requiresManualAction.push({
+            id: planningActionId,
+            purchaseOrderId: line.data.purchaseOrderId
+          });
+          continue;
+        }
+
+        // Atomic claim BEFORE mutating: the conditional Open→Actioned update
+        // is the lock — of two concurrent applies only one sees an affected
+        // row, so the target is never double-mutated. A failed mutation
+        // reopens the claim; a crash in between leaves an Actioned row whose
+        // unmet need the next MRP run re-emits as a fresh Open action (the
+        // natural-key index ignores Actioned rows).
+        const claim = await markPlanningActionsActioned(client, {
+          ids: [planningActionId],
+          companyId,
+          userId
+        });
+        if (claim.error) {
+          errors.push(
+            `Failed to claim planning action ${planningActionId}: ${claim.error.message}`
+          );
+          continue;
+        }
+        if ((claim.data ?? []).length === 0) {
+          errors.push(
+            `Planning action ${planningActionId} was already applied`
+          );
+          continue;
+        }
+
+        if (row.type === "Cancel") {
+          try {
+            await shortClosePurchaseOrderLine(db, {
+              lineId: line.data.id,
+              purchaseOrderId: line.data.purchaseOrderId,
+              companyId,
+              userId,
+              intent: "close"
+            });
+          } catch (err) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
+            errors.push(
+              `Failed to close PO line for planning action ${planningActionId}: ${
+                err instanceof Error ? err.message : "unknown error"
+              }`
+            );
+            continue;
+          }
+        } else if (row.type === "Expedite" || row.type === "Defer") {
+          const update = await updatePurchaseOrderLineSchedule(client, {
+            lineId: line.data.id,
+            companyId,
+            userId,
+            requiredDate: row.suggestedDate
+          });
+          if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
+            errors.push(
+              `Failed to reschedule PO line for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+        } else {
+          // increase / decrease — suggestedQuantity is in INVENTORY units;
+          // the line stores PURCHASE units
+          const conversionFactor = line.data.conversionFactor ?? 1;
+          const purchaseQuantity =
+            conversionFactor > 0
+              ? round(
+                  Number(row.suggestedQuantity) / conversionFactor,
+                  0,
+                  RoundingMode.Up
+                )
+              : Number(row.suggestedQuantity);
+          const update = await updatePurchaseOrderLineSchedule(client, {
+            lineId: line.data.id,
+            companyId,
+            userId,
+            purchaseQuantity
+          });
+          if (update.error) {
+            await reopenPlanningActions(client, {
+              ids: [planningActionId],
+              companyId,
+              userId
+            });
+            errors.push(
+              `Failed to update PO line quantity for planning action ${planningActionId}: ${update.error.message}`
+            );
+            continue;
+          }
+        }
+
+        applied.push(planningActionId);
+      }
+
+      // Committed targets are not failures, but "Applied 0" with a success
+      // toast is a lie — surface the manual-review count, and only report
+      // success when something was actually applied (or nothing needed review).
+      const manualCount = requiresManualAction.length;
+      const messageParts = [
+        `Applied ${applied.length} planning action${applied.length === 1 ? "" : "s"}`
+      ];
+      if (manualCount > 0) {
+        messageParts.push(
+          `${manualCount} target${manualCount === 1 ? " is" : "s are"} committed — review on the order`
+        );
+      }
+      if (errors.length > 0) {
+        messageParts.push(`${errors.length} failed`);
+      }
+      return {
+        success:
+          errors.length === 0 && !(applied.length === 0 && manualCount > 0),
+        message: messageParts.join("; "),
+        applied,
+        requiresManualAction,
+        errors: errors.length > 0 ? errors : undefined
+      };
+    }
+
+    // ── Worklist mutations: dismiss suppresses a persisting need until it
+    // changes materially; assign sets assigneeOverridden so the next MRP
+    // diff-write never re-resolves the owner from the ladder.
+    case "dismiss": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+      const result = await dismissPlanningActions(client, {
+        ids: parsedIds.data,
+        companyId,
+        userId
+      });
+      if (result.error) {
+        return data(
+          { success: false, message: "Failed to dismiss planning actions" },
+          { status: 500 }
+        );
+      }
+      return {
+        success: true,
+        message: `Dismissed ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+      };
+    }
+    case "assign": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+      const parsedAssignee = z
+        .string()
+        .optional()
+        .safeParse(assignee ?? undefined);
+      if (!parsedAssignee.success) {
+        return data(
+          { success: false, message: "Invalid assignee" },
+          { status: 500 }
+        );
+      }
+      const result = await assignPlanningActions(client, {
+        ids: parsedIds.data,
+        companyId,
+        assignee: parsedAssignee.data || null,
+        userId
+      });
+      if (result.error) {
+        return data(
+          { success: false, message: "Failed to assign planning actions" },
+          { status: 500 }
+        );
+      }
+      return {
+        success: true,
+        message: `Assigned ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+      };
+    }
+
     default:
       return data(
         {
           success: false,
-          message: `Unknown action '${action}'. Expected action: 'order'`
+          message: `Unknown action '${action}'. Expected one of: 'order', 'expedite', 'defer', 'increase', 'decrease', 'cancel'`
         },
         { status: 500 }
       );

@@ -74,9 +74,27 @@ Phase-7 write) and throws on failure.
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)
      forward from today (`"Week"` granularity). <!-- UNVERIFIED: exact week count not re-confirmed line-by-line; old doc said 72, code comment said 18 -->
    - **Inputs (demand)**: views `openSalesOrderLines`, `openJobMaterialLines`,
-     plus the user-entered `demandProjection` for forecast netting. Don't conflate it
-     with the output: MRP **consumes `demandProjection`** (user-entered) and **writes
+     plus the user-entered `demandProjection`. Don't conflate it with the
+     output: MRP reads `demandProjection` (user-entered) and **writes
      `demandForecast`** (rebuilt each run — see Outputs below).
+   - **Forecast consumption** (`forecast-consumption.ts`, wired in Phase 4):
+     actual demand consumes the projections for the same (item, location) —
+     own weekly bucket first, then backward
+     `companySettings.forecastConsumptionBackwardPeriods` (default 4) then
+     forward `forecastConsumptionForwardPeriods` (default 1) buckets. Only the
+     unconsumed remainder enters gross demand/contributors; SO lines consume at
+     `openSalesOrderLines.quantityToConsume` (PRE-job-dedup, so an MTO line
+     covered by its job still consumes) while demand still uses the deduped
+     `quantityToSend`; job materials consume at `quantityToIssue`. Runs BEFORE
+     the Phase-4.5 supersession redirect on purpose (read paths don't redirect
+     either). Phase 7 persists `demandProjection.consumedQuantity` (batched
+     `UPDATE … FROM (VALUES …)`, an UPDATE never an upsert) and every read
+     path nets with `GREATEST("forecastQuantity" - "consumedQuantity", 0)`:
+     both planning RPCs, `generatePlanningActions`' union,
+     `get_inventory_quantities`, and `getItemDemand`. Regenerative: nothing to
+     un-consume — cancelled orders/edited forecasts re-net on the next run.
+     Unit tests: `forecast-consumption.test.ts`. Spec:
+     `.ai/specs/2026-09-11-demand-forecast-consumption.md`.
    - **Inputs (supply)**: views `openProductionOrders`, `openPurchaseOrderLines`.
    - **Inputs (on-hand)**: the `itemStockQuantities` table (trigger-maintained,
      `20260812002454`) — an indexed per-company read, replacing the old full
@@ -113,6 +131,7 @@ Base tables defined in `20250610000433_demand-planning.sql`; lineage table in
 | Table | PK | Key cols | Notes |
 |-------|----|----|-------|
 | `period` | `id` | `startDate`, `endDate`, `periodType` | enum `'Week'\|'Day'\|'Month'`; no companyId (uniform RLS) |
+| `demandProjection` | `(itemId, locationId, periodId)` | `forecastQuantity`, `consumedQuantity` | user-authored forecast; `consumedQuantity` is MRP-written derived state (`20260911150012`), never user-edited |
 | `demandForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | MRP writes `forecastMethod='mrp'` |
 | `demandActual` | `(itemId, locationId, periodId, sourceType)` | `actualQuantity`, `sourceType` | `sourceType` enum `demandSourceType` = `'Sales Order'\|'Job Material'` |
 | `supplyForecast` | `(itemId, locationId, periodId)` | `forecastQuantity`, `forecastMethod` | written by **planning.update** routes (planned POs/jobs), not by MRP |
@@ -132,8 +151,10 @@ no `locationId` rather than fabricating one. Audit cols (`createdBy/At`,
 
 ## Planning split functions
 
-Latest definition: `20260324120000_planning-quantity-to-order.sql` (supersedes the
-old `20251205000037_include-reorder-quantity-in-planning.sql`).
+Latest definition of BOTH: `20260911150012_demand-forecast-consumption.sql`
+(supersedes `20260715195226` for production, `20260831190142` for purchasing).
+Their `demand_data` CTEs read the projection arm net of consumption
+(`GREATEST("forecastQuantity" - "consumedQuantity", 0)`).
 
 - `get_purchasing_planning(company_id, location_id, periods[])` — items where
   `replenishmentSystem != 'Make'` (includes "Buy" and "Buy and Make"),
@@ -165,14 +186,15 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 
 - `openSalesOrderLines` — `salesOrderLineType != 'Service'`, status IN
   `('To Ship','To Ship and Invoice')`. Newest def:
-  `20260710051147_mto-sales-lines-drive-demand.sql`. Make to Order lines ARE
-  included (they were excluded before that migration), but their
-  `quantityToSend` is netted down by the remaining output
+  `20260911150012_demand-forecast-consumption.sql`. Make to Order lines ARE
+  included, but their `quantityToSend` is netted down by the remaining output
   (`quantity − quantityReceivedToInventory − quantityShipped`) of live jobs
   linked via `job.salesOrderLineId` (statuses Planned/Ready/In Progress/Paused —
   the same set as `openJobMaterialLines`, so each unit is counted exactly once:
   SO line while unjobbed, job materials once a job is released, inventory once
-  produced). Draft/Cancelled jobs do not suppress line demand.
+  produced). Draft/Cancelled jobs do not suppress line demand. The view also
+  exposes `quantityToConsume` — the PRE-job-dedup open quantity, used only by
+  forecast consumption (a job-covered MTO line still consumes forecast).
 - `openJobMaterialLines` — job status IN `('Planned','Ready','In Progress','Paused')`,
   `methodType != 'Make to Order'`.
 - `openProductionOrders` — job status IN those 4, `salesOrderId IS NULL`
