@@ -17,6 +17,7 @@ import { useNavigate } from "react-router";
 import type { z } from "zod";
 import { Hidden, Select, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
+import { usePermissions } from "~/hooks";
 import {
   fromCompanyPermissions,
   toCompanyPermissions,
@@ -44,7 +45,10 @@ const EmployeePermissionsForm = ({
 }: EmployeePermissionsFormProps) => {
   const { t } = useLingui();
   const navigate = useNavigate();
+  const permissions = usePermissions();
   const onClose = () => navigate(-1);
+
+  const canEditPermissions = permissions.can("update", "users");
 
   const employeeTypeOptions =
     employeeTypes?.map((et) => ({
@@ -126,14 +130,17 @@ const EmployeePermissionsForm = ({
                   placeholder={t`Select Employee Type`}
                   onChange={handleEmployeeTypeChange}
                 />
-                <PermissionMatrix matrix={matrix} />
+                <PermissionMatrix
+                  matrix={matrix}
+                  isDisabled={!canEditPermissions}
+                />
                 <Hidden name="id" />
                 <Hidden name="data" value={permissionsData} />
               </VStack>
             </ModalBody>
             <ModalFooter>
               <HStack>
-                <Submit>
+                <Submit isDisabled={!canEditPermissions}>
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={onClose}>

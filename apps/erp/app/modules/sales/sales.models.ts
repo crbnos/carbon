@@ -9,6 +9,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
 } from "../shared";
@@ -288,7 +289,7 @@ export const quoteValidator = z.object({
   customerReference: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   status: z.enum(quoteStatusType).optional(),
-  notes: z.any().optional(),
+  notes: optionalTiptapDoc,
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),

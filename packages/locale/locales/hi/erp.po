@@ -7634,7 +7634,7 @@ msgid "Finishes"
 msgstr "फिनिशेस"
 
 msgid "Finishing an incomplete pick"
-msgstr "अधूरी पिकिंग को समाप्त करना"
+msgstr "एक अधूरी पिक को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
@@ -13296,6 +13296,9 @@ msgstr "कोटेशन पंक्ति"
 msgid "Quote Line"
 msgstr "कोटेशन पंक्ति"
 
+msgid "Quote Lines"
+msgstr "उद्धरण पंक्तियाँ"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "कोटेशन पंक्तियाँ जिनकी सामग्री सूची इस आइटम को शामिल करती है"
 
@@ -13325,6 +13328,9 @@ msgstr "उद्धृत तारीख"
 
 msgid "Quotes"
 msgstr "उद्धरण"
+
+msgid "Quotes with Lines"
+msgstr "पंक्तियों के साथ उद्धरण"
 
 msgid "Quoting and sales orders"
 msgstr "कोटेशन और विक्रय आदेश"

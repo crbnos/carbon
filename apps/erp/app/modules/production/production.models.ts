@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -14,7 +13,8 @@ import {
   methodType,
   operationTypes,
   procedureStepType,
-  standardFactorType
+  standardFactorType,
+  toTiptapDoc
 } from "../shared";
 import type {
   ItemOrderStatus,
@@ -1368,20 +1368,9 @@ export const assemblyInstructionVersionValidator = z.object({
  */
 const optionalTiptapDescription = zfd
   .text(z.string().optional())
-  .transform((val): any => {
-    if (val === undefined || val === "") return undefined;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(val);
-    } catch {
-      parsed = val;
-    }
-    // Always store a tiptap doc object, never a scalar string (jsonb scalar
-    // strings break method copies) and never silently drop content to {}.
-    if (typeof parsed === "string") return textToTiptap(parsed);
-    if (parsed && typeof parsed === "object") return parsed;
-    return textToTiptap(String(val));
-  });
+  .transform((val): any =>
+    val === undefined || val === "" ? undefined : toTiptapDoc(val)
+  );
 
 export const assemblyInstructionStepValidator = z
   .object({

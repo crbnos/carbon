@@ -7634,7 +7634,7 @@ msgid "Finishes"
 msgstr "仕上げ"
 
 msgid "Finishing an incomplete pick"
-msgstr "不完全なピックの完了"
+msgstr "不完全なピック完了"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
@@ -13296,6 +13296,9 @@ msgstr "見積明細"
 msgid "Quote Line"
 msgstr "見積明細"
 
+msgid "Quote Lines"
+msgstr "見積明細"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "この品目を含む部品表を持つ見積明細"
 
@@ -13325,6 +13328,9 @@ msgstr "見積日"
 
 msgid "Quotes"
 msgstr "見積"
+
+msgid "Quotes with Lines"
+msgstr "明細付き見積"
 
 msgid "Quoting and sales orders"
 msgstr "見積と受注"

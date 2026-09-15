@@ -503,12 +503,21 @@ export function createOAuthClient({
         })
       });
 
-      if (response.error || !response.data) {
+      if (response.error || !response.data?.access_token) {
         logger.error("Token refresh failed", {
-          error: response.error,
+          code: response.code,
+          message: response.message,
           data: response.data
         });
-        throw new Error(`Token refresh failed: ${response.error}`);
+        // Surface the provider's actual rejection (e.g. invalid_grant /
+        // invalid_client) instead of the useless boolean "true".
+        throw new Error(
+          `Token refresh failed (HTTP ${response.code}): ${
+            typeof response.data === "string"
+              ? response.data
+              : JSON.stringify(response.data)
+          }`
+        );
       }
 
       const newCreds = {

@@ -7634,7 +7634,7 @@ msgid "Finishes"
 msgstr "마감"
 
 msgid "Finishing an incomplete pick"
-msgstr "불완전한 픽 완료"
+msgstr "불완전한 피킹 완료"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
@@ -13296,6 +13296,9 @@ msgstr "견적 라인"
 msgid "Quote Line"
 msgstr "견적 라인"
 
+msgid "Quote Lines"
+msgstr "견적 라인"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "이 품목을 포함하는 자재 명세서를 가진 견적 라인"
 
@@ -13325,6 +13328,9 @@ msgstr "견적일"
 
 msgid "Quotes"
 msgstr "견적"
+
+msgid "Quotes with Lines"
+msgstr "라인이 포함된 견적"
 
 msgid "Quoting and sales orders"
 msgstr "견적서 작성 및 수주"

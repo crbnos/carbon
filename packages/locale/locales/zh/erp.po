@@ -13296,6 +13296,9 @@ msgstr "报价行"
 msgid "Quote Line"
 msgstr "报价行"
 
+msgid "Quote Lines"
+msgstr "报价行"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "物料清单中包含此物品的报价行"
 
@@ -13325,6 +13328,9 @@ msgstr "报价日期"
 
 msgid "Quotes"
 msgstr "报价"
+
+msgid "Quotes with Lines"
+msgstr "带报价行的报价单"
 
 msgid "Quoting and sales orders"
 msgstr "报价和销售订单"
