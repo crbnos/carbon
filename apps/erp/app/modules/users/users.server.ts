@@ -12,6 +12,7 @@ import {
   deactivateSupplier
 } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { redis } from "@carbon/kv";
 import { now, parseAbsolute } from "@internationalized/date";
 
@@ -562,7 +563,7 @@ export async function createEmployeeAccount(
     // the "employee" row (and now the "employeeJob" row too), so refusing here
     // dead-ended re-adding someone — the blocking record is also hidden by the
     // employee list's default Active/Invited filter, leaving no way to act on
-    // the error. The writes below upsert so this path reuses those rows.
+    // the error. reinviteDeactivatedEmployee reuses those rows instead.
     if (existingEmployee.data?.active) {
       return {
         success: false,
@@ -596,36 +597,65 @@ export async function createEmployeeAccount(
   }
 
   const code = crypto.randomUUID();
-  // Reusing surviving rows is an UPDATE, and the RLS policies on "employee" and
-  // "employeeJob" gate updates behind users_update / people_update while this
-  // route is gated on users_create. Re-adding someone is the same authorization
-  // decision as adding them the first time — the UPDATE is an artifact of
-  // keeping the rows on deactivation, not a wider grant — so the reuse path
-  // writes with the service role the invite already uses, scoped by id +
-  // companyId. A first-time create still writes under the caller's RLS client.
-  const accountWriteClient = isReactivation ? serviceRole : client;
+  const invite = {
+    role: "employee",
+    permissions,
+    email,
+    companyId,
+    createdBy,
+    code,
+    attestedBy: attestedBy ?? null,
+    attestedAt: attestedAt ?? null
+  } satisfies InviteInsert;
+
+  if (isReactivation) {
+    // Reusing surviving rows is an UPDATE, and the RLS policies on "employee"
+    // and "employeeJob" gate updates behind users_update / people_update while
+    // this route is gated on users_create. Re-adding someone is the same
+    // authorization decision as adding them the first time — the UPDATE is an
+    // artifact of keeping the rows on deactivation, not a wider grant — so this
+    // path writes outside RLS, scoped by id + companyId. It is one transaction
+    // because the three writes are only correct together (see the helper), and
+    // it needs no compensation: the auth user already existed, so a rollback
+    // leaves nothing behind. A first-time create still writes under the
+    // caller's RLS client below.
+    try {
+      await reinviteDeactivatedEmployee(getDatabaseClient(), {
+        userId,
+        companyId,
+        employeeTypeId: employeeType,
+        locationId,
+        invite
+      });
+    } catch (err) {
+      logger.error("Failed to re-invite employee", {
+        error: err,
+        userId,
+        companyId
+      });
+      return {
+        success: false,
+        message:
+          err instanceof Error ? err.message : "Failed to re-invite employee"
+      };
+    }
+
+    return { success: true, code, userId };
+  }
+
   const [employeeInsert, jobInsert, inviteInsert] = await Promise.all([
-    upsertEmployee(accountWriteClient, {
+    insertEmployee(client, {
       id: userId,
       employeeTypeId: employeeType,
       active: false,
       companyId
     }),
-    upsertEmployeeJob(accountWriteClient, {
+    insertEmployeeJob(client, {
       id: userId,
       companyId,
       locationId
     }),
-    insertInvite(serviceRole, {
-      role: "employee",
-      permissions,
-      email,
-      companyId,
-      createdBy,
-      code,
-      attestedBy: attestedBy ?? null,
-      attestedAt: attestedAt ?? null
-    })
+    insertInvite(serviceRole, invite)
   ]);
 
   if (employeeInsert.error) {
@@ -959,44 +989,112 @@ export async function insertEmployee(
 }
 
 /**
- * Insert, or reuse the row a previous deactivation left behind. Re-adding
- * someone who was deactivated or had their invite revoked has to write over
- * that row — it survives deactivation, so a plain insert hits the (id,
- * companyId) primary key. Re-asserts the employee type chosen on the form;
- * active stays false until the invite is accepted.
+ * Re-add someone whose "employee" row survived a deactivation or a revoked
+ * invite, writing the employee type, org placement and invite in one
+ * transaction. They are only correct together: acceptInvite restores the
+ * employee-type membership from employee.employeeTypeId, while the invite's
+ * permissions come from the type chosen on the form. Written separately, a
+ * failed employee write left a redeemable invite for the new type next to a row
+ * still naming the old one.
+ *
+ * The employee row is locked first. That re-checks the caller's "not active"
+ * read, so a concurrent acceptance cannot be flipped back to inactive, and it
+ * serialises two re-adds of the same person, so the later one overwrites all
+ * three rows rather than some of them. The row must still exist: this path
+ * only reuses rows, and a first-time employee insert stays under the caller's
+ * RLS client. Active stays false until the invite is accepted.
+ *
+ * "employeeJob" is upserted because deactivation keeps it (title, start date,
+ * department, shift, manager, tags and custom fields carry through), but an
+ * employee deactivated before that change has none. Only locationId is written
+ * on conflict. Kept here rather than in people.service.ts — every export there
+ * is also published as an MCP tool.
+ *
+ * The invite write mirrors insertInvite: upsert on (email, companyId), clearing
+ * acceptedAt and revokedAt so a spent invite row becomes redeemable again.
  */
-async function upsertEmployee(
-  client: SupabaseClient<Database>,
-  employee: EmployeeInsert
-) {
-  return client
-    .from("employee")
-    .upsert([employee], { onConflict: "id, companyId" })
-    .select("*")
-    .single();
-}
-
-/**
- * The "employeeJob" counterpart. Deactivation keeps this row so org placement
- * survives, which means re-adding someone hits its (id, companyId) primary key
- * too. Only the columns passed here are written on conflict, so title, start
- * date, department, shift, manager, tags and custom fields carry through a
- * deactivate/re-invite round trip. Kept local rather than added to
- * people.service.ts — every export there is also published as an MCP tool.
- */
-async function upsertEmployeeJob(
-  client: SupabaseClient<Database>,
-  job: {
-    id: string;
+async function reinviteDeactivatedEmployee(
+  db: Kysely<KyselyDatabase>,
+  {
+    userId,
+    companyId,
+    employeeTypeId,
+    locationId,
+    invite
+  }: {
+    userId: string;
     companyId: string;
-    locationId?: string;
+    employeeTypeId: string;
+    locationId: string;
+    invite: Omit<InviteInsert, "permissions"> & {
+      permissions: Record<string, string[]>;
+    };
   }
 ) {
-  return client
-    .from("employeeJob")
-    .upsert(job, { onConflict: "id, companyId" })
-    .select("*")
-    .single();
+  await db.transaction().execute(async (trx) => {
+    const employee = await trx
+      .selectFrom("employee")
+      .select("active")
+      .where("id", "=", userId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+
+    if (!employee) {
+      throw new Error(
+        `Employee record not found for user ${userId} in company ${companyId}. Try adding the employee again.`
+      );
+    }
+
+    if (employee.active) {
+      throw new Error("This user is already an employee in this company");
+    }
+
+    await trx
+      .updateTable("employee")
+      .set({ employeeTypeId })
+      .where("id", "=", userId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    await trx
+      .insertInto("employeeJob")
+      .values({ id: userId, companyId, locationId })
+      .onConflict((oc) =>
+        oc.columns(["id", "companyId"]).doUpdateSet({ locationId })
+      )
+      .execute();
+
+    const permissions = JSON.stringify(invite.permissions);
+
+    await trx
+      .insertInto("invite")
+      .values({
+        role: invite.role,
+        permissions,
+        email: invite.email,
+        companyId: invite.companyId,
+        createdBy: invite.createdBy,
+        code: invite.code,
+        attestedBy: invite.attestedBy ?? null,
+        attestedAt: invite.attestedAt ?? null,
+        acceptedAt: null,
+        revokedAt: null
+      })
+      .onConflict((oc) =>
+        oc.columns(["email", "companyId"]).doUpdateSet({
+          role: invite.role,
+          permissions,
+          createdBy: invite.createdBy,
+          code: invite.code,
+          attestedBy: invite.attestedBy ?? null,
+          attestedAt: invite.attestedAt ?? null,
+          acceptedAt: null,
+          revokedAt: null
+        })
+      )
+      .execute();
+  });
 }
 
 export async function insertInvite(

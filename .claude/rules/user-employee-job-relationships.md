@@ -112,8 +112,13 @@ is the separate `job` table from `20240909194622_jobs.sql`).
   company's). A route saves one only after `isActiveCompanyEmployee(client, companyId, userId)`
   (`apps/erp/app/modules/shared/shared.server.ts`), which fails closed on a read error.
 - Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
-  rows rather than failing: it refuses only when the existing `employee` row is `active`, and writes
-  through `upsertEmployee`/`upsertEmployeeJob` on `(id, companyId)`. Re-activation happens on invite
+  rows rather than failing: it refuses only when the existing `employee` row is `active`. The reuse
+  path (`reinviteDeactivatedEmployee`) is one Kysely transaction: it locks the `employee` row and
+  re-checks `active` under the lock, updates `employeeTypeId`, upserts `employeeJob` (only
+  `locationId` on conflict) and upserts the `invite` on `(email, companyId)` — so the invite's
+  permissions and the row's employee type cannot diverge, and a failed write leaves no redeemable
+  invite. It never inserts a first-time `employee` row; that stays under the caller's RLS client,
+  whose INSERT policies also require `users_update` / `people_create`. Re-activation happens on invite
   acceptance — `acceptInvite` (`apps/erp/app/modules/users/users.server.ts`) restores the
   employee-type `membership` the deactivation removed (the `sync_add_employee_to_type_group` trigger
   fires on INSERT only, so an UPDATE cannot rely on it), flips `active` back to true, and stamps
