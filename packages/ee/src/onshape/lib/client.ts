@@ -921,6 +921,20 @@ export async function getOnshapeClient(
   const baseUrl = metadata?.baseUrl ?? ONSHAPE_DEFAULT_BASE_URL;
 
   /**
+   * Make a refreshed pair the one this request uses from now on. Onshape
+   * rotates refresh tokens, so after a proactive refresh the closed-over
+   * `credentials` still held the spent one, and the in-flight 401 recovery
+   * below sent it and was refused.
+   */
+  const adoptCredentials = (next: Record<string, any> | undefined) => {
+    if (!next?.accessToken) return;
+    credentials.accessToken = next.accessToken;
+    if (next.refreshToken) credentials.refreshToken = next.refreshToken;
+    if (next.expiresAt) credentials.expiresAt = next.expiresAt;
+    accessToken = next.accessToken;
+  };
+
+  /**
    * Exchange the refresh token and persist the result, once across concurrent
    * callers.
    *
@@ -974,7 +988,12 @@ export async function getOnshapeClient(
           row.data.secretRef
         ).catch(() => null)) as Record<string, any> | null;
         const token = current?.credentials?.accessToken;
-        return token && token !== accessToken ? (token as string) : null;
+        if (!token || token === accessToken) return null;
+        // Adopt the holder's whole pair, not just the access token: the
+        // refresh token rotated with it, and a later refresh in this request
+        // must spend the new one.
+        adoptCredentials(current?.credentials);
+        return token as string;
       };
       const deadline = Date.now() + REFRESH_LOCK_TTL_SECONDS * 1000;
       while (Date.now() < deadline) {
@@ -1002,15 +1021,17 @@ export async function getOnshapeClient(
       // Onshape tells us how long the token is good for; assuming an hour is
       // how a stored expiry ends up outliving the real credential.
       const lifetimeSeconds = refreshed.expires_in ?? 3600;
+      const next = {
+        ...credentials,
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        expiresAt: new Date(Date.now() + lifetimeSeconds * 1000).toISOString()
+      };
       await persistIntegrationSecrets(serviceRole, companyId, integrationId, {
         ...metadata,
-        credentials: {
-          ...credentials,
-          accessToken: refreshed.access_token,
-          refreshToken: refreshed.refresh_token,
-          expiresAt: new Date(Date.now() + lifetimeSeconds * 1000).toISOString()
-        }
+        credentials: next
       });
+      adoptCredentials(next);
       return refreshed.access_token;
     } catch (error) {
       logger.error("Failed to refresh Onshape token", { error });
