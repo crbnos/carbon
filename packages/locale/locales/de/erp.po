@@ -76,6 +76,10 @@ msgstr "{0} bereits in einem Batch"
 msgid "{0} already started"
 msgstr "{0} bereits gestartet"
 
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr ""
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} Zellen mit Deltas"
@@ -89,9 +93,6 @@ msgstr "{0} gutschreibbar ({1} / {2} gutgeschrieben)"
 #. placeholder {0}: distinctCustomers.length
 msgid "{0} customers"
 msgstr "{0} Kunden"
-#. placeholder {0}: unitOfMeasure.name
-msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
-msgstr ""
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"

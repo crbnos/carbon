@@ -76,6 +76,10 @@ msgstr "{0} ya en un lote"
 msgid "{0} already started"
 msgstr "{0} ya iniciado"
 
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr ""
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} celdas con diferencias"
@@ -89,9 +93,6 @@ msgstr "{0} acreditable ({1} / {2} acreditado)"
 #. placeholder {0}: distinctCustomers.length
 msgid "{0} customers"
 msgstr "{0} clientes"
-#. placeholder {0}: unitOfMeasure.name
-msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
-msgstr ""
 
 #. placeholder {0}: ar.count
 msgid "{0} customers with a balance"
