@@ -2509,6 +2509,25 @@ export async function getTrackedEntitiesByJobId(
 }
 
 /**
+ * The tracked entities a job has already received to inventory. itemLedger is
+ * readable only with inventory or accounting view, so production users need a
+ * service-role client here to see them.
+ */
+export async function getJobReceivedTrackedEntityIds(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("itemLedger")
+    .select("trackedEntityId")
+    .eq("documentType", "Job Receipt")
+    .eq("documentId", jobId)
+    .eq("companyId", companyId)
+    .not("trackedEntityId", "is", null);
+}
+
+/**
  * Reschedule a job using the unified scheduling engine.
  * This recalculates dates, work centers, and priorities for all operations.
  */

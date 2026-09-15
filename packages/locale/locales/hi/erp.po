@@ -3719,6 +3719,9 @@ msgstr "सभी को पूर्ण करें"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "कानबान पूर्ण स्कैन पर सभी मात्रा पूर्ण करें"
 
+msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
+msgstr "इस जॉब को पूर्ण करने से पहले MES में हर सीरियल यूनिट पूर्ण करें। इसकी यूनिट अभी सीरियल नंबर में विभाजित नहीं हैं, इसलिए हर ऑपरेशन को हो गया के रूप में चिह्नित करने से यह पूर्ण नहीं हो सकता।"
+
 msgid "Complete Job"
 msgstr "नौकरी पूरी करें"
 

@@ -94,3 +94,38 @@ serial J000002-01 and issued 0 of 30 materials; completing at 1 twice received i
       ("Nothing completed in MES yet") explaining how to proceed, Complete disabled.
 - [x] New strings translated in all 13 erp catalogs (hand-filled using the glossary terms).
 - [x] Typecheck (`erp`), lint, `pnpm db:check:datasets`, `@carbon/checks` clobbers + tests.
+
+## Review follow-up (2026-09-15)
+
+Second-round review plus the open CodeRabbit comment on the migration.
+
+- [x] **Decrease refused for every stocked item**, not only serial. A lower cumulative quantity
+      posted a negative receipt, cost layer and WIP journal for batch and untracked jobs.
+- [x] **Zero-delta re-completion.** No receipt row is posted, and when catch-up production events
+      add WIP the function returns before the WIP discharge instead of dividing by a zero quantity.
+      That WIP stays in WIP and is discharged with the next receipt.
+- [x] **`sync_finish_job_operation`** asks for at least the quantity already received, so marking
+      the last operation Done on a reopened job is not refused by the decrease guard.
+- [x] **Dialog warning.** A serial job still holding a multi-unit placeholder no longer suggests
+      marking every operation Done: that path raises. Batch jobs and single-unit serial jobs keep
+      the original text.
+- [x] **Received units read by the job route loader** with the service role
+      (`getJobReceivedTrackedEntityIds`). The browser query returned nothing for users without
+      inventory or accounting view, so already-received units looked receivable again.
+- [x] **Dialog minimum** is the received quantity for every stocked job, matching the database.
+- [x] Comment in `getReceivableSerialUnits` on why the dialog locks an unnumbered single unit that
+      the database would receive.
+- Not changed: `Number.isFinite` in `isFractionalSerialQuantity` (it keeps an emptied input from
+  reading as fractional). The auto-complete quantity still sums every last operation, so parallel
+  "With Previous" last operations double-count for all item types; that predates this branch.
+
+Verification:
+
+- [x] Unit tests: `job-complete-logic.test.ts` (22 passing, including `hasUnsplitSerialPlaceholder`).
+- [x] SQL test re-run with the new cases (inventory lower/re-completion, reopened last operation,
+      accounting zero-delta with catch-up WIP): all pass. Against the previously pushed functions the
+      new cases fail, the accounting one with `division by zero`.
+- [x] Browser: a Ready serial job with an unsplit 2-unit placeholder shows the new warning with
+      Complete disabled. Reopened J000001 (2 of 3 received) defaults to 3, lists only J000001-03 from the
+      loader-provided received ids, and clamps a typed 1 to 2. Not run as a production-only user; the
+      loader reads with `bypassRls`, so the result does not depend on the viewer's permissions.

@@ -24,6 +24,7 @@ import {
   getJobMaterialsWithQuantityOnHand,
   getJobMethodTree,
   getJobOrderStatusMap,
+  getJobReceivedTrackedEntityIds,
   getTrackedEntitiesByJobId
 } from "~/modules/production";
 import {
@@ -124,6 +125,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     tags: tags.data ?? [],
     files: getJobDocuments(client, companyId, job.data),
     trackedEntities: getTrackedEntitiesByJobId(client, jobId),
+    // Read here with the service role: the Complete dialog needs the units the
+    // job already received, and itemLedger is hidden from production-only users.
+    receivedTrackedEntityIds: getJobReceivedTrackedEntityIds(
+      client,
+      jobId,
+      companyId
+    ), // returns a promise
     method: getJobMethodTree(client, jobId), // returns a promise
     orderStatus: getJobOrderStatus(
       client,

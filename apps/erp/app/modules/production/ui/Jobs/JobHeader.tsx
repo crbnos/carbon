@@ -85,7 +85,10 @@ import {
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
-import { getJobMethodTree } from "../../production.service";
+import {
+  getJobMethodTree,
+  type getJobReceivedTrackedEntityIds
+} from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
@@ -93,6 +96,7 @@ import {
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialsToReceive,
+  hasUnsplitSerialPlaceholder,
   isFractionalSerialQuantity
 } from "./job-complete-logic";
 
@@ -139,6 +143,9 @@ const JobHeader = () => {
   const routeData = useRouteData<{
     job: Job;
     unbatchedBatchableOperations?: number;
+    receivedTrackedEntityIds?: ReturnType<
+      typeof getJobReceivedTrackedEntityIds
+    >;
   }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
@@ -514,6 +521,7 @@ const JobHeader = () => {
       {completeModal.isOpen && (
         <JobCompleteModal
           job={routeData?.job}
+          receivedTrackedEntityIds={routeData?.receivedTrackedEntityIds}
           onClose={completeModal.onClose}
           fetcher={statusFetcher}
         />
@@ -1123,10 +1131,12 @@ function JobExpediteModal({
 
 function JobCompleteModal({
   job,
+  receivedTrackedEntityIds,
   onClose,
   fetcher
 }: {
   job?: Job;
+  receivedTrackedEntityIds?: ReturnType<typeof getJobReceivedTrackedEntityIds>;
   fetcher: FetcherWithComponents<{}>;
   onClose: () => void;
 }) {
@@ -1141,6 +1151,10 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
+  // A serial job whose units are still one multi-unit placeholder: marking its
+  // operations Done cannot complete it, so the warning must not suggest that.
+  const [hasSerialPlaceholder, setHasSerialPlaceholder] =
+    useState<boolean>(false);
   // Serial units the completion can still receive, in the order
   // complete_job_to_inventory receives them. Null when the quantity is not
   // chosen per serial unit.
@@ -1149,6 +1163,9 @@ function JobCompleteModal({
   );
   // The completed quantity is cumulative; this much was already received.
   const priorReceivedQuantity = job?.quantityReceivedToInventory ?? 0;
+  // complete_job_to_inventory refuses a stocked job below what it received.
+  const minimumQuantityComplete =
+    job?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1194,12 +1211,8 @@ function JobCompleteModal({
           .select("*")
           .eq("attributes->>Job Make Method", makeMethod.data?.id!)
           .order("createdAt", { ascending: true }),
-        carbon
-          .from("itemLedger")
-          .select("trackedEntityId")
-          .eq("documentType", "Job Receipt")
-          .eq("documentId", job?.id!)
-          .not("trackedEntityId", "is", null)
+        // Loaded by the job route with the service role; see the loader.
+        receivedTrackedEntityIds
       ]);
 
       if (trackedEntities.data?.length) {
@@ -1211,7 +1224,7 @@ function JobCompleteModal({
         }, 0);
 
         const receivedEntityIds = new Set(
-          (receipts.data ?? []).flatMap((receipt) =>
+          (receipts?.data ?? []).flatMap((receipt) =>
             receipt.trackedEntityId ? [receipt.trackedEntityId] : []
           )
         );
@@ -1237,6 +1250,13 @@ function JobCompleteModal({
         } else {
           setQuantityComplete(availableQuantity);
           setHasTrackedQuantity(true);
+          setHasSerialPlaceholder(
+            !!makeMethod.data?.requiresSerialTracking &&
+              hasUnsplitSerialPlaceholder(
+                trackedEntities.data,
+                receivedEntityIds
+              )
+          );
         }
       }
     }
@@ -1355,7 +1375,7 @@ function JobCompleteModal({
                   value={quantityComplete}
                   onChange={(value) => setQuantityComplete(value)}
                   isDisabled={hasTrackedQuantity}
-                  minValue={receivableSerials ? priorReceivedQuantity : 0}
+                  minValue={minimumQuantityComplete}
                   maxValue={
                     receivableSerials
                       ? priorReceivedQuantity + receivableSerials.length
@@ -1377,11 +1397,19 @@ function JobCompleteModal({
                       <Trans>Nothing completed in MES yet</Trans>
                     </AlertTitle>
                     <AlertDescription>
-                      <Trans>
-                        Complete serials/batches in MES before completing this
-                        job, or mark every operation Done to complete it
-                        automatically.
-                      </Trans>
+                      {hasSerialPlaceholder ? (
+                        <Trans>
+                          Complete each serial unit in MES before completing
+                          this job. Its units are not split into serials yet, so
+                          marking every operation Done cannot complete it.
+                        </Trans>
+                      ) : (
+                        <Trans>
+                          Complete serials/batches in MES before completing this
+                          job, or mark every operation Done to complete it
+                          automatically.
+                        </Trans>
+                      )}
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1550,9 +1578,8 @@ function JobCompleteModal({
                   (job.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
                   hasFractionalSerialQuantity ||
-                  // A received serial unit cannot be un-received.
-                  (receivableSerials !== null &&
-                    quantityComplete < priorReceivedQuantity)
+                  // Received stock cannot be un-received by completing lower.
+                  quantityComplete < minimumQuantityComplete
                 }
               >
                 <Trans>Complete Job</Trans>

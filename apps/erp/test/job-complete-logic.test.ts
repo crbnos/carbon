@@ -6,6 +6,7 @@ import {
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
   getSerialsToReceive,
+  hasUnsplitSerialPlaceholder,
   isFractionalSerialQuantity,
   type JobSerialUnit
 } from "../app/modules/production/ui/Jobs/job-complete-logic";
@@ -92,6 +93,33 @@ describe("getReceivableSerialUnits", () => {
         new Set(["SN-0001"])
       )
     ).toBeNull();
+  });
+});
+
+describe("hasUnsplitSerialPlaceholder", () => {
+  it("detects a placeholder holding several units", () => {
+    expect(hasUnsplitSerialPlaceholder([unit({ quantity: 3 })])).toBe(true);
+  });
+
+  it("ignores single units, numbered or not", () => {
+    expect(
+      hasUnsplitSerialPlaceholder([
+        unit({ readableId: "SN-0001" }),
+        unit({ id: "unnumbered" })
+      ])
+    ).toBe(false);
+  });
+
+  it("ignores placeholders that can no longer be received", () => {
+    expect(
+      hasUnsplitSerialPlaceholder(
+        [
+          unit({ id: "scrapped", quantity: 2, status: "Scrapped" }),
+          unit({ id: "received", quantity: 2, status: "Available" })
+        ],
+        new Set(["received"])
+      )
+    ).toBe(false);
   });
 });
 

@@ -3719,6 +3719,9 @@ msgstr "全部完成"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "完成看板扫码时完成所有数量"
 
+msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
+msgstr "请先在MES中逐个完成每个序列单元，再完成此工单。其单元尚未拆分为序列号，因此将每道工序标记为完成无法完成该工单。"
+
 msgid "Complete Job"
 msgstr "完成工作"
 

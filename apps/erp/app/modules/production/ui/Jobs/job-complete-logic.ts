@@ -44,6 +44,11 @@ export function getReceivableSerialUnits(
     isUnreceived(entity, receivedEntityIds)
   );
 
+  // Stricter than complete_job_to_inventory on purpose: the database also
+  // receives a single-unit serial with no serial number (a one-unit job with no
+  // serial sequence), but the dialog only unlocks when it can name every unit it
+  // lists. Such a job still completes through the locked path or by marking its
+  // operations Done.
   if (
     receivable.length === 0 ||
     receivable.some((entity) => entity.quantity !== 1 || !entity.readableId)
@@ -63,6 +68,21 @@ export function getReceivableSerialUnits(
         a.id.localeCompare(b.id)
     )
     .map((entity) => entity.readableId as string);
+}
+
+/**
+ * Whether a serial job still holds a placeholder for several units. Its units
+ * become receivable only once the shop floor completes them one at a time;
+ * complete_job_to_inventory refuses the placeholder, including when the last
+ * operation is marked Done.
+ */
+export function hasUnsplitSerialPlaceholder(
+  trackedEntities: JobSerialUnit[],
+  receivedEntityIds: ReadonlySet<string> = new Set()
+): boolean {
+  return trackedEntities.some(
+    (entity) => isUnreceived(entity, receivedEntityIds) && entity.quantity > 1
+  );
 }
 
 /** Units finished on the shop floor that the job has not received yet. */

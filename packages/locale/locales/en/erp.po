@@ -3719,6 +3719,9 @@ msgstr "Complete All"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Complete all quantities on kanban complete scan"
 
+msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
+msgstr "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
+
 msgid "Complete Job"
 msgstr "Complete Job"
 

@@ -79,11 +79,32 @@ CREATE FUNCTION pg_temp.issued(p_job_id text) RETURNS numeric LANGUAGE sql AS $f
   SELECT round(sum("quantityIssued"), 5) FROM "jobMaterial" WHERE "jobId" = p_job_id;
 $fn$;
 
+-- Marks a job operation Done; returns the error message, or NULL when it
+-- succeeded. The Done update runs the sync_finish_job_operation interceptor.
+CREATE FUNCTION pg_temp.try_finish_operation(p_operation_id text) RETURNS text
+LANGUAGE plpgsql AS $fn$
+BEGIN
+  UPDATE "jobOperation" SET status = 'Done' WHERE id = p_operation_id;
+  RETURN NULL;
+EXCEPTION WHEN OTHERS THEN
+  RETURN SQLERRM;
+END;
+$fn$;
+
+-- Net WIP posted against a job.
+CREATE FUNCTION pg_temp.wip(p_job_id text, p_wip_account text) RETURNS numeric LANGUAGE sql AS $fn$
+  SELECT round(COALESCE(sum(amount), 0), 5) FROM "journalLine"
+  WHERE "documentId" = p_job_id AND "accountId" = p_wip_account;
+$fn$;
+
 DO $cases$
 DECLARE
   v_group_id text; v_company_id text; v_location_id text;
   v_serial_item text; v_stocked_item text; v_service_item text; v_part text;
   v_job text; v_error text; v_row record;
+  v_process text; v_work_center text; v_operation text; v_defaults jsonb;
+  v_wip_account text; v_finished_account text; v_labor_account text; v_other_account text;
+  v_receipt_journals int; v_cost_layers int;
 BEGIN
   INSERT INTO "companyGroup" (name, "createdBy") VALUES ('Job completion test', 'system') RETURNING id INTO v_group_id;
   INSERT INTO company (name, "companyGroupId", "baseCurrencyCode", timezone)
@@ -175,13 +196,92 @@ BEGIN
   ASSERT (SELECT sum(quantity) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 1.5, 'Inventory job must receive 1.5';
   ASSERT pg_temp.issued(v_job) = 3, 'Inventory job must consume for 1.5 units: ' || pg_temp.issued(v_job);
 
+  -- Every stocked job, not only serial: the cumulative quantity cannot drop below
+  -- what was received, and re-completing at it posts no zero-quantity receipt.
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error LIKE 'Quantity completed cannot be lower than the 1.5 already received%', 'Lowering an inventory job below its receipts must be refused, got: ' || COALESCE(v_error, 'success');
+  v_error := pg_temp.try_complete(v_job, 1.5);
+  ASSERT v_error IS NULL, 'Inventory re-completion failed: ' || COALESCE(v_error, '');
+  ASSERT (SELECT count(*) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 1, 'Re-completion must not post another receipt';
+
+  -- Reopened job: marking its last operation Done with fewer completions than
+  -- were received completes it at the received quantity instead of being refused.
+  INSERT INTO process (name, "processType", "defaultStandardFactor", "companyId", "createdBy")
+    VALUES ('Assembly', 'Process', 'Hours/Piece', v_company_id, 'system') RETURNING id INTO v_process;
+  INSERT INTO "workCenter" (name, "locationId", "laborRate", "machineRate", "overheadRate", "defaultStandardFactor", "companyId", "createdBy")
+    VALUES ('Bench', v_location_id, 50, 0, 0, 'Hours/Piece', v_company_id, 'system') RETURNING id INTO v_work_center;
+  UPDATE job SET status = 'In Progress' WHERE id = v_job;
+  INSERT INTO "jobOperation" ("jobId", "jobMakeMethodId", "processId", "workCenterId", "operationQuantity", "quantityComplete", status, "companyId", "createdBy")
+    SELECT v_job, m.id, v_process, v_work_center, 2, 1, 'In Progress', v_company_id, 'system'
+    FROM "jobMakeMethod" m WHERE m."jobId" = v_job AND m."parentMaterialId" IS NULL
+    RETURNING id INTO v_operation;
+  v_error := pg_temp.try_finish_operation(v_operation);
+  ASSERT v_error IS NULL, 'Finishing the last operation of a reopened job failed: ' || COALESCE(v_error, '');
+  SELECT status, "quantityComplete", "quantityReceivedToInventory" INTO v_row FROM job WHERE id = v_job;
+  ASSERT v_row.status = 'Completed' AND v_row."quantityComplete" = 1.5 AND v_row."quantityReceivedToInventory" = 1.5, 'The reopened job must complete at the 1.5 already received';
+  ASSERT (SELECT sum(quantity) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 1.5, 'Finishing the reopened job must not change its receipts';
+
   -- Non-Inventory (service) job may still complete at zero.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_service_item, v_part, 'NJ', 1);
   v_error := pg_temp.try_complete(v_job, 0);
   ASSERT v_error IS NULL, 'Non-Inventory job at 0 must be allowed, got: ' || COALESCE(v_error, '');
   ASSERT (SELECT status FROM job WHERE id = v_job) = 'Completed', 'Non-Inventory job must complete';
 
-  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, unsplit placeholders, inventory, non-inventory)';
+  -- Accounting enabled: labor logged after a completion stays in WIP when the job
+  -- is re-completed at the received quantity, and is discharged with the next
+  -- receipt. Before, the zero-quantity re-completion divided that WIP by zero.
+  UPDATE "companySettings" SET "accountingEnabled" = true WHERE id = v_company_id;
+  IF NOT FOUND THEN
+    INSERT INTO "companySettings" (id, "accountingEnabled") VALUES (v_company_id, true);
+  END IF;
+  INSERT INTO "sequence" ("table", name, prefix, "companyId", "updatedBy")
+    VALUES ('journalEntry', 'Journal entries', 'JE-', v_company_id, 'system') ON CONFLICT DO NOTHING;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('WIP', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_wip_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Finished goods', 'Asset', 'Bank', 'Balance Sheet', v_group_id, 'system') RETURNING id INTO v_finished_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Labor absorption', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_labor_account;
+  INSERT INTO account (name, class, "accountType", "incomeBalance", "companyGroupId", "createdBy")
+    VALUES ('Other', 'Expense', 'Expense', 'Income Statement', v_group_id, 'system') RETURNING id INTO v_other_account;
+  SELECT jsonb_object_agg(attname, to_jsonb(v_other_account)) INTO v_defaults
+    FROM pg_attribute WHERE attrelid = '"accountDefault"'::regclass AND attnum > 0 AND NOT attisdropped AND attnotnull AND attname <> 'companyId';
+  INSERT INTO "accountDefault" SELECT (jsonb_populate_record(NULL::"accountDefault", v_defaults || jsonb_build_object(
+    'companyId', v_company_id, 'workInProgressAccount', v_wip_account, 'finishedGoodsAccount', v_finished_account,
+    'laborAbsorptionAccount', v_labor_account))).*;
+
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'AJ', 2);
+  INSERT INTO "jobOperation" ("jobId", "jobMakeMethodId", "processId", "workCenterId", "operationQuantity", status, "companyId", "createdBy")
+    SELECT v_job, m.id, v_process, v_work_center, 2, 'In Progress', v_company_id, 'system'
+    FROM "jobMakeMethod" m WHERE m."jobId" = v_job AND m."parentMaterialId" IS NULL
+    RETURNING id INTO v_operation;
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error IS NULL, 'Accounting job at 2 failed: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.wip(v_job, v_wip_account) = 0, 'No WIP before labor is logged: ' || pg_temp.wip(v_job, v_wip_account);
+
+  -- One hour of labor at 50, logged after the completion and not yet posted.
+  INSERT INTO "productionEvent" ("jobOperationId", "workCenterId", type, "startTime", "endTime", "companyId", "createdBy")
+    VALUES (v_operation, v_work_center, 'Labor', now() - interval '1 hour', now(), v_company_id, 'system');
+  SELECT count(*) INTO v_receipt_journals FROM journal WHERE "companyId" = v_company_id AND "sourceType" = 'Job Receipt';
+  SELECT count(*) INTO v_cost_layers FROM "costLedger" WHERE "documentId" = v_job;
+
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error IS NULL, 'Zero-delta re-completion with catch-up WIP failed: ' || COALESCE(v_error, '');
+  ASSERT NOT EXISTS (SELECT 1 FROM "productionEvent" WHERE "jobOperationId" = v_operation AND "postedToGL" = false), 'The catch-up labor must be posted';
+  ASSERT pg_temp.wip(v_job, v_wip_account) = 50, 'The catch-up labor must stay in WIP: ' || pg_temp.wip(v_job, v_wip_account);
+  ASSERT (SELECT count(*) FROM journal WHERE "companyId" = v_company_id AND "sourceType" = 'Job Receipt') = v_receipt_journals, 'A zero-delta re-completion must not post a receipt journal';
+  ASSERT (SELECT count(*) FROM "costLedger" WHERE "documentId" = v_job) = v_cost_layers, 'A zero-delta re-completion must not add a cost layer';
+
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error LIKE 'Quantity completed cannot be lower than the 2 already received%', 'Lowering an accounting job must be refused, got: ' || COALESCE(v_error, 'success');
+  ASSERT pg_temp.wip(v_job, v_wip_account) = 50, 'A refused completion must not move WIP';
+
+  v_error := pg_temp.try_complete(v_job, 3);
+  ASSERT v_error IS NULL, 'Accounting job at 3 failed: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.wip(v_job, v_wip_account) = 0, 'The next receipt must discharge the WIP: ' || pg_temp.wip(v_job, v_wip_account);
+  ASSERT (SELECT count(*) FROM "costLedger" WHERE "documentId" = v_job AND quantity = 1 AND cost = 50) = 1, 'The next receipt must carry the WIP into one cost layer';
+
+  RAISE NOTICE 'ALL JOB COMPLETION CASES PASSED (zero/fraction/lower refusal, partial and full serial receipt, re-completion, shop-floor-first, scrapped, too few units, unsplit placeholders, inventory lower/re-completion, reopened last operation, non-inventory, accounting zero-delta with catch-up WIP)';
 END;
 $cases$;
 ROLLBACK;

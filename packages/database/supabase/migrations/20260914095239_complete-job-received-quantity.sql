@@ -13,8 +13,7 @@
 --     serial number; never a Consumed, Rejected or Scrapped unit;
 --   * flip only the received units to Available;
 --   * refuse the completion when fewer single-unit serials are left than the
---     units being completed, or when the cumulative quantity would drop below
---     what the job already received.
+--     units being completed.
 -- The job row is locked first so two concurrent completions cannot compute the
 -- same receipt delta.
 -- Refuse a fractional completion quantity for serial-tracked items.
@@ -23,9 +22,20 @@
 -- (service) completions keep their existing behavior. The fully-scrapped branch of
 -- sync_finish_job_operation never calls this function and is unaffected.
 --
+-- Every stocked item, not only serial:
+--   * refuse a cumulative quantity below what the job already received; the
+--     negative delta otherwise posted a negative receipt, cost layer and WIP journal;
+--   * a re-completion at the received quantity (zero delta) receives nothing and
+--     leaves WIP posted since the last receipt in WIP for the next one, instead of
+--     dividing that WIP by a zero quantity.
+--
 -- Recreated VERBATIM from its newest committed definition
--- (20260805023439_company-timezone-sql-functions.sql) apart from the guard and the
--- serial branch.
+-- (20260805023439_company-timezone-sql-functions.sql) apart from the guards, the
+-- zero-delta skips and the serial branch.
+--
+-- sync_finish_job_operation is recreated from 20260727031247 so that marking the
+-- last operation Done on a reopened job never asks for less than the job already
+-- received.
 
 CREATE OR REPLACE FUNCTION complete_job_to_inventory(
   p_job_id TEXT,
@@ -151,11 +161,13 @@ BEGIN
     RAISE EXCEPTION 'Quantity completed must be a whole number for serial-tracked job %', v_job_id_readable;
   END IF;
 
-  -- The quantity is cumulative and a received serial unit cannot be un-received,
-  -- so a serial job cannot be completed at less than it has already received.
-  IF v_job_make_method."requiresSerialTracking"
+  -- The quantity is cumulative, so a stocked job cannot be completed at less than
+  -- it has already received: the negative delta would post a negative receipt,
+  -- cost layer and WIP journal. Received stock is corrected through inventory
+  -- adjustments, not by re-completing the job. Non-Inventory jobs never receive.
+  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory'
      AND p_quantity_complete < COALESCE(v_prior_quantity_received, 0) THEN
-    RAISE EXCEPTION 'Quantity completed cannot be lower than the % already received for serial-tracked job %',
+    RAISE EXCEPTION 'Quantity completed cannot be lower than the % already received for job %',
       COALESCE(v_prior_quantity_received, 0), v_job_id_readable;
   END IF;
 
@@ -218,8 +230,10 @@ BEGIN
   END IF;
 
   -- Insert itemLedger entries based on tracking type.
-  -- Non-Inventory items (services) never enter inventory.
-  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory' THEN
+  -- Non-Inventory items (services) never enter inventory, and a re-completion at
+  -- the quantity already received has nothing new to receive.
+  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory'
+     AND v_quantity_received_to_inventory > 0 THEN
   IF v_job_make_method."requiresBatchTracking" THEN
     SELECT *
     INTO v_tracked_entity
@@ -627,6 +641,14 @@ BEGIN
     RETURN;
   END IF;
 
+  -- A stocked re-completion at the quantity already received has no units to
+  -- carry this cost. The catch-up WIP above stays in WIP and is discharged with
+  -- the next receipt; the per-unit cost below would otherwise divide by zero.
+  IF v_item_tracking_type IS DISTINCT FROM 'Non-Inventory'
+     AND v_quantity_received_to_inventory <= 0 THEN
+    RETURN;
+  END IF;
+
   v_today := v_company_today;
   v_journal_line_reference := nanoid();
 
@@ -788,6 +810,127 @@ BEGIN
         );
       END IF;
     END LOOP;
+  END IF;
+END;
+$$;
+
+
+-- sync_finish_job_operation (fork of 20260727031247): never asks
+-- complete_job_to_inventory for less than the job already received.
+CREATE OR REPLACE FUNCTION sync_finish_job_operation(
+  p_table TEXT,
+  p_operation TEXT,
+  p_new JSONB,
+  p_old JSONB
+)
+RETURNS VOID
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  v_job_location_id TEXT;
+  v_job_storage_unit_id TEXT;
+  v_job_quantity NUMERIC;
+  v_sales_order_id TEXT;
+  v_quantity_complete NUMERIC;
+  v_quantity_lost NUMERIC;
+  v_quantity_received NUMERIC;
+  v_job_status TEXT;
+BEGIN
+  IF p_operation != 'UPDATE' THEN RETURN; END IF;
+  IF (p_new->>'status') != 'Done' OR (p_old->>'status') = 'Done' THEN RETURN; END IF;
+
+  UPDATE "productionEvent"
+  SET "endTime" = NOW()
+  WHERE "jobOperationId" = p_new->>'id'
+    AND "endTime" IS NULL;
+
+  UPDATE "jobOperation" op
+  SET status = 'Ready'
+  WHERE EXISTS (
+    SELECT 1
+    FROM "jobOperationDependency" dep
+    WHERE dep."operationId" = op.id
+      AND dep."dependsOnId" = p_new->>'id'
+      AND op.status = 'Waiting'
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM "jobOperationDependency" dep2
+    JOIN "jobOperation" jo2 ON jo2.id = dep2."dependsOnId"
+    WHERE dep2."operationId" = op.id
+      AND jo2.status != 'Done'
+      AND jo2.id != p_new->>'id'
+  );
+
+  SELECT status INTO v_job_status FROM "job" WHERE id = p_new->>'jobId';
+  IF v_job_status NOT IN ('Ready', 'In Progress', 'Paused') THEN
+    RETURN;
+  END IF;
+
+  IF is_last_job_operation(p_new->>'id') THEN
+    SELECT "locationId", "storageUnitId", quantity, "salesOrderId", "quantityReceivedToInventory"
+    INTO v_job_location_id, v_job_storage_unit_id, v_job_quantity, v_sales_order_id, v_quantity_received
+    FROM "job"
+    WHERE id = p_new->>'jobId';
+
+    v_quantity_complete := (
+      SELECT COALESCE(SUM(terminal_jo."quantityComplete"), 0)
+      FROM "jobOperation" terminal_jo
+      INNER JOIN "jobMakeMethod" terminal_jmm ON terminal_jmm.id = terminal_jo."jobMakeMethodId"
+      WHERE terminal_jo."jobId" = p_new->>'jobId'
+        AND terminal_jmm."parentMaterialId" IS NULL
+        AND NOT EXISTS (
+          SELECT 1
+          FROM "jobOperationDependency" dep
+          INNER JOIN "jobOperation" child_jo ON child_jo.id = dep."operationId"
+          INNER JOIN "jobMakeMethod" child_jmm ON child_jmm.id = child_jo."jobMakeMethodId"
+          WHERE dep."dependsOnId" = terminal_jo.id
+            AND child_jmm."parentMaterialId" IS NULL
+        )
+    );
+
+    IF COALESCE(v_quantity_complete, 0) = 0 THEN
+      -- The zero fallback exists for the quantity-less Finish flow (no
+      -- productionQuantity ever recorded). When the job DID record scrap or
+      -- rework, zero completions is a real outcome (e.g. a fully-scrapped
+      -- lot) — falling back would receive scrapped units into stock.
+      SELECT COALESCE(SUM(COALESCE("quantityScrapped", 0) + COALESCE("quantityReworked", 0)), 0)
+      INTO v_quantity_lost
+      FROM "jobOperation"
+      WHERE "jobId" = p_new->>'jobId';
+
+      IF v_quantity_lost = 0 THEN
+        v_quantity_complete := v_job_quantity;
+      ELSE
+        -- Nothing to receive: close the job without posting Assembly Output.
+        -- Materials were already consumed by the scrap/complete flows; WIP
+        -- cost disposition for fully-scrapped jobs is a costing follow-up.
+        UPDATE "job"
+        SET status = 'Completed',
+            "completedDate" = NOW(),
+            "quantityComplete" = 0,
+            "updatedBy" = COALESCE(p_new->>'updatedBy', p_new->>'createdBy'),
+            "updatedAt" = NOW()
+        WHERE id = p_new->>'jobId';
+        RETURN;
+      END IF;
+    END IF;
+
+    -- A reopened job may already have received more than its operations now
+    -- report. complete_job_to_inventory refuses a quantity below what was
+    -- received, and refusing here would block the Done update itself.
+    v_quantity_complete := GREATEST(v_quantity_complete, COALESCE(v_quantity_received, 0));
+
+    PERFORM complete_job_to_inventory(
+      p_job_id := p_new->>'jobId',
+      p_quantity_complete := v_quantity_complete,
+      p_storage_unit_id := v_job_storage_unit_id,
+      p_location_id := v_job_location_id,
+      p_company_id := p_new->>'companyId',
+      p_user_id := COALESCE(p_new->>'updatedBy', p_new->>'createdBy')
+    );
   END IF;
 END;
 $$;
