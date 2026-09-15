@@ -38,7 +38,11 @@ import { salesInvoicePostValidator } from "../../invoicing.models";
 import StripeCustomerPanel from "./StripeCustomerPanel";
 
 type SalesInvoicePostModalProps = {
-  fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
+  fetcher: FetcherWithComponents<{
+    success?: boolean;
+    message?: string;
+    violations?: unknown[];
+  }>;
   isOpen: boolean;
   onClose: () => void;
   invoiceId: string;
@@ -120,7 +124,12 @@ const SalesInvoicePostModal = ({
     if (fetcher.data?.success) {
       if (fetcher.data?.message) toast.success(fetcher.data.message);
       onClose();
-    } else if (fetcher.data?.success === false && fetcher.data?.message) {
+    } else if (
+      fetcher.data?.success === false &&
+      fetcher.data?.message &&
+      // Violations render in the shared ViolationModal; don't also toast them.
+      (fetcher.data?.violations ?? []).length === 0
+    ) {
       toast.error(fetcher.data.message);
     }
   }, [fetcher.data?.success]);

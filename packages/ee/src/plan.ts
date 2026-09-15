@@ -9,7 +9,7 @@ export const FEATURE_PLANS = {
   API_KEYS: [Plan.Business, Plan.Partner],
   WEBHOOKS: [Plan.Business, Plan.Partner],
   INTEGRATIONS: [Plan.Business, Plan.Partner],
-  ITEM_RULES: [Plan.Business, Plan.Partner],
+  SALES_RULES: [Plan.Business, Plan.Partner],
   AUDIT_LOG: [Plan.Business, Plan.Partner],
   EMAIL_NOTIFICATIONS: [Plan.Business, Plan.Partner],
   STORAGE_RULES: [Plan.Business, Plan.Partner],

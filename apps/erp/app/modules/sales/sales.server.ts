@@ -1,6 +1,13 @@
 import type { Database } from "@carbon/database";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
+import type { Violation } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+
+const logger = getLogger("erp", "sales-server");
 
 type BreakRow = { quantity: number; overridePrice: number; active: boolean };
 
@@ -217,4 +224,92 @@ export async function saveQuoteLineWithPrices(args: {
         .execute();
     }
   });
+}
+
+// ---------------------------------------------------------------------------
+// Sales-rule outcome evidence
+// ---------------------------------------------------------------------------
+
+/**
+ * Persist sales-rule override/block evidence and notify the configured group.
+ *
+ * One `enforcementRuleAcknowledgment` row per deduped violation, plus one
+ * `sales-rule-violation` notification. Both writes are best-effort: evidence
+ * or notification failures are logged and must never break the submission
+ * they describe. Callers pass the SERVICE-ROLE client — the acknowledgment
+ * table's INSERT policy requires `sales_create`, but the documents these
+ * gates protect (invoices, shipments) are legitimately posted by users
+ * without it.
+ *
+ * Line actions pass `documentLineId`/`itemId` for the single line they wrote;
+ * document gates leave them unset and each violation's own `lineId` (stamped
+ * by the document evaluator) attributes the row instead.
+ */
+export async function recordSalesRuleOutcome(
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    userId: string;
+    documentType: "quote" | "salesOrder" | "salesInvoice";
+    documentId: string;
+    outcome: "blocked" | "acknowledged";
+    violations: Violation[];
+    ruleNames: Record<string, string>;
+    documentLineId?: string | null;
+    itemId?: string | null;
+  }
+): Promise<void> {
+  const {
+    companyId,
+    userId,
+    documentType,
+    documentId,
+    outcome,
+    violations,
+    ruleNames
+  } = args;
+  if (violations.length === 0) return;
+
+  const acknowledgmentInsert = await serviceRole
+    .from("enforcementRuleAcknowledgment")
+    .insert(
+      violations.map((v) => ({
+        companyId,
+        ruleId: v.ruleId,
+        ruleName: ruleNames[v.ruleId] ?? null,
+        documentType,
+        documentId,
+        documentLineId: v.lineId ?? args.documentLineId ?? null,
+        itemId: args.itemId ?? null,
+        severity: v.severity,
+        outcome,
+        message: v.message,
+        createdBy: userId
+      }))
+    );
+  if (acknowledgmentInsert.error) {
+    logger.error("Failed to record sales rule acknowledgments", {
+      error: acknowledgmentInsert.error
+    });
+  }
+
+  try {
+    const companySettings = await getCompanySettings(serviceRole, companyId);
+    if (companySettings.data?.salesRuleNotificationGroup?.length) {
+      await trigger("notify", {
+        companyId,
+        documentId: `${documentType}:${documentId}:${outcome}`,
+        event: NotificationEvent.SalesRuleViolation,
+        recipient: {
+          type: "group",
+          groupIds: companySettings.data.salesRuleNotificationGroup
+        },
+        from: userId
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to trigger sales rule violation notification", {
+      error: err
+    });
+  }
 }

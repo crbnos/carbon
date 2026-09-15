@@ -195,6 +195,11 @@ export const uomsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Medium
 });
 
+export const salesRulesQuery = (companyId: string | null) => ({
+  queryKey: ["salesRules", companyId ?? "null"],
+  staleTime: RefreshRate.Low
+});
+
 export const storageRulesQuery = (
   companyId: string | null,
   targetType?: "item" | "storageUnit" | "workCenter" | null
