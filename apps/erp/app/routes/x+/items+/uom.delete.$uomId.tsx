@@ -55,6 +55,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // Surfaced before the user commits, rather than letting them click Delete and
   // meet the database guard.
   const usage = await getUnitOfMeasureUsage(client, uomId);
+  if (usage.error) {
+    throw redirect(
+      `${path.to.uoms}?${getParams(request)}`,
+      await flash(
+        request,
+        error(usage.error, "Failed to check where the unit of measure is used")
+      )
+    );
+  }
 
   return {
     unitOfMeasure: unitOfMeasure.data,

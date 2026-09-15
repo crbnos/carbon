@@ -102,7 +102,8 @@ $$;
 -- because the answer must not depend on which modules the caller can read: a user
 -- with only purchasing access still needs to be told the code is on a sales order.
 -- Takes the id rather than a (code, companyId) pair so there is no cross-tenant
--- surface — the company is resolved from the row and then authorized.
+-- surface — the company is resolved from the row, which is looked up only among
+-- the caller's companies.
 CREATE OR REPLACE FUNCTION get_unit_of_measure_usage(p_id TEXT)
 RETURNS TABLE ("tableName" TEXT, "count" BIGINT)
 LANGUAGE plpgsql
@@ -112,26 +113,19 @@ SET search_path = public, util, pg_temp
 AS $$
 DECLARE
   uom RECORD;
-  allowed TEXT[];
 BEGIN
+  -- The same predicate as the "unitOfMeasure" SELECT policy, applied in the
+  -- lookup itself: an id in another company returns nothing, exactly like an id
+  -- that does not exist, so the function cannot be used to probe for existence.
+  -- A caller with no memberships gets NULL from the helper, and `x = ANY (NULL)`
+  -- filters the row out.
   SELECT "code", "companyId" INTO uom
   FROM "unitOfMeasure"
-  WHERE "id" = p_id;
+  WHERE "id" = p_id
+    AND "companyId" = ANY ((SELECT get_companies_with_any_role())::TEXT[]);
 
   IF NOT FOUND THEN
     RETURN;
-  END IF;
-
-  -- COALESCE is load-bearing: get_companies_with_any_role() array_aggs to NULL
-  -- (not an empty array) for a caller with no memberships, and `NOT (x = ANY
-  -- (NULL))` is NULL, not TRUE — so an unguarded IF would fall through and hand
-  -- an anonymous caller the counts. The RLS policies use the same helper safely
-  -- because a NULL USING clause filters the row out; inverting it here does not.
-  allowed := COALESCE(get_companies_with_any_role(), ARRAY[]::TEXT[]);
-
-  IF NOT (uom."companyId" = ANY (allowed)) THEN
-    RAISE EXCEPTION 'Not authorized to read this unit of measure'
-      USING ERRCODE = 'insufficient_privilege';
   END IF;
 
   RETURN QUERY
@@ -142,9 +136,9 @@ END;
 $$;
 
 -- No REVOKE here: EXECUTE is granted broadly on every public function by
--- Supabase's own DDL trigger, so the role check above is the gate, exactly as it
--- is for get_claims and get_companies_with_any_role. An unauthenticated caller
--- resolves to no companies and is refused.
+-- Supabase's own DDL trigger, so the company filter above is the gate, exactly
+-- as it is for get_claims and get_companies_with_any_role. An unauthenticated
+-- caller resolves to no companies and gets no rows.
 
 CREATE OR REPLACE FUNCTION prevent_unit_of_measure_deletion_when_in_use()
 RETURNS TRIGGER
