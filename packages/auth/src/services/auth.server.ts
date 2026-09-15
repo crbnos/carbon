@@ -41,9 +41,10 @@ import { resolveConsolePinIn } from "./console-pin.server";
 import {
   acquirePanelRefreshLock,
   loadPanelSession,
+  PANEL_REFRESH_LOCK_LEASE_MS,
   panelSessionTokenFromRequest,
-  releasePanelRefreshLock,
-  savePanelSession
+  savePanelSession,
+  withPanelRefreshLock
 } from "./panel-session.server";
 import {
   destroyAuthSession,
@@ -704,9 +705,14 @@ function isPanelSessionExpiringSoon(session: AuthSession) {
   );
 }
 
-/** How long a request will wait for whoever is already refreshing. */
-const PANEL_REFRESH_WAIT_ATTEMPTS = 20;
+/**
+ * How long a request will wait for whoever is already refreshing: past one
+ * full lease, so a holder that died has let its lock lapse and a waiter can
+ * take it over before giving up.
+ */
 const PANEL_REFRESH_WAIT_MS = 100;
+const PANEL_REFRESH_WAIT_ATTEMPTS =
+  Math.ceil(PANEL_REFRESH_LOCK_LEASE_MS / PANEL_REFRESH_WAIT_MS) + 10;
 
 async function refreshPanelSessionNow(
   token: string,
@@ -747,24 +753,30 @@ async function refreshPanelSessionNow(
  *
  * So one request holds the lock and refreshes; the others wait for it and read
  * what it stored.
+ *
+ * Only the lock holder ever refreshes. A waiter that refreshed on its own
+ * after a timeout spent the same rotating refresh token the holder was using,
+ * and whichever lost answered 401 and sent the panel back through sign-in. A
+ * waiter instead keeps trying to take the lock — a holder that died stops
+ * renewing its lease, so the lock frees itself — and refreshes only once it
+ * holds it, from the session as stored at that moment.
  */
 async function refreshPanelSession(
   token: string,
   stored: AuthSession
 ): Promise<AuthSession | null> {
-  if (await acquirePanelRefreshLock(token)) {
-    try {
-      // Re-read under the lock: the holder may have finished between the
-      // expiry check and the lock being acquired.
-      const current = (await loadPanelSession(token)) ?? stored;
-      if (!isPanelSessionExpiringSoon(current)) return current;
-      return await refreshPanelSessionNow(token, current);
-    } finally {
-      await releasePanelRefreshLock(token);
+  for (let attempt = 0; attempt <= PANEL_REFRESH_WAIT_ATTEMPTS; attempt++) {
+    const owner = await acquirePanelRefreshLock(token);
+    if (owner) {
+      return withPanelRefreshLock(token, owner, async () => {
+        // Re-read under the lock: an earlier holder may have finished between
+        // the expiry check and the lock being acquired.
+        const current = (await loadPanelSession(token)) ?? stored;
+        if (!isPanelSessionExpiringSoon(current)) return current;
+        return refreshPanelSessionNow(token, current);
+      });
     }
-  }
 
-  for (let attempt = 0; attempt < PANEL_REFRESH_WAIT_ATTEMPTS; attempt++) {
     await new Promise((resolve) => setTimeout(resolve, PANEL_REFRESH_WAIT_MS));
     const current = await loadPanelSession(token);
     // Gone while we waited: genuinely signed out or revoked.
@@ -772,9 +784,10 @@ async function refreshPanelSession(
     if (!isPanelSessionExpiringSoon(current)) return current;
   }
 
-  // The holder never published a result — it died, or its refresh failed.
-  // Try once ourselves rather than fail a request that may well succeed.
-  return refreshPanelSessionNow(token, stored);
+  // Nobody published a result and the lock never came free: the holder's
+  // refresh failed or is stuck. A 401 sends the panel to sign in again, which
+  // is safer than a second refresh racing the first.
+  return null;
 }
 
 async function requirePanelSession(token: string): Promise<AuthSession> {
