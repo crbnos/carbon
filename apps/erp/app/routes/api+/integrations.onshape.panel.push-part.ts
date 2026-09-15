@@ -554,33 +554,38 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       continue;
     }
-    const inserted = await client.from("externalIntegrationMapping").insert({
-      entityType: "item",
-      entityId: itemId,
-      integration: ONSHAPE_V2_INTEGRATION_ID,
-      externalId,
-      metadata: {
-        documentId,
-        elementId,
-        partId,
-        configuration,
-        wv,
-        wvId,
-        // The plan-time microversion: the only "unchanged" signal a later
-        // plan has, so it must be the one the user reviewed, not a newer one.
-        microversionId: row.microversionId,
-        partNumber: row.partNumber,
-        name: row.name,
-        revision: row.revision,
-        pushedBy: userId,
-        pushedAt: now,
-        planId
-      },
-      lastSyncedAt: now,
-      companyId,
-      createdBy: userId
-    });
-    if (inserted.error) {
+    const inserted = await client
+      .from("externalIntegrationMapping")
+      .insert({
+        entityType: "item",
+        entityId: itemId,
+        integration: ONSHAPE_V2_INTEGRATION_ID,
+        externalId,
+        metadata: {
+          documentId,
+          elementId,
+          partId,
+          configuration,
+          wv,
+          wvId,
+          // The plan-time microversion: the only "unchanged" signal a later
+          // plan has, so it must be the one the user reviewed, not a newer one.
+          microversionId: row.microversionId,
+          partNumber: row.partNumber,
+          name: row.name,
+          revision: row.revision,
+          pushedBy: userId,
+          pushedAt: now,
+          planId
+        },
+        lastSyncedAt: now,
+        companyId,
+        createdBy: userId
+      })
+      // The id is what a rollback deletes by; see the trigger failure below.
+      .select("id")
+      .single();
+    if (inserted.error || !inserted.data) {
       results.push({
         partId,
         action: "error",
@@ -617,13 +622,15 @@ export async function action({ request }: ActionFunctionArgs) {
       // skip the export forever. If the rollback itself fails, say so — the
       // advice to "push again" would otherwise be wrong, since the stale
       // mapping makes the next push a no-op.
+      //
+      // By the id this push inserted, not by externalId: a concurrent push of
+      // the same part may already have replaced this row with its own, and
+      // matching on externalId would delete that newer, successful link.
       const rolledBack = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
         .eq("companyId", companyId)
-        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-        .eq("entityType", "item")
-        .eq("externalId", externalId);
+        .eq("id", inserted.data.id);
       results.push({
         partId,
         action: "error",

@@ -459,6 +459,15 @@ describe("applyRequestBody", () => {
     );
     expect(applyRequestBody(review)).toMatchObject({ changeNotice: null });
   });
+
+  it("leaves the notice decision to the apply when the plan proposed none", () => {
+    // A row that vanished since review becomes a create the plan never saw; an
+    // explicit false here would stop the apply recording it.
+    const review = releaseReview(
+      releasePlan({ changeNotice: null, alreadyPushed: true })
+    );
+    expect(applyRequestBody(review)).not.toHaveProperty("createChangeNotice");
+  });
 });
 
 describe("applyCount", () => {
