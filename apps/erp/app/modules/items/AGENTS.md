@@ -22,7 +22,7 @@ Master data for all item types (Parts, Materials, Tools, Consumables, Services),
 
 ### Ask First
 - Deleting items that have inventory, open POs, or active jobs — blocked at the DB by FKs to `item`: `trackedEntity` (serial/batch) via `ON DELETE RESTRICT`, and `itemLedger`/`costLedger` (any inventory movement or cost history) via `ON DELETE NO ACTION`. Deactivate the item instead. `NO ACTION` (not `RESTRICT`) is deliberate so whole-company cascade deletes still work.
-- Changing how a unit of measure is deleted — `prevent_unit_of_measure_deletion_when_in_use_trigger` refuses any delete whose code is still referenced, across all 33 UoM columns including the ten that have no foreign key. It reads the referencing columns from `information_schema` at runtime, so a new table is covered without a migration.
+- Changing how a unit of measure is deleted — `prevent_unit_of_measure_deletion_when_in_use_trigger` refuses any delete whose code is still referenced, across all 33 UoM columns including the ten that have no foreign key. It reads the referencing columns from `information_schema` at runtime, so a new table is covered without a migration. For those ten columns the guarantee is not concurrency-safe: a write takes no lock on the `unitOfMeasure` row, so one that commits between the trigger's check and the delete's commit can still leave a dangling code.
 - Changing `itemTrackingType` on items that already have tracked entities — use `cascadeItemTrackingType`.
 - Modifying Active method versions — create a new version instead.
 

@@ -16,6 +16,12 @@
 -- on that path exactly as protect_system_required_actions does
 -- (20260321002430_delete-company-fix.sql).
 --
+-- Known limit: for the columns without a foreign key the check is not
+-- concurrency-safe. Writing one of them takes no lock on the "unitOfMeasure" row,
+-- so a write that commits between this check and the delete's commit can still
+-- leave a dangling code. Closing that needs a foreign key or a validating trigger
+-- on each of those tables, which is out of scope here.
+--
 -- Company restore/import are unaffected. They wipe in reverse topological order
 -- under session_replication_role='replica' where the role allows it, which
 -- disables user triggers outright; and because "unitOfMeasure" references only
