@@ -109,9 +109,12 @@ Second-round review plus the open CodeRabbit comment on the migration.
 - [x] **Dialog warning.** A serial job still holding a multi-unit placeholder no longer suggests
       marking every operation Done: that path raises. Batch jobs and single-unit serial jobs keep
       the original text.
-- [x] **Received units read by the job route loader** with the service role
-      (`getJobReceivedTrackedEntityIds`). The browser query returned nothing for users without
-      inventory or accounting view, so already-received units looked receivable again.
+- [x] **Received units read with the service role** (`getJobReceivedTrackedEntityIds`). The browser
+      query returned nothing for users without inventory or accounting view, so already-received units
+      looked receivable again. The dialog fetches them, with the job's received quantity, from
+      `api+/production.job.$jobId.receipts` each time it opens, so a receipt made while the job page
+      is open is not missed (CodeRabbit, second round; the first version read them in the job route
+      loader).
 - [x] **Dialog minimum** is the received quantity for every stocked job, matching the database.
 - [x] Comment in `getReceivableSerialUnits` on why the dialog locks an unnumbered single unit that
       the database would receive.
@@ -129,3 +132,6 @@ Verification:
       Complete disabled. Reopened J000001 (2 of 3 received) defaults to 3, lists only J000001-03 from the
       loader-provided received ids, and clamps a typed 1 to 2. Not run as a production-only user; the
       loader reads with `bypassRls`, so the result does not depend on the viewer's permissions.
+- [x] Browser, stale page: opened a 3-serial job, received JCQ-STALE-01 by SQL without reloading, then
+      opened Complete. The dialog listed only -02 and -03 and clamped a typed 0 to the fresh received
+      quantity of 1.

@@ -85,10 +85,7 @@ import {
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
-import {
-  getJobMethodTree,
-  type getJobReceivedTrackedEntityIds
-} from "../../production.service";
+import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
@@ -143,9 +140,6 @@ const JobHeader = () => {
   const routeData = useRouteData<{
     job: Job;
     unbatchedBatchableOperations?: number;
-    receivedTrackedEntityIds?: ReturnType<
-      typeof getJobReceivedTrackedEntityIds
-    >;
   }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
@@ -521,7 +515,6 @@ const JobHeader = () => {
       {completeModal.isOpen && (
         <JobCompleteModal
           job={routeData?.job}
-          receivedTrackedEntityIds={routeData?.receivedTrackedEntityIds}
           onClose={completeModal.onClose}
           fetcher={statusFetcher}
         />
@@ -1129,14 +1122,30 @@ function JobExpediteModal({
   );
 }
 
+type JobReceipts = {
+  quantityReceivedToInventory: number;
+  trackedEntityIds: string[];
+};
+
+// What the job has received as of now, from api+/production.job.$jobId.receipts.
+// Null when it cannot be read; the dialog then falls back to the route's job.
+async function getJobReceipts(jobId: string): Promise<JobReceipts | null> {
+  try {
+    const response = await fetch(path.to.api.jobReceipts(jobId));
+    if (!response.ok) return null;
+    const body = (await response.json()) as { receipts: JobReceipts | null };
+    return body.receipts;
+  } catch {
+    return null;
+  }
+}
+
 function JobCompleteModal({
   job,
-  receivedTrackedEntityIds,
   onClose,
   fetcher
 }: {
   job?: Job;
-  receivedTrackedEntityIds?: ReturnType<typeof getJobReceivedTrackedEntityIds>;
   fetcher: FetcherWithComponents<{}>;
   onClose: () => void;
 }) {
@@ -1162,7 +1171,10 @@ function JobCompleteModal({
     null
   );
   // The completed quantity is cumulative; this much was already received.
-  const priorReceivedQuantity = job?.quantityReceivedToInventory ?? 0;
+  // Refreshed when the dialog opens, since the route's job may be stale.
+  const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
+    job?.quantityReceivedToInventory ?? 0
+  );
   // complete_job_to_inventory refuses a stocked job below what it received.
   const minimumQuantityComplete =
     job?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
@@ -1186,7 +1198,7 @@ function JobCompleteModal({
   const getJobData = async () => {
     if (!carbon) return;
 
-    const [pickMethod, makeMethod] = await Promise.all([
+    const [pickMethod, makeMethod, receipts] = await Promise.all([
       carbon
         .from("pickMethod")
         .select("*")
@@ -1198,22 +1210,27 @@ function JobCompleteModal({
         .select("*")
         .eq("jobId", job?.id!)
         .is("parentMaterialId", null)
-        .single()
+        .single(),
+      getJobReceipts(job?.id!)
     ]);
+
+    // Read now rather than from the job route: a receipt may have been made
+    // since the page loaded. complete_job_to_inventory still enforces both.
+    const currentReceivedQuantity =
+      receipts?.quantityReceivedToInventory ??
+      job?.quantityReceivedToInventory ??
+      0;
+    setPriorReceivedQuantity(currentReceivedQuantity);
 
     if (
       makeMethod.data?.requiresSerialTracking ||
       makeMethod.data?.requiresBatchTracking
     ) {
-      const [trackedEntities, receipts] = await Promise.all([
-        carbon
-          .from("trackedEntity")
-          .select("*")
-          .eq("attributes->>Job Make Method", makeMethod.data?.id!)
-          .order("createdAt", { ascending: true }),
-        // Loaded by the job route with the service role; see the loader.
-        receivedTrackedEntityIds
-      ]);
+      const trackedEntities = await carbon
+        .from("trackedEntity")
+        .select("*")
+        .eq("attributes->>Job Make Method", makeMethod.data?.id!)
+        .order("createdAt", { ascending: true });
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {
@@ -1223,11 +1240,7 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        const receivedEntityIds = new Set(
-          (receipts?.data ?? []).flatMap((receipt) =>
-            receipt.trackedEntityId ? [receipt.trackedEntityId] : []
-          )
-        );
+        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
         const serialUnits = makeMethod.data?.requiresSerialTracking
           ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
           : null;
@@ -1243,7 +1256,7 @@ function JobCompleteModal({
                 receivedEntityIds
               ),
               jobQuantity: job?.quantity ?? 0,
-              priorReceivedQuantity,
+              priorReceivedQuantity: currentReceivedQuantity,
               receivableSerialCount: serialUnits.length
             })
           );

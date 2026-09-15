@@ -156,6 +156,8 @@ export const path = {
         generatePath(
           `${api}/production/methods/${id}/bom.csv?withOperations=${withOperations}`
         ),
+      jobReceipts: (jobId: string) =>
+        generatePath(`${api}/production/job/${jobId}/receipts`),
       jobSalesOrderLines: (jobId: string) =>
         generatePath(`${api}/production/job/${jobId}/sales-order-lines`),
       jobs: `${api}/production/jobs`,
