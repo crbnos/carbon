@@ -28,7 +28,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { reconcileReceiptLineSerials } from "../../inventory.models";
 import { getReceiptTracking } from "../../inventory.service";
-import type { ReceiptLine } from "../../types";
+import type { Receipt, ReceiptLine } from "../../types";
 
 const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { receiptId } = useParams();
@@ -37,6 +37,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
   const { t } = useLingui();
   const [items] = useItems();
   const routeData = useRouteData<{
+    receipt: Receipt;
     receiptLines: ReceiptLine[];
     fixedAssetLines: {
       id: string;
@@ -103,7 +104,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Receipt Line"] === line.id;
         });
 
-        if (!trackedEntity?.readableId) {
+        // A sales-return receipt picks an existing entity (ReturnEntityForm) —
+        // the entity itself is the batch, so it counts even without a
+        // readableId (mirrors the serial branch below).
+        const isSalesReturn =
+          routeData?.receipt?.sourceDocument === "Sales Return Order";
+
+        if (isSalesReturn ? !trackedEntity : !trackedEntity?.readableId) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             receivedQuantity: line.receivedQuantity ?? 0,
@@ -115,6 +122,12 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
       if (line.requiresSerialTracking) {
         const receivedQuantity = line.receivedQuantity ?? 0;
         if (receivedQuantity === 0) return;
+
+        // A sales-return receipt fills its slots by picking existing tracked
+        // entities (ReturnEntityForm) — the entity itself is the serial unit,
+        // so an assigned entity counts even when it carries no readableId.
+        const isSalesReturn =
+          routeData?.receipt?.sourceDocument === "Sales Return Order";
 
         // post-receipt consumes one serial per index in [0, receivedQuantity);
         // extra or duplicate entities are ignored at post time. Validate that
@@ -130,7 +143,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
             index: (tracking.attributes as TrackedEntityAttributes)[
               "Receipt Line Index"
             ],
-            hasSerial: !!tracking.readableId
+            hasSerial: isSalesReturn || !!tracking.readableId
           }));
 
         const { missingIndexes } = reconcileReceiptLineSerials(

@@ -269,7 +269,7 @@ export default function QualityDocumentRoute() {
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <QualityDocumentEditor />
                   <Outlet />
                 </div>

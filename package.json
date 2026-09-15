@@ -84,6 +84,7 @@
   ],
   "packageManager": "pnpm@10.33.4",
   "dependencies": {
+    "@carbon/api": "workspace:*",
     "@opentelemetry/semantic-conventions": "1.40.0",
     "@react-router/remix-routes-option-adapter": "catalog:",
     "cookie": "catalog:",

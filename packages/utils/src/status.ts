@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { EPSILON } from "./precision";
 
 type SalesOrderLine = Pick<
   Database["public"]["Tables"]["salesOrderLine"]["Row"],
@@ -91,6 +92,67 @@ export const getPurchaseOrderStatus = (
   }
 
   return { status, allInvoices, allLinesReceived };
+};
+
+const isReturnLineSettled = (line: {
+  quantity: number | string | null;
+  moved: number | string | null;
+  closedComplete: boolean | null;
+}) =>
+  !!line.closedComplete ||
+  Number(line.moved ?? 0) >= Number(line.quantity ?? 0) - EPSILON;
+
+/**
+ * Derived supplier-return (purchase return) status, mirroring
+ * `getPurchaseOrderStatus`: the header status is a pure function of the lines,
+ * never set by hand. A return is "Completed" once every line has shipped its
+ * authorized quantity or been short-closed; otherwise it is "To Ship". The
+ * granular "partially shipped" signal is display-only (derived in the view),
+ * not a status. Issuing the supplier credit is out-of-band and does not gate
+ * completion.
+ */
+export const getPurchaseReturnOrderStatus = (
+  lines: Array<{
+    quantity: number | string | null;
+    quantityShipped: number | string | null;
+    closedComplete: boolean | null;
+  }>
+) => {
+  const allShipped =
+    lines.length > 0 &&
+    lines.every((line) =>
+      isReturnLineSettled({ ...line, moved: line.quantityShipped })
+    );
+
+  const status: Database["public"]["Tables"]["purchaseReturnOrder"]["Row"]["status"] =
+    allShipped ? "Completed" : "To Ship";
+
+  return { status, allShipped };
+};
+
+/**
+ * Derived customer-return (sales return / RMA) status. The mirror of
+ * `getPurchaseReturnOrderStatus`: "Completed" once every line has received its
+ * authorized quantity or been short-closed, otherwise "To Receive". Shipping a
+ * replacement back to the customer is out-of-band and does not gate completion.
+ */
+export const getSalesReturnOrderStatus = (
+  lines: Array<{
+    quantity: number | string | null;
+    quantityReceived: number | string | null;
+    closedComplete: boolean | null;
+  }>
+) => {
+  const allReceived =
+    lines.length > 0 &&
+    lines.every((line) =>
+      isReturnLineSettled({ ...line, moved: line.quantityReceived })
+    );
+
+  const status: Database["public"]["Tables"]["salesReturnOrder"]["Row"]["status"] =
+    allReceived ? "Completed" : "To Receive";
+
+  return { status, allReceived };
 };
 
 export const getSalesOrderJobStatus = (

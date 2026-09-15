@@ -2509,6 +2509,40 @@ export async function getTrackedEntitiesByJobId(
 }
 
 /**
+ * What a job has already received to inventory: its received quantity and the
+ * tracked entities its receipts posted. One statement, so both come from the
+ * same snapshot and a receipt committing mid-read cannot pair a new quantity
+ * with old units. Kysely because itemLedger is readable only with inventory or
+ * accounting view, and production users need the answer; the route authorizes.
+ */
+export async function getJobReceiptSnapshot(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return db
+    .selectFrom("job")
+    .leftJoin("itemLedger", (join) =>
+      join
+        .onRef("itemLedger.documentId", "=", "job.id")
+        .onRef("itemLedger.companyId", "=", "job.companyId")
+        .on("itemLedger.documentType", "=", "Job Receipt")
+    )
+    .select([
+      "job.quantityReceivedToInventory",
+      sql<
+        string[]
+      >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
+        "trackedEntityIds"
+      )
+    ])
+    .where("job.id", "=", jobId)
+    .where("job.companyId", "=", companyId)
+    .groupBy(["job.id", "job.companyId"])
+    .executeTakeFirst();
+}
+
+/**
  * Reschedule a job using the unified scheduling engine.
  * This recalculates dates, work centers, and priorities for all operations.
  */

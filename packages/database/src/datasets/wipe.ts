@@ -28,6 +28,7 @@ const PRESERVED_TABLES = new Set([
   "nonConformanceType",
   "paymentTerm",
   "periodCloseTaskDefinition",
+  "returnReason",
   "scrapReason",
   "sequence",
   "unitOfMeasure",
@@ -56,6 +57,18 @@ const PRESERVED_TABLES = new Set([
   "userModulePreference",
   "webhook"
 ]);
+
+/**
+ * MRP planning output — regenerated wholesale on the next run, and deleted
+ * before the FK-nulling pass because their discriminator CHECKs cannot survive
+ * it. Mirrors TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts.
+ */
+const TRANSIENT_MRP_TABLES = [
+  "demandForecastSource",
+  "demandActual",
+  "supplyForecast",
+  "supplyActual"
+];
 
 type ForeignKey = {
   child: string;
@@ -189,6 +202,22 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
 
   const tables = await companyScopedTables(client);
   const deleteSet = new Set(tables.filter((t) => !PRESERVED_TABLES.has(t)));
+
+  // Clear MRP output before anything nulls FKs into it. These tables carry a
+  // discriminator CHECK ("Sales Order" requires salesOrderLineId NOT NULL, and
+  // so on for jobId / demandProjectionId) over columns that are all nullable,
+  // so nullNullableReferences below — which nulls every nullable FK whose
+  // parent is being deleted — would violate the CHECK and abort the wipe.
+  // Deleting outright is safe and loses nothing: MRP regenerates these wholesale
+  // on its next run, which is why the backup catalog also treats them as
+  // transient (see TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts).
+  for (const t of TRANSIENT_MRP_TABLES) {
+    if (deleteSet.has(t)) {
+      await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
+        companyId
+      ]);
+    }
+  }
   const fks = (await foreignKeys(client)).filter(
     (fk) =>
       deleteSet.has(fk.parent) &&

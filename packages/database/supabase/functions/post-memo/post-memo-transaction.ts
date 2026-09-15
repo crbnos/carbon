@@ -249,7 +249,17 @@ export function postMemoTransaction(
       const controlAccountId = isAR
         ? defaults.receivablesAccount
         : defaults.payablesAccount;
-      reasonAccountId = isAR
+      // Return-order memos override the reason (offset) account. A customer-RMA
+      // credit memo books to contra-revenue (salesReturnsAccount, fallback
+      // salesAccount); a supplier-return DEBIT memo nets GRNI against payables —
+      // its shipment already DEBITED GRNI at carried cost, so the memo's reason
+      // leg credits GRNI back to zero while the control leg reduces AP. Every
+      // other memo keeps the deterministic-by-party offset.
+      reasonAccountId = memo.salesReturnOrderId
+        ? (defaults.salesReturnsAccount ?? defaults.salesAccount)
+        : memo.purchaseReturnOrderId
+        ? defaults.goodsReceivedNotInvoicedAccount
+        : isAR
         ? defaults.salesDiscountAccount
         : defaults.supplierPaymentDiscountAccount;
       if (!controlAccountId || !reasonAccountId) {
@@ -274,6 +284,75 @@ export function postMemoTransaction(
           "Memo accounts must be active posting accounts in this company group with the correct control class",
         );
       }
+      // Supplier returns only: the reason leg (GRNI) must clear exactly what the
+      // return SHIPMENT debited — the goods' carried cost, already in BASE
+      // currency (do NOT scale by the memo's exchange rate) — while the control
+      // leg (AP) moves by what the supplier agreed to credit. Recover the carried
+      // cost here and let the builder book the difference as a purchase price
+      // variance; without it GRNI keeps a residual for the life of the company.
+      let reasonAmountBase: number | undefined;
+      if (memo.purchaseReturnOrderId) {
+        // Posted shipments only: a voided shipment's journal was reversed but its
+        // costLedger rows survive, so counting it would over-credit GRNI.
+        const shipments = await trx.selectFrom("shipment").select("id")
+          .where("sourceDocument", "=", "Purchase Return Order")
+          .where("sourceDocumentId", "=", memo.purchaseReturnOrderId)
+          .where("status", "=", "Posted")
+          .where("companyId", "=", companyId).execute();
+        const shipmentIds = shipments.map((row) => row.id);
+
+        if (shipmentIds.length > 0) {
+          const [costRows, creditLines] = await Promise.all([
+            trx.selectFrom("costLedger").select(["itemId", "quantity", "cost"])
+              .where("documentType", "=", "Purchase Return Shipment")
+              .where("documentId", "in", shipmentIds)
+              .where("companyId", "=", companyId).execute(),
+            trx.selectFrom("purchaseReturnOrderCreditLine")
+              .select(["purchaseReturnOrderLineId", "quantity"])
+              .where("memoId", "=", memoId)
+              .where("companyId", "=", companyId).execute(),
+          ]);
+
+          // Per-item carried cost per unit, from what the shipment relieved.
+          const relieved = new Map<string, { qty: number; cost: number }>();
+          for (const row of costRows) {
+            const key = row.itemId as string;
+            const prev = relieved.get(key) ?? { qty: 0, cost: 0 };
+            relieved.set(key, {
+              qty: prev.qty + Math.abs(Number(row.quantity ?? 0)),
+              cost: prev.cost + Math.abs(Number(row.cost ?? 0)),
+            });
+          }
+
+          const lineIds = creditLines.map(
+            (row) => row.purchaseReturnOrderLineId as string,
+          );
+          const returnLines = lineIds.length
+            ? await trx.selectFrom("purchaseReturnOrderLine")
+              .select(["id", "itemId"]).where("id", "in", lineIds)
+              .where("companyId", "=", companyId).execute()
+            : [];
+          const itemByLine = new Map(
+            returnLines.map((row) => [row.id as string, row.itemId as string]),
+          );
+
+          // Credited quantity x that item's per-unit carried cost.
+          let carried = 0;
+          for (const creditLine of creditLines) {
+            const itemId = itemByLine.get(
+              creditLine.purchaseReturnOrderLineId as string,
+            );
+            const totals = itemId ? relieved.get(itemId) : undefined;
+            if (!totals || totals.qty === 0) continue;
+            carried += (totals.cost / totals.qty) *
+              Number(creditLine.quantity ?? 0);
+          }
+          // Only override when we actually recovered a cost basis. A zero-cost or
+          // accounting-disabled-at-shipment return keeps the two-line shape.
+          if (carried > 0) reasonAmountBase = carried;
+        }
+      }
+
       const { lines } = buildMemoJournal({
         memoId,
         companyId,
@@ -285,6 +364,11 @@ export function postMemoTransaction(
         controlAccountId,
         reasonAccountId,
         reasonAccountClass: reason.class,
+        reasonAmountBase,
+        varianceAccountId: defaults.purchaseVarianceAccount,
+        reasonDescription: memo.purchaseReturnOrderId
+          ? "Goods Received Not Invoiced"
+          : undefined,
       });
       const journal = await trx.insertInto("journal").values({
         journalEntryId: await getNextSequence(trx, "journalEntry", companyId),

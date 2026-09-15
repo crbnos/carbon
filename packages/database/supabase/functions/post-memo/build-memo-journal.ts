@@ -1,8 +1,8 @@
 // Pure construction of the GL journal for posting a credit/debit memo. No DB, no
 // I/O, no clock — so it is unit-testable with `deno test`. The driver
-// (`index.ts`) resolves the control + reason account ids, the reason account's
-// class, the accounting period and `journalLineReference` (all impure), then
-// hands them here to compute the balanced two-line double-entry.
+// (`post-memo-transaction.ts`) resolves the control + reason account ids, the
+// reason account's class, the accounting period and `journalLineReference` (all
+// impure), then hands them here to compute the balanced double-entry.
 //
 // A memo is payment-shaped, NOT invoice-shaped: it moves an amount between the
 // party's AR/AP control account and a single chosen reason account. There are
@@ -21,10 +21,17 @@
 //
 // A memo is a single-currency document booked at its own exchange rate, so there
 // is no realized FX at post time (FX only realizes when CASH later settles the
-// memo — a separate payment posting). Both legs use the same base amount, so the
-// entry balances exactly.
+// memo — a separate payment posting).
+//
+// Both legs normally use the same base amount, so the entry balances on two
+// lines. SUPPLIER RETURNS are the one exception: the return shipment already
+// debited GRNI at the goods' CARRIED COST, so the memo must credit GRNI by that
+// same carried cost to clear it, while AP moves by what the supplier actually
+// agreed to credit. Those two figures are independent, and the difference is a
+// purchase price variance — emitted as a third leg. Without it the credit and
+// the cost never reconcile and GRNI keeps a permanent residual.
 
-import { assertBalanced } from "../shared/precision.ts";
+import { assertBalanced, round } from "../shared/precision.ts";
 import { toBaseAmount } from "../shared/accounting-currency.ts";
 import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
@@ -62,6 +69,19 @@ export interface BuildMemoJournalInput {
   // the memo's chosen reason account + its glAccountClass.
   reasonAccountId: string;
   reasonAccountClass: string;
+  // Supplier-return memos only. The reason leg (GRNI) must clear the EXACT
+  // amount the return shipment debited — the carried cost of the goods, in
+  // BASE currency — not the amount the supplier agreed to credit. When the two
+  // differ, the difference is a purchase price variance and needs its own leg,
+  // or the suspense account never nets to zero. Omit both for every other memo
+  // and the entry stays the ordinary two-line shape.
+  reasonAmountBase?: number;
+  varianceAccountId?: string | null;
+  // Overrides the reason leg's description. Defaults to "Credit memo" /
+  // "Debit memo"; a supplier return names the account instead ("Goods
+  // Received Not Invoiced") so the three-line entry reads the same way the
+  // return shipment's own GRNI line does.
+  reasonDescription?: string;
 }
 
 export interface BuildMemoJournalResult {
@@ -87,6 +107,9 @@ export function buildMemoJournal(
     controlAccountId,
     reasonAccountId,
     reasonAccountClass,
+    reasonAmountBase,
+    varianceAccountId,
+    reasonDescription,
   } = input;
 
   if (!controlAccountId) {
@@ -110,14 +133,17 @@ export function buildMemoJournal(
     accountType: AccountType,
     accountId: string,
     description: string,
+    // Defaults to the memo magnitude; only the reason and variance legs of a
+    // supplier return pass their own.
+    lineMagnitude: number = magnitude,
   ) => {
-    signedDebitTotal += side === "debit" ? magnitude : -magnitude;
+    signedDebitTotal += side === "debit" ? lineMagnitude : -lineMagnitude;
     lines.push({
       accountId,
       description,
       amount: side === "debit"
-        ? debit(accountType, magnitude)
-        : credit(accountType, magnitude),
+        ? debit(accountType, lineMagnitude)
+        : credit(accountType, lineMagnitude),
       quantity: 1,
       documentType: "Memo",
       documentId: memoId,
@@ -139,13 +165,47 @@ export function buildMemoJournal(
     isAR ? "Accounts Receivable" : "Accounts Payable",
   );
 
-  // 2) Reason leg — always the inverse side, so the entry balances.
+  // 2) Reason leg — always the inverse side of the control leg.
+  //
+  // Normally it carries the same magnitude, so the entry balances on two
+  // lines. A supplier return is the exception: the reason account (GRNI)
+  // must be cleared at the CARRIED COST the return shipment debited, while
+  // the control leg (AP) moves by what the supplier actually credited. When
+  // those differ, the reason leg uses its own magnitude and the remainder
+  // becomes leg 3.
+  const reasonMagnitude = reasonAmountBase === undefined
+    ? magnitude
+    : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
     reasonType,
     reasonAccountId,
-    direction === "Credit" ? "Credit memo" : "Debit memo",
+    reasonDescription ??
+      (direction === "Credit" ? "Credit memo" : "Debit memo"),
+    reasonMagnitude,
   );
+
+  // 3) Variance leg — the plug that makes an unequal control/reason pair
+  // balance. Same economic family as the invoice-vs-receipt PPV
+  // (`post-purchase-invoice`), so it shares `purchaseVarianceAccount` and is
+  // told apart by its own description.
+  const varianceMagnitude = round(Math.abs(signedDebitTotal));
+  if (varianceMagnitude > 0.005) {
+    if (!varianceAccountId) {
+      throw new Error(
+        "Memo reason amount differs from the memo amount but no variance account was provided; cannot post an unbalanced memo",
+      );
+    }
+    // signedDebitTotal > 0 means debits currently exceed credits, so the plug
+    // must be a credit (a gain: credited more than the goods were carried at).
+    pushLine(
+      signedDebitTotal > 0 ? "credit" : "debit",
+      "expense",
+      varianceAccountId,
+      "Purchase Price Variance",
+      varianceMagnitude,
+    );
+  }
 
   // BALANCE_TOLERANCE is a business threshold (multi-currency memos carry
   // sub-cent cross-rate residuals), NOT the float-noise default.

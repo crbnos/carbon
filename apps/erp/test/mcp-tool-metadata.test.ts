@@ -188,6 +188,42 @@ describe("mcp tool-metadata generator", () => {
     expect(p.requiresSerialTracking?.enum).toEqual(["true", "false"]);
   });
 
+  // A JSON-string-transform field ALSO maps "true"/"false" to the booleans
+  // (`JSON.parse("true") === true`), which used to false-positive the
+  // string-encoded-boolean annotator and publish a bogus `enum: ["true","false"]`
+  // — so `{}` and `null` failed input validation and `"false"` corrupted the row.
+  // Guard the whole class: none of these JSON-payload fields is a boolean enum.
+  it("does not mistake JSON-string fields for string-encoded booleans", () => {
+    const boolEnum = (field: any) =>
+      Array.isArray(field?.enum) &&
+      field.enum.length === 2 &&
+      field.enum.includes("true") &&
+      field.enum.includes("false");
+
+    // methodMaterial.storageUnitIds is a location→bin map, published as a proper
+    // object map (or null to clear), and no longer a required field.
+    const mm = get("items_upsertMethodMaterial");
+    const storageUnitIds = props(mm).storageUnitIds;
+    expect(boolEnum(storageUnitIds)).toBe(false);
+    const objectBranch = (storageUnitIds?.anyOf ?? [storageUnitIds]).find(
+      (b: any) => b?.type === "object"
+    );
+    expect(objectBranch?.additionalProperties?.type).toBe("string");
+    expect(mm.schema.required ?? []).not.toContain("storageUnitIds");
+
+    // The other JSON-string transforms found in the audit.
+    expect(boolEnum(props(get("quality_upsertIssueWorkflow")).content)).toBe(
+      false
+    );
+    expect(
+      boolEnum(props(get("quality_upsertIssueWorkflow")).requiredActionIds)
+    ).toBe(false);
+    expect(boolEnum(props(get("quality_upsertGaugeCalibrationRecord")).notes)).toBe(
+      false
+    );
+    expect(boolEnum(props(get("quality_upsertRisk")).notes)).toBe(false);
+  });
+
   // A parenthesized discriminated-upsert union branch resolves instead of
   // publishing an opaque {} member (and the leading-pipe union style must not
   // contribute an empty first member).

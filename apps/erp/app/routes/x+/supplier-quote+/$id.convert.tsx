@@ -12,6 +12,7 @@ import {
   selectedLinesValidator
 } from "~/modules/purchasing";
 import { isApprovalRequired } from "~/modules/shared";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
@@ -84,7 +85,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.supplierQuoteDetails(id),
       await flash(
         request,
-        error(convert.error, "Failed to convert quote to order")
+        error(
+          convert.error,
+          await getEdgeFunctionErrorMessage(
+            convert.error,
+            "Failed to convert quote to order"
+          )
+        )
       )
     );
   }

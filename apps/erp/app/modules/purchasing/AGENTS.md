@@ -52,6 +52,8 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 | `supplierQuote` / `supplierQuoteLine` / `supplierQuoteLinePrice` | Vendor pricing at quantity breaks |
 | `purchasingRfq` / `purchasingRfqLine` / `purchasingRfqSupplier` | RFQ header, lines, and invited suppliers |
 | `terms` | Payment/delivery terms reference data |
+| `purchaseReturnOrder` / `purchaseReturnOrderLine` / `purchaseReturnOrders` (view) | Supplier returns: authorize → ship (via shipments, source "Purchase Return Order") → credit. Statuses Draft → Confirmed → Partially Shipped → Shipped → Completed/Cancelled; `supplierReference` carries the supplier's own RMA number; line quantities/prices are ALWAYS inventory-UOM (converted once at authoring) |
+| `purchaseReturnOrderLineTrackedEntity` / `purchaseReturnOrderCreditLine` | Entities to send back (picked from Available stock from that supplier) — the `create` edge fn (`shipmentFromPurchaseReturnOrder`) stamps these onto the shipment's tracked entities (`attributes ->> Shipment`/`Shipment Line`) so the batch/serial flows through; `post-shipment` **splits** a batch when the returned quantity is less than the entity's (mirrors the Sales Order path, `buildBatchSplitRecords`). Per-line credit breakdown behind the AP `memo` (`memo.purchaseReturnOrderId`, reason account = GRNI). The memo is a **Debit** memo (`DR-` sequence): direction alone picks the control side, so Credit would INCREASE AP and re-debit GRNI — a vendor return must DR AP / CR GRNI |
 
 ## Key Service Functions
 
@@ -67,6 +69,9 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `getPurchasingRFQ` / `getPurchasingRFQs` / `upsertPurchasingRFQ` — RFQ management
 - `getSupplierQuotesForComparison` — side-by-side quote comparison
 - `getDefaultAttachmentsForPO` — default document attachments for PO creation
+- `getPurchaseReturnOrders` / `insertPurchaseReturnOrder` / `upsertPurchaseReturnOrderLine` — supplier-return CRUD; `confirmPurchaseReturnOrder` (Kysely row-locked caps: receiptLine received → PO line received×factor → invoice line×factor), `cancelPurchaseReturnOrder` / `completePurchaseReturnOrder` / `shortClosePurchaseReturnOrderLine`
+- `getReturnableLinesForSupplier` (posted receipt lines minus already-authorized) — thin wrapper over the `get_returnable_receipt_lines` RPC, which does the `received − authorized > 0` filter, the search (receipt #, PO #, item readable id, item name), recency ordering, and limit/offset paging in SQL and returns `totalCount` on each row. Scales to thousands of receipt lines; the "Add lines from receipt" modal (`ReturnableReceiptLinesModal`) shows the 5 most recent and searches for the rest. / `getReturnableEntitiesForSupplier` (Available entities whose `attributes ->> Receipt` resolves to a posted receipt from the supplier) / `getReturnableEntitiesForReceiptLine` (Available entities from ONE receipt line, via `attributes ->> Receipt Line`) — the `$id.new` action uses it to auto-select the single entity when a tracked line is added from a specific receipt, persisting it at creation so it flows onto the shipment
+- `createPurchaseReturnOrderCredit` (Kysely, shipped-minus-credited cap) / `getCreditableQuantitiesForPurchaseReturn` / `createReplacementPurchaseOrder` (linked-PO-line / supplierPart pricing)
 
 ## Key Exports
 

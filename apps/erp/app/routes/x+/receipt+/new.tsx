@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -53,6 +54,66 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
+    case "Sales Return Order":
+      // One open draft per RMA: clicking Receive again goes to the existing
+      // draft instead of stacking up duplicates.
+      const existingReturnReceipt = await client
+        .from("receipt")
+        .select("id")
+        .eq("sourceDocument", "Sales Return Order")
+        .eq("sourceDocumentId", sourceDocumentId)
+        .eq("status", "Draft")
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (existingReturnReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              existingReturnReceipt.error,
+              "Failed to check for an existing receipt"
+            )
+          )
+        );
+      }
+      if (existingReturnReceipt.data) {
+        throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
+      }
+
+      // No default-location guard: the create edge function falls back to
+      // the return order's own location and errors specifically otherwise.
+      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
+        id: string;
+      }>("create", {
+        body: {
+          type: "receiptFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          salesReturnOrderId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      });
+      if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
+        throw redirect(
+          path.to.salesReturnOrderDetails(sourceDocumentId),
+          await flash(
+            request,
+            error(
+              salesReturnOrderReceipt.error,
+              await getEdgeFunctionErrorMessage(
+                salesReturnOrderReceipt.error,
+                "Failed to create receipt"
+              )
+            )
+          )
+        );
+      }
+
+      throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
       const warehouseTransferReceipt = await serviceRole.functions.invoke<{
         id: string;

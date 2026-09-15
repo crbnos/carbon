@@ -1171,8 +1171,38 @@ it.each([
   });
 });
 
+it("reads a legacy settlement with no document principal from its applied base", async () => {
+  const { client } = clientFor({
+    ...config,
+    salesInvoices: [{ ...invoice, totalAmount: 90, exchangeRate: 1 }],
+    invoiceSettlement: [
+      {
+        paymentId: "posted",
+        memoId: null,
+        targetSalesInvoiceId: "invoice",
+        sourceAmount: null,
+        appliedAmount: 1,
+        discountAmount: 0,
+        writeOffAmount: 0,
+        payment: { status: "Posted" },
+        memo: null,
+        appliedViaPayment: null
+      }
+    ]
+  });
+  const result = await service.getOpenSalesInvoicesForCustomer(
+    client,
+    "co",
+    "cust",
+    "EUR"
+  );
+  expect(result.error).toBeNull();
+  expect(result.data?.[0]).toMatchObject({
+    balance: 89,
+    remainingDocument: 89
+  });
+});
 it.each([
-  null,
   -1,
   Number.NaN
 ])("refuses invalid effective invoice principal %s", async (sourceAmount) => {

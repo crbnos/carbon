@@ -23,7 +23,8 @@ import {
   LuShoppingCart,
   LuTicketX,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import { Link, useNavigation, useParams } from "react-router";
 import type { z } from "zod";
@@ -362,6 +363,15 @@ function SourceDocumentLink({
         <Button variant="secondary" leftIcon={<LuTruck />} asChild>
           <Link to={path.to.warehouseTransferDetails(sourceDocumentId!)}>
             <Trans>Warehouse Transfer</Trans>
+          </Link>
+        </Button>
+      );
+    case "Sales Return Order":
+      if (!permissions.can("view", "sales")) return null;
+      return (
+        <Button variant="secondary" leftIcon={<LuUndo2 />} asChild>
+          <Link to={path.to.salesReturnOrderDetails(sourceDocumentId!)}>
+            <Trans>Sales Return</Trans>
           </Link>
         </Button>
       );

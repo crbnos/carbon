@@ -445,13 +445,27 @@ export const methodMaterialValidator = z.object({
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-  storageUnitIds: z.string().transform((val) => {
-    try {
-      return JSON.parse(val) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  })
+  // A location → storageUnitId map. The BoM web form submits it as a JSON string
+  // (`<Hidden value={JSON.stringify(...)} />`); the MCP/API layer sends the object
+  // map directly. `preprocess` accepts both — a string is JSON-parsed (a malformed
+  // string stays a string and is REJECTED by the record below, never silently
+  // stored) — and the input JSON Schema published to MCP is a clean object map.
+  // `nullish` lets a caller omit it or send `null` to clear (the service applies
+  // the create/update semantics: omitted → preserve on update / {} on create,
+  // explicit null/{} → clear).
+  storageUnitIds: z
+    .preprocess(
+      (val) => {
+        if (typeof val !== "string") return val;
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
+      },
+      z.record(z.string(), z.string())
+    )
+    .nullish()
 });
 
 export const methodOperationValidator = z

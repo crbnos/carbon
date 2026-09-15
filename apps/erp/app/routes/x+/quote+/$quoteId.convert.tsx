@@ -24,6 +24,7 @@ import {
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "quoteid-convert");
@@ -124,7 +125,13 @@ export async function action(args: ActionFunctionArgs) {
       path.to.quoteDetails(quoteId),
       await flash(
         request,
-        error(convert.error, "Failed to convert quote to order")
+        error(
+          convert.error,
+          await getEdgeFunctionErrorMessage(
+            convert.error,
+            "Failed to convert quote to order"
+          )
+        )
       )
     );
   }
