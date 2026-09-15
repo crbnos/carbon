@@ -1128,7 +1128,7 @@ type JobReceipts = {
 };
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.
-// Null when it cannot be read; the dialog then falls back to the route's job.
+// Null when it cannot be read; the dialog then offers a retry, not the form.
 async function getJobReceipts(jobId: string): Promise<JobReceipts | null> {
   try {
     const response = await fetch(path.to.api.jobReceipts(jobId));
@@ -1151,6 +1151,7 @@ function JobCompleteModal({
 }) {
   const { carbon } = useCarbon();
   const [loading, setLoading] = useState(true);
+  const [hasReceiptsError, setHasReceiptsError] = useState(false);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
     string | undefined
@@ -1215,11 +1216,15 @@ function JobCompleteModal({
     ]);
 
     // Read now rather than from the job route: a receipt may have been made
-    // since the page loaded. complete_job_to_inventory still enforces both.
-    const currentReceivedQuantity =
-      receipts?.quantityReceivedToInventory ??
-      job?.quantityReceivedToInventory ??
-      0;
+    // since the page loaded. The route's job is no fallback, since it would
+    // offer received units again, so an unreadable receipt waits for a retry.
+    // complete_job_to_inventory still enforces both.
+    if (!receipts) {
+      setHasReceiptsError(true);
+      setLoading(false);
+      return;
+    }
+    const currentReceivedQuantity = receipts.quantityReceivedToInventory;
     setPriorReceivedQuantity(currentReceivedQuantity);
 
     if (
@@ -1240,7 +1245,7 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        const receivedEntityIds = new Set(receipts.trackedEntityIds);
         const serialUnits = makeMethod.data?.requiresSerialTracking
           ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
           : null;
@@ -1288,6 +1293,12 @@ function JobCompleteModal({
     getJobData();
   });
 
+  const retryJobData = () => {
+    setHasReceiptsError(false);
+    setLoading(true);
+    getJobData();
+  };
+
   // Update leftover quantities when action changes
   const handleLeftoverActionChange = (
     action: "ship" | "receive" | "split" | "discard"
@@ -1321,6 +1332,38 @@ function JobCompleteModal({
               <Spinner className="size-8" />
             </div>
           </ModalBody>
+        ) : hasReceiptsError ? (
+          <>
+            <ModalHeader>
+              <ModalTitle>
+                {makeToOrder
+                  ? t`Complete Job`
+                  : t`Receive ${job.jobId} to Inventory`}
+              </ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <Alert variant="destructive">
+                <LuTriangleAlert />
+                <AlertTitle>
+                  <Trans>Could not read what this job has received</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>
+                    The quantity already received to inventory is needed to
+                    complete this job. Try again.
+                  </Trans>
+                </AlertDescription>
+              </Alert>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={onClose}>
+                <Trans>Cancel</Trans>
+              </Button>
+              <Button onClick={retryJobData}>
+                <Trans>Retry</Trans>
+              </Button>
+            </ModalFooter>
+          </>
         ) : (
           <ValidatedForm
             method="post"

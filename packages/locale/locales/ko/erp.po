@@ -4372,6 +4372,9 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "이 작업의 입고 내역을 읽을 수 없습니다"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 �
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "이 작업을 완료하려면 이미 재고로 입고된 수량이 필요합니다. 다시 시도하세요."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격 책정이 적용되는 수량 구간으로, 각 열은 구매자-공급업체 협상 및 하위 문서로의 변환을 위한 고유한 단가를 포함합니다."

@@ -4372,6 +4372,9 @@ msgstr "Could not prepare region image for analysis"
 msgid "Could not read the document: {0}"
 msgstr "Could not read the document: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "Could not read what this job has received"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "The processes this work center can run; appears in process-pickers when 
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "The quantity already received to inventory is needed to complete this job. Try again."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."

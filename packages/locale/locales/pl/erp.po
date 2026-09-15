@@ -4372,6 +4372,9 @@ msgstr "Nie można przygotować obrazu regionu do analizy"
 msgid "Could not read the document: {0}"
 msgstr "Nie można odczytać dokumentu: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "Nie można odczytać, co to zadanie już odebrało"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "Procesy, które to stanowisko robocze może wykonywać; pojawia się w s
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Dostawca nie oferuje celów wymiarów. Najpierw włącz funkcję u dostawcy (np. kategorie śledzenia, śledzenie klasy lub pola)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "Do ukończenia tego zadania potrzebna jest ilość już odebrana do magazynu. Spróbuj ponownie."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Punkty graniczne ilości, przy których ta pozycja jest wyceniona; każda kolumna nosi własną cenę za sztukę do negocjacji kupiec–dostawca i do konwersji na dokumenty następujące."

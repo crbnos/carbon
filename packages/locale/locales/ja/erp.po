@@ -4372,6 +4372,9 @@ msgstr "分析用の領域画像を準備できませんでした"
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "このジョブの受け取り済み数量を読み込めません"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "この作業区が実行できる工法。工程のスケジュール時
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "プロバイダーはディメンションターゲットを提供していません。最初にプロバイダーで機能を有効にしてください(例:追跡カテゴリ、クラス追跡、またはフィールド)。"
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "このジョブを完了するには、在庫に受け取り済みの数量が必要です。もう一度お試しください。"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は購買担当者と仕入先の交渉および下流文書への変換のための独自の単価を保有します。"

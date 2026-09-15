@@ -4372,6 +4372,9 @@ msgstr "Не удалось подготовить изображение рег
 msgid "Could not read the document: {0}"
 msgstr "Не удалось прочитать документ: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "Не удалось прочитать, что уже получено по этой работе"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "Процессы, которые может выполнять этот 
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Поставщик не предлагает целевые показатели по измерениям. Сначала включите функцию у поставщика (например, категории отслеживания, отслеживание класса или поля)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "Для завершения этой работы нужно количество, уже полученное в инвентарь. Повторите попытку."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Точки разрыва по количеству, при которых рассчитывается цена этой строки; каждый столбец содержит свою цену за единицу для переговоров между закупщиком и поставщиком и для преобразования в последующие документы."

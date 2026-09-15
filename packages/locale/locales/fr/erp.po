@@ -4372,6 +4372,9 @@ msgstr "Impossible de préparer l'image de la région pour l'analyse"
 msgid "Could not read the document: {0}"
 msgstr "Impossible de lire le document : {0}"
 
+msgid "Could not read what this job has received"
+msgstr "Impossible de lire ce que ce travail a déjà reçu"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "Les procédés que ce poste de travail peut exécuter ; apparaît dans l
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Le fournisseur ne propose pas de cibles dimensionnelles. Activez la fonctionnalité chez le fournisseur d'abord (par exemple, catégories de suivi, suivi de classe ou champs)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "La quantité déjà reçue à l'inventaire est nécessaire pour terminer ce travail. Réessayez."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Les points d'arrêt de quantité à laquelle cette ligne est tarifée; chaque colonne porte son propre prix par unité pour la négociation acheteur-fournisseur et la conversion en documents aval."

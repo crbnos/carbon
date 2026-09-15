@@ -4372,6 +4372,9 @@ msgstr "无法准备区域图像以进行分析"
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
 
+msgid "Could not read what this job has received"
+msgstr "无法读取此工作已收货的内容"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "完成此工作需要已收货至库存的数量。请重试。"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"

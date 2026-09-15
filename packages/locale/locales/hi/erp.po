@@ -4372,6 +4372,9 @@ msgstr "विश्लेषण के लिए क्षेत्र छव�
 msgid "Could not read the document: {0}"
 msgstr "दस्तावेज़ नहीं पढ़ा जा सका: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "यह नहीं पढ़ा जा सका कि इस जॉब ने क्या प्राप्त किया है"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "प्रक्रियाएँ जो यह वर्क सें�
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "प्रदाता कोई आयाम लक्ष्य प्रदान नहीं करता है। पहले प्रदाता में सुविधा सक्षम करें (जैसे ट्रैकिंग श्रेणियां, कक्षा ट्रैकिंग, या फ़ील्ड)।"
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "इस जॉब को पूर्ण करने के लिए इन्वेंटरी में पहले से प्राप्त मात्रा आवश्यक है। फिर से प्रयास करें।"
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "मात्रा विभाजन बिंदु जिन पर इस पंक्ति की कीमत है; प्रत्येक कॉलम क्रेता-आपूर्तिकर्ता बातचीत और डाउनस्ट्रीम दस्तावेजों में परिवर्तित करने के लिए अपनी स्वयं की प्रति-यूनिट कीमत रखता है।"

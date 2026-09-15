@@ -4372,6 +4372,9 @@ msgstr "Bölge görüntüsü analiz için hazırlanamadı"
 msgid "Could not read the document: {0}"
 msgstr "Belge okunamadı: {0}"
 
+msgid "Could not read what this job has received"
+msgstr "Bu işin teslim aldıkları okunamadı"
+
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
@@ -17169,6 +17172,9 @@ msgstr "Bu iş merkezinin çalıştırabileceği prosesler; operasyonları zaman
 
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "Sağlayıcı boyut hedefleri sunmaz. Önce sağlayıcıda özelliği etkinleştirin (örneğin, izleme kategorileri, sınıf izleme veya alanlar)."
+
+msgid "The quantity already received to inventory is needed to complete this job. Try again."
+msgstr "Bu işi tamamlamak için envantere zaten alınmış miktar gerekiyor. Tekrar deneyin."
 
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Bu satırın fiyatlandırıldığı miktar kesim noktaları; her sütun alıcı-tedarikçi müzakereleri ve aşağı yöndeki belgelere dönüştürme için kendi birim başına fiyatını taşır."
