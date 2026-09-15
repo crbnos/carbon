@@ -34,7 +34,10 @@ temporary while v2 replaces v1.
   must be registered on the Onshape app. Install + callback for both ids are one
   handler parameterised by id (`apps/erp/app/modules/settings/onshape-oauth.server.ts`);
   each install route checks ITS OWN redirect var and answers "Onshape OAuth not
-  configured" (500) when missing.
+  configured" (500) when missing. Install mints the OAuth `state` bound to
+  integration + user + company (Redis `onshape-oauth-state:<uuid>`, 15 min;
+  503 when Redis did not take it); the callback GETDELs it and refuses a
+  missing, expired, replayed or mismatched state as `invalid-response`.
 - Migration `20260909174511_onshape-v2-integration.sql` seeds the `integration`
   row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
   not — the integration settings form may write metadata before any grant exists.
@@ -64,7 +67,11 @@ iframe. So:
   `Authorization: Bearer`.
 - `requirePermissions` (`packages/auth/src/services/auth.server.ts`) accepts
   the token as a third branch and refreshes the underlying access token in
-  place. Panel-token permission denials return 401/403 — **never redirects**
+  place. Supabase rotates refresh tokens, so the refresh runs under an
+  owner-bound lease lock (`panel-session-refresh:<token>`, 5 s lease renewed
+  every 2 s by `withPanelRefreshLock`, compare-and-delete release). Only the
+  holder refreshes; waiters poll for its result and retry the lock, and one
+  that sees neither answers 401 rather than racing a second refresh. Panel-token permission denials return 401/403 — **never redirects**
   (a redirect inside the iframe is meaningless).
 - Tokens never appear in URLs. postMessage targets `window.location.origin`.
 
@@ -103,7 +110,10 @@ pairing, since a short result would link mapping rows to the wrong lines.
 Onshape-owned item fields — `readableId`, `name`, `description`, `revision`,
 thumbnail, model — are dropped by `upsertPart`'s update path for mapped items.
 The item page's ONLY integration footprint is the self-loading
-`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`).
+`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`). It shows
+the v2 link when both exist and posts that row's `integration` to Detach, which
+validates it and deletes exactly that namespace's row. A failed lock lookup in
+`upsertPart` returns the error instead of writing the owned fields.
 
 ## Plan / apply — every push is two requests
 
@@ -189,7 +199,8 @@ Pure logic in `packages/ee/src/onshape/panel/properties.ts` (tested).
   field on every push. A stored `"default"` is treated as owned. Nothing on the
   item page locks mapped custom fields; they stay editable until the next push
   overwrites them.
-- Values are read at plan: parts via `readPartProperties` (one metadata read
+- Values are read at plan: parts via `readPartProperties`
+  (`@carbon/ee/onshape.server` — kept off the general barrel; one metadata read
   at `depth=2`, verified live to nest `parts.items[].properties`; per-part
   fallback exists), assembly ROOT from the element-metadata read the plan
   already makes. Release pushes and BOM children don't touch custom fields.
