@@ -481,6 +481,65 @@ export const invoiceSettlementValidator = invoiceSettlementBase
     }
   );
 
+/**
+ * Convert a company-base amount into document currency.
+ * Sales views sum base `unitPrice`; `convertedUnitPrice = unitPrice * exchangeRate`.
+ * Example: USD base 1000, EUR order, exchangeRate 0.9 → 900.
+ */
+export function toDocumentCurrency(
+  baseAmount: number,
+  exchangeRate: number | null | undefined
+): number {
+  const rate = Number(exchangeRate);
+  return baseAmount * (Number.isFinite(rate) && rate !== 0 ? rate : 1);
+}
+
+/**
+ * Roll up one linked invoice for an order summary.
+ * Sales cards render in document currency (`convertToDocument: true`).
+ * PO cards format in company base (`convertToDocument: false`) because
+ * purchase `unitPrice` is already `supplierUnitPrice * exchangeRate`.
+ */
+export function invoiceSettlementDisplayAmounts(args: {
+  total: number;
+  balance: number | null | undefined;
+  exchangeRate?: number | null;
+  convertToDocument: boolean;
+  // Posted cash principal, excluding memo credits, discounts and write-offs.
+  paidAmount: number;
+}): {
+  invoicedAmount: number;
+  paidAmount: number;
+  balanceRemaining: number;
+} {
+  const rawTotal = args.total ?? 0;
+  const invoicedAmount = args.convertToDocument
+    ? toDocumentCurrency(rawTotal, args.exchangeRate)
+    : rawTotal;
+  const balanceRemaining = args.convertToDocument
+    ? toDocumentCurrency(
+        Math.max(0, Number(args.balance ?? rawTotal)),
+        args.exchangeRate
+      )
+    : Math.max(0, Number(args.balance ?? rawTotal));
+  return {
+    invoicedAmount,
+    paidAmount: args.convertToDocument
+      ? toDocumentCurrency(args.paidAmount, args.exchangeRate)
+      : args.paidAmount,
+    balanceRemaining
+  };
+}
+
+// A positive remainder must not be hidden, even below a base currency cent.
+export function isInvoiceFullyPaid(
+  balance: number,
+  paidAmount: number,
+  status?: string | null
+): boolean {
+  return balance === 0 && (paidAmount > 0 || status === "Paid");
+}
+
 // The balance views preserve any remaining document minor unit, even when its
 // base equivalent is smaller than a base currency cent.
 export function isInvoicePayable(

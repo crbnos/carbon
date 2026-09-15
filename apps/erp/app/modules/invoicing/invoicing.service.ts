@@ -1487,6 +1487,44 @@ export type InvoiceSettlementForInvoice = {
   source: InvoiceSettlementSource;
 };
 
+// Cash principal only. Match the sales-order calculation: memo applications,
+// discounts and write-offs relieve balance but are not posted cash payments.
+export async function getInvoicePaidAmounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  side: "sales" | "purchase",
+  invoiceIds: string[]
+) {
+  if (invoiceIds.length === 0)
+    return { data: {} as Record<string, number>, error: null };
+  const column =
+    side === "sales" ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId";
+  const payments = await fetchAllFromTable<{
+    targetSalesInvoiceId: string | null;
+    targetPurchaseInvoiceId: string | null;
+    appliedAmount: number;
+  }>(
+    client,
+    "invoiceSettlement",
+    "targetSalesInvoiceId, targetPurchaseInvoiceId, appliedAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("payment.companyId", companyId)
+        .eq("payment.status", "Posted")
+        .in(column, invoiceIds)
+        .order("id")
+  );
+  if (payments.error) return { data: null, error: payments.error };
+  const data: Record<string, number> = {};
+  for (const payment of payments.data ?? []) {
+    const invoiceId = payment[column];
+    if (invoiceId)
+      data[invoiceId] = (data[invoiceId] ?? 0) + payment.appliedAmount;
+  }
+  return { data, error: null };
+}
+
 // Posted settlements against a specific invoice — BOTH cash payments and applied
 // credit/debit memos. Used by the "Applied" panel on the sales/purchase invoice
 // detail page. Page the embedded parents with their applications so large histories

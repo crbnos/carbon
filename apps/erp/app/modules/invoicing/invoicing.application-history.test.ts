@@ -16,6 +16,7 @@ vi.mock("../sales/sales.service", () => ({}));
 vi.mock("../accounting/accounting.ee.service", () => ({}));
 
 import {
+  getInvoicePaidAmounts,
   getInvoiceSettlements,
   getInvoiceSettlementsForInvoice
 } from "./invoicing.service";
@@ -242,5 +243,62 @@ describe.each([
     expect(
       result.data?.find((row) => row.source.type === "memo")?.appliedAmount
     ).toBe(2);
+  });
+});
+
+describe("getInvoicePaidAmounts", () => {
+  it.each([
+    "sales",
+    "purchase"
+  ] as const)("paginates %s cash principal and scopes invoices and payment tenant/status", async (side) => {
+    const rows = Array.from({ length: 1013 }, (_, i) =>
+      settlement(i, {
+        appliedAmount: i === 1012 ? -2 : 1,
+        "payment.companyId": "co",
+        "payment.status": "Posted"
+      })
+    );
+    rows.push(
+      settlement(99, {
+        appliedAmount: 100,
+        "payment.companyId": "co",
+        "payment.status": "Draft"
+      })
+    );
+    rows.push(
+      settlement(100, {
+        appliedAmount: 100,
+        "payment.companyId": "other",
+        "payment.status": "Posted"
+      })
+    );
+    rows.push(
+      settlement(101, { appliedAmount: 100, paymentId: null, memoId: "credit" })
+    );
+    const { client, requests } = cappedClient({ invoiceSettlement: rows });
+    const result = await getInvoicePaidAmounts(client, "co", side, ["invoice"]);
+    expect(result.error).toBeNull();
+    expect(result.data).toEqual({ invoice: 1010 });
+    expect(requests.length).toBeGreaterThan(1);
+    for (const url of requests) {
+      expect(url.searchParams.get("companyId")).toBe("eq.co");
+      expect(url.searchParams.get("payment.companyId")).toBe("eq.co");
+      expect(url.searchParams.get("payment.status")).toBe("eq.Posted");
+      expect(
+        url.searchParams.get(
+          side === "sales" ? "targetSalesInvoiceId" : "targetPurchaseInvoiceId"
+        )
+      ).toBe("in.(invoice)");
+      expect(url.searchParams.get("select")).toContain("!inner(status)");
+    }
+  });
+
+  it("does not query for an empty invoice set", async () => {
+    const { client, requests } = cappedClient({});
+    expect(await getInvoicePaidAmounts(client, "co", "sales", [])).toEqual({
+      data: {},
+      error: null
+    });
+    expect(requests).toHaveLength(0);
   });
 });
