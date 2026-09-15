@@ -15,9 +15,9 @@ import {
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
-  readPartProperties,
   selectInBatches
 } from "@carbon/ee/onshape";
+import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
