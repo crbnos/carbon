@@ -12,6 +12,17 @@
 -- inferrable target, and group memberships keep "memberUserId" NULL, so they
 -- stay mutually distinct and are unaffected.
 
+-- Wrapped in an explicit transaction: the migration runner applies statements in
+-- autocommit, and `LOCK TABLE` requires a transaction block. Same pattern as
+-- 20260908021155_accounting_posting_corrections.sql.
+BEGIN;
+
+-- Hold writers off until the index exists. Without the lock, a membership insert
+-- committing between the DELETE and the index build reintroduces a duplicate and
+-- fails the migration. SHARE ROW EXCLUSIVE conflicts with INSERT/UPDATE/DELETE
+-- but still lets readers through.
+LOCK TABLE "membership" IN SHARE ROW EXCLUSIVE MODE;
+
 -- Collapse existing duplicates first, keeping the earliest row of each pair so
 -- any FK or audit reference to the surviving id stays valid.
 DELETE FROM "membership" m
@@ -23,3 +34,5 @@ WHERE m."memberUserId" IS NOT NULL
 
 CREATE UNIQUE INDEX "membership_groupId_memberUserId_key"
   ON "membership" ("groupId", "memberUserId");
+
+COMMIT;

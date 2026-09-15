@@ -114,10 +114,13 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 - Re-adding a deactivated person through Add Account (`createEmployeeAccount`) reuses the surviving
   rows rather than failing: it refuses only when the existing `employee` row is `active`, and writes
   through `upsertEmployee`/`upsertEmployeeJob` on `(id, companyId)`. Re-activation happens on invite
-  acceptance — `activateEmployee` restores the employee-type `membership` the deactivation removed
-  (the `sync_add_employee_to_type_group` trigger fires on INSERT only, so an UPDATE cannot rely on
-  it) and only then flips `active` back to true, so a failed restore leaves the invite unaccepted
-  and retryable rather than an active employee outside their type's group.
+  acceptance — `acceptInvite` (`apps/erp/app/modules/users/users.server.ts`) restores the
+  employee-type `membership` the deactivation removed (the `sync_add_employee_to_type_group` trigger
+  fires on INSERT only, so an UPDATE cannot rely on it), flips `active` back to true, and stamps
+  `acceptedAt` in one Kysely transaction, so a failed restore leaves the invite unaccepted and
+  retryable rather than an active employee outside their type's group. The membership insert uses
+  `ON CONFLICT ("groupId", "memberUserId") DO NOTHING` against `membership_groupId_memberUserId_key`
+  (`20260911083113`), which is what makes it safe against the trigger racing the same insert.
 - Notification fan-out (`notify.ts` `resolve-recipients` in `packages/jobs`) filters resolved
   recipients against `userToCompany` for the notification's company — a missing membership row
   (i.e. a deactivated user) is dropped before any in-app/email/Slack delivery, regardless of how
