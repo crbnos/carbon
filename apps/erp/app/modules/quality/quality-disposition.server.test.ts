@@ -30,6 +30,7 @@ function matches(row: Row, filters: [string, string, unknown][]) {
 
 function query(table: string, kind: "select" | "update" | "insert") {
   const filters: [string, string, unknown][] = [];
+  const orders: string[] = [];
   let patch: Row = {};
   let values: Row[] = [];
   let locked = false;
@@ -46,6 +47,13 @@ function query(table: string, kind: "select" | "update" | "insert") {
       return inserted;
     }
     const hit = rows.filter((r) => matches(r, filters));
+    // Real sorting, not a no-op: a row picked out of a split item's siblings is
+    // only deterministic if orderBy actually orders.
+    for (const column of [...orders].reverse()) {
+      hit.sort((a, b) =>
+        String(a[column] ?? "").localeCompare(String(b[column] ?? ""))
+      );
+    }
     if (kind === "update") {
       log.push(`update:${table}`);
       for (const r of hit) Object.assign(r, patch);
@@ -68,6 +76,10 @@ function query(table: string, kind: "select" | "update" | "insert") {
     },
     where: (column: string, op: string, value: unknown) => {
       filters.push([column, op, value]);
+      return builder;
+    },
+    orderBy: (column: string) => {
+      orders.push(column);
       return builder;
     },
     forNoKeyUpdate: () => {
@@ -259,6 +271,40 @@ describe("linkEntitiesToIssueItemRow", () => {
 
     expect(tables.nonConformanceItem).toHaveLength(1);
     expect(itemRow().quantity).toBe(4);
+  });
+
+  it("links onto the oldest row when the item has been split", async () => {
+    // splitIssueItem leaves two rows for one item. The split-off row is listed
+    // first here, so a bare executeTakeFirst grows the wrong one.
+    seed({
+      nonConformanceItem: [
+        {
+          id: "nci-split",
+          nonConformanceId: "nc-1",
+          itemId: "item-1",
+          quantity: 0,
+          companyId: "c-1",
+          createdAt: "2026-02-01T00:00:00.000Z"
+        },
+        {
+          id: "nci-1",
+          nonConformanceId: "nc-1",
+          itemId: "item-1",
+          quantity: 0,
+          companyId: "c-1",
+          createdAt: "2026-01-01T00:00:00.000Z"
+        }
+      ]
+    });
+    await link([{ id: "te-1", quantity: 4 }]);
+
+    const byId = (id: string) =>
+      tables.nonConformanceItem.find((r) => r.id === id)!;
+    expect(byId("nci-1").quantity).toBe(4);
+    expect(byId("nci-split").quantity).toBe(0);
+    expect(tables.nonConformanceItemTrackedEntity[0].nonConformanceItemId).toBe(
+      "nci-1"
+    );
   });
 
   it("uses the fallback quantity for an empty row with no entities", async () => {

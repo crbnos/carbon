@@ -275,12 +275,18 @@ export async function linkEntitiesToIssueItemRow(
   const { nonConformanceId, companyId, userId, itemId, entities } = args;
   const nowIso = datetime.timestamp();
 
+  // splitIssueItem drops the old (nonConformanceId, itemId) unique constraint's
+  // guarantee: a split item has several rows. Link onto the oldest — the row the
+  // split shrank, which still holds the un-dispositioned remainder — rather than
+  // whichever row Postgres happens to return first.
   let row = await trx
     .selectFrom("nonConformanceItem")
     .select(["id", "quantity"])
     .where("nonConformanceId", "=", nonConformanceId)
     .where("itemId", "=", itemId)
     .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
     .executeTakeFirst();
   if (!row) {
     row = await trx

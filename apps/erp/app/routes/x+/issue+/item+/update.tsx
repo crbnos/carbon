@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { disposition } from "~/modules/quality/quality.models";
@@ -63,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .update({
           [field]: value ? (value as (typeof disposition)[number]) : null,
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .eq("id", id);
     case "quantity": {
