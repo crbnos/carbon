@@ -3,7 +3,11 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "@supabase/supabase-js";
 import type { MutableRefObject } from "react";
 import type { StoreApi } from "zustand";
-import { SUPABASE_ANON_KEY, SUPABASE_URL } from "../../config/env";
+import {
+  SUPABASE_ANON_KEY,
+  SUPABASE_INTERNAL_URL,
+  SUPABASE_URL
+} from "../../config/env";
 
 const PER_ATTEMPT_TIMEOUT_MS = 25_000;
 const MAX_RETRIES = 2;
@@ -61,16 +65,20 @@ export const getCarbonClient = (
     ? { Authorization: `Bearer ${accessToken}` }
     : undefined;
 
-  const client = createClient<Database, "public">(SUPABASE_URL!, supabaseKey, {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false
-    },
-    global: {
-      fetch: fetchWithRetry,
-      ...(headers ? { headers } : {})
+  const client = createClient<Database, "public">(
+    SUPABASE_INTERNAL_URL!,
+    supabaseKey,
+    {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      },
+      global: {
+        fetch: fetchWithRetry,
+        ...(headers ? { headers } : {})
+      }
     }
-  });
+  );
 
   return client;
 };
@@ -78,7 +86,7 @@ export const getCarbonClient = (
 export const getCarbonAPIKeyClient = (
   apiKey: string
 ): SupabaseClient<Database, "public"> => {
-  const client = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+  const client = createClient(SUPABASE_INTERNAL_URL!, SUPABASE_ANON_KEY!, {
     global: {
       fetch: fetchWithRetry,
       headers: {

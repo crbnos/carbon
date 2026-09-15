@@ -7631,7 +7631,7 @@ msgid "Finishes"
 msgstr "Oberflächen"
 
 msgid "Finishing an incomplete pick"
-msgstr "Unvollständige Kommissionierung abschließen"
+msgstr "Fertigstellung einer unvollständigen Auswahl"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Das Abschließen wird verweigert, bis jede Zeile kommissioniert oder als Kurzbestand markiert ist."
@@ -13290,6 +13290,9 @@ msgstr "Angebotsposition"
 msgid "Quote Line"
 msgstr "Angebotsposition"
 
+msgid "Quote Lines"
+msgstr "Angebotszeilen"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Angebotspositionen, deren Stückliste diesen Artikel enthält"
 
@@ -13319,6 +13322,9 @@ msgstr "Angebotsdatum"
 
 msgid "Quotes"
 msgstr "Angebote"
+
+msgid "Quotes with Lines"
+msgstr "Angebote mit Zeilen"
 
 msgid "Quoting and sales orders"
 msgstr "Angebote und Kundenaufträge"

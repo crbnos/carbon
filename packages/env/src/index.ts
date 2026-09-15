@@ -470,6 +470,18 @@ export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false
 });
 
+// Server-only. In a BYOC/self-hosted k8s deployment, the server's own calls to
+// Supabase can be pointed at an in-cluster address (bypassing the ingress hop
+// that some clusters — k3s's load balancer refusing pod-to-own-LB traffic in
+// particular — cannot route) while the browser keeps the public SUPABASE_URL.
+// Falls back to SUPABASE_URL so every existing deployment (Vercel included) is
+// unaffected when unset. Same pattern as INNGEST_BASE_URL: read directly, never
+// added to getBrowserEnv() or the Window.env interface, so it cannot leak to
+// the browser by construction.
+export const SUPABASE_INTERNAL_URL =
+  getEnv("SUPABASE_INTERNAL_URL", { isRequired: false, isSecret: false }) ||
+  SUPABASE_URL;
+
 export const DEFAULT_LANGUAGE =
   getEnv("DEFAULT_LANGUAGE", {
     isRequired: false,

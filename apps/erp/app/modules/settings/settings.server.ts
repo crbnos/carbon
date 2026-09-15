@@ -340,6 +340,10 @@ export async function upsertCompanyIntegration(
   // Split secret material out of the metadata: only the non-secret config is
   // written to the column; the secrets go to Supabase Vault. The row is upserted
   // FIRST (so it exists), then the vault RPC stamps `secretRef` onto it.
+  // `secrets` is a PARTIAL bag — splitSecrets omits untouched masked fields — so
+  // `upsert_integration_secret` MERGES it into the stored bag (an omitted secret
+  // keeps its value). A full replace here silently wiped a multi-secret
+  // integration's other credential on a partial save.
   const { config, secrets } = splitSecrets(update.id, update.metadata);
 
   const result = await client

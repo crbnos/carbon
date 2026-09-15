@@ -104,7 +104,9 @@ export default function NewSalesInvoiceLineRoute() {
 
   const initialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Item" as MethodItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type
+    // enum; posting it failed validation with "Type is required".
+    invoiceLineType: "Part" as MethodItemType,
     quantity: 1,
     unitOfMeasureCode: "EA",
     locationId:

@@ -7631,7 +7631,7 @@ msgid "Finishes"
 msgstr "Acabados"
 
 msgid "Finishing an incomplete pick"
-msgstr "Finalizando una recogida incompleta"
+msgstr "Finalizar un picking incompleto"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Se rechaza la finalización hasta que cada línea sea recogida o marcada como Corta."
@@ -13290,6 +13290,9 @@ msgstr "Línea de cotización"
 msgid "Quote Line"
 msgstr "Línea de Cotización"
 
+msgid "Quote Lines"
+msgstr "Líneas de Cotización"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Líneas de cotización cuya lista de materiales incluye este artículo"
 
@@ -13319,6 +13322,9 @@ msgstr "Fecha de Cotización"
 
 msgid "Quotes"
 msgstr "Cotizaciones"
+
+msgid "Quotes with Lines"
+msgstr "Cotizaciones con Líneas"
 
 msgid "Quoting and sales orders"
 msgstr "Presupuestos y pedidos de venta"

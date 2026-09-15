@@ -13290,6 +13290,9 @@ msgstr "Строка предложения"
 msgid "Quote Line"
 msgstr "Строка предложения"
 
+msgid "Quote Lines"
+msgstr "Строки предложения"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Строки предложения, чья спецификация материалов включает этот товар"
 
@@ -13319,6 +13322,9 @@ msgstr "Дата предложения"
 
 msgid "Quotes"
 msgstr "Предложения"
+
+msgid "Quotes with Lines"
+msgstr "Предложения со строками"
 
 msgid "Quoting and sales orders"
 msgstr "Коммерческие предложения и заказы покупателей"

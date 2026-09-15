@@ -58,15 +58,12 @@ import { path } from "~/utils/path";
 import type { PlannedOrder } from "../../../purchasing/purchasing.models";
 import { DemandForecastSourcesPopover } from "./DemandForecastSourcesPopover";
 import { PlannedOrderDetailsPopover } from "./PlannedOrderDetailsPopover";
-
-const supplySourceTypes = ["Purchase Order", "Production Order"] as const;
-const demandSourceTypes = ["Sales Order", "Job Material"] as const;
-
-type SourceType =
-  | (typeof supplySourceTypes)[number]
-  | (typeof demandSourceTypes)[number]
-  | "Planned"
-  | "Demand Forecast";
+import {
+  demandSourceTypes,
+  mergePlannedOrders,
+  type SourceType,
+  supplySourceTypes
+} from "./planningSupplyDemand";
 
 interface ChartDataPoint {
   startDate: string;
@@ -347,7 +344,6 @@ export const ItemPlanningChart = ({
   ]);
 
   const combinedSupplyAndDemand = useMemo(() => {
-    let projectedQuantity = forecastFetcher.data?.quantityOnHand ?? 0;
     const periods = forecastFetcher.data?.periods ?? [];
 
     // First get all forecast data
@@ -396,56 +392,12 @@ export const ItemPlanningChart = ({
       })
     ];
 
-    // Filter out planned orders that have matching existing IDs in forecast data
-    const filteredPlannedOrders = plannedOrders.filter((order) => {
-      if (!order.existingId) return true;
-      return !forecastData.some((item) => item.id === order.existingId);
-    });
-
-    // For planned orders with existing IDs, update the quantity in forecast data
-    plannedOrders.forEach((order) => {
-      if (order.existingId) {
-        const existingIndex = forecastData.findIndex(
-          (item) => item.id === order.existingId
-        );
-        if (existingIndex >= 0) {
-          // Convert purchase quantity to inventory quantity
-          const purchaseQuantity = order.quantity ?? 0;
-          const inventoryQuantity = purchaseQuantity * conversionFactor;
-          forecastData[existingIndex].quantity = inventoryQuantity;
-        }
-      }
-    });
-
-    // Add remaining planned orders
-    const combined = [
-      ...forecastData,
-      ...filteredPlannedOrders.map((order) => ({
-        ...order,
-        sourceType: "Planned" as SourceType,
-        quantity: (order.quantity ?? 0) * conversionFactor,
-        documentReadableId: "Planned",
-        documentId: null,
-        id: null,
-        plannedOrder: order
-      }))
-    ]
-      .sort((a, b) => (a.dueDate ?? "").localeCompare(b.dueDate ?? ""))
-      .map((item) => {
-        if (
-          item.sourceType === "Sales Order" ||
-          item.sourceType === "Job Material" ||
-          item.sourceType === "Demand Forecast"
-        ) {
-          projectedQuantity -= item.quantity;
-        } else {
-          projectedQuantity += item.quantity;
-        }
-        return {
-          ...item,
-          projectedQuantity
-        };
-      });
+    const combined = mergePlannedOrders(
+      forecastData,
+      plannedOrders,
+      conversionFactor,
+      forecastFetcher.data?.quantityOnHand ?? 0
+    );
 
     if (!searchTerm) return combined;
 

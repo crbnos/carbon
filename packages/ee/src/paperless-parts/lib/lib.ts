@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
@@ -1963,9 +1964,9 @@ async function downloadAndUploadThumbnail(
     formData.append("contained", "true");
 
     // Process the image through the resizer
-    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseUrl = SUPABASE_INTERNAL_URL;
     if (!supabaseUrl) {
-      logger.error("SUPABASE_URL environment variable not found");
+      logger.error("SUPABASE_INTERNAL_URL environment variable not found");
       return null;
     }
 

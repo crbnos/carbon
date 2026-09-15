@@ -7631,7 +7631,7 @@ msgid "Finishes"
 msgstr "Kaplamalar"
 
 msgid "Finishing an incomplete pick"
-msgstr "Eksik Seçimi Bitirme"
+msgstr "Eksik seçimi tamamlama"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
@@ -13290,6 +13290,9 @@ msgstr "Teklif satırı"
 msgid "Quote Line"
 msgstr "Teklif Satırı"
 
+msgid "Quote Lines"
+msgstr "Teklif Satırları"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Ürün ağacı bu stok kartını içeren teklif satırları"
 
@@ -13319,6 +13322,9 @@ msgstr "Teklif Tarihi"
 
 msgid "Quotes"
 msgstr "Teklifler"
+
+msgid "Quotes with Lines"
+msgstr "Satırlı Teklifler"
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"

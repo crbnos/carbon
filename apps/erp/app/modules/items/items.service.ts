@@ -4009,6 +4009,42 @@ export async function upsertMakeMethodVersion(
  * where an item can be stocked across multiple locations, each with its
  * own preferred bin.
  */
+/**
+ * Coerce whatever a caller supplied for `storageUnitIds` into the
+ * location → storageUnitId map the column stores. The web form pre-parses its
+ * JSON string through `methodMaterialValidator`, but the MCP/API dispatch path
+ * bypasses that validator and hands the service the raw value, so normalize
+ * defensively here too: an object map is kept (string values only), a JSON
+ * string is parsed, and null/undefined/anything-else collapses to `{}`. A bare
+ * string used to be spread character-by-character into the JSONB column
+ * (`"false"` → `{"0":"f","1":"a",…}`) — this is where that is stopped.
+ */
+function normalizeStorageUnitIds(value: unknown): Record<string, string> {
+  const fromObject = (obj: Record<string, unknown>): Record<string, string> => {
+    const out: Record<string, string> = {};
+    for (const [key, v] of Object.entries(obj)) {
+      if (typeof v === "string") out[key] = v;
+    }
+    return out;
+  };
+
+  if (value == null) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? fromObject(parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return fromObject(value as Record<string, unknown>);
+  }
+  return {};
+}
+
 async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
@@ -4082,16 +4118,14 @@ export async function upsertMethodMaterial(
   }
 
   if ("createdBy" in methodMaterial) {
-    // Seed storageUnitIds from the child item's default location/storage-unit
-    // if the caller didn't already provide one for that location. Respects
-    // the form value when supplied, adds a sensible default otherwise.
+    // On create, an omitted / null storageUnitIds normalizes to `{}`, then the
+    // child item's default location/storage-unit picks seed any locations the
+    // caller didn't specify. Respects supplied values; adds sensible defaults.
     const seededStorageUnitIds = await resolveMethodMaterialStorageUnitIds(
       client,
       {
         itemId: methodMaterial.itemId,
-        current: methodMaterial.storageUnitIds as
-          | Record<string, string>
-          | undefined
+        current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );
     return client
@@ -4107,9 +4141,28 @@ export async function upsertMethodMaterial(
       .select("id")
       .single();
   }
+  // On update, an OMITTED storageUnitIds preserves the stored value (drop the key
+  // so `sanitize` can't null it), while an explicit null / {} / map is written —
+  // null and {} both clear it. The web form always submits the field, so its
+  // behavior is unchanged; only the MCP/API caller can omit it.
+  if (methodMaterial.storageUnitIds === undefined) {
+    const { storageUnitIds: _omitted, ...preserved } = methodMaterial;
+    return client
+      .from("methodMaterial")
+      .update(sanitize({ ...preserved, materialMakeMethodId }))
+      .eq("id", methodMaterial.id)
+      .select("id")
+      .single();
+  }
   return client
     .from("methodMaterial")
-    .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
+    .update(
+      sanitize({
+        ...methodMaterial,
+        materialMakeMethodId,
+        storageUnitIds: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
+      })
+    )
     .eq("id", methodMaterial.id)
     .select("id")
     .single();

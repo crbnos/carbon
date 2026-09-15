@@ -35,6 +35,11 @@ export interface ManifestEntry {
   serviceParams: string[];
   injectAuth: AuthField[];
   permission: ToolPermission;
+  /** Whether the service itself applies limit/offset (`setGenericQueryFilters`
+   *  or a direct `.range(`). A list operation with `paginates: false` is a
+   *  fetchAll read — pagination args are inert in the service, and the MCP
+   *  layer pages the response at its own boundary instead. */
+  paginates: boolean;
   /** The JSON Schema for the operation's input. When the service branches on
    *  `"createdBy" in payload`, a required `_operation: "create" | "update"`
    *  property is present here — that property IS the marker (there is no parallel

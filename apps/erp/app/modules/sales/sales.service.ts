@@ -1776,8 +1776,31 @@ export async function getSalesOrderInvoicesByIds(
 ) {
   return client
     .from("salesInvoices")
-    .select("id, invoiceTotal, status, currencyCode")
+    .select("id, invoiceTotal, balance, status, currencyCode, exchangeRate")
     .in("id", invoiceIds);
+}
+
+export async function getSalesOrderInvoicePaymentsByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return fetchAllFromTable<{
+    targetSalesInvoiceId: string | null;
+    appliedAmount: number;
+    payment: { status: string } | null;
+  }>(
+    client,
+    "invoiceSettlement",
+    "targetSalesInvoiceId, appliedAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("payment.companyId", companyId)
+        .eq("payment.status", "Posted")
+        .in("targetSalesInvoiceId", invoiceIds)
+        .order("id")
+  );
 }
 
 export async function getSalesOrderLinesByItemId(
@@ -7513,7 +7536,10 @@ export async function setSalesReturnOrderLineDisposition(
 
   const orderStatus = (line.data.salesReturnOrder as { status: string } | null)
     ?.status;
-  if (orderStatus === "Completed" || orderStatus === "Cancelled") {
+  // Only Cancelled blocks. Completed must not: post-receipt auto-completes
+  // the RMA on full receipt, and disposition is a post-receipt decision —
+  // blocking Completed left entities stuck On Hold forever.
+  if (orderStatus === "Cancelled") {
     return {
       data: null,
       error: {
@@ -7634,10 +7660,8 @@ export async function setSalesReturnOrderLineDisposition(
         .where("companyId", "=", companyId)
         .forUpdate()
         .executeTakeFirstOrThrow();
-      if (
-        lockedOrder.status === "Completed" ||
-        lockedOrder.status === "Cancelled"
-      ) {
+      // Mirrors the pre-check: only Cancelled blocks disposition.
+      if (lockedOrder.status === "Cancelled") {
         throw new Error(
           `Cannot change disposition on a ${lockedOrder.status} return order`
         );

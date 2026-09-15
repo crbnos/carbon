@@ -398,3 +398,24 @@ Deno.test("source reduction preserves principal, final carry and AP FX direction
   }
   assertThrows(() => remainingFundingSources([payment], [{ ...use, sourceAmount: 161 }], decimals, true), Error, "Invalid remaining");
 });
+Deno.test("legacy settlements without a document principal derive it from applied base", () => {
+  const legacy = { sourceAmount: null, appliedAmount: 110, discountAmount: 0, writeOffAmount: 0 };
+  assertEquals(reduceInvoiceSettlements([legacy], 1.1, 2), { document: 121, base: 110 });
+  assertEquals(reduceInvoiceSettlements([legacy, { ...legacy, sourceAmount: 121 }], 1.1, 2), { document: 242, base: 220 });
+  for (const isAR of [true, false]) {
+    const invoice = { id: "invoice", totalAmount: 200, exchangeRate: 1.1 };
+    const row = { ...legacy, targetSalesInvoiceId: "invoice", targetPurchaseInvoiceId: "invoice" };
+    assertEquals(invoiceRemainingAmounts(invoice, [row], new Map([["invoice", 200]]), 2, isAR),
+      { remainingDocument: 99, remainingBase: 90 });
+  }
+  const payment = { id: "p", totalAmount: 220, exchangeRate: 1.1, postingDate: "2026-01-01", paymentDate: "2026-01-01", currencyCode: "EUR" };
+  const decimals = new Map([["EUR", 2]]);
+  const direct = { paymentId: "p", sourcePaymentId: null, sourceAmount: null, appliedAmount: 110, fxGainLossAmount: null };
+  assertEquals(remainingFundingSources([payment], [direct], decimals, true),
+    [{ paymentId: "p", postingDate: "2026-01-01", exchangeRate: 1.1, remainingDocument: 99, remainingBase: 90 }]);
+  assertThrows(() => remainingFundingSources([payment], [{ ...direct, paymentId: "q", sourcePaymentId: "p" }], decimals, true),
+    Error, "missing its document principal");
+  const tiny = { ...direct, appliedAmount: 0.004 };
+  assertEquals(reduceInvoiceSettlements([tiny, tiny].map((row) => ({ ...row, discountAmount: 0, writeOffAmount: 0 })), 1.1, 2).document, 0);
+  assertEquals(remainingFundingSources([payment], [tiny, tiny], decimals, true)[0].remainingDocument, 220);
+});

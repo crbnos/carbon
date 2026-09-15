@@ -568,6 +568,9 @@ const PurchaseInvoiceLineForm = ({
                         validItemTypes={[...itemType]}
                         locationId={locationId}
                         replenishmentSystem="Buy"
+                        // Required by a refine rather than the schema object,
+                        // so the field can't infer this for itself.
+                        isOptional={false}
                         onChange={(value) => {
                           onItemChange(value?.value as string);
                         }}

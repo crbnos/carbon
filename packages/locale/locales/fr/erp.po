@@ -7631,7 +7631,7 @@ msgid "Finishes"
 msgstr "Finitions"
 
 msgid "Finishing an incomplete pick"
-msgstr "Terminer un prélèvement incomplet"
+msgstr "Terminer une cueillette incomplète"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "La fermeture est refusée jusqu'à ce que chaque ligne soit prélevée ou marquée comme Courte."
@@ -13290,6 +13290,9 @@ msgstr "Ligne de devis"
 msgid "Quote Line"
 msgstr "Ligne de devis"
 
+msgid "Quote Lines"
+msgstr "Lignes de devis"
+
 msgid "Quote lines whose bill of materials includes this item"
 msgstr "Lignes de devis dont la nomenclature inclut cet article"
 
@@ -13319,6 +13322,9 @@ msgstr "Date de devis"
 
 msgid "Quotes"
 msgstr "Devis"
+
+msgid "Quotes with Lines"
+msgstr "Devis avec lignes"
 
 msgid "Quoting and sales orders"
 msgstr "Devis et commandes clients"

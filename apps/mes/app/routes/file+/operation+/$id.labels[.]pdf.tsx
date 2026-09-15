@@ -9,7 +9,10 @@ import {
   getCompanySettings,
   getDocumentTemplateConfig
 } from "~/services/inventory.service";
-import { resolveLabelLogo } from "~/services/labelLogo.server";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/services/labelLogo.server";
 import { getTrackedEntitiesByOperationId } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
@@ -91,7 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   const stream = await renderToStream(
     <ProductLabelPDF
