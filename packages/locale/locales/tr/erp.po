@@ -17559,6 +17559,9 @@ msgstr "bu öğe"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Bu stok kartı bir konfigüratör aracılığıyla oluşturulur ve bileşenlerini sipariş başına çözer; bunun için oluşturulan iş emirleri konfigüratörün çözülmüş ürün ağacını devralır."
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr "Bu malzeme pasif olduğu için buraya eklenemez. Malzeme ana verisinde kapatılmış — kullanmak için malzemenin sayfasından yeniden etkinleştirin."
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Bu stok kartının ürün ağacı, raf ömrü etkin olan giriş içermez, bu nedenle ürün ağacından son kullanma tarihi hesaplanmayacaktır."
 

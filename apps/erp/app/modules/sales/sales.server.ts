@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getItemOrderabilityIssue } from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 type BreakRow = { quantity: number; overridePrice: number; active: boolean };
@@ -170,6 +171,55 @@ export async function duplicatePriceOverrides(
   } catch (e) {
     return { duplicated: 0, skipped: 0, overwritten: 0, error: e };
   }
+}
+
+/**
+ * Can this item go on a line of this quote? Returns why not, in plain language,
+ * or null.
+ *
+ * The one quote line item rule. Every write that puts a caller-chosen item on a
+ * quote line runs it: the new-line and line-details routes (which show it as a
+ * field error), and the checked `upsertQuoteLine` in `sales.mcp.server.ts` that
+ * the MCP tool, the HTTP API and the CSV importer call. It lives here rather
+ * than in `upsertQuoteLine` itself because `sales.service.ts` is bundled for the
+ * browser and cannot import `items.server`, and because the change order read
+ * needs a service-role client the service is not handed.
+ *
+ * Two exemptions, both for items the quote already carries:
+ * - `currentItemId` — the line being edited already points at this item. An
+ *   item deactivated after it was quoted must not strand the line.
+ * - another line of this quote uses the item — a quote converted from a sales
+ *   RFQ references placeholder parts that stay inactive until the quote is
+ *   ordered, and a second line for one of them is legitimate.
+ *
+ * Pass a service-role client (see `getItemOrderabilityIssue`).
+ */
+export async function getQuoteLineItemIssue(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    quoteId: string;
+    itemId: string;
+    currentItemId?: string | null;
+  }
+): Promise<string | null> {
+  if (args.currentItemId && args.currentItemId === args.itemId) return null;
+
+  const alreadyOnQuote = await client
+    .from("quoteLine")
+    .select("id")
+    .eq("quoteId", args.quoteId)
+    .eq("itemId", args.itemId)
+    .eq("companyId", args.companyId)
+    .limit(1)
+    .maybeSingle();
+  if (alreadyOnQuote.data) return null;
+
+  const issue = await getItemOrderabilityIssue(client, {
+    itemId: args.itemId,
+    companyId: args.companyId
+  });
+  return issue ? `${issue} It cannot be quoted.` : null;
 }
 
 /**

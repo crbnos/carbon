@@ -431,8 +431,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
   routes' orchestration (MTO method pull on transition, recalc released creates /
   all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Body scans (classification, `_operation`) read the FIRST
-  match in the concatenated content — the service body — so a wrapper must keep
+  hash is unchanged. Second precedent: `sales.mcp.server.ts`'s `upsertQuoteLine`,
+  which applies the quote line item rule (`getQuoteLineItemIssue`) with a
+  service-role read before delegating to the service (pinned by
+  `sales.mcp.server.test.ts`). Body scans (classification, `_operation`) read
+  the FIRST match in the concatenated content — the service body — so a wrapper must keep
   the same discriminator convention as the function it shadows. Pinned by
   `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
   function exactly once" case in `mcp-tool-metadata.test.ts`.

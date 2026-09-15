@@ -25,7 +25,7 @@ import {
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { BsThreeDotsVertical } from "react-icons/bs";
 import { LuTrash } from "react-icons/lu";
 import { Link, useFetcher, useParams } from "react-router";
@@ -93,7 +93,20 @@ const QuoteLineForm = ({
   const [items] = useItems();
   const routeData = useRouteData<{
     quote: Quotation;
+    lines: QuotationLine[];
   }>(path.to.quote(quoteId));
+
+  // A quote converted from a sales RFQ points at placeholder parts that are
+  // deliberately inactive until the quote is ordered (the convert function
+  // mints them `active: false` and activates them at quote -> sales order), so
+  // the items this quote already uses stay selectable.
+  const quoteItemIds = useMemo(
+    () =>
+      (routeData?.lines ?? [])
+        .map((line) => line.itemId)
+        .filter((id): id is string => Boolean(id)),
+    [routeData?.lines]
+  );
 
   const isLocked = isQuoteLocked(routeData?.quote?.status);
   const isEditable = !isLocked;
@@ -410,7 +423,8 @@ const QuoteLineForm = ({
                         typeFieldName="itemType"
                         validItemTypes={[...itemType]}
                         value={itemData.itemId}
-                        includeInactive
+                        showIneligible
+                        eligibleItemIds={quoteItemIds}
                         locationId={routeData?.quote?.locationId ?? undefined}
                         onChange={(value) => {
                           onItemChange(value?.value as string);

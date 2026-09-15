@@ -17559,6 +17559,9 @@ msgstr "этот товар"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "Эта номенклатура собирается через конфигуратор и разрешает свои компоненты для каждого заказа; производственные заказы, созданные для нее, наследуют разрешенный BOM конфигуратора."
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr "Этот элемент неактивен, поэтому его нельзя добавить здесь. Его отключили в мастере элементов — снова включите его на странице элемента, чтобы использовать."
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "Спецификация этой номенклатуры не имеет входов с включенным сроком хранения, поэтому срок годности не будет рассчитан из BOM."
 

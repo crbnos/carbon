@@ -60,7 +60,9 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 
 ## Key Service Functions
 
-- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Wired from `routes/x+/shared+/import.$tableId.tsx`; config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
+- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / the checked `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Wired from `routes/x+/shared+/import.$tableId.tsx`; config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
+- `getQuoteLineItemIssue` (`sales.server.ts`) — the one quote line item rule: refuses an inactive item or one minted by an unreleased change order, exempting the item the edited line already carries and any item already on another line of the quote (RFQ-converted placeholder parts). Takes a service-role client.
+- `upsertQuoteLine` (`sales.mcp.server.ts`) — the checked upsert: runs `getQuoteLineItemIssue`, then the bare `sales.service.ts` upsert. Shadows the service function for the MCP tool and HTTP API, and is what the CSV importer calls. The new-line and line-details routes run the rule themselves (field error) and write directly. Never write a quote line with a caller-chosen item through the bare service without the rule.
 - `convertQuoteToOrder` / `convertSalesRfqToQuote` — lifecycle conversions via edge function
 - `copyQuoteLine` / `copyQuote` — duplication via `get-method` edge function
 - `applyPriceRules` — applies matched discount/markup rules to a starting price

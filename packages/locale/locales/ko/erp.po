@@ -17559,6 +17559,9 @@ msgstr "이 항목"
 msgid "This item is built via a configurator and resolves its components per-order; jobs created for it inherit the configurator's resolved BOM."
 msgstr "이 품목은 컨피그레이터를 통해 구성되며 주문당 구성 요소를 해석합니다. 이를 위해 생성된 작업 지시는 컨피그레이터의 해석된 BOM을 상속합니다."
 
+msgid "This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it."
+msgstr "이 품목은 비활성 상태이므로 여기에 추가할 수 없습니다. 품목 마스터에서 비활성화되었습니다 — 사용하려면 품목 페이지에서 다시 활성화하세요."
+
 msgid "This item's bill of materials has no inputs with shelf-life enabled, so no expiry will be calculated from the BOM."
 msgstr "이 품목의 자재 명세서에는 유통기한이 활성화된 입력이 없으므로 BOM에서 유통기한이 계산되지 않습니다."
 

@@ -44,7 +44,10 @@ import {
   quoteLineValidator,
   reconcileQuantityBreaks
 } from "~/modules/sales";
-import { saveQuoteLineWithPrices } from "~/modules/sales/sales.server";
+import {
+  getQuoteLineItemIssue,
+  saveQuoteLineWithPrices
+} from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -191,6 +194,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // transaction. Previously the line update committed on its own, and a
   // resolver failure left it saved with its new breaks unpriced.
   const serviceRole = getCarbonServiceRole();
+
+  // The line's current item is exempt from the item rule: an existing line whose
+  // item was deactivated later still has to be editable (quantities, prices),
+  // and blocking that would strand the quote. Mirrors the picker, which keeps
+  // the current value selectable but offers nothing new.
+  const existingLine = await serviceRole
+    .from("quoteLine")
+    .select("itemId")
+    .eq("id", lineId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // A failed read says nothing about which item the line points at, so it
+  // cannot be read as "unchanged" — that would skip the guard entirely.
+  if (existingLine.error) {
+    return validationError({
+      fieldErrors: {
+        itemId: "This quote line could not be read. Try again."
+      }
+    });
+  }
+
+  // The writes below go through Kysely by line id alone, with no RLS behind
+  // them, so this company-scoped read is the only thing tying `lineId` to the
+  // caller's company. No row means no write.
+  if (!existingLine.data) {
+    throw redirect(
+      path.to.quote(quoteId),
+      await flash(request, error(null, "Failed to find quote line"))
+    );
+  }
+
+  const itemIssue = await getQuoteLineItemIssue(serviceRole, {
+    companyId,
+    quoteId,
+    itemId: d.itemId,
+    currentItemId: existingLine.data.itemId
+  });
+  if (itemIssue) {
+    return validationError({
+      fieldErrors: {
+        itemId: itemIssue
+      }
+    });
+  }
+
   const existingPrices = await serviceRole
     .from("quoteLinePrice")
     .select("quantity")

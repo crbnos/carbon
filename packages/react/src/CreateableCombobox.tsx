@@ -13,6 +13,7 @@ import {
 import { HStack } from "./HStack";
 import { IconButton } from "./IconButton";
 import { Popover, PopoverContent, PopoverTrigger } from "./Popover";
+import { Tooltip, TooltipContent, TooltipTrigger } from "./Tooltip";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
 import { cn } from "./utils/cn";
 import { reactNodeToString } from "./utils/react";
@@ -28,6 +29,10 @@ export type CreatableComboboxProps = Omit<
     value: string;
     helper?: string;
     helperRight?: string;
+    // Shown, searchable and greyed out, but not selectable. `disabledReason` is
+    // surfaced as a tooltip so the reader learns why rather than guessing.
+    disabled?: boolean;
+    disabledReason?: string;
   }[];
   selected?: string[];
   isClearable?: boolean;
@@ -334,8 +339,23 @@ function VirtualizedCommand({
 
               const isSelected = !!selected?.includes(item.value);
               const isCreateOption = item.value === "create";
+              const isDisabled = !isCreateOption && !!item.disabled;
 
-              return (
+              const rowStyle = {
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: `${itemHeight}px`,
+                transform: `translateY(${virtualRow.start}px)`
+              } as const;
+
+              // cmdk's `disabled` is what takes the row out of arrow-key
+              // navigation and selection. A disabled row can also be styled
+              // `pointer-events-none`, which would swallow the hover that
+              // reveals the reason, so the tooltip hangs off a wrapper below
+              // rather than the item itself.
+              const row = (
                 <CommandItem
                   key={item.value}
                   value={
@@ -343,7 +363,9 @@ function VirtualizedCommand({
                       ? CSS.escape(item.label) + CSS.escape(item.helper ?? "")
                       : undefined
                   }
+                  disabled={isDisabled}
                   onSelect={() => {
+                    if (isDisabled) return;
                     if (isCreateOption) {
                       onCreateOption?.(search);
                     } else if (!isSelected) {
@@ -352,15 +374,12 @@ function VirtualizedCommand({
                     }
                     setOpen(false);
                   }}
-                  style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    width: "100%",
-                    height: `${itemHeight}px`,
-                    transform: `translateY(${virtualRow.start}px)`
-                  }}
-                  className="flex items-center justify-between min-w-0"
+                  style={isDisabled ? { height: "100%" } : rowStyle}
+                  className={cn(
+                    "flex items-center justify-between min-w-0",
+                    isDisabled &&
+                      "cursor-not-allowed opacity-50 aria-selected:bg-transparent aria-selected:text-inherit"
+                  )}
                 >
                   {isCreateOption ? (
                     <div className="flex items-center min-w-0 flex-1">
@@ -378,6 +397,7 @@ function VirtualizedCommand({
                       <TruncatedTooltipText
                         className="block w-full truncate"
                         tooltip={itemHoverText}
+                        enabled={!isDisabled}
                       >
                         {item.label}
                       </TruncatedTooltipText>
@@ -385,6 +405,7 @@ function VirtualizedCommand({
                         <TruncatedTooltipText
                           className="truncate flex-1"
                           tooltip={itemHoverText}
+                          enabled={!isDisabled}
                         >
                           {item.helper}
                         </TruncatedTooltipText>
@@ -399,6 +420,7 @@ function VirtualizedCommand({
                     <TruncatedTooltipText
                       className="truncate flex-1"
                       tooltip={itemHoverText}
+                      enabled={!isDisabled}
                     >
                       {item.label}
                     </TruncatedTooltipText>
@@ -414,6 +436,24 @@ function VirtualizedCommand({
                     />
                   )}
                 </CommandItem>
+              );
+
+              if (!isDisabled) return row;
+
+              return (
+                <Tooltip key={item.value}>
+                  <TooltipTrigger asChild>
+                    <div style={rowStyle}>{row}</div>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    align="start"
+                    sideOffset={6}
+                    className="max-w-[min(360px,calc(100vw-2rem))] whitespace-normal break-words"
+                  >
+                    {item.disabledReason}
+                  </TooltipContent>
+                </Tooltip>
               );
             })}
           </div>

@@ -4,11 +4,10 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import Papa from "papaparse";
 import { itemType as sellableItemTypes } from "~/modules/shared/shared.models";
-import {
-  insertQuote,
-  upsertQuoteLine,
-  upsertQuoteLinePrices
-} from "./sales.service";
+// The checked upsert: refuses an item that cannot be quoted, the same rule the
+// quote line routes apply.
+import { upsertQuoteLine } from "./sales.mcp.server";
+import { insertQuote, upsertQuoteLinePrices } from "./sales.service";
 
 // App-side bulk quote importer. Unlike the master-data imports (which run in the
 // `import-csv` Deno edge function with direct Kysely writes), quotes are created

@@ -20,6 +20,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Status,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
@@ -38,12 +39,13 @@ import ToolForm from "~/modules/items/ui/Tools/ToolForm";
 import type { ItemType, MethodItemType } from "~/modules/shared";
 import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
-import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
 import type { EntityKey } from "./emptyStates";
 import { useEmptyState } from "./emptyStates";
+import type { ItemIneligibility } from "./itemPickerSelection";
+import { getItemPickerEntries } from "./itemPickerSelection";
 
 type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   isReadOnly?: boolean;
@@ -53,6 +55,16 @@ type ItemSelectProps = Omit<ComboboxProps, "options" | "type" | "inline"> & {
   // parts/materials list views. Off by default so pickers that legitimately need a
   // specific revision (BOM, sales/job lines) keep every revision.
   latestRevisionOnly?: boolean;
+  // Instead of hiding an item that fails the eligibility rules, list it greyed
+  // out and unselectable with a plain-language reason on hover. The reader can
+  // still search for it and see that it exists, which a silent omission never
+  // tells them. `includeInactive` still wins: a picker that wants inactive
+  // items selectable keeps them selectable.
+  showIneligible?: boolean;
+  // Item ids the eligibility rules do not apply to — e.g. the placeholder parts
+  // an RFQ-converted quote already references, which are legitimately inactive
+  // until the quote is ordered.
+  eligibleItemIds?: string[];
   inline?: boolean;
   isConfigured?: boolean;
   locationId?: string;
@@ -118,86 +130,108 @@ const Item = ({
   const translateItemType = useTranslatedItemType();
   const [items] = useItems();
 
+  const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
+  const [value, setValue] = useControlField<string | undefined>(name);
+  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
+
+  const entries = useMemo(
+    () =>
+      getItemPickerEntries(items, {
+        type,
+        validItemTypes,
+        replenishmentSystem: props.replenishmentSystem,
+        latestRevisionOnly: props.latestRevisionOnly,
+        whitelist: props.whitelist,
+        blacklist: props.blacklist,
+        includeInactive: props.includeInactive,
+        showIneligible: props.showIneligible,
+        eligibleItemIds: props.eligibleItemIds,
+        selectedId: value || (props.value as string | undefined)
+      }),
+    [
+      items,
+      props.blacklist,
+      props.eligibleItemIds,
+      props.includeInactive,
+      props.latestRevisionOnly,
+      props.replenishmentSystem,
+      props.showIneligible,
+      props.value,
+      props.whitelist,
+      type,
+      validItemTypes,
+      value
+    ]
+  );
+
   const options = useMemo(() => {
-    let filtered = items.filter((item) => {
-      // Filter by type
-      // @ts-expect-error
-      if (validItemTypes && !validItemTypes.includes(item.type)) return false;
-
-      if (type !== "Item" && type !== item.type) return false;
-
-      // Filter by active status
-      if (!props.includeInactive && !item.active) return false;
-
-      // Filter by replenishment system
-      if (props.replenishmentSystem) {
-        const systemMatches =
-          item.replenishmentSystem === props.replenishmentSystem ||
-          item.replenishmentSystem === "Buy and Make" ||
-          props.replenishmentSystem === item.replenishmentSystem;
-
-        if (!systemMatches) return false;
+    // How each reason an item cannot be chosen reads: the badge on a current
+    // value, and the tooltip on a greyed row. The rule itself lives in
+    // getItemPickerEntries; this is only the wording. Keyed by the whole
+    // ItemIneligibility union on purpose — adding a reason without wording it
+    // here is a compile error, not an empty tooltip under an `Inactive` badge.
+    const ineligibilityCopy: Record<
+      ItemIneligibility,
+      { badge: string; message: string }
+    > = {
+      inactive: {
+        badge: t`Inactive`,
+        message: t`This item is inactive, so it can't be added here. Someone switched it off in the item master — turn it back on from the item's page to use it.`
       }
+    };
 
-      return true;
-    });
-
-    // Collapse to a single current revision per part.
-    if (props.latestRevisionOnly) {
-      filtered = latestRevisionByReadableId(filtered);
-    }
-
-    let results = filtered.map((item) => {
+    const toOption = ({
+      item,
+      ineligibility,
+      isCurrentValue
+    }: (typeof entries)[number]) => {
       const scopedQuantity = props.locationId
         ? item.quantityByLocation?.[props.locationId]
         : item.quantityOnHand;
+
+      // The current value is already saved on the record, so it stays
+      // selectable and is labelled instead of greyed out.
+      const readableId =
+        ineligibility && isCurrentValue ? (
+          <span className="flex items-center gap-1.5">
+            {item.readableIdWithRevision}
+            <Status color="gray">
+              {ineligibilityCopy[ineligibility].badge}
+            </Status>
+          </span>
+        ) : (
+          item.readableIdWithRevision
+        );
+
       return {
         value: item.id,
         label: item.supersessionMode ? (
           <span className="flex items-center gap-1.5">
-            {item.readableIdWithRevision}
+            {readableId}
             <ItemLifecycleBadge mode={item.supersessionMode} />
           </span>
         ) : (
-          item.readableIdWithRevision
+          readableId
         ),
         helper: item.name,
         helperRight:
           scopedQuantity !== undefined
             ? `${scopedQuantity} ${item.unitOfMeasureCode}`
-            : undefined
+            : undefined,
+        disabled: !!ineligibility && !isCurrentValue,
+        disabledReason: ineligibility
+          ? ineligibilityCopy[ineligibility].message
+          : undefined
       };
-    });
+    };
 
-    if (props.whitelist) {
-      results = results.filter((item) => props.whitelist?.includes(item.value));
-    }
-
-    if (props.blacklist) {
-      return results.filter((item) => !props.blacklist?.includes(item.value));
-    }
-
-    return results;
-  }, [
-    items,
-    props?.includeInactive,
-    props.blacklist,
-    props.latestRevisionOnly,
-    props.locationId,
-    props.replenishmentSystem,
-    props.whitelist,
-    type,
-    validItemTypes
-  ]);
+    return entries.map(toOption);
+  }, [entries, props.locationId, t]);
 
   const selectTypeModal = useDisclosure();
   const newItemsModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
-
-  const { getInputProps, error, isOptional: fieldIsOptional } = useField(name);
-  const [value, setValue] = useControlField<string | undefined>(name);
-  const resolvedIsOptional = isOptional ?? fieldIsOptional ?? false;
 
   useEffect(() => {
     if (props.value !== null && props.value !== undefined)
