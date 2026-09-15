@@ -63,7 +63,7 @@ import {
 } from "~/components";
 import { CSVLink } from "~/components/CSVLink";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
-import { KPIs } from "~/modules/sales/sales.models";
+import { KPIs, OPEN_SALES_ORDER_STATUSES } from "~/modules/sales/sales.models";
 import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
 import type { Quotation, SalesOrder, SalesRFQ } from "~/modules/sales/types";
 import QuoteStatus from "~/modules/sales/ui/Quotes/QuoteStatus";
@@ -75,15 +75,6 @@ import { path } from "~/utils/path";
 
 const OPEN_RFQ_STATUSES = ["Ready for Quote", "Draft"] as const;
 const OPEN_QUOTE_STATUSES = ["Sent", "Draft"] as const;
-const OPEN_SALES_ORDER_STATUSES = [
-  "Confirmed",
-  "To Ship and Invoice",
-  "To Ship",
-  "To Invoice",
-  "Needs Approval",
-  "In Progress",
-  "Draft"
-] as const;
 
 const chartConfig = {
   value: {
