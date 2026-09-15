@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import type { OnshapeMappingNamespace } from "@carbon/ee/onshape/integration-id";
 import { ONSHAPE_MAPPING_NAMESPACES } from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
@@ -15,6 +16,8 @@ import { useFetcher } from "react-router";
 import { path } from "~/utils/path";
 
 type ExternalSourceMapping = {
+  /** Which Onshape integration owns the link — Detach removes exactly this one. */
+  integration: OnshapeMappingNamespace;
   externalId: string | null;
   lastSyncedAt: string | null;
   metadata: {
@@ -50,17 +53,22 @@ export function ExternalSourceCard({
     let cancelled = false;
     carbon
       .from("externalIntegrationMapping")
-      .select("externalId, lastSyncedAt, metadata")
+      .select("integration, externalId, lastSyncedAt, metadata")
       .eq("entityType", "item")
       .eq("entityId", itemId)
       // Either Onshape integration may own this item while both are
-      // installable, so the card matches on both namespaces and takes the
-      // first row — ONSHAPE_MAPPING_NAMESPACES is ordered v2-first.
+      // installable, so the card matches on both namespaces. An item holds at
+      // most one row per integration, and the database returns them in no
+      // particular order, so the pick is made here: v2 first, the order of
+      // ONSHAPE_MAPPING_NAMESPACES.
       .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
-      .limit(1)
       .then(({ data }) => {
-        if (!cancelled)
-          setMapping((data?.[0] as ExternalSourceMapping) ?? null);
+        if (cancelled) return;
+        const rows = (data ?? []) as ExternalSourceMapping[];
+        const preferred = ONSHAPE_MAPPING_NAMESPACES.map((id) =>
+          rows.find((row) => row.integration === id)
+        ).find((row) => row !== undefined);
+        setMapping(preferred ?? null);
       });
     return () => {
       cancelled = true;
@@ -106,6 +114,11 @@ export function ExternalSourceCard({
             {canDetach ? (
               <detacher.Form method="post" action={path.to.api.onShapeDetach}>
                 <input type="hidden" name="itemId" value={itemId} />
+                <input
+                  type="hidden"
+                  name="integration"
+                  value={mapping.integration}
+                />
                 <Button variant="ghost" leftIcon={<LuUnlink />} type="submit">
                   Detach
                 </Button>

@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape";
+import { isOnshapeMappingNamespace } from "@carbon/ee/onshape";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -12,6 +12,11 @@ export const config = {
  * Remove the Onshape link from an item. The item keeps everything it has
  * (model, documents, fields); Carbon just stops treating Onshape as the owner
  * of its identity fields, and the panel shows the part as unlinked again.
+ *
+ * The card names the integration whose link it shows. Either one can own an
+ * item, and the owned-field lock honours both, so a detach that always removed
+ * the `onshape-v2` row left an `onshape` link — and the lock — in place while
+ * the card disappeared. The delete still names exactly one integration.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -23,12 +28,19 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!itemId) {
     return data({ error: "itemId is required" }, { status: 400 });
   }
+  const integration = String(formData.get("integration") ?? "");
+  if (!isOnshapeMappingNamespace(integration)) {
+    return data(
+      { error: "integration must be an Onshape integration" },
+      { status: 400 }
+    );
+  }
 
   const removed = await getCarbonServiceRole()
     .from("externalIntegrationMapping")
     .delete()
     .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("integration", integration)
     .eq("entityType", "item")
     .eq("entityId", itemId);
 

@@ -3867,6 +3867,9 @@ export async function upsertPart(
     .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
     .limit(1)
     .maybeSingle();
+  // A failed lookup is not "not linked": falling through would write name
+  // and description over the values Onshape owns.
+  if (externalSource.error) return externalSource;
   if (externalSource.data) {
     item.name = undefined;
     item.description = undefined;
