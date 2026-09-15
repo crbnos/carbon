@@ -95,6 +95,7 @@ export type { OnshapeBomNode } from "./onshape/panel/bom";
 export {
   flattenBomTree,
   metadataProperty,
+  missingBomColumnsMessage,
   parseBomTree
 } from "./onshape/panel/bom";
 export type { OnshapePanelContext } from "./onshape/panel/messages";

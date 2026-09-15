@@ -523,11 +523,27 @@ export async function action({ request }: ActionFunctionArgs) {
       ].filter((id): id is string => !!id)
     )
   ];
-  const methodByItemId = await loadActiveMakeMethods(
-    client,
-    companyId,
-    parentItemIds
-  );
+  // A failed read here must stop the line writes, as the ownership read below
+  // does: every level would report "no make method", and a `top` push would
+  // write its lines with a null child-method pointer.
+  let methodByItemId: Awaited<ReturnType<typeof loadActiveMakeMethods>>;
+  try {
+    methodByItemId = await loadActiveMakeMethods(
+      client,
+      companyId,
+      parentItemIds
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
   // Resolve the method each level will be written into BEFORE ownership is
   // read. A released method is never edited in place — Carbon supersedes a
   // live method with a new Draft version — so the push authors into a draft

@@ -7,6 +7,7 @@ import {
   externalIdForBomLine,
   flattenNodes,
   metadataProperty,
+  missingBomColumnsMessage,
   normalizeConfiguration,
   parseBomTree,
   parseProperties,
@@ -122,7 +123,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // The indented BOM never carries the assembly's own row; its identity comes
   // from element metadata, with the BOM root as the fallback when present.
-  const { root: bomRoot, lines } = parseBomTree(bom);
+  const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
+  // An unreadable tree plans as "the assembly has no lines", and the apply
+  // would then remove every Onshape-origin line from the method.
+  if (missingColumns.length > 0) {
+    return data(
+      { error: missingBomColumnsMessage(missingColumns) },
+      { status: 422 }
+    );
+  }
   let rootPartNumber = bomRoot?.partNumber ?? null;
   let rootName = bomRoot?.name ?? null;
   let rootDescription = bomRoot?.description ?? null;
@@ -130,6 +139,10 @@ export async function action({ request }: ActionFunctionArgs) {
   // Kept for the property-map resolution below: the root's custom fields
   // come from this same payload, so mapping costs no extra Onshape call.
   let elementMetadata: unknown = null;
+  // A failed read is kept, not swallowed: identity may still come from the
+  // BOM root, but the mapped fields cannot, and the property-map block below
+  // refuses to plan without them.
+  let metadataError: unknown = null;
   try {
     elementMetadata = await onshape.client.getElementMetadata(
       document,
@@ -141,10 +154,16 @@ export async function action({ request }: ActionFunctionArgs) {
     rootName = metadataProperty(elementMetadata, "Name") ?? rootName;
     rootDescription =
       metadataProperty(elementMetadata, "Description") ?? rootDescription;
-  } catch {
-    // fall through to the 422 below when identity is missing
+  } catch (error) {
+    metadataError = error;
   }
   if (!rootPartNumber) {
+    // A read that failed is not an assembly without a part number: telling
+    // the user to fix their Onshape data would send them the wrong way.
+    if (metadataError !== null) {
+      const failure = onshapeFailure(metadataError);
+      return data(failure.body, { status: failure.status });
+    }
     return data(
       { error: "Set a part number on the assembly in Onshape first" },
       { status: 422 }
@@ -244,9 +263,14 @@ export async function action({ request }: ActionFunctionArgs) {
   ];
 
   const serviceRole = getCarbonServiceRole();
-  const [options, methodByItemId, links] = await Promise.all([
+  const [options, methods, links] = await Promise.all([
     loadPlanOptions(client, companyId),
-    loadActiveMakeMethods(client, companyId, parentItemIds),
+    // Settled here so the other reads still resolve; a failure answers 500
+    // below rather than planning every existing method as missing.
+    loadActiveMakeMethods(client, companyId, parentItemIds).then(
+      (byItemId) => ({ byItemId, error: null }),
+      (error: unknown) => ({ byItemId: null, error })
+    ),
     selectInBatches(linkExternalIds, (batch) =>
       client
         .from("externalIntegrationMapping")
@@ -257,6 +281,18 @@ export async function action({ request }: ActionFunctionArgs) {
         .in("externalId", batch)
     )
   ]);
+  if (!methods.byItemId) {
+    return data(
+      {
+        error:
+          methods.error instanceof Error
+            ? methods.error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const methodByItemId = methods.byItemId;
   // A failed read would mark every reuse a conflict; say so instead.
   if (links.error) {
     return data(
@@ -318,9 +354,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // only a client, so this is one more RLS-scoped select). Only the ROOT
   // item resolves fields — child items get theirs when their own part
   // studio is pushed — and only from the element metadata already fetched
-  // above, so an unmapped company and a failed metadata read both cost
-  // nothing extra.
-  if (elementMetadata !== null) {
+  // above, so an unmapped company costs no extra Onshape call.
+  if (elementMetadata !== null || metadataError !== null) {
     const integration = await client
       .from("companyIntegration")
       .select("metadata")
@@ -336,6 +371,12 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     const propertyMap = parsePropertyMap(integration.data?.metadata);
+    // The same rule for the metadata read itself: identity came from the BOM
+    // root, but the mapped values live only in the payload that failed.
+    if (propertyMap.length > 0 && elementMetadata === null) {
+      const failure = onshapeFailure(metadataError);
+      return data(failure.body, { status: failure.status });
+    }
     if (propertyMap.length > 0) {
       let definitions: Awaited<
         ReturnType<typeof loadPartCustomFieldDefinitions>
