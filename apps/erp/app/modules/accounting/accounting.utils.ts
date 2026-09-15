@@ -654,3 +654,303 @@ export function buildDepreciationLines(
 
   return lines;
 }
+
+// ---------------------------------------------------------------------------
+// Lease subledger (ASC 842 / IFRS 16) — present value, effective-interest
+// schedules, and lessee classification.
+//
+// Pure calculation beside buildDepreciationLines(): given a lease's fixed
+// cashflows and inputs, produce the amortization schedule and classification.
+// No database/account coupling here — the server layer maps these numbers onto
+// journal lines using the leaseClass account FKs.
+// ---------------------------------------------------------------------------
+
+export type LeasePaymentFrequency = "Monthly" | "Quarterly" | "Annual";
+export type LeasePaymentTiming = "Advance" | "Arrears";
+export type LesseeClassification = "Operating" | "Finance";
+
+const LEASE_PERIODS_PER_YEAR: Record<LeasePaymentFrequency, number> = {
+  Monthly: 12,
+  Quarterly: 4,
+  Annual: 1
+};
+
+/** Months between periods for a frequency (Monthly 1, Quarterly 3, Annual 12). */
+function leasePeriodStepMonths(frequency: LeasePaymentFrequency): number {
+  return 12 / LEASE_PERIODS_PER_YEAR[frequency];
+}
+
+/** Round to cents, guarding against binary-float representation drift. */
+function roundLeaseAmount(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+/** One dated fixed cashflow feeding the schedule (period end + amount due). */
+export type LeaseCashflow = {
+  periodDate: string; // period end, YYYY-MM-DD
+  paymentAmount: number;
+};
+
+/**
+ * A computed schedule line carrying BOTH expense patterns so later books
+ * (IFRS 16 adjustment) and reclassification-on-modification never recompute
+ * history. Mirrors the `leaseScheduleLine` table columns but is a plain value —
+ * no generated DB types are referenced.
+ */
+export type LeaseScheduleLineCalc = {
+  periodDate: string;
+  openingLiability: number; // lessor: opening net investment
+  paymentAmount: number;
+  interestAmount: number; // lessor: interest income
+  principalAmount: number;
+  closingLiability: number;
+  rouAmortizationFinance: number; // straight-line ROU/term (also the IFRS-book pattern)
+  leaseCostOperating: number; // total cost / term
+  rouAmortizationOperating: number; // plug = leaseCostOperating − interest
+};
+
+/** Convert an annual IBR (as a percent, e.g. 6) to the per-period rate. */
+export function periodicLeaseRate(
+  annualRatePercent: number,
+  frequency: LeasePaymentFrequency
+): number {
+  return annualRatePercent / 100 / LEASE_PERIODS_PER_YEAR[frequency];
+}
+
+/**
+ * Present value of a fixed-payment stream discounted at `periodicRate`.
+ * Arrears discounts the first payment one full period (ordinary annuity);
+ * Advance leaves the first payment undiscounted (annuity due).
+ */
+export function presentValue(
+  cashflows: number[],
+  periodicRate: number,
+  timing: LeasePaymentTiming
+): number {
+  const offset = timing === "Advance" ? 0 : 1;
+  return cashflows.reduce(
+    (pv, amount, i) => pv + amount / (1 + periodicRate) ** (i + offset),
+    0
+  );
+}
+
+/**
+ * Build the effective-interest amortization schedule for a lease. Emits one
+ * line per cashflow carrying both the finance and operating expense patterns.
+ * The final line absorbs accumulated rounding so the liability closes to
+ * exactly 0 and the straight-line accumulators tie out to their totals.
+ */
+export function buildLeaseSchedule(input: {
+  cashflows: LeaseCashflow[];
+  annualDiscountRate: number;
+  frequency: LeasePaymentFrequency;
+  timing: LeasePaymentTiming;
+  initialDirectCosts?: number;
+  incentivesReceived?: number;
+  prepaidAmount?: number;
+}): {
+  initialLiability: number;
+  initialRouAsset: number;
+  lines: LeaseScheduleLineCalc[];
+} {
+  const idc = input.initialDirectCosts ?? 0;
+  const incentives = input.incentivesReceived ?? 0;
+  const prepaid = input.prepaidAmount ?? 0;
+  const n = input.cashflows.length;
+  const rate = periodicLeaseRate(input.annualDiscountRate, input.frequency);
+
+  const initialLiability = roundLeaseAmount(
+    presentValue(
+      input.cashflows.map((c) => c.paymentAmount),
+      rate,
+      input.timing
+    )
+  );
+  const initialRouAsset = roundLeaseAmount(
+    initialLiability + idc + prepaid - incentives
+  );
+
+  // Operating cost is the total lease cost straight-lined over the term.
+  const totalPayments = input.cashflows.reduce(
+    (s, c) => s + c.paymentAmount,
+    0
+  );
+  const totalOperatingCost = totalPayments + idc - incentives;
+
+  const lines: LeaseScheduleLineCalc[] = [];
+  let opening = initialLiability;
+  let accumFinance = 0;
+  let accumOperatingCost = 0;
+
+  for (let t = 0; t < n; t++) {
+    const isLast = t === n - 1;
+    const payment = input.cashflows[t].paymentAmount;
+
+    // Advance accrues interest on the post-payment balance; arrears on opening.
+    const interestBase =
+      input.timing === "Advance" ? opening - payment : opening;
+    let interest = roundLeaseAmount(interestBase * rate);
+    let principal = roundLeaseAmount(payment - interest);
+    let closing = roundLeaseAmount(opening - principal);
+
+    if (isLast) {
+      // Absorb residual drift: repay whatever remains, interest is the plug.
+      principal = roundLeaseAmount(opening);
+      interest = roundLeaseAmount(payment - principal);
+      closing = 0;
+    }
+
+    // Finance ROU amortization: straight-line, last line ties to initial ROU.
+    const rouAmortizationFinance = isLast
+      ? roundLeaseAmount(initialRouAsset - accumFinance)
+      : roundLeaseAmount(initialRouAsset / n);
+    accumFinance = roundLeaseAmount(accumFinance + rouAmortizationFinance);
+
+    // Operating single lease cost: straight-line, last line ties to total.
+    const leaseCostOperating = isLast
+      ? roundLeaseAmount(totalOperatingCost - accumOperatingCost)
+      : roundLeaseAmount(totalOperatingCost / n);
+    accumOperatingCost = roundLeaseAmount(
+      accumOperatingCost + leaseCostOperating
+    );
+
+    // Operating ROU amortization is the plug that keeps the single cost intact.
+    const rouAmortizationOperating = roundLeaseAmount(
+      leaseCostOperating - interest
+    );
+
+    lines.push({
+      periodDate: input.cashflows[t].periodDate,
+      openingLiability: opening,
+      paymentAmount: payment,
+      interestAmount: interest,
+      principalAmount: principal,
+      closingLiability: closing,
+      rouAmortizationFinance,
+      leaseCostOperating,
+      rouAmortizationOperating
+    });
+
+    opening = closing;
+  }
+
+  return { initialLiability, initialRouAsset, lines };
+}
+
+export type LeaseClassificationInput = {
+  ownershipTransfers: boolean;
+  purchaseOptionReasonablyCertain: boolean;
+  termMonths: number;
+  economicLifeMonths?: number | null;
+  presentValueOfPayments: number;
+  guaranteedResidual?: number;
+  fairValue?: number | null;
+  specializedAsset: boolean;
+  majorPartThresholdPercent?: number; // default 75
+  substantiallyAllThresholdPercent?: number; // default 90
+};
+
+export type LeaseClassificationResult = {
+  classification: LesseeClassification;
+  tests: {
+    ownershipTransfer: boolean;
+    purchaseOption: boolean;
+    majorPartOfLife: boolean;
+    substantiallyAllFairValue: boolean;
+    specializedAsset: boolean;
+  };
+};
+
+/**
+ * ASC 842-10-25-2 lessee classification. Any one criterion true ⇒ Finance,
+ * otherwise Operating. Thresholds default to the standard's bright lines
+ * (75% of economic life, 90% of fair value) but are policy-overridable.
+ */
+export function classifyLease(
+  input: LeaseClassificationInput
+): LeaseClassificationResult {
+  const majorPart = (input.majorPartThresholdPercent ?? 75) / 100;
+  const substantiallyAll = (input.substantiallyAllThresholdPercent ?? 90) / 100;
+
+  const majorPartOfLife =
+    !!input.economicLifeMonths &&
+    input.economicLifeMonths > 0 &&
+    input.termMonths / input.economicLifeMonths >= majorPart;
+
+  const pvPlusResidual =
+    input.presentValueOfPayments + (input.guaranteedResidual ?? 0);
+  const substantiallyAllFairValue =
+    !!input.fairValue &&
+    input.fairValue > 0 &&
+    pvPlusResidual / input.fairValue >= substantiallyAll;
+
+  const tests = {
+    ownershipTransfer: input.ownershipTransfers,
+    purchaseOption: input.purchaseOptionReasonablyCertain,
+    majorPartOfLife,
+    substantiallyAllFairValue,
+    specializedAsset: input.specializedAsset
+  };
+
+  return {
+    classification: Object.values(tests).some(Boolean)
+      ? "Finance"
+      : "Operating",
+    tests
+  };
+}
+
+export type LeasePaymentTermInput = {
+  startDate: string;
+  endDate: string;
+  amountPerPeriod: number;
+  annualEscalationPercent?: number;
+};
+
+/**
+ * Expand `leasePaymentTerm` rows into one dated cashflow per accounting period.
+ * The period-end date walks forward at the frequency's month step from
+ * commencement; the applicable term is matched by that date, and its annual
+ * escalation compounds once per full year elapsed since the term's start.
+ */
+export function expandPaymentTerms(params: {
+  terms: LeasePaymentTermInput[];
+  commencementDate: string;
+  numberOfPeriods: number;
+  frequency: LeasePaymentFrequency;
+}): LeaseCashflow[] {
+  const step = leasePeriodStepMonths(params.frequency);
+  const commencement = new Date(`${params.commencementDate}T00:00:00Z`);
+  const cashflows: LeaseCashflow[] = [];
+
+  for (let i = 0; i < params.numberOfPeriods; i++) {
+    const monthOffset = i * step + (step - 1);
+    const periodDate = getLastDayOfMonth(
+      commencement.getUTCFullYear(),
+      commencement.getUTCMonth() + monthOffset
+    );
+
+    const term =
+      params.terms.find(
+        (candidate) =>
+          periodDate >= candidate.startDate && periodDate <= candidate.endDate
+      ) ?? params.terms[params.terms.length - 1];
+
+    const escalation = term?.annualEscalationPercent ?? 0;
+    const yearsElapsed = term
+      ? Math.floor(
+          getMonthsElapsed(
+            new Date(`${term.startDate}T00:00:00Z`),
+            new Date(`${periodDate}T00:00:00Z`)
+          ) / 12
+        )
+      : 0;
+    const amount = term
+      ? term.amountPerPeriod * (1 + escalation / 100) ** yearsElapsed
+      : 0;
+
+    cashflows.push({ periodDate, paymentAmount: roundLeaseAmount(amount) });
+  }
+
+  return cashflows;
+}
