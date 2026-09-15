@@ -39,8 +39,7 @@ import {
   today
 } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { FormEvent } from "react";
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuBlocks,
@@ -90,13 +89,9 @@ import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
 import {
-  checkReceiptsBeforeComplete,
   getDefaultSerialCompleteQuantity,
   getFinishedUnreceivedQuantity,
   getReceivableSerialUnits,
-  getSerialsToReceive,
-  hasUnsplitSerialPlaceholder,
-  isFractionalSerialQuantity,
   type JobReceiptSnapshot
 } from "./job-complete-logic";
 
@@ -1126,7 +1121,8 @@ function JobExpediteModal({
 }
 
 // What the job has received as of now, from api+/production.job.$jobId.receipts.
-// Null when it cannot be read; the dialog then offers a retry, not the form.
+// Null when it cannot be read; the dialog then keeps the quantity locked rather
+// than offering units it cannot prove are unreceived.
 async function getJobReceipts(
   jobId: string
 ): Promise<JobReceiptSnapshot | null> {
@@ -1153,15 +1149,6 @@ function JobCompleteModal({
 }) {
   const { carbon } = useCarbon();
   const [loading, setLoading] = useState(true);
-  const [hasReceiptsError, setHasReceiptsError] = useState(false);
-  // The receipts the form below was built from, re-checked on submit.
-  const [shownReceipts, setShownReceipts] = useState<JobReceiptSnapshot | null>(
-    null
-  );
-  const [hasReceiptsChanged, setHasReceiptsChanged] = useState(false);
-  const [isCheckingReceipts, setIsCheckingReceipts] = useState(false);
-  const isCheckingReceiptsRef = useRef(false);
-  const isMountedRef = useRef(false);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
     string | undefined
@@ -1171,10 +1158,6 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
-  // A serial job whose units are still one multi-unit placeholder: marking its
-  // operations Done cannot complete it, so the warning must not suggest that.
-  const [hasSerialPlaceholder, setHasSerialPlaceholder] =
-    useState<boolean>(false);
   // Serial units the completion can still receive, in the order
   // complete_job_to_inventory receives them. Null when the quantity is not
   // chosen per serial unit.
@@ -1201,14 +1184,13 @@ function JobCompleteModal({
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
-  const hasFractionalSerialQuantity = isFractionalSerialQuantity(
-    receivableSerials,
-    quantityComplete
-  );
+  // Serial units are received one at a time; the database refuses a fraction.
+  const hasFractionalSerialQuantity =
+    receivableSerials !== null &&
+    Number.isFinite(quantityComplete) &&
+    !Number.isInteger(quantityComplete);
 
-  // currentReceipts: receipts the submit check just read, so they are not read
-  // twice.
-  const getJobData = async (currentReceipts?: JobReceiptSnapshot) => {
+  const getJobData = async () => {
     if (!carbon) return;
 
     const [pickMethod, makeMethod, receipts] = await Promise.all([
@@ -1224,19 +1206,18 @@ function JobCompleteModal({
         .eq("jobId", job?.id!)
         .is("parentMaterialId", null)
         .single(),
-      currentReceipts ?? getJobReceipts(job?.id!)
+      getJobReceipts(job?.id!)
     ]);
 
     // Read now rather than from the job route: a receipt may have been made
-    // since the page loaded. The route's job is no fallback, since it would
-    // offer received units again, so an unreadable receipt waits for a retry.
-    // complete_job_to_inventory still enforces both.
-    if (!receipts) {
-      setHasReceiptsError(true);
-      setLoading(false);
-      return;
-    }
-    const currentReceivedQuantity = receipts.quantityReceivedToInventory;
+    // since the page loaded. When the read fails, fall back to the route's job
+    // and leave the quantity locked below — offering units that may already be
+    // received is the one thing this must not do. complete_job_to_inventory
+    // enforces both regardless.
+    const currentReceivedQuantity =
+      receipts?.quantityReceivedToInventory ??
+      job?.quantityReceivedToInventory ??
+      0;
 
     if (
       makeMethod.data?.requiresSerialTracking ||
@@ -1256,19 +1237,19 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        const receivedEntityIds = new Set(receipts.trackedEntityIds);
-        const serialUnits = makeMethod.data?.requiresSerialTracking
-          ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
-          : null;
+        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        // Only unlock per-serial entry when the receipts are known: without them
+        // the list could offer a unit the job already received.
+        const serialUnits =
+          receipts && makeMethod.data?.requiresSerialTracking
+            ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
+            : null;
 
-        // Each branch sets all of the serial state: this also runs again when
-        // the receipts changed while the dialog was open.
         if (serialUnits) {
           // Every unit already exists as a numbered serial, so the quantity can
           // be chosen here even when nothing was finished on the shop floor.
           setReceivableSerials(serialUnits);
           setHasTrackedQuantity(false);
-          setHasSerialPlaceholder(false);
           setQuantityComplete(
             getDefaultSerialCompleteQuantity({
               finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
@@ -1281,24 +1262,13 @@ function JobCompleteModal({
             })
           );
         } else {
-          setReceivableSerials(null);
           setQuantityComplete(availableQuantity);
           setHasTrackedQuantity(true);
-          setHasSerialPlaceholder(
-            !!makeMethod.data?.requiresSerialTracking &&
-              hasUnsplitSerialPlaceholder(
-                trackedEntities.data,
-                receivedEntityIds
-              )
-          );
         }
       }
     }
 
-    // Set with the serial state, after the last read, so the form never pairs
-    // the new received quantity with the previous serial preview.
     setPriorReceivedQuantity(currentReceivedQuantity);
-    setShownReceipts(receipts);
 
     flushSync(() => {
       setDefaultStorageUnitId(
@@ -1310,56 +1280,9 @@ function JobCompleteModal({
   };
 
   useMount(() => {
-    isMountedRef.current = true;
-    if (job) getJobData();
-    return () => {
-      isMountedRef.current = false;
-    };
-  });
-
-  const retryJobData = () => {
-    setHasReceiptsError(false);
-    setLoading(true);
+    if (!job) return;
     getJobData();
-  };
-
-  // The quantity bounds and serial preview come from the receipts read when the
-  // dialog opened. Another completion can receive units meanwhile, and
-  // complete_job_to_inventory would then reject the cumulative quantity or
-  // receive different serials than shown. Read the receipts again first; if they
-  // changed, reload the dialog and ask the user to confirm again.
-  const checkReceiptsAndSubmit = async (event: FormEvent) => {
-    if (isCheckingReceiptsRef.current) {
-      event.preventDefault();
-      return;
-    }
-    isCheckingReceiptsRef.current = true;
-    setIsCheckingReceipts(true);
-    try {
-      const currentReceipts = await getJobReceipts(job?.id!);
-      // Closed while reading: the user cancelled, so nothing is submitted.
-      if (!isMountedRef.current) {
-        event.preventDefault();
-        return;
-      }
-      const check = checkReceiptsBeforeComplete(shownReceipts, currentReceipts);
-      if (check === "submit") {
-        onClose();
-        return;
-      }
-
-      event.preventDefault();
-      if (check === "unreadable" || !currentReceipts) {
-        setHasReceiptsError(true);
-        return;
-      }
-      setHasReceiptsChanged(true);
-      await getJobData(currentReceipts);
-    } finally {
-      isCheckingReceiptsRef.current = false;
-      setIsCheckingReceipts(false);
-    }
-  };
+  });
 
   // Update leftover quantities when action changes
   const handleLeftoverActionChange = (
@@ -1394,44 +1317,12 @@ function JobCompleteModal({
               <Spinner className="size-8" />
             </div>
           </ModalBody>
-        ) : hasReceiptsError ? (
-          <>
-            <ModalHeader>
-              <ModalTitle>
-                {makeToOrder
-                  ? t`Complete Job`
-                  : t`Receive ${job.jobId} to Inventory`}
-              </ModalTitle>
-            </ModalHeader>
-            <ModalBody>
-              <Alert variant="destructive">
-                <LuTriangleAlert />
-                <AlertTitle>
-                  <Trans>Could not read what this job has received</Trans>
-                </AlertTitle>
-                <AlertDescription>
-                  <Trans>
-                    The quantity already received to inventory is needed to
-                    complete this job. Try again.
-                  </Trans>
-                </AlertDescription>
-              </Alert>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="secondary" onClick={onClose}>
-                <Trans>Cancel</Trans>
-              </Button>
-              <Button onClick={retryJobData}>
-                <Trans>Retry</Trans>
-              </Button>
-            </ModalFooter>
-          </>
         ) : (
           <ValidatedForm
             method="post"
             action={path.to.jobComplete(job.id!)}
             validator={jobCompleteValidator}
-            onSubmit={(_data, event) => checkReceiptsAndSubmit(event)}
+            onSubmit={onClose}
             defaultValues={{
               quantityComplete: job.quantity ?? 0,
               salesOrderId: job.salesOrderId ?? undefined,
@@ -1473,20 +1364,6 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
-                {hasReceiptsChanged && (
-                  <Alert variant="warning">
-                    <LuTriangleAlert />
-                    <AlertTitle>
-                      <Trans>Receipts changed while this dialog was open</Trans>
-                    </AlertTitle>
-                    <AlertDescription>
-                      <Trans>
-                        What this job has received to inventory changed. Review
-                        the quantity and complete the job again.
-                      </Trans>
-                    </AlertDescription>
-                  </Alert>
-                )}
                 {!makeToOrder && (
                   <>
                     <Location
@@ -1529,19 +1406,11 @@ function JobCompleteModal({
                       <Trans>Nothing completed in MES yet</Trans>
                     </AlertTitle>
                     <AlertDescription>
-                      {hasSerialPlaceholder ? (
-                        <Trans>
-                          Complete each serial unit in MES before completing
-                          this job. Its units are not split into serials yet, so
-                          marking every operation Done cannot complete it.
-                        </Trans>
-                      ) : (
-                        <Trans>
-                          Complete serials/batches in MES before completing this
-                          job, or mark every operation Done to complete it
-                          automatically.
-                        </Trans>
-                      )}
+                      <Trans>
+                        Complete serials/batches in MES before completing this
+                        job, or mark every operation Done to complete it
+                        automatically.
+                      </Trans>
                     </AlertDescription>
                   </Alert>
                 )}
@@ -1554,11 +1423,15 @@ function JobCompleteModal({
                         <Trans>Serial numbers received</Trans>
                       </span>
                       <span className="text-sm">
-                        {getSerialsToReceive(
-                          receivableSerials,
-                          quantityComplete,
-                          priorReceivedQuantity
-                        ).join(", ")}
+                        {receivableSerials
+                          .slice(
+                            0,
+                            Math.max(
+                              quantityComplete - priorReceivedQuantity,
+                              0
+                            )
+                          )
+                          .join(", ")}
                       </span>
                     </VStack>
                   )}
@@ -1703,17 +1576,13 @@ function JobCompleteModal({
 
               <Button
                 type="submit"
-                isLoading={isCheckingReceipts}
                 isDisabled={
-                  isCheckingReceipts ||
                   (hasLeftover && !leftoverAction) ||
                   // Completing a stocked item at zero receives nothing and
                   // consumes nothing; the database refuses it as well.
                   (job.itemTrackingType !== "Non-Inventory" &&
                     !(quantityComplete > 0)) ||
-                  hasFractionalSerialQuantity ||
-                  // Received stock cannot be un-received by completing lower.
-                  quantityComplete < minimumQuantityComplete
+                  hasFractionalSerialQuantity
                 }
               >
                 <Trans>Complete Job</Trans>

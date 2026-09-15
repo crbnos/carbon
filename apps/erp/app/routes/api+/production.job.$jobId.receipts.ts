@@ -10,30 +10,30 @@ import { getDatabaseClient } from "~/services/database.server";
  * pairs values from different moments. Read past RLS: itemLedger is hidden from
  * users without inventory or accounting view, and the dialog would otherwise
  * offer received units again.
+ *
+ * A query failure throws rather than answering `null`: the dialog's fallback is
+ * to lock the quantity, and a permanent failure that looks like a transient one
+ * is the harder bug to find.
  */
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
-    update: "production"
+    view: "production"
   });
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  try {
-    const job = await getJobReceiptSnapshot(
-      getDatabaseClient(),
-      jobId,
-      companyId
-    );
-    if (!job) return { receipts: null };
+  const job = await getJobReceiptSnapshot(
+    getDatabaseClient(),
+    jobId,
+    companyId
+  );
+  if (!job) return { receipts: null };
 
-    return {
-      receipts: {
-        quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
-        trackedEntityIds: job.trackedEntityIds
-      }
-    };
-  } catch {
-    return { receipts: null };
-  }
+  return {
+    receipts: {
+      quantityReceivedToInventory: job.quantityReceivedToInventory ?? 0,
+      trackedEntityIds: job.trackedEntityIds
+    }
+  };
 }

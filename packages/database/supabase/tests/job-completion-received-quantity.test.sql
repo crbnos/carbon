@@ -175,10 +175,20 @@ BEGIN
   ASSERT v_error IS NULL, 'Scrap job at 1 failed: ' || COALESCE(v_error, '');
   ASSERT pg_temp.serials(v_job) = 'XJ-01:Scrapped:0,XJ-02:Available:1', 'A scrapped unit must not be received: ' || pg_temp.serials(v_job);
 
-  -- An unsplit placeholder holding several units cannot be received as one unit.
+  -- An item with no serial sequence keeps one seed entity covering every unit.
+  -- It is received as a whole, so marking the last operation Done never raises
+  -- out of sync_finish_job_operation's BEFORE trigger.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'UJ', 2, false);
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error IS NULL, 'Unsplit seed job at 1 failed: ' || COALESCE(v_error, '');
+  ASSERT (SELECT sum(quantity) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 1,
+    'The seed entity must receive exactly 1';
+  ASSERT pg_temp.issued(v_job) = 2, 'Backflush must consume for 1 unit: ' || pg_temp.issued(v_job);
   v_error := pg_temp.try_complete(v_job, 2);
-  ASSERT v_error LIKE 'Job UJ has 0 serial unit(s) left to receive, fewer than the 2 being completed%', 'An unsplit multi-unit placeholder must be refused, got: ' || COALESCE(v_error, 'success');
+  ASSERT v_error IS NULL, 'Unsplit seed job at 2 failed: ' || COALESCE(v_error, '');
+  ASSERT (SELECT sum(quantity) FROM "itemLedger" WHERE "documentId" = v_job AND "documentType" = 'Job Receipt') = 2,
+    'The second completion must receive only the delta';
+  ASSERT pg_temp.issued(v_job) = 4, 'Backflush must consume for 2 units: ' || pg_temp.issued(v_job);
 
   -- A single-unit job without a serial sequence still completes (e.g. every
   -- operation marked Done), receiving its one unnumbered unit.

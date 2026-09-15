@@ -3719,9 +3719,6 @@ msgstr "Completar Todo"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Completar todas las cantidades al escanear Kanban completado"
 
-msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
-msgstr "Complete cada unidad serializada en MES antes de completar esta orden de trabajo. Sus unidades aún no están divididas en seriales, por lo que marcar cada operación como hecha no puede completarla."
-
 msgid "Complete Job"
 msgstr "Completar Trabajo"
 
@@ -4371,9 +4368,6 @@ msgstr "No se pudo preparar la imagen de la región para el análisis"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "No se pudo leer el documento: {0}"
-
-msgid "Could not read what this job has received"
-msgstr "No se pudo leer lo que este trabajo ya ha recibido"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13467,9 +13461,6 @@ msgstr "Fecha de Recepción Solicitada"
 msgid "Receipts"
 msgstr "Recibos"
 
-msgid "Receipts changed while this dialog was open"
-msgstr "Las recepciones cambiaron mientras este diálogo estaba abierto"
-
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Los recibos, envíos, facturas de venta, facturas de compra, pagos y notas de crédito/débito que aún están en Borrador o Pendiente deben contabilizarse o anularse — tanto documentos fechados en este período como documentos sin fechar que recibirían una fecha en él cuando se contabilicen. Hasta que se contabilicen, sus montos no están en el libro mayor, por lo que el período estaría subestimado."
 
@@ -17176,9 +17167,6 @@ msgstr "Los procesos que puede ejecutar este centro de trabajo; aparece en selec
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "El proveedor no ofrece destinos de dimensión. Habilita la función en el proveedor primero (p. ej. categorías de seguimiento, seguimiento de clases o campos)."
 
-msgid "The quantity already received to inventory is needed to complete this job. Try again."
-msgstr "Se necesita la cantidad ya recibida al inventario para completar este trabajo. Inténtelo de nuevo."
-
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Los puntos de ruptura de cantidad a los que se cotiza esta línea; cada columna lleva su propio precio por unidad para la negociación comprador-proveedor y para la conversión a documentos posteriores."
 
@@ -19203,9 +19191,6 @@ msgstr "Qué significan estas filas"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "Lo que contenía este campo antes del cambio. Déjalo en blanco si no hay nada."
-
-msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
-msgstr "Lo que esta orden de trabajo ha recibido en inventario cambió. Revise la cantidad y complete la orden de trabajo de nuevo."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "Lo que este recibo está cumpliendo — una orden de compra, una devolución, una transferencia entrante o un recibo manual sin padre."

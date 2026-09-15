@@ -12,8 +12,9 @@
 --   * take units already finished on the shop floor (Available) first, then by
 --     serial number; never a Consumed, Rejected or Scrapped unit;
 --   * flip only the received units to Available;
---   * refuse the completion when fewer single-unit serials are left than the
---     units being completed.
+--   * fall back to the whole-quantity seed entity when the item has no serial
+--     sequence and its units were never split into numbered serials;
+--   * refuse the completion when fewer units are left than are being completed.
 -- The job row is locked first so two concurrent completions cannot compute the
 -- same receipt delta.
 -- Refuse a fractional completion quantity for serial-tracked items.
@@ -239,6 +240,7 @@ BEGIN
     INTO v_tracked_entity
     FROM "trackedEntity"
     WHERE attributes->>'Job Make Method' = v_job_make_method.id
+      AND "companyId" = p_company_id
       AND status != 'Consumed'
     ORDER BY "createdAt" DESC
     LIMIT 1;
@@ -261,14 +263,13 @@ BEGIN
     -- Receive exactly the newly completed units: units finished on the shop floor
     -- (Available) first, then by serial number. A unit this job already received
     -- is never received again, so re-completion cannot double-count. Rejected
-    -- (failed inspection) and Scrapped units never enter stock. Only single-unit
-    -- records are units: an unsplit placeholder holding several units cannot be
-    -- received as one. The candidates are locked so a concurrent completion
-    -- cannot take the same units.
+    -- (failed inspection) and Scrapped units never enter stock. The candidates
+    -- are locked so a concurrent completion cannot take the same units.
     v_serial_unit_ids := ARRAY(
       SELECT te.id
       FROM "trackedEntity" te
       WHERE te.attributes->>'Job Make Method' = v_job_make_method.id
+        AND te."companyId" = p_company_id
         AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
         AND te.quantity = 1
         AND NOT EXISTS (
@@ -286,28 +287,62 @@ BEGIN
       FOR UPDATE OF te
     );
 
-    -- Receiving fewer units than completed would leave the job's received
-    -- quantity ahead of the ledger.
-    IF COALESCE(array_length(v_serial_unit_ids, 1), 0) < v_quantity_received_to_inventory THEN
-      RAISE EXCEPTION 'Job % has % serial unit(s) left to receive, fewer than the % being completed',
-        v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
-    END IF;
+    IF COALESCE(array_length(v_serial_unit_ids, 1), 0) >= v_quantity_received_to_inventory THEN
+      INSERT INTO "itemLedger" (
+        "entryType", "documentType", "documentId", "companyId",
+        "itemId", quantity, "locationId", "storageUnitId",
+        "trackedEntityId", "createdBy"
+      )
+      SELECT
+        'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
+        v_item_id, 1, p_location_id, p_storage_unit_id,
+        unit_id, p_user_id
+      FROM unnest(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]) AS unit_id;
 
-    FOR v_unit_index IN 1..v_quantity_received_to_inventory::INTEGER LOOP
+      UPDATE "trackedEntity"
+      SET status = 'Available'
+      WHERE id = ANY(v_serial_unit_ids[1:v_quantity_received_to_inventory::INTEGER]);
+
+    ELSE
+      -- An item with no serial sequence never reaches assign-serial-numbers, so
+      -- the job still holds ONE seed entity covering every unit and there is
+      -- nothing to receive one at a time. Receive the delta against that seed,
+      -- the way the batch branch does. Raising here instead would abort the
+      -- jobOperation UPDATE itself: completion also runs inside
+      -- sync_finish_job_operation, a BEFORE trigger interceptor.
+      SELECT *
+      INTO v_tracked_entity
+      FROM "trackedEntity" te
+      WHERE te.attributes->>'Job Make Method' = v_job_make_method.id
+        AND te."companyId" = p_company_id
+        AND te.status NOT IN ('Consumed', 'Rejected', 'Scrapped')
+        AND te.quantity > 1
+      ORDER BY te."createdAt"
+      LIMIT 1
+      FOR UPDATE;
+
+      -- Genuinely short of units (some scrapped, some already received) rather
+      -- than un-numbered: receiving fewer than completed would leave the job's
+      -- received quantity ahead of the ledger.
+      IF v_tracked_entity.id IS NULL THEN
+        RAISE EXCEPTION 'Job % has % serial unit(s) left to receive, fewer than the % being completed',
+          v_job_id_readable, COALESCE(array_length(v_serial_unit_ids, 1), 0), v_quantity_received_to_inventory;
+      END IF;
+
       INSERT INTO "itemLedger" (
         "entryType", "documentType", "documentId", "companyId",
         "itemId", quantity, "locationId", "storageUnitId",
         "trackedEntityId", "createdBy"
       ) VALUES (
         'Assembly Output', 'Job Receipt', p_job_id, p_company_id,
-        v_item_id, 1, p_location_id, p_storage_unit_id,
-        v_serial_unit_ids[v_unit_index], p_user_id
+        v_item_id, v_quantity_received_to_inventory, p_location_id, p_storage_unit_id,
+        v_tracked_entity.id, p_user_id
       );
 
       UPDATE "trackedEntity"
       SET status = 'Available'
-      WHERE id = v_serial_unit_ids[v_unit_index];
-    END LOOP;
+      WHERE id = v_tracked_entity.id;
+    END IF;
 
   ELSE
     INSERT INTO "itemLedger" (

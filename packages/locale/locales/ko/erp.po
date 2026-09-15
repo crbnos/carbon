@@ -3719,9 +3719,6 @@ msgstr "모두 완료"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "칸반 완료 스캔에서 모든 수량을 완료 처리"
 
-msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
-msgstr "이 작업 지시를 완료하기 전에 MES에서 각 일련번호 단위를 완료하세요. 아직 단위가 일련번호로 분할되지 않았으므로 모든 공정을 완료로 표시해도 완료할 수 없습니다."
-
 msgid "Complete Job"
 msgstr "작업 완료"
 
@@ -4371,9 +4368,6 @@ msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "문서를 읽을 수 없습니다: {0}"
-
-msgid "Could not read what this job has received"
-msgstr "이 작업의 입고 내역을 읽을 수 없습니다"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13467,9 +13461,6 @@ msgstr "입고 요청일"
 msgid "Receipts"
 msgstr "입고"
 
-msgid "Receipts changed while this dialog was open"
-msgstr "이 대화 상자가 열려 있는 동안 입고가 변경되었습니다"
-
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "입고, 출하, 매출 송장, 매입 송장, 지불 및 신용증/차감증이 여전히 초안 또는 대기 중이면 전기되거나 무효 처리되어야 합니다. 이 기간에 날짜가 지정된 문서와 전기 시 이 기간의 날짜를 받을 문서 모두. 전기될 때까지 해당 금액이 총계정원장에 반영되지 않으므로 해당 기간이 과소 집계됩니다."
 
@@ -17176,9 +17167,6 @@ msgstr "이 작업장이 실행할 수 있는 공법으로, 공정 일정 시 �
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "제공자가 차원 대상을 제공하지 않습니다. 먼저 제공자에서 기능을 활성화하세요(예: 추적 카테고리, 클래스 추적 또는 필드)."
 
-msgid "The quantity already received to inventory is needed to complete this job. Try again."
-msgstr "이 작업을 완료하려면 이미 재고로 입고된 수량이 필요합니다. 다시 시도하세요."
-
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "이 라인의 가격 책정이 적용되는 수량 구간으로, 각 열은 구매자-공급업체 협상 및 하위 문서로의 변환을 위한 고유한 단가를 포함합니다."
 
@@ -19203,9 +19191,6 @@ msgstr "이 행들의 의미"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "변경 전 이 필드가 보유한 내용입니다. 아무것도 없으면 비워두세요."
-
-msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
-msgstr "이 작업 지시의 재고 입고 내역이 변경되었습니다. 수량을 확인하고 작업 지시를 다시 완료하세요."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "이 입고가 충족하는 것 — 발주서, 반품, 입고 이송, 또는 상위가 없는 수동 입고."

@@ -3719,9 +3719,6 @@ msgstr "すべて完了"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "かんばんスキャン完了時にすべての数量を完了する"
 
-msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
-msgstr "この製造指図を完了する前に、MESで各シリアルユニットを完了してください。ユニットがまだシリアルに分割されていないため、すべての工程を完了にしてもこの製造指図は完了できません。"
-
 msgid "Complete Job"
 msgstr "ジョブを完了"
 
@@ -4371,9 +4368,6 @@ msgstr "分析用の領域画像を準備できませんでした"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "文書が読み込めません: {0}"
-
-msgid "Could not read what this job has received"
-msgstr "このジョブの受け取り済み数量を読み込めません"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13467,9 +13461,6 @@ msgstr "入荷希望納期"
 msgid "Receipts"
 msgstr "領収書"
 
-msgid "Receipts changed while this dialog was open"
-msgstr "このダイアログを開いている間に入荷が変更されました"
-
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "入荷、出荷、売上請求書、仕入先請求書、支払、およびクレジット/デビットメモは、まだ下書きまたは待機中である場合は、転記または取消される必要があります。この期間に日付けられた文書と、転記時にこの期間に日付けを受け取る無期限文書の両方。転記されるまで、それらの金額は総勘定元帳に含まれていないため、期間が過少計上されます。"
 
@@ -17176,9 +17167,6 @@ msgstr "この作業区が実行できる工法。工程のスケジュール時
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "プロバイダーはディメンションターゲットを提供していません。最初にプロバイダーで機能を有効にしてください(例:追跡カテゴリ、クラス追跡、またはフィールド)。"
 
-msgid "The quantity already received to inventory is needed to complete this job. Try again."
-msgstr "このジョブを完了するには、在庫に受け取り済みの数量が必要です。もう一度お試しください。"
-
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "この明細が価格設定される数量ブレークポイント。各列は購買担当者と仕入先の交渉および下流文書への変換のための独自の単価を保有します。"
 
@@ -19203,9 +19191,6 @@ msgstr "これらの行が何を意味するか"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "変更前にこのフィールドが保持していたもの。何もない場合は空白のままにしてください。"
-
-msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
-msgstr "この製造指図の在庫への受け入れ内容が変更されました。数量を確認し、もう一度製造指図を完了してください。"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "この領収書が満たしているもの — 発注書、返品、受信転送、または親のない手動領収書。"

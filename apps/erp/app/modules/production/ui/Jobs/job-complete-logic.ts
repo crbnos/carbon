@@ -14,6 +14,12 @@ export type JobSerialUnit = {
   createdAt: string;
 };
 
+/** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
+export type JobReceiptSnapshot = {
+  quantityReceivedToInventory: number;
+  trackedEntityIds: string[];
+};
+
 const NON_RECEIVABLE_SERIAL_STATUSES = ["Consumed", "Rejected", "Scrapped"];
 
 function isUnreceived(
@@ -33,7 +39,7 @@ function isUnreceived(
  * already received are excluded.
  *
  * Returns null unless every unit left to receive is a numbered, single-unit
- * serial. A job still holding an unsplit placeholder has no serial numbers to
+ * serial. A job still holding an unsplit seed entity has no serial numbers to
  * receive yet, so its quantity stays locked to what the shop floor finished.
  */
 export function getReceivableSerialUnits(
@@ -63,26 +69,9 @@ export function getReceivableSerialUnits(
     .sort(
       (a, b) =>
         statusRank(a.status) - statusRank(b.status) ||
-        (a.readableId ?? "").localeCompare(b.readableId ?? "") ||
-        a.createdAt.localeCompare(b.createdAt) ||
-        a.id.localeCompare(b.id)
+        a.readableId!.localeCompare(b.readableId!)
     )
     .map((entity) => entity.readableId as string);
-}
-
-/**
- * Whether a serial job still holds a placeholder for several units. Its units
- * become receivable only once the shop floor completes them one at a time;
- * complete_job_to_inventory refuses the placeholder, including when the last
- * operation is marked Done.
- */
-export function hasUnsplitSerialPlaceholder(
-  trackedEntities: JobSerialUnit[],
-  receivedEntityIds: ReadonlySet<string> = new Set()
-): boolean {
-  return trackedEntities.some(
-    (entity) => isUnreceived(entity, receivedEntityIds) && entity.quantity > 1
-  );
 }
 
 /** Units finished on the shop floor that the job has not received yet. */
@@ -90,12 +79,10 @@ export function getFinishedUnreceivedQuantity(
   trackedEntities: JobSerialUnit[],
   receivedEntityIds: ReadonlySet<string> = new Set()
 ): number {
-  return trackedEntities
-    .filter(
-      (entity) =>
-        entity.status === "Available" && !receivedEntityIds.has(entity.id)
-    )
-    .reduce((total, entity) => total + entity.quantity, 0);
+  return trackedEntities.filter(
+    (entity) =>
+      entity.status === "Available" && !receivedEntityIds.has(entity.id)
+  ).length;
 }
 
 /**
@@ -117,63 +104,6 @@ export function getDefaultSerialCompleteQuantity({
   const newUnits =
     finishedUnreceivedQuantity > 0
       ? finishedUnreceivedQuantity
-      : Math.min(
-          Math.max(jobQuantity - priorReceivedQuantity, 0),
-          receivableSerialCount
-        );
+      : Math.max(jobQuantity - priorReceivedQuantity, 0);
   return priorReceivedQuantity + Math.min(newUnits, receivableSerialCount);
-}
-
-/** The serial numbers a completion at this cumulative quantity will receive. */
-export function getSerialsToReceive(
-  receivableSerials: string[],
-  quantity: number,
-  priorReceivedQuantity: number
-): string[] {
-  return receivableSerials.slice(
-    0,
-    Math.max(quantity - priorReceivedQuantity, 0)
-  );
-}
-
-/** What a job has received to inventory, from api+/production.job.$jobId.receipts. */
-export type JobReceiptSnapshot = {
-  quantityReceivedToInventory: number;
-  trackedEntityIds: string[];
-};
-
-/**
- * Re-checked right before the dialog completes the job. Its quantity bounds and
- * serial preview come from the receipts read when it opened, and another
- * completion can receive units while it is open. "submit" when nothing changed,
- * "review" when the dialog must reload and ask again, "unreadable" when the
- * receipts could not be read.
- */
-export function checkReceiptsBeforeComplete(
-  shown: JobReceiptSnapshot | null,
-  current: JobReceiptSnapshot | null
-): "submit" | "review" | "unreadable" {
-  if (!current) return "unreadable";
-  if (!shown) return "review";
-  if (shown.quantityReceivedToInventory !== current.quantityReceivedToInventory)
-    return "review";
-
-  const shownIds = new Set(shown.trackedEntityIds);
-  const currentIds = new Set(current.trackedEntityIds);
-  const sameIds =
-    shownIds.size === currentIds.size &&
-    [...currentIds].every((id) => shownIds.has(id));
-  return sameIds ? "submit" : "review";
-}
-
-/** Serial units are received one at a time; the database refuses a fraction. */
-export function isFractionalSerialQuantity(
-  receivableSerials: string[] | null,
-  quantity: number
-): boolean {
-  return (
-    receivableSerials !== null &&
-    Number.isFinite(quantity) &&
-    !Number.isInteger(quantity)
-  );
 }

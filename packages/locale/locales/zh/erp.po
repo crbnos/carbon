@@ -3719,9 +3719,6 @@ msgstr "全部完成"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "完成看板扫码时完成所有数量"
 
-msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
-msgstr "请先在MES中逐个完成每个序列单元，再完成此工单。其单元尚未拆分为序列号，因此将每道工序标记为完成无法完成该工单。"
-
 msgid "Complete Job"
 msgstr "完成工作"
 
@@ -4371,9 +4368,6 @@ msgstr "无法准备区域图像以进行分析"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "无法读取文件：{0}"
-
-msgid "Could not read what this job has received"
-msgstr "无法读取此工作已收货的内容"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13467,9 +13461,6 @@ msgstr "收货要求日期"
 msgid "Receipts"
 msgstr "收据"
 
-msgid "Receipts changed while this dialog was open"
-msgstr "此对话框打开期间收货已变更"
-
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "还处于草稿或待处理状态的收货、发货、销售发票、采购发票、付款以及借方/贷方备忘录必须过账或作废——包括本期日期的文件和未日期但过账时会获得本期日期的文件。在它们过账之前，它们的金额不在总账中，因此本期将被低估。"
 
@@ -17176,9 +17167,6 @@ msgstr "此工作中心可以运行的工艺；在排程工序时显示在工艺
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "提供商不提供维度目标。首先在提供商中启用该功能（例如跟踪类别、类跟踪或字段）。"
 
-msgid "The quantity already received to inventory is needed to complete this job. Try again."
-msgstr "完成此工作需要已收货至库存的数量。请重试。"
-
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "此行定价的数量断点;每一列都有自己的单位价格,用于采购方–供应商谈判和转换为下游文件。"
 
@@ -19203,9 +19191,6 @@ msgstr "这些行的含义"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "此字段在更改之前持有的内容。留空表示无。"
-
-msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
-msgstr "此工单已收货入库的内容已变更。请检查数量并重新完成工单。"
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "此收据正在履行 — 采购订单、退货、入库转移或无父级的手动收据。"

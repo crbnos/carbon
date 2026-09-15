@@ -3719,9 +3719,6 @@ msgstr "Completar Tudo"
 msgid "Complete all quantities on kanban complete scan"
 msgstr "Concluir todas as quantidades ao escanear a conclusão do kanban"
 
-msgid "Complete each serial unit in MES before completing this job. Its units are not split into serials yet, so marking every operation Done cannot complete it."
-msgstr "Conclua cada unidade serializada no MES antes de concluir esta ordem de produção. Suas unidades ainda não foram divididas em seriais, então marcar cada operação como concluída não pode concluí-la."
-
 msgid "Complete Job"
 msgstr "Concluir Trabalho"
 
@@ -4371,9 +4368,6 @@ msgstr "Não foi possível preparar a imagem da região para análise"
 #. placeholder {0}: extraction?.error ?? ""
 msgid "Could not read the document: {0}"
 msgstr "Não foi possível ler o documento: {0}"
-
-msgid "Could not read what this job has received"
-msgstr "Não foi possível ler o que este trabalho já recebeu"
 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
@@ -13467,9 +13461,6 @@ msgstr "Data de Recebimento Solicitada"
 msgid "Receipts"
 msgstr "Recibos"
 
-msgid "Receipts changed while this dialog was open"
-msgstr "Os recebimentos mudaram enquanto esta caixa de diálogo estava aberta"
-
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Recebimentos, remessas, faturas de vendas, faturas de compra, pagamentos e memorandos de crédito/débito que ainda estão em Rascunho ou Pendente devem ser lançados ou anulados — tanto documentos datados neste período quanto documentos sem data que receberiam uma data nele quando lançados. Até que sejam lançados, seus valores não estão no livro-razão geral, portanto o período estaria subestimado."
 
@@ -17176,9 +17167,6 @@ msgstr "Os processos que este centro de trabalho pode executar; aparece em selet
 msgid "The provider offers no dimension targets. Enable the feature in the provider first (e.g. tracking categories, class tracking, or fields)."
 msgstr "O provedor não oferece alvos de dimensão. Habilite o recurso no provedor primeiro (por exemplo, categorias de rastreamento, rastreamento de classe ou campos)."
 
-msgid "The quantity already received to inventory is needed to complete this job. Try again."
-msgstr "A quantidade já recebida para o inventário é necessária para concluir este trabalho. Tente novamente."
-
 msgid "The quantity breakpoints this line is priced at; each column carries its own per-unit price for buyer–supplier negotiation and for converting to downstream documents."
 msgstr "Os pontos de ruptura de quantidade em que essa linha é precificada; cada coluna possui seu próprio preço por unidade para negociação comprador-fornecedor e conversão para documentos posteriores."
 
@@ -19203,9 +19191,6 @@ msgstr "O que essas linhas significam"
 
 msgid "What this field held before the change. Leave blank for nothing."
 msgstr "O que este campo continha antes da alteração. Deixe em branco para nada."
-
-msgid "What this job has received to inventory changed. Review the quantity and complete the job again."
-msgstr "O que esta ordem de produção recebeu no estoque mudou. Revise a quantidade e conclua a ordem de produção novamente."
 
 msgid "What this receipt is fulfilling — a purchase order, a return, an inbound transfer, or a manual receipt with no parent."
 msgstr "O que este Recebimento está satisfazendo — um Pedido de compra, uma devolução, uma Transferência de entrada ou um Recebimento manual sem origem."
