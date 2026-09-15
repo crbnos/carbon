@@ -88,27 +88,86 @@ export async function deletePanelSession(token: string): Promise<void> {
  * so that race is the normal case rather than a rare one, and this lock is
  * what makes exactly one of them do the refresh while the others wait for it.
  *
- * The TTL is the backstop: a request that dies mid-refresh must not lock the
- * session out for the rest of its 12 hours.
+ * The lease is short and renewed while the holder works. A fixed long TTL
+ * could still run out under a slow refresh, letting a second request take the
+ * lock and refresh concurrently; a request that dies mid-refresh stops
+ * renewing, so its lease lapses within seconds rather than locking the session
+ * out.
+ *
+ * The lock is owner-bound: each holder stores its own random value, and
+ * renewal and release only act when the stored value is still theirs. A
+ * holder whose lease lapsed can therefore never extend or delete the lock a
+ * later request took.
  */
-const REFRESH_LOCK_TTL_SECONDS = 15;
+export const PANEL_REFRESH_LOCK_LEASE_MS = 5_000;
+export const PANEL_REFRESH_LOCK_RENEW_MS = 2_000;
 
 function refreshLockKeyFor(token: string) {
   return `panel-session-refresh:${token}`;
 }
 
-/** True when this caller owns the refresh, false when someone else already does. */
-export async function acquirePanelRefreshLock(token: string): Promise<boolean> {
+// Compare-and-act scripts: the check and the write are one atomic step.
+const RELEASE_IF_OWNER = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
+const RENEW_IF_OWNER = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("pexpire", KEYS[1], ARGV[2]) else return 0 end`;
+
+/**
+ * Take the refresh lock. Returns this caller's owner value when it now holds
+ * the lock, null when another request already does (or Redis is unavailable).
+ */
+export async function acquirePanelRefreshLock(
+  token: string
+): Promise<string | null> {
+  const owner = randomBytes(16).toString("base64url");
   const result = await redis.set(
     refreshLockKeyFor(token),
-    "1",
-    "EX",
-    REFRESH_LOCK_TTL_SECONDS,
+    owner,
+    "PX",
+    PANEL_REFRESH_LOCK_LEASE_MS,
     "NX"
   );
-  return result === "OK";
+  return result === "OK" ? owner : null;
 }
 
-export async function releasePanelRefreshLock(token: string): Promise<void> {
-  await redis.del(refreshLockKeyFor(token));
+/** Extend the lease. False when the lock is no longer this owner's. */
+export async function renewPanelRefreshLock(
+  token: string,
+  owner: string
+): Promise<boolean> {
+  const result = await redis.eval(
+    RENEW_IF_OWNER,
+    1,
+    refreshLockKeyFor(token),
+    owner,
+    String(PANEL_REFRESH_LOCK_LEASE_MS)
+  );
+  return result === 1;
+}
+
+/** Release the lock only if this owner still holds it. */
+export async function releasePanelRefreshLock(
+  token: string,
+  owner: string
+): Promise<void> {
+  await redis.eval(RELEASE_IF_OWNER, 1, refreshLockKeyFor(token), owner);
+}
+
+/**
+ * Run `work` while holding the lease, renewing it on an interval until the
+ * work settles, then releasing it. Renewal failures are ignored: the worst
+ * case is the lease lapsing, which the owner check makes safe.
+ */
+export async function withPanelRefreshLock<T>(
+  token: string,
+  owner: string,
+  work: () => Promise<T>
+): Promise<T> {
+  const renewal = setInterval(() => {
+    renewPanelRefreshLock(token, owner).catch(() => undefined);
+  }, PANEL_REFRESH_LOCK_RENEW_MS);
+  try {
+    return await work();
+  } finally {
+    clearInterval(renewal);
+    await releasePanelRefreshLock(token, owner).catch(() => undefined);
+  }
 }
