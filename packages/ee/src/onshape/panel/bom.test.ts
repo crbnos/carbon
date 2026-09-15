@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { flattenBomTree, parseBomTree } from "./bom";
+import { flattenBomTree, missingBomColumnsMessage, parseBomTree } from "./bom";
 
 const H = [
   { id: "h-item", name: "Item" },
@@ -95,8 +95,39 @@ describe("parseBomTree", () => {
   });
 
   it("tolerates an empty payload", () => {
-    const { root, lines } = parseBomTree(null);
+    const { root, lines, missingColumns } = parseBomTree(null);
     expect(root).toBeNull();
     expect(lines).toEqual([]);
+    expect(missingColumns).toEqual([]);
+  });
+
+  it("names a missing Item column instead of returning an empty tree as if valid", () => {
+    // Without "Item" every row reads as the root; the lines come back empty.
+    const { lines, missingColumns } = parseBomTree({
+      headers: H.filter((header) => header.name !== "Item"),
+      rows: [row("1", "A-1", 1), row("2", "B-1", 1)]
+    });
+    expect(lines).toEqual([]);
+    expect(missingColumns).toEqual(["Item"]);
+  });
+
+  it("names every missing required column", () => {
+    const { missingColumns } = parseBomTree({
+      headers: H.filter(
+        (header) => header.name !== "Item" && header.name !== "Part number"
+      ),
+      rows: [row("1", "A-1", 1)]
+    });
+    expect(missingColumns).toEqual(["Item", "Part number"]);
+    expect(missingBomColumnsMessage(missingColumns)).toContain(
+      '"Item" and "Part number"'
+    );
+  });
+
+  it("does not flag the headers of a BOM with no rows", () => {
+    expect(parseBomTree({ headers: [], rows: [] }).missingColumns).toEqual([]);
+    expect(
+      parseBomTree({ headers: H, rows: [row("1", "A-1", 1)] }).missingColumns
+    ).toEqual([]);
   });
 });

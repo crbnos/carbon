@@ -4,6 +4,7 @@ import {
   buildReleasePlan,
   groupRevisionsIntoReleases,
   isModelReleaseItem,
+  missingBomColumnsMessage,
   parseBomTree
 } from "@carbon/ee";
 import type { StoredReleasePlan } from "@carbon/ee/onshape";
@@ -123,7 +124,15 @@ export async function action({ request }: ActionFunctionArgs) {
   if (releaseRows.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  const items = releaseRows.data as PlanItemRow[];
+  // item.revision is nullable; the builder compares it to release letters as
+  // a string and reads a missing one as "0", as plan-assembly does. Cast
+  // straight through, a null default revision missed its own row and planned
+  // a revision on top of it.
+  const toPlanRow = <T extends { revision: string | null }>(row: T) => ({
+    ...row,
+    revision: row.revision ?? "0"
+  });
+  const items: PlanItemRow[] = releaseRows.data.map(toPlanRow);
 
   // Method status only matters for assemblies already at the released letter
   // (the reuse case): a released method refuses the BOM, and the review shows
@@ -138,10 +147,27 @@ export async function action({ request }: ActionFunctionArgs) {
         )
         .map((row) => row.id)
     );
-  const [methodByItemId, options] = await Promise.all([
-    loadActiveMakeMethods(client, companyId, letterAssemblyItemIds),
+  const [methods, options] = await Promise.all([
+    // Settled so a failure answers 500 instead of reading as "no method",
+    // which would plan a BOM read — and a BOM write — for a released method.
+    loadActiveMakeMethods(client, companyId, letterAssemblyItemIds).then(
+      (byItemId) => ({ byItemId, error: null }),
+      (error: unknown) => ({ byItemId: null, error })
+    ),
     loadPlanOptions(client, companyId)
   ]);
+  if (!methods.byItemId) {
+    return data(
+      {
+        error:
+          methods.error instanceof Error
+            ? methods.error.message
+            : "Failed to read the make methods"
+      },
+      { status: 500 }
+    );
+  }
+  const methodByItemId = methods.byItemId;
   const refusedElementIds = new Set(
     modelItems
       .filter((item) => item.elementType === 1)
@@ -181,7 +207,19 @@ export async function action({ request }: ActionFunctionArgs) {
         },
         item.elementId
       );
-      bomLinesByElementId[item.elementId] = parseBomTree(bom).lines;
+      const { lines, missingColumns } = parseBomTree(bom);
+      if (missingColumns.length > 0) {
+        // Unreadable, so treated exactly like a failed read: null leaves the
+        // method alone at apply, where an empty tree would clear it.
+        bomLinesByElementId[item.elementId] = null;
+        warnings.push(
+          `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(
+            missingColumns
+          )}`
+        );
+        continue;
+      }
+      bomLinesByElementId[item.elementId] = lines;
     } catch (error) {
       bomLinesByElementId[item.elementId] = null;
       warnings.push(
@@ -218,7 +256,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (childRows.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  items.push(...(childRows.data as PlanItemRow[]));
+  items.push(...childRows.data.map(toPlanRow));
 
   const plan = buildReleasePlan({
     documentId,

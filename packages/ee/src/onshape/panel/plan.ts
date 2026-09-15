@@ -1129,9 +1129,16 @@ export function buildReleasePlan({
     }
   }
 
-  const createsAnything = planItems.some(
+  // The change notice records the release items the push creates — the apply
+  // writes one affected row per created revision or item, and none for BOM
+  // children — so only those propose one.
+  const createsReleaseItems = planItems.some(
     (item) => item.action === "revision" || item.action === "create"
   );
+  // "Already pushed" is broader: a release whose items are all in Carbon can
+  // still mint a missing BOM child.
+  const createsAnything =
+    createsReleaseItems || children.some((child) => child.action === "create");
 
   return {
     kind: "release",
@@ -1144,7 +1151,7 @@ export function buildReleasePlan({
     // Always proposed, never forced: the review step decides whether the
     // notice is written and what it is called. The engineer already named the
     // release, so that name carries over rather than being prefixed.
-    changeNotice: createsAnything
+    changeNotice: createsReleaseItems
       ? {
           name: release.releaseName ?? `Onshape release ${release.releaseId}`,
           description: null

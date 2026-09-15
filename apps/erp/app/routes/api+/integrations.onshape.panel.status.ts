@@ -6,6 +6,7 @@ import {
   externalIdForAssembly,
   externalIdForBomLine,
   metadataProperty,
+  missingBomColumnsMessage,
   normalizeConfiguration,
   parseBomTree
 } from "@carbon/ee";
@@ -110,7 +111,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
       return data(failure.body, { status: failure.status });
     }
 
-    const { root: bomRoot, lines } = parseBomTree(bom);
+    const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
+    // Without its required columns the tree is empty or unjoinable, and every
+    // line would read "Not in Carbon".
+    if (missingColumns.length > 0) {
+      return data(
+        { error: missingBomColumnsMessage(missingColumns) },
+        { status: 422 }
+      );
+    }
     // The BOM omits the assembly's own row; its identity lives in element
     // metadata (one cached call).
     let rootPartNumber = bomRoot?.partNumber ?? null;

@@ -729,6 +729,33 @@ describe("buildReleasePlan", () => {
     expect(plan.changeNotice).toBeNull();
     expect(plan.items[0]?.methodStatus).toBe("missing");
   });
+
+  it("is not already pushed when only a BOM child is missing, and proposes no notice for it", () => {
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release: { ...release, items: release.items.slice(0, 1) },
+      items: [
+        { id: "wb-a", readableId: "WB-100", revision: "A", name: "Workbench" }
+      ],
+      bomLinesByElementId: {
+        "e-wb": [
+          node({
+            partNumber: "HDW-011",
+            name: "Nut",
+            purchased: true
+          })
+        ]
+      },
+      methodByItemId: new Map([["wb-a", { id: "m-wb-a", status: "Draft" }]]),
+      options
+    });
+    expect(plan.children.map((c) => [c.partNumber, c.action])).toEqual([
+      ["HDW-011", "create"]
+    ]);
+    expect(plan.alreadyPushed).toBe(false);
+    // The apply records only created release items on the notice.
+    expect(plan.changeNotice).toBeNull();
+  });
 });
 
 describe("pickAdoptTarget", () => {
