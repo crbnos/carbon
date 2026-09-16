@@ -23,11 +23,17 @@ Phase-7 write) and throws on failure.
 
 1. **Scheduled job** — `packages/jobs/src/inngest/functions/scheduled/mrp.ts`.
    `inngest.createFunction({ id: "mrp", retries: 2 }, { cron: "0 */3 * * *" }, …)`
-   — every 3 hours. Fans out **per company**: selects all rows from `company`
-   and, for each, calls `runMrp(serviceRole, getJobDatabaseClient(), { type:
-   "company", id, companyId, userId: "system" })` **in-process** (`runMrp` throws
-   on failure; the loop try/catches per company). There is no location-scoped
-   cron — only company-wide.
+   — every 3 hours. A `find-companies` step selects all rows from `company`,
+   then **one `step.run` per company** (`mrp-<companyId>`) calls
+   `runMrp(serviceRole, getJobDatabaseClient(), { type: "company", id,
+   companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
+   the loop try/catches per step and returns `{ companies, failed }`). Every
+   Inngest step is one HTTP request to `/api/inngest`, so a step's ceiling is
+   that Vercel function's `maxDuration` (300s, set by the route's `config`
+   export). All companies in ONE step was one invocation, hit
+   `FUNCTION_INVOCATION_TIMEOUT` as the tenant count grew after the
+   `company`-enumeration change below, and every retry restarted from company
+   #1. There is no location-scoped cron — only company-wide.
 
    It enumerated `companyPlan` until 2026-08-26. MRP is not in `FEATURE_PLANS`,
    so that was never a billing gate — just a convenient list of companies — but

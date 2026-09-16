@@ -37,6 +37,10 @@ import { today } from "@internationalized/date";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
+import {
   drainSyncOperations,
   getSweepFloorDate,
   getSyncOperationActor,
@@ -405,7 +409,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId")
+        .select("id, companyId, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -417,7 +421,8 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
 
       return (integrations.data ?? []).map((row) => ({
         companyId: row.companyId,
-        providerId: row.id as ProviderID
+        providerId: row.id as ProviderID,
+        updatedBy: row.updatedBy
       }));
     });
 
@@ -426,13 +431,19 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: ProviderID } & SweepSummary
+      {
+        companyId: string;
+        providerId: ProviderID;
+      } & IsolatedStepOutcome<SweepSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `outbound-sweep-${target.providerId}-${target.companyId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `outbound-sweep-${target.providerId}-${target.companyId}`,
+        target,
+        fn: async () => {
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
           try {
@@ -446,9 +457,13 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
             await pool.end();
           }
         }
-      );
+      });
 
-      results.push({ ...target, ...result });
+      results.push({
+        companyId: target.companyId,
+        providerId: target.providerId,
+        ...result
+      });
     }
 
     return { targets: targets.length, results };

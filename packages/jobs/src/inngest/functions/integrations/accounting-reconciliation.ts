@@ -62,6 +62,10 @@ import {
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
+import {
   buildRemoteAccountRefIndex,
   computeTieOutDeltas,
   DOC_BACKED_ERROR_CODE,
@@ -978,7 +982,7 @@ export const accountingReconciliationFunction = inngest.createFunction(
       // the provider-agnostic fetchRemoteJournalTotals dispatcher.
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId, metadata")
+        .select("id, companyId, metadata, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -990,7 +994,11 @@ export const accountingReconciliationFunction = inngest.createFunction(
 
       return (integrations.data ?? [])
         .filter((row) => resolvePostingSyncSettings(row.metadata).enabled)
-        .map((row) => ({ companyId: row.companyId, providerId: row.id }));
+        .map((row) => ({
+          companyId: row.companyId,
+          providerId: row.id,
+          updatedBy: row.updatedBy
+        }));
     });
 
     if (targets.length === 0) {
@@ -998,13 +1006,19 @@ export const accountingReconciliationFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: string } & ReconciliationSummary
+      {
+        companyId: string;
+        providerId: string;
+      } & IsolatedStepOutcome<ReconciliationSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `reconcile-${target.companyId}-${target.providerId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `reconcile-${target.companyId}-${target.providerId}`,
+        target,
+        fn: async () => {
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
           try {
@@ -1017,7 +1031,7 @@ export const accountingReconciliationFunction = inngest.createFunction(
             await pool.end();
           }
         }
-      );
+      });
 
       results.push({
         companyId: target.companyId,

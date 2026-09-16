@@ -16,6 +16,12 @@ import { callOperation } from "./v1+/lib/call.server";
 
 // const mode = process.env.INNGEST_MODE?.toLowerCase() || "serve";
 
+// Every Inngest step executes as one request to this route, so a step's
+// ceiling is this function's ceiling. Per-tenant steps keep each one short,
+// but a single tenant's MRP or sweep still needs more than the platform
+// default; 300s is the Pro-plan maximum without Fluid Compute.
+export const config = { runtime: "nodejs", maxDuration: 300 };
+
 const handler = serve({
   client: inngest,
   functions,

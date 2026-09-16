@@ -235,6 +235,7 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
       redirectUri: config.redirectUri,
       tokenUrl: "https://identity.xero.com/connect/token",
       onTokenRefresh: config.onTokenRefresh,
+      beforeRefresh: config.beforeRefresh,
       getAuthUrl(scopes: string[], redirectURL: string): string {
         const params = new URLSearchParams({
           response_type: "code",
