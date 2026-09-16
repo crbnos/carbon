@@ -78,7 +78,7 @@ msgstr "{0} 已启动"
 
 #. placeholder {0}: unitOfMeasure.name
 msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
-msgstr ""
+msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改为其他计量单位。"
 
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"

@@ -2255,13 +2255,9 @@ export async function getUnitOfMeasure(
 }
 
 /**
- * Which tables still reference a unit of measure, and how many rows each.
- * Empty means it is safe to delete, or that the id is not in one of the
- * caller's companies (the two are deliberately indistinguishable, as with an
- * RLS-filtered read). Backed by the `get_unit_of_measure_usage`
- * RPC because the answer must not depend on the caller's module permissions —
- * a purchasing user still needs to be told the code is on a sales order — and
- * because ten of the referencing columns have no foreign key to follow.
+ * Which tables still reference a unit of measure, and how many rows each;
+ * empty means safe to delete (or id not visible to the caller). RPC-backed so
+ * the answer doesn't depend on the caller's module permissions.
  */
 export async function getUnitOfMeasureUsage(
   client: SupabaseClient<Database>,

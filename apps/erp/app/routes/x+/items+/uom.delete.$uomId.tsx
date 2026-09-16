@@ -18,13 +18,8 @@ import { getParams, path } from "~/utils/path";
 import { getCompanyId, uomsQuery } from "~/utils/react-query";
 import { camelCaseToWords } from "~/utils/string";
 
-type UnitOfMeasureUsage = { tableName: string; count: number };
-
-/**
- * "purchase order line (12), item (4)" — table names humanized rather than
- * mapped, so a table added later reads correctly without a lookup to maintain.
- */
-function describeUsage(usage: UnitOfMeasureUsage[]) {
+// "purchase order line (12), item (4)" — humanized table names, no lookup to maintain.
+function describeUsage(usage: { tableName: string; count: number }[]) {
   return usage
     .map(
       (u) =>
@@ -52,8 +47,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Surfaced before the user commits, rather than letting them click Delete and
-  // meet the database guard.
+  // Checked up front so the modal can explain before the DB guard has to.
   const usage = await getUnitOfMeasureUsage(client, uomId);
   if (usage.error) {
     throw redirect(
@@ -67,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     unitOfMeasure: unitOfMeasure.data,
-    usage: (usage.data ?? []) as UnitOfMeasureUsage[]
+    usage: usage.data ?? []
   };
 }
 
@@ -84,8 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Re-checked here, not just in the loader: the modal may have been open while
-  // someone else put the code on a document.
+  // Re-checked: the code may have been put on a document while the modal was open.
   const usage = await getUnitOfMeasureUsage(client, uomId);
   if (usage.error) {
     throw redirect(
@@ -97,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const inUse = (usage.data ?? []) as UnitOfMeasureUsage[];
+  const inUse = usage.data ?? [];
   if (inUse.length > 0) {
     throw redirect(
       path.to.uoms,
@@ -117,7 +110,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.uoms,
       await flash(
         request,
-        error(deleteTypeError, "Failed to delete unit of measure")
+        // The trigger's refusal names the referencing tables — show it.
+        error(
+          deleteTypeError,
+          deleteTypeError.message || "Failed to delete unit of measure"
+        )
       )
     );
   }
