@@ -1032,6 +1032,9 @@ msgstr "Seleccionar artículo rastreado"
 msgid "Picked"
 msgstr "Recogido"
 
+msgid "Picked as"
+msgstr "Preparado como"
+
 msgid "Picked quantity"
 msgstr "Cantidad recogida"
 
@@ -1043,6 +1046,12 @@ msgstr "Se tomó la columna {0} en la posición: {1} de {2}"
 
 msgid "Picking"
 msgstr "Picking"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "picking en lugar de {substitutedFrom}, el artículo de la orden de trabajo"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "picking en lugar de {substitutedFrom}, el artículo de la orden de trabajo, para {substitutedAssemblies} ensamblajes"
 
 msgid "Pin Out"
 msgstr "Cerrar sesión con PIN"

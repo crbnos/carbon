@@ -8,7 +8,8 @@ export const RoundingMode = {
   /** Ties away from zero — matches Postgres round(). (Math.round(-2.5) = -2; Postgres = -3.) */
   HalfUp: "halfUp",
   /** Away from zero to the next step — scrap allowances. */
-  Up: "up"
+  Up: "up",
+  Down: "down"
 } as const;
 export type RoundingMode = (typeof RoundingMode)[keyof typeof RoundingMode];
 
@@ -27,7 +28,9 @@ export function round(
   const fn =
     mode === RoundingMode.Up
       ? (n: number) => Math.sign(n) * Math.ceil(Math.abs(n))
-      : (n: number) => Math.sign(n) * Math.round(Math.abs(n));
+      : mode === RoundingMode.Down
+        ? (n: number) => Math.sign(n) * Math.floor(Math.abs(n))
+        : (n: number) => Math.sign(n) * Math.round(Math.abs(n));
   return shift(fn(shift(value, scale)), -scale);
 }
 

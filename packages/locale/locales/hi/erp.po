@@ -107,6 +107,19 @@ msgstr "{0} सफलतापूर्वक हटाया गया"
 msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} स्टॉक में है, {1} असेंबलीज़ के लिए; शेष {2} को {3} के रूप में पिका जाएगा"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} स्टॉक में है; शेष {1} को {2} के रूप में पिका जाएगा"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} जॉब बनाए गए"
@@ -1414,6 +1427,9 @@ msgstr "पथ जोड़ें"
 
 msgid "Add Permissions"
 msgstr "अनुमतियां जोड़ें"
+
+msgid "Add Predecessor"
+msgstr "पूर्ववर्ती जोड़ें"
 
 msgid "Add Printer"
 msgstr "प्रिंटर जोड़ें"
@@ -3484,6 +3500,9 @@ msgstr "एक साथ चल सकने वाले ऑपरेशन द
 
 msgid "Choose a company"
 msgstr "कंपनी चुनें"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "एक पार्ट चुनें जिसे {itemReadableId} प्रतिस्थापित करता है। नियम उस पार्ट पर सहेजा जाता है जिसमें {itemReadableId} उत्तराधिकारी है।"
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "यह देखने के लिए बाईं ओर की पंक्ति को चुनें कि इसका स्टॉक कहां से आ सकता है।"
@@ -7757,6 +7776,9 @@ msgstr "आवृत्ति"
 msgid "Friday"
 msgstr "शुक्रवार"
 
+msgid "from"
+msgstr "से"
+
 msgid "From"
 msgstr "से"
 
@@ -8294,6 +8316,9 @@ msgstr "उत्तराधिकारी के कितने एक प�
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "इस कार्य की एक मात्रा बनाने के लिए इस सामग्री की कितनी जरूरत है; खपत को आकार देने के लिए कार्य मात्रा से गुणा किया गया।"
 
+msgid "How many of this part replace one old part"
+msgstr "एक पुराने पार्ट की जगह इस पार्ट की कितनी मात्रा आती है"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "बल्क बैच में प्रत्येक व्यक्तिगत नौकरी कितनी इकाइयों को बनाती है; यदि कुल मात्रा समान रूप से विभाजित नहीं होती है तो अंतिम नौकरी की मात्रा छोटी हो सकती है।"
 
@@ -8481,6 +8506,9 @@ msgstr "इस RFQ को कोटेशन में परिवर्ति�
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "इस RFQ को आपूर्तिकर्ताओं को भेजने के लिए, आपको पहले RFQ में आपूर्तिकर्ता जोड़ने चाहिए।"
 
+msgid "in place of this item"
+msgstr "इस आइटम की जगह"
+
 msgid "In Process Only"
 msgstr "केवल प्रक्रिया में"
 
@@ -8504,6 +8532,9 @@ msgstr "स्टॉक में"
 
 msgid "In stock only"
 msgstr "केवल स्टॉक में"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "स्टॉक में, शेष {substitute} के रूप में"
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
@@ -11875,6 +11906,12 @@ msgstr "IAS 21 के अनुसार इक्विटी शेष को 
 msgid "Optional pages & sections"
 msgstr "वैकल्पिक पृष्ठ और अनुभाग"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "वैकल्पिक। इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "वैकल्पिक। इस तारीख के बाद पुराने पार्ट के लिए नई खरीद सुझाव बंद करता है।"
+
 msgid "Options"
 msgstr "विकल्प"
 
@@ -11889,6 +11926,10 @@ msgstr "या इस गुप्त को मैन्युअल रूप 
 
 msgid "Order"
 msgstr "आदेश"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "इस जॉब के लिए {0} × {substitute} ऑर्डर करें"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "भाग"
 
 msgid "Part"
 msgstr "पार्ट"
+
+msgid "Part Being Replaced"
+msgstr "प्रतिस्थापित किया जा रहा पार्ट"
 
 msgid "Part Details"
 msgstr "भाग विवरण"
@@ -12393,11 +12437,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
 
+msgid "Picked"
+msgstr "पिक किया गया"
+
 msgid "Picked and consumed as separate components"
 msgstr "अलग घटकों के रूप में चुना और उपभोग किया गया"
 
 msgid "Picked quantity"
 msgstr "चुना गया मात्रा"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "जॉब पर आइटम {substitutedFrom} की जगह में पिकिंग"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "जॉब पर आइटम {substitutedFrom} की जगह में {assemblies} असेंबलीज़ के लिए पिकिंग"
 
 msgid "Picking Lines"
 msgstr "पिकिंग लाइनें"
@@ -16029,6 +16082,12 @@ msgstr "प्राप्ति को रोकें"
 msgid "Stop Shipping"
 msgstr "शिपिंग बंद करें"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "इस तारीख के बाद नई खरीद सुझाव बंद करता है।"
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "इस तारीख के बाद पुराने पार्ट के लिए नई खरीद सुझाव बंद करता है।"
+
 msgid "Storage client not available"
 msgstr "स्टोरेज क्लाइंट उपलब्ध नहीं है"
 
@@ -17474,6 +17533,9 @@ msgstr "ये जॉब इस वर्क सेंटर को असाइ
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "ये जर्नल प्रविष्टियां अभी भी ड्राफ्ट हैं, इसलिए उनके नामे और जमा इस अवधि के लिए खाता बही में नहीं हैं। प्रत्येक को पोस्ट करें, या इसे बाद की खुली अवधि में फिर से दिनांकित करें।"
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "ये पार्ट्स इसके द्वारा प्रतिस्थापित किए जा रहे हैं। प्रत्येक नियम पुराने पार्ट पर सेट है; नियम बदलने के लिए इसे खोलें।"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
 
@@ -18753,6 +18815,9 @@ msgstr "संस्करण:"
 msgid "Versions"
 msgstr "संस्करण"
 
+msgid "via"
+msgstr "के माध्यम से"
+
 msgid "via Digital Quote"
 msgstr "डिजिटल उद्धरण के माध्यम से"
 
@@ -19168,6 +19233,9 @@ msgstr "किस चीज़ ने इन्वेंटरी को कि�
 msgid "What happens when a journal is dated in a locked period."
 msgstr "जब कोई जर्नल लॉक की गई अवधि में तारीख दी जाती है तो क्या होता है।"
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "इस सामग्री के लिए प्रति पार्ट लाइनसाइड पर जो वास्तव में पिका गया है। एक पिक सामग्री में नामित पार्ट से अलग पार्ट ला सकता है (एक पहले उपयोग करें विभाजन, एक नए को प्राथमिकता दें फॉलबैक) — यह वह जगह है जहां आप देखते हैं कि कौन से पार्ट्स मशीन पर हैं।"
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
 
@@ -19245,6 +19313,9 @@ msgstr "जब कार्बन ने माल के आने का व�
 
 msgid "When expired stock is used"
 msgstr "जब समाप्त हो चुका स्टॉक उपयोग किया जाता है"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "जब MRP इस पार्ट का उपयोग पुराने पार्ट की मांग को पूरा करने के लिए शुरू करता है"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "जब MRP नई मांग के लिए उत्तराधिकारी का उपयोग करता है"

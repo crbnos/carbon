@@ -1032,6 +1032,9 @@ msgstr "Wybierz śledzony element"
 msgid "Picked"
 msgstr "Pobrane"
 
+msgid "Picked as"
+msgstr "Pobrano jako"
+
 msgid "Picked quantity"
 msgstr "Pobrana ilość"
 
@@ -1043,6 +1046,12 @@ msgstr "Podniesiono kolumnę {0} na pozycji: {1} z {2}"
 
 msgid "Picking"
 msgstr "Kompletowanie"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "kompletacja zamiast {substitutedFrom}, artykułu w zleceniu produkcyjnym"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "kompletacja zamiast {substitutedFrom}, artykułu w zleceniu produkcyjnym, dla {substitutedAssemblies} montaży"
 
 msgid "Pin Out"
 msgstr "Wyloguj PIN"

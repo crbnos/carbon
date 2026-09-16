@@ -1032,6 +1032,9 @@ msgstr "追跡品目をピック"
 msgid "Picked"
 msgstr "ピック済み"
 
+msgid "Picked as"
+msgstr "ピッキング済み として"
+
 msgid "Picked quantity"
 msgstr "ピック数量"
 
@@ -1043,6 +1046,12 @@ msgstr "カラム {0} を位置 {1}/{2} で選択しました"
 
 msgid "Picking"
 msgstr "ピッキング"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom}の代わりにピッキング、当ジョブ上の品目"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "{substitutedAssemblies}個のアセンブリ分、{substitutedFrom}の代わりにピッキング、当ジョブ上の品目"
 
 msgid "Pin Out"
 msgstr "ピンアウト"

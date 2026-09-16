@@ -692,7 +692,8 @@ export const supersessionModeMeta: Record<
   },
   "Prefer New": {
     color: "blue",
-    description: "Default to the successor; old part as fallback only"
+    description:
+      "Plan and build with the successor; picking falls back to the old part only while the successor is out of stock"
   },
   "Stock Only": {
     color: "orange",
@@ -719,7 +720,10 @@ export const itemSupersessionValidator = z
     minimumReserveQuantity: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
-    (data) => (data.supersessionMode ? !!data.discontinuationDate : true),
+    (data) =>
+      data.supersessionMode && data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
     {
       message: "Discontinuation date is required",
       path: ["discontinuationDate"]
@@ -751,6 +755,39 @@ export const itemSupersessionValidator = z
     }
   );
 
+export const predecessorSupersessionValidator = z
+  .object({
+    predecessorItemId: z.string().min(1, { message: "Part is required" }),
+    supersessionMode: z.enum(supersessionModes),
+    discontinuationDate: zfd.text(z.string().optional()),
+    successorEffectivityDate: zfd.text(z.string().optional()),
+    conversionFactor: zfd.numeric(z.number().positive().optional())
+  })
+  .refine((data) => data.supersessionMode !== "No Stock", {
+    message: "No Stock has no successor; set it on the part itself",
+    path: ["supersessionMode"]
+  })
+  .refine(
+    (data) =>
+      data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
+    {
+      message: "Discontinuation date is required",
+      path: ["discontinuationDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.successorEffectivityDate && data.discontinuationDate
+        ? data.successorEffectivityDate >= data.discontinuationDate
+        : true,
+    {
+      message:
+        "Successor effectivity date must be on or after the discontinuation date",
+      path: ["successorEffectivityDate"]
+    }
+  );
 export const itemPurchasingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   preferredSupplierId: zfd.text(z.string().optional()),

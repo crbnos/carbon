@@ -107,6 +107,19 @@ msgstr "{0}이(가) 삭제되었습니다"
 msgid "{0} draft journal entries"
 msgstr "{0}개의 초안 분개"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0}개 재고 있음, {1}개 조립품용; 나머지 {2}개는 {3}로 피킹할 예정"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0}개 재고 있음; 나머지 {1}개는 {2}로 피킹할 예정"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0}개의 작업 지시 생성됨"
@@ -1414,6 +1427,9 @@ msgstr "경로 추가"
 
 msgid "Add Permissions"
 msgstr "권한 추가"
+
+msgid "Add Predecessor"
+msgstr "선행 품목 추가"
 
 msgid "Add Printer"
 msgstr "프린터 추가"
@@ -3484,6 +3500,9 @@ msgstr "함께 실행할 수 있는 작업을 보려면 배치 가능한 공정�
 
 msgid "Choose a company"
 msgstr "회사를 선택하세요"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "{itemReadableId}가 대체하는 부품을 선택하세요. 규칙은 해당 부품에 저장되며 {itemReadableId}가 후속 품목으로 지정됩니다."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "왼쪽의 행을 선택하여 해당 재고가 어디서 올 수 있는지 확인하세요."
@@ -7757,6 +7776,9 @@ msgstr "빈도"
 msgid "Friday"
 msgstr "금요일"
 
+msgid "from"
+msgstr "에서"
+
 msgid "From"
 msgstr "출발지"
 
@@ -8294,6 +8316,9 @@ msgstr "이전 품목 하나를 대체하는 후속 품목의 수량"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "작업 지시의 부모 품목 1개를 만드는 데 필요한 이 자재의 개수입니다. 작업 수량에 곱해서 소모량을 결정합니다."
 
+msgid "How many of this part replace one old part"
+msgstr "이 부품 몇 개가 기존 부품 1개를 대체합니까"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "대량 배치 내 개별 작업 각각이 생산하는 수량으로, 총수량이 균등하게 나누어지지 않으면 마지막 작업의 수량이 더 적을 수 있습니다."
 
@@ -8481,6 +8506,9 @@ msgstr "이 RFQ를 견적으로 전환하려면 고객이 지정되어 있어야
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "이 RFQ를 공급업체에 보내려면 먼저 RFQ에 공급업체를 추가해야 합니다."
 
+msgid "in place of this item"
+msgstr "이 품목 대신"
+
 msgid "In Process Only"
 msgstr "진행 중만"
 
@@ -8504,6 +8532,9 @@ msgstr "재고 있음"
 
 msgid "In stock only"
 msgstr "재고만"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "재고 있음, 나머지는 {substitute}로"
 
 msgid "In the loop together"
 msgstr "함께 정보 공유하기"
@@ -11875,6 +11906,12 @@ msgstr "IAS 21에 따라 자본 잔액을 환산할 때 사용하는 선택적 �
 msgid "Optional pages & sections"
 msgstr "선택적 페이지 및 섹션"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "선택사항. 이 날짜 이후로 새로운 구매 제안을 중단합니다."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "선택사항. 이 날짜 이후로 기존 부품에 대한 새로운 구매 제안을 중단합니다."
+
 msgid "Options"
 msgstr "옵션"
 
@@ -11889,6 +11926,10 @@ msgstr "또는 이 시크릿을 수동으로 입력하세요:"
 
 msgid "Order"
 msgstr "주문"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "이 작업 지시를 위해 {0} × {substitute} 발주"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "품목"
 
 msgid "Part"
 msgstr "품목"
+
+msgid "Part Being Replaced"
+msgstr "대체될 부품"
 
 msgid "Part Details"
 msgstr "품목 세부정보"
@@ -12393,11 +12437,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "추적 품목 선택"
 
+msgid "Picked"
+msgstr "피킹 완료"
+
 msgid "Picked and consumed as separate components"
 msgstr "별도의 구성품으로 피킹 및 소비됨"
 
 msgid "Picked quantity"
 msgstr "피킹 수량"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom}(작업 지시의 품목) 대신 피킹"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "{substitutedFrom}(작업 지시의 품목) 대신 피킹, {assemblies}개 조립품용"
 
 msgid "Picking Lines"
 msgstr "피킹 라인"
@@ -16029,6 +16082,12 @@ msgstr "수령 중지"
 msgid "Stop Shipping"
 msgstr "배송 중지"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "이 날짜 이후로 새로운 구매 제안을 중단합니다."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "이 날짜 이후로 기존 부품에 대한 새로운 구매 제안을 중단합니다."
+
 msgid "Storage client not available"
 msgstr "저장소 클라이언트를 사용할 수 없습니다"
 
@@ -17474,6 +17533,9 @@ msgstr "이 작업장에 할당된 공정이 있는 작업 지시:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "이 전표들은 아직 초안 상태이므로 이 기간에 차변 및 대변이 원장에 없습니다. 각 전표를 전기하거나 이후 미결 기간으로 다시 날짜를 지정하십시오."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "이 부품들이 이 부품으로 대체됩니다. 각 규칙은 기존 부품에 설정되어 있으니 규칙을 변경하려면 해당 부품을 열어주세요."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므로 현재 데이터의 안전한 사본을 만들 수 없습니다. 이들을 삭제하면 되돌릴 수 없습니다. 이들이 이 그룹의 다른 회사와 공유되는 경우, 아무것도 삭제되지 않고 복원이 시작되지 않습니다."
 
@@ -18753,6 +18815,9 @@ msgstr "버전:"
 msgid "Versions"
 msgstr "버전"
 
+msgid "via"
+msgstr "경유"
+
 msgid "via Digital Quote"
 msgstr "디지털 견적을 통해"
 
@@ -19168,6 +19233,9 @@ msgstr "모든 차원별 재고를 높이거나 낮춘 요인"
 msgid "What happens when a journal is dated in a locked period."
 msgstr "전표의 일자가 잠김 기간에 있을 때 무슨 일이 발생하는가."
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "이 자재에 대해 라인사이드로 실제로 피킹된 부품입니다(부품당). 피킹은 자재가 지정한 부품과 다를 수 있습니다(우선 소진 분할, 신규 선호 폴백). 이는 기계에 있는 부품을 확인할 수 있는 곳입니다."
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"
 
@@ -19245,6 +19313,9 @@ msgstr "Carbon이 재화 도착을 약속한 시점으로, 배송 방법의 운�
 
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "MRP가 기존 부품의 소요량을 충족하기 위해 이 부품을 사용하기 시작할 때"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "MRP가 새로운 소요량에 대해 후속 품목을 사용할 때"

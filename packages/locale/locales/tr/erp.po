@@ -107,6 +107,19 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe fişi"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} stokta, {1} montaj için; kalan {2} {3} olarak toplanacak"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} stokta; kalan {1} {2} olarak toplanacak"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} iş emri oluşturuldu"
@@ -1414,6 +1427,9 @@ msgstr "Yol ekle"
 
 msgid "Add Permissions"
 msgstr "İzin Ekle"
+
+msgid "Add Predecessor"
+msgstr "Öncülü Ekle"
 
 msgid "Add Printer"
 msgstr "Yazıcı Ekle"
@@ -3484,6 +3500,9 @@ msgstr "Birlikte çalışabilecek operasyonları görmek için toplu işlenebili
 
 msgid "Choose a company"
 msgstr "Bir şirket seçin"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "{itemReadableId}'nin yerine geçen bir parça seçin. Kural seçilen parçaya {itemReadableId} ardıl olarak kaydedilir."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı seçin."
@@ -7757,6 +7776,9 @@ msgstr "Sıklık"
 msgid "Friday"
 msgstr "Cuma"
 
+msgid "from"
+msgstr "gelen"
+
 msgid "From"
 msgstr "Başlangıç"
 
@@ -8294,6 +8316,9 @@ msgstr "Bir eski parçanın yerini kaç ardıl alır"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "İşin ana öğesinin birini oluşturmak için bu malzemeden ne kadar gerekir; tüketimi boyutlandırmak için iş miktarı ile çarpılır."
 
+msgid "How many of this part replace one old part"
+msgstr "Bu parçadan kaçı bir eski parçayı değiştirir"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "Toplu batch'teki her bireysel iş kaç birim oluşturur; toplam miktar eşit olarak bölünmezse, son işin miktarı daha küçük olabilir."
 
@@ -8481,6 +8506,9 @@ msgstr "Bu Fiyat Teklifi'ni (RFQ) bir teklife dönüştürmek için bir müşter
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "Bu RFQ'yu tedarikçilere gönderebilmek için öncelikle RFQ'ya tedarikçi eklemeniz gerekir."
 
+msgid "in place of this item"
+msgstr "bu stok kartı yerine"
+
 msgid "In Process Only"
 msgstr "Sadece Devam Edenler"
 
@@ -8504,6 +8532,9 @@ msgstr "Stokta"
 
 msgid "In stock only"
 msgstr "Yalnızca stokta"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "Stokta, geri kalanı {substitute} olarak"
 
 msgid "In the loop together"
 msgstr "Birlikte döngüde"
@@ -11875,6 +11906,12 @@ msgstr "Özkaynak bakiyelerini IAS 21'e göre çevirirken kullanılan isteğe ba
 msgid "Optional pages & sections"
 msgstr "İsteğe bağlı sayfalar ve bölümler"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "İsteğe bağlı. Bu tarihten sonra yeni satın alma önerilerini durdurur."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "İsteğe bağlı. Bu tarihten sonra eski parça için yeni satın alma önerilerini durdurur."
+
 msgid "Options"
 msgstr "Seçenekler"
 
@@ -11889,6 +11926,10 @@ msgstr "Veya bu sırrı manuel olarak girin:"
 
 msgid "Order"
 msgstr "Sipariş"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "Bu iş emri için {0} × {substitute} sipariş et"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "parçalar"
 
 msgid "Part"
 msgstr "Parça"
+
+msgid "Part Being Replaced"
+msgstr "Yerine Geçilen Parça"
 
 msgid "Part Details"
 msgstr "Parça Detayları"
@@ -12393,11 +12437,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "Takip edilen öğeyi seç"
 
+msgid "Picked"
+msgstr "Toplandı"
+
 msgid "Picked and consumed as separate components"
 msgstr "Ayrı bileşenler olarak toplanmış ve tüketilmiş"
 
 msgid "Picked quantity"
 msgstr "Alınan miktar"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı, {assemblies} montaj için"
 
 msgid "Picking Lines"
 msgstr "Toplama Satırları"
@@ -16029,6 +16082,12 @@ msgstr "Alımı Durdur"
 msgid "Stop Shipping"
 msgstr "Gönderimi Durdur"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "Bu tarihten sonra yeni satın alma önerilerini durdurur."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "Bu tarihten sonra eski parça için yeni satın alma önerilerini durdurur."
+
 msgid "Storage client not available"
 msgstr "Depolama istemcisi kullanılamıyor"
 
@@ -17474,6 +17533,9 @@ msgstr "Bu iş emirlerinin bu iş merkezine atanmış operasyonları vardır:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Bu muhasebe fişleri hala Taslak halinde olduğundan borç ve alacakları bu dönemin defterine girmedi. Her birini muhasebeleştir veya daha sonraki açık bir döneme yeniden tarihle."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
 
@@ -18753,6 +18815,9 @@ msgstr "Sürüm:"
 msgid "Versions"
 msgstr "Sürümler"
 
+msgid "via"
+msgstr "aracılığıyla"
+
 msgid "via Digital Quote"
 msgstr "Dijital Teklif ile"
 
@@ -19168,6 +19233,9 @@ msgstr "Envanterin yükselmesine veya düşmesine neyin sebep olduğu, herhangi 
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Muhasebe fişi kilitli bir dönemde tarihlendirildiğinde ne olur?"
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "Bu malzeme için Hat yanı'na gerçekten toplanmış olan toplama, parça başına. Bir toplama malzemenin adından farklı bir parça getirebilir (Önce tüket bölmesi, Yeni'yi Tercih Et yedek) — makinada hangi parçaların bulunduğunu görmek için burası."
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} nedir?"
 
@@ -19245,6 +19313,9 @@ msgstr "Carbon'un malların teslim edilmesine taahhüt ettiği zaman; sevkiyat y
 
 msgid "When expired stock is used"
 msgstr "Süresi dolmuş stok kullanıldığında"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "MRP bu parçayı eski parçanın talebinde kullanmaya başladığında"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "MRP'nin ardılı yeni talebe kullandığında"

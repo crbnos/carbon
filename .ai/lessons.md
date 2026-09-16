@@ -1484,6 +1484,136 @@ full-screen ERP route.
 
 **Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
 
+## A creation-time swap must be keyed by its provenance column at every later lookup
+
+**Context:** Supersession swaps a `jobMaterial` to its successor when the job is created (`substitutedFromItemId` records the predecessor). Picking then looked up `itemSupersession` by `jobMaterial.itemId` — which is now the successor, which has no row — so `resolvePickTarget` returned "pick the item unchanged" and `Consume First` never consumed the predecessor's stock. The picking-side branch was dead code for every job created after the effectivity date, and the unit tests (which passed a material still on the predecessor) could not see it.
+
+**Problem:** The rule lives on the OLD item; the row already names the NEW one. Any later stage that re-reads the rule by the row's current item silently finds nothing, and "no rule" is a valid, quiet outcome.
+
+**Rule:** When a row is rewritten by a rule and carries a provenance column (`substitutedFromItemId`, `redirectedFromItemId`, …), every downstream lookup of that rule must key on `COALESCE(provenance, current)`, in BOTH the TS and SQL mirrors. Test the swapped shape explicitly — a fixture that stops at "rule set, nothing swapped yet" proves nothing about what happens after the swap.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any consumer of `jobMaterial.substitutedFromItemId`.
+
+
+## A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity
+
+**Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
+
+**Problem:** A pass keyed on the parent id is correct for the flow it was written next to and silently over-broad for any flow that rebuilds a subset. Nothing fails: the rewritten row has plausible numbers and a plausible provenance column, and only the units disagree with what was already issued.
+
+**Rule:** A fix-up pass that runs after inserts takes the inserted row ids (collect them at every insert site of every flow) and filters on them, plus a guard on any state that means "this row's units are already committed" (`quantityIssued > 0`). Never derive the candidate set from the parent entity when some caller rebuilds only part of it.
+
+**Applies to:** `packages/database/supabase/functions/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
+
+## A provenance column that records both directions of a swap cannot be trusted first
+
+**Context:** `jobMaterial.substitutedFromItemId` holds the predecessor on a line swapped forward at creation, and the SUCCESSOR on a line pulled back onto a stocked predecessor. Picking looked the rule up on that column first — correct for the forward case, and when the successor had a rule of its own (NEW → NEWER) the pulled-back line resolved NEW's rule, the roles inverted, and the pick went back to NEW.
+
+**Problem:** "Column set ⇒ rule lives there" was true until the second writer appeared. The only thing that distinguishes the two shapes is the relation between the row's own item and the column: on a pulled-back line, the row's own rule NAMES the column as its successor.
+
+**Rule:** When a provenance column can be written by more than one direction of a swap, resolve by relation, not by presence: prefer the row's own rule when it points at the column; only then fall back to the column's rule. Mirror the precedence in every SQL twin (`ORDER BY (own AND successor = column) IS TRUE DESC, …`). Or give the two directions distinct columns.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` (`resolvePickRule`), `get_picking_schedule`, any reader of `substitutedFromItemId` / `redirectedFromItemId`.
+
+## Consume First splits are per assembly, not per unit (2026-09-15)
+
+- **Context:** the Consume First partial-stock split picked the predecessor for
+  every unit the warehouse had and the successor for the rest.
+- **Problem:** with 2 per assembly and 3 on the shelf that put one old and one
+  new part on the same unit. A customer would rather leave the odd part in
+  stock than fit a mismatched pair; units of a batch may differ, one unit never.
+- **Rule:** round a predecessor's usable on-hand DOWN to a multiple of the
+  line's per-assembly quantity (`consumableInWholeAssemblies`) everywhere the
+  split is computed — job creation, picking, the SQL schedule, the job
+  materials note, Order Status, the planning list, MRP. A quantity rule that
+  lives in seven places needs one helper, or the sites drift.
+- **Applies to:** any allocation of a per-unit component across a batch.
+
+## Consume First is one rule for bought and made parts (2026-09-16)
+
+- **Context:** the Consume First stock-netting was written for bought parts
+  only. A made predecessor always swapped to its successor — at job creation
+  (`loadSupersessionRedirect`'s Make exclusion) and in MRP (full BOM swap) —
+  because the post-explosion pass that moved the bought shortfall could not
+  explode a made successor's BOM.
+- **Problem:** stocked old sub-assemblies were never used: a job named the new
+  bracket while old brackets sat on the shelf, and planning bought the new
+  bracket's ingredients for the whole quantity. The two "made" special cases
+  were a workaround for where the netting lived, not a product decision.
+- **Rule:** put the netting where the successor can still be planned as
+  itself. In MRP that is INSIDE `explodeBom` (`consumeFirstRedirect`): the old
+  part nets its running balance and moves the shortfall to the successor,
+  which then explodes or buys at a deeper level (a synthetic leveling edge
+  keeps it below the predecessor). In job creation the per-line settle pass is
+  the authority for every Pull from Inventory line, and the item-level filter
+  is provisional. When a rule has a replenishment-specific exception, ask
+  whether the exception is a product decision or an artefact of where the
+  code sits.
+- **Applies to:** `lib/mrp-engine.ts`, `packages/ee/src/planning/mrp/mrp.ts`,
+  `get-method` `settleConsumeFirstLines` / `loadSupersessionRedirect`.
+
+## A Make to Order line is never picked, and never split for Consume First (2026-09-16)
+
+- **Context:** a Consume First sub-assembly on a Make to Order BOM line, three
+  old on the shelf, five needed. The job swapped the line to the successor and
+  built five (Plate B 5), and the picking list ALSO staged three old and two
+  new from the shelf for the parent operation.
+- **Problem:** two bugs stacked. `get_picking_schedule` never excluded Make to
+  Order lines, and since unassigned materials are attributed to the first
+  operation every Make to Order sub-assembly got a phantom pick that nothing
+  consumes (`issue`'s backflush skips Make to Order). And the made-line rule
+  "always swap" meant stocked old sub-assemblies were never used. The obvious
+  fix — split the line into "pick 3 old" + "build 2 new" — dies at the next
+  `recalculate`, which rebuilds every line as per-assembly × parent quantity.
+- **Rule:** a Make to Order line follows the bought Consume First rule by
+  CHANGING METHOD TYPE, not by splitting: when the predecessor covers one whole
+  assembly it becomes a Pull from Inventory line on the predecessor (decided in
+  the row builder, before insert, so no sub-method row is ever created), and
+  picking splits per unit as for any picked line; otherwise it swaps and is
+  built. Picking excludes Make to Order lines everywhere (SQL + TS). When a
+  fix needs two rows where the BOM has one, check what `recalculate` will do
+  to them before writing it.
+- **Applies to:** `get-method` row builders (`itemToJob`,
+  `itemToJobMakeMethod`), `generatePickingList`, `get_picking_schedule`,
+  `lib/job-quantities-engine.ts`.
+
+## A helper that models a chain must be tested with a loop (2026-09-16)
+
+- **Context:** `buildConsumeFirstHops` walked one Consume First hop at a time
+  and guarded against loops only while collapsing through non-Consume-First
+  hops. A two-item Consume First loop passed straight through, and in the
+  engine both items would sit on one cycle level and hand demand to an item
+  already planned — silently lost.
+- **Problem:** the guard was written for the path being walked, not for the
+  property that matters ("does this chain terminate?"), and the first test
+  I wrote for it was the one that caught it.
+- **Rule:** any function that follows successor / parent / next pointers
+  gets a cycle test of the smallest loop (two nodes) before anything else,
+  and the guard checks termination of the WHOLE chain, not just the part the
+  function happens to traverse.
+- **Applies to:** `lib/supersession-pick.ts` chain builders, BOM walkers,
+  anything keyed on `successorItemId` or `parentMaterialId`.
+
+## Two readers of the same shelf must share one definition (2026-09-16)
+
+- **Context:** the pick-list generator credited lineside material with an
+  all-or-nothing on-hand check per item, the schedule SQL did its own version,
+  and consumption followed pick lines only. A job whose two assemblies' parts
+  were already at the work centre (one pair picked on a since-cancelled list,
+  one produced by a sub-job straight into the bin) got a list for four more,
+  and would have consumed the wrong part from the wrong bin.
+- **Problem:** three code paths each answered "what is at the machine for
+  this job?" with a different formula, and none of them was wrong in
+  isolation. The trial found it in minutes because real shop floors leave
+  material at the machine in every way except a clean pick.
+- **Rule:** when picking, scheduling and consumption all read the same bin,
+  write the definition ONCE as a pure function (`linesideCredit`), mirror it
+  in SQL under the same name (`get_lineside_credit`), and make every reader
+  call it. Then enumerate the ways stock reaches a bin — pick, cancelled
+  pick, sub-job output, manual transfer, return — and test each against the
+  definition before calling the feature done.
+- **Applies to:** `generatePickingList`, `get_picking_schedule`,
+  `getPickedBudgets` / `issue`, `post-picking`.
 ## Resolve adoption assumptions before designing accounting migration machinery
 
 **Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.

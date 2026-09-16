@@ -1032,6 +1032,9 @@ msgstr "Pick tracked item"
 msgid "Picked"
 msgstr "Picked"
 
+msgid "Picked as"
+msgstr "Picked as"
+
 msgid "Picked quantity"
 msgstr "Picked quantity"
 
@@ -1043,6 +1046,12 @@ msgstr "Picked up Column {0} at position: {1} of {2}"
 
 msgid "Picking"
 msgstr "Picking"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "picking in place of {substitutedFrom}, the item on the job"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
 
 msgid "Pin Out"
 msgstr "Pin Out"

@@ -913,6 +913,21 @@ export async function getItemSupersession(
     .maybeSingle();
 }
 
+export async function getItemSupersessionsForItems(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+) {
+  if (itemIds.length === 0) return { data: [], error: null };
+  return client
+    .from("itemSupersession")
+    .select(
+      "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor, successor:item!itemSupersession_successorItemId_fkey(readableIdWithRevision)"
+    )
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
+}
+
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
 export async function getItemSupersededBy(
   client: SupabaseClient<Database>,
@@ -1774,7 +1789,7 @@ export async function getOpenJobMaterials(
   return client
     .from("openJobMaterialLines")
     .select(
-      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, quantityPerParent, documentReadableId:jobReadableId, documentId:jobId, dueDate"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
@@ -3780,6 +3795,57 @@ export async function upsertItemPurchasing(
     .eq("itemId", update.itemId);
 }
 
+export const SUPERSESSION_CYCLE_CODE = "SUPERSESSION_CYCLE";
+
+const SUPERSESSION_CHAIN_LIMIT = 10;
+
+async function findSupersessionCycle(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  successorItemId: string,
+  companyId: string
+): Promise<
+  | { kind: "ok" }
+  | { kind: "cycle"; path: string[] }
+  | { kind: "tooLong" }
+  | { kind: "error"; error: PostgrestError }
+> {
+  const path = [itemId, successorItemId];
+  const visited = new Set(path);
+  let currentId = successorItemId;
+  let closed = false;
+  for (let hop = 0; hop < SUPERSESSION_CHAIN_LIMIT; hop++) {
+    const link = await client
+      .from("itemSupersession")
+      .select("successorItemId")
+      .eq("itemId", currentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (link.error) return { kind: "error", error: link.error };
+    const next = link.data?.successorItemId;
+    if (!next) return { kind: "ok" };
+    path.push(next);
+    if (visited.has(next)) {
+      closed = true;
+      break;
+    }
+    visited.add(next);
+    currentId = next;
+  }
+  if (!closed) return { kind: "tooLong" };
+
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", Array.from(new Set(path)))
+    .eq("companyId", companyId);
+  if (items.error) return { kind: "error", error: items.error };
+  const readable = new Map(
+    (items.data ?? []).map((i) => [i.id, i.readableIdWithRevision ?? i.id])
+  );
+  return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
+}
+
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -3824,6 +3890,35 @@ export async function upsertItemSupersession(
   }
 
   const isNoStock = supersessionMode === "No Stock";
+
+  if (!isNoStock && successorItemId) {
+    const check = await findSupersessionCycle(
+      client,
+      itemId,
+      successorItemId,
+      companyId
+    );
+    if (check.kind === "error") return { data: null, error: check.error };
+    if (check.kind === "tooLong") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `Supersession chains longer than ${SUPERSESSION_CHAIN_LIMIT} hops are not allowed`
+        }
+      };
+    }
+    if (check.kind === "cycle") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `This would create a supersession loop: ${check.path.join(" → ")}`
+        }
+      };
+    }
+  }
+
   const row = {
     supersessionMode,
     // No Stock has no successor (nothing takes over the demand).

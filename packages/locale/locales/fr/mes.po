@@ -1032,6 +1032,9 @@ msgstr "Sélectionner un article suivi"
 msgid "Picked"
 msgstr "Prélevé"
 
+msgid "Picked as"
+msgstr "Prélevé comme"
+
 msgid "Picked quantity"
 msgstr "Quantité prélevée"
 
@@ -1043,6 +1046,12 @@ msgstr "Colonne {0} saisie à la position : {1} sur {2}"
 
 msgid "Picking"
 msgstr "Prélèvement"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication, pour {substitutedAssemblies} assemblages"
 
 msgid "Pin Out"
 msgstr "Déconnecter"

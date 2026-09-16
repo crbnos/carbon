@@ -107,6 +107,19 @@ msgstr "{0} deleted successfully"
 msgid "{0} draft journal entries"
 msgstr "{0} draft journal entries"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} in stock; the remaining {1} will be picked as {2}"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} jobs created"
@@ -1414,6 +1427,9 @@ msgstr "Add path"
 
 msgid "Add Permissions"
 msgstr "Add Permissions"
+
+msgid "Add Predecessor"
+msgstr "Add Predecessor"
 
 msgid "Add Printer"
 msgstr "Add Printer"
@@ -3484,6 +3500,9 @@ msgstr "Choose a batchable process to see the operations that can run together."
 
 msgid "Choose a company"
 msgstr "Choose a company"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Choose a row on the left to see where its stock can come from."
@@ -7757,6 +7776,9 @@ msgstr "Frequency"
 msgid "Friday"
 msgstr "Friday"
 
+msgid "from"
+msgstr "from"
+
 msgid "From"
 msgstr "From"
 
@@ -8294,6 +8316,9 @@ msgstr "How many of the successor replace one old part"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 
+msgid "How many of this part replace one old part"
+msgstr "How many of this part replace one old part"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 
@@ -8481,6 +8506,9 @@ msgstr "In order to convert this RFQ to a quote, it must have a customer."
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 
+msgid "in place of this item"
+msgstr "in place of this item"
+
 msgid "In Process Only"
 msgstr "In Process Only"
 
@@ -8504,6 +8532,9 @@ msgstr "In stock"
 
 msgid "In stock only"
 msgstr "In stock only"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "In stock, the remainder as {substitute}"
 
 msgid "In the loop together"
 msgstr "In the loop together"
@@ -11875,6 +11906,12 @@ msgstr "Optional fixed rate used when translating equity balances per IAS 21 (in
 msgid "Optional pages & sections"
 msgstr "Optional pages & sections"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "Optional. Stops new purchase suggestions after this date."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "Optional. Stops new purchase suggestions for the old part after this date."
+
 msgid "Options"
 msgstr "Options"
 
@@ -11889,6 +11926,10 @@ msgstr "Or enter this secret manually:"
 
 msgid "Order"
 msgstr "Order"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "Order {0} × {substitute} for this job"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "part"
 
 msgid "Part"
 msgstr "Part"
+
+msgid "Part Being Replaced"
+msgstr "Part Being Replaced"
 
 msgid "Part Details"
 msgstr "Part Details"
@@ -12393,11 +12437,20 @@ msgstr "Pick the serial numbers on hand that were received from this supplier."
 msgid "Pick tracked item"
 msgstr "Pick tracked item"
 
+msgid "Picked"
+msgstr "Picked"
+
 msgid "Picked and consumed as separate components"
 msgstr "Picked and consumed as separate components"
 
 msgid "Picked quantity"
 msgstr "Picked quantity"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "picking in place of {substitutedFrom}, the item on the job"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
 
 msgid "Picking Lines"
 msgstr "Picking Lines"
@@ -16029,6 +16082,12 @@ msgstr "Stop Receiving"
 msgid "Stop Shipping"
 msgstr "Stop Shipping"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "Stops new purchase suggestions after this date."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "Stops new purchase suggestions for the old part after this date."
+
 msgid "Storage client not available"
 msgstr "Storage client not available"
 
@@ -17474,6 +17533,9 @@ msgstr "These jobs have operations assigned to this work center:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 
@@ -18753,6 +18815,9 @@ msgstr "Version:"
 msgid "Versions"
 msgstr "Versions"
 
+msgid "via"
+msgstr "via"
+
 msgid "via Digital Quote"
 msgstr "via Digital Quote"
 
@@ -19168,6 +19233,9 @@ msgstr "What drove inventory up or down, by any dimension"
 msgid "What happens when a journal is dated in a locked period."
 msgstr "What happens when a journal is dated in a locked period."
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+
 msgid "What is {translatedTerm}?"
 msgstr "What is {translatedTerm}?"
 
@@ -19245,6 +19313,9 @@ msgstr "When Carbon committed to having the goods arrive; combined with the ship
 
 msgid "When expired stock is used"
 msgstr "When expired stock is used"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "When MRP starts using this part for the old part's demand"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "When MRP uses the successor for new demand"

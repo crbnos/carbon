@@ -107,6 +107,19 @@ msgstr "{0} erfolgreich gelöscht"
 msgid "{0} draft journal entries"
 msgstr "{0} Entwurfs-Buchungszeilen"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} auf Lager für {1} Baugruppen; die verbleibenden {2} werden als {3} kommissioniert"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} auf Lager; die verbleibenden {1} werden als {2} kommissioniert"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} Fertigungsaufträge erstellt"
@@ -1414,6 +1427,9 @@ msgstr "Pfad hinzufügen"
 
 msgid "Add Permissions"
 msgstr "Berechtigungen hinzufügen"
+
+msgid "Add Predecessor"
+msgstr "Vorgänger hinzufügen"
 
 msgid "Add Printer"
 msgstr "Drucker hinzufügen"
@@ -3484,6 +3500,9 @@ msgstr "Wählen Sie einen batchfähigen Prozess, um die Operationen zu sehen, di
 
 msgid "Choose a company"
 msgstr "Wählen Sie ein Unternehmen"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "Wählen Sie ein Teil aus, das {itemReadableId} ersetzt. Die Regel wird auf diesem Teil mit {itemReadableId} als Nachfolger gespeichert."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Wählen Sie eine Zeile auf der linken Seite, um zu sehen, woher der Bestand kommen kann."
@@ -7757,6 +7776,9 @@ msgstr "Häufigkeit"
 msgid "Friday"
 msgstr "Freitag"
 
+msgid "from"
+msgstr "von"
+
 msgid "From"
 msgstr "Von"
 
@@ -8294,6 +8316,9 @@ msgstr "Wie viele der Nachfolger ersetzen ein altes Teil"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "Wie viele dieses Werkstoffs benötigt werden, um ein übergeordnetes Teil des Fertigungsauftrags herzustellen; multipliziert mit der Fertigungsauftrag-Menge, um den Verbrauch zu berechnen."
 
+msgid "How many of this part replace one old part"
+msgstr "Wie viele Einheiten dieses Teils ersetzen ein altes Teil"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "Wie viele Einheiten jeder einzelne Auftrag in der Stapelcharge baut; die Menge des letzten Auftrags kann kleiner sein, wenn sich die Gesamtmenge nicht gleichmäßig teilt."
 
@@ -8481,6 +8506,9 @@ msgstr "Um diese Anfrage in ein Angebot umzuwandeln, muss ein Kunde vorhanden se
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "Um diese RFQ an Lieferanten zu senden, müssen Sie zunächst Lieferanten zur RFQ hinzufügen."
 
+msgid "in place of this item"
+msgstr "anstelle von diesem Artikel"
+
 msgid "In Process Only"
 msgstr "Nur in Bearbeitung"
 
@@ -8504,6 +8532,9 @@ msgstr "Auf Lager"
 
 msgid "In stock only"
 msgstr "Nur auf Lager"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "Auf Lager; der Rest wird als {substitute} kommissioniert"
 
 msgid "In the loop together"
 msgstr "Im Prozess dabei"
@@ -11875,6 +11906,12 @@ msgstr "Optionale feste Rate, die bei der Umrechnung von Eigenkapitalsalden nach
 msgid "Optional pages & sections"
 msgstr "Optionale Seiten & Abschnitte"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "Optional. Beendet neue Kaufvorschläge nach diesem Datum."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "Optional. Beendet neue Kaufvorschläge für den alten Teil nach diesem Datum."
+
 msgid "Options"
 msgstr "Optionen"
 
@@ -11889,6 +11926,10 @@ msgstr "Oder geben Sie dieses Geheimnis manuell ein:"
 
 msgid "Order"
 msgstr "Bestellung"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "{0} × {substitute} für diesen Fertigungsauftrag bestellen"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "Teile"
 
 msgid "Part"
 msgstr "Teil"
+
+msgid "Part Being Replaced"
+msgstr "Zu ersetzender Teil"
 
 msgid "Part Details"
 msgstr "Teildetails"
@@ -12393,11 +12437,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "Verfolgtes Element auswählen"
 
+msgid "Picked"
+msgstr "Kommissioniert"
+
 msgid "Picked and consumed as separate components"
 msgstr "Als separate Komponenten entnommen und verbraucht"
 
 msgid "Picked quantity"
 msgstr "Gepickte Menge"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel auf dem Fertigungsauftrag"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel auf dem Fertigungsauftrag, für {assemblies} Baugruppen"
 
 msgid "Picking Lines"
 msgstr "Kommissionierungszeilen"
@@ -16029,6 +16082,12 @@ msgstr "Empfang beenden"
 msgid "Stop Shipping"
 msgstr "Versand stoppen"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "Beendet neue Kaufvorschläge nach diesem Datum."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "Beendet neue Kaufvorschläge für den alten Teil nach diesem Datum."
+
 msgid "Storage client not available"
 msgstr "Speicherclient nicht verfügbar"
 
@@ -17474,6 +17533,9 @@ msgstr "Diese Fertigungsaufträge haben diesem Arbeitsplatz zugewiesene Arbeitsg
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Diese Buchungssätze sind noch Entwurf, sodass ihre Sollposten und Habenposten nicht im Sachkonto für diesen Zeitraum enthalten sind. Buchen Sie jeden einzelnen oder ändern Sie das Datum zu einem späteren offenen Zeitraum."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher kann keine Sicherheitskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Sollten diese sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Wiederherstellung wird nicht gestartet."
 
@@ -18753,6 +18815,9 @@ msgstr "Version:"
 msgid "Versions"
 msgstr "Versionen"
 
+msgid "via"
+msgstr "über"
+
 msgid "via Digital Quote"
 msgstr "über digitales Angebot"
 
@@ -19168,6 +19233,9 @@ msgstr "Was den Bestand nach oben oder unten getrieben hat, nach beliebiger Dime
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Was passiert, wenn ein Buchungssatz in einem gesperrten Zeitraum datiert ist."
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "Was tatsächlich je Teil für diesen Werkstoff zum Linienlager kommissioniert wurde. Eine Kommissionierung kann ein anderes Teil bringen, als der Materialname angibt (eine Aufteilung durch „Zuerst verbrauchen“, ein Ausweichplan durch „Neue bevorzugen“) — hier sehen Sie, welche Teile sich an der Maschine befinden."
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} ist was?"
 
@@ -19245,6 +19313,9 @@ msgstr "Wann Carbon sich verpflichtet hatte, die Waren ankommen zu lassen; kombi
 
 msgid "When expired stock is used"
 msgstr "Wenn abgelaufene Bestände verwendet werden"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "Wenn MRP dieses Teil für die Nachfrage des alten Teils nutzt"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "Wenn MRP den Nachfolger für neuen Bedarf verwendet"

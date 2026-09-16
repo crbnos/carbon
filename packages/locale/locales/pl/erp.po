@@ -107,6 +107,19 @@ msgstr "{0} usunięty pomyślnie"
 msgid "{0} draft journal entries"
 msgstr "{0} roboczych zapisów księgowych"
 
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} w zapasach, dla {1} zespołów; pozostała {2} będzie pobrana jako {3}"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} w zapasach; pozostała {1} będzie pobrana jako {2}"
+
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
 msgstr "{0} zleceń produkcyjnych utworzonych"
@@ -1414,6 +1427,9 @@ msgstr "Dodaj ścieżkę"
 
 msgid "Add Permissions"
 msgstr "Dodaj uprawnienia"
+
+msgid "Add Predecessor"
+msgstr "Dodaj poprzednika"
 
 msgid "Add Printer"
 msgstr "Dodaj drukarkę"
@@ -3484,6 +3500,9 @@ msgstr "Wybierz proces wsadowy, aby zobaczyć operacje, które mogą działać r
 
 msgid "Choose a company"
 msgstr "Wybierz firmę"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "Wybierz część, którą zastępuje {itemReadableId}. Reguła jest zapisana na tej części z {itemReadableId} jako jej następnik."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Wybierz wiersz po lewej, aby zobaczyć, skąd może pochodzić jego zapas."
@@ -7757,6 +7776,9 @@ msgstr "Częstotliwość"
 msgid "Friday"
 msgstr "Piątek"
 
+msgid "from"
+msgstr "z"
+
 msgid "From"
 msgstr "Od"
 
@@ -8294,6 +8316,9 @@ msgstr "Ile następników zastępuje jedną starą część"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "Ile tego materiału potrzeba do zbudowania jednego artykułu nadrzędnego pracy; pomnożyć przez ilość pracy, aby zmienić rozmiar zużycia."
 
+msgid "How many of this part replace one old part"
+msgstr "Ile tej części zastępuje jedną starą część"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "Ile jednostek buduje każde indywidualne zadanie w partii; ilość ostatniego zadania może być mniejsza, jeśli całkowita ilość nie dzieli się równomiernie."
 
@@ -8481,6 +8506,9 @@ msgstr "Aby przekształcić to RFQ w ofertę, musi mieć klienta."
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "Aby wysłać to zapytanie ofertowe do dostawców, musisz najpierw dodać dostawców do zapytania ofertowego."
 
+msgid "in place of this item"
+msgstr "w miejsce tego artykułu"
+
 msgid "In Process Only"
 msgstr "Tylko w trakcie"
 
@@ -8504,6 +8532,9 @@ msgstr "W magazynie"
 
 msgid "In stock only"
 msgstr "Tylko w magazynie"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "W zapasach, reszta jako {substitute}"
 
 msgid "In the loop together"
 msgstr "W pętli razem"
@@ -11875,6 +11906,12 @@ msgstr "Opcjonalna stała stawka używana przy tłumaczeniu sald kapitału włas
 msgid "Optional pages & sections"
 msgstr "Opcjonalne strony i sekcje"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "Opcjonalnie. Wstrzymuje nowe propozycje zakupów po tej dacie."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "Opcjonalnie. Wstrzymuje nowe propozycje zakupów dla starej części po tej dacie."
+
 msgid "Options"
 msgstr "Opcje"
 
@@ -11889,6 +11926,10 @@ msgstr "Lub wpisz tę sekretną wartość ręcznie:"
 
 msgid "Order"
 msgstr "Zamówienie"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "Zamów {0} × {substitute} dla tego zlecenia produkcyjnego"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12113,6 +12154,9 @@ msgstr "części"
 
 msgid "Part"
 msgstr "Część"
+
+msgid "Part Being Replaced"
+msgstr "Część wymieniana"
 
 msgid "Part Details"
 msgstr "Szczegóły części"
@@ -12393,11 +12437,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "Wybierz śledzony element"
 
+msgid "Picked"
+msgstr "Pobrano"
+
 msgid "Picked and consumed as separate components"
 msgstr "Pobrane i zużyte jako oddzielne komponenty"
 
 msgid "Picked quantity"
 msgstr "Pobrana ilość"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "kompletacja w miejsce {substitutedFrom}, artykułu na zleceniu"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "kompletacja w miejsce {substitutedFrom}, artykułu na zleceniu, dla {assemblies} zespołów"
 
 msgid "Picking Lines"
 msgstr "Pozycje kompletacji"
@@ -16029,6 +16082,12 @@ msgstr "Zatrzymaj Odbieranie"
 msgid "Stop Shipping"
 msgstr "Zatrzymaj wysyłkę"
 
+msgid "Stops new purchase suggestions after this date."
+msgstr "Wstrzymuje nowe propozycje zakupów po tej dacie."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "Wstrzymuje nowe propozycje zakupów dla starej części po tej dacie."
+
 msgid "Storage client not available"
 msgstr "Klient magazynu niedostępny"
 
@@ -17474,6 +17533,9 @@ msgstr "Te zlecenia produkcyjne mają operacje przypisane do tego stanowiska rob
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Te dowody księgowe są wciąż w wersji roboczej, dlatego ich wpisy Winien i Ma nie znajdują się w księdze dla tego okresu. Zaksięguj każdy z nich lub przesyć go do późniejszego otwartego okresu."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "Te części są zastępowane przez ten artykuł. Każda reguła jest ustawiona na starej części; otwórz ją, aby zmienić regułę."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wykonać bezpiecznej kopii bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są współdzielone z innymi firmami w tej grupie, nic nie zostanie usunięte i przywracanie nie zostanie uruchomione."
 
@@ -18753,6 +18815,9 @@ msgstr "Wersja:"
 msgid "Versions"
 msgstr "Wersje"
 
+msgid "via"
+msgstr "poprzez"
+
 msgid "via Digital Quote"
 msgstr "poprzez Cyfrową Ofertę"
 
@@ -19168,6 +19233,9 @@ msgstr "Co spowodowało wzrost lub spadek zapasów, wg dowolnego wymiaru"
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Co się dzieje, gdy dowód księgowy jest datowany w zablokowanym okresie."
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "Co faktycznie zostało pobrane do magazynu przyliniowego dla tego materiału, na każdą część. Pobranie może przynieść inną część niż wymieniona na materiale (podział Najpierw zużyj, rezerwowy Preferuj nowy) — tutaj widzisz, które części są przy maszynie."
+
 msgid "What is {translatedTerm}?"
 msgstr "Co to jest {translatedTerm}?"
 
@@ -19245,6 +19313,9 @@ msgstr "Kiedy Carbon zobowiązał się na dostarczenie towaru; połączone z dni
 
 msgid "When expired stock is used"
 msgstr "Gdy używany jest wygasły zapas"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "Kiedy MRP zaczyna używać tę część do zapotrzebowania starej części"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "Kiedy MRP używa następcy dla nowego zapotrzebowania"

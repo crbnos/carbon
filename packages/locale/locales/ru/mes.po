@@ -1032,6 +1032,9 @@ msgstr "Выбрать отслеживаемый товар"
 msgid "Picked"
 msgstr "Подобрано"
 
+msgid "Picked as"
+msgstr "Отобрано как"
+
 msgid "Picked quantity"
 msgstr "Выбранное количество"
 
@@ -1043,6 +1046,12 @@ msgstr "Столбец {0} взят с позиции: {1} из {2}"
 
 msgid "Picking"
 msgstr "Отбор"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Отбор вместо {substitutedFrom}, номенклатура в производственном заказе"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Отбор вместо {substitutedFrom}, номенклатура в производственном заказе, для {substitutedAssemblies} сборок"
 
 msgid "Pin Out"
 msgstr "Выход по PIN"

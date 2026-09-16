@@ -1032,6 +1032,9 @@ msgstr "ट्रैक किए गए आइटम को चुनें"
 msgid "Picked"
 msgstr "उठाया गया"
 
+msgid "Picked as"
+msgstr "के रूप में पिक किया गया"
+
 msgid "Picked quantity"
 msgstr "चुना गया मात्रा"
 
@@ -1043,6 +1046,12 @@ msgstr "कॉलम {0} को स्थिति {1} पर उठाया �
 
 msgid "Picking"
 msgstr "पिकिंग"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम, {substitutedAssemblies} असेंबलीज के लिए"
 
 msgid "Pin Out"
 msgstr "पिन आउट"
