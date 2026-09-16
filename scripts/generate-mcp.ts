@@ -19,9 +19,6 @@ import {
   MODULE_LIST
 } from "./lib/service-metadata";
 
-const log = (message: string) => process.stdout.write(`${message}\n`);
-const warn = (message: string) => process.stderr.write(`${message}\n`);
-
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
   ROOT,
@@ -37,21 +34,19 @@ export const DIGEST_FILE = path.join(
 );
 
 export async function generateToolMetadata(): Promise<void> {
-  log("Generating tool metadata from service files...");
+  console.log("Generating tool metadata from service files...");
 
-  const {
-    tools: allTools,
-    registryStats,
-    responseStats,
-    resolutions
-  } = await buildAllToolMetadataWithValidators({
-    onModule: (mod, count) => log(`  ✓ ${mod}: ${count} tools`)
-  });
+  const { tools: allTools, registryStats, responseStats, resolutions } =
+    await buildAllToolMetadataWithValidators({
+      onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
+    });
 
+  // No timestamp: the file must be a pure function of the sources so repeated
+  // runs on an unchanged tree are byte-identical.
   const metadata = {
     totalTools: allTools.length,
     modules: [...new Set(allTools.map((t) => t.module))].length,
-    tools: allTools
+    tools: allTools,
   };
 
   // Minified: this file is gitignored build output that only machines read, and
@@ -61,37 +56,37 @@ export async function generateToolMetadata(): Promise<void> {
     DIGEST_FILE,
     serializeManifestDigest(buildManifestDigest(allTools))
   );
-  log(`\n✓ Generated metadata for ${allTools.length} tools`);
-  log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
-  log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
+  console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
+  console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
+  console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
 
   // Schema provenance. A validator that fell back to source-text parsing still
   // produces a manifest entry, so surface it rather than letting the degrade pass
   // silently — that fallback is the only path that can publish a lossy schema.
   const fallbacks = resolutions.filter((r) => r.how !== "native");
-  log(
+  console.log(
     `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/${MODULE_LIST.length} modules`
   );
-  log(
+  console.log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
   );
   if (registryStats.moduleErrors.length > 0) {
-    warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
+    console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
     for (const e of registryStats.moduleErrors) {
-      warn(`      ${e.module}: ${e.error}`);
+      console.warn(`      ${e.module}: ${e.error}`);
     }
   }
   if (registryStats.conversionFailures.length > 0) {
-    warn(
+    console.warn(
       `  ⚠ ${registryStats.conversionFailures.length} validator(s) failed to convert:`
     );
     for (const f of registryStats.conversionFailures.slice(0, 10)) {
-      warn(`      ${f.module}.${f.name}: ${f.error}`);
+      console.warn(`      ${f.module}.${f.name}: ${f.error}`);
     }
   }
   if (fallbacks.length > 0) {
     const unique = [...new Set(fallbacks.map((f) => f.validatorName))];
-    warn(
+    console.warn(
       `  ⚠ ${fallbacks.length} param(s) used the source-text fallback: ${unique.slice(0, 12).join(", ")}`
     );
   }
@@ -99,7 +94,7 @@ export async function generateToolMetadata(): Promise<void> {
 
 if (require.main === module) {
   generateToolMetadata().catch((err) => {
-    process.stderr.write(`${err instanceof Error ? err.stack : String(err)}\n`);
+    console.error(err);
     process.exit(1);
   });
 }

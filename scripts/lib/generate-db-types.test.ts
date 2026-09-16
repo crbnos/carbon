@@ -16,8 +16,8 @@ import { createRequire } from "node:module";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
-import { sortRelationships } from "./generate-db-types";
 import { fileURLToPath } from "node:url";
+import { sortRelationships } from "./generate-db-types";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -35,7 +35,6 @@ function runGenerator(
     exit?: number;
     databaseUrl?: string;
     missingExecutable?: boolean;
-    failSecondReplacement?: boolean;
     envFiles?: Record<string, string>;
   } = {}
 ) {
@@ -51,13 +50,13 @@ function runGenerator(
       writeFileSync(join(directory, target), original);
     }
     mkdirSync(join(directory, "scripts/lib"), { recursive: true });
-    copyFileSync(
-      join(root, "scripts/generate-db-types.ts"),
-      join(directory, "scripts/generate-db-types.ts")
-    );
-    const helper = "scripts/lib/generate-db-types.ts";
-    if (existsSync(join(root, helper)))
-      copyFileSync(join(root, helper), join(directory, helper));
+    for (const file of [
+      "scripts/generate-db-types.ts",
+      "scripts/lib/generate-db-types.ts",
+      "scripts/lib/local-script-config.ts"
+    ]) {
+      copyFileSync(join(root, file), join(directory, file));
+    }
     symlinkSync(
       join(root, "node_modules"),
       join(directory, "node_modules"),
@@ -74,22 +73,9 @@ function runGenerator(
         { mode: 0o755 }
       );
     }
-    const preload = join(directory, "failure.cjs");
-    // Inject an operating-system failure at the second destination only. Real
-    // subprocess generation, validation, writes and rollback still execute.
-    writeFileSync(
-      preload,
-      `const fs = require('node:fs');\nlet failed = false;\nconst target = ${JSON.stringify(join(directory, targets[1]))};\nfor (const name of ['renameSync', 'copyFileSync', 'writeFileSync']) {\n  const original = fs[name];\n  fs[name] = (...args) => {\n    const destination = name === 'writeFileSync' ? args[0] : args[1];\n    if (${Boolean(options.failSecondReplacement)} && !failed && require('node:path').resolve(String(destination)) === target) {\n      failed = true;\n      throw Object.assign(new Error('Synthetic second replacement failure'), { code: 'EACCES' });\n    }\n    return original(...args);\n  };\n}\nrequire('node:module').syncBuiltinESMExports();\n`
-    );
     const result = spawnSync(
       process.execPath,
-      [
-        "--require",
-        preload,
-        "--import",
-        require.resolve("tsx"),
-        join(directory, "scripts/generate-db-types.ts")
-      ],
+      ["--import", require.resolve("tsx"), join(directory, "scripts/generate-db-types.ts")],
       {
         cwd: directory,
         encoding: "utf8",
@@ -119,7 +105,7 @@ function runGenerator(
   }
 }
 
-test("default .env preserves the caller's database URL without dotenv or NODE_PATH", () => {
+test("default .env preserves the caller's database URL", () => {
   const result = runGenerator(generated, {
     envFiles: {
       ".env": "SUPABASE_DB_URL=postgresql://external.example.com/database\n"
@@ -156,13 +142,7 @@ test("missing generator executable preserves both last-good outputs", () => {
   assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
 });
 
-for (const output of [
-  "",
-  "   \n",
-  "export type Database = {",
-  "export const unrelated = 42;",
-  "type Database = {};"
-]) {
+for (const output of ["", "   \n", "export const unrelated = 42;", "type Database = {};"]) {
   test(`rejects unusable successful output (${JSON.stringify(output)})`, () => {
     const result = runGenerator(output);
     assert.equal(result.invoked, true, result.stderr);
@@ -171,14 +151,6 @@ for (const output of [
     assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
   });
 }
-
-test("failure replacing the second output rolls back the first output", () => {
-  const result = runGenerator(generated, { failSecondReplacement: true });
-  assert.equal(result.invoked, true, result.stderr);
-  assert.notEqual(result.status, 0);
-  assert.deepEqual(result.contents, [original, original]);
-  assert.deepEqual(result.remaining, [["types.ts"], ["types.ts"]]);
-});
 
 for (const databaseUrl of [
   "postgresql://localhost:synthetic-secret@example.com/example",

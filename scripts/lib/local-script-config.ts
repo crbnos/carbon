@@ -2,6 +2,20 @@ import { existsSync, readFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { parseEnv } from "node:util";
 
+// Values from .env.local override the caller's environment (it is the file
+// `pnpm dev:up` writes); plain .env only fills in what is not already set.
+export function loadDotEnv(): void {
+  for (const file of [".env", ".env.local"]) {
+    if (!existsSync(file)) continue;
+    for (const [key, value] of Object.entries(
+      parseEnv(readFileSync(file, "utf8"))
+    )) {
+      if (file === ".env.local" || process.env[key] === undefined)
+        process.env[key] = value;
+    }
+  }
+}
+
 export function readLocalScriptConfig<const Keys extends readonly string[]>(
   names: Keys,
   environment: Record<string, string | undefined>

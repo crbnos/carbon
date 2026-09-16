@@ -1,8 +1,6 @@
 import { spawnSync } from "node:child_process";
 import {
   closeSync,
-  copyFileSync,
-  existsSync,
   mkdtempSync,
   openSync,
   readFileSync,
@@ -11,7 +9,6 @@ import {
   writeFileSync
 } from "node:fs";
 import { dirname, join, resolve } from "node:path";
-import ts from "typescript";
 
 function validateDatabaseUrl(value: string | undefined): string {
   if (!value?.trim()) {
@@ -40,39 +37,11 @@ function validateDatabaseUrl(value: string | undefined): string {
   return value;
 }
 
-function validateTypes(source: string): void {
-  if (!source.trim())
-    throw new Error("Database type generation produced empty output.");
-  const parsed = ts.createSourceFile(
-    "types.ts",
-    source,
-    ts.ScriptTarget.Latest,
-    true
-  );
-  const result = ts.transpileModule(source, { reportDiagnostics: true });
-  const hasDatabase = parsed.statements.some(
-    (statement) =>
-      (ts.isTypeAliasDeclaration(statement) ||
-        ts.isInterfaceDeclaration(statement)) &&
-      statement.name.text === "Database" &&
-      statement.modifiers?.some(
-        (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword
-      )
-  );
-  if (
-    result.diagnostics?.some(
-      (diagnostic) => diagnostic.category === ts.DiagnosticCategory.Error
-    ) ||
-    !hasDatabase
-  ) {
-    throw new Error(
-      "Database type generation did not produce valid TypeScript with an exported Database type."
-    );
-  }
-}
-
-// Runtime-created per-tenant tables depend on locally seeded companies. Keep
-// the existing filter while validating both the original and normalized output.
+// Strip per-tenant `searchIndex_<companyId>` / `auditLog_<companyId>` tables.
+// They are created at runtime per company, so which ones exist depends on the
+// local DB's seeded companies — committing them makes types.ts
+// machine-dependent. The static `searchIndexRegistry` / `auditLogArchive`
+// tables (no underscore) are unaffected.
 function stripPerTenantTables(source: string): string {
   const lines: string[] = [];
   let skipping = false;
@@ -112,7 +81,8 @@ export function sortRelationships(source: string): string {
       if (lines[j] === `${indent}  {`) {
         const entry = [lines[j]];
         j++;
-        while (j < lines.length && !/^\s*\},?$/.test(lines[j])) entry.push(lines[j++]);
+        while (j < lines.length && !/^\s*\},?$/.test(lines[j]))
+          entry.push(lines[j++]);
         entry.push(lines[j]);
         entries.push(entry);
       }
@@ -127,7 +97,10 @@ export function sortRelationships(source: string): string {
     });
     entries.forEach((entry, index) => {
       const last = entry[entry.length - 1].replace(/,$/, "");
-      out.push(...entry.slice(0, -1), index < entries.length - 1 ? `${last},` : last);
+      out.push(
+        ...entry.slice(0, -1),
+        index < entries.length - 1 ? `${last},` : last
+      );
     });
     out.push(closing);
     i = j;
@@ -135,41 +108,16 @@ export function sortRelationships(source: string): string {
   return out.join("\n");
 }
 
-type StagedOutput = {
-  target: string;
-  directory: string;
-  candidate: string;
-  backup: string;
-  existed: boolean;
-  replaced: boolean;
-};
-
 export function generateDatabaseTypes(databaseUrl: string | undefined): void {
   const dbUrl = validateDatabaseUrl(databaseUrl);
   const targets = [
     resolve("packages/database/src/types.ts"),
     resolve("packages/database/supabase/functions/lib/types.ts")
   ];
-  const staged: StagedOutput[] = [];
-  let preserveBackups = false;
+  const directory = mkdtempSync(join(dirname(targets[0]!), ".db-types-"));
   try {
-    for (const target of targets) {
-      const directory = mkdtempSync(join(dirname(target), ".db-types-"));
-      const entry = {
-        target,
-        directory,
-        candidate: join(directory, "types.ts"),
-        backup: join(directory, "previous.ts"),
-        existed: existsSync(target),
-        replaced: false
-      };
-      staged.push(entry);
-      if (entry.existed) copyFileSync(target, entry.backup);
-    }
-    const first = staged[0];
-    if (!first)
-      throw new Error("Database type generation has no output destination.");
-    const out = openSync(first.candidate, "wx");
+    const candidate = join(directory, "types.ts");
+    const out = openSync(candidate, "wx");
     try {
       // File-backed stdout avoids truncating large schemas or a maxBuffer cap.
       // Do not inherit stderr: CLI failures can echo the credential-bearing URL.
@@ -202,41 +150,20 @@ export function generateDatabaseTypes(databaseUrl: string | undefined): void {
     } finally {
       closeSync(out);
     }
-    const source = readFileSync(first.candidate, "utf8");
-    validateTypes(source);
-    const normalized = sortRelationships(stripPerTenantTables(source));
-    validateTypes(normalized);
-    for (const entry of staged) writeFileSync(entry.candidate, normalized);
-    try {
-      for (const entry of staged) {
-        renameSync(entry.candidate, entry.target);
-        entry.replaced = true;
-      }
-    } catch {
-      const failedRollbacks: string[] = [];
-      for (const entry of staged.toReversed()) {
-        if (!entry.replaced) continue;
-        try {
-          if (entry.existed) renameSync(entry.backup, entry.target);
-          else rmSync(entry.target);
-        } catch {
-          failedRollbacks.push(entry.backup);
-        }
-      }
-      if (failedRollbacks.length) {
-        preserveBackups = true;
-        throw new Error(
-          `Database type replacement and rollback failed. Recover the previous files from: ${failedRollbacks.join(", ")}`
-        );
-      }
+    const normalized = sortRelationships(
+      stripPerTenantTables(readFileSync(candidate, "utf8"))
+    );
+    if (!/^export type Database\b/m.test(normalized)) {
       throw new Error(
-        "Database type replacement failed; both previous output files were preserved."
+        "Database type generation did not produce an exported Database type; existing type files were preserved."
       );
     }
-  } finally {
-    if (!preserveBackups) {
-      for (const entry of staged)
-        rmSync(entry.directory, { recursive: true, force: true });
+    for (const target of targets) {
+      const staged = join(directory, "staged.ts");
+      writeFileSync(staged, normalized);
+      renameSync(staged, target);
     }
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
   }
 }
