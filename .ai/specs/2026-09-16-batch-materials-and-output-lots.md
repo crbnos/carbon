@@ -265,6 +265,13 @@ All new strings via lingui (`<Trans>`/`t`) in both apps; `/translate` after.
 
 ## Changelog
 
+- 2026-09-16 (live-test follow-up, Sid): completing a batch now completes its
+  Draft/Planned member jobs (sync_finish_job_operation admits them when the
+  Done op carries a jobOperationBatchId — 20260916155634). Their receipts post
+  before the route's merge, so a merged lot's on-hand equals its combined
+  quantity immediately. Supersedes the earlier "keep manual, surface it" call;
+  the drawer nudge remains for members with operations still open.
+
 - 2026-09-16 (UX simplification, Sid): the post-completion merge prompt is
   gone. The batch number is the merge intent — members completed under one
   number (same item) merge at completion, confirmed inline in the Complete

@@ -23,7 +23,7 @@ Receiving a tracked item creates entities **On Hold**; posting the receipt relea
 
 Every material event (consume, produce, split, ship) is recorded as an **activity** with **inputs** (what was consumed) and **outputs** (what was produced). Parent and child link through the activity, so the genealogy graph is built as work happens and walked later to trace a unit's ancestry or descendants. Consuming part of a batch records a **split**, linking the original lot to the consumed portion and the remainder.
 
-The inverse is a **merge**, which combines lots of one item into a single lot carrying their summed quantity and the earliest expiry date among them. Both lots stay in the graph as inputs to that merge, so the new lot traces back through each of them. `docs/reference/batching` offers a merge when several jobs in one run produced the same item.
+The inverse is a **merge**, which combines lots of one item into a single lot carrying their summed quantity and the earliest expiry date among them. Both lots stay in the graph as inputs to that merge, so the new lot traces back through each of them. `docs/reference/batching` merges the members a run completed under one batch number; lots kept separate can still be merged from the batch's drawer.
 
 There are no separate serial-number or batch-number tables — one tracked-entity model represents both, and the number itself is an attribute. Genealogy isn't a stored parent pointer; it's reconstructed by walking the activity graph from a unit outward.
 

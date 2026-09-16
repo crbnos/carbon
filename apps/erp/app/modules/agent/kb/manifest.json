@@ -524,7 +524,7 @@
         "The builder hides some operations on the process",
         "The pick modal says a batch number is not available",
         "A shared pick left every member short",
-        "The merge prompt did not appear after completing",
+        "Completed the batch but the lots did not merge",
         "Suggested batches look wrong / too small"
       ]
     },

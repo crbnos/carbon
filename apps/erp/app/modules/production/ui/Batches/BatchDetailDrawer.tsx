@@ -319,11 +319,10 @@ export function BatchDetailDrawer({
           <div className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-3">
             {/* Operations — the batch's contents */}
             <section className="flex min-h-0 flex-col lg:col-span-2">
-              {/* Stock only enters through each member job's receipt: a
-                  completed batch of un-completed (e.g. Draft) jobs has made
-                  its lots but put nothing on hand yet. Deliberately a nudge,
-                  not an auto-transition — completing the job stays a person's
-                  call. */}
+              {/* Members whose batched operation was their LAST auto-complete
+                  and receive with the batch; this nudge covers the rest — a
+                  member with operations still remaining has made its lot but
+                  put nothing on hand until the job finishes. */}
               {batch.status === "Completed" && pendingJobs.length > 0 && (
                 <div className="mx-6 mt-5 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
                   <LuTriangleAlert className="mt-0.5 size-3.5 shrink-0" />
