@@ -78,19 +78,34 @@ describe("sendEmail", () => {
       host: "mail.example.com",
       port: 465,
       secure: true,
+      requireTLS: false,
       auth: { user: "user", pass: "pass" }
     });
   });
 
-  it("uses STARTTLS (secure: false) on port 587", async () => {
+  it("uses STARTTLS (secure: false) on port 587, required when authenticated", async () => {
     vi.stubEnv("SMTP_HOST", "mail.example.com");
     vi.stubEnv("SMTP_PORT", "587");
+    vi.stubEnv("SMTP_USER", "user");
+    vi.stubEnv("SMTP_PASSWORD", "pass");
 
     const { sendEmail } = await loadMailer();
     await sendEmail({ to: "a@b.com", subject: "hi", text: "hello" });
 
     expect(createTransport).toHaveBeenCalledWith(
-      expect.objectContaining({ port: 587, secure: false, auth: undefined })
+      expect.objectContaining({ port: 587, secure: false, requireTLS: true })
+    );
+  });
+
+  it("allows plaintext for an unauthenticated relay", async () => {
+    vi.stubEnv("SMTP_HOST", "relay.internal");
+    vi.stubEnv("SMTP_PORT", "25");
+
+    const { sendEmail } = await loadMailer();
+    await sendEmail({ to: "a@b.com", subject: "hi", text: "hello" });
+
+    expect(createTransport).toHaveBeenCalledWith(
+      expect.objectContaining({ requireTLS: false, auth: undefined })
     );
   });
 

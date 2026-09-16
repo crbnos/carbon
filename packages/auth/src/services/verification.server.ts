@@ -44,7 +44,9 @@ export async function sendVerificationCode(email: string) {
     });
     log.debug("Verification email sent", { result });
 
-    return !result.error;
+    // `data: null` with no error is the SMTP-unconfigured no-op — the user
+    // will never receive a code, so don't report success.
+    return !result.error && result.data !== null;
   } catch (error) {
     log.error("Failed to send verification code", { error });
     return false;

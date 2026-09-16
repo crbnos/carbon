@@ -61,6 +61,7 @@ services:
       - inngest_signing_key
       - inngest_event_key
       - resend_api_key
+      - smtp_password
     environment:
       NODE_ENV: production
       PORT: "3000"

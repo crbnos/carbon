@@ -48,6 +48,13 @@ export const sendEmailFunction = inngest.createFunction(
         to: toRecipients
       });
       if (response.error) {
+        // A rejected envelope (bad recipient/sender address) will never
+        // succeed on retry.
+        if ((response.error as { code?: string }).code === "EENVELOPE") {
+          throw new NonRetriableError(
+            `Email envelope error: ${response.error.message}`
+          );
+        }
         throw new Error(`Email error: ${response.error.message}`);
       }
       // data is null when SMTP is not configured — email is disabled.

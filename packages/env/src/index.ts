@@ -307,7 +307,7 @@ export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD", {
 export const SMTP_PORT = Number(
   getEnv("SMTP_PORT", {
     isRequired: false
-  }) ?? 587
+  }) || 587
 );
 export const SMTP_USER = getEnv("SMTP_USER", {
   isRequired: false

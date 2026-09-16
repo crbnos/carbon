@@ -56,14 +56,17 @@ const getTransporter = (): Transporter | null => {
   if (transporter !== undefined) return transporter;
 
   if (SMTP_HOST) {
+    const auth =
+      SMTP_USER && SMTP_PASSWORD
+        ? { user: SMTP_USER, pass: SMTP_PASSWORD }
+        : undefined;
     transporter = nodemailer.createTransport({
       host: SMTP_HOST,
       port: SMTP_PORT,
       secure: SMTP_PORT === 465,
-      auth:
-        SMTP_USER && SMTP_PASSWORD
-          ? { user: SMTP_USER, pass: SMTP_PASSWORD }
-          : undefined
+      // Never send credentials in plaintext if the relay skips STARTTLS.
+      requireTLS: SMTP_PORT !== 465 && Boolean(auth),
+      auth
     });
   } else if (process.env.RESEND_API_KEY) {
     // Legacy fallback so existing deployments keep sending with zero config
