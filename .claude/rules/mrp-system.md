@@ -29,8 +29,11 @@ Phase-7 write) and throws on failure.
    companyId, userId: "system" })` **in-process** (`runMrp` throws on failure;
    the loop try/catches per step and returns `{ companies, failed }`). Every
    Inngest step is one HTTP request to `/api/inngest`, so a step's ceiling is
-   that Vercel function's `maxDuration` (300s, set by the route's `config`
-   export). All companies in ONE step was one invocation, hit
+   that Vercel function's max duration — set project-wide in the Vercel
+   dashboard (Settings → Functions), NOT via a route `config` export: a
+   `maxDuration` in the route config splits a second server bundle in the
+   @vercel/react-router preset and the Vite 8 css-post plugin fails the build
+   ("Unable to get file name for unknown file"). All companies in ONE step was one invocation, hit
    `FUNCTION_INVOCATION_TIMEOUT` as the tenant count grew after the
    `company`-enumeration change below, and every retry restarted from company
    #1. There is no location-scoped cron — only company-wide.

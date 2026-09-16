@@ -1019,17 +1019,15 @@ export const accountingReconciliationFunction = inngest.createFunction(
         id: `reconcile-${target.companyId}-${target.providerId}`,
         target,
         fn: async () => {
+          // Process-lifetime cached pool shared with events/sync.ts and the
+          // pull sweep — never end it here (see accounting-pull-sweep.ts).
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await reconcileCompany({
-              companyId: target.companyId,
-              providerId: target.providerId as ProviderID,
-              database
-            });
-          } finally {
-            await pool.end();
-          }
+          return await reconcileCompany({
+            companyId: target.companyId,
+            providerId: target.providerId as ProviderID,
+            database
+          });
         }
       });
 
