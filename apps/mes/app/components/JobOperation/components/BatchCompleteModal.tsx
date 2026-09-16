@@ -335,7 +335,12 @@ export function BatchCompleteModal({
                 allExcluded || missingBatchNumbers || conflictGroups.length > 0
               }
             >
-              {isCompleting ? t`Retry Completion` : t`Complete Batch`}
+              {/* While the submit is in flight the realtime revalidation sees the
+                  batch pass through Completing — don't flip the label mid-run;
+                  "Retry" is only true once we are idle and still parked there. */}
+              {fetcher.state === "idle" && isCompleting
+                ? t`Retry Completion`
+                : t`Complete Batch`}
             </Submit>
           </ModalFooter>
         </ValidatedForm>

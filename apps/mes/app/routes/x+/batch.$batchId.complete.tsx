@@ -147,7 +147,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   });
 
-  if (completeResult.error || completeResult.data?.error) {
+  // "Already completed" is not a failure: a duplicate submit (double click,
+  // a retry after a slow first attempt) means the work landed. Fall through to
+  // the merge step, which is itself idempotent — the parents are Consumed by
+  // then, so it finds no groups — and redirect as a success. Reporting this as
+  // an error told the operator the completion failed when it had just
+  // succeeded, with the lots and the merged lot already written.
+  const completionErrorMessage =
+    completeResult.data?.error ??
+    (completeResult.error ? String(completeResult.error.message ?? "") : "");
+  const alreadyCompleted = /already been completed|already completed/i.test(
+    completionErrorMessage
+  );
+  if (
+    (completeResult.error || completeResult.data?.error) &&
+    !alreadyCompleted
+  ) {
     return data(
       {},
       await flash(
