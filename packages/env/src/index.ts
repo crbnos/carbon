@@ -54,7 +54,6 @@ declare global {
       QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
-      RESEND_DOMAIN: string;
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
@@ -63,6 +62,11 @@ declare global {
       SLACK_OAUTH_REDIRECT_URL: string;
       SLACK_SIGNING_SECRET: string;
       SLACK_STATE_SECRET: string;
+      SMTP_FROM: string;
+      SMTP_HOST: string;
+      SMTP_PASSWORD: string;
+      SMTP_PORT: string;
+      SMTP_USER: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_CONNECT_WEBHOOK_SECRET: string;
@@ -290,10 +294,24 @@ export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isSecret: true
 });
 
-export const RESEND_DOMAIN =
-  getEnv("RESEND_DOMAIN", {
+export const SMTP_FROM = getEnv("SMTP_FROM", {
+  isRequired: false
+});
+export const SMTP_HOST = getEnv("SMTP_HOST", {
+  isRequired: false
+});
+export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD", {
+  isRequired: false,
+  isSecret: true
+});
+export const SMTP_PORT = Number(
+  getEnv("SMTP_PORT", {
     isRequired: false
-  }) ?? "carbon.ms";
+  }) ?? 587
+);
+export const SMTP_USER = getEnv("SMTP_USER", {
+  isRequired: false
+});
 
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false

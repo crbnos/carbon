@@ -1,7 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { RESEND_DOMAIN } from "@carbon/env";
-import { NonRetriableError, serializeError } from "inngest";
-import { Resend } from "resend";
+import { sendEmail } from "@carbon/lib/email.server";
+import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
 
 export const sendEmailFunction = inngest.createFunction(
@@ -13,7 +12,7 @@ export const sendEmailFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const payload = event.data;
 
-    // Resend rejects the request if `to` or `cc` contain null/undefined
+    // The mail transport rejects `to` or `cc` lists containing null/undefined
     // entries, so strip falsy values regardless of what callers pass.
     const sanitizeRecipients = (
       value: string | string[] | undefined
@@ -37,43 +36,27 @@ export const sendEmailFunction = inngest.createFunction(
       );
     }
 
-    const fromAddress = `Carbon <no-reply@${RESEND_DOMAIN}>`;
-
     const result = await step.run("send-email", async () => {
-      if (process.env.DISABLE_RESEND) {
-        logger.info("Resend disabled — skipping send", { toRecipients });
-        return null;
-      }
-
-      const resend = new Resend(process.env.RESEND_API_KEY!);
-
-      const email = {
+      logger.info("Email Job");
+      const response = await sendEmail({
         attachments: payload.attachments,
         cc: ccRecipients,
-        from: fromAddress,
         html: payload.html,
-        reply_to: payload.from,
+        replyTo: payload.from,
         subject: payload.subject,
         text: payload.text,
         to: toRecipients
-      };
-
-      logger.info("Resend Email Job");
-      const response = await resend.emails.send(email);
+      });
       if (response.error) {
-        if (response.error.name === "validation_error") {
-          throw new NonRetriableError(
-            `Resend validation error: ${serializeError(response.error)}`
-          );
-        }
-        throw new Error(`Resend error: ${serializeError(response.error)}`);
+        throw new Error(`Email error: ${response.error.message}`);
       }
+      // data is null when SMTP is not configured — email is disabled.
       return response.data;
     });
 
     // Count the delivery for recurring notifications (result is null when
-    // Resend is disabled). Throwing here is retry-safe: the memoized send step
-    // won't re-send, and the memoized Resend id makes the increment idempotent.
+    // email is disabled). Throwing here is retry-safe: the memoized send step
+    // won't re-send, and the memoized message id makes the increment idempotent.
     const tracking = payload.tracking;
     if (tracking && result) {
       await step.run("record-delivery", async () => {

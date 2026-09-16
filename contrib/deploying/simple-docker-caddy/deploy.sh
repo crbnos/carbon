@@ -127,7 +127,8 @@ cmd_init() {
     fi
     
     # Operator-supplied secrets — placeholders so the stack deploys; replace later.
-    # ERP crashes on boot with an empty RESEND_API_KEY, so seed a non-empty value.
+    # resend_api_key is optional (marketing contacts / legacy fallback); app email
+    # sends over SMTP using the shared GOTRUE_SMTP_* config + smtp_password.
     for s in $SUPPLIED_SECRETS; do
         secret_exists "$s" && continue
         case "$s" in
