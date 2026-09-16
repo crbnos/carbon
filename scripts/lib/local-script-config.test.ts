@@ -65,6 +65,10 @@ test("real .env parser and pinned SDK load without root dependency aliases or ne
       join(directory, ".env"),
       'SUPABASE_URL="https://database.example.com"\nCARBON_API_KEY="fixture-api-key"\n'
     );
+    writeFileSync(
+      join(directory, ".env.local"),
+      'CARBON_API_KEY="fixture-local-override"\n'
+    );
     const result = spawnSync(
       process.execPath,
       [
@@ -79,13 +83,13 @@ import helpers from ${JSON.stringify(
 const { createScriptClient, readLocalScriptConfig } = helpers;
 const config = readLocalScriptConfig(
   ["SUPABASE_URL", "SUPABASE_ANON_KEY", "CARBON_API_KEY"],
-  { SUPABASE_ANON_KEY: "fixture-public-key", CARBON_API_KEY: "fixture-override" }
+  { SUPABASE_ANON_KEY: "fixture-public-key", CARBON_API_KEY: "fixture-environment" }
 );
 let calls = 0;
 globalThis.fetch = async (input, init) => {
   calls += 1;
   assert(String(input).startsWith("https://database.example.com/rest/v1/fixture"));
-  assert(new Headers(init.headers).get("carbon-key") === "fixture-override");
+  assert(new Headers(init.headers).get("carbon-key") === "fixture-local-override");
   return new Response('[{"id":"fixture"}]', {
     status: 200,
     headers: { "content-type": "application/json" }

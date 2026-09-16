@@ -22,7 +22,8 @@ export function normalizeSwaggerSchema(schema: unknown): unknown {
     typeof id?.description === "string" &&
     typeof alias?.description === "string" &&
     alias.description.includes(PRIMARY_KEY_NOTE) &&
-    !id.description.includes(PRIMARY_KEY_NOTE)
+    !id.description.includes(PRIMARY_KEY_NOTE) &&
+    id.description.includes("Note:\n")
   ) {
     alias.description = alias.description.replace(`${PRIMARY_KEY_NOTE}\n`, "");
     id.description = id.description.replace(

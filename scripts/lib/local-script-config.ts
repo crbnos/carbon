@@ -23,8 +23,14 @@ export function readLocalScriptConfig<const Keys extends readonly string[]>(
   const local = existsSync(".env")
     ? parseEnv(readFileSync(".env", "utf8"))
     : {};
+  const localOverride = existsSync(".env.local")
+    ? parseEnv(readFileSync(".env.local", "utf8"))
+    : {};
   const values = Object.fromEntries(
-    names.map((name) => [name, environment[name] ?? local[name]])
+    names.map((name) => [
+      name,
+      localOverride[name] ?? environment[name] ?? local[name]
+    ])
   );
   const missing = names.filter((name) => !values[name]?.trim());
   if (missing.length) {

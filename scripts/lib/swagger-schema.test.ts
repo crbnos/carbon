@@ -49,6 +49,12 @@ test("both observed alias choices normalize to identical metadata", () => {
   assert.deepEqual(normalizeSwaggerSchema(fixture("id")), fixture("id"));
 });
 
+test("keeps the alias note when id has no Note anchor to receive it", () => {
+  const input = fixture("supplierLocationId");
+  input.definitions.partners.properties.id.description = "No note block here.";
+  assert.deepEqual(normalizeSwaggerSchema(input), input);
+});
+
 test("normalization is idempotent and leaves the input object intact", () => {
   const input = fixture("supplierLocationId");
   const saved = structuredClone(input);
