@@ -42,6 +42,7 @@ pnpm --filter @carbon/documents build       # generates fonts.data.ts
 ## Cross-References
 
 - `.claude/rules/pdf-generation-patterns.md` — full authoring guide
+- `.claude/rules/email-design.md` — the notification card every email template follows (anatomy, dark-mode-by-class, preview fixtures)
 - `.claude/rules/document-template-customizer.md` — block template engine
 - `.claude/rules/printing-system.md` — print queue / ZPL side
 - `apps/erp/app/routes/file+/` — PDF serving routes

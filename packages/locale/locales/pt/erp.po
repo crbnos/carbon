@@ -3494,6 +3494,12 @@ msgstr "Alterar Tipo"
 msgid "Changed By"
 msgstr "Alterado por"
 
+msgid "Changelog"
+msgstr "Histórico de Mudanças"
+
+msgid "Changelog newsletter"
+msgstr "Boletim de Mudanças"
+
 msgid "Changes"
 msgstr "Alterações"
 
