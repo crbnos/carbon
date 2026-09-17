@@ -68,6 +68,13 @@ vi.mock("~/modules/sales/sales.service", () => ({
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
+// The sales-rule gate imports `~/modules/sales/sales.server` and
+// `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
+// validation at import). Dispatch behavior under a gate block is not what
+// these golden tests pin, so stub it as "no block".
+vi.mock("./sales-rules-gate.server", () => ({
+  checkSalesRulesForOperation: vi.fn(async () => null)
+}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
