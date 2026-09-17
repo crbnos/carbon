@@ -27,7 +27,7 @@ msgstr "{0}前"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} ジョブ"
+msgstr "{0} 製造指図"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -146,7 +146,7 @@ msgid "Are you sure you want to leave this page?"
 msgstr "このページを離れてもよろしいですか？"
 
 msgid "Assembly steps"
-msgstr "組立工程"
+msgstr "組立ステップ"
 
 msgid "Assigned"
 msgstr "割当済み"
@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
 msgid "Batched jobs"
-msgstr "バッチ処理されたジョブ"
+msgstr "バッチ製造指図"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "目標より{daysBehindTarget}日遅れ"
@@ -407,7 +407,7 @@ msgstr "描画と機能をリサイズするためにドラッグします"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
-msgstr "{0} のドラッグがキャンセルされました。"
+msgstr "ドラッグ {0} キャンセル済。"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
@@ -441,7 +441,7 @@ msgid "Elapsed"
 msgstr "経過時間"
 
 msgid "Email Address"
-msgstr "メールアドレス"
+msgstr "メール住所"
 
 msgid "Empty work centers"
 msgstr "作業区が空です"
@@ -492,6 +492,9 @@ msgstr "失敗した機能"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "在庫調整の完了に失敗しました"
+
+msgid "Failed to convert image"
+msgstr "画像の変換に失敗しました"
 
 msgid "Failed to end operations"
 msgstr "工程の終了に失敗しました"
@@ -752,7 +755,7 @@ msgid "Mark Short"
 msgstr "短い数量をマーク"
 
 msgid "Mark the step done / record"
-msgstr "工程を完了としてマーク / 記録"
+msgstr "ステップを完了としてマークする / 記録"
 
 msgid "matches"
 msgstr "が一致"
@@ -1466,7 +1469,7 @@ msgid "Thumbnail"
 msgstr "サムネイル"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "時間とコストは数量に比例してジョブ全体に按分されます。"
+msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"
 
 msgid "Time Entries"
 msgstr "タイムエントリー"
@@ -1606,7 +1609,7 @@ msgid "Your organization requires an authenticator app. Set it up in Carbon, the
 msgstr "あなたの組織は認証器アプリが必要です。Carbonで設定してから、ここに戻ってください。"
 
 msgid "Your session was locked after inactivity."
-msgstr "非アクティブ後、セッションがロックされました。"
+msgstr "非アクティビティ後、セッションはロック中になりました。"
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

@@ -154,6 +154,7 @@ export const auditConfig = {
         customerPayment: { role: "extension" }, // PK = customerId
         customerShipping: { role: "extension" }, // PK = customerId
         customerTax: { role: "extension" }, // PK = customerId
+        customerBankAccount: { entityIdColumn: "customerId" },
         contact: {
           resolve: {
             junction: "customerContact",
@@ -183,6 +184,7 @@ export const auditConfig = {
         supplierPayment: { role: "extension" }, // PK = supplierId
         supplierShipping: { role: "extension" }, // PK = supplierId
         supplierTax: { role: "extension" }, // PK = supplierId
+        supplierBankAccount: { entityIdColumn: "supplierId" },
         contact: {
           resolve: {
             junction: "supplierContact",
@@ -616,12 +618,14 @@ export const auditConfig = {
     customerPayment: "Payment",
     customerShipping: "Shipping",
     customerTax: "Tax",
+    customerBankAccount: "Bank Account",
     contact: "Contact",
     address: "Address",
     supplier: "Supplier",
     supplierPayment: "Payment",
     supplierShipping: "Shipping",
     supplierTax: "Tax",
+    supplierBankAccount: "Bank Account",
     supplierPart: "Supplier Part",
     item: "Item",
     itemShelfLife: "Shelf Life",

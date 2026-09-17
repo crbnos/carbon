@@ -16,7 +16,7 @@ export interface ResolvedLabelLogo {
 /**
  * If the tracking-label template has a visible logo block, resolve the company
  * logo into a color URL (PDF), a monochrome PNG (PDF B&W) and a ZPL `^GFA`
- * graphic — the last two via the `logo-resizer` edge function (ImageMagick).
+ * graphic — the last two via the `logo-resizer` edge function (shared image pipeline).
  * Returns null when there's no logo block or no company logo. `supabaseUrl` is
  * passed in so this stays free of app-specific auth imports.
  */

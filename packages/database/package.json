@@ -55,6 +55,10 @@
   "version": "0.0.0",
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@jsquash/jpeg": "1.6.0",
+    "@jsquash/png": "3.1.1",
+    "@jsquash/resize": "2.1.1",
+    "@jsquash/webp": "1.5.0",
     "@logtape/logtape": "catalog:",
     "@logtape/redaction": "catalog:",
     "@supabase/postgrest-js": "catalog:",
@@ -62,6 +66,7 @@
     "dompurify": "catalog:",
     "kysely": "catalog:",
     "kysely-supabase": "0.2.1",
+    "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "pg": "8.20.0",
     "react-pdf": "catalog:",

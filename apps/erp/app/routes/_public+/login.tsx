@@ -62,6 +62,10 @@ import {
   useLoaderData,
   useSearchParams
 } from "react-router";
+import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "~/modules/shared/self-signup-blocklist.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -242,6 +246,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       { success: false, message: "User record not found" },
       await flash(request, error(null, "Failed to sign in"))
+    );
+  } else if (isSelfSignupBlockedForEmail(email)) {
+    // Cloud self-signup rejects consumer email domains (self-signup-blocked-domains.txt).
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "self-signup domain blocked"
+    });
+    return data(
+      { success: false, message: SELF_SIGNUP_BLOCKED_MESSAGE },
+      await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
     );
   } else {
     // Signup verification codes go out via Resend, never GoTrue.

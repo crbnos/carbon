@@ -593,6 +593,10 @@ msgstr "A depreciation method that charges a fixed percentage of remaining book 
 msgid "A depreciation method that charges an equal amount each period across the asset's useful life."
 msgstr "A depreciation method that charges an equal amount each period across the asset's useful life."
 
+#. placeholder {0}: file.name
+msgid "A file named {0} already exists — delete or rename it first"
+msgstr "A file named {0} already exists — delete or rename it first"
+
 msgid "A firm customer commitment to deliver; fulfillment status splits across ship and invoice before reaching Completed."
 msgstr "A firm customer commitment to deliver; fulfillment status splits across ship and invoice before reaching Completed."
 
@@ -1012,6 +1016,9 @@ msgstr "A tool is a physical item used to make a part that can be used across mu
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 
+msgid "ABA"
+msgstr "ABA"
+
 msgid "abilities"
 msgstr "abilities"
 
@@ -1084,6 +1091,9 @@ msgstr "Account for the cost of fixed assets when disposed"
 
 msgid "Account for the purchase cost of fixed assets"
 msgstr "Account for the purchase cost of fixed assets"
+
+msgid "Account Holder"
+msgstr "Account Holder"
 
 msgid "Account manager"
 msgstr "Account manager"
@@ -1745,6 +1755,9 @@ msgstr "An https request Carbon sends to a system of yours when a workflow reach
 msgid "An integration or a custom change — the small slice that's actually custom."
 msgstr "An integration or a custom change — the small slice that's actually custom."
 
+msgid "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
+msgstr "An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code."
+
 msgid "An invitation is pending. They become active once they accept it."
 msgstr "An invitation is pending. They become active once they accept it."
 
@@ -2364,6 +2377,9 @@ msgstr "Are you sure you want to delete the webhook: {0}? This cannot be undone.
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Are you sure you want to delete this approval rule? This cannot be undone."
 
+msgid "Are you sure you want to delete this bank account?"
+msgstr "Are you sure you want to delete this bank account?"
+
 msgid "Are you sure you want to delete this change notice?"
 msgstr "Are you sure you want to delete this change notice?"
 
@@ -2438,6 +2454,9 @@ msgstr "Are you sure you want to permanently delete {0}?"
 
 msgid "Are you sure you want to permanently delete the supplier process?"
 msgstr "Are you sure you want to permanently delete the supplier process?"
+
+msgid "Are you sure you want to permanently delete this bank account?"
+msgstr "Are you sure you want to permanently delete this bank account?"
 
 msgid "Are you sure you want to post this receipt?"
 msgstr "Are you sure you want to post this receipt?"
@@ -2834,8 +2853,20 @@ msgstr "Bank account denominated in a foreign currency"
 msgid "Bank account denominated in the local currency"
 msgstr "Bank account denominated in the local currency"
 
+msgid "Bank Accounts"
+msgstr "Bank Accounts"
+
+msgid "Bank Address"
+msgstr "Bank Address"
+
 msgid "Bank and financial service charge expenses"
 msgstr "Bank and financial service charge expenses"
+
+msgid "Bank Code"
+msgstr "Bank Code"
+
+msgid "Bank Name"
+msgstr "Bank Name"
 
 msgid "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
 msgstr "Bars show each week's flow: <0>supply</0> pushes inventory up, <1>demand</1> pulls it down. The <2>line</2> is your projected on-hand inventory — when it dips below <3>safety stock</3> you're at risk, and below zero is a <4>stockout</4>."
@@ -3045,6 +3076,9 @@ msgstr "Browse library"
 
 msgid "Browse the published version read-only. You can still rearrange steps to tidy the layout."
 msgstr "Browse the published version read-only. You can still rearrange steps to tidy the layout."
+
+msgid "BSB"
+msgstr "BSB"
 
 msgid "Bucket"
 msgstr "Bucket"
@@ -6125,6 +6159,9 @@ msgstr "Due within"
 msgid "Duplicate"
 msgstr "Duplicate"
 
+msgid "Duplicate file names after image conversion"
+msgstr "Duplicate file names after image conversion"
+
 msgid "Duplicate Item"
 msgstr "Duplicate Item"
 
@@ -6262,6 +6299,9 @@ msgstr "Edit Attribute"
 
 msgid "Edit Attribute Category"
 msgstr "Edit Attribute Category"
+
+msgid "Edit Bank Account"
+msgstr "Edit Bank Account"
 
 msgid "Edit Category"
 msgstr "Edit Category"
@@ -7191,6 +7231,9 @@ msgstr "Failed to add line — {addedCount} of {0} lines were added"
 msgid "Failed to add lines"
 msgstr "Failed to add lines"
 
+msgid "Failed to convert image"
+msgstr "Failed to convert image"
+
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create asset class: {0}"
 msgstr "Failed to create asset class: {0}"
@@ -7611,8 +7654,8 @@ msgstr "File size too big (max. {0})"
 msgid "File type not supported"
 msgstr "File type not supported"
 
-msgid "File type not supported. Please use JPG, PNG, WebP, or GIF."
-msgstr "File type not supported. Please use JPG, PNG, WebP, or GIF."
+msgid "File type not supported. Please use JPG, PNG, WebP, GIF, or HEIC."
+msgstr "File type not supported. Please use JPG, PNG, WebP, GIF, or HEIC."
 
 msgid "Files"
 msgstr "Files"
@@ -8203,6 +8246,9 @@ msgstr "Help"
 msgid "Hide"
 msgstr "Hide"
 
+msgid "Hide account number"
+msgstr "Hide account number"
+
 msgid "Hide raw"
 msgstr "Hide raw"
 
@@ -8428,6 +8474,9 @@ msgstr "I have a reasonable basis to believe this individual is a U.S. person as
 msgid "I'm Still Working"
 msgstr "I'm Still Working"
 
+msgid "IBAN"
+msgstr "IBAN"
+
 msgid "Id"
 msgstr "Id"
 
@@ -8478,6 +8527,12 @@ msgstr "If something is off track"
 
 msgid "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
 msgstr "If you wish to change the part numbers, please click Cancel and manually assign the parts for each line item before converting."
+
+msgid "IFSC"
+msgstr "IFSC"
+
+msgid "IFSC Code"
+msgstr "IFSC Code"
 
 msgid "Ignore"
 msgstr "Ignore"
@@ -10536,6 +10591,9 @@ msgstr "New Attribute"
 msgid "New Attribute Category"
 msgstr "New Attribute Category"
 
+msgid "New Bank Account"
+msgstr "New Bank Account"
+
 msgid "New Batch"
 msgstr "New Batch"
 
@@ -10936,6 +10994,9 @@ msgstr "No available filters"
 msgid "No available tracked entities found"
 msgstr "No available tracked entities found"
 
+msgid "No bank accounts have been added yet."
+msgstr "No bank accounts have been added yet."
+
 msgid "No batches"
 msgstr "No batches"
 
@@ -10998,6 +11059,9 @@ msgstr "No dimension slots configured"
 
 msgid "No dimension values mapped yet"
 msgstr "No dimension values mapped yet"
+
+msgid "No documents"
+msgstr "No documents"
 
 msgid "No draft make method for this item yet."
 msgstr "No draft make method for this item yet."
@@ -11680,6 +11744,12 @@ msgstr "Only Draft procedures are editable. Create a new version to change an Ac
 
 msgid "Only empty, open periods can be deleted."
 msgstr "Only empty, open periods can be deleted."
+
+msgid "Only if it differs from the customer name"
+msgstr "Only if it differs from the customer name"
+
+msgid "Only if it differs from the supplier name"
+msgstr "Only if it differs from the supplier name"
 
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Only qualified employees can be scheduled for and run this process"
@@ -14267,6 +14337,9 @@ msgstr "Returns:"
 msgid "Rev {revision}"
 msgstr "Rev {revision}"
 
+msgid "Reveal account number"
+msgstr "Reveal account number"
+
 msgid "Revenue"
 msgstr "Revenue"
 
@@ -14454,6 +14527,9 @@ msgstr "Route all AR invoices to one address (e.g. corporate headquarters) inste
 
 msgid "Routing"
 msgstr "Routing"
+
+msgid "Routing Number (ABA)"
+msgstr "Routing Number (ABA)"
 
 msgid "rows"
 msgstr "rows"
@@ -15874,6 +15950,9 @@ msgstr "Sort Ascending"
 msgid "Sort by"
 msgstr "Sort by"
 
+msgid "Sort Code"
+msgstr "Sort Code"
+
 msgid "Sort Descending"
 msgstr "Sort Descending"
 
@@ -16522,6 +16601,12 @@ msgstr "Surfaces"
 msgid "Suspected Failure Mode"
 msgstr "Suspected Failure Mode"
 
+msgid "SWIFT"
+msgstr "SWIFT"
+
+msgid "SWIFT / BIC"
+msgstr "SWIFT / BIC"
+
 msgid "Switch"
 msgstr "Switch"
 
@@ -16879,6 +16964,9 @@ msgstr "The category this supplier belongs to (raw-material, services, contract-
 
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
+
+msgid "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
+msgstr "The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead."
 
 msgid "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
 msgstr "The contractor's expected weekly availability; scheduling uses this as the upper bound when assigning this contractor to operations across the week."
@@ -18259,6 +18347,12 @@ msgstr "Transfer ownership of this company to another user"
 msgid "Transfer To"
 msgstr "Transfer To"
 
+msgid "Transit"
+msgstr "Transit"
+
+msgid "Transit & Institution"
+msgstr "Transit & Institution"
+
 msgid "Trash"
 msgstr "Trash"
 
@@ -18956,6 +19050,9 @@ msgstr "View History"
 
 msgid "View in Academy"
 msgstr "View in Academy"
+
+msgid "View in new tab"
+msgstr "View in new tab"
 
 msgid "View in project plan"
 msgstr "View in project plan"

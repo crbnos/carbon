@@ -2059,5 +2059,13 @@ export const terms = {
   "magic-link": {
     term: msg`Magic link`,
     definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
+  },
+  iban: {
+    term: msg`IBAN`,
+    definition: msg`An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code.`
+  },
+  "swift-bic": {
+    term: msg`SWIFT / BIC`,
+    definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

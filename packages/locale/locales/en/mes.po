@@ -493,6 +493,9 @@ msgstr "Failed features"
 msgid "Failed to complete inventory adjustment"
 msgstr "Failed to complete inventory adjustment"
 
+msgid "Failed to convert image"
+msgstr "Failed to convert image"
+
 msgid "Failed to end operations"
 msgstr "Failed to end operations"
 

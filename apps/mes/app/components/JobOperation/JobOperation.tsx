@@ -1,6 +1,7 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -54,7 +55,6 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   batchPlanBreakdown,
   convertDateStringToIsoString,
-  convertKbToString,
   formatDate,
   formatDurationMilliseconds,
   getItemReadableId,

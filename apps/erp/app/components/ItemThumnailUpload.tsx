@@ -1,4 +1,5 @@
-import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { useCarbon } from "@carbon/auth";
+import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
@@ -148,27 +149,13 @@ export function ItemThumbnailUpload({
       const file = e.target.files?.[0];
       if (file) {
         toast.info(t`Uploading ${file.name}`);
-        const formData = new FormData();
-        formData.append("file", file);
-        formData.append("contained", "true");
 
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/image-resizer`,
-            {
-              method: "POST",
-              body: formData
-            }
-          );
-
-          // Get content type from response to determine if it's JPG or PNG
-          const contentType =
-            response.headers.get("Content-Type") || "image/png";
-          const isJpg = contentType.includes("image/jpeg");
-          const fileExtension = isJpg ? "jpg" : "png";
-
-          const blob = new Blob([await response.arrayBuffer()], {
-            type: contentType
+          const processed = await prepareImageUpload(carbon, {
+            bucket: "private",
+            directory: `${company.id}/tmp`,
+            file,
+            contained: true
           });
 
           const reader = new FileReader();
@@ -178,11 +165,12 @@ export function ItemThumbnailUpload({
               setThumbnailPath(base64String);
             }
           };
-          reader.readAsDataURL(blob);
+          reader.readAsDataURL(processed);
 
+          const fileExtension = processed.name.split(".").pop();
           const fileName = `${nanoid()}.${fileExtension}`;
-          const thumbnailFile = new File([blob], fileName, {
-            type: contentType
+          const thumbnailFile = new File([processed], fileName, {
+            type: processed.type
           });
 
           const { data, error } = await carbon.storage

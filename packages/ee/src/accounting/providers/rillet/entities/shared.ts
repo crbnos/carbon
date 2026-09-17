@@ -170,9 +170,6 @@ export async function writeDroppingUnregisteredReferences<
     ) {
       throw error;
     }
-    console.warn(
-      `[Rillet] external-reference type slugs are not registered for this organization (Rillet Settings → External References: add "${RILLET_CARBON_REFERENCE_TYPE}" and "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}"); retrying without references`
-    );
     const { external_references: _dropped, ...stripped } = payload;
     return await write(stripped as TPayload);
   }
@@ -480,14 +477,6 @@ export abstract class RilletEntitySyncer<
         await this.linkEntities(tx, entityId, remoteId);
       });
 
-      console.log("[SyncLog]", {
-        direction: "PUSH",
-        entity: this.entityType,
-        localId: entityId,
-        remoteId,
-        status: "success"
-      });
-
       return {
         status: "success",
         action: existingMapping ? "updated" : "created",
@@ -496,10 +485,6 @@ export abstract class RilletEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] structured push failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -507,11 +492,6 @@ export abstract class RilletEntitySyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",
@@ -934,10 +914,6 @@ export abstract class RilletTransactionSyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] pre-flight failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -945,11 +921,6 @@ export abstract class RilletTransactionSyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",

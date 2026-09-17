@@ -493,6 +493,9 @@ msgstr "失败的功能"
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
 
+msgid "Failed to convert image"
+msgstr "转换图像失败"
+
 msgid "Failed to end operations"
 msgstr "结束工序失败"
 

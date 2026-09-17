@@ -669,6 +669,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../../packages/env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../../packages/files
       '@carbon/form':
         specifier: workspace:*
         version: link:../../packages/form
@@ -870,9 +873,6 @@ importers:
       isbot:
         specifier: 'catalog:'
         version: 5.1.37
-      json-2-csv:
-        specifier: 5.6.0
-        version: 5.6.0
       konva:
         specifier: ^9.3.22
         version: 9.3.22
@@ -1144,6 +1144,9 @@ importers:
       '@carbon/ee':
         specifier: workspace:*
         version: link:../../packages/ee
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../../packages/files
       '@carbon/form':
         specifier: workspace:*
         version: link:../../packages/form
@@ -2056,6 +2059,18 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@jsquash/jpeg':
+        specifier: 1.6.0
+        version: 1.6.0
+      '@jsquash/png':
+        specifier: 3.1.1
+        version: 3.1.1
+      '@jsquash/resize':
+        specifier: 2.1.1
+        version: 2.1.1
+      '@jsquash/webp':
+        specifier: 1.5.0
+        version: 1.5.0
       '@logtape/logtape':
         specifier: 'catalog:'
         version: 2.2.3
@@ -2077,6 +2092,9 @@ importers:
       kysely-supabase:
         specifier: 0.2.1
         version: 0.2.1(kysely@0.28.17)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
+      libheif-js:
+        specifier: 1.23.2
+        version: 1.23.2
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -2314,6 +2332,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/kv':
         specifier: workspace:*
         version: link:../kv
@@ -2439,6 +2460,55 @@ importers:
       typescript:
         specifier: 'catalog:'
         version: 5.8.3
+
+  packages/files:
+    dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
+      '@jsquash/jpeg':
+        specifier: 1.6.0
+        version: 1.6.0
+      '@jsquash/png':
+        specifier: 3.1.1
+        version: 3.1.1
+      '@jsquash/resize':
+        specifier: 2.1.1
+        version: 2.1.1
+      '@jsquash/webp':
+        specifier: 1.5.0
+        version: 1.5.0
+      '@supabase/supabase-js':
+        specifier: 'catalog:'
+        version: 2.80.0
+      libheif-js:
+        specifier: 1.23.2
+        version: 1.23.2
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
+      papaparse:
+        specifier: 5.3.2
+        version: 5.3.2
+      pdfjs-dist:
+        specifier: 5.4.296
+        version: 5.4.296
+      unpdf:
+        specifier: 1.8.1
+        version: 1.8.1(@napi-rs/canvas@0.1.97)
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
+      '@types/papaparse':
+        specifier: 5.5.2
+        version: 5.5.2
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/form:
     dependencies:
@@ -2609,6 +2679,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/kv':
         specifier: workspace:*
         version: link:../kv
@@ -2669,9 +2742,6 @@ importers:
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
-      pdfjs-dist:
-        specifier: 5.4.296
-        version: 5.4.296
       react:
         specifier: 18.3.1
         version: 18.3.1
@@ -3652,6 +3722,9 @@ importers:
 
   packages/viewer:
     dependencies:
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/react':
         specifier: workspace:*
         version: link:../react
@@ -5403,6 +5476,18 @@ packages:
 
   '@js-sdsl/ordered-map@4.4.2':
     resolution: {integrity: sha512-iUKgm52T8HOE/makSxjqoWhe95ZJA1/G1sYsGev2JDKUSS14KAgg1LHb+Ba+IPow0xflbnSkOsZcO08C7w1gYw==}
+
+  '@jsquash/jpeg@1.6.0':
+    resolution: {integrity: sha512-zwN46Awh1VM6gXlIcALwb5WzqK5H2e6+Awcs1QP8AvS8ohsK/sbE4esvmH4jhlhW7+CgiUUww66vg0aTnlSIMA==}
+
+  '@jsquash/png@3.1.1':
+    resolution: {integrity: sha512-C10pc+0H6j0h8fENOfnGOvkXCmvpSQTDGlfGd0sHphZhPSGTyLjIrHba0FaZZdsKqA/wlmhYicUHb92vfZphaw==}
+
+  '@jsquash/resize@2.1.1':
+    resolution: {integrity: sha512-0R5UL1ZLHUT+carjVikcE1QfA+kfNQ2YamYyGVRmhfh4zttU5EY3bQBGxPIPtY2xIAw1P4Kgyxm2xrceRw1r2w==}
+
+  '@jsquash/webp@1.5.0':
+    resolution: {integrity: sha512-KggLoj2MnRSfIqTeKe1EmbljTX2vuV7mh79k89PCL1pyqiDULcPM1L47twxXt0hkb68F70bXiL31MxsuoZtKFw==}
 
   '@juggle/resize-observer@3.4.0':
     resolution: {integrity: sha512-dfLbk+PwWvFzSxwk3n5ySL0hfBog779o8h68wK/7/APo/7cgyWp5jcXockbxdk5kFRkbeXWm4Fbi9FrdN381sA==}
@@ -11721,10 +11806,6 @@ packages:
       babel-plugin-macros:
         optional: true
 
-  deeks@3.2.1:
-    resolution: {integrity: sha512-D/o0k3pCG1aI1cxb/dDiWmtMc4Rh7ZQBybXpfMsw9Rbtqwg8kUA9SpYkWcw0pAUjZSnPm8MluctiS0o68r69jQ==}
-    engines: {node: '>= 16'}
-
   deep-equal@2.2.3:
     resolution: {integrity: sha512-ZIwpnevOurS8bpT4192sqAowWM76JDKSHYzMLty3BZGSswgq6pBaH3DhCSW5xVAZICZyKdOBPjwww5wfgT/6PA==}
     engines: {node: '>= 0.4'}
@@ -11791,10 +11872,6 @@ packages:
 
   dlv@1.1.3:
     resolution: {integrity: sha512-+HlytyjlPKnIG8XuRG8WvmBP8xs8P71y+SKKS6ZXWoEgLuePxtDoUEiH7WkdePWrQ5JBpE6aoVqfZfJUQkjXwA==}
-
-  doc-path@4.1.4:
-    resolution: {integrity: sha512-yw5D++UCIB6a033PvQaUvSpW2QuKW0+DOId763n0Q4z3brxS7G8oQr8yBQ1nQFkognKrAVrV6I55TLeU9cfXTg==}
-    engines: {node: '>=16'}
 
   dom-accessibility-api@0.5.16:
     resolution: {integrity: sha512-X7BJ2yElsnOJ30pZF4uIIDfBEVgF4XEBxL9Bxhy6dnrm5hkzqmsWHGTiHqRiITNhMyFLyAiWndIJP7Z1NTteDg==}
@@ -13195,10 +13272,6 @@ packages:
     engines: {node: '>=6'}
     hasBin: true
 
-  json-2-csv@5.6.0:
-    resolution: {integrity: sha512-EOEkcWooN2FYMZLV1TM7BrHJEfV6/7Eexh+xmr72FADjZGuFwAlfzPdkMx2YxIldHGWkTtoL1QJGknzhJCln/w==}
-    engines: {node: '>= 16'}
-
   json-bigint@1.0.0:
     resolution: {integrity: sha512-SiPv/8VpZuWbvLSMtTDU8hEfrZWg/mH/nV/b4o0CYbSxu1UIQPLdwKOCIyLQX+VIPO5vrLX3i8qtqFyhdPSUSQ==}
 
@@ -13278,6 +13351,10 @@ packages:
   leven@3.1.0:
     resolution: {integrity: sha512-qsda+H8jTaUaN/x5vzW2rzc+8Rw4TAQ/4KjB46IwK5VH+IlVeeeje/EoZRpiXvIqjFgK84QffqPztGI3VBLG1A==}
     engines: {node: '>=6'}
+
+  libheif-js@1.23.2:
+    resolution: {integrity: sha512-qvHIXtggEsw1lCNCWBYKloL2Z36DJBm0R9ThGiH2JnhKYdeZFLPFkP30Lw4yMskxxhx0bKg1gLrBHX1D2w2pSw==}
+    engines: {node: '>=8.0.0'}
 
   libphonenumber-js@1.12.41:
     resolution: {integrity: sha512-lsmMmGXBxXIK/VMLEj0kL6MtUs1kBGj1nTCzi6zgQoG1DEwqwt2DQyHxcLykceIxAnfE3hya7NuIh6PpC6S3fA==}
@@ -16220,6 +16297,15 @@ packages:
     resolution: {integrity: sha512-gptHNQghINnc/vTGIk0SOFGFNXw7JVrlRUtConJRlvaw6DuX0wO5Jeko9sWrMBhh+PsYAZ7oXAiOnf/UKogyiw==}
     engines: {node: '>= 10.0.0'}
 
+  unpdf@1.8.1:
+    resolution: {integrity: sha512-xkURhy2SoGpOIH0a1gLHNkASPIQYonadDJs2AQwPEfUakafeD9EA1WTWWsaR++gfTCXJpV27W7tU1nXuk82UKQ==}
+    engines: {node: '>=22'}
+    peerDependencies:
+      '@napi-rs/canvas': ^0.1.69 || ^1.0.0
+    peerDependenciesMeta:
+      '@napi-rs/canvas':
+        optional: true
+
   unpipe@1.0.0:
     resolution: {integrity: sha512-pjy2bYhSsufwWlKwPc+l3cN7+wuJlK6uz0YdJEOlQDbl6jo/YlPi4mb8agUkVC8BF7V8NuzeyPNqRksA3hztKQ==}
     engines: {node: '>= 0.8'}
@@ -16468,6 +16554,9 @@ packages:
 
   warning@4.0.3:
     resolution: {integrity: sha512-rpJyN222KWIvHJ/F53XSZv0Zl/accqHR8et1kpaMTD/fLCRxtV8iX8czMzY7sVZupTI3zcUTg8eycS2kNF9l6w==}
+
+  wasm-feature-detect@1.9.0:
+    resolution: {integrity: sha512-zonE+xlIIYtxPy++L24ow0hAD8CICb4+FgPyROd3buyXIqsJvUEDkBgfCCoXOd1Hu3DUr0GOfnPIdcGV+YpNaA==}
 
   watchpack@2.5.2:
     resolution: {integrity: sha512-6i/00NBjP4yGPs+caKSyRfpTF/8Torsu0MOW3mMzIbhgISFder8i7xbqgHlLMwJrdiN8ndBV3UA1/AfzPSr+jg==}
@@ -18360,6 +18449,16 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.5.5
 
   '@js-sdsl/ordered-map@4.4.2': {}
+
+  '@jsquash/jpeg@1.6.0': {}
+
+  '@jsquash/png@3.1.1': {}
+
+  '@jsquash/resize@2.1.1': {}
+
+  '@jsquash/webp@1.5.0':
+    dependencies:
+      wasm-feature-detect: 1.9.0
 
   '@juggle/resize-observer@3.4.0': {}
 
@@ -26090,8 +26189,6 @@ snapshots:
     optionalDependencies:
       babel-plugin-macros: 3.1.0
 
-  deeks@3.2.1: {}
-
   deep-equal@2.2.3:
     dependencies:
       array-buffer-byte-length: 1.0.2
@@ -26164,8 +26261,6 @@ snapshots:
   diff-match-patch@1.0.5: {}
 
   dlv@1.1.3: {}
-
-  doc-path@4.1.4: {}
 
   dom-accessibility-api@0.5.16: {}
 
@@ -27910,11 +28005,6 @@ snapshots:
 
   jsesc@3.1.0: {}
 
-  json-2-csv@5.6.0:
-    dependencies:
-      deeks: 3.2.1
-      doc-path: 4.1.4
-
   json-bigint@1.0.0:
     dependencies:
       bignumber.js: 9.3.1
@@ -27999,6 +28089,8 @@ snapshots:
   leac@0.6.0: {}
 
   leven@3.1.0: {}
+
+  libheif-js@1.23.2: {}
 
   libphonenumber-js@1.12.41: {}
 
@@ -31616,6 +31708,10 @@ snapshots:
 
   universalify@2.0.1: {}
 
+  unpdf@1.8.1(@napi-rs/canvas@0.1.97):
+    optionalDependencies:
+      '@napi-rs/canvas': 0.1.97
+
   unpipe@1.0.0: {}
 
   update-browserslist-db@1.2.3(browserslist@4.28.2):
@@ -32149,6 +32245,8 @@ snapshots:
   warning@4.0.3:
     dependencies:
       loose-envify: 1.4.0
+
+  wasm-feature-detect@1.9.0: {}
 
   watchpack@2.5.2:
     dependencies:

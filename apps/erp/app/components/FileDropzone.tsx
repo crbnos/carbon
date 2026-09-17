@@ -1,7 +1,16 @@
-import { cn } from "@carbon/react";
+import { useCarbon } from "@carbon/auth";
+import {
+  DuplicateFileNameError,
+  isHeic,
+  MediaUploader
+} from "@carbon/files/media";
+import { cn, toast } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import type React from "react";
+import { useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { LuCloudUpload } from "react-icons/lu";
+import { useUser } from "~/hooks";
 
 interface FileDropzoneProps {
   onDrop: (acceptedFiles: File[]) => void;
@@ -20,11 +29,42 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
   disabled = false,
   className = "mt-4"
 }) => {
+  const { t } = useLingui();
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const [isConverting, setIsConverting] = useState(false);
+
+  // HEIC is never stored — convert to JPEG before handing files to the caller.
+  const onDropWithConversion = async (acceptedFiles: File[]) => {
+    let files = acceptedFiles;
+    if (carbon && files.some((file) => isHeic(file.name, file.type))) {
+      const uploader = new MediaUploader(carbon, {
+        bucket: "private",
+        directory: `${company.id}/tmp`
+      });
+      setIsConverting(true);
+      try {
+        files = await uploader.prepareForUpload(files);
+      } catch (error) {
+        toast.error(
+          error instanceof DuplicateFileNameError
+            ? t`Duplicate file names after image conversion`
+            : t`Failed to convert image`
+        );
+        return;
+      } finally {
+        setIsConverting(false);
+      }
+    }
+    onDrop(files);
+  };
+
+  const isDisabled = disabled || isConverting;
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
+    onDrop: onDropWithConversion,
     accept,
     multiple,
-    disabled
+    disabled: isDisabled
   });
 
   return (
@@ -32,10 +72,10 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
       {...getRootProps()}
       className={cn(
         "border-2 border-dashed rounded-md p-6 text-center transition-colors",
-        disabled
+        isDisabled
           ? "cursor-not-allowed border-border opacity-60"
           : "cursor-pointer hover:border-primary hover:bg-primary/10",
-        !disabled && isDragActive
+        !isDisabled && isDragActive
           ? "border-primary bg-primary/10"
           : "border-border",
         className

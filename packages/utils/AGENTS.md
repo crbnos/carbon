@@ -7,7 +7,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
 - Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
-- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` are allowed runtime deps.
+- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` (plus `nanoid` and `@supabase/supabase-js` for the typed `supabase.ts` wrappers) are allowed runtime deps.
 
 ## Ask First
 
@@ -18,7 +18,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Never
 
 - Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate edge-shared utilities:** `precision.ts`, `accounting-currency.ts`, `accounting-posting.ts`, `payment-funding.ts`, `sales-posting-amounts.ts`, `batch-time-split.ts`, and `batch-compatibility.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes `precision.ts`). Those implementations live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. They are client-safe source imports, not imports of the server/database package, and not something to "fix" (same pattern as `packages/database/src/sampling.ts`). Keep their dependency graphs pure.
-- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers).
+- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers). File/image handling lives in `@carbon/files`, not here.
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
 ## Validation Commands

@@ -7,21 +7,12 @@ import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 import {
-  ImageMagick,
-  MagickColor,
-  MagickFormat,
-  initializeImageMagick,
-} from "npm:@imagemagick/magick-wasm@0.0.30";
+  decodeImage,
+  encodeImage,
+  resizeImage,
+} from "../shared/image-pipeline.ts";
 
 const logger = getFunctionLogger("thumbnail");
-
-const wasmBytes = await Deno.readFile(
-  new URL(
-    "magick.wasm",
-    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
-  )
-);
-await initializeImageMagick(wasmBytes);
 
 const payloadSchema = z.object({
   url: z.string(),
@@ -74,19 +65,22 @@ serve(async (req: Request) => {
         : screenshot
     );
 
-    const result = await ImageMagick.read(screenshotArray, (img) => {
-      img.transparent(new MagickColor("white"));
+    const image = await decodeImage(screenshotArray, "png");
+    // Knock the white viewer background out to transparency, as magick's
+    // `transparent(white)` did.
+    for (let i = 0; i < image.data.length; i += 4) {
+      if (
+        image.data[i] === 255 &&
+        image.data[i + 1] === 255 &&
+        image.data[i + 2] === 255
+      ) {
+        image.data[i + 3] = 0;
+      }
+    }
+    const resized = await resizeImage(image, 300, 300);
+    const result = await encodeImage(resized, "png");
 
-      img.resize(300, 300);
-      // Set the output format explicitly and COPY the bytes out of the callback:
-      // the `data` handed to `write` is a view into ImageMagick's WASM heap that is
-      // reused/freed once the callback returns — returning it directly yields a
-      // corrupt PNG (valid header, garbage body → "200 but invalid image").
-      img.format = MagickFormat.Png;
-      return img.write((data) => new Uint8Array(data));
-    });
-
-    return new Response(result, {
+    return new Response(result as BodyInit, {
       headers: { ...corsHeaders, "Content-Type": "image/png" },
       status: 200,
     });

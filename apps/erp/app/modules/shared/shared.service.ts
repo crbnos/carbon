@@ -1,13 +1,10 @@
 import type { Database, Json, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getContentType, getFileExtension } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import type { ConditionAst, Severity } from "@carbon/utils";
-import {
-  datetime,
-  getPurchaseOrderStatus,
-  supportedModelTypes
-} from "@carbon/utils";
+import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -18,7 +15,6 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   approvalDocumentType,
-  documentTypes,
   PriceBreak,
   SupplierPriceMap
 } from "./shared.models";
@@ -712,24 +708,22 @@ export async function getBase64ImageFromSupabase(
   client: SupabaseClient<Database>,
   path: string
 ) {
-  function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    return Buffer.from(buffer).toString("base64");
-  }
+  // Legacy stored HEIC can't be decoded by consumers (PDF rendering) — serve
+  // the imgproxy JPEG rendition instead. Everything else passes through raw.
+  const extension = getFileExtension(path);
+  const heic = extension === "heic" || extension === "heif";
 
-  const { data, error } = await client.storage.from("private").download(path);
+  const { data, error } = await client.storage
+    .from("private")
+    .download(path, heic ? { transform: { quality: 90 } } : undefined);
   if (error) {
     return null;
   }
 
-  const arrayBuffer = await data.arrayBuffer();
-  const base64String = arrayBufferToBase64(arrayBuffer);
+  const base64String = Buffer.from(await data.arrayBuffer()).toString("base64");
 
-  // Determine the mime type based on file extension
-  const fileExtension = path.split(".").pop()?.toLowerCase();
-  const mimeType =
-    fileExtension === "jpg" || fileExtension === "jpeg"
-      ? "image/jpeg"
-      : "image/png";
+  const contentType = heic ? "image/jpeg" : getContentType(extension);
+  const mimeType = contentType.startsWith("image/") ? contentType : "image/png";
 
   return `data:${mimeType};base64,${base64String}`;
 }
@@ -782,52 +776,7 @@ export async function getLatestApprovalRequestForDocument(
   };
 }
 
-export function getDocumentType(
-  fileName: string
-): (typeof documentTypes)[number] {
-  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
-  if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
-    return "Archive";
-  }
-
-  if (["pdf"].includes(extension)) {
-    return "PDF";
-  }
-
-  if (["doc", "docx", "txt", "rtf"].includes(extension)) {
-    return "Document";
-  }
-
-  if (["ppt", "pptx"].includes(extension)) {
-    return "Presentation";
-  }
-
-  if (["csv", "xls", "xlsx"].includes(extension)) {
-    return "Spreadsheet";
-  }
-
-  if (["txt"].includes(extension)) {
-    return "Text";
-  }
-
-  if (["png", "jpg", "jpeg", "gif", "avif"].includes(extension)) {
-    return "Image";
-  }
-
-  if (["mp4", "mov", "avi", "wmv", "flv", "mkv"].includes(extension)) {
-    return "Video";
-  }
-
-  if (["mp3", "wav", "wma", "aac", "ogg", "flac"].includes(extension)) {
-    return "Audio";
-  }
-
-  if (supportedModelTypes.includes(extension)) {
-    return "Model";
-  }
-
-  return "Other";
-}
+export { getDocumentType } from "@carbon/files";
 
 /**
  * The item's CAD model in the same shape the line views expose it, so it drops

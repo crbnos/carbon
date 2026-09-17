@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Array as ArrayInput,
   Hidden,
@@ -37,7 +36,6 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   useDebounce,
   useDisclosure,
   useShortcutKeyMap,
@@ -47,7 +45,6 @@ import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
-import { nanoid } from "nanoid";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -67,10 +64,10 @@ import { Empty } from "~/components";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
 import { procedureStepType } from "~/modules/shared";
 import { EXPLORER_SHORTCUTS } from "~/shortcuts";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import {
   procedureParameterValidator,
   procedureStepValidator
@@ -741,11 +738,6 @@ function ProcedureStepForm({
     }
   });
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
   const fetcher = useFetcher<{
     success: boolean;
   }>();
@@ -772,23 +764,7 @@ function ProcedureStepForm({
 
   const isEditing = !!initialValues.id;
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   return (
     <Drawer

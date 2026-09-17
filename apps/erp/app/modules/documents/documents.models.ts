@@ -3,7 +3,6 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { itemType } from "~/modules/shared";
-import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "documents-models");
 
@@ -22,6 +21,8 @@ export const documentSourceTypes = [
   "Sales Return Order",
   "Purchase Return Order",
   "Shipment",
+  "Supplier",
+  "Customer",
   ...itemType
 ] as const;
 
@@ -44,26 +45,11 @@ export const documentLabelsValidator = z.object({
   labels: z.array(z.string().min(1).max(50)).optional()
 });
 
-/**
- * Build the canonical storage path for an uploaded document:
- * `${companyId}/${folder}/${entityId}/${sanitizedName}` in the `"private"` bucket.
- * Single source of truth for the path convention every `use*Documents` hook
- * inlines client-side; shared so the server-side (MCP) upload methods produce
- * paths the entity document panels list from.
- */
-export function buildDocumentUploadPath({
-  companyId,
-  folder,
-  entityId,
-  name
-}: {
-  companyId: string;
-  folder: string;
-  entityId: string;
-  name: string;
-}): string {
-  return `${companyId}/${folder}/${entityId}/${stripSpecialCharacters(name)}`;
-}
+export {
+  buildDocumentUploadPath,
+  buildStagedUploadPath,
+  parseStagedUploadPath
+} from "./documents.paths";
 
 // -- PDF document extraction --------------------------------------------------
 //

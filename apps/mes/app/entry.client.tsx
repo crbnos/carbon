@@ -1,7 +1,7 @@
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+registerReactPdfWorker(pdfjs);
 
 import {
   CONTROLLED_ENVIRONMENT,
@@ -13,6 +13,7 @@ import posthog from "posthog-js";
 import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
 
 ensureLoggingConfigured();
 
@@ -49,6 +50,11 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   );
 }
 
-startTransition(() => {
-  hydrateRoot(document, <HydratedRouter />);
+// The catalog is no longer in loader data, so fetch the active language's
+// chunk before hydrating — otherwise a non-en page hydrates against an empty
+// catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(document, <HydratedRouter />);
+  });
 });

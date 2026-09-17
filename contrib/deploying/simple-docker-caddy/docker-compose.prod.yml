@@ -397,7 +397,8 @@ services:
       TENANT_ID: stub
       REGION: stub
       GLOBAL_S3_BUCKET: stub
-      ENABLE_IMAGE_TRANSFORMATION: "false"
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
     volumes:
       - *shim
       - storage:/var/lib/storage
@@ -407,6 +408,32 @@ services:
         - node
         - -e
         - "fetch('http://127.0.0.1:5000/status').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+      interval: 5s
+      timeout: 5s
+      retries: 30
+    deploy:
+      <<: *restart
+      replicas: 1
+      resources:
+        limits:
+          memory: 512M
+
+  # Image transformations (resize + HEIC→JPEG decode) for the storage API.
+  # Internal only — never publish a port: direct imgproxy access reads the
+  # storage volume with no RLS.
+  imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    networks: [internal]
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
+      IMGPROXY_MAX_SRC_RESOLUTION: "60"
+    volumes:
+      - storage:/var/lib/storage
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
       interval: 5s
       timeout: 5s
       retries: 30

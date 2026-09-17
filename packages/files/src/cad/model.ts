@@ -1,15 +1,3 @@
-export const convertKbToString = (kb: number) => {
-  if (kb < 1024) {
-    return `${kb} KB`;
-  }
-  const mb = kb / 1024;
-  if (mb < 1024) {
-    return `${mb.toFixed(2)} MB`;
-  }
-  const gb = mb / 1024;
-  return `${gb.toFixed(2)} GB`;
-};
-
 // Formats the assembler's /v1/optimize can ingest: exact B-rep sources OCCT
 // tessellates (step/iges/brep + the compacted BinXCAF `xbf` retained-raw form)
 // and mesh sources it parses directly (glb/gltf/stl/obj/ply/off/bim/3mf/amf).

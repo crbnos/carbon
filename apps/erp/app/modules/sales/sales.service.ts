@@ -18,7 +18,7 @@ import type {
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import { buildDocumentUploadPath } from "~/modules/documents/documents.models";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -39,6 +39,7 @@ import {
 } from "../shared/shared.service";
 import type {
   customerAccountingValidator,
+  customerBankAccountValidator,
   customerContactValidator,
   customerPaymentValidator,
   customerShippingValidator,
@@ -339,6 +340,64 @@ export async function deleteCustomer(
   customerId: string
 ) {
   return client.from("customer").delete().eq("id", customerId);
+}
+
+export async function deleteCustomerBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("customerBankAccount").delete().eq("id", id);
+}
+
+export async function getCustomerBankAccounts(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client
+    .from("customerBankAccount")
+    .select("*")
+    .eq("customerId", customerId)
+    .order("name");
+}
+
+export async function upsertCustomerBankAccount(
+  db: Kysely<KyselyDatabase>,
+  bankAccount:
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const { customerId, companyId } = bankAccount;
+
+  if ("createdBy" in bankAccount) {
+    return await db
+      .insertInto("customerBankAccount")
+      .values(bankAccount)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  }
+
+  const { id, ...update } = bankAccount;
+
+  // customerId and companyId are scoping columns, not editable fields. They are
+  // also re-asserted in the WHERE clause so a forged form value cannot move
+  // this row to another customer.
+  return await db
+    .updateTable("customerBankAccount")
+    .set({ ...update, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("customerId", "=", customerId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
 }
 
 export async function deleteCustomerContact(
@@ -7105,7 +7164,7 @@ export async function getShippedTrackedEntitiesForCustomer(
       (entities.data ?? [])
         .map(
           (entity) =>
-            (entity.attributes as Record<string, unknown> | null)?.["Shipment"]
+            (entity.attributes as Record<string, unknown> | null)?.Shipment
         )
         .filter((value): value is string => typeof value === "string")
     )
@@ -7131,9 +7190,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 
   return {
     data: (entities.data ?? []).filter((entity) => {
-      const shipmentId = (
-        entity.attributes as Record<string, unknown> | null
-      )?.["Shipment"];
+      const shipmentId = (entity.attributes as Record<string, unknown> | null)
+        ?.Shipment;
       return (
         typeof shipmentId === "string" && customerShipmentIds.has(shipmentId)
       );
@@ -7750,15 +7808,12 @@ export async function createOpportunityDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; opportunityId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "opportunity",
     entityId: args.opportunityId,
     name: args.name
   });
-  return client.storage
-    .from("private")
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }
 
 /**
@@ -7771,13 +7826,10 @@ export async function createOpportunityLineDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; lineId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "opportunity-line",
     entityId: args.lineId,
     name: args.name
   });
-  return client.storage
-    .from("private")
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }
