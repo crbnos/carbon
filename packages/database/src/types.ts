@@ -13855,7 +13855,7 @@ export type Database = {
           createdBy: string
           customFields?: Json | null
           description?: string | null
-          family: Database["public"]["Enums"]["enforcementRuleFamily"]
+          family?: Database["public"]["Enums"]["enforcementRuleFamily"]
           filteredItemGroupIds?: string[]
           filteredItemMatchAll?: boolean
           filteredItemTypes?: string[]
@@ -13923,6 +13923,13 @@ export type Database = {
             foreignKeyName: "enforcementRule_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -13931,13 +13938,6 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRule_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -13958,6 +13958,13 @@ export type Database = {
             foreignKeyName: "enforcementRule_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRule_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -13966,13 +13973,6 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRule_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -13988,7 +13988,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
+          }
         ]
       }
       enforcementRuleAcknowledgment: {
@@ -14073,6 +14073,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14081,13 +14088,6 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleAcknowledgment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14108,6 +14108,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14116,13 +14123,6 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleAcknowledgment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14138,7 +14138,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
+          }
         ]
       }
       enforcementRuleItemAssignment: {
@@ -14199,6 +14199,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14207,13 +14214,6 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleItemAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14283,6 +14283,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14291,13 +14298,6 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleItemAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14313,7 +14313,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
-          },
+          }
         ]
       }
       enforcementRuleWorkCenterAssignment: {
@@ -14374,6 +14374,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
             columns: ["createdBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14382,13 +14389,6 @@ export type Database = {
             columns: ["createdBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleWorkCenterAssignment_createdBy_fkey"
-            columns: ["createdBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14416,6 +14416,13 @@ export type Database = {
             foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
             referencedRelation: "employees"
             referencedColumns: ["id"]
           },
@@ -14424,13 +14431,6 @@ export type Database = {
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "employeesAcrossCompanies"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "enforcementRuleWorkCenterAssignment_updatedBy_fkey"
-            columns: ["updatedBy"]
-            isOneToOne: false
-            referencedRelation: "employeeSummary"
             referencedColumns: ["id"]
           },
           {
@@ -14474,7 +14474,7 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "workCentersWithBlockingStatus"
             referencedColumns: ["id"]
-          },
+          }
         ]
       }
       eventSystemSubscription: {
@@ -68292,6 +68292,7 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
+          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -68344,6 +68345,7 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
+          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -68396,6 +68398,7 @@ export type Database = {
           quantityComplete?: number | null
           quantityReworked?: number | null
           quantityScrapped?: number | null
+          readyAt?: string | null
           reworkId?: string | null
           setupTime?: number | null
           setupUnit?: Database["public"]["Enums"]["factor"] | null
@@ -68718,6 +68721,7 @@ export type Database = {
           quantityComplete: number | null
           quantityReworked: number | null
           quantityScrapped: number | null
+          readyAt: string | null
           reworkId: string | null
           setupTime: number | null
           setupUnit: Database["public"]["Enums"]["factor"] | null
@@ -77071,14 +77075,14 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["paymentCountryCode"]
+            columns: ["customerCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
           },
           {
             foreignKeyName: "address_countryCode_fkey"
-            columns: ["customerCountryCode"]
+            columns: ["paymentCountryCode"]
             isOneToOne: false
             referencedRelation: "country"
             referencedColumns: ["alpha2"]
