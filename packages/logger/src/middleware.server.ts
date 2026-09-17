@@ -1,5 +1,4 @@
 import { withContext } from "@logtape/logtape";
-import { DEFAULT_REDACT_FIELDS } from "@logtape/redaction";
 import { createId } from "@paralleldrive/cuid2";
 import {
   createContext,
@@ -7,6 +6,7 @@ import {
   type RouterContextProvider
 } from "react-router";
 import { getRequestContext } from "./context.server";
+import { isSensitiveKey, REDACTED } from "./redaction";
 
 // Re-exported from the existing entry point rather than adding a new package
 // export subpath: Vite resolves a package's `exports` map once at dev-server
@@ -24,6 +24,16 @@ export {
 
 import { getLogger } from "./logger";
 
+/**
+ * Run `fn` inside a LogTape implicit-context scope so every log line emitted
+ * within it carries `properties` — the same mechanism `requestIdMiddleware`
+ * uses for `requestId`. Scopes nest and merge, so calling this inside a
+ * request adds to the request's context rather than replacing it. Use it to
+ * stamp identity that a whole request shares (e.g. `companyId`/`userId` once
+ * auth resolves) instead of repeating the fields at every log call site.
+ */
+export { withContext as withLogContext } from "@logtape/logtape";
+
 export const REQUEST_ID_HEADER = "x-request-id";
 
 /** Only these carry a body worth logging; GET/HEAD/OPTIONS don't. */
@@ -34,16 +44,6 @@ const BODY_LOG_METHODS = new Set(["POST", "PUT", "PATCH", "DELETE"]);
  * pulled into the log path.
  */
 const BODY_LOG_MAX_BYTES = 8 * 1024;
-const REDACTED = "[REDACTED]";
-
-/** `DEFAULT_REDACT_FIELDS` entries are `string | RegExp`; match either form. */
-function isSensitiveKey(key: string): boolean {
-  return DEFAULT_REDACT_FIELDS.some((pattern) =>
-    typeof pattern === "string"
-      ? key.toLowerCase().includes(pattern.toLowerCase())
-      : pattern.test(key)
-  );
-}
 
 /**
  * Mask sensitive query-param values (`?code=…`, `?token=…`, …) while keeping the
@@ -64,10 +64,10 @@ function redactSearch(search: string): string {
 
 /**
  * Recursively mask values whose key matches a sensitive-field pattern (the same
- * `DEFAULT_REDACT_FIELDS` LogTape's `redactByField` uses: password/token/secret/
- * key/auth/email/phone/address/…). The sink-level redactor only runs in prod
- * (JSONL); debug bodies are captured in dev where it's off, so we redact the
- * body value here directly.
+ * `REDACT_FIELD_PATTERNS` the prod sink's `redactByField` uses: password/token/
+ * secret/key/auth/…). The sink-level redactor only runs in prod (JSONL); debug
+ * bodies are captured in dev where it's off, so we redact the body value here
+ * directly.
  */
 function redactBody(value: unknown): unknown {
   if (Array.isArray(value)) return value.map(redactBody);

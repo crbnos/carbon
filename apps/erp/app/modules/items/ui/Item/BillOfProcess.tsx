@@ -3932,7 +3932,7 @@ function makeItem(
     id: operation.id!,
     title: (
       <VStack spacing={0}>
-        <h3 className="font-semibold truncate cursor-pointer">
+        <h3 className="font-semibold max-w-full truncate cursor-pointer">
           {operation.description}
         </h3>
         {operation.operationType === "Outside Processing" && (

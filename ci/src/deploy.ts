@@ -52,6 +52,9 @@ export type Workspace = {
   jira_client_secret: string | null;
   jira_oauth_redirect_url: string | null;
   jira_state_secret: string | null;
+  onshape_client_id: string | null;
+  onshape_client_secret: string | null;
+  onshape_oauth_redirect_url: string | null;
   openai_api_key: string | null;
   posthog_api_host: string | null;
   posthog_project_public_key: string | null;
@@ -134,6 +137,9 @@ async function deploy(): Promise<void> {
         jira_oauth_redirect_url,
         jira_state_secret,
         jwt_secret,
+        onshape_client_id,
+        onshape_client_secret,
+        onshape_oauth_redirect_url,
         openai_api_key,
         posthog_api_host,
         posthog_project_public_key,
@@ -293,6 +299,9 @@ async function deploy(): Promise<void> {
           JIRA_CLIENT_SECRET: jira_client_secret ?? undefined,
           JIRA_OAUTH_REDIRECT_URL: jira_oauth_redirect_url ?? undefined,
           JIRA_STATE_SECRET: jira_state_secret ?? undefined,
+          ONSHAPE_CLIENT_ID: onshape_client_id ?? undefined,
+          ONSHAPE_CLIENT_SECRET: onshape_client_secret ?? undefined,
+          ONSHAPE_OAUTH_REDIRECT_URL: onshape_oauth_redirect_url ?? undefined,
           OPENAI_API_KEY: openai_api_key,
           POSTHOG_API_HOST: posthog_api_host ?? undefined,
           POSTHOG_PROJECT_PUBLIC_KEY: posthog_project_public_key ?? undefined,

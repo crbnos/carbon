@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Accounting } from "../../../../core/types";
+import { Rillet } from "../../models";
 import { type BillPostingJournalLine, mapBillToRilletBill } from "../bill";
+import { toRilletExchangeRate } from "../shared";
 
 // The bill's G/L costing comes from its posted Purchase Invoice journal
 // (item-backed invoice lines carry no account of their own): journal lines
@@ -31,33 +33,30 @@ const bill = (): Accounting.Bill =>
   }) as unknown as Accounting.Bill;
 
 const journalLines: BillPostingJournalLine[] = [
-  // Debit-signed: GR/IR clearing debit +300, AP credit -300
+  // Debit-signed costing: GR/IR clearing debit +300; loader excluded AP.
   {
     id: "jl-1",
     accountId: "acct_grir",
     amount: 300,
     description: "GR/IR Clearing"
-  },
-  {
-    id: "jl-2",
-    accountId: "acct_ap",
-    amount: -300,
-    description: "Accounts Payable"
   }
 ];
 
 const codes = new Map([["acct_grir", "2125"]]);
 
 describe("mapBillToRilletBill (journal-derived costing)", () => {
-  it("builds items from the posting journal minus the AP control line", () => {
+  it("builds items from the loader's costing-only rows", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
       subsidiaryId: null,
       companyId: "company-1",
-      postingJournalLines: journalLines,
-      payablesAccountId: "acct_ap"
+      postingJournalLines: journalLines
     });
 
     expect(payload.vendor_id).toBe("vendor-remote-1");
@@ -74,24 +73,30 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
   it("warns when the invoice has no posted journal", () => {
     expect(() =>
       mapBillToRilletBill({
+        documentTotal: 300,
+        decimalPlaces: 2,
+        baseCurrencyCode: "USD",
+        postingDate: "2026-09-07",
         bill: bill(),
         vendorRemoteId: "vendor-remote-1",
         accountCodesById: codes,
         subsidiaryId: null,
         companyId: "company-1",
-        postingJournalLines: [],
-        payablesAccountId: "acct_ap"
+        postingJournalLines: []
       })
     ).toThrowError(JournalEntrySyncError);
     try {
       mapBillToRilletBill({
+        documentTotal: 300,
+        decimalPlaces: 2,
+        baseCurrencyCode: "USD",
+        postingDate: "2026-09-07",
         bill: bill(),
         vendorRemoteId: "vendor-remote-1",
         accountCodesById: codes,
         subsidiaryId: null,
         companyId: "company-1",
-        postingJournalLines: [],
-        payablesAccountId: "acct_ap"
+        postingJournalLines: []
       });
     } catch (error) {
       expect((error as JournalEntrySyncError).failure.message).toContain(
@@ -101,16 +106,19 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
     }
   });
 
-  it("warns on unmapped costing accounts (AP line still excluded)", () => {
+  it("warns on unmapped costing accounts (costing-only input)", () => {
     try {
       mapBillToRilletBill({
+        documentTotal: 300,
+        decimalPlaces: 2,
+        baseCurrencyCode: "USD",
+        postingDate: "2026-09-07",
         bill: bill(),
         vendorRemoteId: "vendor-remote-1",
         accountCodesById: new Map(),
         subsidiaryId: null,
         companyId: "company-1",
-        postingJournalLines: journalLines,
-        payablesAccountId: "acct_ap"
+        postingJournalLines: journalLines
       });
       expect.unreachable("should have thrown");
     } catch (error) {
@@ -122,6 +130,10 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
 
   it("keeps variance/tax lines as additional items", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: new Map([
@@ -142,15 +154,8 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
           accountId: "acct_ppv",
           amount: 20,
           description: "Purchase Price Variance"
-        },
-        {
-          id: "jl-3",
-          accountId: "acct_ap",
-          amount: -300,
-          description: "Accounts Payable"
         }
-      ],
-      payablesAccountId: "acct_ap"
+      ]
     });
 
     expect(payload.items.map((i) => [i.account_code, i.amount.amount])).toEqual(
@@ -165,6 +170,10 @@ describe("mapBillToRilletBill (journal-derived costing)", () => {
 describe("mapBillToRilletBill — item labels + FX (representation model)", () => {
   it("prepends the item code/name label to PO-backed line descriptions", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
@@ -178,8 +187,7 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
           description: "GR/IR Clearing",
           sourceItem: { id: "item-1", code: "WIDGET-1", name: "Widget" }
         }
-      ],
-      payablesAccountId: "acct_ap"
+      ]
     });
 
     expect(payload.items[0]?.description).toBe(
@@ -196,6 +204,10 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
 
   it("uses the item label alone when the line has no journal description", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
@@ -209,8 +221,7 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
           description: null,
           sourceItem: { id: "item-1", code: "WIDGET-1", name: null }
         }
-      ],
-      payablesAccountId: "acct_ap"
+      ]
     });
     expect(payload.items[0]?.description).toBe("WIDGET-1");
   });
@@ -219,10 +230,14 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
     const fxBill = {
       ...bill(),
       currencyCode: "EUR",
-      exchangeRate: 2
+      exchangeRate: 0.8
     } as unknown as Accounting.Bill;
 
     const payload = mapBillToRilletBill({
+      documentTotal: 224,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: fxBill,
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: new Map([
@@ -231,7 +246,7 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
       ]),
       subsidiaryId: null,
       companyId: "company-1",
-      // base-currency debit-signed amounts (rate 2 → half in EUR)
+      // Base-currency debit-signed amounts convert once by multiplication.
       postingJournalLines: [
         {
           id: "jl-1",
@@ -245,14 +260,18 @@ describe("mapBillToRilletBill — item labels + FX (representation model)", () =
           amount: -20,
           description: "Purchase Price Variance"
         }
-      ],
-      payablesAccountId: "acct_ap"
+      ]
     });
 
-    expect(payload.exchange_rate).toBe(2);
+    expect(payload.exchange_rate).toEqual({
+      base: "EUR",
+      target: "USD",
+      rate: "1.25",
+      date: "2026-09-07"
+    });
     expect(payload.items.map((i) => [i.account_code, i.amount])).toEqual([
-      ["2125", { amount: "150.00", currency: "EUR" }],
-      ["5210", { amount: "-10.00", currency: "EUR" }]
+      ["2125", { amount: "240.00", currency: "EUR" }],
+      ["5210", { amount: "-16.00", currency: "EUR" }]
     ]);
   });
 });
@@ -268,14 +287,6 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
       amount: 300,
       description: "GR/IR Clearing",
       dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_hq" }]
-    },
-    {
-      id: "jl-2",
-      accountId: "acct_ap",
-      amount: -300,
-      description: "Accounts Payable",
-      // AP control line dimensions never push (the line itself is excluded)
-      dimensions: [{ dimensionId: LOCATION_DIM, valueId: "loc_other" }]
     }
   ];
 
@@ -283,13 +294,16 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
 
   it("attaches uuid field refs to items from their posting journal line dimensions", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
       subsidiaryId: null,
       companyId: "company-1",
       postingJournalLines: dimensionedLines,
-      payablesAccountId: "acct_ap",
       dimensions: {
         fieldIdByDimensionId,
         fieldValueIdsByValue: new Map([["dim_loc:loc_hq", "fv-hq"]])
@@ -304,31 +318,41 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
 
   it("omits fields for unmapped values (drop path) and when no dimension args are passed", () => {
     const dropped = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
       subsidiaryId: null,
       companyId: "company-1",
       postingJournalLines: dimensionedLines,
-      payablesAccountId: "acct_ap",
       dimensions: { fieldIdByDimensionId, fieldValueIdsByValue: new Map() }
     });
     expect(dropped.items[0]?.fields).toBeUndefined();
 
     const withoutArgs = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
       subsidiaryId: null,
       companyId: "company-1",
-      postingJournalLines: dimensionedLines,
-      payablesAccountId: "acct_ap"
+      postingJournalLines: dimensionedLines
     });
     expect(withoutArgs.items[0]?.fields).toBeUndefined();
   });
 
   it("omits a dimension whose Field was not provisioned (no field mapping)", () => {
     const payload = mapBillToRilletBill({
+      documentTotal: 300,
+      decimalPlaces: 2,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07",
       bill: bill(),
       vendorRemoteId: "vendor-remote-1",
       accountCodesById: codes,
@@ -343,12 +367,85 @@ describe("mapBillToRilletBill — dimensions (Fields)", () => {
           dimensions: [{ dimensionId: "dim_unprovisioned", valueId: "v1" }]
         }
       ],
-      payablesAccountId: "acct_ap",
       dimensions: {
         fieldIdByDimensionId, // only LOCATION_DIM is mapped
         fieldValueIdsByValue: new Map([["dim_unprovisioned:v1", "fv-x"]])
       }
     });
     expect(payload.items[0]?.fields).toBeUndefined();
+  });
+});
+
+describe("Rillet bill currency contract", () => {
+  it("serializes the directed exchange-rate object without money rounding", () => {
+    const rate = toRilletExchangeRate({
+      baseCurrencyCode: "USD",
+      documentCurrencyCode: "EUR",
+      foreignPerBaseRate: 0.8,
+      date: "2026-09-07"
+    });
+    expect(Rillet.ExchangeRateSchema.parse(rate)).toEqual({
+      base: "EUR",
+      target: "USD",
+      rate: "1.25",
+      date: "2026-09-07"
+    });
+    expect(
+      toRilletExchangeRate({
+        baseCurrencyCode: "USD",
+        documentCurrencyCode: "USD",
+        foreignPerBaseRate: 1,
+        date: "2026-09-07"
+      })
+    ).toBeUndefined();
+    expect(() =>
+      toRilletExchangeRate({
+        baseCurrencyCode: "USD",
+        documentCurrencyCode: "USD",
+        foreignPerBaseRate: 2,
+        date: "2026-09-07"
+      })
+    ).toThrow();
+  });
+  it.each([
+    0.8, 1.2, 1
+  ])("preserves USD base principal at foreign rate %s", (rate) => {
+    const result = toRilletExchangeRate({
+      baseCurrencyCode: "USD",
+      documentCurrencyCode: "EUR",
+      foreignPerBaseRate: rate,
+      date: "2026-09-09"
+    });
+    expect(result).toMatchObject({ base: "EUR", target: "USD" });
+    expect(100 * rate * Number(result?.rate)).toBeCloseTo(100, 12);
+  });
+  it.each([
+    [0, "80"],
+    [3, "80.003"]
+  ])("serializes bill currency decimal scale %i", (decimalPlaces, expected) => {
+    const total = Number(expected);
+    const payload = mapBillToRilletBill({
+      bill: { ...bill(), currencyCode: "EUR", exchangeRate: 0.8 },
+      vendorRemoteId: "v",
+      accountCodesById: codes,
+      subsidiaryId: null,
+      companyId: "company-1",
+      postingJournalLines: [
+        {
+          id: "j",
+          accountId: "acct_grir",
+          amount: total / 0.8,
+          description: null
+        }
+      ],
+      documentTotal: total,
+      decimalPlaces,
+      baseCurrencyCode: "USD",
+      postingDate: "2026-09-07"
+    });
+    expect(payload.items[0]?.amount).toEqual({
+      amount: expected,
+      currency: "EUR"
+    });
   });
 });

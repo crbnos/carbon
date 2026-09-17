@@ -18,6 +18,35 @@ or change docs **in that system, in its house style, grounded in real Carbon cod
 
 **Announce at start:** "Using the carbon-docs skill — authoring docs for {topic}."
 
+## First: ask which kind of page this is
+
+Not all doc pages are equal — a settings toggle does not get the treatment a production flow gets, and
+the single biggest quality failure so far has been writing every page in the long narrative register.
+**Before any research or writing, ask the user to pick the page type** (AskUserQuestion, one question,
+your recommended type first — infer it from the topic). Skip the question only when the user already
+named the type in their request, or you're editing an existing page without changing its shape (keep
+its current type). Several pages in one request → one question covering them.
+
+| Type | Reader's question | Shape | Budget |
+|---|---|---|---|
+| **Flow / tour** (Guide) | "walk me through it" | Narrative chapter in a flow: sequenced, illustrated, second-person storytelling, prior stages set up | length serves the story |
+| **System / entity** (Reference) | "how does it work — fields, statuses, rules?" | 1–2 lead sentences → `<StatusFlow entity=…>` lifecycle → rule/gotcha Callouts → `<FieldTable>` → `<Cards>` onward | ~800–1,500 words |
+| **Settings / how-to** (Reference) | "how do I turn it on / use it?" | 1–2 lead sentences → `<Steps>` → one gotcha Callout → where-it-lives | ~300–600 words; steps, not story |
+| **Concept / overview** (Reference) | "what is this area?" | Short intro + `<Cards>` linking to the owning pages | ~150–300 words |
+
+A page can mix types **by section** (an entity page that ends with a short settings section) — pick the
+dominant type for the page, then hold each section to its own shape. Troubleshooting/FAQ content never
+gets a reader-visible section: it goes in `<AgentContext>` (see Reference components).
+
+**No page ends cold.** Every page closes pointing onward: entity and concept pages with a small
+`<Cards>` Related row, settings pages with where-it-lives links, guide chapters get "read next" for
+free. A page that just stops is an IA bug, not a style choice.
+
+The house voice below scales with this choice: full narrative register belongs to Guides; entity pages
+dial it down to scannable-with-gotchas; settings/how-to pages drop it entirely. On a settings page the
+reader wants the steps, not an essay — two-factor auth is a 500-word how-to, not an 1,800-word
+meditation on passwords.
+
 > The single biggest mistake is writing plausible ERP-generic prose. Carbon's behavior is specific and
 > often counterintuitive (WIP is a GL balance not a table; a payment is a posted entity applied via
 > settlements; overhead IS absorbed into WIP per production event; fixed-asset disposal is
@@ -44,9 +73,12 @@ The **holy source of truth is the actual source code + the LATEST database migra
   subsystem the cache still describes the old way.
 - **Document only real, ACTIVE features.** Omit placeholders / inactive / not-yet-shipped things (e.g.
   integration registry entries with `active: false` like QuickBooks/Sage). Don't surface them.
+- **Deliberately undocumented:** the **Implementation Hub** (`/x/get-started`, `packages/onboarding`
+  content) stays out of the docs by the user's decision — don't document it, and don't link to it.
 - **When code and cache disagree, code wins** — and note the drift.
-- **Method:** dispatch a research subagent per feature → return verified facts with `file:line` refs →
-  then write. This is how every flow in the Guide was built. Don't skip it for anything non-trivial.
+- **Method:** one research subagent per feature → a structured **fact sheet** with `file:line` refs
+  (contract in Authoring workflow step 1) → then write from it. This is how every flow in the Guide was
+  built. Don't skip it for anything non-trivial.
 
 ## Three surfaces (know which you're touching)
 
@@ -61,10 +93,29 @@ Guide for the story. (Guide chapters were given 12 cross-flow links — interlin
 
 ## Authoring workflow (every change)
 
-1. **Research (grounded).** Subagent verifies the feature vs source + newest migrations. Get exact
-   table/column/enum/transition names + `file:line`. Flag what a generic description would get wrong.
-2. **Pick the surface + placement.** Guide flow + frontmatter, or Reference folder + `meta.json` order.
+1. **Research (grounded) → a fact sheet.** Dispatch a research subagent per feature. It must return a
+   structured **fact sheet**, not prose: entities/tables/columns; exact status strings and which entity
+   owns each; transitions with the action that drives them (service fn / route / edge function) as
+   `file:line`; gates and settings (`companySettings.*`, plan features); the real UI labels for every
+   where-to-click; the gotchas a generic description would get wrong; and an explicit "could not verify"
+   list — a gap on that list is more research work, never a writing improvisation. The writer then works
+   ONLY from the fact sheet + the page-type template, and writing stays in the main loop on the main
+   model — no model downgrades for prose; the fact sheet is the handoff, not a license for a weaker
+   writer.
+2. **Pick the surface + placement** (the page *type* was chosen up front). Guide flow + frontmatter, or
+   Reference folder + `meta.json` + `REFERENCE_GROUPS` — run the placement checklist below before
+   creating any new page.
 3. **Write in the house voice** with the surface's real components (below). Lead with a concrete example.
+   **Decide media placement yourself as you write — don't wait to be asked.** Drop a `<Screenshot>` slot
+   wherever the reader needs to see the actual UI, with a label naming the real screen + state (the fact
+   sheet's UI labels are the source); use `<Figure>` only when a registry key genuinely fits. Typical
+   density by page type: settings/how-to 1 (the screen with the switch/steps), entity 1–2 (the list or
+   detail view, or the lifecycle UI), guide chapters one per major beat, concept stubs none. **Boy Scout
+   rule:** editing an existing Reference page that has no `<Screenshot>`? Add the one slot its type calls
+   for while you're there — the Reference surface shipped with almost none, and it goes on the media
+   manifest like any new slot. Reuse existing slots on a rewrite; never drop or re-label one that a real
+   capture may already exist for. Slot `label`s double as the image's alt text once a capture lands, so
+   write them as a description of what's *shown* (screen + state), never as a caption or a filename.
 4. **Verify — against the user's running dev server, read-only.** They usually have `pnpm --filter docs dev`
    up. **Never** `pkill`/restart it, run `next build`, or `rm .next` under it — verify by fetching pages:
    ```bash
@@ -127,11 +178,23 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
 
 ## Reference — entity pages
 
-- Frontmatter: `title` + `description` only.
-- **Nav = `meta.json` `pages` arrays** (ordered). Folders: `content/docs/{reference,platform,integrate}/`.
-  Root order in `content/docs/meta.json`; a folder's order + sidebar title in its own `meta.json`
-  (`{ "title": "Product reference", "defaultOpen": true, "pages": [...] }`). Add a page → add its slug to
-  the folder's `pages`. **Don't list `index` in `pages`** — fumadocs treats `index.mdx` as the folder index
+- Frontmatter: `title` + `description` (+ `plan` for a paid-feature gate).
+- **Placement checklist — run it BEFORE creating any page.** (1) Does an existing page already own this
+  topic? Grep `content/docs` for the feature name; if a page covers it, **extend that page** with a
+  section instead of creating a parallel one — a bucket page that re-documents features owned elsewhere
+  is scattering, not architecture. (2) One noun per page. (3) If genuinely new: which sidebar group does
+  it belong to (`REFERENCE_GROUPS`, next bullet)? If none fits, propose a group to the user rather than
+  letting the page dangle ungrouped. (4) **Sub-folders are exceptional** — one entity = one page;
+  `change-orders/` is the only folder today, and splitting a feature across a new folder needs the
+  user's sign-off first.
+- **Nav is TWO layers — miss the second and your page dangles at the bottom of the sidebar.** Folders:
+  `content/docs/{reference,platform,building,integrations}/`. A folder's `meta.json` `pages` array is
+  authoritative for membership AND order (top-level section order is the root `meta.json`) — and the flat
+  Product-reference list is additionally nested into sidebar groups by the hardcoded `REFERENCE_GROUPS`
+  slug map in `app/docs/layout.tsx`, whose group order and within-group slug order are what the reader
+  sees. A reference page missing from that map is appended **ungrouped** after the groups. So adding a
+  reference page = slug into `reference/meta.json` **and** into the right `REFERENCE_GROUPS` group.
+  **Don't list `index` in `pages`** — fumadocs treats `index.mdx` as the folder index
   and the nav renders it as **"Overview"**; listing it duplicates the title as a sibling. Integrations are
   their own top-level section (`content/docs/integrations/`) grouped by category — document only `active`
   integrations (omit `active: false` placeholders + commented-out ones).
@@ -149,13 +212,24 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     (omit when the table has no type column); `required` only when the source marks it so; the child is the
     description as **MDX** (so inline `` `code` ``, *italics*, `<Term>` render — that's why it's children, not a
     `type={{}}` prop). Registered in **both** `mdx.tsx` and `editorial/mdx.tsx`.
-  - `<StatusFlow><Status name accent? branch? terminal?>meaning</Status></StatusFlow>`
+  - `<StatusFlow entity="job"><Status name accent? branch? terminal?>meaning</Status></StatusFlow>`
     (`components/editorial/status-flow.tsx`) — an **interactive** lifecycle widget (selectable pills → a detail
     `Callout` showing the meaning) that replaces a linear `| Status | Meaning |` table. Children in source
     (lifecycle) order; meanings are MDX. Flags: `accent` = the single pivotal milestone (≤1, optional);
     `branch` = a temporary returnable hold (Paused, On Hold, Needs Approval); `terminal` = an off-path exit
-    (Cancelled, Voided, Lost, Expired). Use it ONLY for a **linear** lifecycle — a 2-axis comparison matrix
+    (Cancelled, Voided, Lost, Expired). **`entity` is REQUIRED in practice**: it resolves each status's
+    real ERP badge color from `@carbon/utils/status-colors` (`statusColorMaps`); omit it and every pill
+    silently renders gray — that is a bug, not a style. If the entity has no map yet, add one to
+    `packages/utils/src/status-colors.ts`, **derived from the module's `*Status.tsx` component in the
+    ERP** (never guessed), then pass it. Use it ONLY for a **linear** lifecycle — a 2-axis comparison matrix
     (e.g. invoices sales-vs-purchase) or a small enum list stays a markdown table.
+  - `<AgentContext>…</AgentContext>` — renders **nothing** on the site; its content ships only to the
+    in-app agent's knowledge base (`pnpm run generate:agent-kb` → `apps/erp/app/modules/agent/kb/`,
+    regenerated automatically by check-and-commit). Put troubleshooting/FAQ, exact error strings, and
+    internal mechanics (table names, routes, enum internals) here — reader-facing prose stays free of
+    them. Never write a reader-visible "Troubleshooting" section. About half the Reference pages still
+    have no `<AgentContext>`: when your fact sheet surfaced exact error strings for a page you're
+    editing, seed or extend its block while you're there.
   - `<PlanBadge plan="Business" />` — flags a paid feature. Whole-page gate → set `plan: Business` in
     frontmatter; renders a small **"Paid"** pill inline with the page title (label is fixed to "Paid"; the
     `plan` value only feeds the hover tooltip + the banner copy). Section gate → drop `<PlanBadge>` in-body.
@@ -187,6 +261,24 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
 
 ## House voice
 
+Calibrated by the page type chosen up front: Guides get the full register below; entity pages keep the
+grounding and the gotchas but stay scannable; settings/how-to pages take only "quote real names exactly"
+and "ground every where-to-click" — no narrative, no rhetorical asides, no answering questions nobody
+asked. Cutting to budget beats compressing: drop whole asides, don't shorten every sentence.
+
+- **Active voice, second person, one term per concept.** Never alternate synonyms for the same thing
+  ("API key" one paragraph, "API token" the next) — the glossary term is the term, everywhere. No
+  colloquialisms or idioms; the catalogs are translated and idioms don't survive it.
+- **Never state the obvious.** "Click Save to save" documents nothing. A step earns its place by
+  carrying something the button label doesn't already say.
+- **Short paragraphs — split at the idea boundary.** A paragraph is one idea in 2–4 sentences
+  (~70 words). When a draft paragraph carries two ideas ("what it is" AND "how time splits back"),
+  break it in two rather than chaining clauses; a wall of prose is skipped, not read. Callout bodies
+  obey the same cap. The gate below flags any prose paragraph over ~480 characters.
+- **Every page stands alone.** A reader (or an AI retriever) lands cold from search: state the context
+  and prerequisites in place rather than leaning on the previous page. How-to/settings pages name their
+  prerequisites explicitly before the steps ("needs `settings` update permission", "requires the Slack
+  integration connected").
 - **Second person, concrete, narrative.** Anchor in the running example (the 90-unit humanoid-robot order).
   "Open the sales order dashboard." / "You don't build 90 robots as one monolithic job."
 - **Quote real status names exactly**, in quotes: `**"To Ship and Invoice"**`, `**"Posted"**`, `**"Open"**`.
@@ -195,10 +287,13 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
   `Ordered/In Progress/Completed`) before you attribute it, and state the transition fully (an order at
   `"To Ship and Invoice"` flips to `"To Invoice"` once everything has shipped but isn't billed — don't imply
   it sits at one value until fully closed).
-- **Go easy on em-dashes.** Stacked, they read as a tic — at most one per paragraph, and never a dash-pair
-  parenthetical in an opening sentence. Default to a period or comma; reach for the dash only when it truly
-  beats both. ("Too many em-dashes" is the single most common copy note from review.) Applies to `caption=`
-  and `title=` strings too, not just body prose.
+- **Em-dashes are rationed — count them.** Hard budget: at most 1 per ~150 words of body prose (a 600-word
+  page gets 4, total), never two in one paragraph, never a dash-pair parenthetical in an opening sentence,
+  and none in `title=`, `caption=`, or frontmatter strings. Default to a period, comma, or colon; most
+  dashes read better as two sentences. Do NOT mimic the dash-heavy style of this skill file or of older
+  pages — "too many em-dashes" is the single most common copy note this project gets. Before declaring a
+  page done, count (`grep -o '—' <page>.mdx | wc -l`) and cut to budget; when delegating prose to a
+  subagent, put the budget in its prompt verbatim.
 - **Keep the running example's nouns and numbers exact.** It's the *sales order* (don't drift to a bare
   "order" when instructing the reader) and it's *90 units* (not "a robot"). Once you name the entity and the
   quantity, stay consistent every time — drift is what makes a tour feel sloppy.
@@ -286,6 +381,10 @@ to raise the whole site's connectivity.
 - **Regen `.source` before typecheck** after any frontmatter/schema change (the schema is baked into
   `.source/` at generate time).
 - **Figure keys must exist** — see the list above; a typo renders nothing, silently.
+- **Inline code chips are for identifiers, never statements.** A full command, SQL statement, or long
+  path in an inline `` `…` `` span renders as one unbroken chip that can overflow its container —
+  anything that reads as a *line of code* goes in a fenced block (fences are fine inside Callouts),
+  and inline stays for short tokens (`companyId`, `crbn_…`, `Settings → X` labels stay plain bold).
 - **Bare `{…}` in MDX is a JS expression.** A token in prose like `{item.id}` (e.g. inside an example rule
   message) fails the build with `item is not defined`. Wrap any literal braces/tokens in backticks: `` `{item.id}` ``.
 - **`Write` blocks on existing files** — natural collision protection when a parallel session co-writes the
@@ -308,8 +407,33 @@ to raise the whole site's connectivity.
 
 ## Verification bar
 
-Never declare docs done without: the new content rendering (in the user's running dev server, or a clean
-`pnpm --filter docs build`), every internal link resolving, any new `<Term>` glossary entries grounded in
-source + their popovers rendering, names matching real code, **no generic repeated
-headings**, and a re-read that confirms each page says what matters / names the mistake / points onward. Then
+**Mechanical gate — run on every touched page BEFORE the re-read; each must come back clean.** These are
+deterministic, so there is no judgment call to get lazy on:
+
+Measure READER-VISIBLE content only — raw `wc -w` counts frontmatter and the invisible `<AgentContext>`
+block too, overstating a page by up to 40% and making budgets meaningless:
+
+```bash
+awk '/<AgentContext>/{s=1} !s{print} /<\/AgentContext>/{s=0}' <page>.mdx | wc -w              # words vs the type's budget
+awk '/<AgentContext>/{s=1} !s{print} /<\/AgentContext>/{s=0}' <page>.mdx | grep -o '—' | wc -l  # em-dashes ≤ 1 per ~150 words
+grep -n '<StatusFlow>' <page>.mdx                         # bare = gray pills; must carry entity="…"
+grep -nE '^(title|description): [^"]*: ' <page>.mdx       # unquoted colon-space = YAML, 500s the site
+grep -m1 '^description:' <page>.mdx | wc -c               # ≤ ~170 raw (the SEO meta: 150–160 chars of text)
+awk '/<AgentContext>/{s=1} !s{print} /<\/AgentContext>/{s=0}' <page>.mdx | grep -vE '^\s*([<#|`-]|$)' | awk 'length>480 {print "long paragraph: " substr($0,1,60) "…"}'   # split any hit at its idea boundary
+```
+
+Plus two eyeball checks no grep covers: a `## Troubleshooting` heading may exist only inside
+`<AgentContext>`, and every `<Figure illustration=…>` key is in the registry list.
+
+Never declare docs done without: the mechanical gate passing, the new content rendering (in the user's
+running dev server, or a clean `pnpm --filter docs build`), every internal link resolving, any new
+`<Term>` glossary entries grounded in source + their popovers rendering, names matching real code,
+**no generic repeated headings**, and a re-read that confirms each page says what matters / names the
+mistake / points onward.
+
+**Close with a media manifest.** The final report to the user MUST end with the list of images/media the
+work needs captured — every unfilled `<Screenshot>` slot on a page you created or touched, one line each:
+`page path — slot label (ratio) — what to capture (screen + state)`. Build it with
+`grep -n '<Screenshot' <touched pages>`. That list is the user's capture worklist; a slot you don't
+report is a slot that never gets filled. No new slots → say "no new media needed" explicitly. Then
 record progress (the `.ai/plans/` plan file if one exists, + memory). **Don't kill or rebuild under the user's running dev server.**

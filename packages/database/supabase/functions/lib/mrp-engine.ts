@@ -1,5 +1,11 @@
 // Pure MRP engine functions shared across Supabase edge functions.
 
+import {
+  consumableInWholeAssemblies,
+  type Redirect,
+} from "./supersession-pick.ts";
+import { round, RoundingMode } from "../shared/precision.ts";
+
 export type MethodType =
   | "Make to Order"
   | "Pull from Inventory"
@@ -20,6 +26,7 @@ type DemandContributorBase = {
   quantity: number;
   // The discontinued part this demand was redirected from, if any.
   redirectedFromItemId?: string;
+  perAssemblyQuantity?: number;
 };
 
 export type DemandContributor =
@@ -45,6 +52,7 @@ export type BomExplosionInput = {
   onHandByLocationItem: Map<string, number>;
   jobSupplyByLocationPeriodItem: Map<string, number>;
   topLevelContributors: Map<string, DemandContributor[]>;
+  consumeFirstRedirect?: Map<string, Redirect>;
 };
 
 export type BomExplosionOutput = {
@@ -101,7 +109,7 @@ export function splitActualKey(
   return [parts[0]!, parts[1]!, parts[2]!, parts[3]!];
 }
 
-function effectiveReplenishment(
+export function effectiveReplenishment(
   repSys: ReplenishmentSystem | undefined
 ): "Buy" | "Make" | undefined {
   return repSys === "Buy and Make"
@@ -183,8 +191,24 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
 
   const bomDerivedDemand = new Map<string, number>();
   const demandContributors = new Map<string, DemandContributor[]>();
+  const consumeFirstRedirect =
+    input.consumeFirstRedirect ?? new Map<string, Redirect>();
 
-  const { llc, cycleItemIds } = computeLowLevelCodes(bomByItem);
+  const levelingBom =
+    consumeFirstRedirect.size === 0
+      ? bomByItem
+      : (() => {
+          const withEdges = new Map(bomByItem);
+          for (const [oldItemId, { to }] of consumeFirstRedirect) {
+            withEdges.set(oldItemId, [
+              ...(withEdges.get(oldItemId) ?? []),
+              { itemId: to, quantity: 0, methodType: "Pull from Inventory" },
+            ]);
+          }
+          return withEdges;
+        })();
+
+  const { llc, cycleItemIds } = computeLowLevelCodes(levelingBom);
 
   // A cycle cannot be leveled (rose seeds -> rose -> bouquet -> rose seeds is
   // real production data). Failing the whole company's run for one corrupt
@@ -248,6 +272,39 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
         const grossQty = grossDemand.get(periodKey) ?? 0;
         if (grossQty <= 0) continue;
 
+        const redirect = consumeFirstRedirect.get(itemId);
+        if (redirect) {
+          const weeks = (id: string) =>
+            round((leadTimeByItem.get(id) ?? 7) / 7, 0, RoundingMode.Up);
+          const currentPeriodIndex = periodIndexById.get(period.id) ?? 0;
+          const successorPeriodIndex = Math.max(
+            0,
+            Math.min(
+              currentPeriodIndex,
+              currentPeriodIndex + weeks(itemId) - weeks(redirect.to)
+            )
+          );
+          const successorPeriod =
+            periods[successorPeriodIndex] ?? period;
+          running = redirectConsumeFirstShortfall({
+            itemId,
+            periodKey,
+            successorKey: makeKey(locationId, successorPeriod.id, redirect.to),
+            factor: redirect.factor,
+            grossQty,
+            running,
+            successorIsMake:
+              effectiveReplenishment(
+                replenishmentSystemByItem.get(redirect.to)
+              ) === "Make",
+            bomByItem,
+            grossDemand,
+            bomDerivedDemand,
+            demandContributors,
+          });
+          continue;
+        }
+
         const netRequirement = Math.max(0, grossQty - Math.max(0, running));
         running = Math.max(0, running - grossQty);
 
@@ -306,6 +363,7 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
                 // demand can be shown as "redirected from <old part>".
                 redirectedFromItemId:
                   child.redirectedFromItemId ?? pc.redirectedFromItemId,
+                perAssemblyQuantity: child.quantity,
               });
             }
             demandContributors.set(childKey, childContributors);
@@ -320,4 +378,131 @@ export function explodeBom(input: BomExplosionInput): BomExplosionOutput {
   }
 
   return { grossDemand, bomDerivedDemand, demandContributors, cycleItemIds };
+}
+
+export function netConsumeFirstContributors(args: {
+  itemId: string;
+  contributors: DemandContributor[];
+  grossQty: number;
+  running: number;
+  factor: number;
+  perAssemblyOf: (c: DemandContributor) => number;
+}): {
+  kept: DemandContributor[];
+  moved: DemandContributor[];
+  consumed: number;
+  running: number;
+} {
+  const { itemId, contributors, grossQty, factor, perAssemblyOf } = args;
+  let running = Math.max(0, args.running);
+  const kept: DemandContributor[] = [];
+  const moved: DemandContributor[] = [];
+  let attributed = 0;
+  let consumed = 0;
+  for (const c of contributors) {
+    const take = Math.min(
+      c.quantity,
+      consumableInWholeAssemblies(running, perAssemblyOf(c))
+    );
+    running -= take;
+    attributed += c.quantity;
+    consumed += take;
+    if (take > 0) kept.push({ ...c, quantity: take });
+    if (c.quantity - take > 0) {
+      moved.push({
+        ...c,
+        quantity: (c.quantity - take) * factor,
+        redirectedFromItemId: c.redirectedFromItemId ?? itemId,
+        perAssemblyQuantity:
+          c.perAssemblyQuantity == null
+            ? undefined
+            : c.perAssemblyQuantity * factor,
+      });
+    }
+  }
+  const unattributed = Math.max(0, grossQty - attributed);
+  const unitTake = Math.min(running, unattributed);
+  running -= unitTake;
+  consumed += unitTake;
+  return { kept, moved, consumed, running };
+}
+
+function redirectConsumeFirstShortfall(args: {
+  itemId: string;
+  periodKey: string;
+  successorKey: string;
+  factor: number;
+  grossQty: number;
+  running: number;
+  successorIsMake: boolean;
+  bomByItem: Map<string, BomChild[]>;
+  grossDemand: Map<string, number>;
+  bomDerivedDemand: Map<string, number>;
+  demandContributors: Map<string, DemandContributor[]>;
+}): number {
+  const {
+    itemId,
+    periodKey,
+    successorKey,
+    factor,
+    grossQty,
+    successorIsMake,
+    bomByItem,
+    grossDemand,
+    bomDerivedDemand,
+    demandContributors,
+  } = args;
+
+  const contributors = demandContributors.get(periodKey) ?? [];
+  const { kept, moved, consumed, running } = netConsumeFirstContributors({
+    itemId,
+    contributors,
+    grossQty,
+    running: args.running,
+    factor,
+    perAssemblyOf: (c) =>
+      c.perAssemblyQuantity ??
+      bomByItem
+        .get(c.parentItemId)
+        ?.find((child) => child.itemId === itemId)?.quantity ??
+      0,
+  });
+
+  const shortfall = grossQty - consumed;
+  if (shortfall <= 0) return running;
+
+  const keptShare = consumed / grossQty;
+  const derivedOld = bomDerivedDemand.get(periodKey) ?? 0;
+  const keptDerived = derivedOld * keptShare;
+  if (keptDerived > 0) {
+    bomDerivedDemand.set(periodKey, keptDerived);
+  } else {
+    bomDerivedDemand.delete(periodKey);
+  }
+  grossDemand.set(
+    successorKey,
+    (grossDemand.get(successorKey) ?? 0) + shortfall * factor
+  );
+  const movedDerived = successorIsMake
+    ? (derivedOld - keptDerived) * factor
+    : shortfall * factor;
+  if (movedDerived > 0) {
+    bomDerivedDemand.set(
+      successorKey,
+      (bomDerivedDemand.get(successorKey) ?? 0) + movedDerived
+    );
+  }
+
+  if (contributors.length > 0) {
+    if (kept.length > 0) {
+      demandContributors.set(periodKey, kept);
+    } else {
+      demandContributors.delete(periodKey);
+    }
+    demandContributors.set(
+      successorKey,
+      (demandContributors.get(successorKey) ?? []).concat(moved)
+    );
+  }
+  return running;
 }

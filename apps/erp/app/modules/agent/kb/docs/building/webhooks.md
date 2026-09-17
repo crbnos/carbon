@@ -67,4 +67,4 @@ Carbon does **not** sign webhook payloads. There is no shared secret or signatur
 ## Related
 
   - Integrations Prefer a packaged connector? See the first-party integrations.
-  - Authentication Pull the full record from the API after a webhook tells you it changed.
+  - API keys Pull the full record from the Carbon API after a webhook tells you it changed.

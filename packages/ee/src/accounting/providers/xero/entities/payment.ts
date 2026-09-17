@@ -221,7 +221,7 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       paymentRemoteId,
       amount: remote.Amount ?? 0,
       currencyCode: remote.Invoice?.CurrencyCode ?? null,
-      exchangeRate: remote.CurrencyRate ?? 1,
+      exchangeRate: remote.CurrencyRate ?? null,
       paidDate: getXeroPaymentDate(remote.Date),
       // The Xero PaymentID is the human/provider reference.
       reference: paymentRemoteId,

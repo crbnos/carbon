@@ -30,6 +30,15 @@ function createHmacSignature(
     .digest("hex");
 }
 
+function signaturesMatch(signature: string, expectedSignature: string) {
+  const signatureBuffer = Buffer.from(signature);
+  const expectedBuffer = Buffer.from(expectedSignature);
+  return (
+    signatureBuffer.length === expectedBuffer.length &&
+    crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+  );
+}
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = params;
   if (!companyId) {
@@ -70,10 +79,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
     const { apiKey, secretKey } = integrationValidator.parse(resolvedMetadata);
 
-    // The signature provided by Paperless Parts is computed using the Python json.dumps() function,
-    // which formats the JSON string with newlines and whitespace.
-    // We need to remove the newlines and whitespace to match the signature.
-    const payloadText = JSON.stringify(await request.json(), null, 1)
+    // HMACs authenticate bytes, not parsed JSON. Paperless signs the serialized
+    // request body, so preserve it exactly (including escapes and number syntax).
+    const rawPayloadText = await request.text();
+    const payload = JSON.parse(rawPayloadText);
+
+    // Keep accepting the historical normalized representation for deliveries
+    // where Paperless signed json.dumps(payload) but transmitted different
+    // whitespace. New deliveries should match the raw body.
+    const normalizedPayloadText = JSON.stringify(payload, null, 1)
       .replace(/^ +/gm, " ")
       .replace(/\n/g, "")
       .replace(/{ /g, "{")
@@ -85,37 +99,55 @@ export async function action({ request, params }: ActionFunctionArgs) {
       request.headers.get("paperless-parts-signature") ||
       request.headers.get("Paperless-Parts-Signature");
     if (!signatureHeader) {
+      logger.warning("Paperless Parts webhook rejected", {
+        companyId,
+        reason: "missing_signature_header"
+      });
       return data({ success: false }, { status: 401 });
     }
 
     // Parse timestamp and signature from header
     const [timestampPart, signaturePart] = signatureHeader.split(",");
+    if (!timestampPart || !signaturePart) {
+      logger.warning("Paperless Parts webhook rejected", {
+        companyId,
+        reason: "malformed_signature_header"
+      });
+      return data({ success: false }, { status: 401 });
+    }
     const timestamp = Number(timestampPart.replace("t=", ""));
     const signature = signaturePart.replace("v1=", "");
 
     if (!timestamp || !signature) {
+      logger.warning("Paperless Parts webhook rejected", {
+        companyId,
+        reason: "malformed_signature_header"
+      });
       return data({ success: false }, { status: 401 });
     }
-
-    const expectedSignature = createHmacSignature(
-      payloadText,
-      secretKey,
-      timestamp
-    );
 
     // Constant-time comparison (SC-13): a plain `!==` leaks, via timing, how many
-    // leading bytes of a forged signature are correct. Guard length first —
-    // timingSafeEqual throws on unequal-length buffers.
-    const signatureBuffer = Buffer.from(signature);
-    const expectedBuffer = Buffer.from(expectedSignature);
+    // leading bytes of a forged signature are correct. Check both the exact
+    // signed bytes and the legacy normalized representation for compatibility.
+    const signedPayloadCandidates = new Set([
+      rawPayloadText,
+      normalizedPayloadText
+    ]);
     if (
-      signatureBuffer.length !== expectedBuffer.length ||
-      !crypto.timingSafeEqual(signatureBuffer, expectedBuffer)
+      ![...signedPayloadCandidates].some((candidate) =>
+        signaturesMatch(
+          signature,
+          createHmacSignature(candidate, secretKey, timestamp)
+        )
+      )
     ) {
+      logger.warning("Paperless Parts webhook rejected", {
+        companyId,
+        reason: "signature_mismatch"
+      });
       return data({ success: false }, { status: 401 });
     }
 
-    const payload = JSON.parse(payloadText);
     logger.info("payload", payload);
 
     await trigger("paperless-parts", {
@@ -125,7 +157,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
     return { success: true };
-  } catch (_err) {
+  } catch (err) {
+    logger.error("Paperless Parts webhook failed", {
+      companyId,
+      error: err instanceof Error ? err.message : String(err),
+      stack: err instanceof Error ? err.stack : undefined
+    });
     return data({ success: false }, { status: 500 });
   }
 }

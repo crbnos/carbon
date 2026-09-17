@@ -107,6 +107,7 @@ export function ReviewersList({
                       <Trans>Cancel</Trans>
                     </Button>
                     <Submit
+                      hideShortcutKey
                       isLoading={fetcher.state === "submitting"}
                       isDisabled={fetcher.state === "submitting"}
                     >

@@ -1,7 +1,7 @@
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
 import { serve } from "inngest/remix";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { executeFunction } from "./mcp+/lib/direct-executor";
+import { callOperation } from "./v1+/lib/call.server";
 
 /**
  * Inngest API endpoint.
@@ -31,7 +31,11 @@ const handler = serve({
 let dispatchWired = false;
 function wireWorkflowDispatch() {
   if (dispatchWired) return;
-  setWorkflowDispatch(executeFunction);
+  // A running workflow acts as its already-authorized owner; the per-operation
+  // scope gate applies to API keys only.
+  setWorkflowDispatch((name, context, args) =>
+    callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+  );
   dispatchWired = true;
 }
 

@@ -986,10 +986,10 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     startDate: { kind: "primitive", of: "date" },
     storageUnitId: { kind: "primitive", of: "string" },
     priority: { kind: "primitive", of: "number" },
-    productionQuantity: { kind: "primitive", of: "number" },
     projectedCompletionAt: { kind: "primitive", of: "date" },
     scheduleOutdatedReason: { kind: "primitive", of: "string" },
-    scheduleOutdatedAt: { kind: "primitive", of: "date" }
+    scheduleOutdatedAt: { kind: "primitive", of: "date" },
+    productionQuantity: { kind: "primitive", of: "number" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },
@@ -1034,9 +1034,10 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     manuallyScheduled: { kind: "primitive", of: "boolean" },
     reworkId: { kind: "primitive", of: "string" },
     assemblyInstructionId: { kind: "primitive", of: "string" },
-    inspectionDocumentId: { kind: "primitive", of: "string" },
     readyAt: { kind: "primitive", of: "date" },
-    projectedCompletionAt: { kind: "primitive", of: "date" }
+    inspectionDocumentId: { kind: "primitive", of: "string" },
+    projectedCompletionAt: { kind: "primitive", of: "date" },
+    jobOperationBatchId: { kind: "primitive", of: "string" }
   },
   location: {
     id: { kind: "primitive", of: "string" },

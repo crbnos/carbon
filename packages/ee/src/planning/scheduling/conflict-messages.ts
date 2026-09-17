@@ -227,3 +227,35 @@ export function composeLateConflict(
       return `${late} — outside processing pushes it past the due date`;
   }
 }
+
+/**
+ * A batch member whose predecessor is now projected to finish AFTER the
+ * batch's placed start. The batch window came from the pre-pass (anchored on
+ * last-wave forecasts); this wave moved the predecessor later, so the batch
+ * would start before its input is ready. Informational — the next wave
+ * re-anchors the batch and converges.
+ */
+export function composeBatchPredecessorConflict(args: {
+  batchReadableId: string | null;
+  predecessorDescription: string | null;
+}): string {
+  const batch = args.batchReadableId
+    ? `Batch ${args.batchReadableId}`
+    : "The operation's batch";
+  const predecessor = args.predecessorDescription
+    ? `"${args.predecessorDescription}"`
+    : "an earlier operation";
+  return `${batch} is scheduled to start before ${predecessor} in this job is projected to finish — the next replan re-anchors the batch`;
+}
+
+/**
+ * A Released batch whose open members all carry zero setup/labor/machine
+ * time. It cannot be sized, so it holds a flagged placeholder instead of
+ * capacity; the fix is data entry, not rescheduling.
+ */
+export function composeBatchNoEstimatesConflict(
+  batchReadableId: string | null
+): string {
+  const batch = batchReadableId ? `Batch ${batchReadableId}` : "The batch";
+  return `${batch} has no estimated time — add setup, labor, or machine time to its operations to schedule it`;
+}

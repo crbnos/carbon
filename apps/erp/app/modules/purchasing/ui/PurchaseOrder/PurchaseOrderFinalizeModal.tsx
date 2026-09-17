@@ -5,7 +5,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -80,14 +79,14 @@ const PurchaseOrderFinalizeModal = ({
             <ModalTitle>{`Finalize ${getPurchaseOrderDisplayId(
               purchaseOrder
             )}`}</ModalTitle>
-            <ModalDescription>
-              Are you sure you want to finalize the purchase order? Finalizing
-              the order will affect on order quantities used to calculate supply
-              and demand.
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to finalize the purchase order? Finalizing
+                the order will affect on order quantities used to calculate
+                supply and demand.
+              </p>
               {canEmail && (
                 <SelectControlled
                   label={t`Send Via`}

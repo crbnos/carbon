@@ -1,5 +1,7 @@
+import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { runLocationSchedule } from "@carbon/ee/planning";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@carbon/auth", () => ({
@@ -16,8 +18,14 @@ vi.mock("@carbon/auth/client.server", () => ({
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
+vi.mock("@carbon/ee/planning", () => ({
+  runLocationSchedule: vi.fn()
+}));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn() })
+}));
+vi.mock("~/services/database.server", () => ({
+  getDatabaseClient: vi.fn(() => ({}))
 }));
 vi.mock("~/utils/path", () => ({
   path: {
@@ -27,6 +35,9 @@ vi.mock("~/utils/path", () => ({
     }
   },
   requestReferrer: () => null
+}));
+vi.mock("~/modules/inventory", () => ({
+  cancelOpenPickingListsForJob: vi.fn()
 }));
 vi.mock("~/modules/production", () => ({
   jobStatus: [
@@ -40,11 +51,16 @@ vi.mock("~/modules/production", () => ({
     "Cancelled"
   ],
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
+  returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
 
-import { updateJobStatus } from "~/modules/production";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory";
+import {
+  returnPickedRemaindersForJob,
+  updateJobStatus
+} from "~/modules/production";
 import { action } from "./$jobId.status";
 
 type QueryResult = { data: unknown; error: unknown };
@@ -101,8 +117,29 @@ function setup() {
     events.push("updateJobStatus");
     return { data: { id: "job-1" }, error: null } as any;
   });
+  vi.mocked(runLocationSchedule).mockImplementation(async () => {
+    events.push("runLocationSchedule");
+    return undefined as any;
+  });
+  vi.mocked(returnPickedRemaindersForJob).mockImplementation(async () => {
+    events.push("returnPickedRemainders");
+    return { data: {}, error: null } as any;
+  });
+  vi.mocked(cancelOpenPickingListsForJob).mockImplementation(async () => {
+    events.push("cancelOpenPickingLists");
+    return { error: null };
+  });
 
   return { client, serviceRole };
+}
+
+function cancelRequest() {
+  const body = new FormData();
+  body.set("status", "Cancelled");
+  return new Request("http://localhost/x/job/job-1/status", {
+    method: "POST",
+    body
+  });
 }
 
 function releaseRequest() {
@@ -134,15 +171,41 @@ describe("Job release status action", () => {
     // On success the action ends by throwing a redirect Response.
     await expect(runRelease()).rejects.toBeInstanceOf(Response);
 
+    // The redirect must be the SUCCESS one. Without this, a scheduler that
+    // throws still redirects (the catch flashes "Failed to schedule job"), and
+    // the ordering assertion below would pass on the failure path.
+    expect(success).toHaveBeenCalledWith("Updated job status");
+    expect(error).not.toHaveBeenCalled();
+
     expect(updateJobStatus).toHaveBeenCalledOnce();
     expect(events).toContain("updateJobStatus");
-    expect(events).toContain("invoke:schedule");
-    // Regression guard: the `schedule` edge function only batches jobs already
+    expect(events).toContain("runLocationSchedule");
     // Ready/In Progress/Paused. If the status is committed AFTER the scheduler
     // runs, the freshly released job is filtered out of its own schedule run and
     // never lands in capacityReservation / the forecast.
     expect(events.indexOf("updateJobStatus")).toBeLessThan(
-      events.indexOf("invoke:schedule")
+      events.indexOf("runLocationSchedule")
+    );
+  });
+});
+
+describe("Job cancel status action", () => {
+  it("returns staged material, then cancels the job's open picking lists", async () => {
+    await expect(
+      action({
+        request: cancelRequest(),
+        params: { jobId: "job-1" },
+        context: {}
+      } as any)
+    ).rejects.toBeInstanceOf(Response);
+
+    expect(returnPickedRemaindersForJob).toHaveBeenCalledOnce();
+    expect(cancelOpenPickingListsForJob).toHaveBeenCalledWith(
+      expect.anything(),
+      { jobId: "job-1", companyId: "company-1", userId: "user-1" }
+    );
+    expect(events.indexOf("returnPickedRemainders")).toBeLessThan(
+      events.indexOf("cancelOpenPickingLists")
     );
   });
 });

@@ -63,7 +63,7 @@ export type FormProps<DataType, Subaction extends string | undefined> = {
   /**
    * A `Validator` object that describes how to validate the form.
    */
-  validator: z.Schema<DataType> | z.ZodEffects<any> | z.ZodObject<any>;
+  validator: z.Schema<DataType> | z.ZodObject<any> | z.ZodPipe<any, any>;
   /**
    * A submit callback that gets called when the form is submitted
    * after all validations have been run.
@@ -385,6 +385,7 @@ export function ValidatedForm<
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setFieldErrors(backendError?.fieldErrors ?? {});
+    if (backendError?.fieldErrors) endSubmit();
     if (!disableFocusOnError && backendError?.fieldErrors) {
       focusFirstInvalidInput(
         backendError.fieldErrors,
@@ -396,6 +397,7 @@ export function ValidatedForm<
     backendError?.fieldErrors,
     customFocusHandlers,
     disableFocusOnError,
+    endSubmit,
     setFieldErrors,
     setFieldError
   ]);

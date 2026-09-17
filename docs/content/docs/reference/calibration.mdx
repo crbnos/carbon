@@ -64,7 +64,7 @@ Logging a calibration never overwrites the last one. Each record is a dated row,
 
 A gauge carries a calibration status with three values, and Carbon sets it for you.
 
-<StatusFlow>
+<StatusFlow entity="gaugeCalibration">
   <Status name="Pending">The starting state. The gauge has a schedule but no passing calibration on record yet, so it's neither confirmed in nor out.</Status>
   <Status name="In-Calibration" accent>The most recent calibration passed and the next-due date is still in the future. The gauge is trustworthy.</Status>
   <Status name="Out-of-Calibration" terminal>The most recent calibration failed, the gauge is inactive, or the next-due date has passed. The gauge needs recalibrating.</Status>

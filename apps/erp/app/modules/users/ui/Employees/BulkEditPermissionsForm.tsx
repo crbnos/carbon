@@ -16,6 +16,7 @@ import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
 import { Employees, Hidden, Radios, Submit } from "~/components/Form";
 import PermissionMatrix from "~/components/PermissionMatrix";
+import { usePermissions } from "~/hooks";
 import {
   fromEmployeeTypePermissions,
   toCompanyPermissions,
@@ -37,6 +38,7 @@ const BulkEditPermissions = ({
   onClose
 }: BulkEditPermissionsProps) => {
   const { t } = useLingui();
+  const permissions = usePermissions();
   const emptyPermissionsFetcher = useFetcher<{
     permissions: Record<
       string,
@@ -46,6 +48,8 @@ const BulkEditPermissions = ({
       }
     >;
   }>();
+
+  const canEditPermissions = permissions.can("update", "users");
 
   useMount(() => {
     emptyPermissionsFetcher.load(path.to.api.emptyPermissions);
@@ -130,13 +134,18 @@ const BulkEditPermissions = ({
                 label={t`Users to Update`}
               />
 
-              {hasModules && <PermissionMatrix matrix={matrix} />}
+              {hasModules && (
+                <PermissionMatrix
+                  matrix={matrix}
+                  isDisabled={!canEditPermissions}
+                />
+              )}
               <Hidden name="data" value={permissionsData} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>
             <HStack>
-              <Submit>
+              <Submit isDisabled={!canEditPermissions}>
                 <Trans>Save</Trans>
               </Submit>
               <Button size="md" variant="solid" onClick={onClose}>

@@ -88,7 +88,9 @@ export default function NewWorkCenterRoute() {
     name: "",
     overheadRate: 0,
     processes: [],
-    shifts: []
+    shifts: [],
+    batchCapacity: undefined as number | undefined,
+    minimumBatchQuantity: undefined as number | undefined
   };
 
   return <WorkCenterForm onClose={onClose} initialValues={initialValues} />;

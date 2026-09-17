@@ -429,7 +429,7 @@ export type Theme = (typeof themes)[number];
 export const themeValidator = z.object({
   next: zfd.text(z.string().optional()),
   theme: z.enum(themes, {
-    errorMap: (issue, ctx) => ({ message: "Theme is required" })
+    error: "Theme is required"
   })
 });
 

@@ -1,0 +1,112 @@
+---
+title: Operation batching
+description: Group identical operations from several jobs to run as one setup and one timer at a work center, with time and cost split back per job by quantity.
+---
+
+Some processes physically run several jobs at once: a laser table nests parts from many work orders on one sheet, a furnace treats many jobs in one cycle, a plating bath coats whatever fits. An <Term>operation batch</Term> models that run. It groups unstarted <Term id="job-operation">job operations</Term> from different jobs, all on the same batchable process, to run together at one <Term id="work-center">work center</Term>, with one shared setup and one shared timer.
+
+The jobs are never merged and no BOM changes: each member stays a first-class operation on its own job, and at completion the shared time is sliced back per member in proportion to its quantity, so job costing and the GL post per job with nothing special-cased.
+
+<Callout type="note" title="Not the same as batch tracking">
+An operation batch (`BAT000001`) is a production-run concept. It is unrelated to the lot/batch **numbers** that trace quantities through inventory — see [traceability](/docs/reference/traceability). Same word, different feature.
+</Callout>
+
+## Making a process batchable
+
+Batching is switched on per **process**, not per item or method. On the process form (**Resources → Processes**), turn on **"Batchable"** and pick a **"Batch type"**: **"Sequential"** (parts run one after another, like a saw or laser table) or **"Simultaneous"** (parts run together in one load, like a furnace, oven, or plating bath). The type drives the run-time estimate: sequential sums the members' times, simultaneous takes the longest.
+
+The same card holds the **"Compatibility rules"**: how strictly each material property must match for operations to share a batch. Six dimensions (material, substance, grade, dimension, form, finish), each set to **"Require Match"**, **"Suggest Match"**, or **"Ignore"**. By default substance, grade, and dimension suggest a match and the rest are ignored.
+
+Only "Require Match" ever blocks anything; a suggested mismatch just warns. A work center can additionally carry an advisory **"Batch Capacity"** and **"Minimum Batch Quantity"**; the builder shows a fill bar against them but never refuses a batch over them.
+
+## Building a batch
+
+Open **Production → Batches** and press **"New Batch"** (the production dashboard's **"Unbatched Operations"** card and a job header's *"N awaiting batching"* badge lead to the same place). Pick a **Location** and a **Batchable process**, and the builder lists every eligible operation: unstarted, not already in a batch, on that process, with no production recorded.
+
+Operations whose "Require Match" dimensions clash with your selection stay visible but locked, and mixed "Suggest Match" materials get an amber tag plus a warning to confirm they nest together on this run.
+
+<Screenshot label="The batch builder at Production → Batches → New Batch: scope pickers, the eligible-operations list grouped by material with suggestion banner, and the Review & create panel with setup-saving chip" caption="Suggestions group by material signature and due window; the review panel shows one shared setup instead of one per operation." />
+
+The builder also proposes ready-made groupings: operations sharing a material signature and due within the same seven-day window, ranked by setup saved, urgency, and capacity fit. Finish with **"Create batch"** (the batch waits as **"Planned"**) or **"Create & Release"** (it goes straight to the floor). A work center is optional at this point: leave it blank and the scheduler auto-assigns the earliest-finishing candidate on release, writing it to the batch and every member.
+
+## Lifecycle
+
+<StatusFlow entity="jobOperationBatch">
+  <Status name="Planned">Composed but not on the floor. Members still schedule as individual operations, the batch is invisible in the shop floor app, and it can be freely edited or dissolved.</Status>
+  <Status name="Released" accent>On the floor as one unit: one schedule reservation, one shared timer. Members appear in the shop floor app even when their own job isn't released yet.</Status>
+  <Status name="Completing">Completion has started: quantities are recorded and time is sliced. If a downstream step fails, the batch stays here and the operator retries from the shop floor.</Status>
+  <Status name="Completed">Done. Each member operation is marked "Done" with its own time, quantity, and cost, and the jobs proceed independently.</Status>
+</StatusFlow>
+
+There is no cancelled state: **"Dissolve Batch"** returns the members to the schedule un-run and deletes the batch, and removing the last member does the same. **"Unrelease Batch"** puts a released batch back to "Planned".
+
+<Callout type="warn" title="Recorded production freezes the batch">
+The moment a single timer event is recorded against the batch, membership is permanent: adding, removing, changing the work center, unreleasing, and dissolving are all refused, and the only exit is completing it. Decide the composition before work starts.
+</Callout>
+
+<Callout type="note" title="Release pulls member jobs onto the floor">
+A batched operation is visible to operators when its **batch** is released, even if its own job is still "Draft" or "Planned"; the batch's schedule outranks the job's. Releasing recalculates requirements for those unreleased member jobs first, so materials are known, but it does not run MRP. The same job's other, unbatched operations stay hidden until the job itself is released.
+</Callout>
+
+## On the schedule
+
+A released batch is one scheduling unit: it books a single work-center reservation sized by the batch type, placed before the per-job passes so member jobs plan around it.
+
+On the [schedule board](/docs/reference/scheduling), the batch renders as one card listing its jobs; dragging it to another column reassigns the batch's work center, and reordering it moves every member's priority together. The Batches list also offers bulk actions — select planned batches and **"Release N batches"** in one go, or dissolve several at once.
+
+## On the shop floor
+
+There is no separate batch screen in the shop floor app: any member's operation view *is* the batch UI. A batch chip shows the `BAT…` number, the member jobs, and a **"Print batch list"** action; the timer is shared, so starting it runs one clock for the whole batch, and planned time shows the batch total.
+
+<Screenshot label="The Complete Batch modal in the shop floor app: one row per member job with Quantity and Scrap inputs, and the footnote about leaving a row at zero" caption="Time and cost split across jobs proportionally to quantity; scrap is entered per job and never split." />
+
+Completion happens once, for the whole batch, in the **"Complete Batch"** modal: one row per member with **Quantity** and **Scrap**, pre-filled with each operation's remaining quantity. Leave a row at zero to skip that operation — it detaches and returns to the schedule un-run, with no time or quantity recorded.
+
+On submit, any running timer stops, the shared time is sliced into per-member events in proportion to each member's planned quantity, scrap is recorded per member exactly as typed, materials issue, costs post, and every remaining member is marked **"Done"**.
+
+<Callout type="warn" title="A partial quantity still completes the operation">
+Entering less than the pre-filled quantity records less output, but the member operation is marked "Done" regardless. The only way to keep a member open is to zero it out entirely so it leaves the batch. If a downstream step fails mid-completion, the batch parks at "Completing" and the modal's button becomes **"Retry Completion"** — the retry must resubmit the recorded quantities, and corrections happen after completion.
+</Callout>
+
+## Related
+
+<Cards>
+  <Card title="Scheduling" href="/docs/reference/scheduling">How a released batch appears on the timeline, and why an estimate-less batch can't be scheduled.</Card>
+  <Card title="Jobs" href="/docs/reference/jobs">The work orders whose operations a batch groups.</Card>
+  <Card title="Work centers" href="/docs/reference/work-centers">Where a batch runs, and the advisory capacity numbers the builder reads.</Card>
+  <Card title="MES" href="/docs/reference/mes">The shop floor app where the shared timer runs and completion happens.</Card>
+</Cards>
+
+<AgentContext>
+## Internals, exact strings, and troubleshooting
+
+Tables: `jobOperationBatch` header (PK `("id","companyId")`, status enum `jobOperationBatchStatus` = Planned | Active | Completing | Completed, default Planned; migration `20260905132037_job-operation-batching.sql`); membership via `jobOperation.jobOperationBatchId`; `productionEvent.jobOperationBatchId` tags the shared timer; `capacityReservation.jobOperationBatchId` marks the one coalesced schedule hold. Readable id sequence prefix `BAT`, size 6, seed name "Operation Batch". Process config: `process.batchable`, `process.batchType` (Sequential|Simultaneous), `process.batchRules` JSONB (six dimensions × must|guide|ignore; defaults: substance/grade/dimension=guide, item/form/finish=ignore — `shared/batch-compatibility.ts`, re-exported by `@carbon/utils`). Work center: `batchCapacity` / `minimumBatchQuantity`, advisory only; validator enforces min ≤ capacity.
+
+**"Active" is displayed as "Released" everywhere** (`BatchesTable.tsx:60`; raw value in the tooltip). Never write "activate a batch". Colors: `BATCH_STATUS_COLOR_MAP` (`@carbon/utils/status-colors`).
+
+All mutations go through the `batch-operations` edge function (`packages/database/supabase/functions/batch-operations/index.ts`), permission `update: "production"` for every type — including create (the RLS INSERT policy names `production_create`, but the edge fn's Kysely path makes `production_update` the effective gate). ERP routes: list `/x/production/batches` (view: production), builder `/x/production/batches/new` (update: production — deliberate, so the wizard never dead-ends at submit), bulk `/x/production/batches/release` and `/dissolve`, board updates via `/x/priority/batching/update`. Batch list PDF at `/file/batch/:id.pdf` is permissionless by design (tenant safety from explicit companyId scoping). No plan gate and no companySettings flag exists — `process.batchable` is the only enablement switch.
+
+Eligibility (`assertEligible`): same company, same process, process batchable, `jobOperationBatchId IS NULL`, status ∈ Todo|Ready|Waiting, zero production events; candidate RPC (`get_batchable_operations`) also requires a non-terminal job but NOT a released one. Floor visibility (`get_active_job_operations_by_location`): batched op visible iff batch is Active/Completing; enforced again in the MES operation loader, start route, and `getOpenJobs`.
+
+Two-phase completion (`completeBatch`): phase 1 in one transaction — detach excluded members, auto-close a running timer at NOW(), slice events per member ∝ `operationQuantity` (largest-remainder whole seconds; `productionEvent.duration` is GENERATED so cost follows), insert per-member `productionQuantity` rows (Production when qty>0, Scrap when scrap>0), flip Active→Completing. Phase 2 idempotent — issue materials per member with qty>0, flip members Done (fires `sync_finish_job_operation` each), post GL per sliced event skipping already-posted, finalize Completing→Completed. MES batch timers skip `post-production-event` at End (`apps/mes/app/routes/x+/event.tsx:129-132`); cost posts once at completion. Scheduler: `batch-scheduler.ts` pre-pass places Active/Completing batches as one unit (Planned excluded), auto-assigns earliest-finish work center when blank (guarded `WHERE workCenterId IS NULL`), writes one reservation anchored on the min open member op; the reservation is spared by per-job regen and retired only by the status trigger (`20260907155426_cleanup-reservations-on-batch-exit.sql`) on entry to Planned/Completed; dissolve self-heals via FK SET NULL. Employee finiteness is deliberately absent in v1 — the batch reserves the work center only.
+
+Key refusal strings (edge fn): "The process is not batchable"; "Operation {id} is already in a batch"; "Operation {id} has already started"; "Operations with recorded production events cannot be batched"; "These operations can't share a batch — the {dims} must match on this process"; "Cannot add operations to a batch with status {status}"; "The batch has already started — complete it instead"; "Cannot remove operations: production has been recorded. Complete the batch instead."; "Cannot change the work center: production has been recorded."; "Only a planned batch can be released"; "Cannot release an empty batch"; "Only an active batch can be unreleased"; "Cannot dissolve: production has been recorded. Complete the batch instead — member jobs then proceed independently."; "Every operation is excluded — dissolve the batch instead of completing it"; "Operation {id} was included when completion started — retry with the recorded values; corrections happen after completion."; "Quantities were already recorded for this batch ({detail}). Retry with the recorded values; corrections happen after completion."; "One or more operations were already claimed by another batch — refresh and try again". MES gates: "This operation is part of a batch that has not been released to the floor"; "This operation's job has not been released to the floor". Builder add-mode: "Only a planned or active batch can take more operations". Scheduling conflict: "{Batch} has no estimated time — add setup, labor, or machine time to its operations to schedule it".
+
+### The batch card is missing from the operations board / MES
+Planned batches are invisible outside the Batches list and the builder: the board and the floor only surface Active ("Released") and Completing batches. Release it.
+
+### Can't dissolve, unrelease, remove a member, or change the work center
+Production has been recorded against the batch — membership and placement are frozen; complete the batch instead. A "Completing" batch can only be retried from the shop floor (the schedule card links "Completion in progress — retry in Shop Floor").
+
+### An operator sees a job that was never released
+Its operation is in a released batch — the batch's release outranks the job's for that operation only. Expected; the job's other operations stay hidden.
+
+### Retry Completion rejects my corrected quantities
+By design: a resume must match what phase 1 recorded (mismatches are quoted back). Complete with the recorded values; correct afterwards on the job.
+
+### The builder hides some operations on the process
+The hidden-ops note explains: "{n} already started", "{n} already in a batch". Started or event-carrying operations can never be batched.
+
+### Suggested batches look wrong / too small
+Suggestions group by material signature split into 7-day due windows, scored by setup saved (0.4), urgency (0.35), capacity fit (0.15), specificity (0.1); top 6 shown. Undated members ride the earliest dated cluster. They're suggestions — manual selection is never constrained by them.
+</AgentContext>

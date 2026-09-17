@@ -34,7 +34,7 @@ The source and target are picked from the group's active companies, and **elimin
 
 Every intercompany transaction carries a **status**. It starts life at **"Unmatched"**, is paired to its counterpart by matching, and is retired by elimination.
 
-<StatusFlow>
+<StatusFlow entity="intercompanyTransaction">
   <Status name="Unmatched">The transaction has been created and posted on its source company, but Carbon has not yet found the mirror-image transaction on the other company. This is the default on creation.</Status>
   <Status name="Matched" accent>Matching found the counterpart: a transaction in the reverse direction (its source is this one's target, and vice versa) for the **same amount** in the same group. Both sides flip to Matched together and each records the other's journal line.</Status>
   <Status name="Eliminated" terminal>Elimination has generated the reversing journal that cancels the pair for consolidation. The transaction is retired and stops counting toward the intercompany balance.</Status>

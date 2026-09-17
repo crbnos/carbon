@@ -153,6 +153,11 @@ export const terms = {
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
     href: "/docs/reference/work-centers"
   },
+  "operation-batch": {
+    term: msg`Operation batch`,
+    definition: msg`Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity.`,
+    href: "/docs/reference/batching"
+  },
   backflush: {
     term: msg`Backflush`,
     definition: msg`Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually.`,
@@ -552,6 +557,10 @@ export const terms = {
   "account-default-sales": {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
+  },
+  "account-default-sales-shipping-revenue": {
+    term: msg`Shipping Revenue (default)`,
+    definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
@@ -1714,8 +1723,12 @@ export const terms = {
     definition: msg`The outside suppliers that perform this process; each gets a row of pricing and lead-time inputs on the supplier process form.`
   },
   "process-complete-all-on-scan": {
-    term: msg`Complete all quantities on barcode scan`,
+    term: msg`Complete all quantities on kanban complete scan`,
     definition: msg`When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials.`
+  },
+  "batch-type": {
+    term: msg`Batch type`,
+    definition: msg`How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath).`
   },
 
   // ── Resources: Work centers (WorkCenterForm) ────────────────────────────
@@ -1972,7 +1985,7 @@ export const terms = {
   "api-key": {
     term: msg`API key`,
     definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
-    href: "/docs/reference/api-keys"
+    href: "/docs/building/api-keys"
   },
   notification: {
     term: msg`Notification`,

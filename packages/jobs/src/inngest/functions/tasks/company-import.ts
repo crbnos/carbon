@@ -4,6 +4,7 @@ import { sql } from "kysely";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import type { TableInfo } from "./company-backup";
 import {
   assertBackupImportable,
   BACKUP_INTEGRATION,
@@ -22,7 +23,11 @@ import {
 import {
   buildIdMaps,
   buildRowTransforms,
-  loadSubstrateIds
+  getUniqueColumnGroups,
+  loadSubstrateIds,
+  mapCollidingRows,
+  matchableUniqueGroups,
+  referencedDroppedTables
 } from "./company-backup.transforms";
 
 const INSERT_CHUNK_SIZE = 200;
@@ -145,7 +150,7 @@ export const companyImportFunction = inngest.createFunction(
       // correct in both cases: a bare clone imports everything, an
       // identity-seeded onboard skips exactly what's already there.
       const byName = new Map(catalog.tables.map((t) => [t.name, t]));
-      const importTables =
+      const unpopulatedTables =
         mode === "reseed"
           ? await filterUnpopulated(
               db,
@@ -156,6 +161,30 @@ export const companyImportFunction = inngest.createFunction(
             )
           : candidateTables;
 
+      // A dropped-as-already-populated table whose ids the kept rows still
+      // reference must be imported anyway, or every FK into it is nulled /
+      // left dangling (this is how a reseed detached every workCenter and job
+      // from its location — onboarding's one "Headquarters" row made the
+      // backup's `location` table look "already populated"). Colliding rows
+      // are mapped onto the target's own rows below instead of inserted.
+      let readdedTables: TableInfo[] = [];
+      let importTables = unpopulatedTables;
+      if (mode === "reseed") {
+        const keptNames = new Set(unpopulatedTables.map((t) => t.name));
+        readdedTables = referencedDroppedTables(
+          unpopulatedTables,
+          candidateTables.filter((t) => !keptNames.has(t.name))
+        );
+        if (readdedTables.length > 0) {
+          const keep = new Set([
+            ...keptNames,
+            ...readdedTables.map((t) => t.name)
+          ]);
+          // Re-filter from candidateTables so topological (catalog) order holds.
+          importTables = candidateTables.filter((t) => keep.has(t.name));
+        }
+      }
+
       // Reseed: assign a fresh id to every row of every id-bearing table up
       // front so FK references can be rewritten in a single pass. Shares
       // `buildIdMaps` with the restore path so the two can't drift.
@@ -164,9 +193,46 @@ export const companyImportFunction = inngest.createFunction(
           ? buildIdMaps(importTables, backup.data)
           : new Map<string, Map<string, string>>();
 
+      // Re-added tables are populated in the target BY DEFINITION, and unique
+      // constraints stay enforced under replica mode — a backup row sharing a
+      // unique key with an existing target row (both sides have a
+      // "Headquarters" location) must map onto it, not be inserted against it.
+      const collisionSkips = new Map<string, Set<string>>();
+      for (const table of readdedTables) {
+        const idMap = idMaps.get(table.name);
+        if (!idMap || table.scope.kind !== "direct") continue;
+        const scopeValue =
+          table.scope.column === "companyId" ? companyId : targetGroupId;
+        if (scopeValue == null) continue;
+        const groups = matchableUniqueGroups(
+          await getUniqueColumnGroups(db, table.name),
+          table
+        );
+        if (groups.length === 0) continue;
+        const cols = [...new Set(groups.flat())];
+        const existing = await sql<{ [col: string]: unknown }>`
+          SELECT ${sql.join([sql.id("id"), ...cols.map((c) => sql.id(c))])}
+          FROM ${sql.id(table.name)}
+          WHERE ${sql.id(table.scope.column)} = ${scopeValue}
+        `.execute(db);
+        const { skippedSourceIds, overrides } = mapCollidingRows(
+          groups,
+          backup.data[table.name] ?? [],
+          existing.rows
+        );
+        for (const [sourceId, targetId] of overrides) {
+          idMap.set(sourceId, targetId);
+        }
+        if (skippedSourceIds.size > 0) {
+          collisionSkips.set(table.name, skippedSourceIds);
+        }
+      }
+
       // Flat old-id → new-id lookup across every remapped table, used to rewrite
       // ids embedded in storage paths (e.g. `{co}/models/{modelId}.stl`) so the
       // restored files and their DB path columns line up. Empty in preserve mode.
+      // Built AFTER collision overrides so a mapped-onto-target row's path
+      // segments rewrite to the surviving id.
       const idRewrite = new Map<string, string>();
       for (const map of idMaps.values()) {
         for (const [oldId, newId] of map) idRewrite.set(oldId, newId);
@@ -250,7 +316,13 @@ export const companyImportFunction = inngest.createFunction(
             onUnresolvedRef: recordUnresolvedRef,
             scrubEmail
           });
-          const originalRows = backup.data[table.name]!;
+          const skips = collisionSkips.get(table.name);
+          const allRows = backup.data[table.name]!;
+          const originalRows = skips
+            ? allRows.filter(
+                (row) => !(typeof row.id === "string" && skips.has(row.id))
+              )
+            : allRows;
           // Hot path: indexed loops (no per-row `forEach` closure), packed
           // output array, `out` keys in fixed column order (one hidden class
           // per table).

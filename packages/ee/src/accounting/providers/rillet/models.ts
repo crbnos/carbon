@@ -86,7 +86,7 @@ export namespace Rillet {
     id: z.string(),
     name: z.string(),
     values: z.array(FieldValueSchema).default([]),
-    settings: z.record(z.unknown()).nullish(),
+    settings: z.record(z.string(), z.unknown()).nullish(),
     updated_at: z.string().nullish()
   });
 
@@ -197,7 +197,7 @@ export namespace Rillet {
 
   /**
    * Carbon only ever writes ONE_TIME prices (Rillet also supports
-   * FIXED_RECURRING and USAGE; Carbon-generated AR_ONLY invoices carry
+   * FIXED_RECURRING and USAGE; Carbon-generated invoices carry
    * their own line totals, so the product price is nominal).
    */
   export const ProductPriceSchema = z.object({
@@ -224,8 +224,25 @@ export namespace Rillet {
 
   export type Product = z.infer<typeof ProductSchema>;
 
-  /** AR_ONLY invoice item — product_id is REQUIRED on every line. */
+  export const ExchangeRateSchema = z.object({
+    base: z.string().min(1),
+    target: z.string().min(1),
+    rate: z
+      .string()
+      .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  });
+  export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
+
+  /** External invoice item — product_id is REQUIRED on every line. */
   export const InvoiceItemSchema = z.object({
+    revenue: z
+      .object({
+        account_code: z.string().optional(),
+        period: z.object({ start: z.string(), end: z.string() }).optional(),
+        pattern: z.enum(["DAILY", "EVEN_PERIOD"]).optional()
+      })
+      .optional(),
     id: z.string().optional(),
     product_id: z.string(),
     description: z.string(),
@@ -238,12 +255,12 @@ export namespace Rillet {
   export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 
   /**
-   * AR_ONLY invoice: Carbon keeps generating/sending the invoice; Rillet
-   * carries the receivable. `invoice_number` is Carbon's readable id.
+   * External invoice: Carbon issues the invoice; Rillet carries the receivable.
+   * New postings use REVENUE_RECOGNITION_ONLY for fixed FX and immediate revenue. `invoice_number` is Carbon's readable id.
    */
   export const InvoiceSchema = z.object({
     id: z.string(),
-    scope: z.literal("AR_ONLY"),
+    scope: z.enum(["AR_ONLY", "REVENUE_RECOGNITION_ONLY"]),
     customer_id: z.string(),
     /** YYYY-MM-DD. */
     invoice_date: z.string(),
@@ -252,7 +269,7 @@ export namespace Rillet {
     due_date: z.string().optional(),
     tax_amount: MonetaryAmountSchema.optional(),
     subsidiary_id: z.string().optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     items: z.array(InvoiceItemSchema).min(1),
     external_references: z.array(ExternalReferenceSchema).min(1),
     status: z.string().optional(),
@@ -295,7 +312,7 @@ export namespace Rillet {
     subsidiary_id: z.string().optional(),
     impact_date: z.string().optional(),
     external_references: z.array(ExternalReferenceSchema).optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     status: BillStatusSchema.optional(),
     updated_at: z.string().optional()
   });

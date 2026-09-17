@@ -121,6 +121,7 @@
   "peerDependencies": {
     "@internationalized/date": "catalog:",
     "@lingui/react": "catalog:",
+    "@marsidev/react-turnstile": "catalog:",
     "framer-motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",

@@ -647,6 +647,15 @@ function ShipmentLineItem({
   );
 }
 
+// Sales-return shipments (source "Sales Return Order") ship returned stock,
+// which is deliberately On Hold until it leaves — mirror the status
+// lines.tracking accepts when validating entities for this source.
+function expectedEntityStatus(shipment?: Shipment) {
+  return shipment?.sourceDocument === "Sales Return Order"
+    ? "On Hold"
+    : "Available";
+}
+
 function BatchForm({
   line,
   shipment,
@@ -709,8 +718,9 @@ function BatchForm({
   const resolvedBatch = values.number
     ? resolveTrackedEntity(values.number, batchNumbers?.data ?? [])
     : null;
-  // @ts-expect-error TS2339 - TODO: fix type
-  const isBatchNumberValid = resolvedBatch?.status === "Available";
+  const isBatchNumberValid =
+    // @ts-expect-error TS2339 - TODO: fix type
+    resolvedBatch?.status === expectedEntityStatus(shipment);
 
   // Verify batch quantity is sufficient for the shipped quantity
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
@@ -728,7 +738,7 @@ function BatchForm({
       if (
         batchNumber &&
         // @ts-expect-error TS2339 - TODO: fix type
-        batchNumber.status === "Available" &&
+        batchNumber.status === expectedEntityStatus(shipment) &&
         // @ts-expect-error TS2339 - TODO: fix type
         (line.shippedQuantity || 0) > batchNumber.quantity
       ) {
@@ -803,7 +813,7 @@ function BatchForm({
     );
 
     // @ts-expect-error TS2339 - TODO: fix type
-    if (batchNumber && batchNumber.status !== "Available") {
+    if (batchNumber && batchNumber.status !== expectedEntityStatus(shipment)) {
       // @ts-expect-error TS2339 - TODO: fix type
       setError(`Batch number is ${batchNumber.status}`);
       setValues({
@@ -867,6 +877,14 @@ function BatchForm({
     });
   };
 
+  // Same discoverability fix as SerialForm: the input stays free-text for
+  // scanners, and the QR affordance opens the list of batches this line accepts.
+  // Quantity is shown alongside each one because a batch smaller than the
+  // shipped quantity is split on posting, which is worth seeing before picking.
+  const selectableBatches = (batchNumbers?.data ?? []).filter(
+    (entity) => entity.status === expectedEntityStatus(shipment)
+  );
+
   return (
     <div className="flex flex-col gap-6 w-full p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
@@ -917,6 +935,43 @@ function BatchForm({
               <InputRightElement className="pl-2">
                 {isBatchNumberValid ? (
                   <LuCheck className="text-emerald-500" />
+                ) : selectableBatches.length > 0 && !isReadOnly ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        aria-label={t`Show available batch numbers`}
+                        className="text-muted-foreground hover:text-foreground"
+                      >
+                        <LuQrCode />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="max-h-64 overflow-y-auto"
+                    >
+                      {selectableBatches.map((entity) => {
+                        const number = (entity.readableId ??
+                          entity.id) as string;
+                        return (
+                          <DropdownMenuItem
+                            key={entity.id}
+                            className="flex items-center justify-between gap-3"
+                            onSelect={() => {
+                              const picked = { ...values, number };
+                              setValues(picked);
+                              updateBatchNumber(picked, true);
+                            }}
+                          >
+                            <span className="font-mono text-xs">{number}</span>
+                            <span className="text-xs text-muted-foreground tabular-nums">
+                              {+(entity.quantity ?? 0)}
+                            </span>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <LuQrCode />
                 )}
@@ -967,6 +1022,7 @@ function SerialForm({
     serialNumbers: { index: number; id: string }[]
   ) => void;
 }) {
+  const { t } = useLingui();
   const [errors, setErrors] = useState<Record<number, string>>({});
   const { data: serialNumbersData } = useSerialNumbers(
     line.itemId!,
@@ -1012,14 +1068,14 @@ function SerialForm({
       }
 
       // @ts-expect-error TS2339 - TODO: fix type
-      if (serialNumber.status !== "Available") {
+      if (serialNumber.status !== expectedEntityStatus(shipment)) {
         // @ts-expect-error TS2339 - TODO: fix type
         return `Serial number is ${serialNumber.status}`;
       }
 
       return null;
     },
-    [serialNumbers, serialNumbersData?.data]
+    [serialNumbers, serialNumbersData?.data, shipment]
   );
 
   const updateSerialNumber = useCallback(
@@ -1119,6 +1175,28 @@ function SerialForm({
     ]
   );
 
+  // The input stays free-text so a barcode scanner can drive it, but that left
+  // no way to discover a valid number without the physical label in hand. The
+  // QR affordance now also opens the list of what this line accepts.
+  //
+  // Deliberately not `TrackedEntityPicker`/`CreatableCombobox`: the former reads
+  // `get_available_tracked_entities`, which hard-filters `status = 'Available'`
+  // while a sales-return shipment ships On Hold stock; the latter can't render a
+  // value that isn't in its options, which would hide scanned entries. Driving
+  // this off the same data `validateSerialNumber` checks keeps them in step.
+  const unassignedSerialNumbers = (serialNumbersData?.data ?? []).filter(
+    (entity) =>
+      entity.status === expectedEntityStatus(shipment) &&
+      !serialNumbers.some((assigned) => {
+        if (!assigned.id) return false;
+        const resolved = resolveTrackedEntity(
+          assigned.id,
+          serialNumbersData?.data ?? []
+        );
+        return resolved?.id === entity.id;
+      })
+  );
+
   return (
     <div className="flex flex-col gap-6 p-6 border rounded-lg">
       <div className="flex justify-between items-center gap-4">
@@ -1154,8 +1232,9 @@ function SerialForm({
                 serialNumbersData?.data ?? []
               )
             : null;
-          // @ts-expect-error TS2339 - TODO: fix type
-          const isSerialNumberValid = resolvedSerial?.status === "Available";
+          const isSerialNumberValid =
+            // @ts-expect-error TS2339 - TODO: fix type
+            resolvedSerial?.status === expectedEntityStatus(shipment);
 
           return (
             <div
@@ -1209,6 +1288,46 @@ function SerialForm({
                 <InputRightElement className="pl-2">
                   {isSerialNumberValid ? (
                     <LuCheck className="text-emerald-500" />
+                  ) : unassignedSerialNumbers.length > 0 && !isReadOnly ? (
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <button
+                          type="button"
+                          aria-label={t`Show available tracking numbers`}
+                          className="text-muted-foreground hover:text-foreground"
+                        >
+                          <LuQrCode />
+                        </button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent
+                        align="end"
+                        className="max-h-64 overflow-y-auto"
+                      >
+                        {unassignedSerialNumbers.map((entity) => {
+                          const number = (entity.readableId ??
+                            entity.id) as string;
+                          return (
+                            <DropdownMenuItem
+                              key={entity.id}
+                              className="font-mono text-xs"
+                              onSelect={() => {
+                                const updated = [...serialNumbers];
+                                updated[index] = { index, id: number };
+                                onSerialNumbersChange(updated);
+                                setErrors((prev) => {
+                                  const next = { ...prev };
+                                  delete next[index];
+                                  return next;
+                                });
+                                updateSerialNumber({ index, id: number });
+                              }}
+                            >
+                              {number}
+                            </DropdownMenuItem>
+                          );
+                        })}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   ) : (
                     <LuQrCode />
                   )}

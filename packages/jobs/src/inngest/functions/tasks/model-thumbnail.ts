@@ -2,7 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   NODE_ENV,
   SUPABASE_ANON_KEY,
-  SUPABASE_URL,
+  SUPABASE_INTERNAL_URL,
   VERCEL_URL
 } from "@carbon/env";
 import { nanoid } from "nanoid";
@@ -60,7 +60,7 @@ export const modelThumbnailFunction = inngest.createFunction(
       const previousPath = previous.data?.thumbnailPath ?? null;
 
       const url = getModelUrl(modelId);
-      const imageUrl = `${SUPABASE_URL}/functions/v1/thumbnail`;
+      const imageUrl = `${SUPABASE_INTERNAL_URL}/functions/v1/thumbnail`;
 
       const response = await fetch(imageUrl, {
         method: "POST",

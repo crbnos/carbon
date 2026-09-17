@@ -1,13 +1,15 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 
 import { corsPreflight, errorResponse } from "../lib/response.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("pick");
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
@@ -46,12 +48,7 @@ serve(async (req: Request) => {
   try {
     const { type, companyId, userId } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "pick",
-      type,
-      companyId,
-      userId,
-    });
+    logger.info({ type, companyId, userId });
 
     const client = await requirePermissions(req, companyId, userId, { update: "inventory" });
 
@@ -64,7 +61,9 @@ serve(async (req: Request) => {
         return errorResponse("Invalid operation type", 400);
     }
   } catch (error) {
-    console.error("Error in pick:", error);
+    logger.error("pick failed", {
+      error: String((error as Error)?.stack ?? error),
+    });
     return errorResponse(error, 500);
   }
 });

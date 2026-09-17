@@ -9,6 +9,35 @@ import babelMacros from "vite-plugin-babel-macros";
 export default defineConfig(({ mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, __dirname);
 
+  /**
+   * SSR dependencies that must be bundled into the server output rather than
+   * left as bare `import`s. Applied to BOTH `ssr.noExternal` (honored by the
+   * dev server and the plain `react-router build`) and
+   * `environments.ssr.resolve.noExternal`.
+   *
+   * The second location is not redundant: with `future.v8_viteEnvironmentApi`
+   * enabled, the Vercel preset builds each route group as a named server-bundle
+   * environment (`ssr_bundle_*`), and React Router's server-bundle environment
+   * resolver merges `viteUserConfig.environments.ssr` — NOT the top-level `ssr`
+   * config. Without this, `zustand` (default-imported by @react-three/fiber,
+   * see below) is externalized in the Vercel Lambda and crashes the function on
+   * cold start with "does not provide an export named 'default'".
+   */
+  const ssrNoExternal = [
+    "react-dropzone",
+    "react-icons",
+    "react-phone-number-input",
+    "tailwind-merge",
+    /**
+     * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
+     * its nested zustand v3, while the app uses zustand v5 (no default
+     * export). Externalizing zustand merges both into one bare import that
+     * resolves to v5 at runtime and crashes the server at module load.
+     * Bundling it lets each importer keep its own version.
+     */
+    "zustand",
+  ];
+
   return {
     build: {
       minify: true,
@@ -27,20 +56,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
       global: "globalThis",
     },
     ssr: {
-      noExternal: [
-        "react-dropzone",
-        "react-icons",
-        "react-phone-number-input",
-        "tailwind-merge",
-        /**
-         * @react-three/fiber v8 (inlined via @carbon/viewer) default-imports
-         * its nested zustand v3, while the app uses zustand v5 (no default
-         * export). Externalizing zustand merges both into one bare import that
-         * resolves to v5 at runtime and crashes the server at module load.
-         * Bundling it lets each importer keep its own version.
-         */
-        "zustand",
-      ],
+      noExternal: ssrNoExternal,
+    },
+    environments: {
+      ssr: {
+        resolve: {
+          noExternal: ssrNoExternal,
+        },
+      },
     },
     server: {
       port: 3001,

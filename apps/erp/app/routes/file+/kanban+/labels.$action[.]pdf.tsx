@@ -93,6 +93,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         locationName: kanban.locationName || "",
         storageUnitId: kanban.storageUnitId,
         storageUnitName: kanban.storageUnitName,
+        fromStorageUnitName: kanban.fromStorageUnitName,
         supplierName: kanban.supplierName,
         quantity: kanban.quantity ?? 0,
         unitOfMeasureCode: kanban.purchaseUnitOfMeasureCode,

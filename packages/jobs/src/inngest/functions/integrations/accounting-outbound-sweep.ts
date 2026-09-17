@@ -37,6 +37,10 @@ import { today } from "@internationalized/date";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
+import {
   drainSyncOperations,
   getSweepFloorDate,
   getSyncOperationActor,
@@ -229,7 +233,10 @@ async function sweepCompanyProvider(args: {
     const billIds = await pageIds({
       ctx,
       table: "purchaseInvoice",
-      statuses: SWEPT_BILL_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_BILL_STATUSES, "Voided"]
+          : SWEPT_BILL_STATUSES,
       dateColumn: "postingDate",
       floor
     });
@@ -258,7 +265,10 @@ async function sweepCompanyProvider(args: {
     const invoiceIds = await pageIds({
       ctx,
       table: "salesInvoice",
-      statuses: SWEPT_INVOICE_STATUSES,
+      statuses:
+        providerId === "rillet"
+          ? [...SWEPT_INVOICE_STATUSES, "Voided"]
+          : SWEPT_INVOICE_STATUSES,
       dateColumn: "postingDate",
       floor
     });
@@ -281,9 +291,23 @@ async function sweepCompanyProvider(args: {
       dateColumn: "createdAt",
       floor
     });
-    scanned.payments = paymentIds.length;
+    // A void is a LATE state change, so `createdAt` cannot see it: a payment
+    // created before the lookback floor and voided today is invisible to the
+    // page above, and a lost void event would never recover. Page those by
+    // `voidedAt` as well — the column that actually moved.
+    const lateVoidedPaymentIds = await pageIds({
+      ctx,
+      table: "payment",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor
+    });
+    const sweptPaymentIds = [
+      ...new Set([...paymentIds, ...lateVoidedPaymentIds])
+    ];
+    scanned.payments = sweptPaymentIds.length;
     refs.push(
-      ...paymentIds.map(
+      ...sweptPaymentIds.map(
         (id): ReconcileRef => ({ entityType: "payment", entityId: id })
       )
     );
@@ -385,7 +409,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId")
+        .select("id, companyId, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -397,7 +421,8 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
 
       return (integrations.data ?? []).map((row) => ({
         companyId: row.companyId,
-        providerId: row.id as ProviderID
+        providerId: row.id as ProviderID,
+        updatedBy: row.updatedBy
       }));
     });
 
@@ -406,29 +431,37 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: ProviderID } & SweepSummary
+      {
+        companyId: string;
+        providerId: ProviderID;
+      } & IsolatedStepOutcome<SweepSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `outbound-sweep-${target.providerId}-${target.companyId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `outbound-sweep-${target.providerId}-${target.companyId}`,
+        target,
+        fn: async () => {
+          // Process-lifetime cached pool shared with events/sync.ts and the
+          // pull sweep — never end it here (see accounting-pull-sweep.ts).
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await sweepCompanyProvider({
-              companyId: target.companyId,
-              providerId: target.providerId,
-              database,
-              scope: runId
-            });
-          } finally {
-            await pool.end();
-          }
+          return await sweepCompanyProvider({
+            companyId: target.companyId,
+            providerId: target.providerId,
+            database,
+            scope: runId
+          });
         }
-      );
+      });
 
-      results.push({ ...target, ...result });
+      results.push({
+        companyId: target.companyId,
+        providerId: target.providerId,
+        ...result
+      });
     }
 
     return { targets: targets.length, results };

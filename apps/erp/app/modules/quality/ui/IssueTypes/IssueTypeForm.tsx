@@ -95,7 +95,7 @@ const IssueTypeForm = ({
             </ModalDrawerBody>
             <ModalDrawerFooter>
               <HStack>
-                <Submit isDisabled={isDisabled}>
+                <Submit hideShortcutKey isDisabled={isDisabled}>
                   <Trans>Save</Trans>
                 </Submit>
                 <Button size="md" variant="solid" onClick={() => onClose()}>

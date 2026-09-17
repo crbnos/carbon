@@ -888,10 +888,15 @@ export async function updateDefaultCustomerCc(
   companyId: string,
   defaultCustomerCc: string[]
 ) {
-  return client
-    .from("companySettings")
-    .update({ defaultCustomerCc })
-    .eq("companyId", companyId);
+  return (
+    client
+      .from("companySettings")
+      .update({ defaultCustomerCc })
+      // `companySettings` is keyed by `id` (which IS the companyId) — it has no
+      // `companyId` column, so the old predicate made every save fail with a
+      // PostgREST error surfaced straight to the user on Settings → Sales.
+      .eq("id", companyId)
+  );
 }
 
 export async function updateCompany(

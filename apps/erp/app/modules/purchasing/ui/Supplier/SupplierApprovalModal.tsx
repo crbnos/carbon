@@ -4,7 +4,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle
@@ -59,15 +58,15 @@ const SupplierApprovalModal = ({
             <ModalTitle>
               {isApproving ? "Approve" : "Reject"} {supplierName}
             </ModalTitle>
-            <ModalDescription>
-              {isApproving
-                ? "Are you sure you want to approve this supplier? This will make it active."
-                : "Are you sure you want to reject this supplier?"}
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
+            <p className="text-sm text-muted-foreground mb-4">
+              {isApproving
+                ? "Are you sure you want to approve this supplier? This will make it active."
+                : "Are you sure you want to reject this supplier?"}
+            </p>
             <TextArea
               name="notes"
               label={t`Notes (optional)`}

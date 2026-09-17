@@ -7,7 +7,6 @@ import useInitialDimensions from "./useInitialDimenions";
 import { useInterval } from "./useInterval";
 import useIsMobile from "./useIsMobile";
 import { useIsomorphicLayoutEffect } from "./useIsomorphicLayoutEffect";
-import useKeyboardShortcuts from "./useKeyboardShortcuts";
 import { useKeyboardWedge } from "./useKeyboardWedge";
 import useLocalStorage from "./useLocalStorage";
 import { useMode, useOptimisticMode } from "./useMode";
@@ -17,11 +16,11 @@ import { useNProgress } from "./useNProgress";
 import { useOptimisticLocation } from "./useOptimisticLocation";
 import useOutsideClick from "./useOutsideClick";
 import { usePlan } from "./usePlan";
-import { usePrettifyShortcut } from "./usePrettifyShortcut";
 import { useRealtimeChannel } from "./useRealtimeChannel";
 import { useRouteData } from "./useRouteData";
 import type { Shortcut, ShortcutDefinition } from "./useShortcutKeys";
-import { useShortcutKeys } from "./useShortcutKeys";
+import { useShortcutKeyMap, useShortcutKeys } from "./useShortcutKeys";
+import { useShortcutSequence } from "./useShortcutSequence";
 import useThrottle from "./useThrottle";
 import { useUrlParams } from "./useUrlParams";
 
@@ -35,7 +34,6 @@ export {
   useInterval,
   useIsMobile,
   useIsomorphicLayoutEffect,
-  useKeyboardShortcuts,
   useKeyboardWedge,
   useLocalStorage,
   useMode,
@@ -46,10 +44,11 @@ export {
   useOptimisticMode,
   useOutsideClick,
   usePlan,
-  usePrettifyShortcut,
   useRealtimeChannel,
   useRouteData,
+  useShortcutKeyMap,
   useShortcutKeys,
+  useShortcutSequence,
   useThrottle,
   useUrlParams
 };

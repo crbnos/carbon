@@ -31,6 +31,38 @@ describe("paymentValidator", () => {
     expect(r.success).toBe(true);
   });
 
+  it("accepts a customer refund disbursement", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement"
+      }).success
+    ).toBe(true);
+  });
+
+  it("accepts a supplier refund receipt", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined,
+        supplierId: "supp1"
+      }).success
+    ).toBe(true);
+  });
+
+  it.each([
+    "Receipt",
+    "Disbursement"
+  ])("rejects ambiguous %s counterparty", (paymentType) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType,
+        supplierId: "supp1"
+      }).success
+    ).toBe(false);
+  });
+
   it("rejects a Receipt missing customer", () => {
     const r = paymentValidator.safeParse({
       ...validReceipt,
@@ -167,9 +199,9 @@ describe("isInvoicePayable", () => {
     expect(isInvoicePayable("Overdue", 100)).toBe(true);
   });
 
-  it("forgives a sub-cent dust balance (not payable)", () => {
-    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(false);
-    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(false);
+  it("keeps positive foreign document remainders payable below a base cent", () => {
+    expect(isInvoicePayable("Partially Paid", 0.003)).toBe(true);
+    expect(isInvoicePayable("Partially Paid", 0.009)).toBe(true);
   });
 
   it("is not payable when fully paid or zero balance", () => {
@@ -187,4 +219,20 @@ describe("isInvoicePayable", () => {
     expect(isInvoicePayable(null, null)).toBe(false);
     expect(isInvoicePayable(undefined, undefined)).toBe(false);
   });
+});
+
+it("retains exact document principal when its rounded base is zero", () => {
+  const result = invoiceSettlementValidator.safeParse({
+    paymentId: "pay",
+    targetSalesInvoiceId: "inv",
+    appliedAmount: 0,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceAmount: 0.01,
+    sourceExchangeRate: 100000,
+    targetExchangeRate: 100000,
+    appliedDate: "2026-09-07"
+  });
+  expect(result.success).toBe(true);
+  if (result.success) expect(result.data).toHaveProperty("sourceAmount", 0.01);
 });

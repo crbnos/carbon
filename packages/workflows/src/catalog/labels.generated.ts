@@ -191,6 +191,7 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.jobOperation.inspectionDocumentId": msg`Inspection document`,
   "entity.jobOperation.jobId": msg`Job`,
   "entity.jobOperation.jobMakeMethodId": msg`Job make method`,
+  "entity.jobOperation.jobOperationBatchId": msg`Job operation batch`,
   "entity.jobOperation.laborRate": msg`Labor rate`,
   "entity.jobOperation.laborTime": msg`Labor time`,
   "entity.jobOperation.laborUnit": msg`Labor unit`,

@@ -9,7 +9,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -172,12 +171,12 @@ const QuotationFinalizeModal = ({
         >
           <ModalHeader>
             <ModalTitle>{`Finalize ${getQuoteDisplayId(quote)}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>Are you sure you want to finalize the quote?</Trans>
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>Are you sure you want to finalize the quote?</Trans>
+              </p>
               {warningLineReadableIds.length > 0 && (
                 <Alert variant="destructive">
                   <LuTriangleAlert className="h-4 w-4" />

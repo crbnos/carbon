@@ -13,6 +13,20 @@ export const DEFAULT_APP_ORIGIN = "https://app.carbon.ms";
 
 export const DEFAULT_MCP_ENDPOINT = `${DEFAULT_APP_ORIGIN}/api/mcp`;
 
+/** Carbon Cloud regions for the CARBON API — app origins, since `/api/v1` is served
+ *  by the app rather than the REST host. The US and ITAR values are the same two
+ *  `getAppUrl()` falls back to in `packages/env`; keep them in step.
+ *
+ *  Deliberately NOT the Data API's list: that plane is one `rest.` host plus a
+ *  self-hosted escape, and is configured on its own. */
+export const CARBON_REGIONS = [
+  { id: "us", label: "US", origin: DEFAULT_APP_ORIGIN },
+  { id: "eu", label: "EU", origin: "https://app.eu.carbon.ms" },
+  { id: "itar", label: "ITAR", origin: "https://itar.carbon.ms" }
+] as const;
+
+export type CarbonRegionId = (typeof CARBON_REGIONS)[number]["id"];
+
 /** Stand-in for the origin when we don't know which instance the reader is on.
  *  Mirrors the `<api-key>` convention: obviously a placeholder when copy-pasted. */
 export const HOST_PLACEHOLDER = "<your-host>";

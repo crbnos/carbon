@@ -126,7 +126,7 @@ export function TemplateReviewRow({
                 {datasetLabel ?? run.datasetKey ?? t`Demo data`}
               </span>
               {run.status === "failed" ? (
-                <span className="text-xs text-destructive-foreground">
+                <span className="text-xs text-destructive">
                   {t`Failed`} — {run.error ?? t`unknown error`}
                 </span>
               ) : (

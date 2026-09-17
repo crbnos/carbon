@@ -84,26 +84,36 @@ export function setWorkflowDispatch(fn: WorkflowDispatch): void
 export function getWorkflowDispatch(): WorkflowDispatch | undefined
 ```
 
-`apps/erp/app/routes/api+/inngest.ts` fills it at boot:
+`apps/erp/app/routes/api+/inngest.ts` fills it on first request (lazy, so the
+client build can tree-shake the server graph):
 
 ```ts
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
-import { executeFunction } from "./mcp+/lib/direct-executor";
+import { callOperation } from "./v1+/lib/call.server";
 
-setWorkflowDispatch(executeFunction);
+setWorkflowDispatch((name, context, args) =>
+  callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+);
 ```
 
-`WorkflowDispatch` is declared to be **structurally** satisfied by
-`executeFunction`, so nothing in `@carbon/jobs` names an app type. An unfilled
-slot is not a crash: `runAction` returns
+`callOperation` is the Carbon API's canonical entry point (the same one MCP
+`call_tool` and the in-app agent use) — it runs the operation through the real
+oRPC procedure. `authKind: "session"` marks the workflow engine as an
+already-authorized in-process caller, so the per-operation API-key scope gate
+does not apply; the owner-scoped client's RLS still does. `WorkflowDispatch` is
+**structurally** satisfied by the wrapper, so nothing in `@carbon/jobs` names an
+app type. An unfilled slot is not a crash: `runAction` returns
 `"This step is not available in this environment."`
 
 `runCreateAction` (`actions/create.ts`) converts each `RuntimeValue` with
-`toPlainValue`, dispatches, then digs the new row's id out of whatever came back
-— the service functions return a Supabase envelope whose `error` it checks
-separately, and `idIn` walks a list if one came back. No id means
-`"The record was created but could not be read back."`, never a silent success.
-`companyId`, `createdBy` and `updatedBy` are stamped by the dispatcher.
+`toPlainValue`, dispatches, then digs the new row's id out of whatever came back.
+`callOperation` returns the service data already UNWRAPPED (`{ success, data }`),
+and `create.ts` handles both that and the legacy envelope shape: it checks
+`envelope.error` when the payload looks like one, and `idIn` walks a list if one
+came back. No id means `"The record was created but could not be read back."`,
+never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
+the dispatch layer (`enrichWithAuthContext` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`).
 
 ## `createWorkflowServices` — the one port
 

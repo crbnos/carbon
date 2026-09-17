@@ -1,15 +1,17 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 
 import { sql } from "kysely";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("update-purchased-prices");
 
 const payloadValidator = z.discriminatedUnion("source", [
   z.object({
@@ -63,13 +65,7 @@ serve(async (req: Request) => {
   const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
   const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
 
-  console.log({
-    function: "update-purchased-prices",
-    source,
-    companyId,
-    shouldUpdatePrices,
-    shouldUpdateLeadTimes,
-  });
+  logger.info({ source, companyId, shouldUpdatePrices, shouldUpdateLeadTimes });
 
   try {
     const client = await requirePermissions(req, companyId, userId, { update: "purchasing" });
@@ -81,12 +77,7 @@ serve(async (req: Request) => {
       case "purchaseOrder": {
         const { purchaseOrderId } = parsedPayload;
 
-        console.log({
-          function: "update-purchased-prices",
-          source,
-          purchaseOrderId,
-          companyId,
-        });
+        logger.info({ source, purchaseOrderId, companyId });
 
         const [purchaseOrder, purchaseOrderLines] = await Promise.all([
           client
@@ -165,12 +156,7 @@ serve(async (req: Request) => {
       case "purchaseInvoice": {
         const { invoiceId } = parsedPayload;
 
-        console.log({
-          function: "update-purchased-prices",
-          source,
-          invoiceId,
-          companyId,
-        });
+        logger.info({ source, invoiceId, companyId });
 
         const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
           client

@@ -7,14 +7,14 @@ export const runTriggerSchema = z.discriminatedUnion("kind", [
     table: z.string(),
     recordId: z.string(),
     operation: z.enum(["INSERT", "UPDATE", "DELETE"]),
-    record: z.record(z.unknown()).nullable(),
-    before: z.record(z.unknown()).nullable(),
-    after: z.record(z.unknown()).nullable()
+    record: z.record(z.string(), z.unknown()).nullable(),
+    before: z.record(z.string(), z.unknown()).nullable(),
+    after: z.record(z.string(), z.unknown()).nullable()
   }),
   z.object({
     kind: z.literal("moment"),
     moment: z.string(),
-    outputs: z.record(z.object({ id: z.string() }).passthrough())
+    outputs: z.record(z.string(), z.object({ id: z.string() }).passthrough())
   }),
   z.object({
     kind: z.literal("schedule"),

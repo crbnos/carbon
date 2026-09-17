@@ -57,6 +57,8 @@ const WorkCenters = (props: WorkCenterSelectProps) => {
             processes: props?.processId ? [props.processId] : [],
             shifts: [],
             alwaysOn: false,
+            batchCapacity: undefined,
+            minimumBatchQuantity: undefined,
             defaultStandardFactor: "Minutes/Piece" as "Total Hours"
           }}
         />

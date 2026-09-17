@@ -63,7 +63,7 @@ ALTER TABLE "documentTemplate" ADD CONSTRAINT "documentTemplate_companyId_docume
   separate named FK constraints.
 - **MANDATORY: every table with `createdBy` MUST also have `updatedBy`** — a nullable
   `"updatedBy" TEXT REFERENCES "user"("id")`. The shared audit-injection path (MCP
-  `direct-executor`, service writes) stamps `updatedBy` on every write, so a table that has
+  the Carbon API dispatch, service writes) stamps `updatedBy` on every write, so a table that has
   `createdBy` but omits `updatedBy` fails those callers with `column "updatedBy" does not exist`.
   Include it even on append-only ledger tables (it just stays NULL there). When authoring a
   migration that adds `createdBy`, add `updatedBy` in the same statement.

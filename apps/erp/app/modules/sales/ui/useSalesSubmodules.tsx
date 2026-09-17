@@ -6,7 +6,8 @@ import {
   LuPercent,
   LuShapes,
   LuSquareUser,
-  LuStar
+  LuStar,
+  LuUndo2
 } from "react-icons/lu";
 import {
   RiProgress2Line,
@@ -51,16 +52,22 @@ export default function useSalesSubmodules() {
           table: "salesOrder"
         },
         {
-          name: t`Portals`,
-          to: path.to.customerPortals,
-          role: "employee",
-          icon: <LuGlobe />
+          name: t`Returns`,
+          to: path.to.salesReturnOrders,
+          icon: <LuUndo2 />,
+          table: "salesReturnOrder"
         }
       ]
     },
     {
       name: t`Configure`,
       routes: [
+        {
+          name: t`Portals`,
+          to: path.to.customerPortals,
+          role: "employee",
+          icon: <LuGlobe />
+        },
         {
           name: t`Price Lists`,
           to: path.to.salesPriceList,
@@ -78,6 +85,12 @@ export default function useSalesSubmodules() {
           to: path.to.noQuoteReasons,
           role: "employee",
           icon: <LuBan />
+        },
+        {
+          name: t`Return Reasons`,
+          to: path.to.returnReasons,
+          role: "employee",
+          icon: <LuUndo2 />
         },
 
         {

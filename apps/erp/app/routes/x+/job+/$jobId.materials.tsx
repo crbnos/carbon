@@ -4,8 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { useMount, VStack } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { redirect, useLoaderData, useParams } from "react-router";
 import { usePanels } from "~/components/Layout";
+import { useRealtime } from "~/hooks";
+import { getPicksByJobMaterial } from "~/modules/inventory";
+import { getItemSupersessionsForItems } from "~/modules/items";
 import {
   getJob,
   getJobMaterialItemIds,
@@ -44,26 +47,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const locationId = job.data.locationId ?? "";
 
   // Independent — run in parallel.
-  const [materials, settings, jobItems] = await Promise.all([
+  const [materials, settings, jobItems, picks] = await Promise.all([
     getJobMaterialsWithQuantityOnHand(client, jobId, companyId, locationId, {
       search,
       limit,
       offset,
       sorts,
       // orderStatus is filtered client-side — not a column the RPC can filter on.
-      filters: (filters ?? []).filter((f) => f.column !== "orderStatus")
+      // readableIdWithRevision was the Item filter's column before it moved to
+      // jobMaterialItemId; saved views and bookmarks from then still replay it,
+      // and the RPC has no such column (42703).
+      filters: (filters ?? []).filter(
+        (f) =>
+          f.column !== "orderStatus" && f.column !== "readableIdWithRevision"
+      )
     }),
     getCompanySettings(client, companyId),
-    getJobMaterialItemIds(client, jobId, companyId)
+    getJobMaterialItemIds(client, jobId, companyId),
+    getPicksByJobMaterial(client, jobId, companyId)
   ]);
 
   if (materials.error) {
-    redirect(
+    throw redirect(
       path.to.production,
       await flash(
         request,
         error(materials.error, "Failed to fetch job materials")
       )
+    );
+  }
+
+  if (picks.error) {
+    throw redirect(
+      path.to.production,
+      await flash(request, error(picks.error, "Failed to fetch picks"))
     );
   }
 
@@ -75,24 +92,64 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       } | null
     )?.nearExpiryWarningDays ?? null;
 
-  // Both depend on the materials but not on each other.
-  const [expiredItemIds, orderStatusByMaterialId] = await Promise.all([
-    getExpiredItemIds(
-      client,
-      companyId,
-      rows,
-      nearExpiryWarningDays,
-      locationId
-    ),
-    getJobOrderStatusMap(
-      client,
-      jobId,
-      companyId,
-      locationId,
-      job.data.status,
+  const materialItemIds = Array.from(
+    new Set(
       rows
+        .map((m) => m.jobMaterialItemId)
+        .filter((id): id is string => Boolean(id))
     )
-  ]);
+  );
+
+  const today = datetime
+    .today(await getLocationTimeZone(client, locationId, companyId))
+    .toString();
+
+  const [expiredItemIds, orderStatusByMaterialId, supersessions] =
+    await Promise.all([
+      getExpiredItemIds(
+        client,
+        companyId,
+        rows,
+        nearExpiryWarningDays,
+        locationId
+      ),
+      getJobOrderStatusMap(
+        client,
+        jobId,
+        companyId,
+        locationId,
+        job.data.status,
+        rows,
+        today
+      ),
+      getItemSupersessionsForItems(client, materialItemIds, companyId)
+    ]);
+  if (supersessions.error) {
+    throw redirect(
+      path.to.production,
+      await flash(
+        request,
+        error(supersessions.error, "Failed to fetch supersessions")
+      )
+    );
+  }
+  const consumeFirstByItemId: Record<string, ConsumeFirstRule> = {};
+  for (const rule of supersessions.data ?? []) {
+    if (rule.supersessionMode !== "Consume First") continue;
+    if (!rule.successorItemId) continue;
+    if (
+      rule.successorEffectivityDate &&
+      rule.successorEffectivityDate > today
+    ) {
+      continue;
+    }
+    consumeFirstByItemId[rule.itemId] = {
+      successorItemId: rule.successorItemId,
+      successorReadableId:
+        rule.successor?.readableIdWithRevision ?? rule.successorItemId,
+      conversionFactor: Number(rule.conversionFactor ?? 1) || 1
+    };
+  }
 
   const jobItemIds = Array.from(
     new Set(
@@ -110,9 +167,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       hasExpiredBatch: expiredItemIds.has(m.jobMaterialItemId ?? "")
     })),
     nearExpiryWarningDays,
-    orderStatusByMaterialId
+    orderStatusByMaterialId,
+    picksByMaterialId: picks.data,
+    consumeFirstByItemId
   };
 }
+
+export type ConsumeFirstRule = {
+  successorItemId: string;
+  successorReadableId: string;
+  conversionFactor: number;
+};
 
 // Item ids with stock already past its expiration date (the "Expired batch" badge).
 async function getExpiredItemIds(
@@ -154,9 +219,14 @@ export default function JobMaterialsRoute() {
     materials,
     nearExpiryWarningDays,
     jobItemIds,
-    orderStatusByMaterialId
+    orderStatusByMaterialId,
+    picksByMaterialId,
+    consumeFirstByItemId
   } = useLoaderData<typeof loader>();
+  const { jobId } = useParams();
   const { setIsExplorerCollapsed } = usePanels();
+
+  useRealtime("pickingListLine", `jobId=eq.${jobId}`);
 
   useMount(() => {
     setIsExplorerCollapsed(true);
@@ -173,6 +243,8 @@ export default function JobMaterialsRoute() {
         nearExpiryWarningDays={nearExpiryWarningDays}
         jobItemIds={jobItemIds}
         orderStatusByMaterialId={orderStatusByMaterialId}
+        picksByMaterialId={picksByMaterialId}
+        consumeFirstByItemId={consumeFirstByItemId}
       />
     </VStack>
   );

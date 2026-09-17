@@ -120,12 +120,45 @@ Deno.test("sanitizer suppresses node-pg-shaped error", async () => {
   assertEquals(await errorResponse(err).json(), {});
 });
 
-Deno.test("sanitizer suppresses ZodError", async () => {
+// A ZodError's raw `.message` is a JSON dump, so `isDataLayerError` still blocks
+// it — but a payload-validation failure is the CALLER's input contract, not a
+// data-layer leak. `zodIssueSummary` replaces it with a compact `path: message`
+// summary so an API caller has something to converge on; suppressing it entirely
+// left them with only the service's generic fallback string.
+Deno.test("ZodError is replaced by a compact issue summary, never its raw dump", async () => {
   const err = Object.assign(new Error("[{...}]"), {
     name: "ZodError",
     issues: [{ path: [], message: "x" }],
   });
   assert(isDataLayerError(err));
+  const body = await errorResponse(err).json();
+  assertEquals(body, { message: "Invalid payload — x" });
+  assert(!body.message.includes("[{...}]"));
+});
+
+Deno.test("ZodError summary names the offending field and caps at five issues", async () => {
+  const err = Object.assign(new Error("[{...}]"), {
+    name: "ZodError",
+    issues: Array.from({ length: 7 }, (_, i) => ({
+      path: ["body", `field${i}`],
+      message: "Required",
+    })),
+  });
+  const { message } = await errorResponse(err).json();
+  assertEquals(
+    message,
+    "Invalid payload — body.field0: Required; body.field1: Required; " +
+      "body.field2: Required; body.field3: Required; body.field4: Required; +2 more",
+  );
+});
+
+Deno.test("a ZodError with no issues omits the message key entirely", async () => {
+  const err = Object.assign(new Error("[{...}]"), {
+    name: "ZodError",
+    issues: [],
+  });
+  // `getEdgeFunctionErrorMessage` falls back to the caller's own copy when the
+  // key is absent, so an empty summary must not ship an empty string.
   assertEquals(await errorResponse(err).json(), {});
 });
 

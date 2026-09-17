@@ -36,7 +36,10 @@ if git diff --cached --name-only | grep -q '\.service\.ts$'; then
         echo "✗ MCP tool metadata could not be regenerated. Nothing was staged."
         exit 1
     fi
-    git add apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json
+    # The manifest itself is gitignored (see 633f134b0b) — the DIGEST is what is
+    # committed, and `git add` on an ignored path exits 1, which failed this hook
+    # for every commit that touched a *.service.ts.
+    git add apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json
 fi
 
 # Demo-dataset drift only shows up when the datasets actually run. This dry-runs
@@ -62,6 +65,20 @@ if [ -z "$CARBON_SKIP_BACKUP_CHECK" ] && git diff --cached --name-only | grep -q
         echo ""
         echo "Commit blocked by the backup compatibility check. The reason is printed above."
         echo "Skip it with: CARBON_SKIP_BACKUP_CHECK=1 git commit ..."
+        exit 1
+    fi
+fi
+# The published operation contract lives in a GITIGNORED manifest, so its committed
+# digest is the only record a reviewer can see. Regenerate and refuse the commit if
+# a service or validator change did not update it — a stale digest is worse than
+# none, since it reads as "nothing changed".
+# Set CARBON_SKIP_MANIFEST_CHECK=1 to skip.
+if [ -z "$CARBON_SKIP_MANIFEST_CHECK" ] && git diff --cached --name-only | grep -qE '^(apps/erp/app/modules/[^/]+/[^/]+\.(service|models|mcp\.server)\.ts|apps/erp/app/routes/api\+/mcp\+/lib/mcp-blocked-tools\.ts|scripts/(generate-mcp|lib/.*)\.ts)$'; then
+    echo "Checking the API operation manifest digest..."
+    if ! pnpm --silent check:manifest; then
+        echo ""
+        echo "Run: pnpm generate:mcp   then stage tool-manifest.digest.json"
+        echo "Skip it with: CARBON_SKIP_MANIFEST_CHECK=1 git commit ..."
         exit 1
     fi
 fi

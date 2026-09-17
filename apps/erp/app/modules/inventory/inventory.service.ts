@@ -1,6 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type LinesideClaim,
+  linesideCredit
+} from "@carbon/database/picked-consumption";
+import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -42,7 +47,10 @@ import {
 import {
   effectiveSuccessorId,
   type PickSupersession,
-  resolvePickTarget
+  pickSupersessionItemId,
+  resolvePickRule,
+  resolvePickTarget,
+  splitConsumeFirstPick
 } from "./supersession-pick";
 
 export async function deleteBatchProperty(
@@ -2717,6 +2725,60 @@ export async function getPickingList(
     .single();
 }
 
+export async function getPicksByJobMaterial(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  const lines = await client
+    .from("pickingListLine")
+    .select(
+      "jobMaterialId, itemId, quantityToPick, quantityPicked, quantityReturned, status, jobMaterial(itemId), pickingList!inner(id, pickingListId, status), item(readableIdWithRevision)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .neq("status", "Cancelled")
+    .neq("pickingList.status", "Cancelled");
+
+  const byMaterial: Record<string, JobMaterialPick[]> = {};
+  for (const line of lines.data ?? []) {
+    if (!line.jobMaterialId || !line.itemId) continue;
+    const picks = (byMaterial[line.jobMaterialId] ??= []);
+    const key = `${line.itemId}:${line.pickingList.id}`;
+    let pick = picks.find((p) => `${p.itemId}:${p.pickingListId}` === key);
+    if (!pick) {
+      pick = {
+        itemId: line.itemId,
+        itemReadableId: line.item?.readableIdWithRevision ?? line.itemId,
+        isSubstitute: line.jobMaterial?.itemId !== line.itemId,
+        quantityToPick: 0,
+        quantityPicked: 0,
+        pickingListId: line.pickingList.id,
+        pickingListReadableId: line.pickingList.pickingListId,
+        pickingListStatus: line.pickingList.status
+      };
+      picks.push(pick);
+    }
+    pick.quantityToPick += Number(line.quantityToPick ?? 0);
+    pick.quantityPicked += Math.max(
+      0,
+      Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
+    );
+  }
+  return { data: byMaterial, error: lines.error };
+}
+
+export type JobMaterialPick = {
+  itemId: string;
+  itemReadableId: string;
+  isSubstitute: boolean;
+  quantityToPick: number;
+  quantityPicked: number;
+  pickingListId: string;
+  pickingListReadableId: string;
+  pickingListStatus: string;
+};
+
 export async function getPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string
@@ -2724,7 +2786,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, item(readableId)), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -3047,6 +3109,61 @@ export async function getUnresolvedPickingListLines(
   return { unresolved, hasShort, error: null };
 }
 
+export async function cancelOpenPickingListsForJob(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<{ error: Error | null }> {
+  try {
+    await db.transaction().execute(async (trx) => {
+      const lines = await trx
+        .selectFrom("pickingListLine as pll")
+        .innerJoin("pickingList as pl", "pl.id", "pll.pickingListId")
+        .select(["pll.id", "pll.pickingListId"])
+        .where("pll.jobId", "=", args.jobId)
+        .where("pll.companyId", "=", args.companyId)
+        .where("pll.status", "<>", "Cancelled")
+        .where("pl.status", "in", ["Draft", "In Progress"])
+        .execute();
+      if (lines.length === 0) return;
+
+      const now = new Date().toISOString();
+      await trx
+        .updateTable("pickingListLine")
+        .set({ status: "Cancelled", updatedBy: args.userId, updatedAt: now })
+        .where(
+          "id",
+          "in",
+          lines.map((line) => line.id)
+        )
+        .execute();
+
+      const pickingListIds = Array.from(
+        new Set(lines.map((line) => line.pickingListId))
+      );
+      const remaining = await trx
+        .selectFrom("pickingListLine")
+        .select("pickingListId")
+        .where("pickingListId", "in", pickingListIds)
+        .where("companyId", "=", args.companyId)
+        .where("status", "<>", "Cancelled")
+        .execute();
+      const stillLive = new Set(remaining.map((line) => line.pickingListId));
+      const emptied = pickingListIds.filter((id) => !stillLive.has(id));
+      if (emptied.length === 0) return;
+
+      await trx
+        .updateTable("pickingList")
+        .set({ status: "Cancelled", updatedBy: args.userId, updatedAt: now })
+        .where("id", "in", emptied)
+        .where("companyId", "=", args.companyId)
+        .execute();
+    });
+    return { error: null };
+  } catch (err) {
+    return { error: err instanceof Error ? err : new Error(String(err)) };
+  }
+}
+
 export async function updatePickingListStatus(
   client: SupabaseClient<Database>,
   pickingListId: string,
@@ -3179,6 +3296,46 @@ async function resolveWarehouseSource(
   return null;
 }
 
+function toPickFactor(value: number | string | null | undefined): number {
+  const n = Number(value ?? 1);
+  return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+async function getWarehouseOnHand(
+  client: SupabaseClient<Database>,
+  args: { itemId: string; locationId: string; companyId: string }
+): Promise<number> {
+  const quantities = await getItemStorageUnitQuantities(
+    client,
+    args.itemId,
+    args.companyId,
+    args.locationId
+  );
+
+  const perUnit = new Map<string, number>();
+  let total = 0;
+  for (const row of quantities.data ?? []) {
+    const unitId = (row as { storageUnitId?: string | null }).storageUnitId;
+    const qty = Number((row as { quantity?: number | null }).quantity ?? 0);
+    if (!unitId) {
+      total += qty;
+    } else {
+      perUnit.set(unitId, (perUnit.get(unitId) ?? 0) + qty);
+    }
+  }
+  total = Math.max(0, total);
+
+  for (const [storageUnitId, qty] of perUnit) {
+    if (qty <= 0) continue;
+    const effectiveWc = await client.rpc("get_effective_work_center_id", {
+      p_storage_unit_id: storageUnitId
+    });
+    if (!effectiveWc.data) total += qty;
+  }
+
+  return total;
+}
+
 /**
  * Whether an item has any WAREHOUSE (non-lineside) on-hand at a location,
  * INCLUDING the unassigned (null storage unit) bin.
@@ -3226,6 +3383,12 @@ async function hasWarehouseStock(
   }
 
   return false;
+}
+
+class PickingReadError extends Error {
+  constructor(readonly postgrestError: PostgrestError) {
+    super(postgrestError.message);
+  }
 }
 
 export async function generatePickingList(
@@ -3321,10 +3484,11 @@ export async function generatePickingList(
   let materialsQuery = client
     .from("jobMaterial")
     .select(
-      "id, jobId, jobOperationId, jobMakeMethodId, itemId, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
+      "id, jobId, jobOperationId, jobMakeMethodId, itemId, substitutedFromItemId, substitutionFactor, quantity, quantityToIssue, storageUnitId, requiresSerialTracking, requiresBatchTracking"
     )
     .eq("companyId", args.companyId)
-    .gt("quantityToIssue", 0);
+    .gt("quantityToIssue", 0)
+    .neq("methodType", "Make to Order");
   materialsQuery =
     makeMethodIds.length > 0
       ? materialsQuery.or(
@@ -3343,7 +3507,12 @@ export async function generatePickingList(
   // Stock Only) or, for Consume First, when the predecessor is out of stock.
   // Mirrors get_picking_schedule's SQL resolution.
   const materialItemIds = Array.from(
-    new Set((materials.data ?? []).map((m) => m.itemId))
+    new Set(
+      (materials.data ?? []).flatMap((m) => [
+        pickSupersessionItemId(m),
+        m.itemId
+      ])
+    )
   );
   const supersessionByItem = new Map<string, PickSupersession>();
   if (materialItemIds.length > 0) {
@@ -3370,8 +3539,120 @@ export async function generatePickingList(
   // boundary.
   const asOfDate = datetime.today("UTC").toString();
 
+  const warehouseStockCache = new Map<string, boolean>();
+  const inWarehouseStock = async (itemId: string): Promise<boolean> => {
+    const cached = warehouseStockCache.get(itemId);
+    if (cached !== undefined) return cached;
+    const result = await hasWarehouseStock(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    warehouseStockCache.set(itemId, result);
+    return result;
+  };
+  const warehouseRemaining = new Map<string, number>();
+  const remainingWarehouseStock = async (itemId: string): Promise<number> => {
+    const cached = warehouseRemaining.get(itemId);
+    if (cached !== undefined) return cached;
+    const result = await getWarehouseOnHand(client, {
+      itemId,
+      locationId: args.locationId,
+      companyId: args.companyId
+    });
+    warehouseRemaining.set(itemId, result);
+    return result;
+  };
+
   // Cache per-item on-hand-by-bin so a supersession redirect doesn't refetch.
   const onHandCache = new Map<string, Map<string, number>>();
+  const claimsByItem = new Map<string, LinesideClaim[]>();
+  const claimsFor = async (
+    itemId: string,
+    storageUnitId: string
+  ): Promise<LinesideClaim[]> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const cached = claimsByItem.get(key);
+    if (cached) return cached;
+    const { data, error } = await client
+      .from("pickingListLine")
+      .select(
+        "jobId, jobMaterialId, quantityPicked, quantityReturned, pickingList!inner(status), job!inner(status)"
+      )
+      .eq("companyId", args.companyId)
+      .eq("itemId", itemId)
+      .eq("toStorageUnitId", storageUnitId)
+      .neq("status", "Cancelled")
+      .neq("pickingList.status", "Cancelled")
+      .in("job.status", ["Planned", "Ready", "In Progress", "Paused"]);
+    if (error) throw new PickingReadError(error);
+    const claims = (data ?? []).map((line) => ({
+      jobId: line.jobId,
+      jobMaterialId: line.jobMaterialId,
+      staged:
+        Number(line.quantityPicked ?? 0) - Number(line.quantityReturned ?? 0)
+    }));
+    claimsByItem.set(key, claims);
+    return claims;
+  };
+  const consumedByItem = new Map<string, Map<string, number>>();
+  const consumedFor = async (
+    itemId: string,
+    storageUnitId: string
+  ): Promise<Map<string, number>> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const cached = consumedByItem.get(key);
+    if (cached) return cached;
+    const { data, error } = await client
+      .from("itemLedger")
+      .select("documentId, quantity")
+      .eq("companyId", args.companyId)
+      .eq("locationId", args.locationId)
+      .eq("itemId", itemId)
+      .eq("storageUnitId", storageUnitId)
+      .eq("documentType", "Job Consumption");
+    if (error) throw new PickingReadError(error);
+    const byJob = new Map<string, number>();
+    for (const row of data ?? []) {
+      if (!row.documentId) continue;
+      byJob.set(
+        row.documentId,
+        (byJob.get(row.documentId) ?? 0) +
+          Math.max(0, -Number(row.quantity ?? 0))
+      );
+    }
+    consumedByItem.set(key, byJob);
+    return byJob;
+  };
+  const unclaimedRemaining = new Map<string, number>();
+  const linesideCreditFor = async (
+    itemId: string,
+    storageUnitId: string,
+    jobId: string,
+    jobMaterialId: string
+  ): Promise<{ own: number; unclaimed: number; key: string }> => {
+    const key = `${itemId}|${storageUnitId}`;
+    const credit = linesideCredit({
+      onHand: (await onHandFor(itemId)).get(storageUnitId) ?? 0,
+      claims: await claimsFor(itemId, storageUnitId),
+      consumedByJob: await consumedFor(itemId, storageUnitId),
+      jobId,
+      jobMaterialId
+    });
+    if (!unclaimedRemaining.has(key)) {
+      unclaimedRemaining.set(key, credit.unclaimed);
+    }
+    return {
+      own: credit.own,
+      unclaimed: unclaimedRemaining.get(key) ?? 0,
+      key
+    };
+  };
+  const chargeUnclaimed = (key: string, used: number, own: number) => {
+    const current = unclaimedRemaining.get(key) ?? 0;
+    unclaimedRemaining.set(key, Math.max(0, current - Math.max(0, used - own)));
+  };
+
   const onHandFor = async (itemId: string): Promise<Map<string, number>> => {
     const cached = onHandCache.get(itemId);
     if (cached) return cached;
@@ -3422,115 +3703,180 @@ export async function generatePickingList(
     companyId: string;
     createdBy: string;
   }> = [];
-  for (const mat of materials.data ?? []) {
-    const quantityToIssue = Number(mat.quantityToIssue ?? 0);
-    if (quantityToIssue <= 0) continue;
+  try {
+    for (const mat of materials.data ?? []) {
+      const quantityToIssue = Number(mat.quantityToIssue ?? 0);
+      if (quantityToIssue <= 0) continue;
 
-    // Unassigned materials attach to the earliest selected operation of their
-    // make method; its work center drives the lineside destination.
-    const effectiveOperationId =
-      mat.jobOperationId ??
-      firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
-      null;
+      // Unassigned materials attach to the earliest selected operation of their
+      // make method; its work center drives the lineside destination.
+      const effectiveOperationId =
+        mat.jobOperationId ??
+        firstSelectedOpByMakeMethod.get(mat.jobMakeMethodId)?.id ??
+        null;
 
-    const opWorkCenterId = effectiveOperationId
-      ? (workCenterByOperation.get(effectiveOperationId) ?? null)
-      : null;
+      const opWorkCenterId = effectiveOperationId
+        ? (workCenterByOperation.get(effectiveOperationId) ?? null)
+        : null;
 
-    // 5. Resolve the destination: the operation's work-center lineside shelf.
-    const toStorageUnitId = await resolveLineside(opWorkCenterId);
+      // 5. Resolve the destination: the operation's work-center lineside shelf.
+      const toStorageUnitId = await resolveLineside(opWorkCenterId);
 
-    // 6. Honor supersession: decide which item this pick targets. Consume First
-    // needs to know whether the predecessor is out of warehouse stock (and the
-    // successor has stock), so probe those sources first — for that mode only.
-    // The stock TEST uses total non-lineside on-hand (including the unassigned
-    // bin) rather than a resolvable concrete source, so predecessor stock sitting
-    // only in the unassigned bin still blocks a spurious successor redirect.
-    const supersession = supersessionByItem.get(mat.itemId);
-    let predecessorInStock = true;
-    let successorInStock = true;
-    if (supersession?.supersessionMode === "Consume First") {
-      predecessorInStock = await hasWarehouseStock(client, {
+      // The stock TEST uses total non-lineside on-hand (including the unassigned
+      // bin) rather than a resolvable concrete source, so predecessor stock sitting
+      // only in the unassigned bin still blocks a spurious successor redirect.
+      const { rule: supersession, swappedFromItemId } = resolvePickRule(
+        mat,
+        supersessionByItem
+      );
+      const predecessorItemId = swappedFromItemId ?? mat.itemId;
+      const perAssemblyOld =
+        Number(mat.quantity ?? 0) *
+        (swappedFromItemId ? 1 / toPickFactor(mat.substitutionFactor) : 1);
+      let predecessorInStock = true;
+      let successorInStock = true;
+      let successorId: string | null = null;
+      if (
+        supersession?.supersessionMode === "Consume First" ||
+        supersession?.supersessionMode === "Prefer New"
+      ) {
+        successorId = swappedFromItemId
+          ? mat.itemId
+          : effectiveSuccessorId(supersession, asOfDate);
+        if (successorId) {
+          const available = await remainingWarehouseStock(predecessorItemId);
+          predecessorInStock =
+            supersession.supersessionMode === "Consume First"
+              ? consumableInWholeAssemblies(available, perAssemblyOld) > 0
+              : available > 0;
+          successorInStock = await inWarehouseStock(successorId);
+        }
+      }
+
+      const target = resolvePickTarget({
         itemId: mat.itemId,
-        locationId: args.locationId,
-        companyId: args.companyId
+        substitutedFromItemId: swappedFromItemId,
+        substitutionFactor: mat.substitutionFactor,
+        supersession,
+        predecessorInStock,
+        successorInStock,
+        asOfDate
       });
-      const successorId = effectiveSuccessorId(supersession, asOfDate);
-      if (successorId && !predecessorInStock) {
-        successorInStock = await hasWarehouseStock(client, {
-          itemId: successorId,
-          locationId: args.locationId,
-          companyId: args.companyId
+      // Nothing valid to pick for production (No Stock, or Stock Only without an
+      // effective successor) — drop it, matching get_picking_schedule.
+      if (target.kind === "skip") continue;
+
+      let targets: { itemId: string; quantity: number }[];
+      if (supersession?.supersessionMode === "Consume First" && successorId) {
+        const oldPerLine = swappedFromItemId
+          ? 1 / toPickFactor(mat.substitutionFactor)
+          : 1;
+        const newPerOld = swappedFromItemId
+          ? toPickFactor(mat.substitutionFactor)
+          : toPickFactor(supersession.conversionFactor);
+        const oldCredit = toStorageUnitId
+          ? await linesideCreditFor(
+              predecessorItemId,
+              toStorageUnitId,
+              mat.jobId,
+              mat.id
+            )
+          : null;
+        const newCredit = toStorageUnitId
+          ? await linesideCreditFor(
+              successorId,
+              toStorageUnitId,
+              mat.jobId,
+              mat.id
+            )
+          : null;
+        const warehouseOld = await remainingWarehouseStock(predecessorItemId);
+        const split = splitConsumeFirstPick({
+          needOld: quantityToIssue * oldPerLine,
+          perAssemblyOld,
+          newPerOld,
+          stagedOld: oldCredit ? oldCredit.own + oldCredit.unclaimed : 0,
+          stagedNew: newCredit ? newCredit.own + newCredit.unclaimed : 0,
+          warehouseOld,
+          successorInStock
+        });
+        warehouseRemaining.set(
+          predecessorItemId,
+          Math.max(0, warehouseOld - split.warehouseOldUsed)
+        );
+        if (oldCredit) {
+          chargeUnclaimed(oldCredit.key, split.stagedOldUsed, oldCredit.own);
+        }
+        if (newCredit) {
+          chargeUnclaimed(newCredit.key, split.stagedNewUsed, newCredit.own);
+        }
+        if (split.picks.length === 0) continue;
+        targets = split.picks.map((pick) => ({
+          itemId: pick.item === "predecessor" ? predecessorItemId : successorId,
+          quantity: pick.quantity
+        }));
+      } else {
+        const need = quantityToIssue * target.factor;
+        if (toStorageUnitId) {
+          const credit = await linesideCreditFor(
+            target.itemId,
+            toStorageUnitId,
+            mat.jobId,
+            mat.id
+          );
+          const credited = Math.min(need, credit.own + credit.unclaimed);
+          chargeUnclaimed(credit.key, credited, credit.own);
+          if (credited >= need) continue;
+          targets = [{ itemId: target.itemId, quantity: need - credited }];
+        } else {
+          targets = [{ itemId: target.itemId, quantity: need }];
+        }
+      }
+
+      for (const { itemId: pickItemId, quantity: quantityToPick } of targets) {
+        const onHandByUnit = await onHandFor(pickItemId);
+
+        let sourceStorageUnitId: string | null;
+        if (pickItemId === mat.itemId && mat.storageUnitId) {
+          const effectiveWc = await client.rpc("get_effective_work_center_id", {
+            p_storage_unit_id: mat.storageUnitId
+          });
+          const materialEffectiveWc =
+            (effectiveWc.data as string | null) ?? null;
+          sourceStorageUnitId = materialEffectiveWc
+            ? await resolveWarehouseSource(client, onHandByUnit)
+            : mat.storageUnitId;
+        } else {
+          sourceStorageUnitId = await resolveWarehouseSource(
+            client,
+            onHandByUnit
+          );
+        }
+
+        lineRows.push({
+          pickingListId: plId,
+          jobId: mat.jobId,
+          jobMaterialId: mat.id,
+          jobOperationId: effectiveOperationId,
+          itemId: pickItemId,
+          quantityToPick,
+          storageUnitId: sourceStorageUnitId,
+          toStorageUnitId,
+          companyId: args.companyId,
+          createdBy: args.createdBy
         });
       }
+      // Tracked (serial/batch) lots are intentionally NOT pre-allocated here — the
+      // kitter selects them at pick time via the TrackedEntityPicker (smart-ordered,
+      // deduped), and the pick records pickingListLineTrackedEntity. Pre-allocating
+      // would show un-picked lots as if already picked.
     }
-
-    const target = resolvePickTarget({
-      itemId: mat.itemId,
-      supersession,
-      predecessorInStock,
-      successorInStock,
-      asOfDate
-    });
-    // Nothing valid to pick for production (No Stock, or Stock Only without an
-    // effective successor) — drop it, matching get_picking_schedule.
-    if (target.kind === "skip") continue;
-
-    const pickItemId = target.itemId;
-    const quantityToPick = quantityToIssue * target.factor;
-
-    // On-hand of the resolved PICK item per bin at the location (reused for the
-    // already-staged skip and warehouse-source resolution).
-    const onHandByUnit = await onHandFor(pickItemId);
-
-    // Skip when the op's lineside bin already stocks enough of the pick item to
-    // cover the (converted) quantity — it's already staged here, so there's
-    // nothing to pick. We test the ACTUAL on-hand at that bin, not merely
-    // whether the jobMaterial's recorded shelf points there: a part can be
-    // line-stocked at this work center while the jobMaterial still points at the
-    // warehouse (or another line).
-    if (
-      toStorageUnitId &&
-      (onHandByUnit.get(toStorageUnitId) ?? 0) >= quantityToPick
-    ) {
-      continue;
+  } catch (err) {
+    if (err instanceof PickingReadError) {
+      await client.from("pickingList").delete().eq("id", plId);
+      return { data: null, error: err.postgrestError };
     }
-
-    // 7. Determine the source (warehouse) shelf. The jobMaterial's recorded
-    // shelf is only meaningful when we're picking that same item (the
-    // predecessor); for a substituted successor, resolve a warehouse source by
-    // on-hand. Use the recorded shelf only when it's a warehouse (non-lineside)
-    // shelf; otherwise resolve by on-hand — never rob another work center's
-    // lineside. A null source = a shortage the kitter/planner must resolve.
-    let sourceStorageUnitId: string | null;
-    if (pickItemId === mat.itemId && mat.storageUnitId) {
-      const effectiveWc = await client.rpc("get_effective_work_center_id", {
-        p_storage_unit_id: mat.storageUnitId
-      });
-      const materialEffectiveWc = (effectiveWc.data as string | null) ?? null;
-      sourceStorageUnitId = materialEffectiveWc
-        ? await resolveWarehouseSource(client, onHandByUnit)
-        : mat.storageUnitId;
-    } else {
-      sourceStorageUnitId = await resolveWarehouseSource(client, onHandByUnit);
-    }
-
-    lineRows.push({
-      pickingListId: plId,
-      jobId: mat.jobId,
-      jobMaterialId: mat.id,
-      jobOperationId: effectiveOperationId,
-      itemId: pickItemId,
-      quantityToPick,
-      storageUnitId: sourceStorageUnitId,
-      toStorageUnitId,
-      companyId: args.companyId,
-      createdBy: args.createdBy
-    });
-    // Tracked (serial/batch) lots are intentionally NOT pre-allocated here — the
-    // kitter selects them at pick time via the TrackedEntityPicker (smart-ordered,
-    // deduped), and the pick records pickingListLineTrackedEntity. Pre-allocating
-    // would show un-picked lots as if already picked.
+    throw err;
   }
 
   // 7. If no lines to pick, delete the empty header and report.

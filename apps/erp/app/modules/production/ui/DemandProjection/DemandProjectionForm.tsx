@@ -17,7 +17,6 @@ import {
 import type { ChartConfig } from "@carbon/react/Chart";
 import { ChartContainer, ChartTooltip } from "@carbon/react/Chart";
 import { getLocalTimeZone, startOfWeek, today } from "@internationalized/date";
-import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
 import { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
@@ -96,7 +95,7 @@ const DemandProjectionsForm = ({
       month: "numeric",
       day: "numeric"
     });
-    return i18n._(msg`Week ${i + 1} (${formattedDate})`);
+    return t`Week ${i + 1} (${formattedDate})`;
   });
 
   // Local mirror of the 52 week inputs, seeded from initialValues, that drives

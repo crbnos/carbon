@@ -5,7 +5,7 @@ description: How Carbon decides who can see and change what, from the module-act
 
 Everyone who works in Carbon signs in against one company, and Carbon decides what they can do from a set of small, explicit grants. A grant is a pair: a **module** (a slice of the app, like Sales or Inventory) and an **action** on it (view, create, update, or delete). Grant someone `sales_view` and they can read sales orders; grant `inventory_update` and they can edit inventory. Nothing is implied and nothing is global. A person with no grants can sign in and see nothing.
 
-You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/reference/api-keys). Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see [two-factor authentication](/docs/reference/two-factor).
+You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see [people](/docs/reference/people); for programmatic access that uses the same model, see [API keys](/docs/building/api-keys). Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see [two-factor authentication](/docs/reference/two-factor).
 
 ## The module-action model
 
@@ -28,7 +28,7 @@ Every permission screen in Carbon is the same widget: a matrix with a **row per 
 Internally each grant stores the list of companies it applies to, so one person can hold different permissions in each company they belong to. In the UI you always edit permissions for the company you're currently in. The special value `"0"` means "all companies" and is how a true cross-company administrator is represented. See [multi-company setup](/docs/reference/intercompany) for how a user spans several companies.
 </Callout>
 
-Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for [API keys](/docs/reference/api-keys), which carry scopes in exactly this `module_action` shape.
+Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for [API keys](/docs/building/api-keys), which carry scopes in exactly this `module_action` shape.
 
 ## Employee types
 
@@ -70,7 +70,7 @@ You don't create passwords for people. You **invite** them by email, and they se
 
 Because an invite is a real record, an employee has a clear **status** derived from it and their account (the `employees` view, `packages/database/supabase/migrations/20260529160000_employees-view-status.sql:16`):
 
-<StatusFlow>
+<StatusFlow entity="employeeAccount">
   <Status name="Invited">The invite has been sent but not yet accepted. The person can't sign in until they follow the link.</Status>
   <Status name="Active" accent>The invite was accepted and the account is live. This is the normal working state.</Status>
   <Status name="Inactive" terminal>The account has been deactivated, or the invite was revoked before acceptance. No access.</Status>
@@ -96,7 +96,7 @@ PIN accounts are scoped to the floor by design. They carry only the grants their
   <Card title="People" href="/docs/reference/people">
     The individual accounts these permissions apply to.
   </Card>
-  <Card title="API keys" href="/docs/reference/api-keys">
+  <Card title="API keys" href="/docs/building/api-keys">
     Programmatic access using the same module-action scopes.
   </Card>
   <Card title="The MES app" href="/docs/reference/mes">

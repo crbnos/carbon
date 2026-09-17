@@ -1,12 +1,35 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Kysely, sql } from "kysely";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("embed");
+
+/**
+ * Render a caught value for logging. Kysely's `PostgresDriver.executeQuery`
+ * rethrows non-`Error` values unchanged, so anything can land in a `catch`
+ * here — and `JSON.stringify` THROWS on a circular object or a BigInt. That
+ * throw would escape the catch block and abort failure handling before the
+ * job is recorded in `failedJobs`, turning one bad job into a silent loss of
+ * the whole batch. Always returns a string.
+ */
+function describeError(error: unknown): { detail: string; message: string } {
+  if (error instanceof Error) {
+    return { detail: error.stack ?? error.message, message: error.message };
+  }
+  let message: string;
+  try {
+    message = JSON.stringify(error) ?? String(error);
+  } catch {
+    message = String(error);
+  }
+  return { detail: message, message };
+}
 
 const jobSchema = z.object({
   jobId: z.number(),
@@ -40,10 +63,7 @@ serve(async (req: Request) => {
   // Use Zod to parse and validate the request body
   const parseResult = z.array(jobSchema).safeParse(await req.json());
 
-  console.log({
-    function: "embed",
-    ...parseResult,
-  });
+  logger.info(parseResult);
 
   if (parseResult.error) {
     return new Response(`invalid request body: ${parseResult.error.message}`, {
@@ -67,11 +87,9 @@ serve(async (req: Request) => {
         await processJob(db, currentJob);
         completedJobs.push(currentJob);
       } catch (error) {
-        console.error(error);
-        failedJobs.push({
-          ...currentJob,
-          error: error instanceof Error ? error.message : JSON.stringify(error),
-        });
+        const described = describeError(error);
+        logger.error("processJob failed", { error: described.detail });
+        failedJobs.push({ ...currentJob, error: described.message });
       }
     }
   }
@@ -82,17 +100,15 @@ serve(async (req: Request) => {
   } catch (error) {
     // If the worker is terminating (e.g. wall clock limit reached),
     // add pending jobs to fail list with termination reason
-    console.error(error);
+    const described = describeError(error);
+    logger.error("embed worker terminating", { error: described.detail });
     failedJobs.push(
-      ...pendingJobs.map((job) => ({
-        ...job,
-        error: error instanceof Error ? error.message : JSON.stringify(error),
-      }))
+      ...pendingJobs.map((job) => ({ ...job, error: described.message }))
     );
   }
 
   // Log completed and failed jobs for traceability
-  console.log("finished processing jobs:", {
+  logger.info("finished processing jobs", {
     completedJobs: completedJobs.length,
     failedJobs: failedJobs.length,
   });
@@ -124,17 +140,17 @@ serve(async (req: Request) => {
 async function processJob(db: Kysely<DB>, job: Job) {
   const { jobId, id, table } = job;
 
-  console.log(`Processing job ${jobId} for ${table} with id ${id}`);
+  logger.debug(`Processing job ${jobId} for ${table} with id ${id}`);
 
   if (table === "item") {
-    console.log("Fetching item from database...");
+    logger.debug("Fetching item from database...");
     const item = await db
       .selectFrom("item")
       .selectAll()
       .where("id", "=", id)
       .executeTakeFirst();
 
-    console.log("Item fetched:", {
+    logger.debug("Item fetched", {
       id: item?.id,
       name: item?.name,
       description: item?.description,
@@ -145,12 +161,12 @@ async function processJob(db: Kysely<DB>, job: Job) {
     );
 
     const textToEmbed = textParts.join(" ");
-    console.log("Text to embed:", textToEmbed);
+    logger.debug("Text to embed", { textToEmbed });
 
     const embedding = await generateEmbedding(textToEmbed);
     const embeddingString = JSON.stringify(embedding);
 
-    console.log("Updating item with embedding...", {
+    logger.debug("Updating item with embedding...", {
       embeddingLength: embedding.length,
       embeddingStringLength: embeddingString.length,
     });
@@ -163,18 +179,18 @@ async function processJob(db: Kysely<DB>, job: Job) {
       .where("id", "=", id)
       .execute();
 
-    console.log("Item update result:", result);
+    logger.debug("Item update result", { result });
   }
 
   if (table === "supplier") {
-    console.log("Fetching supplier from database...");
+    logger.debug("Fetching supplier from database...");
     const supplier = await db
       .selectFrom("supplier")
       .selectAll()
       .where("id", "=", id)
       .executeTakeFirst();
 
-    console.log("Supplier fetched:", {
+    logger.debug("Supplier fetched", {
       id: supplier?.id,
       name: supplier?.name,
     });
@@ -185,12 +201,12 @@ async function processJob(db: Kysely<DB>, job: Job) {
       throw new Error(`Supplier ${id} has no name to embed`);
     }
 
-    console.log("Text to embed:", textToEmbed);
+    logger.debug("Text to embed", { textToEmbed });
 
     const embedding = await generateEmbedding(textToEmbed);
     const embeddingString = JSON.stringify(embedding);
 
-    console.log("Updating supplier with embedding...", {
+    logger.debug("Updating supplier with embedding...", {
       embeddingLength: embedding.length,
       embeddingStringLength: embeddingString.length,
     });
@@ -204,18 +220,18 @@ async function processJob(db: Kysely<DB>, job: Job) {
       .where("id", "=", id)
       .execute();
 
-    console.log("Supplier update result:", result);
+    logger.debug("Supplier update result", { result });
   }
 
   if (table === "customer") {
-    console.log("Fetching customer from database...");
+    logger.debug("Fetching customer from database...");
     const customer = await db
       .selectFrom("customer")
       .selectAll()
       .where("id", "=", id)
       .executeTakeFirst();
 
-    console.log("Customer fetched:", {
+    logger.debug("Customer fetched", {
       id: customer?.id,
       name: customer?.name,
     });
@@ -226,12 +242,12 @@ async function processJob(db: Kysely<DB>, job: Job) {
       throw new Error(`Customer ${id} has no name to embed`);
     }
 
-    console.log("Text to embed:", textToEmbed);
+    logger.debug("Text to embed", { textToEmbed });
 
     const embedding = await generateEmbedding(textToEmbed);
     const embeddingString = JSON.stringify(embedding);
 
-    console.log("Updating customer with embedding...", {
+    logger.debug("Updating customer with embedding...", {
       embeddingLength: embedding.length,
       embeddingStringLength: embeddingString.length,
     });
@@ -245,15 +261,15 @@ async function processJob(db: Kysely<DB>, job: Job) {
       .where("id", "=", id)
       .execute();
 
-    console.log("Customer update result:", result);
+    logger.debug("Customer update result", { result });
   }
 
-  console.log(`Deleting job ${jobId} from queue...`);
+  logger.debug(`Deleting job ${jobId} from queue...`);
   const deleteResult =
     await sql`select pgmq.delete(${QUEUE_NAME}, ${jobId}::bigint)`.execute(db);
-  console.log("Queue delete result:", deleteResult);
+  logger.debug("Queue delete result", { deleteResult });
 
-  console.log(`Job ${jobId} processing completed successfully`);
+  logger.debug(`Job ${jobId} processing completed successfully`);
 }
 
 /**

@@ -65,7 +65,6 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
   );
   const permissions = usePermissions();
   const post = useFetcher();
-  const voidFetcher = useFetcher();
   const isEditing = Boolean(initialValues.id);
   const status = initialValues.status as
     | "Draft"
@@ -76,6 +75,7 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
   const canMutate = permissions.can("update", "invoicing");
   const canDelete = permissions.can("delete", "invoicing");
   const deleteModal = useDisclosure();
+  const voidModal = useDisclosure();
 
   // Party type is a UI-only toggle — NOT a validator field. It switches which of
   // customerId/supplierId is shown; the hidden one stays empty. A memo can be for
@@ -138,14 +138,9 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                   <Button
                     leftIcon={<LuTicketX />}
                     variant="destructive"
-                    isLoading={voidFetcher.state !== "idle"}
+                    type="button"
                     isDisabled={!canMutate}
-                    onClick={() =>
-                      voidFetcher.submit(null, {
-                        method: "post",
-                        action: path.to.memoVoid(initialValues.id!)
-                      })
-                    }
+                    onClick={voidModal.onOpen}
                   >
                     <Trans>Void</Trans>
                   </Button>
@@ -252,6 +247,17 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
           </CardFooter>
         </Card>
       </ValidatedForm>
+      {voidModal.isOpen && (
+        <ConfirmDelete
+          action={path.to.memoVoid(initialValues.id!)}
+          name={initialValues.memoId ?? ""}
+          title={t`Void ${initialValues.memoId}`}
+          text={t`Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone.`}
+          deleteText={t`Void`}
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
+        />
+      )}
       {deleteModal.isOpen && (
         <ConfirmDelete
           action={path.to.memoDelete(initialValues.id!)}

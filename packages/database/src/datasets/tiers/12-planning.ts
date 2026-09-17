@@ -85,6 +85,11 @@ export async function runTier12(ctx: Ctx): Promise<void> {
 
   const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
 
+  // Every sales order needs an opportunity — /x/sales-order/:id loads it and
+  // throws when it is missing, so an order seeded without one can never be
+  // opened. Tier 04 does the same for the orders it writes.
+  const opportunityId = await insertId(ctx, "opportunity", { customerId });
+
   const soId = await nextSequence(ctx, "salesOrder");
   const so = await insertId(ctx, "salesOrder", {
     salesOrderId: soId,
@@ -93,6 +98,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     customerLocationId,
     locationId: plantId,
     currencyCode: order.currencyCode,
+    opportunityId,
     orderDate: resolveDate(ctx.anchor, 0)
   });
   await insertRow(ctx, "salesOrderPayment", {

@@ -11,6 +11,7 @@ import type {
   documentSourceTypes,
   documentValidator
 } from "./documents.models";
+import { buildDocumentUploadPath } from "./documents.models";
 
 export async function deleteDocument(
   client: SupabaseClient<Database>,
@@ -194,6 +195,59 @@ export async function upsertDocument(
       })
     )
     .eq("id", document.id);
+}
+
+/**
+ * Create a presigned upload URL for a document in the "private" bucket. First step
+ * of the two-step upload flow: PUT the file bytes to the returned `signedUrl` (or
+ * use supabase-js `uploadToSignedUrl(path, token, file)`), then call
+ * `insertUploadedDocument` with the returned `path` to register the metadata row.
+ * `folder`/`entityId` scope the storage path so the file lands where the entity's
+ * document panel lists it (e.g. `job`/jobId, `parts`/itemId, `opportunity`/opportunityId).
+ */
+export async function createDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    folder: string;
+    entityId: string;
+    name: string;
+  }
+) {
+  const documentPath = buildDocumentUploadPath(args);
+  return client.storage
+    .from("private")
+    .createSignedUploadUrl(documentPath, { upsert: true });
+}
+
+/**
+ * Register the metadata row for a file already uploaded to storage. Second step of
+ * the upload flow: pass the `path` returned by `createDocumentUploadUrl` (or a
+ * per-module `create*DocumentUploadUrl`). Wraps `upsertDocument`, defaulting the
+ * read/write groups to the creating user. `size` is in KB, matching the
+ * `document.size` column and the browser upload hooks.
+ */
+export async function insertUploadedDocument(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    createdBy: string;
+    path: string;
+    name: string;
+    size: number;
+    sourceDocument?: (typeof documentSourceTypes)[number];
+    sourceDocumentId?: string;
+  }
+) {
+  const { sourceDocument, sourceDocumentId, ...rest } = args;
+  return upsertDocument(client, {
+    ...rest,
+    readGroups: [args.createdBy],
+    writeGroups: [args.createdBy],
+    ...(sourceDocument && sourceDocumentId
+      ? { sourceDocument, sourceDocumentId }
+      : {})
+  });
 }
 
 export async function updateDocumentFavorite(

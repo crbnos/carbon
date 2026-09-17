@@ -31,7 +31,11 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 - `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
   (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
 - `lines.tracking.tsx` — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
-  `"Shipment Line Index"`); guards `status === "Available"`; clears stale attrs off prior entities.
+  `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
+  shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
+  attrs off prior entities. Receipt tracking additionally has a `returnEntity` type for
+  sales-return receipts (same-serial re-entry, guarded by provenance: the entity must be the
+  return line's item and shipped to that return's customer on a posted shipment).
 - `lines.split.tsx` — invokes `create` with `type: "shipmentLineSplit"` / `receiptLineSplit`.
 - `lines.$id.delete.tsx` — `deleteShipmentLine` / `deleteReceiptLine`.
 - `fixed-asset-lines.update.tsx` — upsert `shipmentFixedAssetLine` (`shipped`/`received` bool, `serialNumber`).
@@ -65,6 +69,13 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   serials reconciled across indices `0..receivedQuantity`; uses `useStorageRuleViolations`),
   `ShipmentVoidModal` / `ReceiptVoidModal` (destructive `Alert` + bulleted consequences, submit
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
+  **Both post modals are source-aware for return flows**, and must stay in step with
+  `lines.tracking`'s guard or they reject what tracking accepted:
+  `ReceiptPostModal` counts a serial slot as filled when the entity is merely ASSIGNED on a
+  `Sales Return Order` receipt (returned units are picked, not typed, so they carry no
+  `readableId` of their own); `ShipmentPostModal` and `ShipmentLines`' batch/serial inputs
+  expect `On Hold` rather than `Available` when the shipment's source is a
+  `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
 ## Posting flow (`$id.post.tsx` → edge fn)
 
@@ -78,16 +89,34 @@ slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnRe
 `{ type: "post" | "void", {receipt,shipment}Id, userId, companyId }`, run under
 `getCarbonServiceRole` + Kysely `db.transaction()`, and branch on `sourceDocument`:
 
-- **post-receipt** handles `Purchase Order` and `Inbound Transfer`. PO path: inserts `itemLedger`
+- **post-receipt** handles `Purchase Order`, `Inbound Transfer`, and `Sales Return Order`
+  (customer RMA re-entry at original outbound cost, entities to On Hold). PO path: inserts `itemLedger`
   (entry types `Positive/Negative Adjmt.` by sign), GR/IR + inventory `journalLine`s when
   `accountingEnabled`, advances PO line `quantityReceived`/`receivedComplete` and PO `status`,
   flips tracked entities to `Available` (**`On Hold` if the item has a Receipt-usage inspection
   document assignment**), and
   creates one `inspection` lot per inspected line (see `inspection-system.md`).
-- **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`. SO path: COGS
+- **post-shipment** handles `Sales Order`, `Purchase Order`, `Outbound Transfer`,
+  `Sales Return Order` (return-to-customer), and `Purchase Return Order` (supplier return,
+  Cr Inventory / Dr GR/IR; the `create` edge fn seeds the shipment's tracked entities from
+  `purchaseReturnOrderLineTrackedEntity`, and this path **splits** a batch when the returned
+  quantity is less than the entity's — same `buildBatchSplitRecords` mechanism as SO). SO path: COGS
   `journalLine`s via `calculateCOGS` + `costLedger`, negative `itemLedger`, advances SO line
   `quantitySent`/`sentComplete` and SO `status`, updates `job.quantityShipped`/status for Job
   fulfillment, and **splits** batch tracked entities when shipped qty < entity qty.
+**GL dimensions on return journals.** Every return-flow journal (post-shipment
+`Sales Return Order` + `Purchase Return Order`, post-receipt `Sales Return Order`)
+attaches automatic `journalLineDimension` rows — item, item posting group
+(`itemCost.itemPostingGroupId`), party (supplier/customer + type), and location —
+built index-parallel to the journal lines and emitted through the shared pure
+`buildJournalLineDimensionInserts` (`functions/shared/journal-dimensions.ts`), gated
+by the company group's configured `dimension` rows. The journalLine insert must
+`.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
+original lines' dimensions onto the reversing lines (read `journalLineDimension` by
+`journalLineId`, re-attach by position) so a void mirrors the posting. `post-memo`
+already carries the party dimensions; its legs are aggregate so no per-item dimension
+applies.
+
 - **`void`** (post fn, `type: "void"`): requires `status === "Posted"`; receipt also blocks if
   `invoiced` (and only PO-sourced receipts can void). Posts reversing `itemLedger` + `journalLine`s,
   rolls back source-document quantities, restores tracked entities to `Available`, sets `status: "Voided"`.

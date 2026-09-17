@@ -54,7 +54,8 @@ import {
   LuClipboardCheck,
   LuEllipsisVertical,
   LuFile,
-  LuInbox
+  LuInbox,
+  LuLayers
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import type { LoaderFunctionArgs } from "react-router";
@@ -72,7 +73,11 @@ import {
 import { CSVLink } from "~/components/CSVLink";
 import { useUser } from "~/hooks/useUser";
 import type { ActiveProductionEvent } from "~/modules/production";
-import { getActiveProductionEvents, KPIs } from "~/modules/production";
+import {
+  getActiveProductionEvents,
+  getUnbatchedBatchableOperationCount,
+  KPIs
+} from "~/modules/production";
 import { getDeadlineIcon } from "~/modules/production/ui/Jobs";
 import type { WorkCenter } from "~/modules/resources";
 import { getWorkCentersListWithBlockingStatus } from "~/modules/resources";
@@ -100,23 +105,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "production"
   });
 
-  const [activeJobs, assignedJobs, workCenters] = await Promise.all([
-    client
-      .from("job")
-      .select("id,status,assignee")
-      .eq("companyId", companyId)
-      .in("status", activeJobStatuses),
-    client
-      .from("job")
-      .select("id,status,assignee")
-      .eq("companyId", companyId)
-      .eq("assignee", userId),
-    getWorkCentersListWithBlockingStatus(client, companyId)
-  ]);
+  const [activeJobs, assignedJobs, unbatchedOperations, workCenters] =
+    await Promise.all([
+      client
+        .from("job")
+        .select("id,status,assignee")
+        .eq("companyId", companyId)
+        .in("status", activeJobStatuses),
+      client
+        .from("job")
+        .select("id,status,assignee")
+        .eq("companyId", companyId)
+        .eq("assignee", userId),
+      getUnbatchedBatchableOperationCount(client, companyId),
+      getWorkCentersListWithBlockingStatus(client, companyId)
+    ]);
 
   return {
     activeJobs: activeJobs.data?.length ?? 0,
     assignedJobs: assignedJobs.data?.length ?? 0,
+    unbatchedOperations: unbatchedOperations.count ?? 0,
     workCenters: workCenters.data ?? [],
     events: getActiveProductionEvents(client, companyId)
   };
@@ -124,7 +132,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function ProductionDashboard() {
   const { t } = useLingui();
-  const { activeJobs, assignedJobs, events, workCenters } =
+  const { activeJobs, assignedJobs, unbatchedOperations, events, workCenters } =
     useLoaderData<typeof loader>();
 
   const user = useUser();
@@ -310,7 +318,7 @@ export default function ProductionDashboard() {
     <div className="flex flex-col gap-4 w-full p-4 h-[calc(100dvh-var(--header-height))] overflow-y-auto scrollbar-thin scrollbar-thumb-rounded-full scrollbar-thumb-muted-foreground bg-card">
       <div className="grid w-full gap-y-4 lg:gap-x-4 grid-cols-1 lg:grid-cols-6">
         <MetricCard
-          className="col-span-1 lg:col-span-3"
+          className="col-span-1 lg:col-span-2"
           icon={<LuCirclePlay />}
           title={<Trans>Active Jobs</Trans>}
           value={activeJobs}
@@ -319,12 +327,21 @@ export default function ProductionDashboard() {
         />
 
         <MetricCard
-          className="col-span-1 lg:col-span-3"
+          className="col-span-1 lg:col-span-2"
           icon={<LuInbox />}
           title={<Trans>Jobs Assigned to Me</Trans>}
           value={assignedJobs}
           to={`${path.to.jobs}?filter=assignee:eq:${user.id}`}
           linkLabel={t`View Assigned Jobs`}
+        />
+
+        <MetricCard
+          className="col-span-1 lg:col-span-2"
+          icon={<LuLayers />}
+          title={<Trans>Unbatched Operations</Trans>}
+          value={unbatchedOperations}
+          to={path.to.newOperationBatch}
+          linkLabel={t`Create Batch`}
         />
 
         <Card className="col-span-1 lg:col-span-6">

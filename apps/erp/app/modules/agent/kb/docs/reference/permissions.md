@@ -4,7 +4,7 @@
 
 Everyone who works in Carbon signs in against one company, and Carbon decides what they can do from a set of small, explicit grants. A grant is a pair: a **module** (a slice of the app, like Sales or Inventory) and an **action** on it (view, create, update, or delete). Grant someone `sales_view` and they can read sales orders; grant `inventory_update` and they can edit inventory. Nothing is implied and nothing is global. A person with no grants can sign in and see nothing.
 
-You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see `docs/reference/people`; for programmatic access that uses the same model, see `docs/reference/api-keys`. Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see `docs/reference/two-factor`.
+You rarely set those grants one at a time. Each employee gets an **employee type** that carries a template of grants, and you tune the exceptions per person from there. This page is the map of that system, from the permission model at the bottom to the people at the top. For the individuals themselves see `docs/reference/people`; for programmatic access that uses the same model, see `docs/building/api-keys`. Permissions decide what someone may do once they are in; for how they prove who they are on the way in, see `docs/reference/two-factor`.
 
 ## The module-action model
 
@@ -23,7 +23,7 @@ Every permission screen in Carbon is the same widget: a matrix with a **row per 
 
 Internally each grant stores the list of companies it applies to, so one person can hold different permissions in each company they belong to. In the UI you always edit permissions for the company you're currently in. The special value `"0"` means "all companies" and is how a true cross-company administrator is represented. See `docs/reference/intercompany` for how a user spans several companies.
 
-Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for `docs/reference/api-keys`, which carry scopes in exactly this `module_action` shape.
+Carbon enforces these grants in two places at once. The app checks them to show or hide screens and buttons, and the database enforces the same grants through row-level security, so a request that skips the UI still can't reach data the grant doesn't allow. That second layer is what makes the same model safe for `docs/building/api-keys`, which carry scopes in exactly this `module_action` shape.
 
 ## Employee types
 

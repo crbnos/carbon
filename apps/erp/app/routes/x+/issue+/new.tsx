@@ -2,6 +2,7 @@ import { assertIsPost, ERP_URL, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -19,8 +20,10 @@ import {
   insertIssue,
   issueValidator
 } from "~/modules/quality";
+import { linkEntitiesToIssueItemRow } from "~/modules/quality/quality-disposition.server";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -323,79 +326,26 @@ async function autoLinkJobOperationDisposition(
     }
   }
 
-  // Disposition row: find or create. insertIssue may have already inserted
-  // one for this item via the form's `items` array.
-  const existingItem = await client
-    .from("nonConformanceItem")
-    .select("id, quantity")
-    .eq("nonConformanceId", nonConformanceId)
-    .eq("itemId", itemId)
-    .maybeSingle();
-
-  let itemRowId: string;
-  let currentQty: number;
-  if (existingItem.data) {
-    itemRowId = existingItem.data.id as string;
-    currentQty = Number(existingItem.data.quantity ?? 0);
-  } else {
-    const insert = await (client as any)
-      .from("nonConformanceItem")
-      .insert({
-        itemId,
-        nonConformanceId,
-        createdBy: userId,
-        companyId,
-        quantity: 0
-      })
-      .select("id, quantity")
-      .single();
-    if (insert.error || !insert.data) {
-      logger.error("Issue creation step failed", { error: insert.error });
-      return;
-    }
-    itemRowId = insert.data.id as string;
-    currentQty = Number(insert.data.quantity ?? 0);
+  // Disposition row: find or create (insertIssue may have already inserted
+  // one for this item via the form's `items` array), link the lot, and grow
+  // the row quantity — under the issue lock shared by every link writer.
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, { nonConformanceId, companyId });
+        await linkEntitiesToIssueItemRow(trx, {
+          nonConformanceId,
+          companyId,
+          userId,
+          itemId,
+          entities: lotEntities.map((e) => ({
+            id: e.id,
+            quantity: Number(e.quantity ?? 1)
+          }))
+        });
+      });
+  } catch (err) {
+    logger.error("Issue creation step failed", { error: err });
   }
-
-  // ncUnique: an entity may sit on at most one disposition row per NCR.
-  const alreadyLinked = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", entityIds);
-  const alreadyLinkedSet = new Set(
-    ((alreadyLinked.data ?? []) as { trackedEntityId: string }[]).map(
-      (r) => r.trackedEntityId
-    )
-  );
-
-  const linkRows = lotEntities
-    .filter((e) => !alreadyLinkedSet.has(e.id))
-    .map((e) => ({
-      nonConformanceItemId: itemRowId,
-      trackedEntityId: e.id,
-      quantity: Number(e.quantity ?? 1),
-      companyId,
-      createdBy: userId
-    }));
-  if (linkRows.length === 0) return;
-
-  const linkInsert = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .insert(linkRows);
-  if (linkInsert.error) {
-    logger.error("Issue creation step failed", { error: linkInsert.error });
-    return;
-  }
-
-  const addedQty = linkRows.reduce((acc, r) => acc + r.quantity, 0);
-  await client
-    .from("nonConformanceItem")
-    .update({
-      quantity: currentQty + addedQty,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", itemRowId)
-    .eq("companyId", companyId);
 }

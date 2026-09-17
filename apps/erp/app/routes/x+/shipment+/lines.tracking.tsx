@@ -14,17 +14,34 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const shipmentLineId = formData.get("shipmentLineId") as string;
   const shipmentId = formData.get("shipmentId") as string;
-  // const itemId = formData.get("itemId") as string;
   const trackingType = formData.get("trackingType") as "batch" | "serial";
   const trackedEntityId = formData.get("trackedEntityId") as string;
 
-  // Fetch the current tracked entity to get existing attributes
-  const trackedEntityResponse = await client
-    .from("trackedEntity")
-    .select("*")
-    .eq("id", trackedEntityId)
-    .eq("companyId", companyId)
-    .single();
+  // Fetch the current tracked entity to get existing attributes, plus the
+  // shipment and its line — the LINE's item (never the form's) is what the
+  // entity must match.
+  const [trackedEntityResponse, shipmentResponse, shipmentLineResponse] =
+    await Promise.all([
+      client
+        .from("trackedEntity")
+        .select("*")
+        .eq("id", trackedEntityId)
+        .eq("companyId", companyId)
+        .single(),
+      client
+        .from("shipment")
+        .select("sourceDocument, sourceDocumentId")
+        .eq("id", shipmentId)
+        .eq("companyId", companyId)
+        .single(),
+      client
+        .from("shipmentLine")
+        .select("itemId")
+        .eq("id", shipmentLineId)
+        .eq("shipmentId", shipmentId)
+        .eq("companyId", companyId)
+        .single()
+    ]);
 
   if (trackedEntityResponse.error) {
     return data(
@@ -38,7 +55,87 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const trackedEntity = trackedEntityResponse.data;
 
-  if (trackedEntity.status !== "Available") {
+  // A failed shipment lookup must not silently fall back to "Available" —
+  // that would reject legitimate On Hold sales-return tracking writes.
+  if (shipmentResponse.error) {
+    return data(
+      { success: false, error: shipmentResponse.error.message },
+      await flash(
+        request,
+        error(shipmentResponse.error, "Failed to load shipment")
+      )
+    );
+  }
+
+  if (shipmentLineResponse.error) {
+    return data(
+      { success: false, error: shipmentLineResponse.error.message },
+      await flash(
+        request,
+        error(shipmentLineResponse.error, "Failed to load shipment line")
+      )
+    );
+  }
+
+  // The entity must be the line's item — the loosest picker (or a crafted
+  // POST) must not be able to assign an unrelated part's serial.
+  if (
+    trackedEntity.itemId &&
+    shipmentLineResponse.data.itemId &&
+    trackedEntity.itemId !== shipmentLineResponse.data.itemId
+  ) {
+    const message = "Tracked entity does not match the line's item";
+    return data(
+      { success: false, error: message },
+      await flash(request, error(message))
+    );
+  }
+
+  // Return-to-customer shipments (source "Sales Return Order") ship returned
+  // stock, which is deliberately On Hold until dispositioned/shipped back —
+  // everything else ships Available stock only.
+  const isSalesReturnShipment =
+    shipmentResponse.data?.sourceDocument === "Sales Return Order";
+  const allowedStatus = isSalesReturnShipment ? "On Hold" : "Available";
+
+  // On Hold alone is not provenance: an entity can be On Hold for an
+  // unrelated inspection or another customer's RMA. For a return-to-customer
+  // shipment the entity must have COME BACK on a receipt of THIS return
+  // order (its Receipt attribute is stamped by the return-receipt flow).
+  if (isSalesReturnShipment) {
+    const entityReceiptId = (
+      trackedEntity.attributes as Record<string, unknown> | null
+    )?.["Receipt"] as string | undefined;
+    const provenance = entityReceiptId
+      ? await client
+          .from("receipt")
+          .select("id")
+          .eq("id", entityReceiptId)
+          .eq("sourceDocument", "Sales Return Order")
+          .eq("sourceDocumentId", shipmentResponse.data.sourceDocumentId ?? "")
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : { data: null, error: null };
+    if (provenance.error) {
+      return data(
+        { success: false, error: "Failed to verify the entity's provenance" },
+        await flash(
+          request,
+          error(provenance.error, "Failed to verify the entity's provenance")
+        )
+      );
+    }
+    if (!provenance.data) {
+      const message =
+        "Tracked entity was not received on this return order and cannot ship back on it";
+      return data(
+        { success: false, error: message },
+        await flash(request, error(message))
+      );
+    }
+  }
+
+  if (trackedEntity.status !== allowedStatus) {
     return data(
       {
         success: false,
@@ -87,7 +184,37 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  // Clear stale shipment attrs from previously-assigned tracked entities for this line.
+  // Update the trackedEntity record using service role to bypass RLS
+  const updateResponse = await serviceRole
+    .from("trackedEntity")
+    .update({
+      attributes: newAttributes
+    })
+    .eq("id", trackedEntityId)
+    .eq("status", allowedStatus)
+    .select("id");
+
+  if (updateResponse.error) {
+    return data(
+      { success: false, error: updateResponse.error.message },
+      await flash(
+        request,
+        error(updateResponse.error, updateResponse.error.message)
+      )
+    );
+  }
+
+  // The status filter guards against a concurrent flip; zero matched rows is
+  // a conflict, not a success.
+  if (!updateResponse.data || updateResponse.data.length === 0) {
+    const message = `Tracked entity is no longer ${allowedStatus}`;
+    return data(
+      { success: false, error: message },
+      await flash(request, error(message))
+    );
+  }
+
+  // Only after the new assignment succeeds, clear stale shipment attrs
   // Batch: any prior entity on this line. Serial: only the entity at this index.
   let staleQuery = serviceRole
     .from("trackedEntity")
@@ -120,25 +247,6 @@ export async function action({ request }: ActionFunctionArgs) {
           .update({ attributes: cleaned })
           .eq("id", stale.id);
       })
-    );
-  }
-
-  // Update the trackedEntity record using service role to bypass RLS
-  const updateResponse = await serviceRole
-    .from("trackedEntity")
-    .update({
-      attributes: newAttributes
-    })
-    .eq("id", trackedEntityId)
-    .eq("status", "Available");
-
-  if (updateResponse.error) {
-    return data(
-      { success: false, error: updateResponse.error.message },
-      await flash(
-        request,
-        error(updateResponse.error, updateResponse.error.message)
-      )
     );
   }
 

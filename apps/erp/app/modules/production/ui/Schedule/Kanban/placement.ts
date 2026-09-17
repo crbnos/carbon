@@ -216,6 +216,54 @@ export function getColumnPlacement<T extends PrioritizedItem>(
   };
 }
 
+/**
+ * Renumber a destination column with the dragged item inserted at
+ * `insertionIndex`, assigning evenly spaced integer priorities in display order.
+ *
+ * The fractional single-op path (`calculateFractionalPriority`) can only place a
+ * card when its two new neighbors have a numeric gap between them. Operations
+ * default to `priority = 1` until the finite scheduler sequences them, so a
+ * column of unsequenced ops is entirely equal-priority — no gap anywhere, and
+ * every drop is silently rejected. Renumbering restores a strict order in one
+ * pass; returning only the ops whose priority actually changes keeps an
+ * already-spaced column cheap (a single write) while a collided/defaulted column
+ * self-heals into `1..N` spacing on its first reorder.
+ */
+export function planColumnReorder<T extends PrioritizedItem>(
+  origin: DragOrigin<T>,
+  items: readonly T[],
+  destinationColumnId: string,
+  insertionIndex: number
+): { id: string; priority: number }[] {
+  const destinationItems = getItemsInColumn(
+    items,
+    destinationColumnId,
+    origin.item.id
+  );
+  const index = Math.max(0, Math.min(insertionIndex, destinationItems.length));
+  const orderedIds = [
+    ...destinationItems.slice(0, index).map((item) => item.id),
+    origin.item.id,
+    ...destinationItems.slice(index).map((item) => item.id)
+  ];
+
+  const currentPriority = new Map(
+    destinationItems.map((item) => [item.id, item.priority])
+  );
+
+  const updates: { id: string; priority: number }[] = [];
+  orderedIds.forEach((id, position) => {
+    const priority = position + 1;
+    // The dragged op always moves columns and/or slot, so it always writes; a
+    // sibling only writes when its priority genuinely shifts.
+    if (id === origin.item.id || currentPriority.get(id) !== priority) {
+      updates.push({ id, priority });
+    }
+  });
+
+  return updates;
+}
+
 export function isSamePlacement(
   origin: DragPlacement,
   placement: DragPlacement

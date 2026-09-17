@@ -12,6 +12,7 @@ import {
   buildMergeRecords
 } from "../shared/batch-split.ts";
 import { round } from "../shared/precision.ts";
+import { getPickedBudgets, orderOldFirst } from "../lib/picked-consumption.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -1007,7 +1008,12 @@ serve(async (req: Request) => {
             .executeTakeFirstOrThrow();
           // Job scope is the final catch-all: only a completed job's remainder
           // is provably surplus (completion-time backflush has already run).
-          if (job.status !== "Completed" || !job.locationId) return;
+          if (
+            (job.status !== "Completed" && job.status !== "Cancelled") ||
+            !job.locationId
+          ) {
+            return;
+          }
 
           await runReturnSweep(trx, {
             scope: "job",
@@ -1407,7 +1413,12 @@ async function returnUntrackedMaterialRemainder(
   trx: any,
   args: {
     today: string;
-    material: { id: string; itemId: string; quantityIssued: number | string | null };
+    material: {
+      id: string;
+      itemId: string;
+      jobId: string;
+      quantityIssued: number | string | null;
+    };
     lines: ReturnSweepLine[];
     owed: number;
     locationId: string;
@@ -1428,9 +1439,21 @@ async function returnUntrackedMaterialRemainder(
     .filter((l) => l.stagedNet > 0 && l.toStorageUnitId);
   if (staged.length === 0) return 0;
 
-  const totalStaged = staged.reduce((sum, l) => sum + l.stagedNet, 0);
-  const issued = Number(material.quantityIssued ?? 0);
-  let returnable = Math.max(0, totalStaged - Math.max(issued, owed));
+  const budgets = orderOldFirst(
+    await getPickedBudgets(trx, { material, locationId, companyId }),
+    material.itemId
+  );
+  const returnableByItem = new Map<string, number>();
+  let owedRemaining = Math.max(0, owed);
+  for (const budget of budgets) {
+    const hold =
+      budget.factor > 0
+        ? Math.min(budget.available, owedRemaining * budget.factor)
+        : 0;
+    owedRemaining -= budget.factor > 0 ? hold / budget.factor : 0;
+    returnableByItem.set(budget.itemId, Math.max(0, budget.available - hold));
+  }
+  let returnable = [...returnableByItem.values()].reduce((a, b) => a + b, 0);
   if (returnable <= 0) return 0;
 
   // Newest-first: return the most recently staged stock, deterministic.
@@ -1458,7 +1481,10 @@ async function returnUntrackedMaterialRemainder(
   let totalReturned = 0;
   for (const line of staged) {
     if (returnable <= 0) break;
-    const quantity = Math.min(line.stagedNet, returnable);
+    const itemReturnable = returnableByItem.get(line.itemId) ?? 0;
+    const quantity = Math.min(line.stagedNet, itemReturnable);
+    if (quantity <= 0) continue;
+    returnableByItem.set(line.itemId, itemReturnable - quantity);
     // Return target: the line's source bin, else the item's default pick bin,
     // else location-level unassigned stock (mirrors picks from unassigned bins;
     // never strands the return).
@@ -1550,6 +1576,7 @@ async function runReturnSweep(
     .select([
       "id",
       "itemId",
+      "jobId",
       "jobOperationId",
       "quantityIssued",
       "estimatedQuantity",
@@ -1615,7 +1642,13 @@ async function runReturnSweep(
 
     await maybeRestoreJobMaterialSource(trx, {
       scope,
-      material: { id: material.id, quantityIssued: material.quantityIssued },
+      material: {
+        id: material.id,
+        itemId: material.itemId,
+        jobId: material.jobId,
+        quantityIssued: material.quantityIssued
+      },
+      locationId: job.locationId,
       userId,
       companyId
     });
@@ -1633,12 +1666,18 @@ async function maybeRestoreJobMaterialSource(
   trx: any,
   args: {
     scope: "operation" | "job";
-    material: { id: string; quantityIssued: number | string | null };
+    material: {
+      id: string;
+      itemId: string;
+      jobId: string;
+      quantityIssued: number | string | null;
+    };
+    locationId: string;
     userId: string;
     companyId: string;
   }
 ) {
-  const { scope, material, userId, companyId } = args;
+  const { scope, material, locationId, userId, companyId } = args;
 
   const liveLines = await trx
     .selectFrom("pickingListLine as pll")
@@ -1651,13 +1690,12 @@ async function maybeRestoreJobMaterialSource(
     .execute();
 
   if (scope === "operation") {
-    const netStaged = liveLines.reduce(
-      (sum: number, l: ReturnSweepLine) =>
-        sum +
-        Math.max(0, Number(l.quantityPicked ?? 0) - Number(l.quantityReturned ?? 0)),
-      0
-    );
-    if (netStaged - Number(material.quantityIssued ?? 0) > 0) return;
+    const budgets = await getPickedBudgets(trx, {
+      material,
+      locationId,
+      companyId
+    });
+    if (budgets.some((b) => b.available > 0)) return;
   }
 
   const sourceLine = liveLines

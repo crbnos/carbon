@@ -14,7 +14,7 @@ import {
   generateProductLabelZPL,
   generateStorageUnitLabelZPL
 } from "@carbon/documents/zpl";
-import { ERP_URL, SUPABASE_URL } from "@carbon/env";
+import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { renderWithBinderyPress } from "@carbon/printing/printing.server";
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
 import { labelSizes } from "@carbon/utils";
@@ -113,7 +113,10 @@ function requireMediaSize(mediaSizeId: string): LabelSize {
   return mediaSize;
 }
 
-const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
+// Not the public storage prefix: nothing here reaches a browser. Both the
+// expanded logo path (fetched by `resolveLabelLogo`) and the logo-resizer
+// call it feeds are server-to-server, so this uses the internal URL.
+const INTERNAL_STORAGE_URL_PREFIX = `${SUPABASE_INTERNAL_URL}/storage/v1/object/public/public/`;
 
 /**
  * Resolve the company's tracking-label template + logo for a built-in render.
@@ -143,7 +146,7 @@ async function loadProductLabelContext(
   const template = toDocumentTemplate(templateRow.data, "trackingLabel");
 
   const expand = (path: string | null | undefined) =>
-    path ? `${PUBLIC_STORAGE_URL_PREFIX}${path}` : null;
+    path ? `${INTERNAL_STORAGE_URL_PREFIX}${path}` : null;
   const company = companyRow.data
     ? {
         logoLight: expand(companyRow.data.logoLight),
@@ -152,7 +155,7 @@ async function loadProductLabelContext(
     : null;
 
   const logo = await resolveLabelLogo(company, template, labelSize, {
-    supabaseUrl: SUPABASE_URL ?? ""
+    supabaseUrl: SUPABASE_INTERNAL_URL ?? ""
   });
 
   return { template, logo };
@@ -221,6 +224,7 @@ async function renderKanbanCardPDF(
           locationName: item.locationName,
           storageUnitId: item.storageUnitId,
           storageUnitName: item.storageUnitName,
+          fromStorageUnitName: item.fromStorageUnitName,
           supplierName: item.supplierName,
           quantity: item.quantity,
           unitOfMeasureCode: item.unitOfMeasureCode,

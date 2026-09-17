@@ -26,8 +26,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
   Label,
+  ShortcutKey,
   Tabs,
   TabsContent,
   TabsList,
@@ -40,8 +40,7 @@ import {
   toast,
   useDebounce,
   useDisclosure,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -70,6 +69,7 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { procedureStepType } from "~/modules/shared";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { getPrivateUrl, path } from "~/utils/path";
 import {
   procedureParameterValidator,
@@ -80,7 +80,6 @@ import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
 const logger = getLogger("erp", "procedureexplorer");
 
 export default function ProcedureExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const procedureData = useRouteData<{
@@ -217,24 +216,30 @@ export default function ProcedureExplorer() {
   };
 
   const newAttributeRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+a": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      if (!isDisabled) {
-        newAttributeRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addAttribute,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        if (!isDisabled) {
+          newAttributeRef.current?.click();
+        }
       }
     }
-  });
+  ]);
 
   const newParameterRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+p": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      if (!isDisabled) {
-        newParameterRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addParameter,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        if (!isDisabled) {
+          newParameterRef.current?.click();
+        }
       }
     }
-  });
+  ]);
 
   const attributeMap = useMemo(
     () =>
@@ -342,7 +347,10 @@ export default function ProcedureExplorer() {
                       <span>
                         <Trans>Add Step</Trans>
                       </span>
-                      <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
+                      <ShortcutKey
+                        shortcut={EXPLORER_SHORTCUTS.addAttribute}
+                        variant="small"
+                      />
                     </HStack>
                     {isDisabled && (
                       <span className="text-muted-foreground">
@@ -423,7 +431,10 @@ export default function ProcedureExplorer() {
                     <span>
                       <Trans>Add Parameter</Trans>
                     </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+p")}</Kbd>
+                    <ShortcutKey
+                      shortcut={EXPLORER_SHORTCUTS.addParameter}
+                      variant="small"
+                    />
                   </HStack>
                 </TooltipContent>
               </Tooltip>
