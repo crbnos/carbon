@@ -1032,6 +1032,9 @@ msgstr "Verfolgtes Element auswählen"
 msgid "Picked"
 msgstr "Gepickt"
 
+msgid "Picked as"
+msgstr "Kommissioniert als"
+
 msgid "Picked quantity"
 msgstr "Gepickte Menge"
 
@@ -1043,6 +1046,12 @@ msgstr "Spalte {0} aufgenommen an Position: {1} von {2}"
 
 msgid "Picking"
 msgstr "Kommissionierung"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel im Fertigungsauftrag"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel im Fertigungsauftrag, für {substitutedAssemblies} Baugruppen"
 
 msgid "Pin Out"
 msgstr "Abmelden"

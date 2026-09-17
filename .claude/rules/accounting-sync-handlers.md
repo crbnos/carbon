@@ -26,7 +26,7 @@ The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/acco
 
 `AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry`. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
-`SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
+`SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. Rillet's `customer`/`vendor` are the one place a Carbon-owned entity has a working PULL path: the explicit contact import below enqueues `pull-from-accounting` operations by hand (see the Rillet contact import section) — the automatic direction is unchanged, and `owner: "carbon"` is exactly what keeps a re-import from overwriting a linked record. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
 
 ## Inngest functions (entry points)
 
@@ -38,9 +38,16 @@ These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/syn
 | `accounting-pull-sweep` | — | `accounting-pull-sweep.ts` | cron `*/30 * * * *`; iterates every active integration that implements `SupportsIncrementalPull` (`listChanges`) — the **INBOUND correctness guarantee** behind the webhooks (webhooks are latency, not correctness) |
 | `accounting-outbound-sweep` | — | `accounting-outbound-sweep.ts` | cron `15,45 * * * *` (offset from the pull sweep) — the **OUTBOUND correctness guarantee** (v4 Pillar B); see the sweep section below |
 | `accounting-backfill` | `carbon/accounting-backfill` | `accounting-backfill.ts` | `accounting-backfill` |
+| `rillet-import-contacts` | `carbon/rillet-import-contacts` | `rillet-import-contacts.ts` | the Rillet integration's **Import customers & vendors** action; the only on-demand PULL of master data — see the Rillet contact import section below |
 | `accounting-consolidation` | — | `accounting-consolidation.ts` | cron `0 2 * * *`; pushes one aggregated provider journal per posting date for daily-consolidation configs (drains hold those journal ops for it) |
 | `accounting-reconciliation` | — | `accounting-reconciliation.ts` | cron `0 3 * * 1` (Mondays 03:00 UTC) — presence drift check + `accountingSyncTieOut` writer; see the tie-out section below |
 | `event-handler-sync` | `carbon/event-sync` | `events/sync.ts` | the SYNC event-system handler (see event-system.md) — DB writes -> push to the provider |
+
+### Per-tenant isolation and dead OAuth grants
+
+The four crons (`pull-sweep`, `outbound-sweep`, `reconciliation`, `consolidation`) walk every active integration with one `step.run` per company, through `runIsolatedCompanyStep` (`accounting-auth-failure.ts`). Two invariants: a tenant that exhausts its step retries returns `{ error }` and the loop continues — it never fails the run for every tenant after it (it used to: one company with a dead token skipped every later company on every sweep); and an `AccountingAuthError` (the provider's token endpoint answered 400/401 — `invalid_grant` "Refresh token not found", revoked, rotated-and-lost) is NOT retried, because nothing retries a dead grant back to life. It returns `{ authFailed }`, `recordIntegrationAuthFailure` increments a redis counter (`integrations:<companyId>:<providerId>:auth-failures`, cleared by any successful pass), notifies the configurer (`integration.updatedBy`, `NotificationEvent.IntegrationSync`, deduped to one per day), and at `AUTH_FAILURE_DISABLE_THRESHOLD` (12 consecutive ≈ 3 h across both sweeps — `drainSyncOperations` rethrows `AccountingAuthError` like `RatelimitError` instead of parking it as Failed rows, so drain-path auth failures count too) sets `companyIntegration.active = false`, clears the integration cache keys, and notifies "disabled — reconnect". The OAuth callback routes upsert `active: true`, so reconnecting is the whole recovery. Note a deactivated accounting integration makes the period-close "External GL sync complete" blocker auto-pass (it only checks ACTIVE integrations) — that is the trade-off the user chose over an integration that sits active and silently syncs nothing.
+
+Why tokens die: Xero and QBO rotate refresh tokens, and Carbon refreshes reactively on a 401 (`providers/*/provider.ts`). Several runners (both sweeps, webhooks, event sync, reconciliation) build their own provider from the vault and can refresh with the same token. `createOAuthClient.refresh()` therefore calls `beforeRefresh` first (`core/service.ts` re-reads the vault): a stored refresh token that differs from the in-memory one means another runner already rotated — adopt it, skip the token endpoint. And `onTokenRefresh` now THROWS when `persistIntegrationSecrets` fails: the provider has already rotated, so a lost write is a dead credential; failing the run right there beats "Refresh token not found" thirty minutes later with no trail. Pinned by `core/oauth-refresh.test.ts`.
 
 ### The operation ledger — enqueue, cooldown, truthful close
 
@@ -318,3 +325,59 @@ is dead config for Rillet only, left in place for the capped providers.
 - DELETE sync is not implemented anywhere yet.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
 </content>
+
+## Rillet contact import (on-demand pull)
+
+`rillet-import-contacts.ts` + `apps/erp/app/routes/api+/integrations.rillet.import-contacts.ts`,
+reached from the **Import customers & vendors** action on the Rillet integration
+settings page (`actions` in `packages/ee/src/rillet/config.tsx`).
+
+Seeds Carbon from a Rillet organization that already has contacts, and — the actual
+point — writes the `externalIntegrationMapping` rows. `RilletCustomerSyncer.upsertRemote`
+resolves `getRemoteId(localId)` before writing, so once a Carbon customer is linked, a
+sales invoice raised in Carbon PUTs the ORIGINAL Rillet customer instead of creating a
+second one. Same for vendors and bills.
+
+- The job lists customers and vendors in ONE step (Rillet cursors expire after 2 h and
+  are never resumed), then enqueues `pull-from-accounting` ledger operations in batches
+  of `IMPORT_BATCH_SIZE` and drains each batch through the shared `drainSyncOperations`.
+  `concurrency: { key: "event.data.companyId", limit: 1 }` — two concurrent imports would
+  race on the name-match ladder below.
+- **Direction is NOT changed.** `buildRilletSyncConfig` still forces
+  `push-to-accounting` / `owner: "carbon"` for both entities, so no sweep, webhook or
+  event pulls a contact on its own. The ledger row's own `direction` is what routes the
+  drain to `pullBatchFromAccounting` — the same override the inbound webhook path uses.
+- **Re-running is safe at two levels.** A linked record is skipped by
+  `pullBatchFromAccounting`'s `owner: "carbon"` gate (Rillet never overwrites a
+  Carbon-owned record), and an unlinked one resolves through `upsertLocal`'s match ladder:
+  mapping row → the Carbon id on the record's own `carbon` external_reference (qualified
+  by `carbon-company`, so another Carbon instance's colliding id is refused) → the name,
+  which `customer_name_unique`/`supplier_name_unique (name, companyId)` makes a real key.
+  A name match onto a supplier/customer already linked to a DIFFERENT Rillet record
+  THROWS (named ids, visible in Sync Activity) rather than silently re-pointing the
+  mapping.
+- `RilletEntitySyncer` is now Rillet plumbing only; the pull rejections moved to
+  `RilletPushOnlyEntitySyncer`, which `RilletItemSyncer` and `RilletTransactionSyncer`
+  extend. Customer and vendor extend `RilletEntitySyncer` and implement
+  `mapToLocal`/`upsertLocal`.
+- `fetchRemoteBatch` on both syncers reads ONE cursor-drained list for a multi-id batch
+  and keeps the direct GET for a single id — Rillet has no get-many endpoint, so the
+  alternative is N GETs. The list is memoized on the **provider** (`listCustomers`/
+  `listVendors` in `provider.ts`), and the import builds ONE provider and reuses it for
+  the id-listing step and every batch, so the full drain per entity type runs once for
+  the whole import instead of once per 50-id batch (the drain builds a fresh syncer per
+  batch, so per-syncer memoization alone would rescan). A failed list is not cached, so a
+  retried batch can list again. On an Inngest replay the list step is skipped and the
+  provider is fresh, so the first re-executing batch re-lists once — bounded, never
+  per-batch.
+- A Rillet contact email that collides with an existing same-class contact
+  (`contact_email_companyId_unique (email, companyId, isCustomer)`, and `contact.email`
+  is nullable) is **skipped**, not created/filled — the insert or fill-missing UPDATE
+  would throw inside the shared pull transaction and roll back the mapping the import
+  exists to write. The contact is secondary; the checked-up-front guard covers both the
+  insert and the fill branches.
+- **Not imported:** addresses (`address.countryCode` is an FK to `country.alpha2`, and a
+  free-text Rillet country would fail the whole row) and payment terms (Carbon's is an FK
+  to `paymentTerm`, and the outbound mapper does not read it either). A contact person is
+  created only when Rillet carries an email — a Rillet contact has no person name, so
+  with no email there is nothing a contact row would say that the customer row does not.

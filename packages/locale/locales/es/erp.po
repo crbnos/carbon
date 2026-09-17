@@ -76,6 +76,10 @@ msgstr "{0} ya en un lote"
 msgid "{0} already started"
 msgstr "{0} ya iniciado"
 
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr "{0} no se puede eliminar porque todavía está en uso por {where}. Cambie primero esos registros a otra unidad de medida."
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} celdas con diferencias"
@@ -106,6 +110,19 @@ msgstr "{0} eliminado correctamente"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0} asientos de diario en borrador"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0} en existencias, para {1} conjuntos; el restante {2} será preparado como {3}"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0} en existencias; el restante {1} será preparado como {2}"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -1417,6 +1434,9 @@ msgstr "Agregar ruta"
 
 msgid "Add Permissions"
 msgstr "Agregar Permisos"
+
+msgid "Add Predecessor"
+msgstr "Agregar predecesor"
 
 msgid "Add Printer"
 msgstr "Agregar impresora"
@@ -3490,6 +3510,9 @@ msgstr "Elija un proceso agrupable para ver las operaciones que pueden ejecutars
 
 msgid "Choose a company"
 msgstr "Elige una empresa"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "Selecciona una pieza que {itemReadableId} reemplaza. La regla se guarda en esa pieza con {itemReadableId} como su sucesor."
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "Elija una fila a la izquierda para ver de dónde puede provenir su stock."
@@ -7778,6 +7801,9 @@ msgstr "Frecuencia"
 msgid "Friday"
 msgstr "Viernes"
 
+msgid "from"
+msgstr "desde"
+
 msgid "From"
 msgstr "Desde"
 
@@ -8315,6 +8341,9 @@ msgstr "Cuántos del sucesor reemplazan una pieza antigua"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "Cuánto de este material se necesita para construir uno del artículo padre del trabajo; se multiplica por cantidad de trabajo para cambiar el tamaño del consumo."
 
+msgid "How many of this part replace one old part"
+msgstr "Cuántas de esta pieza reemplazan una pieza anterior"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "Cuántas unidades construye cada trabajo individual en el lote; la cantidad del último trabajo puede ser más pequeña si la cantidad total no se divide uniformemente."
 
@@ -8502,6 +8531,9 @@ msgstr "Para convertir esta RFQ a una cotización, debe tener un cliente."
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "Para enviar esta RFQ a los proveedores, primero debe agregar proveedores a la RFQ."
 
+msgid "in place of this item"
+msgstr "en lugar de este artículo"
+
 msgid "In Process Only"
 msgstr "Solo en proceso"
 
@@ -8525,6 +8557,9 @@ msgstr "En stock"
 
 msgid "In stock only"
 msgstr "Solo en stock"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "En existencias, el restante como {substitute}"
 
 msgid "In the loop together"
 msgstr "En el ciclo juntos"
@@ -8826,8 +8861,20 @@ msgstr "Invitado"
 msgid "Invoice"
 msgstr "Factura"
 
+msgid "Invoice Address"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "Contacto de Factura"
+
+msgid "Invoice Contact Email"
+msgstr ""
+
+msgid "Invoice Contact Name"
+msgstr ""
+
+msgid "Invoice Contact Phone"
+msgstr ""
 
 msgid "Invoice customer"
 msgstr "Cliente de factura"
@@ -11896,6 +11943,12 @@ msgstr "Tasa fija opcional utilizada al traducir saldos de patrimonio según IAS
 msgid "Optional pages & sections"
 msgstr "Páginas y secciones opcionales"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "Opcional. Detiene las sugerencias de compra después de esta fecha."
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "Opcional. Detiene las sugerencias de compra para la pieza anterior después de esta fecha."
+
 msgid "Options"
 msgstr "Opciones"
 
@@ -11910,6 +11963,10 @@ msgstr "O ingrese este código secreto manualmente:"
 
 msgid "Order"
 msgstr "Pedido"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "Ordenar {0} × {substitute} para esta orden de trabajo"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12134,6 +12191,9 @@ msgstr "piezas"
 
 msgid "Part"
 msgstr "Parte"
+
+msgid "Part Being Replaced"
+msgstr "Pieza siendo reemplazada"
 
 msgid "Part Details"
 msgstr "Detalles de la Pieza"
@@ -12417,11 +12477,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "Seleccionar artículo rastreado"
 
+msgid "Picked"
+msgstr "Preparado"
+
 msgid "Picked and consumed as separate components"
 msgstr "Seleccionado y consumido como componentes separados"
 
 msgid "Picked quantity"
 msgstr "Cantidad recogida"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "picking en lugar de {substitutedFrom}, el artículo en la orden de trabajo"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "picking en lugar de {substitutedFrom}, el artículo en la orden de trabajo, para {assemblies} conjuntos"
 
 msgid "Picking Lines"
 msgstr "Líneas de Picking"
@@ -13131,6 +13200,15 @@ msgstr "Contacto de compras"
 
 msgid "Purchasing Contact"
 msgstr "Contacto de Compras"
+
+msgid "Purchasing Contact Email"
+msgstr ""
+
+msgid "Purchasing Contact Name"
+msgstr ""
+
+msgid "Purchasing Contact Phone"
+msgstr ""
 
 msgid "Purchasing Invoices"
 msgstr "Facturas de Compra"
@@ -15500,8 +15578,20 @@ msgstr "Cantidad Enviada"
 msgid "Shipping"
 msgstr "Envío"
 
+msgid "Shipping Address"
+msgstr ""
+
 msgid "Shipping Contact"
 msgstr "Contacto de Envío"
+
+msgid "Shipping Contact Email"
+msgstr ""
+
+msgid "Shipping Contact Name"
+msgstr ""
+
+msgid "Shipping Contact Phone"
+msgstr ""
 
 msgid "Shipping Cost"
 msgstr "Costo de Envío"
@@ -16061,6 +16151,12 @@ msgstr "Detener recepción"
 
 msgid "Stop Shipping"
 msgstr "Detener envío"
+
+msgid "Stops new purchase suggestions after this date."
+msgstr "Detiene las sugerencias de compra después de esta fecha."
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "Detiene las sugerencias de compra para la pieza anterior después de esta fecha."
 
 msgid "Storage client not available"
 msgstr "Cliente de almacenamiento no disponible"
@@ -17507,6 +17603,9 @@ msgstr "Estas órdenes de trabajo tienen operaciones asignadas a este centro de 
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Estos asientos aún están en Borrador, por lo que sus debe y haber no están en el libro mayor para este período. Contabiliza cada uno, o cambia su fecha a un período abierto posterior."
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "Estas piezas están siendo reemplazadas por ésta. Cada regla se establece en la pieza anterior; ábrela para cambiar la regla."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Estas filas contienen referencias a datos fuera de esta empresa, por lo que no se puede crear una copia de seguridad de los datos actuales. La eliminación de estas filas no se puede deshacer. Si se encuentran compartidas con otras empresas del grupo, nada se eliminará y la restauración no se iniciará."
 
@@ -18789,6 +18888,9 @@ msgstr "Versión:"
 msgid "Versions"
 msgstr "Versiones"
 
+msgid "via"
+msgstr "vía"
+
 msgid "via Digital Quote"
 msgstr "a través de Cotización Digital"
 
@@ -19204,6 +19306,9 @@ msgstr "Qué impulsó el inventario hacia arriba o hacia abajo, por cualquier di
 msgid "What happens when a journal is dated in a locked period."
 msgstr "Qué sucede cuando un asiento se registra en un período bloqueado."
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "Qué ha sido preparado realmente en pie de línea para este artículo, por pieza. Un picking puede traer una pieza diferente a la que el artículo nombra (una división Consumir primero, una alternativa Preferir nuevo) — aquí es donde ves qué piezas están en la máquina."
+
 msgid "What is {translatedTerm}?"
 msgstr "¿Qué es {translatedTerm}?"
 
@@ -19281,6 +19386,9 @@ msgstr "Cuándo Carbon se comprometió a que llegaran los bienes; combinado con 
 
 msgid "When expired stock is used"
 msgstr "Cuando se utiliza stock vencido"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "Cuándo MRP comienza a usar esta pieza para la demanda de la pieza anterior"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "Cuando MRP utiliza el sucesor para nueva demanda"

@@ -1032,6 +1032,9 @@ msgstr "추적 품목 선택"
 msgid "Picked"
 msgstr "피킹됨"
 
+msgid "Picked as"
+msgstr "피킹 항목"
+
 msgid "Picked quantity"
 msgstr "피킹 수량"
 
@@ -1043,6 +1046,12 @@ msgstr "열 {0}을(를) 집었습니다 — 위치: {2}개 중 {1}번째"
 
 msgid "Picking"
 msgstr "피킹"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom} 대신 피킹, 작업의 품목"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"

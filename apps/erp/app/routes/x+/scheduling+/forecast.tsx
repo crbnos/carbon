@@ -433,6 +433,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId: r.job?.jobId ?? r.jobId,
       operationId: r.operationId,
       operationDescription: r.jobOperation?.description ?? null,
+      itemReadableId:
+        r.jobOperation?.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: r.jobOperation?.jobMakeMethod?.item?.name ?? null,
+      itemThumbnailPath:
+        r.jobOperation?.jobMakeMethod?.item?.thumbnailPath ?? null,
+      itemType: r.jobOperation?.jobMakeMethod?.item?.type ?? null,
       batchReadableId: r.jobOperationBatch?.readableId ?? null,
       batchId: r.jobOperationBatchId ?? null,
       batchMemberCount: r.jobOperationBatchId

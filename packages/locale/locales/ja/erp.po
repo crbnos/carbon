@@ -76,6 +76,10 @@ msgstr "{0}はすでにバッチに含まれています"
 msgid "{0} already started"
 msgstr "{0}はすでに開始されています"
 
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr "{0}は{where}でまだ使用されているため削除できません。先にそれらのレコードを別の単位に変更してください。"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0}個のデルタを持つセル"
@@ -106,6 +110,19 @@ msgstr "{0}が正常に削除されました"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}件の下書き仕訳"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0}在庫あり、{1}組用；残り{2}は{3}としてピッキング"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0}在庫あり；残り{1}は{2}としてピッキング"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -1417,6 +1434,9 @@ msgstr "パスを追加"
 
 msgid "Add Permissions"
 msgstr "権限を追加"
+
+msgid "Add Predecessor"
+msgstr "前任品目を追加"
 
 msgid "Add Printer"
 msgstr "プリンターを追加"
@@ -3490,6 +3510,9 @@ msgstr "バッチ可能なプロセスを選択して、一緒に実行できる
 
 msgid "Choose a company"
 msgstr "会社を選択"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "{itemReadableId}が置き換える部品を選択してください。そのルールはその部品に{itemReadableId}を後継品目として保存されます。"
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "左側の行を選択して、在庫がどこから来るかを確認します。"
@@ -7778,6 +7801,9 @@ msgstr "頻度"
 msgid "Friday"
 msgstr "金曜日"
 
+msgid "from"
+msgstr "から"
+
 msgid "From"
 msgstr "開始"
 
@@ -8315,6 +8341,9 @@ msgstr "1つの旧部品を何個の後継品目で置き換えるか"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "ジョブの親アイテムの1つを構築するために必要なこの材料の量; ジョブ数量を乗じて消費をサイズ化します。"
 
+msgid "How many of this part replace one old part"
+msgstr "旧部品1個を置き換えるのに、この部品は何個必要か"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "バルク一括処理の各個別ジョブが構築するユニット数; 総数量が均等に分割されない場合、最後のジョブの数量は小さくなります。"
 
@@ -8502,6 +8531,9 @@ msgstr "この見積依頼を見積に変換するには、得意先を持つ必
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "この見積依頼を仕入先に送信するには、まず見積依頼に仕入先を追加する必要があります。"
 
+msgid "in place of this item"
+msgstr "この品目の代わりに"
+
 msgid "In Process Only"
 msgstr "処理中のみ"
 
@@ -8525,6 +8557,9 @@ msgstr "在庫あり"
 
 msgid "In stock only"
 msgstr "在庫のみ"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "在庫あり、残りは{substitute}として"
 
 msgid "In the loop together"
 msgstr "一緒にループの中にいる"
@@ -8826,8 +8861,20 @@ msgstr "招待済み"
 msgid "Invoice"
 msgstr "請求書"
 
+msgid "Invoice Address"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "請求書担当者"
+
+msgid "Invoice Contact Email"
+msgstr ""
+
+msgid "Invoice Contact Name"
+msgstr ""
+
+msgid "Invoice Contact Phone"
+msgstr ""
 
 msgid "Invoice customer"
 msgstr "請求書得意先"
@@ -11896,6 +11943,12 @@ msgstr "IAS 21 に従って純資産残高を換算する際に使用するオ�
 msgid "Optional pages & sections"
 msgstr "オプションページとセクション"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "オプション。この日付以降、新規の購買提案が行われなくなります。"
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "オプション。この日付以降、旧部品の新規購買提案が行われなくなります。"
+
 msgid "Options"
 msgstr "オプション"
 
@@ -11910,6 +11963,10 @@ msgstr "または、このシークレットを手動で入力します："
 
 msgid "Order"
 msgstr "注文"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "この製造指図に{0} × {substitute}を発注"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12134,6 +12191,9 @@ msgstr "部品"
 
 msgid "Part"
 msgstr "部品"
+
+msgid "Part Being Replaced"
+msgstr "置き換わる部品"
 
 msgid "Part Details"
 msgstr "部品詳細"
@@ -12417,11 +12477,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "追跡品目をピック"
 
+msgid "Picked"
+msgstr "ピッキング済"
+
 msgid "Picked and consumed as separate components"
 msgstr "別個のコンポーネントとしてピッキングおよび消費"
 
 msgid "Picked quantity"
 msgstr "ピック数量"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "製造指図の{substitutedFrom}の代わりにピッキング"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "製造指図の{substitutedFrom}の代わりに{assemblies}組用にピッキング"
 
 msgid "Picking Lines"
 msgstr "ピッキングラインス"
@@ -13131,6 +13200,15 @@ msgstr "購買担当者"
 
 msgid "Purchasing Contact"
 msgstr "購買担当者"
+
+msgid "Purchasing Contact Email"
+msgstr ""
+
+msgid "Purchasing Contact Name"
+msgstr ""
+
+msgid "Purchasing Contact Phone"
+msgstr ""
 
 msgid "Purchasing Invoices"
 msgstr "購買請求書"
@@ -15500,8 +15578,20 @@ msgstr "出荷数量"
 msgid "Shipping"
 msgstr "配送"
 
+msgid "Shipping Address"
+msgstr ""
+
 msgid "Shipping Contact"
 msgstr "出荷担当者"
+
+msgid "Shipping Contact Email"
+msgstr ""
+
+msgid "Shipping Contact Name"
+msgstr ""
+
+msgid "Shipping Contact Phone"
+msgstr ""
 
 msgid "Shipping Cost"
 msgstr "配送料金"
@@ -16061,6 +16151,12 @@ msgstr "受信を停止"
 
 msgid "Stop Shipping"
 msgstr "配送を停止"
+
+msgid "Stops new purchase suggestions after this date."
+msgstr "この日付以降、新規の購買提案が行われなくなります。"
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "この日付以降、旧部品の新規購買提案が行われなくなります。"
 
 msgid "Storage client not available"
 msgstr "ストレージクライアントは利用できません"
@@ -17507,6 +17603,9 @@ msgstr "これらの製造指図には、この作業区に割り当てられた
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "これらの仕訳はまだ下書きであるため、それらの借方と貸方は当期の元帳に含まれていません。各仕訳を転記するか、後の開いている期間に再度日付を付け直してください。"
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
@@ -18789,6 +18888,9 @@ msgstr "バージョン:"
 msgid "Versions"
 msgstr "バージョン"
 
+msgid "via"
+msgstr "経由で"
+
 msgid "via Digital Quote"
 msgstr "デジタル見積経由"
 
@@ -19204,6 +19306,9 @@ msgstr "在庫の増減を駆動した要因（ディメンション別）"
 msgid "What happens when a journal is dated in a locked period."
 msgstr "仕訳をロック中の期間に付けたときの処理"
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "この材料用にラインサイドに実際にピッキングされたもの（部品別）。ピッキングは材料の名前と異なる部品をもたらすことができます（先に消費による分割、新しい方を優先するフォールバック）— ここはマシンにある部品を確認できる場所です。"
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"
 
@@ -19281,6 +19386,9 @@ msgstr "Carbonが商品の到着を約束した日付。出荷方法の輸送日
 
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "MRPがこの部品を旧部品の所要量に使用し始めるとき"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "MRPが新しい所要量に対して後継品目を使用する場合"

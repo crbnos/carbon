@@ -76,6 +76,10 @@ msgstr "{0} 已在批次中"
 msgid "{0} already started"
 msgstr "{0} 已启动"
 
+#. placeholder {0}: unitOfMeasure.name
+msgid "{0} cannot be deleted because it is still in use by {where}. Change those records to a different unit of measure first."
+msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改为其他计量单位。"
+
 #. placeholder {0}: tieOut.deltaCellCount
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
@@ -106,6 +110,19 @@ msgstr "{0} 已成功删除"
 #. placeholder {0}: task.autoCheck.count
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format(assembliesInStock)
+#. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {3}: consumeFirst.successorReadableId
+msgid "{0} in stock, for {1} assemblies; the remaining {2} will be picked as {3}"
+msgstr "{0}库存，用于{1}个组件；剩余的{2}将按{3}拣货"
+
+#. placeholder {0}: formatter.format(onHand)
+#. placeholder {1}: formatter.format( shortfall * consumeFirst.conversionFactor )
+#. placeholder {2}: consumeFirst.successorReadableId
+msgid "{0} in stock; the remaining {1} will be picked as {2}"
+msgstr "{0}库存；剩余的{1}将按{2}拣货"
 
 #. placeholder {0}: jobs.length
 msgid "{0} jobs created"
@@ -1417,6 +1434,9 @@ msgstr "添加路径"
 
 msgid "Add Permissions"
 msgstr "添加权限"
+
+msgid "Add Predecessor"
+msgstr "添加前驱物料"
 
 msgid "Add Printer"
 msgstr "添加打印机"
@@ -3490,6 +3510,9 @@ msgstr "选择可批处理的工序以查看可以一起运行的操作。"
 
 msgid "Choose a company"
 msgstr "选择公司"
+
+msgid "Choose a part that {itemReadableId} replaces. The rule is saved on that part with {itemReadableId} as its successor."
+msgstr "选择{itemReadableId}所替代的零件。该规则将保存在该零件上，将{itemReadableId}作为其后继物料。"
 
 msgid "Choose a row on the left to see where its stock can come from."
 msgstr "选择左侧的行以查看其库存可能来自何处。"
@@ -7778,6 +7801,9 @@ msgstr "频率"
 msgid "Friday"
 msgstr "星期五"
 
+msgid "from"
+msgstr "来自"
+
 msgid "From"
 msgstr "从"
 
@@ -8315,6 +8341,9 @@ msgstr "后继物料中的多少个替代一个旧零件"
 msgid "How many of this material it takes to build one of the job's parent item; multiplied by job quantity to size the consumption."
 msgstr "构建一个工单的父物料需要多少这种原材料；乘以工单数量来确定消耗量"
 
+msgid "How many of this part replace one old part"
+msgstr "此零件中有多少个替代一个旧零件"
+
 msgid "How many units each individual job in the bulk batch builds; the last job's quantity may be smaller if Total Quantity doesn't divide evenly."
 msgstr "批量生产批次中每个单独工单生产的件数；如果总数量不能均匀整除，最后一个工单的数量可能较小。"
 
@@ -8502,6 +8531,9 @@ msgstr "为了将此RFQ转换为报价，它必须有一个客户。"
 msgid "In order to send this RFQ to suppliers, you must first add suppliers to the RFQ."
 msgstr "为了将此RFQ发送给供应商，您必须先向RFQ添加供应商。"
 
+msgid "in place of this item"
+msgstr "代替此物料"
+
 msgid "In Process Only"
 msgstr "仅处理中"
 
@@ -8525,6 +8557,9 @@ msgstr "有库存"
 
 msgid "In stock only"
 msgstr "仅库存"
+
+msgid "In stock, the remainder as {substitute}"
+msgstr "库存，剩余部分为{substitute}"
 
 msgid "In the loop together"
 msgstr "一起保持沟通"
@@ -8826,8 +8861,20 @@ msgstr "已邀请"
 msgid "Invoice"
 msgstr "发票"
 
+msgid "Invoice Address"
+msgstr ""
+
 msgid "Invoice Contact"
 msgstr "发票联系人"
+
+msgid "Invoice Contact Email"
+msgstr ""
+
+msgid "Invoice Contact Name"
+msgstr ""
+
+msgid "Invoice Contact Phone"
+msgstr ""
 
 msgid "Invoice customer"
 msgstr "发票客户"
@@ -11896,6 +11943,12 @@ msgstr "在根据IAS 21转换所有者权益余额时使用的可选固定汇率
 msgid "Optional pages & sections"
 msgstr "可选页面和部分"
 
+msgid "Optional. Stops new purchase suggestions after this date."
+msgstr "可选。在此日期之后停止新采购建议。"
+
+msgid "Optional. Stops new purchase suggestions for the old part after this date."
+msgstr "可选。在此日期之后停止旧零件的新采购建议。"
+
 msgid "Options"
 msgstr "选项"
 
@@ -11910,6 +11963,10 @@ msgstr "或手动输入此密码:"
 
 msgid "Order"
 msgstr "订单"
+
+#. placeholder {0}: status?.shortfall
+msgid "Order {0} × {substitute} for this job"
+msgstr "为此工单订购{0} × {substitute}"
 
 #. placeholder {0}: status?.shortfall
 msgid "Order {0} for this job"
@@ -12134,6 +12191,9 @@ msgstr "零件"
 
 msgid "Part"
 msgstr "零件"
+
+msgid "Part Being Replaced"
+msgstr "被替代的零件"
 
 msgid "Part Details"
 msgstr "零件详情"
@@ -12417,11 +12477,20 @@ msgstr ""
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
 
+msgid "Picked"
+msgstr "已拣货"
+
 msgid "Picked and consumed as separate components"
 msgstr "已拣货且作为单独组件已消耗"
 
 msgid "Picked quantity"
 msgstr "已拣货数量"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "拣货替代{substitutedFrom}（工单上的物料）"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {assemblies} assemblies"
+msgstr "拣货替代{substitutedFrom}（工单上的物料），用于{assemblies}个组件"
 
 msgid "Picking Lines"
 msgstr "拣货行"
@@ -13131,6 +13200,15 @@ msgstr "采购联系人"
 
 msgid "Purchasing Contact"
 msgstr "采购联系人"
+
+msgid "Purchasing Contact Email"
+msgstr ""
+
+msgid "Purchasing Contact Name"
+msgstr ""
+
+msgid "Purchasing Contact Phone"
+msgstr ""
 
 msgid "Purchasing Invoices"
 msgstr "采购发票"
@@ -15500,8 +15578,20 @@ msgstr "已发货数量"
 msgid "Shipping"
 msgstr "运输"
 
+msgid "Shipping Address"
+msgstr ""
+
 msgid "Shipping Contact"
 msgstr "配送联系人"
+
+msgid "Shipping Contact Email"
+msgstr ""
+
+msgid "Shipping Contact Name"
+msgstr ""
+
+msgid "Shipping Contact Phone"
+msgstr ""
 
 msgid "Shipping Cost"
 msgstr "运费"
@@ -16061,6 +16151,12 @@ msgstr "停止接收"
 
 msgid "Stop Shipping"
 msgstr "停止发货"
+
+msgid "Stops new purchase suggestions after this date."
+msgstr "在此日期之后停止新采购建议。"
+
+msgid "Stops new purchase suggestions for the old part after this date."
+msgstr "在此日期之后停止旧零件的新采购建议。"
 
 msgid "Storage client not available"
 msgstr "存储客户端不可用"
@@ -17507,6 +17603,9 @@ msgstr "这些工单在此工作中心分配了工序:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
+msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
@@ -18789,6 +18888,9 @@ msgstr "版本："
 msgid "Versions"
 msgstr "版本"
 
+msgid "via"
+msgstr "经由"
+
 msgid "via Digital Quote"
 msgstr "通过数字报价"
 
@@ -19204,6 +19306,9 @@ msgstr "什么驱动库存管理增加或减少，按任何维度"
 msgid "What happens when a journal is dated in a locked period."
 msgstr "当凭证的日期在已锁定的期间时会发生什么。"
 
+msgid "What has actually been picked to lineside for this material, per part. A pick can bring a different part than the material names (a Consume First split, a Prefer New fallback) — this is where you see which parts are at the machine."
+msgstr "此物料实际拣货到线边的零件。拣货可能会使用与物料名称不同的零件（先消耗拆分、优选新物料回退）——这是您查看机器上有哪些零件的位置。"
+
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
 
@@ -19281,6 +19386,9 @@ msgstr "货物的承诺到达日期；结合发货方式的运输天数，这驱
 
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"
+
+msgid "When MRP starts using this part for the old part's demand"
+msgstr "当MRP开始将此零件用于旧零件的需求时"
 
 msgid "When MRP uses the successor for new demand"
 msgstr "当 MRP 将后继物料用于新需求时"

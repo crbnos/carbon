@@ -849,7 +849,8 @@ export async function getJobMaterialsByOperationId(
   const pickedFor = (materialId: string | null) =>
     (materialId ? pickedByMaterial[materialId] : undefined) ?? {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     };
 
   if (requiresSerialTracking) {

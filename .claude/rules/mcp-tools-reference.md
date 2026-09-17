@@ -370,6 +370,35 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 
+## File uploads (two-step, signed-URL)
+
+MCP `call_tool.arguments` is JSON only — there is **no binary channel** — so file
+uploads are a two-step, presigned-URL flow. Step 1 is a per-module tool that mints a
+folder-scoped signed upload URL; the agent PUTs the bytes straight to Supabase
+storage; step 2 registers the `document` metadata row. File bytes never pass through
+the model context or the MCP dispatch.
+
+- **Step 1 (per module):** `production_createJobDocumentUploadUrl`,
+  `items_createItemDocumentUploadUrl`, `sales_createOpportunityDocumentUploadUrl` /
+  `…OpportunityLineDocumentUploadUrl`,
+  `purchasing_createSupplierInteractionDocumentUploadUrl` / `…LineDocumentUploadUrl`,
+  plus the generic escape hatch `documents_createDocumentUploadUrl` (takes a raw
+  `folder`/`entityId` for entities without a dedicated wrapper — Issue, Shipment,
+  Gauge, …). Each returns `{ path, token, signedUrl }`. Per-module because an
+  opportunity's **storage-folder id (`opportunityId`) differs from its
+  `sourceDocumentId`** (the quote/order id), so a generic `sourceDocument`-keyed tool
+  cannot reconstruct the folder path. Backed by `documents.service.ts`
+  `createDocumentUploadUrl` → `client.storage.from("private").createSignedUploadUrl`;
+  the shared path convention is `buildDocumentUploadPath` in `documents.models.ts`
+  (`${companyId}/${folder}/${entityId}/${stripSpecialCharacters(name)}`).
+- **Step 2:** `documents_insertUploadedDocument` — wraps `upsertDocument`, defaulting
+  `readGroups`/`writeGroups` to the creating user and taking `size` in **KB**. Pass
+  the step-1 `path` plus the entity's `sourceDocument` (enum) + `sourceDocumentId`.
+- **Auth:** works on the **OAuth-connector path** (user-scoped client → storage RLS
+  passes). The `carbon-key` API-key path is not a Supabase JWT (`auth.uid()` is null),
+  so the `private` bucket's storage RLS will refuse the signed-URL mint — same class
+  of limitation as the blocked note-table tools. OAuth is the supported path.
+
 ## Gotchas
 
 - The generator reads a service's **parameter list textually**, but resolves more

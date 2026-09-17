@@ -1032,6 +1032,9 @@ msgstr "拣货追踪物料"
 msgid "Picked"
 msgstr "已拣货"
 
+msgid "Picked as"
+msgstr "拣货为"
+
 msgid "Picked quantity"
 msgstr "已拣货数量"
 
@@ -1043,6 +1046,12 @@ msgstr "在位置{1}（共{2}）处选取了列{0}"
 
 msgid "Picking"
 msgstr "拣货"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "拣货替代{substitutedFrom}（工单上的物料）"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "拣货替代{substitutedFrom}（工单上的物料），{substitutedAssemblies}个装配"
 
 msgid "Pin Out"
 msgstr "退出登录"

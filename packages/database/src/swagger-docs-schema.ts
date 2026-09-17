@@ -30220,6 +30220,9 @@ export default {
             $ref: "#/parameters/rowFilter.openJobMaterialLines.dueDate"
           },
           {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.quantityPerParent"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -95648,6 +95651,63 @@ export default {
         tags: ["(rpc) sync_update_quote_material_make_method_item_id"]
       }
     },
+    "/rpc/get_unit_of_measure_usage": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_unit_of_measure_usage"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_unit_of_measure_usage"]
+      }
+    },
     "/rpc/sync_update_supplier_type_group_name": {
       post: {
         parameters: [
@@ -100434,6 +100494,125 @@ export default {
           }
         },
         tags: ["(rpc) get_material_naming_details"]
+      }
+    },
+    "/rpc/get_lineside_credit": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_material_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_lineside_credit"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_material_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_location_id",
+                "p_storage_unit_id",
+                "p_item_id",
+                "p_job_id",
+                "p_job_material_id"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_lineside_credit"]
       }
     },
     "/rpc/get_api_key_scopes": {
@@ -118288,6 +118467,10 @@ export default {
         dueDate: {
           format: "date",
           type: "string"
+        },
+        quantityPerParent: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -163853,6 +164036,12 @@ export default {
     },
     "rowFilter.openJobMaterialLines.dueDate": {
       name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openJobMaterialLines.quantityPerParent": {
+      name: "quantityPerParent",
       required: false,
       in: "query",
       type: "string"

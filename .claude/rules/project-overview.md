@@ -29,7 +29,7 @@ pnpm + Turborepo monorepo of `apps/*` and `packages/*`.
   types, and a typed Kysely client.
 - **jobs** — Inngest-powered background job orchestration (events, email/PDF
   rendering, printing, webhooks). `inngest-cli dev` for local.
-- **lib** — Shared backend utilities: Inngest client, Resend email, Slack helpers,
+- **lib** — Shared backend utilities: Inngest client, SMTP email, Slack helpers,
   event definitions.
 - **react** — Shared UI component library (Radix UI, TanStack Table/Virtual,
   Recharts, rich-text/editor). Grep here before writing UI.

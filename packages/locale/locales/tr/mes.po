@@ -1032,6 +1032,9 @@ msgstr "Takip edilen öğeyi seç"
 msgid "Picked"
 msgstr "Alındı"
 
+msgid "Picked as"
+msgstr "Toplandı olarak"
+
 msgid "Picked quantity"
 msgstr "Alınan miktar"
 
@@ -1043,6 +1046,12 @@ msgstr "Sütun {0} alındı, konumu: {1} / {2}"
 
 msgid "Picking"
 msgstr "Toplama"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı, {substitutedAssemblies} montaj için"
 
 msgid "Pin Out"
 msgstr "Çıkış Yap"

@@ -30,6 +30,7 @@ const taskToEvent = {
   "print-job-deliver": "carbon/print-job-deliver",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",
+  "rillet-import-contacts": "carbon/rillet-import-contacts",
   "schedule-inputs-changed": "carbon/schedule.inputs.changed",
   "send-email": "carbon/send-email",
   "send-slack": "carbon/send-slack",

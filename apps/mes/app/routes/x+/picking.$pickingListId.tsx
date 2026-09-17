@@ -444,6 +444,46 @@ function PickLineItem({
   const lineItem = line.item as { name: string; readableId: string } | null;
   const item = items.find((i) => i.id === line.itemId);
   const itemName = item?.name ?? lineItem?.name ?? "";
+  const sourceMaterial = (
+    line as {
+      jobMaterial?: {
+        itemId?: string | null;
+        quantity?: number | string | null;
+        substitutionFactor?: number | string | null;
+        item?: {
+          readableId?: string | null;
+          itemSupersession?: {
+            conversionFactor?: number | string | null;
+          } | null;
+        } | null;
+      } | null;
+    }
+  ).jobMaterial;
+  const substitutedFrom =
+    sourceMaterial?.itemId && sourceMaterial.itemId !== line.itemId
+      ? (items.find((i) => i.id === sourceMaterial.itemId)
+          ?.readableIdWithRevision ??
+        sourceMaterial.item?.readableId ??
+        sourceMaterial.itemId)
+      : null;
+  const substitutedAssemblies = (() => {
+    if (!substitutedFrom || !sourceMaterial) return null;
+    const perAssembly = Number(sourceMaterial.quantity ?? 0);
+    if (!(perAssembly > 0)) return null;
+    const substitutionFactor = Number(sourceMaterial.substitutionFactor ?? 0);
+    const conversionFactor = Number(
+      sourceMaterial.item?.itemSupersession?.conversionFactor ?? 0
+    );
+    const factor =
+      substitutionFactor > 0
+        ? 1 / substitutionFactor
+        : conversionFactor > 0
+          ? conversionFactor
+          : null;
+    if (factor === null) return null;
+    const n = Number(line.quantityToPick ?? 0) / (perAssembly * factor);
+    return Number.isInteger(n) ? n : null;
+  })();
   const source = (line.storageUnit as { name?: string } | null)?.name;
   const availableQuantity = Number(
     (line as { availableQuantity?: number }).availableQuantity ?? 0
@@ -557,6 +597,21 @@ function PickLineItem({
             <p className="truncate font-mono text-sm text-muted-foreground">
               {item?.readableIdWithRevision ?? lineItem?.readableId}
             </p>
+            {substitutedFrom && (
+              <p className="truncate text-sm text-blue-700 dark:text-blue-300">
+                ↩{" "}
+                {substitutedAssemblies !== null ? (
+                  <Trans>
+                    picking in place of {substitutedFrom}, the item on the job,
+                    for {substitutedAssemblies} assemblies
+                  </Trans>
+                ) : (
+                  <Trans>
+                    picking in place of {substitutedFrom}, the item on the job
+                  </Trans>
+                )}
+              </p>
+            )}
             {isTracked && !isFullyPicked && (
               <RecommendedLots resolve={recommendations} lineId={line.id} />
             )}

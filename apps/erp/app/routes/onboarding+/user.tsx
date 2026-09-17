@@ -28,6 +28,7 @@ import {
   updatePublicAccount
 } from "~/modules/account";
 import { getUser } from "~/modules/users/users.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 
 const logger = getLogger("erp", "user");
 
@@ -124,7 +125,7 @@ export default function OnboardingUser() {
                 <Trans>Previous</Trans>
               </Link>
             </Button>
-            <Submit>
+            <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>
               <Trans>Next</Trans>
             </Submit>
           </HStack>

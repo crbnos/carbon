@@ -1504,6 +1504,136 @@ full-screen ERP route.
 
 **Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
 
+## A creation-time swap must be keyed by its provenance column at every later lookup
+
+**Context:** Supersession swaps a `jobMaterial` to its successor when the job is created (`substitutedFromItemId` records the predecessor). Picking then looked up `itemSupersession` by `jobMaterial.itemId` — which is now the successor, which has no row — so `resolvePickTarget` returned "pick the item unchanged" and `Consume First` never consumed the predecessor's stock. The picking-side branch was dead code for every job created after the effectivity date, and the unit tests (which passed a material still on the predecessor) could not see it.
+
+**Problem:** The rule lives on the OLD item; the row already names the NEW one. Any later stage that re-reads the rule by the row's current item silently finds nothing, and "no rule" is a valid, quiet outcome.
+
+**Rule:** When a row is rewritten by a rule and carries a provenance column (`substitutedFromItemId`, `redirectedFromItemId`, …), every downstream lookup of that rule must key on `COALESCE(provenance, current)`, in BOTH the TS and SQL mirrors. Test the swapped shape explicitly — a fixture that stops at "rule set, nothing swapped yet" proves nothing about what happens after the swap.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any consumer of `jobMaterial.substitutedFromItemId`.
+
+
+## A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity
+
+**Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
+
+**Problem:** A pass keyed on the parent id is correct for the flow it was written next to and silently over-broad for any flow that rebuilds a subset. Nothing fails: the rewritten row has plausible numbers and a plausible provenance column, and only the units disagree with what was already issued.
+
+**Rule:** A fix-up pass that runs after inserts takes the inserted row ids (collect them at every insert site of every flow) and filters on them, plus a guard on any state that means "this row's units are already committed" (`quantityIssued > 0`). Never derive the candidate set from the parent entity when some caller rebuilds only part of it.
+
+**Applies to:** `packages/database/supabase/functions/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
+
+## A provenance column that records both directions of a swap cannot be trusted first
+
+**Context:** `jobMaterial.substitutedFromItemId` holds the predecessor on a line swapped forward at creation, and the SUCCESSOR on a line pulled back onto a stocked predecessor. Picking looked the rule up on that column first — correct for the forward case, and when the successor had a rule of its own (NEW → NEWER) the pulled-back line resolved NEW's rule, the roles inverted, and the pick went back to NEW.
+
+**Problem:** "Column set ⇒ rule lives there" was true until the second writer appeared. The only thing that distinguishes the two shapes is the relation between the row's own item and the column: on a pulled-back line, the row's own rule NAMES the column as its successor.
+
+**Rule:** When a provenance column can be written by more than one direction of a swap, resolve by relation, not by presence: prefer the row's own rule when it points at the column; only then fall back to the column's rule. Mirror the precedence in every SQL twin (`ORDER BY (own AND successor = column) IS TRUE DESC, …`). Or give the two directions distinct columns.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` (`resolvePickRule`), `get_picking_schedule`, any reader of `substitutedFromItemId` / `redirectedFromItemId`.
+
+## Consume First splits are per assembly, not per unit (2026-09-15)
+
+- **Context:** the Consume First partial-stock split picked the predecessor for
+  every unit the warehouse had and the successor for the rest.
+- **Problem:** with 2 per assembly and 3 on the shelf that put one old and one
+  new part on the same unit. A customer would rather leave the odd part in
+  stock than fit a mismatched pair; units of a batch may differ, one unit never.
+- **Rule:** round a predecessor's usable on-hand DOWN to a multiple of the
+  line's per-assembly quantity (`consumableInWholeAssemblies`) everywhere the
+  split is computed — job creation, picking, the SQL schedule, the job
+  materials note, Order Status, the planning list, MRP. A quantity rule that
+  lives in seven places needs one helper, or the sites drift.
+- **Applies to:** any allocation of a per-unit component across a batch.
+
+## Consume First is one rule for bought and made parts (2026-09-16)
+
+- **Context:** the Consume First stock-netting was written for bought parts
+  only. A made predecessor always swapped to its successor — at job creation
+  (`loadSupersessionRedirect`'s Make exclusion) and in MRP (full BOM swap) —
+  because the post-explosion pass that moved the bought shortfall could not
+  explode a made successor's BOM.
+- **Problem:** stocked old sub-assemblies were never used: a job named the new
+  bracket while old brackets sat on the shelf, and planning bought the new
+  bracket's ingredients for the whole quantity. The two "made" special cases
+  were a workaround for where the netting lived, not a product decision.
+- **Rule:** put the netting where the successor can still be planned as
+  itself. In MRP that is INSIDE `explodeBom` (`consumeFirstRedirect`): the old
+  part nets its running balance and moves the shortfall to the successor,
+  which then explodes or buys at a deeper level (a synthetic leveling edge
+  keeps it below the predecessor). In job creation the per-line settle pass is
+  the authority for every Pull from Inventory line, and the item-level filter
+  is provisional. When a rule has a replenishment-specific exception, ask
+  whether the exception is a product decision or an artefact of where the
+  code sits.
+- **Applies to:** `lib/mrp-engine.ts`, `packages/ee/src/planning/mrp/mrp.ts`,
+  `get-method` `settleConsumeFirstLines` / `loadSupersessionRedirect`.
+
+## A Make to Order line is never picked, and never split for Consume First (2026-09-16)
+
+- **Context:** a Consume First sub-assembly on a Make to Order BOM line, three
+  old on the shelf, five needed. The job swapped the line to the successor and
+  built five (Plate B 5), and the picking list ALSO staged three old and two
+  new from the shelf for the parent operation.
+- **Problem:** two bugs stacked. `get_picking_schedule` never excluded Make to
+  Order lines, and since unassigned materials are attributed to the first
+  operation every Make to Order sub-assembly got a phantom pick that nothing
+  consumes (`issue`'s backflush skips Make to Order). And the made-line rule
+  "always swap" meant stocked old sub-assemblies were never used. The obvious
+  fix — split the line into "pick 3 old" + "build 2 new" — dies at the next
+  `recalculate`, which rebuilds every line as per-assembly × parent quantity.
+- **Rule:** a Make to Order line follows the bought Consume First rule by
+  CHANGING METHOD TYPE, not by splitting: when the predecessor covers one whole
+  assembly it becomes a Pull from Inventory line on the predecessor (decided in
+  the row builder, before insert, so no sub-method row is ever created), and
+  picking splits per unit as for any picked line; otherwise it swaps and is
+  built. Picking excludes Make to Order lines everywhere (SQL + TS). When a
+  fix needs two rows where the BOM has one, check what `recalculate` will do
+  to them before writing it.
+- **Applies to:** `get-method` row builders (`itemToJob`,
+  `itemToJobMakeMethod`), `generatePickingList`, `get_picking_schedule`,
+  `lib/job-quantities-engine.ts`.
+
+## A helper that models a chain must be tested with a loop (2026-09-16)
+
+- **Context:** `buildConsumeFirstHops` walked one Consume First hop at a time
+  and guarded against loops only while collapsing through non-Consume-First
+  hops. A two-item Consume First loop passed straight through, and in the
+  engine both items would sit on one cycle level and hand demand to an item
+  already planned — silently lost.
+- **Problem:** the guard was written for the path being walked, not for the
+  property that matters ("does this chain terminate?"), and the first test
+  I wrote for it was the one that caught it.
+- **Rule:** any function that follows successor / parent / next pointers
+  gets a cycle test of the smallest loop (two nodes) before anything else,
+  and the guard checks termination of the WHOLE chain, not just the part the
+  function happens to traverse.
+- **Applies to:** `lib/supersession-pick.ts` chain builders, BOM walkers,
+  anything keyed on `successorItemId` or `parentMaterialId`.
+
+## Two readers of the same shelf must share one definition (2026-09-16)
+
+- **Context:** the pick-list generator credited lineside material with an
+  all-or-nothing on-hand check per item, the schedule SQL did its own version,
+  and consumption followed pick lines only. A job whose two assemblies' parts
+  were already at the work centre (one pair picked on a since-cancelled list,
+  one produced by a sub-job straight into the bin) got a list for four more,
+  and would have consumed the wrong part from the wrong bin.
+- **Problem:** three code paths each answered "what is at the machine for
+  this job?" with a different formula, and none of them was wrong in
+  isolation. The trial found it in minutes because real shop floors leave
+  material at the machine in every way except a clean pick.
+- **Rule:** when picking, scheduling and consumption all read the same bin,
+  write the definition ONCE as a pure function (`linesideCredit`), mirror it
+  in SQL under the same name (`get_lineside_credit`), and make every reader
+  call it. Then enumerate the ways stock reaches a bin — pick, cancelled
+  pick, sub-job output, manual transfer, return — and test each against the
+  definition before calling the feature done.
+- **Applies to:** `generatePickingList`, `get_picking_schedule`,
+  `getPickedBudgets` / `issue`, `post-picking`.
 ## Resolve adoption assumptions before designing accounting migration machinery
 
 **Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.
@@ -1591,6 +1721,8 @@ full-screen ERP route.
 
 **Applies to:** `packages/database/supabase/functions/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
 
+**Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
+
 ## An unchecked supabase-js insert turns a NOT NULL violation into silence
 
 **Context:** Inspection rejects were supposed to seed `nonConformanceItemTrackedEntity` links on the NCR's default Scrap row so the MRB could split or reassign specific entities. Nothing ever appeared. Both writers — `x+/inspection+/$id.reject.tsx` and `x+/issue+/new.tsx`'s job-operation auto-link — built their rows without `nonConformanceId`, which is `NOT NULL` on that table (`20260421130000_nc-item-tracked-entity.sql`).
@@ -1600,3 +1732,23 @@ full-screen ERP route.
 **Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read.
 
 **Applies to:** every `.from(...).insert(...)` / `.update(...)` whose result is not bound, especially in post-commit "also link X" tails; fixed for both writers in PR #1612 by moving them into a Kysely transaction under `lockIssueDispositions`.
+
+## A running total must be subtracted from the pool it was taken from
+
+**Context:** The operation-completion backflush (`issue`, `issueJobOperationMaterials`) allocates every material of the operation against its lineside budgets before inserting any ledger row. A review pointed out that two materials sharing a picked item could both be offered the same unclaimed lineside stock, and asked to track what earlier materials took and subtract it from the next budget.
+
+**Problem:** The budget's `available` was the sum of two pools — the material's OWN pick (private) and the bin's UNCLAIMED stock (shared) — and the fix subtracted a per-item running total of whole takes from that sum. Material A consuming its own private pick therefore zeroed material B's private pick, and B fell back to the warehouse while its staged stock sat at the machine. The fix was written to the reviewer's wording ("subtract it from available"), it had no test with a non-empty running total, and the follow-up review comment landed after the fix was pushed and was never re-polled.
+
+**Rule:** When a value is a sum of pools with different sharing scopes, never subtract a merged total from it. Keep the pools apart on the type, attribute each take to a pool, and subtract a take only from the pool it came from. Every fix that adds a cross-iteration accumulator gets a pure test with the accumulator non-empty before it is committed. After pushing review fixes, re-read the PR's open threads — the reviewer's follow-up is on the FIX commit, not the original diff.
+
+**Applies to:** `lib/picked-consumption.ts` (`SharedTakes`, `recordSharedTakes`, `splitTakeByBin`), `generatePickingList`'s `unclaimedRemaining`, `getPickedBudgets` callers, and any loop that allocates from a shared balance before persisting.
+
+## A cron that walks every tenant must isolate each tenant
+
+**Context:** `accounting-pull-sweep` looped `for (target of targets) await step.run(...)` over every active accounting integration; `mrp` ran every company inside ONE `step.run`. One Xero tenant's refresh token died (`invalid_grant` "Refresh token not found"); one MRP run outgrew Vercel's function timeout.
+
+**Problem:** An Inngest step that exhausts its retries throws into the function and fails the run, so the dead-token company silently skipped every company after it on every sweep — for weeks, with no notification. The single-step MRP was one Vercel invocation for all tenants, timed out, and every retry restarted from company #1. In both cases the run's status said what happened to the run, not to the tenants.
+
+**Rule:** One `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues; return the per-tenant outcomes so the run output says who failed. Classify terminal failures (a refused OAuth grant is `AccountingAuthError`) and return them from the step instead of throwing — retries cannot fix them and only delay the next tenant. Pair the per-tenant step with a `maxDuration` on the serve route: a step's ceiling is that function's ceiling.
+
+**Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
