@@ -4,18 +4,13 @@ import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { SalesRuleSurface } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import type { z } from "zod";
 import { type salesRuleSeverities, salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -64,14 +59,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(`${path.to.salesRules}?${getParams(request)}`);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window?.clientCache?.setQueryData(
-    salesRulesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function EditSalesRuleRoute() {

@@ -6632,8 +6632,8 @@ msgstr "完全な発生主義会計を有効にし、仕訳帳エントリ、財
 msgid "Enable in Settings"
 msgstr "設定で有効にする"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "見積書または販売注文行で販売ルール違反がブロックまたは確認されたときに通知を有効にします。"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "見積、受注、または売上請求書で販売ルール違反がブロックまたは承認されたときに通知を有効にします。"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "見積依頼が見積準備完了の状態になったときに通知を有効にします。"

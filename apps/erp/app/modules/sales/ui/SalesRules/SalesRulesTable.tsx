@@ -1,6 +1,6 @@
-// List table for Items → Sales Rules. Mirrors
+// List table for Sales → Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRulesTable` minus the targetType column;
-// permission checks use `parts` (the Items module permission).
+// permission checks use `sales`.
 
 import type { Json } from "@carbon/database";
 import { Badge, MenuIcon, MenuItem, Status } from "@carbon/react";

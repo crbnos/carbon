@@ -6632,8 +6632,8 @@ msgstr "Aktivieren Sie vollständige periodengerechte Buchhaltung mit Buchungss�
 msgid "Enable in Settings"
 msgstr "In Einstellungen aktivieren"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Verletzung einer Verkaufsregel auf einer Angebots- oder Verkaufsauftragszeile blockiert oder bestätigt wird."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Verletzung einer Verkaufsregel auf einem Angebot, Kundenauftrag oder einer Ausgangsrechnung blockiert oder bestätigt wird."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Aktivieren Sie Benachrichtigungen, wenn eine Anfrage als Angebotsbereit gekennzeichnet ist."

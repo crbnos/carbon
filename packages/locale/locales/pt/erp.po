@@ -6632,8 +6632,8 @@ msgstr "Ativar contabilidade de regime de competência completo com lançamentos
 msgid "Enable in Settings"
 msgstr "Ativar nas Configurações"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Ative notificações quando uma violação de regra de vendas é bloqueada ou confirmada em uma linha de cotação ou pedido de venda."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Ative notificações quando uma violação de regra de venda for bloqueada ou confirmada em uma cotação, pedido de venda ou fatura de venda."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Ativar notificações quando um RFQ é marcado como pronto para orçamento."

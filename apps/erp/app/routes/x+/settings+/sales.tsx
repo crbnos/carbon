@@ -643,7 +643,7 @@ export default function SalesSettingsRoute() {
               <CardDescription>
                 <Trans>
                   Enable notifications when a sales rule violation is blocked or
-                  acknowledged on a quote or sales order line.
+                  acknowledged on a quote, sales order, or sales invoice.
                 </Trans>
               </CardDescription>
             </CardHeader>

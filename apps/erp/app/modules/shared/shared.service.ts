@@ -1504,7 +1504,6 @@ export type EnforcementRuleInsert = RuleItemFilterFields &
     conditionAst: ConditionAst;
     surfaces: RuleSurfaces;
     active: boolean;
-    companyId: string;
     createdBy: string;
     customFields?: Json;
   };
@@ -1560,7 +1559,7 @@ export async function getEnforcementRule(
   family: EnforcementRuleFamily,
   id: string,
   companyId: string
-) {
+): Promise<PostgrestSingleResponse<EnforcementRuleRow>> {
   return (
     client
       .from("enforcementRule")
@@ -1571,7 +1570,10 @@ export async function getEnforcementRule(
       // defense-in-depth for service-role callers (these functions are
       // MCP-exposed).
       .eq("companyId", companyId)
-      .single()
+      // Same union-family `any` collapse as `getEnforcementRules` above.
+      .single() as unknown as Promise<
+      PostgrestSingleResponse<EnforcementRuleRow>
+    >
   );
 }
 

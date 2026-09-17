@@ -4,17 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ConditionAst } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
 import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,14 +58,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(`${path.to.storageRules}?${getParams(request)}`);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window?.clientCache?.setQueryData(
-    storageRulesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function EditStorageRuleRoute() {

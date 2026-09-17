@@ -14,6 +14,7 @@ import {
   getSalesOrder,
   selectedLinesValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
@@ -98,7 +99,7 @@ export async function action(args: ActionFunctionArgs) {
       // acknowledge a warning, and internal compliance text must never reach
       // the customer. Errors refuse with a neutral message; warnings are logged
       // for the seller and the order proceeds.
-      const { violations: salesRuleViolations } =
+      const { violations: salesRuleViolations, ruleNames: salesRuleNames } =
         await evaluateSalesRulesForSalesDocument({
           client: serviceRole,
           companyId: quote.data.companyId,
@@ -106,7 +107,16 @@ export async function action(args: ActionFunctionArgs) {
           documentType: "quote",
           documentId: quote.data.id
         });
-      const dedupedSalesRuleViolations = dedupeViolations(salesRuleViolations);
+      // Only the lines the customer selected convert — a deselected line's
+      // violations must not block the acceptance.
+      const acceptedLineIds = new Set(
+        Object.entries(selectedLines)
+          .filter(([, line]) => (line.quantity ?? 0) > 0)
+          .map(([lineId]) => lineId)
+      );
+      const dedupedSalesRuleViolations = dedupeViolations(
+        salesRuleViolations
+      ).filter((v) => !v.lineId || acceptedLineIds.has(v.lineId));
       const blockingViolations = dedupedSalesRuleViolations.filter(
         (v) => v.severity === "error"
       );
@@ -116,6 +126,18 @@ export async function action(args: ActionFunctionArgs) {
           quoteId: quote.data.id,
           companyId: quote.data.companyId,
           violations: blockingViolations
+        });
+        // The customer is told to contact their rep — the rep needs the
+        // signal: write the same evidence + notification every internal gate
+        // writes, attributed to the quote's owner (there is no session user).
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id,
+          outcome: "blocked",
+          violations: blockingViolations,
+          ruleNames: salesRuleNames
         });
         return {
           success: false,

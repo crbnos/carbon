@@ -123,6 +123,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           userId,
           documentType: "salesOrder",
           documentId: orderId,
+          documentLineId: null,
           itemId: d.itemId ?? null,
           outcome: "blocked",
           violations: deduped,

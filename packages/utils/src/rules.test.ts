@@ -8,6 +8,7 @@ import { ruleAppliesToItem } from "./rule-filters";
 import {
   __resetStorageRulesCache,
   __storageRulesCacheSize,
+  breakQuantities,
   compileRule,
   compileWithCache,
   evaluateRules,
@@ -629,7 +630,7 @@ describe("per-surface field availability", () => {
     expect(wcFields.some((f) => f.path === "transaction.quantity")).toBe(true);
   });
 
-  it("item-surface fields stay offered for sales rules", () => {
+  it("item-surface fields stay offered for storage rules", () => {
     const itemFields = getFieldsForTargetTypeAndSurfaces("item", ["receipt"]);
     expect(itemFields.some((f) => f.path === "item.type")).toBe(true);
     expect(itemFields.some((f) => f.context === "storage")).toBe(true);
@@ -730,5 +731,14 @@ describe("ruleAppliesToItem", () => {
         { filteredItemGroupIds: ["grp_a"] }
       )
     ).toBe(false);
+  });
+});
+
+describe("breakQuantities", () => {
+  it("returns each unique positive break, falling back to 1", () => {
+    expect(breakQuantities([1, 50, 100, 50])).toEqual([1, 50, 100]);
+    expect(breakQuantities([])).toEqual([1]);
+    expect(breakQuantities(null)).toEqual([1]);
+    expect(breakQuantities([0, -5, Number.NaN])).toEqual([1]);
   });
 });

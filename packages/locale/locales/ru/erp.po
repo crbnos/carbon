@@ -6632,8 +6632,8 @@ msgstr "Включить полный учет по методу начисле�
 msgid "Enable in Settings"
 msgstr "Включить в настройках"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Включить уведомления, когда нарушение правила продаж заблокировано или подтверждено в строке предложения или заказа продажи."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Включите уведомления, когда нарушение правила продаж блокируется или подтверждается в предложении, заказе покупателя или счете-фактуре выданном."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Включить уведомления, когда запрос коммерческого предложения отмечен как готовый к цитированию."

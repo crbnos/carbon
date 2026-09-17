@@ -6632,8 +6632,8 @@ msgstr "Muhasebe fişleri, finansal raporlar ve büyük defter muhasebeleştirme
 msgid "Enable in Settings"
 msgstr "Ayarlarda Etkinleştir"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Bir teklif veya satış siparişi satırında bir satış kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Bir teklif, satış siparişi veya satış faturasında bir satış kuralı ihlali engellendiğinde veya onaylandığında bildirimleri etkinleştirin."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Bir RFQ teklif için hazır olarak işaretlendiğinde bildirimleri etkinleştir."

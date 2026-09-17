@@ -1,4 +1,4 @@
-// Block/dedupe semantics shared by both rule families (storage + item).
+// Block/dedupe semantics shared by both rule families (storage + sales).
 //
 // Pure — no client, no env, no I/O. It lives outside `storage/server.ts` so it
 // can be unit-tested without dragging in the plan gate's `@carbon/auth` import
@@ -24,9 +24,10 @@ export const isBlocked = (
  * pass on the same receipt, or several surfaces on one document).
  *
  * `lineId` participates in the key so a document-level gate keeps one entry per
- * offending line — the UI groups and deep-links off it. Single-line evaluation
- * leaves `lineId` undefined, so the key (and the collapsing behavior storage
- * rules have always had) is unchanged there.
+ * offending line — the UI groups and deep-links off it. The storage evaluator
+ * leaves `lineId` undefined (the sales evaluator stamps it on every
+ * violation), so the collapsing behavior storage rules have always had is
+ * unchanged.
  */
 export const dedupeViolations = (violations: Violation[]): Violation[] => {
   const seen = new Set<string>();

@@ -6632,8 +6632,8 @@ msgstr "Włącz pełną księgowość memoriałową z wpisami dowodów księgowy
 msgid "Enable in Settings"
 msgstr "Włącz w Ustawieniach"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Włącz powiadomienia, gdy naruszenie reguły sprzedaży jest zablokowane lub potwierdzone w linii oferty lub zamówienia sprzedaży."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Włącz powiadomienia, gdy naruszenie reguły sprzedaży zostanie zablokowane lub potwierdzone na ofercie, zamówieniu sprzedaży lub fakturze sprzedaży."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Włącz powiadomienia, gdy RFQ jest oznaczony jako gotowy do oferty."

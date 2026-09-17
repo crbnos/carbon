@@ -6632,8 +6632,8 @@ msgstr "पूर्ण प्रोद्भवन लेखांकन को
 msgid "Enable in Settings"
 msgstr "सेटिंग्स में सक्षम करें"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "जब किसी उद्धरण या बिक्रय आदेश लाइन पर एक बिक्री नियम उल्लंघन अवरुद्ध या स्वीकार किया जाता है तो सूचनाएं सक्षम करें।"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "जब किसी उद्धरण, विक्रय आदेश या विक्रय चालान पर विक्रय नियम उल्लंघन अवरुद्ध या स्वीकृत किया जाता है, तो सूचनाएँ सक्षम करें।"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "जब RFQ को कोटेशन के लिए तैयार के रूप में चिह्नित किया जाए तो सूचनाएँ सक्षम करें।"

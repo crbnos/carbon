@@ -3,17 +3,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useNavigate } from "react-router";
 import { salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
 import { upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, salesRulesQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   await requirePermissions(request, { create: "sales" });
@@ -41,7 +36,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const insert = await upsertEnforcementRule(client, "sales", companyId, {
     ...validation.data,
     description: validation.data.description ?? null,
-    companyId,
     createdBy: userId
   });
 
@@ -53,14 +47,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(`${path.to.salesRules}?${getParams(request)}`);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window?.clientCache?.setQueryData(
-    salesRulesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewSalesRuleRoute() {

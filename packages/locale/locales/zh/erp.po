@@ -6632,8 +6632,8 @@ msgstr "启用完整权责发生制会计，包括凭证、财务报告和总账
 msgid "Enable in Settings"
 msgstr "在设置中启用"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "当报价单或销售订单行上的销售规则违规被阻止或确认时启用通知。"
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "当销售规则违规在报价、销售订单或销售发票上被阻止或确认时，启用通知。"
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "当询价单标记为可报价时启用通知。"

@@ -4,17 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import { requirePlan } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { TargetType } from "@carbon/utils";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs,
-  LoaderFunctionArgs
-} from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
 import { upsertEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
-import { getCompanyId, storageRulesQuery } from "~/utils/react-query";
 
 const isTargetType = (value: string | null): value is TargetType =>
   value === "item" || value === "workCenter";
@@ -47,7 +42,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const insert = await upsertEnforcementRule(client, "storage", companyId, {
     ...validation.data,
     description: validation.data.description ?? null,
-    companyId,
     createdBy: userId
   });
 
@@ -59,14 +53,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   throw redirect(`${path.to.storageRules}?${getParams(request)}`);
-}
-
-export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
-  window?.clientCache?.setQueryData(
-    storageRulesQuery(getCompanyId()).queryKey,
-    null
-  );
-  return await serverAction();
 }
 
 export default function NewStorageRuleRoute() {

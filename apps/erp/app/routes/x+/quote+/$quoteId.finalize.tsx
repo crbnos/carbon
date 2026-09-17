@@ -11,7 +11,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { datetime, type Violation } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -63,16 +63,34 @@ export async function action(args: ActionFunctionArgs) {
   // Runs before the external link + PDF so a blocked quote produces neither.
   const formData = await request.clone().formData();
   const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
-    client,
-    companyId,
-    userId,
-    documentType: "quote",
-    documentId: quoteId
-  });
+  let violations: Violation[];
+  let ruleNames: Record<string, string>;
+  try {
+    const result = await evaluateSalesRulesForSalesDocument({
+      client,
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId
+    });
+    violations = result.violations;
+    ruleNames = result.ruleNames;
+  } catch (err) {
+    // Fail closed but not as a raw 500 — the modal shows the message.
+    return {
+      violations: [
+        {
+          ruleId: "__evaluation-error__",
+          severity: "error" as const,
+          message:
+            err instanceof Error ? err.message : "Sales rule evaluation failed"
+        }
+      ],
+      ruleNames: {}
+    };
+  }
   const deduped = dedupeViolations(violations);
-  if (deduped.length > 0) {
-    const blocked = isBlocked(deduped, acknowledged);
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
     // The strongest overrides happen at gates like this one — record the
     // same evidence + notification the per-line checks write.
     await recordSalesRuleOutcome(getCarbonServiceRole(), {
@@ -80,13 +98,11 @@ export async function action(args: ActionFunctionArgs) {
       userId,
       documentType: "quote",
       documentId: quoteId,
-      outcome: blocked ? "blocked" : "acknowledged",
+      outcome: "blocked",
       violations: deduped,
       ruleNames
     });
-    if (blocked) {
-      return { violations: deduped, ruleNames };
-    }
+    return { violations: deduped, ruleNames };
   }
 
   const externalLink = await upsertExternalLink(client, {
@@ -168,6 +184,21 @@ export async function action(args: ActionFunctionArgs) {
         path.to.quote(quoteId),
         await flash(request, error(finalize.error, "Failed to finalize quote"))
       );
+    }
+
+    // Acknowledged-override evidence only once the finalize has committed —
+    // a trail for a transition that then failed would be false, and a retry
+    // would duplicate it.
+    if (deduped.length > 0) {
+      await recordSalesRuleOutcome(getCarbonServiceRole(), {
+        companyId,
+        userId,
+        documentType: "quote",
+        documentId: quoteId,
+        outcome: "acknowledged",
+        violations: deduped,
+        ruleNames
+      });
     }
   } catch (err) {
     throw redirect(

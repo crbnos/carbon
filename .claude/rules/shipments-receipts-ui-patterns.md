@@ -66,7 +66,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 - **Status** (`ShipmentStatus.tsx`, `ReceiptStatus.tsx`): `Draft`(gray) `Pending`(orange)
   `Posted`(green) `Voided`(red). Shipment additionally shows `Invoiced`(blue) when `invoiced` and not voided.
 - **Modals**: `ReceiptPostModal` (validates lines on mount — batch lines need a batch number,
-  serials reconciled across indices `0..receivedQuantity`; uses `useStorageRuleViolations`),
+  serials reconciled across indices `0..receivedQuantity`; uses `useRuleViolations`),
   `ShipmentVoidModal` / `ReceiptVoidModal` (destructive `Alert` + bulleted consequences, submit
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
   **Both post modals are source-aware for return flows**, and must stay in step with

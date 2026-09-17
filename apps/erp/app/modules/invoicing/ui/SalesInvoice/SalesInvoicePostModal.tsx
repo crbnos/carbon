@@ -132,7 +132,7 @@ const SalesInvoicePostModal = ({
     ) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data]);
 
   const resolution = stripeCustomer.data ?? null;
   const isStale = loadedKeyRef.current !== requestKey;

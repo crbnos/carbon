@@ -9,6 +9,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import type { Violation } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -86,16 +87,46 @@ export async function action(args: ActionFunctionArgs) {
   // server runtime). Gating here covers this path without duplicating the
   // evaluator into a tree CI never typechecks or tests.
   const acknowledged = formData.get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
-    client: serviceRole,
-    companyId,
-    userId,
-    documentType: "quote",
-    documentId: quoteId
-  });
-  const deduped = dedupeViolations(violations);
-  if (deduped.length > 0) {
-    const blocked = isBlocked(deduped, acknowledged);
+  let violations: Violation[];
+  let ruleNames: Record<string, string>;
+  try {
+    const result = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId
+    });
+    violations = result.violations;
+    ruleNames = result.ruleNames;
+  } catch (err) {
+    // Fail closed but not as a raw 500 — the modal shows the message.
+    return {
+      violations: [
+        {
+          ruleId: "__evaluation-error__",
+          severity: "error" as const,
+          message:
+            err instanceof Error ? err.message : "Sales rule evaluation failed"
+        }
+      ],
+      ruleNames: {}
+    };
+  }
+  // Only the SELECTED lines convert (quantity > 0) — a deselected line never
+  // becomes a sales-order line, so its violations must not block the
+  // conversion or leave "acknowledged" evidence for a line that never
+  // converted. A violation without a lineId (shouldn't happen — the document
+  // evaluator stamps every one) is kept, failing closed.
+  const convertingLineIds = new Set(
+    Object.entries(selectedLines)
+      .filter(([, line]) => (line.quantity ?? 0) > 0)
+      .map(([lineId]) => lineId)
+  );
+  const deduped = dedupeViolations(violations).filter(
+    (v) => !v.lineId || convertingLineIds.has(v.lineId)
+  );
+  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
     // Record the same evidence + notification the per-line checks write —
     // an override at a gate is the strongest kind and must leave a trail.
     await recordSalesRuleOutcome(serviceRole, {
@@ -103,13 +134,11 @@ export async function action(args: ActionFunctionArgs) {
       userId,
       documentType: "quote",
       documentId: quoteId,
-      outcome: blocked ? "blocked" : "acknowledged",
+      outcome: "blocked",
       violations: deduped,
       ruleNames
     });
-    if (blocked) {
-      return { violations: deduped, ruleNames };
-    }
+    return { violations: deduped, ruleNames };
   }
 
   const convert = await convertQuoteToOrder(serviceRole, {
@@ -137,6 +166,21 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   const salesOrderId = convert.data?.convertedId!;
+
+  // Acknowledged-override evidence only once the conversion has committed —
+  // a trail for a conversion that then failed would be false, and a retry
+  // would duplicate it.
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
+  }
 
   // Generate PDF and optionally send email — failures here should not block
   // the redirect to the new sales order.

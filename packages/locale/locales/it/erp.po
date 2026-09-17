@@ -6632,8 +6632,8 @@ msgstr "Abilita la contabilità per competenza completa con righe di registrazio
 msgid "Enable in Settings"
 msgstr "Abilita nelle Impostazioni"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Abilita le notifiche quando una violazione della regola di vendita viene bloccata o riconosciuta su una riga di preventivo o ordine di vendita."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Abilita le notifiche quando una violazione di una regola di vendita viene bloccata o confermata su un preventivo, un ordine di vendita o una fattura di vendita."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Abilita Notifiche quando una RdO è contrassegnata come Pronto per offerta."

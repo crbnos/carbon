@@ -103,14 +103,13 @@ const SalesOrderConfirmModal = ({
     violations?: unknown[];
   }>;
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     // Violations render in the ViolationModal; don't also toast their message.
     if ((fetcher.data?.violations ?? []).length > 0) return;
     if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data]);
 
   return (
     <Modal

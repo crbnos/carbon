@@ -6632,8 +6632,8 @@ msgstr "Enable full accrual accounting with journal entries, financial reports, 
 msgid "Enable in Settings"
 msgstr "Enable in Settings"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Enable notifications when an RFQ is marked as ready for quote."

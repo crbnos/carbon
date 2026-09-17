@@ -500,6 +500,22 @@ export const interpolateMessage = (
 
 // Evaluator
 
+/**
+ * The quantities a quote line's break array should be evaluated at — every
+ * unique positive break, falling back to 1. No single break is conservative
+ * for every operator (a min-quantity rule fires on the smallest, a
+ * max-quantity rule on the largest), so callers evaluate each and dedupe.
+ */
+export const breakQuantities = (
+  breaks: number[] | null | undefined
+): number[] => {
+  const out = new Set<number>();
+  for (const q of breaks ?? []) {
+    if (typeof q === "number" && Number.isFinite(q) && q > 0) out.add(q);
+  }
+  return out.size > 0 ? Array.from(out) : [1];
+};
+
 export type EvaluateRulesOptions = {
   resolveConditionValue?: (
     cond: Condition,

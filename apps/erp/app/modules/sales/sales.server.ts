@@ -279,7 +279,14 @@ export async function recordSalesRuleOutcome(
         ruleName: ruleNames[v.ruleId] ?? null,
         documentType,
         documentId,
-        documentLineId: v.lineId ?? args.documentLineId ?? null,
+        // A caller that evaluated a single line knows the real line id (or
+        // that none exists yet) and passes the key — the evaluator's stamp is
+        // a placeholder ("new") there. Document gates omit the key and the
+        // per-violation stamp is the attribution.
+        documentLineId:
+          "documentLineId" in args
+            ? (args.documentLineId ?? null)
+            : (v.lineId ?? null),
         itemId: args.itemId ?? null,
         severity: v.severity,
         outcome,

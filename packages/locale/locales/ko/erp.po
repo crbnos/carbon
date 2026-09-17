@@ -6632,8 +6632,8 @@ msgstr "전표, 재무 보고서, 총계정원장 전기를 포함한 완전 발
 msgid "Enable in Settings"
 msgstr "설정에서 활성화"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "견적서 또는 판매 주문 라인에서 판매 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "견적, 수주 또는 매출 송장에서 판매 규칙 위반이 차단되거나 승인될 때 알림을 활성화합니다."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "RFQ가 견적 준비 완료로 표시될 때 알림을 활성화하세요."

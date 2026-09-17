@@ -49,7 +49,7 @@ A rule lists the **surfaces** (sales-document line types) it applies to: `quoteL
 `salesInvoiceLine`. Two kinds of checkpoint run them:
 
 - **Line checks** as a line is created or edited on a quote, sales order, or sales invoice.
-- **Document gates** at each commitment point: finalizing a quote, converting a quote (or RFQ) to an order,
+- **Document gates** at each commitment point: finalizing a quote, converting a quote to an order (or an RFQ to a quote),
   confirming a sales order, posting its shipment, and posting a sales invoice. The gate re-reads **every**
   line on the document, so it also catches staleness — a rule authored after the line was written, or a
   ship-to that changed.

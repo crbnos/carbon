@@ -5,8 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
-  evaluateSalesRulesForSalesDocument,
-  isBlocked
+  evaluateSalesRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -47,7 +48,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { data: lines } = await serviceRole
     .from("shipmentLine")
     .select(
-      "id, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
+      "id, lineId, itemId, storageUnitId, shippedQuantity, locationId, shipmentId"
     )
     .eq("shipmentId", shipmentId)
     .eq("companyId", companyId);
@@ -60,6 +61,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("shipment")
     .select("sourceDocument, sourceDocumentId, locationId")
     .eq("id", shipmentId)
+    // Service-role read: companyId scope is not backstopped by RLS here.
+    .eq("companyId", companyId)
     .single();
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
@@ -111,20 +114,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Sales rules on the originating sales order — the last physical checkpoint.
   // Sales rules have no `shipment` surface (their enum is sales-document only),
-  // so this re-evaluates the SO under `salesOrderLine` rather than inventing a
-  // surface. It is what catches an order confirmed BEFORE a rule was authored,
-  // and it is the first moment a real shipped quantity exists.
+  // so this evaluates under `salesOrderLine` rather than inventing a surface.
+  // Scope is THIS shipment's lines at their real shipped quantities — the
+  // whole order would let an unshipped violating line block a partial
+  // shipment of a clean one. The ship-to is the order's resolved destination
+  // (drop-ship included).
   let salesRuleViolations: ReturnType<typeof dedupeViolations> = [];
   if (
     shipmentForSurface?.sourceDocument === "Sales Order" &&
     shipmentForSurface.sourceDocumentId
   ) {
-    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+    const shipTo = await resolveSalesOrderShipTo(
+      serviceRole,
+      shipmentForSurface.sourceDocumentId,
+      companyId
+    );
+    const { violations, ruleNames } = await evaluateSalesRuleLines({
       client: serviceRole,
       companyId,
       userId,
-      documentType: "salesOrder",
-      documentId: shipmentForSurface.sourceDocumentId
+      surface: "salesOrderLine",
+      lines: (lines ?? [])
+        .filter((l) => !!l.itemId && Number(l.shippedQuantity ?? 0) > 0)
+        .map((l) => ({
+          // Attribute to the source sales-order line when linked, so the
+          // evidence row and deep link land on the order line.
+          lineId: (l.lineId as string | null) ?? (l.id as string),
+          itemId: l.itemId as string,
+          quantity: Number(l.shippedQuantity)
+        })),
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
     });
     salesRuleViolations = violations;
     allViolations.push(...violations);
@@ -132,22 +152,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const deduped = dedupeViolations(allViolations);
+  // Evidence covers only the SALES violations (the acknowledgment table is
+  // sales-family evidence, attributed to the source order); storage
+  // violations on the same post carry no evidence, as on every other
+  // storage surface. The outcome reflects the submission's overall fate —
+  // a post blocked by any violation records its sales violations as
+  // blocked too. Acknowledged evidence waits until the post has committed.
+  const salesDeduped = dedupeViolations(salesRuleViolations);
   if (deduped.length > 0) {
     const blocked = isBlocked(deduped, acknowledged);
-    // Evidence covers only the SALES violations (the acknowledgment table is
-    // sales-family evidence, attributed to the source order); storage
-    // violations on the same post carry no evidence, as on every other
-    // storage surface. The outcome reflects the submission's overall fate —
-    // a post blocked by any violation records its sales violations as
-    // blocked too.
-    const salesDeduped = dedupeViolations(salesRuleViolations);
-    if (salesDeduped.length > 0 && shipmentForSurface?.sourceDocumentId) {
+    if (
+      blocked &&
+      salesDeduped.length > 0 &&
+      shipmentForSurface?.sourceDocumentId
+    ) {
       await recordSalesRuleOutcome(serviceRole, {
         companyId,
         userId,
         documentType: "salesOrder",
         documentId: shipmentForSurface.sourceDocumentId,
-        outcome: blocked ? "blocked" : "acknowledged",
+        outcome: "blocked",
         violations: salesDeduped,
         ruleNames: allRuleNames
       });
@@ -409,6 +433,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // See the receipt post route: below the catch still runs after a rollback,
   // so the flag is what makes this "the post stuck", not the position.
   if (!reverted) {
+    // Acknowledged-override evidence only once the post has stuck — a trail
+    // (and notification) for a post that was rolled back would be false.
+    if (salesDeduped.length > 0 && shipmentForSurface?.sourceDocumentId) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: shipmentForSurface.sourceDocumentId,
+        outcome: "acknowledged",
+        violations: salesDeduped,
+        ruleNames: allRuleNames
+      });
+    }
     trackWorkEvent("shipment_posted", {
       companyId,
       userId,

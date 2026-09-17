@@ -94,7 +94,10 @@ describe("enforcementRule family isolation", () => {
     });
   });
 
-  it("ignores a pin that points at another family's rule", async () => {
+  it("drops a pin whose ruleId the family-filtered fetch did not return", async () => {
+    // NOTE: the fake serves fixture rows regardless of filters, so this pins
+    // only the join-side behavior — that the rule QUERY carries the family
+    // filter is pinned by the filter-recording test above.
     // The shared pin table returns a row for a STORAGE rule id. The sales rule
     // fetch never returns that id, so it must not become a sales assignment.
     const { client } = makeClient({
@@ -184,7 +187,10 @@ describe("enforcementRule family isolation", () => {
     }
   });
 
-  it("ignores a pin that points at a sales rule", async () => {
+  it("drops a pin whose ruleId the family-filtered fetch did not return", async () => {
+    // NOTE: the fake serves fixture rows regardless of filters, so this pins
+    // only the join-side behavior — that the rule QUERY carries the family
+    // filter is pinned by the filter-recording test above.
     // The shared pin table returns a row for a SALES rule id. The
     // family-filtered rule fetch never returns that id, so it must not become
     // a storage assignment.

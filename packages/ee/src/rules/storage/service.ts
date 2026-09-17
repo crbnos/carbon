@@ -370,7 +370,7 @@ export async function getRuleAssignmentsForTarget(
     if (b.active === false) continue;
     if (byRuleId.has(b.id)) continue;
 
-    // Sales rules: only surface those whose filter matches this item. Label by
+    // Storage rules: only surface those whose filter matches this item. Label by
     // reach so the drawer reads "All items" vs a filtered match.
     let label = "Applies to all";
     if (isItem) {

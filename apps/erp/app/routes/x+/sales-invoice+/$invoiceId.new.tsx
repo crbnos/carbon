@@ -106,6 +106,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           userId,
           documentType: "salesInvoice",
           documentId: invoiceId,
+          documentLineId: null,
           itemId: d.itemId ?? null,
           outcome: "blocked",
           violations: deduped,

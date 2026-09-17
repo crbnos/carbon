@@ -6632,8 +6632,8 @@ msgstr "Habilitar contabilidad de acumulación completa con asientos de diario, 
 msgid "Enable in Settings"
 msgstr "Habilitar en Configuración"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Habilitar notificaciones cuando una violación de regla de ventas se bloquea o se reconoce en una línea de cotización u orden de venta."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Habilite notificaciones cuando una infracción de regla de ventas sea bloqueada o confirmada en una cotización, un pedido de venta o una factura de venta."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Habilitar notificaciones cuando una RFQ está marcada como lista para cotizar."

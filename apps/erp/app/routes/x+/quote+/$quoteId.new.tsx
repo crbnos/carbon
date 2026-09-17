@@ -9,6 +9,7 @@ import {
 } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { breakQuantities } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -78,15 +79,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId,
     surface: "quoteLine",
     // Quote lines carry a quantity-break array rather than a single
-    // transaction quantity. Evaluate the largest break — it is the one most
-    // likely to trip a `gt` threshold, so it is the conservative choice.
-    lines: [
-      {
-        lineId: "new",
-        itemId: d.itemId ?? null,
-        quantity: Math.max(1, ...(d.quantity ?? [1]))
-      }
-    ],
+    // transaction quantity. Evaluate every break — a min-quantity rule fires
+    // on the smallest, a max-quantity rule on the largest; dedupe collapses
+    // same-message repeats.
+    lines: breakQuantities(d.quantity).map((quantity) => ({
+      lineId: "new",
+      itemId: d.itemId ?? null,
+      quantity
+    })),
     customerId: quote.data?.customerId ?? null,
     customerLocationId: quote.data?.customerLocationId ?? null
   });
@@ -99,6 +99,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId,
       documentType: "quote",
       documentId: quoteId,
+      documentLineId: null,
       itemId: d.itemId ?? null,
       outcome: "blocked",
       violations: deduped,

@@ -80,8 +80,7 @@ export async function action(args: ActionFunctionArgs) {
       documentId: orderId
     });
     const deduped = dedupeViolations(violations);
-    if (deduped.length > 0) {
-      const blocked = isBlocked(deduped, acknowledged);
+    if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
       // Record the same evidence + notification the per-line checks write —
       // an override at a gate is the strongest kind and must leave a trail.
       await recordSalesRuleOutcome(serviceRole, {
@@ -89,18 +88,16 @@ export async function action(args: ActionFunctionArgs) {
         userId,
         documentType: "salesOrder",
         documentId: orderId,
-        outcome: blocked ? "blocked" : "acknowledged",
+        outcome: "blocked",
         violations: deduped,
         ruleNames
       });
-      if (blocked) {
-        return {
-          success: false,
-          message: "Sales rule violations must be resolved before confirming",
-          violations: deduped,
-          ruleNames
-        };
-      }
+      return {
+        success: false,
+        message: "Sales rule violations must be resolved before confirming",
+        violations: deduped,
+        ruleNames
+      };
     }
 
     const acceptLanguage = request.headers.get("accept-language");
@@ -214,6 +211,21 @@ export async function action(args: ActionFunctionArgs) {
         success: false,
         message: "Failed to confirm sales order"
       };
+    }
+
+    // Acknowledged-override evidence is written only once the confirm has
+    // actually committed — evidence (and its notification) for a transition
+    // that then failed would be a false trail, and a retry would duplicate it.
+    if (deduped.length > 0) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: orderId,
+        outcome: "acknowledged",
+        violations: deduped,
+        ruleNames
+      });
     }
 
     await runMRP(getCarbonServiceRole(), getDatabaseClient(), {

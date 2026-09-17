@@ -6,6 +6,7 @@
 
 import type { Database } from "@carbon/database";
 import {
+  breakQuantities,
   type CompiledRule,
   compileSalesRuleWithCache,
   evaluateRules,
@@ -18,7 +19,10 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { companyHasPlan } from "../../plan.server";
 import { itemPostingGroupIdFromEmbed } from "../storage/context";
-import { dedupeViolations } from "../storage/server";
+import {
+  buildConditionValueResolver,
+  dedupeViolations
+} from "../storage/server";
 import {
   buildSalesRuleLineContext,
   type CustomerCtxInput,
@@ -64,10 +68,12 @@ export type EvaluateSalesRuleLinesResult = {
   ruleNames: Record<string, string>;
 };
 
-const EMPTY_RESULT: EvaluateSalesRuleLinesResult = {
+// Fresh object per call — a shared literal returned by reference is one
+// caller mutation away from poisoning every subsequent evaluation.
+const emptyResult = (): EvaluateSalesRuleLinesResult => ({
   violations: [],
   ruleNames: {}
-};
+});
 
 export async function evaluateSalesRuleLines({
   client,
@@ -79,10 +85,10 @@ export async function evaluateSalesRuleLines({
   customerLocationId
 }: EvaluateSalesRuleLinesArgs): Promise<EvaluateSalesRuleLinesResult> {
   if (lines.length === 0) {
-    return EMPTY_RESULT;
+    return emptyResult();
   }
   if (!(await isSalesRulesEnabledForCompany(client, companyId))) {
-    return EMPTY_RESULT;
+    return emptyResult();
   }
 
   const itemIds = new Set<string>();
@@ -154,9 +160,22 @@ export async function evaluateSalesRuleLines({
     );
   }
 
+  // A failed customer or location read is indistinguishable from "no type /
+  // no country": the ctx would be built with nulls and a rule on those fields
+  // would emit a misleading "required" violation. Fail loud like the rule and
+  // item loads above.
+  if (customerRes.error || locationRes.error) {
+    const err = customerRes.error ?? locationRes.error;
+    throw new Error(
+      `Sales rule evaluation could not load the customer context: ${
+        (err as { message?: string })?.message ?? String(err)
+      }`
+    );
+  }
+
   // If no active rules exist, nothing can fire.
   if (rules.length === 0) {
-    return EMPTY_RESULT;
+    return emptyResult();
   }
 
   // Resolve the ship-to country off the customerLocation → address embed
@@ -201,10 +220,7 @@ export async function evaluateSalesRuleLines({
     itemsById.set(row.id as string, {
       ...rest,
       id: readable ?? (row.id as string),
-      itemPostingGroupId: itemPostingGroupIdFromEmbed(itemCost) ?? undefined,
-      customFields:
-        (row.customFields as Record<string, unknown> | null | undefined) ??
-        undefined
+      itemPostingGroupId: itemPostingGroupIdFromEmbed(itemCost) ?? undefined
     });
   }
 
@@ -216,6 +232,16 @@ export async function evaluateSalesRuleLines({
     filtersById.set(rule.id, toItemFilter(rule));
     ruleNamesById.set(rule.id, rule.name);
   }
+
+  // `{condition[N].name}` tokens resolve stored ids (customer type, status,
+  // country) to their labels — same resolver the storage evaluator uses.
+  const resolveConditionValue = await buildConditionValueResolver(
+    client,
+    companyId,
+    (function* () {
+      for (const rule of compiledById.values()) yield* rule.conditions;
+    })()
+  );
 
   const violations: Violation[] = [];
   for (const line of lines) {
@@ -250,7 +276,9 @@ export async function evaluateSalesRuleLines({
       customer
     });
 
-    const ruleViolations = evaluateRules(compiledForLine, ctx, surface);
+    const ruleViolations = evaluateRules(compiledForLine, ctx, surface, {
+      resolveConditionValue
+    });
     for (let i = 0; i < ruleViolations.length; i++) {
       // Stamp the originating line so a document-level gate can attribute the
       // violation and deep-link to it.
@@ -373,7 +401,7 @@ export async function evaluateSalesRulesForSalesDocument({
   documentId
 }: EvaluateSalesRulesForSalesDocumentArgs): Promise<EvaluateSalesRuleLinesResult> {
   if (!(await isSalesRulesEnabledForCompany(client, companyId))) {
-    return EMPTY_RESULT;
+    return emptyResult();
   }
 
   // A sales RFQ has no surface of its own — its lines are evaluated under
@@ -405,13 +433,18 @@ export async function evaluateSalesRulesForSalesDocument({
       );
     }
 
+    // Evaluate every quantity break — a min-quantity rule fires on the
+    // smallest break, a max-quantity rule on the largest; no single break is
+    // conservative for both. Dedupe collapses same-message repeats per line.
     const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
-      .map((l) => ({
-        lineId: l.id,
-        itemId: l.itemId,
-        quantity: Math.max(1, ...(l.quantity ?? [1]))
-      }));
+      .flatMap((l) =>
+        breakQuantities(l.quantity).map((quantity) => ({
+          lineId: l.id,
+          itemId: l.itemId,
+          quantity
+        }))
+      );
 
     return evaluateSalesRuleLines({
       client,
@@ -448,16 +481,18 @@ export async function evaluateSalesRulesForSalesDocument({
       );
     }
 
+    // A quote line carries an array of quantity breaks; evaluate each one —
+    // a min-quantity rule fires on the smallest break, a max-quantity rule on
+    // the largest. Dedupe collapses same-message repeats per line.
     const lines: SalesRuleLineInput[] = (linesRes.data ?? [])
       .filter((l) => !!l.itemId)
-      .map((l) => ({
-        lineId: l.id,
-        itemId: l.itemId,
-        // A quote line carries an array of quantity breaks. Evaluate the
-        // largest — it is the one most likely to trip a `gt` threshold, so
-        // this is the conservative choice.
-        quantity: Math.max(1, ...(l.quantity ?? [1]))
-      }));
+      .flatMap((l) =>
+        breakQuantities(l.quantity).map((quantity) => ({
+          lineId: l.id,
+          itemId: l.itemId,
+          quantity
+        }))
+      );
 
     return evaluateSalesRuleLines({
       client,
@@ -519,6 +554,8 @@ export async function evaluateSalesRulesForSalesDocument({
       }
     }
 
+    // Per-group loads are bounded by the number of DISTINCT source orders on
+    // one invoice (typically 1–3), not by line count.
     const results = await Promise.all(
       [...groups].map(async ([salesOrderId, groupLines]) => {
         const shipTo = salesOrderId

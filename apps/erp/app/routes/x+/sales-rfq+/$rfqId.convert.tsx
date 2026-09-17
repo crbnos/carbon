@@ -7,6 +7,7 @@ import {
   evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
+import type { Violation } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -33,13 +34,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (it is Deno and cannot import the ERP server runtime the plan gate needs).
   const acknowledged =
     (await request.formData()).get("acknowledged") === "true";
-  const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
-    client: serviceRole,
-    companyId,
-    userId,
-    documentType: "salesRfq",
-    documentId: id
-  });
+  let violations: Violation[];
+  let ruleNames: Record<string, string>;
+  try {
+    const result = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesRfq",
+      documentId: id
+    });
+    violations = result.violations;
+    ruleNames = result.ruleNames;
+  } catch (err) {
+    // Fail closed but not as a raw 500 — the modal shows the message.
+    return {
+      violations: [
+        {
+          ruleId: "__evaluation-error__",
+          severity: "error" as const,
+          message:
+            err instanceof Error ? err.message : "Sales rule evaluation failed"
+        }
+      ],
+      ruleNames: {}
+    };
+  }
   const deduped = dedupeViolations(violations);
   // No acknowledgment evidence here: the table's documentType CHECK covers
   // quote / salesOrder / salesInvoice only, and the minted quote's own line

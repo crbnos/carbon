@@ -10,6 +10,7 @@ import {
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
+import { breakQuantities } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment, Suspense, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -212,13 +213,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // Quote lines carry a quantity-break array rather than a single
     // transaction quantity. Evaluate the largest break — it is the one most
     // likely to trip a `gt` threshold, so it is the conservative choice.
-    lines: [
-      {
-        lineId,
-        itemId: d.itemId ?? null,
-        quantity: Math.max(1, ...(d.quantity ?? [1]))
-      }
-    ],
+    lines: breakQuantities(d.quantity).map((quantity) => ({
+      lineId,
+      itemId: d.itemId ?? null,
+      quantity
+    })),
     customerId: quote.data?.customerId ?? null,
     customerLocationId: quote.data?.customerLocationId ?? null
   });

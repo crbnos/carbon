@@ -34,6 +34,7 @@ import {
   resolveSalesOrderShipTo,
   type SalesDocumentType
 } from "@carbon/ee/rules.server";
+import { breakQuantities } from "@carbon/utils";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 
 type GateContext = { companyId: string; userId: string };
@@ -172,21 +173,24 @@ async function checkLineWrite(
             };
           })();
 
-  const quantity =
+  // A quote line carries a break array — evaluate every break (min-quantity
+  // rules fire on the smallest, max-quantity on the largest); the other
+  // surfaces carry one scalar quantity.
+  const quantities =
     typeof payload.saleQuantity === "number"
-      ? payload.saleQuantity
+      ? [payload.saleQuantity]
       : Array.isArray(payload.quantity)
-        ? Math.max(1, ...(payload.quantity as number[]))
+        ? breakQuantities(payload.quantity as number[])
         : typeof payload.quantity === "number"
-          ? payload.quantity
-          : 1;
+          ? [payload.quantity]
+          : [1];
 
   const { violations, ruleNames } = await evaluateSalesRuleLines({
     client: serviceRole,
     companyId: context.companyId,
     userId: context.userId,
     surface: op.surface,
-    lines: [{ lineId, itemId, quantity }],
+    lines: quantities.map((quantity) => ({ lineId, itemId, quantity })),
     customerId: shipTo.customerId,
     customerLocationId: shipTo.customerLocationId
   });
@@ -211,25 +215,113 @@ async function checkLineWrite(
   return `Blocked by sales rules: ${errors.map((v) => v.message).join("; ")}`;
 }
 
+// Statuses that do NOT advance a document past its human gates. Everything
+// else — including enum values added later — is treated as advancing, so a new
+// status fails closed into evaluation rather than slipping past it.
+const NON_ADVANCING_QUOTE_STATUSES = new Set([
+  "Draft",
+  "Lost",
+  "Cancelled",
+  "Expired"
+]);
+const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
+  "Draft",
+  "Needs Approval",
+  "Cancelled",
+  "Closed"
+]);
+
+/**
+ * Ops that can move a document's `status` past the confirm/finalize gates
+ * without going through them: the direct status setters, the generic updates
+ * (whose payload may carry `status`), and the deprecated upserts. The gate
+ * evaluates only when the payload actually carries an ADVANCING status for an
+ * EXISTING document (a create has no lines yet, so there is nothing to
+ * evaluate).
+ */
+const STATUS_WRITE_OPERATIONS: Record<
+  string,
+  {
+    documentType: "quote" | "salesOrder";
+    param: string;
+    nonAdvancing: Set<string>;
+  }
+> = {
+  sales_updateQuote: {
+    documentType: "quote",
+    param: "input",
+    nonAdvancing: NON_ADVANCING_QUOTE_STATUSES
+  },
+  sales_updateQuoteStatus: {
+    documentType: "quote",
+    param: "update",
+    nonAdvancing: NON_ADVANCING_QUOTE_STATUSES
+  },
+  sales_upsertQuote: {
+    documentType: "quote",
+    param: "quote",
+    nonAdvancing: NON_ADVANCING_QUOTE_STATUSES
+  },
+  sales_updateSalesOrder: {
+    documentType: "salesOrder",
+    param: "input",
+    nonAdvancing: NON_ADVANCING_SALES_ORDER_STATUSES
+  },
+  sales_updateSalesOrderStatus: {
+    documentType: "salesOrder",
+    param: "update",
+    nonAdvancing: NON_ADVANCING_SALES_ORDER_STATUSES
+  },
+  sales_upsertSalesOrder: {
+    documentType: "salesOrder",
+    param: "salesOrder",
+    nonAdvancing: NON_ADVANCING_SALES_ORDER_STATUSES
+  }
+};
+
+function statusTransitionTarget(
+  meta: ManifestEntry,
+  functionArgs: unknown[]
+): { documentType: SalesDocumentType; documentId: string } | null {
+  // `releaseSalesOrder` hardcodes its advancing status and takes a scalar id.
+  if (meta.name === "sales_releaseSalesOrder") {
+    const id = resolvedParam(meta, functionArgs, "salesOrderId");
+    return typeof id === "string"
+      ? { documentType: "salesOrder", documentId: id }
+      : null;
+  }
+
+  const op = STATUS_WRITE_OPERATIONS[meta.name];
+  if (!op) return null;
+  const resolved = resolvedParam(meta, functionArgs, op.param);
+  if (!resolved || typeof resolved !== "object" || Array.isArray(resolved)) {
+    return null;
+  }
+  const payload = resolved as Record<string, unknown>;
+  const documentId = typeof payload.id === "string" ? payload.id : null;
+  const status = typeof payload.status === "string" ? payload.status : null;
+  if (!documentId || !status || op.nonAdvancing.has(status)) return null;
+  return { documentType: op.documentType, documentId };
+}
+
 async function checkDocumentTransition(
   meta: ManifestEntry,
   context: GateContext,
   functionArgs: unknown[]
 ): Promise<string | null> {
-  const documentType: SalesDocumentType | null =
+  let documentType: SalesDocumentType | null =
     meta.name === "sales_finalizeQuote" ||
     meta.name === "sales_convertQuoteToOrder"
       ? "quote"
       : meta.name === "sales_convertSalesRfqToQuote"
         ? "salesRfq"
         : null;
-  if (!documentType) return null;
 
   // `finalizeQuote` addresses the quote by a scalar `quoteId` param; the two
   // convert functions take a `payload` object whose document id is `id`.
   const scalarId = resolvedParam(meta, functionArgs, "quoteId");
   const payload = resolvedParam(meta, functionArgs, "payload");
-  const documentId =
+  let documentId =
     typeof scalarId === "string"
       ? scalarId
       : payload && typeof payload === "object" && !Array.isArray(payload)
@@ -237,7 +329,13 @@ async function checkDocumentTransition(
           ? ((payload as Record<string, unknown>).id as string)
           : null
         : null;
-  if (!documentId) return null;
+
+  if (!documentType || !documentId) {
+    const statusTarget = statusTransitionTarget(meta, functionArgs);
+    if (!statusTarget) return null;
+    documentType = statusTarget.documentType;
+    documentId = statusTarget.documentId;
+  }
 
   const serviceRole = getCarbonServiceRole();
   const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
@@ -256,11 +354,11 @@ async function checkDocumentTransition(
   // Blocked evidence, same as the route gates. An RFQ has no evidence row
   // (the acknowledgment table's documentType CHECK covers quote / salesOrder /
   // salesInvoice only); its lines are re-gated at the quote stage.
-  if (documentType === "quote") {
+  if (documentType === "quote" || documentType === "salesOrder") {
     await recordSalesRuleOutcome(serviceRole, {
       companyId: context.companyId,
       userId: context.userId,
-      documentType: "quote",
+      documentType,
       documentId,
       outcome: "blocked",
       violations: errors,

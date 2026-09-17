@@ -529,38 +529,52 @@ export async function action(args: ActionFunctionArgs) {
   // BEFORE the optimistic `Pending` write below, or a blocked post strands
   // the invoice in `Pending`; running first also prevents the Stripe send
   // and the customer email.
-  {
-    const acknowledged = formData.get("acknowledged") === "true";
-    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+  const acknowledged = formData.get("acknowledged") === "true";
+  // An evaluator throw (failed rule/item/ship-to load) must fail closed but
+  // not as a raw 500 — surface it like the Stripe preflight below.
+  let salesRuleResult: Awaited<
+    ReturnType<typeof evaluateSalesRulesForSalesDocument>
+  >;
+  try {
+    salesRuleResult = await evaluateSalesRulesForSalesDocument({
       client: serviceRole,
       companyId,
       userId,
       documentType: "salesInvoice",
       documentId: invoiceId
     });
-    const deduped = dedupeViolations(violations);
-    if (deduped.length > 0) {
-      const blocked = isBlocked(deduped, acknowledged);
-      // Record the same evidence + notification the per-line checks write —
-      // posting is the revenue checkpoint, the strongest override there is.
-      await recordSalesRuleOutcome(serviceRole, {
-        companyId,
-        userId,
-        documentType: "salesInvoice",
-        documentId: invoiceId,
-        outcome: blocked ? "blocked" : "acknowledged",
-        violations: deduped,
-        ruleNames
-      });
-      if (blocked) {
-        return {
-          success: false,
-          message: "Sales rules blocked posting this invoice",
-          violations: deduped,
-          ruleNames
-        };
-      }
-    }
+  } catch (err) {
+    logger.error("Sales rule evaluation failed", { error: err, invoiceId });
+    return {
+      success: false,
+      message: `Invoice not posted — ${
+        err instanceof Error ? err.message : "sales rule evaluation failed"
+      }`
+    };
+  }
+  const { ruleNames: salesRuleNames } = salesRuleResult;
+  const salesRuleViolations = dedupeViolations(salesRuleResult.violations);
+  if (
+    salesRuleViolations.length > 0 &&
+    isBlocked(salesRuleViolations, acknowledged)
+  ) {
+    // Record the same evidence + notification the per-line checks write —
+    // posting is the revenue checkpoint, the strongest override there is.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "blocked",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
+    return {
+      success: false,
+      message: "Sales rules blocked posting this invoice",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    };
   }
 
   const {
@@ -662,6 +676,21 @@ export async function action(args: ActionFunctionArgs) {
       success: false,
       message: "Failed to post sales invoice"
     };
+  }
+
+  // Acknowledged-override evidence only once the post has committed — a
+  // trail (and notification) for a post that then failed would be false, and
+  // a retry would duplicate it.
+  if (salesRuleViolations.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "acknowledged",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
   }
 
   const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);

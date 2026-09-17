@@ -6632,8 +6632,8 @@ msgstr "Activez la comptabilité d'exercice complète avec les écritures de jou
 msgid "Enable in Settings"
 msgstr "Activer dans les paramètres"
 
-msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote or sales order line."
-msgstr "Activez les notifications lorsqu'une violation de règle de vente est bloquée ou reconnue sur une ligne de devis ou de commande client."
+msgid "Enable notifications when a sales rule violation is blocked or acknowledged on a quote, sales order, or sales invoice."
+msgstr "Activez les notifications lorsqu'une violation de règle de vente est bloquée ou confirmée sur un devis, une commande client ou une facture de vente."
 
 msgid "Enable notifications when an RFQ is marked as ready for quote."
 msgstr "Activer les notifications lorsqu'une demande de devis est marquée comme prête pour la cotation."

@@ -219,7 +219,9 @@ const LOADERS: Record<ValueOptionsLoader, LoaderFn | null> = {
 
 const EMPTY_RESOLVER = (): undefined => undefined;
 
-async function buildConditionValueResolver(
+// Exported for the sales evaluator (`../sales/server.ts`) — same loaders,
+// same `{condition[N].name}` semantics, one implementation.
+export async function buildConditionValueResolver(
   client: Client,
   companyId: string,
   conditions: Iterable<Condition>
@@ -343,7 +345,7 @@ export async function evaluateLinesForSurface({
     if (line.workCenterId) workCenterIds.add(line.workCenterId);
     if (line.operation?.itemId) itemIds.add(line.operation.itemId);
   }
-  // No early-return on empty targetIds — broadcasts (all active sales rules, or
+  // No early-return on empty targetIds — broadcasts (all active storage rules, or
   // appliesToAll rules for non-item targets) must still fire against every line.
   // Explicit-assignment lookup short-circuits inside `getActiveRulesForTargets`
   // when targetIds is empty.
@@ -351,7 +353,7 @@ export async function evaluateLinesForSurface({
   // Walk the storage-unit tree for every line that carries a bin id so storage
   // types cascade: a child bin implicitly carries every `storageTypeIds`
   // declared on itself OR any ancestor. The evaluator unions them when
-  // populating `ctx.storageUnit.storageTypeId` below (sales rules referencing
+  // populating `ctx.storageUnit.storageTypeId` below (storage rules referencing
   // `storageUnit.storageTypeId` on place/pick depend on this). One round-trip;
   // selects `storageTypeIds` so the union doesn't need a second fetch.
   const ancestorsByBin = new Map<string, string[]>();
