@@ -17753,7 +17753,6 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde bulunabilirsiniz ve bu e-postanıza gönderilir."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Bu fatura kullanılabilir bir son tarih yok — Stripe için birini seçin."
 msgstr "Bu faturanın kullanılabilir bir son tarihi yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

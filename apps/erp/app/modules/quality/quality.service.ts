@@ -1130,17 +1130,12 @@ export async function getQualityDocumentsList(
     id: string;
     name: string;
     version: number;
-    processId: string;
     status: string;
-  }>(
-    client,
-    "qualityDocument",
-    "id, name, version, processId, status",
-    (query) =>
-      query
-        .eq("companyId", companyId)
-        .order("name", { ascending: true })
-        .order("version", { ascending: false })
+  }>(client, "qualityDocument", "id, name, version, status", (query) =>
+    query
+      .eq("companyId", companyId)
+      .order("name", { ascending: true })
+      .order("version", { ascending: false })
   );
 }
 

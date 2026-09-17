@@ -1054,7 +1054,7 @@
     {"name":"quality_getQualityActions","classification":"READ","paramCount":3,"schema":"04eded31eebb","response":"76d10ad61a21","injectAuth":"companyId","permission":"quality:view","paginates":true},
     {"name":"quality_getQualityDocument","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"a8b2d87af029","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getQualityDocuments","classification":"READ","paramCount":1,"schema":"75e0e9e0be40","response":"8bb4ab685129","injectAuth":"companyId","permission":"quality:view","paginates":true},
-    {"name":"quality_getQualityDocumentsList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"fe6a24448aaa","injectAuth":"companyId","permission":"quality:view","paginates":false},
+    {"name":"quality_getQualityDocumentsList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"f0df86b695e6","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getQualityDocumentSteps","classification":"READ","paramCount":1,"schema":"6d79e6870690","response":"55202747c3b2","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getQualityDocumentVersions","classification":"READ","paramCount":2,"schema":"89111eab017d","response":"63e52c70cbef","injectAuth":"companyId","permission":"quality:view","paginates":false},
     {"name":"quality_getQualityFiles","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"c8f657a900dd","injectAuth":"companyId","permission":"quality:view","paginates":false},
