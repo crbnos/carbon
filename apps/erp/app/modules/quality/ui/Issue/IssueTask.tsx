@@ -441,7 +441,7 @@ function useTaskStatus({
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticTaskStatus(task.id!);
 
-  const isDisabled = !permissions.can("update", "production") || disabled;
+  const isDisabled = !permissions.can("update", "quality") || disabled;
 
   const onOperationStatusChange = useCallback(
     (id: string, status: IssueActionTask["status"]) => {
