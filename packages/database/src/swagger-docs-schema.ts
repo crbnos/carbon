@@ -13723,6 +13723,9 @@ export default {
             $ref: "#/parameters/rowFilter.partners.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.partners.tags"
+          },
+          {
             $ref: "#/parameters/rowFilter.partners.supplierLocationId"
           },
           {
@@ -49329,6 +49332,84 @@ export default {
         tags: ["quotes"]
       }
     },
+    "/abilities": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.abilities.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.curve"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.shadowWeeks"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.processId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.recertifyEveryDays"
+          },
+          {
+            $ref: "#/parameters/rowFilter.abilities.name"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/abilities"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["abilities"]
+      }
+    },
     "/pickingListLine": {
       get: {
         parameters: [
@@ -64516,9 +64597,6 @@ export default {
             $ref: "#/parameters/rowFilter.ability.id"
           },
           {
-            $ref: "#/parameters/rowFilter.ability.name"
-          },
-          {
             $ref: "#/parameters/rowFilter.ability.curve"
           },
           {
@@ -64611,9 +64689,6 @@ export default {
             $ref: "#/parameters/rowFilter.ability.id"
           },
           {
-            $ref: "#/parameters/rowFilter.ability.name"
-          },
-          {
             $ref: "#/parameters/rowFilter.ability.curve"
           },
           {
@@ -64658,9 +64733,6 @@ export default {
         parameters: [
           {
             $ref: "#/parameters/rowFilter.ability.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.ability.name"
           },
           {
             $ref: "#/parameters/rowFilter.ability.curve"
@@ -90787,9 +90859,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -90797,6 +90866,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/select"
@@ -90993,9 +91065,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91003,6 +91072,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -91153,9 +91225,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91163,6 +91232,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -110948,6 +111020,13 @@ export default {
         customFields: {
           format: "jsonb"
         },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
         supplierLocationId: {
           description:
             "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
@@ -128254,6 +128333,67 @@ export default {
       },
       type: "object"
     },
+    abilities: {
+      properties: {
+        id: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        curve: {
+          format: "jsonb"
+        },
+        shadowWeeks: {
+          format: "numeric",
+          type: "number"
+        },
+        active: {
+          format: "boolean",
+          type: "boolean"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        processId: {
+          description:
+            "Note:\nThis is a Foreign Key to `process.id`.<fk table='process' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        recertifyEveryDays: {
+          format: "integer",
+          type: "integer"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     pickingListLine: {
       required: [
         "id",
@@ -135051,22 +135191,18 @@ export default {
     ability: {
       required: [
         "id",
-        "name",
         "curve",
         "shadowWeeks",
         "active",
         "companyId",
         "createdAt",
-        "createdBy"
+        "createdBy",
+        "processId"
       ],
       properties: {
         id: {
           default: "public.id('abil'::text)",
           description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
           format: "text",
           type: "string"
         },
@@ -147764,10 +147900,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
-        "allowLowercaseItemIds"
+        "allowLowercaseItemIds",
+        "salesRuleNotificationGroup"
       ],
       properties: {
         id: {
@@ -148014,13 +148150,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -148035,6 +148164,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -155650,6 +155786,12 @@ export default {
     },
     "rowFilter.partners.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.partners.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
@@ -175086,6 +175228,87 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.abilities": {
+      name: "abilities",
+      description: "abilities",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/abilities"
+      }
+    },
+    "rowFilter.abilities.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.curve": {
+      name: "curve",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.shadowWeeks": {
+      name: "shadowWeeks",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.processId": {
+      name: "processId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.recertifyEveryDays": {
+      name: "recertifyEveryDays",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.abilities.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.pickingListLine": {
       name: "pickingListLine",
       description: "pickingListLine",
@@ -182661,12 +182884,6 @@ export default {
     },
     "rowFilter.ability.id": {
       name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.ability.name": {
-      name: "name",
       required: false,
       in: "query",
       type: "string"
@@ -197010,12 +197227,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -197030,6 +197241,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

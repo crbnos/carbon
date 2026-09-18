@@ -273,7 +273,9 @@ describe("mcp tool-metadata generator", () => {
     ).toBeGreaterThan(0);
 
     const ability = props(get("resources_updateAbility")).ability;
-    expect(Object.keys(ability?.properties ?? {})).toContain("recertifyEveryDays");
+    expect(Object.keys(ability?.properties ?? {})).toContain(
+      "recertifyEveryDays"
+    );
     expect(ability?.required).toEqual(["recertifyEveryDays"]);
   });
 
