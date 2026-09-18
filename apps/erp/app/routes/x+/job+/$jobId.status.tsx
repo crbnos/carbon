@@ -36,6 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const selectedPurchaseOrdersBySupplierId = formData.get(
     "selectedPurchaseOrdersBySupplierId"
   ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
+  ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
     throw redirect(
@@ -138,6 +141,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
 
       const serviceRole = getCarbonServiceRole();
+
+      // Persist any supplier the user chose in the release modal for an outside
+      // operation whose process has multiple suppliers. Stamping it on the
+      // operation lets purchaseOrderFromJob resolve it (below) and keeps the
+      // choice on the operation. Must complete BEFORE the edge function reads.
+      const operationSupplierChoices = Object.entries(
+        JSON.parse(selectedSupplierProcessByOperationId ?? "{}") as Record<
+          string,
+          string
+        >
+      );
+      if (operationSupplierChoices.length > 0) {
+        await Promise.all(
+          operationSupplierChoices.map(([operationId, supplierProcessId]) =>
+            serviceRole
+              .from("jobOperation")
+              .update({
+                operationSupplierProcessId: supplierProcessId,
+                updatedBy: userId
+              })
+              .eq("id", operationId)
+              .eq("companyId", companyId)
+          )
+        );
+      }
+
       // Forecast-first scheduling regenerates the whole location the job is in.
       const { data: jobLocation } = await serviceRole
         .from("job")
