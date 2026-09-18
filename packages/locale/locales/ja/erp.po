@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 msgid "{load} in queue"
 msgstr "キューに{load}件"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB制限"
 
@@ -2207,6 +2211,10 @@ msgstr "APIキー: {0} を削除してもよろしいですか?これは元に�
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "資産クラス {0} を削除してもよろしいですか。この操作は元に戻せません。"
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "変更通知アクション「{0}」を削除してもよろしいですか？この操作は取り消せません。"
@@ -2849,6 +2857,9 @@ msgstr "銀行—地元通貨（デフォルト）"
 
 msgid "Bank / Cash Account"
 msgstr "銀行 / 現金口座"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "外国通貨で表示される銀行口座"
@@ -4818,6 +4829,12 @@ msgstr "CSVカラム"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSVファイルは最低2行必要です。"
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "累積"
 
@@ -4841,6 +4858,10 @@ msgstr "通貨換算"
 
 msgid "Currency Translation (default)"
 msgstr "通貨換算（デフォルト）"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "現在"
@@ -5409,6 +5430,9 @@ msgstr "関連付けを削除"
 
 msgid "Delete Attribute"
 msgstr "属性を削除"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "カテゴリを削除"
@@ -7472,6 +7496,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "スケジュールの再生成に失敗しました"
 
@@ -8564,11 +8591,22 @@ msgstr "実施リード"
 msgid "Import {label} CSV"
 msgstr "{label} CSV をインポート"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "インポート結果"
 
 msgid "Import your BOM"
 msgstr "BOMをインポート"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "名前で一致"
 
 msgid "Match none"
 msgstr "いずれにも一致しない"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "照合済み"
@@ -18322,6 +18363,9 @@ msgstr "アカデミーとアプリ内ガイドを使用してチームを教育
 
 msgid "Trainings"
 msgstr "教育訓練"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "トランザクションは仕訳帳エントリを作成し、総勘定元帳を更新します。"

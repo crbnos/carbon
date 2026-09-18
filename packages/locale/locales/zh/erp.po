@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# 行} other {# 行}}"
 msgid "{load} in queue"
 msgstr "{load} 在队列中"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 限制"
 
@@ -2207,6 +2211,10 @@ msgstr "确定要删除API密钥：{0}吗？此操作无法撤消。"
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "确定要删除资产类别: {0}吗?此操作无法撤销。"
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "确定要删除变更通知操作：{0}吗？此操作无法撤消。"
@@ -2849,6 +2857,9 @@ msgstr "银行—本地货币（默认）"
 
 msgid "Bank / Cash Account"
 msgstr "银行/现金账户"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "以外币计价的银行账户"
@@ -4818,6 +4829,12 @@ msgstr "CSV 列"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV 文件必须至少有 2 行。"
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "累计"
 
@@ -4841,6 +4858,10 @@ msgstr "货币折算"
 
 msgid "Currency Translation (default)"
 msgstr "货币折算（默认）"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "当前"
@@ -5409,6 +5430,9 @@ msgstr "删除关联"
 
 msgid "Delete Attribute"
 msgstr "删除属性"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "删除分类"
@@ -7472,6 +7496,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "排程再生成失败"
 
@@ -8564,11 +8591,22 @@ msgstr "实施主管"
 msgid "Import {label} CSV"
 msgstr "导入 {label} CSV"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "导入结果"
 
 msgid "Import your BOM"
 msgstr "导入您的BOM"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "按名称匹配"
 
 msgid "Match none"
 msgstr "不匹配任何条件"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "已匹配"
@@ -18322,6 +18363,9 @@ msgstr "通过 Academy 和应用内指南培训班组"
 
 msgid "Trainings"
 msgstr "培训"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "交易将创建凭证并更新总账。"

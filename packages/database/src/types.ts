@@ -4994,6 +4994,332 @@ export type Database = {
           }
         ]
       }
+      bankStatement: {
+        Row: {
+          companyBankAccountId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          id: string
+          importError: string | null
+          sourceFileName: string | null
+          status: Database["public"]["Enums"]["bankStatementStatus"]
+          transactionCount: number
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          companyBankAccountId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          id?: string
+          importError?: string | null
+          sourceFileName?: string | null
+          status?: Database["public"]["Enums"]["bankStatementStatus"]
+          transactionCount?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          companyBankAccountId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          id?: string
+          importError?: string | null
+          sourceFileName?: string | null
+          status?: Database["public"]["Enums"]["bankStatementStatus"]
+          transactionCount?: number
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bankStatement_companyBankAccountId_companyId_fkey"
+            columns: ["companyBankAccountId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "companyBankAccount"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "bankStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "bankStatement_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "bankStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "bankStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankStatement_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      bankTransaction: {
+        Row: {
+          amount: number
+          bankStatementId: string | null
+          companyBankAccountId: string
+          companyId: string
+          createdAt: string
+          createdBy: string
+          description: string
+          id: string
+          matchedJournalLineId: string | null
+          matchType: Database["public"]["Enums"]["bankMatchType"] | null
+          postedDate: string
+          status: Database["public"]["Enums"]["bankTransactionStatus"]
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          amount: number
+          bankStatementId?: string | null
+          companyBankAccountId: string
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          description: string
+          id?: string
+          matchedJournalLineId?: string | null
+          matchType?: Database["public"]["Enums"]["bankMatchType"] | null
+          postedDate: string
+          status?: Database["public"]["Enums"]["bankTransactionStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          amount?: number
+          bankStatementId?: string | null
+          companyBankAccountId?: string
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          description?: string
+          id?: string
+          matchedJournalLineId?: string | null
+          matchType?: Database["public"]["Enums"]["bankMatchType"] | null
+          postedDate?: string
+          status?: Database["public"]["Enums"]["bankTransactionStatus"]
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bankTransaction_bankStatementId_companyId_fkey"
+            columns: ["bankStatementId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "bankStatement"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "bankTransaction_companyBankAccountId_companyId_fkey"
+            columns: ["companyBankAccountId", "companyId"]
+            isOneToOne: false
+            referencedRelation: "companyBankAccount"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "bankTransaction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "bankTransaction_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "bankTransaction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "bankTransaction_matchedJournalLineId_fkey"
+            columns: ["matchedJournalLineId"]
+            isOneToOne: false
+            referencedRelation: "journalLine"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_matchedJournalLineId_fkey"
+            columns: ["matchedJournalLineId"]
+            isOneToOne: false
+            referencedRelation: "journalLines"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bankTransaction_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       batchProperty: {
         Row: {
           companyId: string
@@ -7082,6 +7408,168 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "integrations"
             referencedColumns: ["companyId"]
+          }
+        ]
+      }
+      companyBankAccount: {
+        Row: {
+          active: boolean
+          companyId: string
+          createdAt: string
+          createdBy: string
+          currencyCode: string
+          customFields: Json | null
+          glAccountId: string
+          id: string
+          name: string
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Insert: {
+          active?: boolean
+          companyId: string
+          createdAt?: string
+          createdBy: string
+          currencyCode: string
+          customFields?: Json | null
+          glAccountId: string
+          id?: string
+          name: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Update: {
+          active?: boolean
+          companyId?: string
+          createdAt?: string
+          createdBy?: string
+          currencyCode?: string
+          customFields?: Json | null
+          glAccountId?: string
+          id?: string
+          name?: string
+          updatedAt?: string | null
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "companyBankAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_currencyCode_fkey"
+            columns: ["currencyCode"]
+            isOneToOne: false
+            referencedRelation: "currencyCode"
+            referencedColumns: ["code"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_glAccountId_fkey"
+            columns: ["glAccountId"]
+            isOneToOne: false
+            referencedRelation: "account"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_glAccountId_fkey"
+            columns: ["glAccountId"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "companyBankAccount_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
           }
         ]
       }
@@ -84110,6 +84598,9 @@ export type Database = {
       approvalStatus: "Pending" | "Approved" | "Rejected" | "Cancelled"
       assemblyInstructionStatus: "Draft" | "Published" | "Archived"
       assemblyStepStatus: "Todo" | "Review" | "Done"
+      bankMatchType: "Exact" | "Manual"
+      bankStatementStatus: "Processing" | "Imported" | "Failed"
+      bankTransactionStatus: "Unmatched" | "Matched" | "Excluded"
       batchType: "Sequential" | "Simultaneous"
       capacityResourceKind: "WorkCenter" | "OperatorPool" | "Employee"
       changeOrderChangeType:
@@ -85503,6 +85994,9 @@ export const Constants = {
       approvalStatus: ["Pending", "Approved", "Rejected", "Cancelled"],
       assemblyInstructionStatus: ["Draft", "Published", "Archived"],
       assemblyStepStatus: ["Todo", "Review", "Done"],
+      bankMatchType: ["Exact", "Manual"],
+      bankStatementStatus: ["Processing", "Imported", "Failed"],
+      bankTransactionStatus: ["Unmatched", "Matched", "Excluded"],
       batchType: ["Sequential", "Simultaneous"],
       capacityResourceKind: ["WorkCenter", "OperatorPool", "Employee"],
       changeOrderChangeType: [

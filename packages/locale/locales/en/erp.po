@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# line} other {# lines}}"
 msgid "{load} in queue"
 msgstr "{load} in queue"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr "{matchedCount} of {0} transactions matched"
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB limit"
 
@@ -2207,6 +2211,10 @@ msgstr "Are you sure you want to delete the API key: {0}? This cannot be undone.
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
@@ -2849,6 +2857,9 @@ msgstr "Bank — Local Currency (default)"
 
 msgid "Bank / Cash Account"
 msgstr "Bank / Cash Account"
+
+msgid "Bank Account"
+msgstr "Bank Account"
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "Bank account denominated in a foreign currency"
@@ -4818,6 +4829,12 @@ msgstr "CSV column"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV file must have at least 2 rows."
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr "CSV must have Date, Amount, and Description columns"
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+
 msgid "Cumulative"
 msgstr "Cumulative"
 
@@ -4841,6 +4858,10 @@ msgstr "Currency Translation"
 
 msgid "Currency Translation (default)"
 msgstr "Currency Translation (default)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr "Currency: {0}"
 
 msgid "current"
 msgstr "current"
@@ -5409,6 +5430,9 @@ msgstr "Delete Association"
 
 msgid "Delete Attribute"
 msgstr "Delete Attribute"
+
+msgid "Delete Bank Account"
+msgstr "Delete Bank Account"
 
 msgid "Delete Category"
 msgstr "Delete Category"
@@ -7472,6 +7496,9 @@ msgstr "Failed to load tracked entities"
 msgid "Failed to move account: {0}"
 msgstr "Failed to move account: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr "Failed to parse CSV file"
+
 msgid "Failed to regenerate schedule"
 msgstr "Failed to regenerate schedule"
 
@@ -8564,11 +8591,22 @@ msgstr "Implementation Lead"
 msgid "Import {label} CSV"
 msgstr "Import {label} CSV"
 
+msgid "Import Bank Statement"
+msgstr "Import Bank Statement"
+
 msgid "Import results"
 msgstr "Import results"
 
 msgid "Import your BOM"
 msgstr "Import your BOM"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr "Imported {0} transactions, {1} matched"
+
+msgid "Importing {fileName}..."
+msgstr "Importing {fileName}..."
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "Match by name"
 
 msgid "Match none"
 msgstr "Match none"
+
+msgid "Match Type"
+msgstr "Match Type"
 
 msgid "Matched"
 msgstr "Matched"
@@ -18322,6 +18363,9 @@ msgstr "Training your team via the Academy and in-app guides"
 
 msgid "Trainings"
 msgstr "Trainings"
+
+msgid "Transactions"
+msgstr "Transactions"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transactions will create journal entries and update the general ledger."

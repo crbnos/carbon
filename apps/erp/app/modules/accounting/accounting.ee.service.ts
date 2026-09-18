@@ -6815,3 +6815,87 @@ export async function getAccountingSyncTieOutCell(
 
   return { data: { cell, journals, truncated }, error: null };
 }
+
+// -- Bank Reconciliation --
+
+export async function getCompanyBankAccounts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("companyBankAccount")
+    .select("id, name, glAccountId, currencyCode, active", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getCompanyBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("companyBankAccount").select("*").eq("id", id).single();
+}
+
+export async function upsertCompanyBankAccount(
+  client: SupabaseClient<Database>,
+  data:
+    | (Record<string, any> & { companyId: string; createdBy: string })
+    | (Record<string, any> & { id: string; updatedBy: string })
+) {
+  if ("createdBy" in data) {
+    return client
+      .from("companyBankAccount")
+      .insert([data as any])
+      .select("id")
+      .single();
+  }
+  const { id, ...rest } = data;
+  return client
+    .from("companyBankAccount")
+    .update(sanitize(rest))
+    .eq("id", id)
+    .select("id")
+    .single();
+}
+
+export async function deleteCompanyBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("companyBankAccount").delete().eq("id", id);
+}
+
+export async function getBankTransactions(
+  client: SupabaseClient<Database>,
+  companyBankAccountId: string
+) {
+  return client
+    .from("bankTransaction")
+    .select(
+      "id, postedDate, amount, description, status, matchType, matchedJournalLineId, bankStatementId"
+    )
+    .eq("companyBankAccountId", companyBankAccountId)
+    .order("postedDate", { ascending: false });
+}
+
+export async function getBankStatements(
+  client: SupabaseClient<Database>,
+  companyBankAccountId: string
+) {
+  return client
+    .from("bankStatement")
+    .select(
+      "id, sourceFileName, status, importError, transactionCount, createdAt"
+    )
+    .eq("companyBankAccountId", companyBankAccountId)
+    .order("createdAt", { ascending: false });
+}

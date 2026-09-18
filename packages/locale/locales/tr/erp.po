@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
 msgid "{load} in queue"
 msgstr "{load} kuyruğunda"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB sınırı"
 
@@ -2207,6 +2211,10 @@ msgstr "API anahtarını silmek istediğinizden emin misiniz: {0}? Bu geri alın
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "Varlık Sınıfını silmek istediğinizden emin misiniz: {0}? Bu işlem geri alınamaz."
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "{0} değişiklik bildirisi işlemini silmek istediğinizden emin misiniz? Bu işlem geri alınamaz."
@@ -2849,6 +2857,9 @@ msgstr "Banka — Yerel Para Birimi (varsayılan)"
 
 msgid "Bank / Cash Account"
 msgstr "Banka / Nakit Hesabı"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "Yabancı para biriminde yapılandırılmış banka hesabı"
@@ -4818,6 +4829,12 @@ msgstr "CSV sütunu"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV dosyası en az 2 satır içermelidir."
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "Kümülatif"
 
@@ -4841,6 +4858,10 @@ msgstr "Kur çevrimi"
 
 msgid "Currency Translation (default)"
 msgstr "Kur çevrimi (varsayılan)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "geçerli"
@@ -5409,6 +5430,9 @@ msgstr "İlişkiyi Sil"
 
 msgid "Delete Attribute"
 msgstr "Özniteliği Sil"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "Kategoriyi Sil"
@@ -7472,6 +7496,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Çizelge yeniden oluşturulamadı"
 
@@ -8564,11 +8591,22 @@ msgstr "Uygulama Müdürü"
 msgid "Import {label} CSV"
 msgstr "İçe aktarılacak {label} CSV"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "İçe Aktarma Sonuçları"
 
 msgid "Import your BOM"
 msgstr "BOM'unuzu İçe Aktarın"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "Ada göre eşleştir"
 
 msgid "Match none"
 msgstr "Hiçbiriyle eşleşme"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "Eşleştirildi"
@@ -18322,6 +18363,9 @@ msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
 
 msgid "Trainings"
 msgstr "Eğitimler"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelleyecektir."

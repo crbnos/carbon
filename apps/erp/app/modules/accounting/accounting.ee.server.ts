@@ -802,3 +802,171 @@ export async function postDepreciationRun(
       .execute();
   });
 }
+
+// -- Bank Reconciliation --
+//
+// Checkpoint 1: a CSV import writes one bankStatement + its bankTransaction
+// rows, then an exact-match pass runs inline (no Inngest job yet — that lands
+// once this loop is proven out). See .ai/plans (or the approved plan doc) for
+// the full phasing; deliberately deferred here: fuzzy/suggested matches, a
+// reconciliation-batch close lifecycle, and any async/scheduled matching.
+
+export type ParsedBankTransactionRow = {
+  postedDate: string; // YYYY-MM-DD
+  amount: number; // positive = money in, negative = money out
+  description: string;
+};
+
+export async function importBankTransactionsFromCsv(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyBankAccountId: string;
+    companyId: string;
+    userId: string;
+    fileName: string;
+    rows: ParsedBankTransactionRow[];
+  }
+) {
+  const { companyBankAccountId, companyId, userId, fileName, rows } = args;
+
+  return db.transaction().execute(async (trx) => {
+    const statement = await trx
+      .insertInto("bankStatement")
+      .values({
+        companyId,
+        companyBankAccountId,
+        sourceFileName: fileName,
+        status: "Processing",
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    if (rows.length > 0) {
+      await trx
+        .insertInto("bankTransaction")
+        .values(
+          rows.map((row) => ({
+            companyId,
+            companyBankAccountId,
+            bankStatementId: statement.id,
+            postedDate: row.postedDate,
+            amount: row.amount,
+            description: row.description,
+            status: "Unmatched" as const,
+            createdBy: userId
+          }))
+        )
+        .execute();
+    }
+
+    await trx
+      .updateTable("bankStatement")
+      .set({
+        status: "Imported",
+        transactionCount: rows.length,
+        updatedBy: userId
+      })
+      .where("id", "=", statement.id)
+      .execute();
+
+    return { bankStatementId: statement.id, transactionCount: rows.length };
+  });
+}
+
+const MATCH_DATE_TOLERANCE_DAYS = 3;
+
+/**
+ * Exact-match pass: unmatched bankTransaction rows for this account against
+ * posted journalLine rows on the account's own GL account. Amount is compared
+ * directly (not sign-flipped) — the bank account's GL leaf is an Asset, so its
+ * natural debit-positive balance already agrees with "positive = money in".
+ * A journalLine already claimed by another bankTransaction is excluded so the
+ * same GL line can never back two matches.
+ */
+export async function matchBankTransactionsForAccount(
+  db: Kysely<KyselyDatabase>,
+  args: { companyBankAccountId: string; companyId: string; userId: string }
+) {
+  const { companyBankAccountId, companyId, userId } = args;
+
+  return db.transaction().execute(async (trx) => {
+    const account = await trx
+      .selectFrom("companyBankAccount")
+      .select(["glAccountId"])
+      .where("id", "=", companyBankAccountId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+
+    const unmatched = await trx
+      .selectFrom("bankTransaction")
+      .select(["id", "postedDate", "amount"])
+      .where("companyBankAccountId", "=", companyBankAccountId)
+      .where("companyId", "=", companyId)
+      .where("status", "=", "Unmatched")
+      .execute();
+
+    if (unmatched.length === 0) {
+      return { matched: 0, unmatched: 0 };
+    }
+
+    const alreadyClaimed = await trx
+      .selectFrom("bankTransaction")
+      .select(["matchedJournalLineId"])
+      .where("companyId", "=", companyId)
+      .where("matchedJournalLineId", "is not", null)
+      .execute();
+    const claimedIds = new Set(
+      alreadyClaimed.map((row) => row.matchedJournalLineId)
+    );
+
+    const candidates = await trx
+      .selectFrom("journalLine")
+      .innerJoin("journal", "journal.id", "journalLine.journalId")
+      .select([
+        "journalLine.id as id",
+        "journalLine.amount as amount",
+        "journal.postingDate as postingDate"
+      ])
+      .where("journalLine.accountId", "=", account.glAccountId)
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.status", "=", "Posted")
+      .execute();
+
+    const availableCandidates = candidates.filter((c) => !claimedIds.has(c.id));
+
+    let matchedCount = 0;
+    for (const txn of unmatched) {
+      const txnDate = new Date(txn.postedDate).getTime();
+      const matchIndex = availableCandidates.findIndex((c) => {
+        if (Number(c.amount) !== Number(txn.amount)) return false;
+        const candidateDate = new Date(c.postingDate).getTime();
+        const dayDiff =
+          Math.abs(txnDate - candidateDate) / (1000 * 60 * 60 * 24);
+        return dayDiff <= MATCH_DATE_TOLERANCE_DAYS;
+      });
+
+      if (matchIndex === -1) continue;
+
+      const [match] = availableCandidates.splice(matchIndex, 1);
+
+      await trx
+        .updateTable("bankTransaction")
+        .set({
+          status: "Matched",
+          matchedJournalLineId: match.id,
+          matchType: "Exact",
+          updatedBy: userId
+        })
+        .where("id", "=", txn.id)
+        .execute();
+
+      matchedCount += 1;
+    }
+
+    return {
+      matched: matchedCount,
+      unmatched: unmatched.length - matchedCount
+    };
+  });
+}

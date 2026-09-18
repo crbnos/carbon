@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# Zeile} other {# Zeilen}}"
 msgid "{load} in queue"
 msgstr "{load} in Warteschlange"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB-Limit"
 
@@ -2207,6 +2211,10 @@ msgstr "Sind Sie sicher, dass Sie den API-Schlüssel: {0}? löschen möchten? Di
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "Möchten Sie die Anlagenklasse {0} wirklich löschen? Dies kann nicht rückgängig gemacht werden."
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie die Änderungsmitteilung-Aktion löschen möchten: {0}? Dies kann nicht rückgängig gemacht werden."
@@ -2849,6 +2857,9 @@ msgstr "Bank — Landeswährung (Standard)"
 
 msgid "Bank / Cash Account"
 msgstr "Bank-/Kassenkonto"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "Bankkonto, das auf eine Fremdwährung lautet."
@@ -4818,6 +4829,12 @@ msgstr "CSV-Spalte"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV-Datei muss mindestens 2 Zeilen enthalten."
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "Kumulativ"
 
@@ -4841,6 +4858,10 @@ msgstr "Währungsumrechnung"
 
 msgid "Currency Translation (default)"
 msgstr "Währungsumrechnung (Standard)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "aktuell"
@@ -5409,6 +5430,9 @@ msgstr "Zuordnung löschen"
 
 msgid "Delete Attribute"
 msgstr "Attribut löschen"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "Kategorie löschen"
@@ -7472,6 +7496,9 @@ msgstr "Fehler beim Laden von verfolgten Entitäten"
 msgid "Failed to move account: {0}"
 msgstr "Konto konnte nicht verschoben werden: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Terminplan konnte nicht neu generiert werden"
 
@@ -8564,11 +8591,22 @@ msgstr "Umsetzungsleiter"
 msgid "Import {label} CSV"
 msgstr "Importiere {label} CSV"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "Importergebnisse"
 
 msgid "Import your BOM"
 msgstr "Importieren Sie Ihre BOM"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "Nach Namen abgleichen"
 
 msgid "Match none"
 msgstr "Keine Übereinstimmung"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "Abgestimmt"
@@ -18322,6 +18363,9 @@ msgstr "Schulung Ihres Teams über die Academy und In-App-Leitfäden"
 
 msgid "Trainings"
 msgstr "Schulungen"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transaktionen erstellen Buchungssätze und aktualisieren das Hauptbuch."

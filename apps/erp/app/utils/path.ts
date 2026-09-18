@@ -407,6 +407,11 @@ export const path = {
     balanceSheet: `${x}/reports/balance-sheet`,
     balanceSheetLedger: (id: string) =>
       generatePath(`${x}/reports/balance-sheet/${id}`),
+    bankAccount: (id: string) =>
+      generatePath(`${x}/accounting/bank-account/${id}`),
+    bankAccountImport: (id: string) =>
+      generatePath(`${x}/accounting/bank-account/${id}/import`),
+    bankAccounts: `${x}/accounting/bank-accounts`,
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
@@ -631,6 +636,8 @@ export const path = {
       generatePath(`${x}/people/attribute/delete/${id}`),
     deleteAttributeCategory: (id: string) =>
       generatePath(`${x}/people/attributes/delete/${id}`),
+    deleteBankAccount: (id: string) =>
+      generatePath(`${x}/accounting/bank-account/${id}/delete`),
     deleteBatchProperty: (itemId: string, id: string) =>
       generatePath(
         `${x}/inventory/batch-property/${itemId}/property/delete/${id}`
@@ -1499,6 +1506,7 @@ export const path = {
     newAttributeCategory: `${x}/people/attributes/new`,
     newAttributeForCategory: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}/new`),
+    newBankAccount: `${x}/accounting/bank-accounts/new`,
     newBatch: `${x}/inventory/batches/new`,
     newBulkJob: `${x}/job/bulk/new`,
     // Create form lives at its own top-level route (like /x/part/new and

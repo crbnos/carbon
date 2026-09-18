@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# строка} other {# строк}}"
 msgid "{load} in queue"
 msgstr "{load} в очереди"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}МБ максимум"
 
@@ -2207,6 +2211,10 @@ msgstr "Вы уверены, что хотите удалить API-ключ: {0
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить класс основных средств: {0}? Это невозможно отменить."
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить действие извещения об изменении: {0}? Это невозможно отменить."
@@ -2849,6 +2857,9 @@ msgstr "Банк — Местная валюта (по умолчанию)"
 
 msgid "Bank / Cash Account"
 msgstr "Банк / Счет денежных средств"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "Банковский счет в иностранной валюте."
@@ -4818,6 +4829,12 @@ msgstr "Столбец CSV"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV файл должен содержать минимум 2 строки."
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "Нарастающий итог"
 
@@ -4841,6 +4858,10 @@ msgstr "Пересчет валют"
 
 msgid "Currency Translation (default)"
 msgstr "Пересчет валют (по умолчанию)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "текущий"
@@ -5409,6 +5430,9 @@ msgstr "Удалить ассоциацию"
 
 msgid "Delete Attribute"
 msgstr "Удалить атрибут"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "Удалить категорию"
@@ -7472,6 +7496,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Ошибка при пересчете графика"
 
@@ -8564,11 +8591,22 @@ msgstr "Руководитель внедрения"
 msgid "Import {label} CSV"
 msgstr "Импортировать {label} CSV"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "Импортировать результаты"
 
 msgid "Import your BOM"
 msgstr "Импортируйте вашу BOM"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "Совпадение по имени"
 
 msgid "Match none"
 msgstr "Не совпадает ни одно"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "Сопоставлено"
@@ -18322,6 +18363,9 @@ msgstr "Обучение вашей команды через Academy и вст�
 
 msgid "Trainings"
 msgstr "Обучение"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Операции создадут записи и обновят Главную книгу"

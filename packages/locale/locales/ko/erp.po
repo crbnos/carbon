@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
 msgid "{load} in queue"
 msgstr "큐에 {load}개 대기 중"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB 제한"
 
@@ -2207,6 +2211,10 @@ msgstr "API 키 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌릴 �
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "자산 클래스: {0}를 삭제하시겠습니까? 이 작업은 실행 취소할 수 없습니다."
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "변경 통지 작업을 삭제하시겠습니까: {0}? 이 작업은 취소할 수 없습니다."
@@ -2849,6 +2857,9 @@ msgstr "은행 — 자국통화(기본값)"
 
 msgid "Bank / Cash Account"
 msgstr "은행/현금 계정"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "외화로 표시된 은행 계좌"
@@ -4818,6 +4829,12 @@ msgstr "CSV 열"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV 파일에는 최소 2개 행이 있어야 합니다."
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "누적"
 
@@ -4841,6 +4858,10 @@ msgstr "통화 환산"
 
 msgid "Currency Translation (default)"
 msgstr "통화 환산(기본값)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "현재"
@@ -5409,6 +5430,9 @@ msgstr "연결 삭제"
 
 msgid "Delete Attribute"
 msgstr "속성 삭제"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "카테고리 삭제"
@@ -7472,6 +7496,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "일정 재생성 실패"
 
@@ -8564,11 +8591,22 @@ msgstr "실행 리드"
 msgid "Import {label} CSV"
 msgstr "{label} CSV 가져오기"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "가져오기 결과"
 
 msgid "Import your BOM"
 msgstr "BOM 가져오기"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "이름으로 일치"
 
 msgid "Match none"
 msgstr "일치 안 함"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "일치함"
@@ -18322,6 +18363,9 @@ msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
 
 msgid "Trainings"
 msgstr "교육"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데이트됩니다."

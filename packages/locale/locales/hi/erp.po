@@ -306,6 +306,10 @@ msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
 msgid "{load} in queue"
 msgstr "{load} कतार में"
 
+#. placeholder {0}: transactions.length
+msgid "{matchedCount} of {0} transactions matched"
+msgstr ""
+
 msgid "{maxSizeMB}MB limit"
 msgstr "{maxSizeMB}MB सीमा"
 
@@ -2207,6 +2211,10 @@ msgstr "क्या आप API कुंजी को हटाना चाह
 msgid "Are you sure you want to delete the asset class: {0}? This cannot be undone."
 msgstr "क्या आप परिसंपत्ति वर्ग को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: selected.name
+msgid "Are you sure you want to delete the bank account: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: requiredAction.name
 msgid "Are you sure you want to delete the change notice action: {0}? This cannot be undone."
 msgstr "क्या आप परिवर्तन सूचना क्रिया को हटाना चाहते हैं: {0}? यह पूर्ववत नहीं किया जा सकता।"
@@ -2849,6 +2857,9 @@ msgstr "बैंक — स्थानीय मुद्रा (डिफ़�
 
 msgid "Bank / Cash Account"
 msgstr "बैंक / नकद खाता"
+
+msgid "Bank Account"
+msgstr ""
 
 msgid "Bank account denominated in a foreign currency"
 msgstr "बैंक खाता एक विदेशी मुद्रा में मूल्यवर्गित।"
@@ -4818,6 +4829,12 @@ msgstr "CSV कॉलम"
 msgid "CSV file must have at least 2 rows."
 msgstr "CSV फ़ाइल में कम से कम 2 पंक्तियाँ होनी चाहिए।"
 
+msgid "CSV must have Date, Amount, and Description columns"
+msgstr ""
+
+msgid "CSV with Date, Amount, and Description columns (positive amount = money in, negative = money out)."
+msgstr ""
+
 msgid "Cumulative"
 msgstr "संचयी"
 
@@ -4841,6 +4858,10 @@ msgstr "मुद्रा रूपांतरण"
 
 msgid "Currency Translation (default)"
 msgstr "मुद्रा रूपांतरण (डिफ़ॉल्ट)"
+
+#. placeholder {0}: account.currencyCode
+msgid "Currency: {0}"
+msgstr ""
 
 msgid "current"
 msgstr "वर्तमान"
@@ -5409,6 +5430,9 @@ msgstr "संबंध हटाएं"
 
 msgid "Delete Attribute"
 msgstr "विशेषता हटाएं"
+
+msgid "Delete Bank Account"
+msgstr ""
 
 msgid "Delete Category"
 msgstr "श्रेणी हटाएं"
@@ -7472,6 +7496,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to parse CSV file"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "शेड्यूल पुनः उत्पन्न करने में विफल"
 
@@ -8564,11 +8591,22 @@ msgstr "कार्यान्वयन नेता"
 msgid "Import {label} CSV"
 msgstr "{label} CSV आयात करें"
 
+msgid "Import Bank Statement"
+msgstr ""
+
 msgid "Import results"
 msgstr "आयात परिणाम"
 
 msgid "Import your BOM"
 msgstr "अपना BOM आयात करें"
+
+#. placeholder {0}: fetcher.data.transactionCount
+#. placeholder {1}: fetcher.data.matched
+msgid "Imported {0} transactions, {1} matched"
+msgstr ""
+
+msgid "Importing {fileName}..."
+msgstr ""
 
 #. placeholder {0}: precise?.text
 msgid "in {0}"
@@ -10061,6 +10099,9 @@ msgstr "नाम से मेल खाएं"
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
+
+msgid "Match Type"
+msgstr ""
 
 msgid "Matched"
 msgstr "मेल खाया"
@@ -18322,6 +18363,9 @@ msgstr "Academy और इन-ऐप गाइड के माध्यम स�
 
 msgid "Trainings"
 msgstr "प्रशिक्षण"
+
+msgid "Transactions"
+msgstr ""
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "लेनदेन जर्नल प्रविष्टियां बनाएंगे और सामान्य खाता बही को अपडेट करेंगे।"

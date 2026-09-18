@@ -547,3 +547,28 @@ export type AssetDepreciationHistoryItem = NonNullable<
 export type FixedAssetDisposal = NonNullable<
   Awaited<ReturnType<typeof getFixedAssetDisposal>>["data"]
 >;
+
+// -- Bank Reconciliation types --
+
+import type {
+  getBankStatements,
+  getBankTransactions,
+  getCompanyBankAccount,
+  getCompanyBankAccounts
+} from "./accounting.ee.service";
+
+export type CompanyBankAccount = NonNullable<
+  Awaited<ReturnType<typeof getCompanyBankAccount>>["data"]
+>;
+
+export type CompanyBankAccountListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getCompanyBankAccounts>>>["data"]
+>[number];
+
+export type BankTransactionListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getBankTransactions>>>["data"]
+>[number];
+
+export type BankStatementListItem = NonNullable<
+  NonNullable<Awaited<ReturnType<typeof getBankStatements>>>["data"]
+>[number];

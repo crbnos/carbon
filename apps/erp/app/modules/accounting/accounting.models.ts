@@ -1018,3 +1018,13 @@ export const fixedAssetUsageLogValidator = z.object({
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
 });
+
+// -- Bank Reconciliation --
+
+export const companyBankAccountValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().min(1, { message: "Name is required" }),
+  glAccountId: z.string().min(1, { message: "GL account is required" }),
+  currencyCode: z.string().min(1, { message: "Currency is required" }),
+  active: zfd.checkbox()
+});
