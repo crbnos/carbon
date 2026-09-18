@@ -4,8 +4,10 @@ import { getRequestId } from "@carbon/logger/middleware.server";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
 import { isRouteErrorResponse } from "react-router";
+import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
+scheduleInngestSelfSync();
 
 const log = getLogger("erp");
 

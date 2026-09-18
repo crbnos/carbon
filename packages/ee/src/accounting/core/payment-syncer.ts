@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { round } from "@carbon/utils";
 import { sql } from "kysely";
 import { createMappingService } from "./external-mapping";
 import { ProviderID } from "./models";
@@ -392,9 +393,8 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
 
   /**
    * Whether this provider can echo a void of a Carbon-pushed payment back out.
-   * Off in v1 for every provider (Rillet has no payment-void endpoint) — a
-   * voided Carbon-originated payment lands a Skipped op telling the operator to
-   * void it in the provider by hand.
+   * Opt-in: Rillet deletes native invoice/bill payments; other providers keep
+   * their existing unsupported-void behavior.
    */
   protected supportsPaymentVoidPush = false;
 
@@ -466,6 +466,10 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         );
       }
 
+      if (payment.status === "Voided") {
+        return await this.pushVoid(entityId);
+      }
+
       // Origin routing via the payment mapping. A pulled payment links its
       // mapping in the pull upsert BEFORE post-payment flips it to Posted, so
       // its Posted event finds a mapping here and skips — the loop guard.
@@ -474,10 +478,6 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         entityId,
         this.provider.id
       );
-
-      if (payment.status === "Voided") {
-        return this.pushVoid(entityId, mapping);
-      }
 
       if (mapping?.externalId) {
         // Provider-known (pulled) or already pushed — idempotent skip.
@@ -520,6 +520,37 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         return skipped(
           entityId,
           `Payment ${entityId} carries a discount or write-off — outbound push of adjusted payments is not supported in v1`
+        );
+      }
+      if (settlements.some((s) => s.sourcePaymentId !== null)) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} uses prior credit funding — outbound credit-funded payments are not supported`
+        );
+      }
+      if (
+        settlements.some(
+          (s) =>
+            !Number.isFinite(s.sourceAmount) ||
+            s.sourceAmount <= 0 ||
+            s.fxGainLossAmount !== 0 ||
+            s.targetExchangeRate !== 1 ||
+            s.sourceAmount !== s.appliedAmount
+        )
+      ) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} has unsupported FX or non-cash principal — outbound FX payment push is not supported`
+        );
+      }
+      if (
+        !Number.isFinite(payment.totalAmount) ||
+        round(settlements.reduce((sum, s) => sum + s.sourceAmount, 0)) >
+          payment.totalAmount
+      ) {
+        return skipped(
+          entityId,
+          `Payment ${entityId} settlement principal exceeds its cash total`
         );
       }
       if (payment.exchangeRate !== 1) {
@@ -571,7 +602,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
           family,
           targetDocumentId,
           bankAccountId: payment.bankAccount,
-          amount: settlement.appliedAmount,
+          amount: settlement.sourceAmount,
           currencyCode: payment.currencyCode,
           paidDate: payment.paidDate,
           reference: payment.reference
@@ -619,37 +650,80 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     }
   }
 
+  /** Provider-native delete; only adapters opting into void push implement it. */
+  protected async voidRemotePayment(_compositeId: string): Promise<void> {
+    throw new Error(
+      `Payment void push is not supported by ${this.provider.id}`
+    );
+  }
+
   /**
-   * A Carbon payment reaching Voided. Echo the void to the provider ONLY for a
-   * payment Carbon originated and pushed (mapping stamped origin:"carbon") — a
-   * pulled payment voided in the provider already reversed there, so re-pushing
-   * would loop. v1 has no provider void endpoint, so this always Skips with a
-   * manual-remediation message; it is the seam a provider void hook plugs into.
+   * Mapping keys are the durable authority for both single and fan-out pushes.
+   * Keep them after deletion, marking completion only after every native delete
+   * succeeds. A partial remote failure retries safely through idempotent deletes.
    */
-  private pushVoid(
-    entityId: string,
-    mapping: { metadata: Record<string, unknown> | null } | null
-  ): SyncResult {
-    const carbonOrigin =
-      mapping?.metadata != null && mapping.metadata.origin === "carbon";
-    if (!carbonOrigin) {
+  private async pushVoid(entityId: string): Promise<SyncResult> {
+    if (!this.supportsPaymentVoidPush) {
+      return skipped(
+        entityId,
+        `Voiding a pushed payment in ${this.provider.id} is not supported`
+      );
+    }
+    const mappings = await this.database
+      .selectFrom("externalIntegrationMapping")
+      .select(["entityId", "externalId", "metadata"])
+      .where("companyId", "=", this.companyId)
+      .where("integration", "=", this.provider.id)
+      .where("entityType", "=", "payment")
+      .where(
+        sql<string>`split_part("entityId", ${SETTLEMENT_KEY_SEPARATOR}, 1)`,
+        "=",
+        entityId
+      )
+      .execute();
+    const owned = mappings.filter(
+      (mapping): mapping is typeof mapping & { externalId: string } =>
+        typeof mapping.externalId === "string" &&
+        mapping.externalId.length > 0 &&
+        (mapping.metadata as Record<string, unknown> | null)?.origin ===
+          "carbon"
+    );
+    if (owned.length === 0) {
       return skipped(
         entityId,
         `Voided payment ${entityId} has no Carbon-originated provider payment to reverse`
       );
     }
-    if (!this.supportsPaymentVoidPush) {
-      return skipped(
-        entityId,
-        `Voiding a pushed payment in ${this.provider.id} is not supported in v1 — void it manually in the provider`
-      );
-    }
-    // No provider implements void push in v1; when one does, call its void
-    // adapter here.
-    return skipped(
-      entityId,
-      `Voiding a pushed payment in ${this.provider.id} is not supported in v1`
+    const pending = owned.filter(
+      (mapping) =>
+        (mapping.metadata as Record<string, unknown> | null)?.voided !== true
     );
+    for (const mapping of pending) {
+      await this.voidRemotePayment(mapping.externalId);
+    }
+    if (pending.length > 0)
+      await withTriggersDisabled(this.database, async (tx) => {
+        await createMappingService(tx, this.companyId).linkBatch(
+          pending.map((mapping) => ({
+            entityType: "payment",
+            entityId: mapping.entityId,
+            integration: this.provider.id,
+            externalId: mapping.externalId,
+            options: {
+              metadata: {
+                ...(mapping.metadata as Record<string, unknown> | null),
+                voided: true
+              }
+            }
+          }))
+        );
+      });
+    return {
+      status: "success",
+      action: "deleted",
+      localId: entityId,
+      remoteId: owned[0]!.externalId
+    };
   }
 
   async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
@@ -686,7 +760,8 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         "exchangeRate",
         "paymentDate",
         "postingDate",
-        "reference"
+        "reference",
+        "totalAmount"
       ])
       .where("id", "=", paymentId)
       .where("companyId", "=", this.companyId)
@@ -700,6 +775,10 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         "targetSalesInvoiceId",
         "targetPurchaseInvoiceId",
         "appliedAmount",
+        "sourceAmount",
+        "sourcePaymentId",
+        "targetExchangeRate",
+        "fxGainLossAmount",
         "discountAmount",
         "writeOffAmount"
       ])
@@ -712,7 +791,8 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       paymentType: payment.paymentType,
       bankAccount: payment.bankAccount,
       currencyCode: payment.currencyCode,
-      exchangeRate: Number(payment.exchangeRate ?? 1),
+      exchangeRate: Number(payment.exchangeRate),
+      totalAmount: Number(payment.totalAmount),
       // Kysely's pg driver hands DATE columns back as Date objects (local
       // midnight) — toPostingDateString recovers the stored calendar date
       // for both Date and string values; a bare .slice crashed the push.
@@ -722,6 +802,10 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         targetSalesInvoiceId: s.targetSalesInvoiceId,
         targetPurchaseInvoiceId: s.targetPurchaseInvoiceId,
         appliedAmount: Number(s.appliedAmount ?? 0),
+        sourceAmount: Number(s.sourceAmount),
+        sourcePaymentId: s.sourcePaymentId,
+        targetExchangeRate: Number(s.targetExchangeRate),
+        fxGainLossAmount: Number(s.fxGainLossAmount),
         discountAmount: Number(s.discountAmount ?? 0),
         writeOffAmount: Number(s.writeOffAmount ?? 0)
       }))
@@ -780,12 +864,17 @@ type LocalPaymentForPush = {
   bankAccount: string;
   currencyCode: string;
   exchangeRate: number;
+  totalAmount: number;
   paidDate: string;
   reference: string | null;
   settlements: Array<{
     targetSalesInvoiceId: string | null;
     targetPurchaseInvoiceId: string | null;
     appliedAmount: number;
+    sourceAmount: number;
+    sourcePaymentId: string | null;
+    targetExchangeRate: number;
+    fxGainLossAmount: number;
     discountAmount: number;
     writeOffAmount: number;
   }>;

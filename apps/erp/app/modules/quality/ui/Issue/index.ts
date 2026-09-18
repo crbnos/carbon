@@ -1,5 +1,6 @@
 export * from "./ActionTasksList";
 export * from "./AssociatedItemsList";
+export * from "./CreateSupplierReturn";
 export * from "./IssueAssociations";
 export * from "./IssueContent";
 export * from "./IssueForm";

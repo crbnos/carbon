@@ -1,7 +1,7 @@
-import workerSrc from "pdfjs-dist/build/pdf.worker.min.mjs?url";
+import { registerReactPdfWorker } from "@carbon/files/pdf/worker";
 import { pdfjs } from "react-pdf";
 
-pdfjs.GlobalWorkerOptions.workerSrc = workerSrc;
+registerReactPdfWorker(pdfjs);
 
 import {
   CONTROLLED_ENVIRONMENT,
@@ -13,6 +13,7 @@ import posthog from "posthog-js";
 import { startTransition } from "react";
 import { hydrateRoot } from "react-dom/client";
 import { HydratedRouter } from "react-router/dom";
+import { preloadCatalog } from "~/services/lingui";
 
 ensureLoggingConfigured();
 
@@ -28,7 +29,13 @@ ensureLoggingConfigured();
 //
 // Controlled (ITAR) environments never initialize analytics — no data about a
 // U.S.-Persons-only environment leaves it, even if the key is set.
-if (POSTHOG_PROJECT_PUBLIC_KEY && !CONTROLLED_ENVIRONMENT) {
+//
+// The key must be a real PostHog project key (`phc_…`), not just non-empty: a
+// placeholder value (e.g. a masked "****" in a local .env) passes a truthiness
+// check, and initializing with it makes posthog-js inject its remote-config
+// <script> into the document before hydrateRoot(document) runs — an extra DOM
+// node React can't match, so the ENTIRE document fails hydration.
+if (POSTHOG_PROJECT_PUBLIC_KEY?.startsWith("phc_") && !CONTROLLED_ENVIRONMENT) {
   posthog.init(POSTHOG_PROJECT_PUBLIC_KEY, {
     api_host: POSTHOG_API_HOST
   });
@@ -43,6 +50,11 @@ if (CONTROLLED_ENVIRONMENT && posthog.__loaded) {
   );
 }
 
-startTransition(() => {
-  hydrateRoot(document, <HydratedRouter />);
+// The catalog is no longer in loader data, so fetch the active language's
+// chunk before hydrating — otherwise a non-en page hydrates against an empty
+// catalog and mismatches the server markup.
+preloadCatalog(document.documentElement.lang).then(() => {
+  startTransition(() => {
+    hydrateRoot(document, <HydratedRouter />);
+  });
 });

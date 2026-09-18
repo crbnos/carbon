@@ -104,6 +104,7 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
                 matrix={matrix}
                 label={t`Default Permissions`}
                 termId="employee-type-default-permissions"
+                isDisabled={isDisabled}
               />
             </div>
           </ModalBody>

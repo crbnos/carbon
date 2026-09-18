@@ -27,6 +27,7 @@ import {
   useMount
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuFilter, LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -40,6 +41,7 @@ import { itemType, methodItemType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { latestRevisionByReadableId } from "~/stores/items";
 import { path } from "~/utils/path";
+import { getCompanyId, itemQuantitiesQuery } from "~/utils/react-query";
 import { MethodItemTypeIcon } from "../Icons";
 import { ItemLifecycleBadge } from "../ItemLifecycleBadge";
 import type { EntityKey } from "./emptyStates";
@@ -100,6 +102,47 @@ const useTranslatedItemType = () => {
   };
 };
 
+// Stable identity, so a picker with no quantities does not re-run its options
+// memo on every render.
+const NO_QUANTITIES: Record<string, number> = {};
+
+/**
+ * On-hand per item for the option badge, keyed by the location in play ("all"
+ * totals every location). This used to ride on the items store, which meant the
+ * whole `itemStockQuantities` table (item x location) was downloaded into the
+ * browser on every page load, re-polled every 10 minutes and re-read in full on
+ * every stock movement — to decorate a dropdown. Fetching it here means pages
+ * with no item picker fetch nothing, and the shared client dedupes across every
+ * picker on the page.
+ *
+ * An OBSERVED query, not the imperative `cachedApiQuery` read-through: a stock
+ * movement invalidates this key (`RealtimeDataProvider`), and only an observer
+ * re-fetches and re-renders. Copying one result into state left an open picker
+ * showing yesterday's numbers until it remounted.
+ */
+function useItemQuantities(locationId?: string) {
+  const scope = locationId ?? "all";
+  const { queryKey, staleTime } = itemQuantitiesQuery(scope, getCompanyId());
+
+  const { data } = useQuery({
+    queryKey,
+    staleTime,
+    queryFn: async () => {
+      const response = await fetch(path.to.api.itemQuantities(scope));
+      if (!response.ok) {
+        throw new Error(`Request failed with status ${response.status}`);
+      }
+      return (await response.json()) as {
+        data: Record<string, number> | null;
+      };
+    }
+  });
+
+  // A badge is decoration — a failed read leaves it off rather than breaking
+  // the picker.
+  return data?.data ?? NO_QUANTITIES;
+}
+
 const Item = ({
   name,
   label,
@@ -117,6 +160,7 @@ const Item = ({
   const { t } = useLingui();
   const translateItemType = useTranslatedItemType();
   const [items] = useItems();
+  const quantities = useItemQuantities(props.locationId);
 
   const options = useMemo(() => {
     let filtered = items.filter((item) => {
@@ -148,9 +192,7 @@ const Item = ({
     }
 
     let results = filtered.map((item) => {
-      const scopedQuantity = props.locationId
-        ? item.quantityByLocation?.[props.locationId]
-        : item.quantityOnHand;
+      const scopedQuantity = quantities[item.id];
       return {
         value: item.id,
         label: item.supersessionMode ? (
@@ -180,10 +222,10 @@ const Item = ({
     return results;
   }, [
     items,
+    quantities,
     props?.includeInactive,
     props.blacklist,
     props.latestRevisionOnly,
-    props.locationId,
     props.replenishmentSystem,
     props.whitelist,
     type,
@@ -296,6 +338,7 @@ const Item = ({
             ref={triggerRef}
             options={options}
             {...props}
+            isReadOnly={isReadOnly}
             inline={props.inline ? ItemPreview : undefined}
             value={value?.replace(/"/g, '\\"')}
             onChange={(newValue) => {

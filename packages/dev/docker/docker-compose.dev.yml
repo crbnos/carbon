@@ -217,7 +217,33 @@ services:
       TENANT_ID: stub
       REGION: stub
       GLOBAL_S3_BUCKET: stub
-      ENABLE_IMAGE_TRANSFORMATION: "false"
+      ENABLE_IMAGE_TRANSFORMATION: "true"
+      IMGPROXY_URL: http://imgproxy:5001
+    volumes:
+      - storage:/var/lib/storage:z
+
+  # Image transformations (resize + HEIC→JPEG decode) for the storage API.
+  # Internal only — never publish a port: direct imgproxy access reads the
+  # storage volume with no RLS.
+  imgproxy:
+    image: darthsim/imgproxy:v3.8.0
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: ${MEM_IMGPROXY:-512m}
+          cpus: ${CPU_IMGPROXY:-1}
+    environment:
+      IMGPROXY_BIND: ":5001"
+      IMGPROXY_LOCAL_FILESYSTEM_ROOT: /
+      IMGPROXY_USE_ETAG: "true"
+      # Default is 16.8Mpx, which rejects 48MP iPhone photos.
+      IMGPROXY_MAX_SRC_RESOLUTION: "60"
+    healthcheck:
+      test: ["CMD", "imgproxy", "health"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
     volumes:
       - storage:/var/lib/storage:z
 
@@ -283,8 +309,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_EDGE:-512m}
-          cpus: ${CPU_EDGE:-0.5}
+          # The edge runtime compiles each function's TS module graph on worker
+          # boot (kysely/zod graphs take real CPU) and runs every privileged
+          # business function. Starved of CPU, worker boot outlives the isolate
+          # CPU budget and requests hang mid-kill — give it app-tier resources.
+          memory: ${MEM_EDGE:-1g}
+          cpus: ${CPU_EDGE:-2}
     depends_on:
       postgres:
         condition: service_healthy

@@ -18,7 +18,34 @@ The asymmetry to remember: **supplier status is a fixed four-value set; customer
 
 ## What they share
 
-Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to RFQs through a digital-quote link; customers track their orders through a customer portal.
+Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to RFQs through a digital-quote link; customers track their orders through a `docs/reference/customer-portal`.
+
+## Bank accounts
+
+Both parties can carry bank accounts: the account you pay a supplier into, and the one you refund a customer to. They live on the **Bank Accounts** tab of the record, and they are reference data. Nothing in Carbon moves money from them; a person reads the details and enters them in their own banking system.
+
+The fields adapt to the account's country, because banking identifiers are not the same everywhere. Pick France and the account field is labelled **"IBAN"** with no routing field, since an IBAN already identifies the bank. Pick India and you get an **"IFSC Code"** field plus a required SWIFT / BIC, because one routes the payment inside the country and the other gets it there.
+
+  - **Name**: Your label for the account, so two accounts at one bank stay distinguishable.
+  - **Account Holder**: Only needed when it differs from the party's own name.
+  - **Bank Name**: The bank the account sits with.
+  - **Bank Address**: Printed onto payment files; correspondent banks route international wires on it.
+  - **Country**: Selects which validation rules apply to everything below.
+  - **Currency**: The currency the account settles in.
+  - **Account Number / IBAN**: Labelled by country. Validated by checksum where the scheme has one.
+  - **Routing code**: Named for the country: *Routing Number (ABA)*, *Sort Code*, *BSB*, *IFSC Code*, or *Transit & Institution*. Absent for countries whose IBAN carries it.
+  - **SWIFT / BIC**: Required wherever the country expects a cross-border payment to route.
+  - **Notes**: Free text for anything the fixed fields do not cover.
+
+Most people who can open a supplier should not see its bank account, so the tab is gated on **accounting** rather than the module that owns the record. Without `accounting` view permission the tab does not appear in the sidebar, and opening its URL directly is refused. Adding, editing, and deleting are gated separately.
+
+Account numbers display masked, showing the last four characters with a toggle to reveal the rest. That deters someone reading over your shoulder or catching it in a screenshot; it is not an access control, and the permission above is what actually protects the data.
+
+A checksum confirms an IBAN was typed correctly. It cannot tell you the account belongs to the supplier you think it does. Confirming that is an out-of-band step, a call to a number you already had, and it is the control that stops payment-redirection fraud.
+
+## Documents
+
+Both records have a **Documents** tab for files that belong to the party itself rather than to one transaction: a W-9, an insurance certificate, a signed master agreement. Drop a file on the tab and it is filed against that record, and it also appears in the shared `docs/reference/documents`, so you can find it either by opening the party or by searching.
 
 ## Related
 

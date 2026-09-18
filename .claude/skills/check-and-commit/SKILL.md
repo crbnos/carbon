@@ -28,7 +28,7 @@ paths, derive:
 
 - `SCHEMA_CHANGED` — any file under `packages/database/supabase/migrations/`
 - `AGENT_KB_RELEVANT` — the diff touches `docs/content/**` or
-  `scripts/generate-agent-kb.ts`. When true, Gate 1b regenerates the agent's doc
+  `docs/scripts/generate-agent-kb.ts`. When true, Gate 1b regenerates the agent's doc
   corpus (`apps/erp/app/modules/agent/kb/`) so the generated copy ships in this same
   commit instead of drifting behind the docs (same model as the `.po` files —
   see `.ai/rules/agent-knowledge-base.md`).

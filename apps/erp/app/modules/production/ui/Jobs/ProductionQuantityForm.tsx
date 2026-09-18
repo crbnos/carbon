@@ -10,7 +10,6 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -41,7 +40,7 @@ const ProductionQuantityForm = ({
   operationOptions
 }: ProductionQuantityFormProps) => {
   const permissions = usePermissions();
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const navigate = useNavigate();
   const onClose = () => navigate(-1);
 
@@ -50,9 +49,9 @@ const ProductionQuantityForm = ({
   );
 
   const quantityTypeOptions = [
-    { label: i18n._(msg`Production`), value: "Production" },
-    { label: i18n._(msg`Scrap`), value: "Scrap" },
-    { label: i18n._(msg`Rework`), value: "Rework" }
+    { label: t`Production`, value: "Production" },
+    { label: t`Scrap`, value: "Scrap" },
+    { label: t`Rework`, value: "Rework" }
   ];
 
   const isEditing = initialValues.id !== undefined;

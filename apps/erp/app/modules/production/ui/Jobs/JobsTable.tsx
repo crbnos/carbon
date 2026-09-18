@@ -29,6 +29,7 @@ import {
   LuCalendar,
   LuClock,
   LuHash,
+  LuLayers,
   LuMapPin,
   LuPencil,
   LuQrCode,
@@ -66,9 +67,14 @@ type JobsTableProps = {
   data: Job[];
   count: number;
   tags: { name: string }[];
+  // jobId -> readableIds of live (Active/Completing) operation batches the
+  // job has an operation in. Batching is per-operation, so this is the only
+  // job-level view of it.
+  batchesByJobId?: Record<string, string[]>;
 };
 
 const defaultColumnVisibility = {
+  batches: false,
   description: false,
   createdAt: false,
   createdBy: false,
@@ -138,7 +144,8 @@ function useReadableTrackedEntities(data: Job[], companyId: string) {
   return trackedEntities;
 }
 
-const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
+const JobsTable = memo((props: JobsTableProps) => {
+  const { data, count, tags, batchesByJobId = {} } = props;
   const navigate = useNavigate();
   const { t } = useLingui();
   const [params] = useUrlParams();
@@ -254,6 +261,73 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
         }
       },
       {
+        accessorKey: "status",
+        header: t`Status`,
+        cell: ({ row }) => {
+          const status = row.original.status;
+          const dueDate = row.original.dueDate;
+          return (
+            <HStack spacing={1}>
+              <JobStatus status={status} />
+              {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
+                status ?? ""
+              ) && (
+                <>
+                  {dueDate && isSameDay(parseDate(dueDate), todaysDate) && (
+                    <JobStatus status="Due Today" />
+                  )}
+                  {dueDate && parseDate(dueDate) < todaysDate && (
+                    <JobStatus status="Overdue" />
+                  )}
+                </>
+              )}
+            </HStack>
+          );
+        },
+        meta: {
+          filter: {
+            type: "static",
+            options: jobStatus.map((status) => ({
+              value: status,
+              label: <JobStatus status={status} />
+            }))
+          },
+          pluralHeader: t`Statuses`,
+          icon: <LuUsers />
+        }
+      },
+      {
+        id: "batches",
+        header: t`Batches`,
+        cell: ({ row }) => {
+          const batches = row.original.id
+            ? (batchesByJobId[row.original.id] ?? [])
+            : [];
+          if (batches.length === 0) return null;
+          return (
+            <HStack spacing={1}>
+              {batches.map((readableId) => (
+                <Badge
+                  key={readableId}
+                  variant="secondary"
+                  className="items-center gap-1"
+                  title={t`An operation on this job runs in this batch`}
+                >
+                  <LuLayers />
+                  {readableId}
+                </Badge>
+              ))}
+            </HStack>
+          );
+        },
+        meta: {
+          icon: <LuLayers />,
+          filterHeader: t`Batches`,
+          exportValue: (row: Job) =>
+            row.id ? (batchesByJobId[row.id] ?? []).join(", ") : null
+        }
+      },
+      {
         accessorKey: "quantity",
         header: t`Quantity`,
         cell: ({ row }) => {
@@ -324,42 +398,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
           }
         }
       },
-      {
-        accessorKey: "status",
-        header: t`Status`,
-        cell: ({ row }) => {
-          const status = row.original.status;
-          const dueDate = row.original.dueDate;
-          return (
-            <HStack spacing={1}>
-              <JobStatus status={status} />
-              {["Draft", "Planned", "In Progress", "Ready", "Paused"].includes(
-                status ?? ""
-              ) && (
-                <>
-                  {dueDate && isSameDay(parseDate(dueDate), todaysDate) && (
-                    <JobStatus status="Due Today" />
-                  )}
-                  {dueDate && parseDate(dueDate) < todaysDate && (
-                    <JobStatus status="Overdue" />
-                  )}
-                </>
-              )}
-            </HStack>
-          );
-        },
-        meta: {
-          filter: {
-            type: "static",
-            options: jobStatus.map((status) => ({
-              value: status,
-              label: <JobStatus status={status} />
-            }))
-          },
-          pluralHeader: t`Statuses`,
-          icon: <LuUsers />
-        }
-      },
+
       {
         id: "assignee",
         header: t`Assignee`,
@@ -610,7 +649,7 @@ const JobsTable = memo(({ data, count, tags }: JobsTableProps) => {
       }
     ];
     return [...defaultColumns, ...customColumns];
-  }, [params, customColumns, trackedEntities]);
+  }, [params, customColumns, trackedEntities, batchesByJobId]);
 
   const fetcher = useFetcher<typeof action>();
   useEffect(() => {

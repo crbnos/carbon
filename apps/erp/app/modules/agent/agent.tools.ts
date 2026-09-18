@@ -1,11 +1,9 @@
 import { tool } from "ai";
 import { z } from "zod";
-import {
-  type ExecutorContext,
-  executeFunction
-} from "~/routes/api+/mcp+/lib/direct-executor";
 import { isMcpBlockedTool } from "~/routes/api+/mcp+/lib/mcp-blocked-tools";
 import toolMetadata from "~/routes/api+/mcp+/lib/tool-metadata.json";
+import type { AuthedContext } from "~/routes/api+/v1+/lib/base.server";
+import { callOperation } from "~/routes/api+/v1+/lib/call.server";
 import {
   buttonBlock,
   choiceBlock,
@@ -23,7 +21,7 @@ import { findPages } from "./agent.pages";
 const readTools = toolMetadata.tools.filter((t) => t.classification === "READ");
 const readToolByName = new Map(readTools.map((t) => [t.name, t]));
 
-export function createAgentTools(ctx: ExecutorContext) {
+export function createAgentTools(ctx: AuthedContext) {
   // v1 is docs-only (see agent.config.ts): the live-data tools are wired up but gated
   // off. When disabled they're simply omitted from the tool set, so the model never
   // sees them and can't fan out large row payloads into context.
@@ -86,7 +84,7 @@ export function createAgentTools(ctx: ExecutorContext) {
 
 // Live-data ERP tools. Gated behind AGENT_DATA_TOOLS_ENABLED (off in v1). Kept intact
 // so the agent-with-actions milestone can re-enable them behind an enforcement gate.
-function createDataTools(ctx: ExecutorContext) {
+function createDataTools(ctx: AuthedContext) {
   return {
     search_tools: tool({
       description:
@@ -152,7 +150,9 @@ function createDataTools(ctx: ExecutorContext) {
         if (!readToolByName.has(name) || isMcpBlockedTool(name)) {
           return { error: `Tool "${name}" is not available.` };
         }
-        return executeFunction(
+        // The model now sees the UNWRAPPED data (not the Supabase envelope) — the
+        // one intentional agent-facing change, pinned in agent.tools.test.ts.
+        return callOperation(
           name,
           ctx,
           args as Record<string, unknown> | undefined

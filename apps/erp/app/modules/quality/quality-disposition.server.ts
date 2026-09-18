@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { EPSILON } from "@carbon/utils";
+import { lockIssueDispositions } from "@carbon/database/quality";
+import { datetime, EPSILON, round } from "@carbon/utils";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
@@ -43,6 +44,25 @@ export async function assignEntitiesToIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading any quantity, so a concurrent quantity
+      // edit or link writer on the same issue waits for this move.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", nonConformanceItemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Source item association not found");
+      // Re-check the closed lock inside the transaction: the route check is a
+      // separate read and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const source = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "quantity"])
@@ -61,18 +81,6 @@ export async function assignEntitiesToIssueItem(args: {
 
       if (source.nonConformanceId !== target.nonConformanceId) {
         throw new Error("Cannot move entities between different NCRs");
-      }
-
-      // Re-check the lock inside the transaction: the route check is a separate
-      // read and could race with a concurrent close.
-      const parent = await trx
-        .selectFrom("nonConformance")
-        .select(["status"])
-        .where("id", "=", source.nonConformanceId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (isIssueLocked(parent?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
       }
 
       const existingLinks = await trx
@@ -144,6 +152,210 @@ export async function assignEntitiesToIssueItem(args: {
       err instanceof Error ? err.message : "Failed to move entities"
     );
   }
+}
+
+// -------------------------------------------------------------
+// updateIssueItemQuantity
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem.quantity (compare-and-set on expectedQuantity)
+//
+// Only link-less rows on issues without an inspection link are editable: a
+// tracked row's quantity is the sum of its links, and an inspection-originated
+// issue already wrote off the lot, which closeIssue restores as row.quantity
+// on Use As Is / Rework. The checks and the update run under the issue lock,
+// which every link and inspection writer also takes, so a link cannot land
+// between the check and the write.
+
+export async function updateIssueItemQuantity(args: {
+  id: string;
+  companyId: string;
+  userId: string;
+  quantity: number;
+  expectedQuantity: number;
+}): Promise<Result<{ id: string }>> {
+  const { id, companyId, userId, quantity, expectedQuantity } = args;
+  const db = getDatabaseClient();
+
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return errResult("Issue item not found");
+
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        return errResult("Cannot modify a closed issue. Reopen it first.");
+      }
+
+      const link = await trx
+        .selectFrom("nonConformanceItemTrackedEntity")
+        .select(["id"])
+        .where("nonConformanceItemId", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (link) {
+        return errResult(
+          "This row's quantity comes from its linked tracked entities. Split or move entities instead."
+        );
+      }
+
+      const inspection = await trx
+        .selectFrom("nonConformanceInspection")
+        .select(["id"])
+        .where("nonConformanceId", "=", owner.nonConformanceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (inspection) {
+        return errResult(
+          "Quantity is set by the rejected inspection lot and cannot be edited."
+        );
+      }
+
+      // Compare-and-set: a stale save (an older request finishing after a
+      // newer one) matches no row instead of overwriting it.
+      const updated = await trx
+        .updateTable("nonConformanceItem")
+        .set({
+          quantity: round(quantity),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .where("quantity", "=", expectedQuantity)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (!updated) {
+        return errResult(
+          "This quantity changed since the page loaded. Refresh and try again."
+        );
+      }
+      return { data: { id: updated.id }, error: null };
+    });
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to update quantity"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// linkEntitiesToIssueItemRow
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem (find-or-create the item's row, grow its quantity)
+//   - nonConformanceItemTrackedEntity (one link per entity not yet on a row)
+//
+// The caller must hold lockIssueDispositions for the issue. Entities already
+// linked to any row of the issue are skipped (an entity sits on at most one
+// disposition row per issue). The row quantity grows by the linked entities'
+// quantities, so it stays equal to the link sum. With no entities at all, a
+// row still at 0 takes `fallbackQuantity` (e.g. an untracked inspection lot
+// size); entities that are all already linked change nothing.
+
+export async function linkEntitiesToIssueItemRow(
+  trx: KyselyTx,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    entities: { id: string; quantity: number }[];
+    fallbackQuantity?: number;
+  }
+): Promise<void> {
+  const { nonConformanceId, companyId, userId, itemId, entities } = args;
+  const nowIso = datetime.timestamp();
+
+  // splitIssueItem drops the old (nonConformanceId, itemId) unique constraint's
+  // guarantee: a split item has several rows. Link onto the oldest — the row the
+  // split shrank, which still holds the un-dispositioned remainder — rather than
+  // whichever row Postgres happens to return first.
+  let row = await trx
+    .selectFrom("nonConformanceItem")
+    .select(["id", "quantity"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+  if (!row) {
+    row = await trx
+      .insertInto("nonConformanceItem")
+      .values({
+        nonConformanceId,
+        itemId,
+        quantity: 0,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id", "quantity"])
+      .executeTakeFirstOrThrow();
+  }
+  const currentQty = Number(row.quantity ?? 0);
+
+  if (entities.length === 0) {
+    const fallback = args.fallbackQuantity ?? 0;
+    if (currentQty === 0 && fallback > 0) {
+      await trx
+        .updateTable("nonConformanceItem")
+        .set({ quantity: fallback, updatedBy: userId, updatedAt: nowIso })
+        .where("id", "=", row.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return;
+  }
+
+  const alreadyLinked = await trx
+    .selectFrom("nonConformanceItemTrackedEntity")
+    .select(["trackedEntityId"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where(
+      "trackedEntityId",
+      "in",
+      entities.map((e) => e.id)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const alreadyLinkedIds = new Set(alreadyLinked.map((l) => l.trackedEntityId));
+  const toLink = entities.filter((e) => !alreadyLinkedIds.has(e.id));
+  if (toLink.length === 0) return;
+
+  await trx
+    .insertInto("nonConformanceItemTrackedEntity")
+    .values(
+      toLink.map((e) => ({
+        nonConformanceItemId: row.id,
+        nonConformanceId,
+        trackedEntityId: e.id,
+        quantity: e.quantity,
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  const addedQty = toLink.reduce((acc, e) => acc + e.quantity, 0);
+  await trx
+    .updateTable("nonConformanceItem")
+    .set({
+      quantity: currentQty + addedQty,
+      updatedBy: userId,
+      updatedAt: nowIso
+    })
+    .where("id", "=", row.id)
+    .where("companyId", "=", companyId)
+    .execute();
 }
 
 // -------------------------------------------------------------
@@ -368,6 +580,25 @@ export async function splitIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading the row quantity, so a concurrent
+      // quantity edit or link writer on the same issue waits for this split.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Item association not found");
+      // Re-check inside the transaction: the route lock check is a separate read
+      // and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const item = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "itemId", "quantity"])
@@ -378,15 +609,10 @@ export async function splitIssueItem(args: {
 
       const issue = await trx
         .selectFrom("nonConformance")
-        .select(["nonConformanceId", "status", "locationId"])
+        .select(["nonConformanceId", "locationId"])
         .where("id", "=", item.nonConformanceId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
-      // Re-check inside the transaction: the route lock check is a separate read
-      // and could race with a concurrent close.
-      if (isIssueLocked(issue?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
-      }
       const readableNc = issue?.nonConformanceId ?? item.nonConformanceId;
       const locationId = issue?.locationId ?? null;
 
@@ -665,7 +891,80 @@ export async function closeIssue(
     }))
   }));
 
+  // Supplier-return bridge state: linked purchaseReturnOrder lines cover
+  // 'Return to Supplier' quantities. An OPEN linked return blocks the close
+  // (ship, short-close, or cancel it first); shipped coverage reduces the
+  // write-off (the return shipment already relieved inventory), and entities
+  // that left via a return shipment are exempt from the Consumed guard and
+  // the Rejected flip.
+  const linkedReturnsResult = await (client as any)
+    .from("nonConformancePurchaseReturnOrderLine")
+    .select(
+      `id, quantity, purchaseReturnOrderLineId,
+       purchaseReturnOrderLine(
+         id, itemId, quantityShipped,
+         purchaseReturnOrder(id, purchaseReturnOrderId, status)
+       )`
+    )
+    .eq("nonConformanceId", nonConformanceId)
+    .eq("companyId", companyId);
+
+  if (linkedReturnsResult.error) {
+    return errResult("Failed to load linked supplier returns");
+  }
+  const linkedReturns = ((linkedReturnsResult.data as any[]) ?? []).filter(
+    (row) =>
+      row.purchaseReturnOrderLine?.purchaseReturnOrder?.status !== "Cancelled"
+  );
+  const openLinkedReturns = linkedReturns.filter((row) =>
+    ["Draft", "To Ship"].includes(
+      row.purchaseReturnOrderLine?.purchaseReturnOrder?.status ?? ""
+    )
+  );
+  // Shipped coverage per item: min(covered quantity, the line's shipped
+  // quantity) per association row — one association per line by construction.
+  const shippedCoverageByItem = new Map<string, number>();
+  for (const row of linkedReturns) {
+    const line = row.purchaseReturnOrderLine;
+    if (!line?.itemId) continue;
+    const covered = Math.min(
+      Number(row.quantity ?? 0),
+      Number(line.quantityShipped ?? 0)
+    );
+    if (covered <= 0) continue;
+    shippedCoverageByItem.set(
+      line.itemId,
+      (shippedCoverageByItem.get(line.itemId) ?? 0) + covered
+    );
+  }
+  const linkedReturnLineIds = linkedReturns
+    .map((row) => row.purchaseReturnOrderLineId)
+    .filter(Boolean) as string[];
+  let returnedEntityIds = new Set<string>();
+  if (linkedReturnLineIds.length > 0) {
+    const picks = await (client as any)
+      .from("purchaseReturnOrderLineTrackedEntity")
+      .select("trackedEntityId")
+      .in("purchaseReturnOrderLineId", linkedReturnLineIds)
+      .eq("companyId", companyId);
+    if (picks.error) {
+      return errResult("Failed to load supplier-return tracked entities");
+    }
+    returnedEntityIds = new Set(
+      ((picks.data as any[]) ?? []).map((p) => p.trackedEntityId)
+    );
+  }
+
   const blockers: IssueClosureBlocker[] = [];
+  for (const ret of openLinkedReturns) {
+    blockers.push({
+      nonConformanceItemId: ret.purchaseReturnOrderLineId,
+      reason: `Supplier return ${
+        ret.purchaseReturnOrderLine?.purchaseReturnOrder
+          ?.purchaseReturnOrderId ?? ""
+      } is open — ship, short-close, or cancel it first`
+    });
+  }
   for (const row of plan) {
     // Every row must be dispositioned before closing, tracked or not.
     if (!row.disposition || row.disposition === "Pending") {
@@ -691,7 +990,10 @@ export async function closeIssue(
           nonConformanceItemId: row.id,
           reason: "Linked tracked entity is missing"
         });
-      } else if (link.trackedEntityStatus === "Consumed") {
+      } else if (
+        link.trackedEntityStatus === "Consumed" &&
+        !returnedEntityIds.has(link.trackedEntityId)
+      ) {
         blockers.push({
           nonConformanceItemId: row.id,
           reason: `Tracked entity ${link.trackedEntityId} is already Consumed`
@@ -763,6 +1065,8 @@ export async function closeIssue(
     quantity: number;
     comment: string;
   }[] = [];
+  // Mutable copy: shipped-via-return coverage consumed as it offsets rows.
+  const remainingCoverageByItem = new Map(shippedCoverageByItem);
   for (const row of plan) {
     const isScrap =
       row.disposition === "Scrap" || row.disposition === "Return to Supplier";
@@ -773,6 +1077,15 @@ export async function closeIssue(
         const suffix =
           row.disposition === "Scrap" ? "scrap" : "return to supplier";
         for (const link of row.links) {
+          // Shipped via a linked supplier return: post-shipment already
+          // relieved this entity's value — no write-off here.
+          if (
+            row.disposition === "Return to Supplier" &&
+            returnedEntityIds.has(link.trackedEntityId) &&
+            link.trackedEntityStatus === "Consumed"
+          ) {
+            continue;
+          }
           movements.push({
             itemId: row.itemId,
             locationId,
@@ -786,14 +1099,26 @@ export async function closeIssue(
     }
     if (!inventoryItemIds.has(row.itemId)) continue; // Non-Inventory: no ledger
     if (isScrap && !inspectionOriginated) {
+      let writeOff = row.quantity;
+      if (row.disposition === "Return to Supplier") {
+        const coverage = remainingCoverageByItem.get(row.itemId) ?? 0;
+        const offset = Math.min(writeOff, coverage);
+        if (offset > 0) {
+          remainingCoverageByItem.set(row.itemId, coverage - offset);
+          writeOff -= offset;
+        }
+      }
+      if (writeOff <= EPSILON) continue;
       movements.push({
         itemId: row.itemId,
         locationId,
         trackedEntityId: null,
-        quantity: -row.quantity,
+        quantity: -writeOff,
         comment: `NC ${readableNc} scrap`
       });
-    } else if (isKeep && inspectionOriginated) {
+      continue;
+    }
+    if (isKeep && inspectionOriginated) {
       movements.push({
         itemId: row.itemId,
         locationId,
@@ -889,6 +1214,51 @@ export async function closeIssue(
         linksByItem.set(link.nonConformanceItemId, arr);
       }
 
+      // The supplier-return bridge was read in the preflight too, and it moves
+      // independently of this issue: a linked return can ship (or be voided, or
+      // confirmed) between that read and here. The write-off was computed from
+      // the stale coverage, so posting it now would relieve the same goods the
+      // return shipment already relieved — the double relief AC 15 forbids.
+      // Re-read the linked return state and refuse if it moved.
+      if (linkedReturnLineIds.length > 0) {
+        const freshReturnLines = await trx
+          .selectFrom("purchaseReturnOrderLine as prol")
+          .innerJoin("purchaseReturnOrder as pro", (join) =>
+            join
+              .onRef("pro.id", "=", "prol.purchaseReturnOrderId")
+              .onRef("pro.companyId", "=", "prol.companyId")
+          )
+          .select([
+            "prol.id as id",
+            "prol.quantityShipped as quantityShipped",
+            "pro.status as status"
+          ])
+          .where("prol.id", "in", linkedReturnLineIds)
+          .where("prol.companyId", "=", companyId)
+          .forUpdate()
+          .execute();
+
+        const shippedAtPreflight = new Map(
+          linkedReturns.map((row: any) => [
+            row.purchaseReturnOrderLineId as string,
+            Number(row.purchaseReturnOrderLine?.quantityShipped ?? 0)
+          ])
+        );
+        for (const fresh of freshReturnLines) {
+          if (["Draft", "To Ship"].includes(fresh.status ?? "")) {
+            throw new Error(
+              "A linked supplier return was reopened while closing; please retry."
+            );
+          }
+          const before = shippedAtPreflight.get(fresh.id) ?? 0;
+          if (Math.abs(Number(fresh.quantityShipped ?? 0) - before) > EPSILON) {
+            throw new Error(
+              "A linked supplier return shipped while closing; please retry."
+            );
+          }
+        }
+      }
+
       const freshPlan: DispositionRow[] = itemRows.map((row) => ({
         id: row.id,
         itemId: row.itemId,
@@ -909,7 +1279,8 @@ export async function closeIssue(
         for (const link of row.links) {
           if (
             !link.trackedEntityStatus ||
-            link.trackedEntityStatus === "Consumed"
+            (link.trackedEntityStatus === "Consumed" &&
+              !returnedEntityIds.has(link.trackedEntityId))
           ) {
             throw new Error(
               "A tracked entity changed while closing; please retry."
@@ -975,8 +1346,17 @@ export async function closeIssue(
           row.disposition === "Scrap" ||
           row.disposition === "Return to Supplier"
         ) {
+          // Entities that left via a linked supplier-return shipment are
+          // Consumed with a closed genealogy — they stay Consumed.
           const idsToFlip = row.links
-            .filter((l) => l.trackedEntityStatus !== "Rejected")
+            .filter(
+              (l) =>
+                l.trackedEntityStatus !== "Rejected" &&
+                !(
+                  returnedEntityIds.has(l.trackedEntityId) &&
+                  l.trackedEntityStatus === "Consumed"
+                )
+            )
             .map((l) => l.trackedEntityId);
           if (idsToFlip.length > 0) {
             await trx

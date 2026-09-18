@@ -1,4 +1,4 @@
-/* Hand-laid architecture diagrams for /docs/platform/architecture. See `architecture-kit.tsx`
+/* Hand-laid architecture diagrams for /docs/building/architecture. See `architecture-kit.tsx`
  * for the shape vocabulary and why these are drawn by hand rather than generated.
  *
  * Editing one means moving coordinates. That is the trade: an auto-layout engine is

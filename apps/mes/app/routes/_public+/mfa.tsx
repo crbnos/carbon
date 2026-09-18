@@ -142,7 +142,7 @@ function MfaCodeField({ result }: { result?: MfaResult }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" />;
+  return <InputOTP name="code" label="" autoFocus />;
 }
 
 export default function MfaRoute() {
@@ -190,6 +190,7 @@ export default function MfaRoute() {
             <MfaCodeField result={fetcher.data} />
 
             <Submit
+              hideShortcutKey
               size="lg"
               className="w-full"
               withBlocker={false}

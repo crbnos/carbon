@@ -2,8 +2,8 @@ import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { GetStartedEmail, WelcomeEmail } from "@carbon/documents/email";
-import { RESEND_DOMAIN } from "@carbon/env";
-import { resend, sendEmail } from "@carbon/lib/resend.server";
+import { EMAIL_DOMAIN, sendEmail } from "@carbon/lib/email.server";
+import { getResend } from "@carbon/lib/resend.server";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { getTwentyClient } from "@carbon/lib/twenty.server";
 import { render } from "@react-email/components";
@@ -54,17 +54,27 @@ export const onboardFunction = inngest.createFunction(
             companyId
           );
 
-          try {
-            await resend.contacts.create({
-              email: user.email,
-              firstName: user.firstName,
-              lastName: user.lastName,
-              unsubscribed: false,
-              audienceId: process.env.RESEND_AUDIENCE_ID!
-            });
-            logger.info("Successfully created resend contact for:", user.email);
-          } catch (error) {
-            logger.error("Error creating resend contact", error);
+          // Skipped rather than attempted when Resend is not configured:
+          // a self-hosted install has no marketing audience to add anyone
+          // to, and onboarding should not depend on someone else's SaaS.
+          const resend = getResend();
+          const audienceId = process.env.RESEND_AUDIENCE_ID;
+          if (resend && audienceId) {
+            try {
+              await resend.contacts.create({
+                email: user.email,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                unsubscribed: false,
+                audienceId
+              });
+              logger.info(
+                "Successfully created resend contact for:",
+                user.email
+              );
+            } catch (error) {
+              logger.error("Error creating resend contact", error);
+            }
           }
         });
 
@@ -267,9 +277,9 @@ export const onboardFunction = inngest.createFunction(
 
         if (sendOnboardingEmail) {
           const from = `Chase from Carbon <${
-            RESEND_DOMAIN === "carbon.ms"
+            EMAIL_DOMAIN === "carbon.ms"
               ? "chase@carbon.ms"
-              : `no-reply@${RESEND_DOMAIN}`
+              : `no-reply@${EMAIL_DOMAIN}`
           }>`;
           await step.run("send-welcome-email", async () => {
             await sendEmail({
@@ -285,9 +295,9 @@ export const onboardFunction = inngest.createFunction(
 
         if (sendOnboardingEmail) {
           const from = `Info from Carbon <${
-            RESEND_DOMAIN === "carbon.ms"
+            EMAIL_DOMAIN === "carbon.ms"
               ? "info@carbon.ms"
-              : `no-reply@${RESEND_DOMAIN}`
+              : `no-reply@${EMAIL_DOMAIN}`
           }>`;
           await step.run("send-get-started-email", async () => {
             await sendEmail({

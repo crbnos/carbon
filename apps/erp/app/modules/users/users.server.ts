@@ -888,14 +888,20 @@ export async function insertInvite(
   client: SupabaseClient<Database>,
   invite: InviteInsert
 ) {
-  return client
-    .from("invite")
-    .upsert([{ ...invite, acceptedAt: null }], {
-      onConflict: "email, companyId",
-      ignoreDuplicates: false
-    })
-    .select("*")
-    .single();
+  return (
+    client
+      .from("invite")
+      // Re-inviting an email that already has an invite row reuses it via the
+      // onConflict upsert. Clear both terminal states so a previously revoked or
+      // accepted invite becomes redeemable again — otherwise the acceptance
+      // loader (invite.$code.tsx) rejects the row and it can never be accepted.
+      .upsert([{ ...invite, acceptedAt: null, revokedAt: null }], {
+        onConflict: "email, companyId",
+        ignoreDuplicates: false
+      })
+      .select("*")
+      .single()
+  );
 }
 
 async function insertSupplierAccount(

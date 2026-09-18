@@ -333,8 +333,14 @@ export async function requirePermissions(
   }
 
   let role: string | undefined;
+  let sub: string | undefined;
   try {
-    role = (JSON.parse(atob(parts[1]!)) as { role?: string }).role;
+    const claims = JSON.parse(atob(parts[1]!)) as {
+      role?: string;
+      sub?: string;
+    };
+    role = claims.role;
+    sub = claims.sub;
   } catch {
     throw new Error("Invalid authorization token");
   }
@@ -344,6 +350,13 @@ export async function requirePermissions(
   }
 
   if (role === "authenticated") {
+    // Bind the payload userId to the token's subject — permissions are looked
+    // up for userId, so accepting a mismatched one would let any authenticated
+    // caller borrow another member's permissions. The gateway (verify_jwt) has
+    // already verified the signature.
+    if (!sub || sub !== userId) {
+      throw new Error("userId does not match the authenticated user");
+    }
     const claimsResult = await serviceRole.rpc("get_claims", {
       uid: userId,
       company: companyId,
@@ -359,6 +372,20 @@ export async function requirePermissions(
 
     if (!checkPermissions(parsed.permissions, companyId, permissions)) {
       throw new Error("Insufficient permissions");
+    }
+
+    // With no specific permission required, checkPermissions passes for ANY
+    // authenticated user — still require membership of the claimed company
+    // (some permission array naming it) before handing back the service role.
+    if (Object.keys(permissions).length === 0) {
+      const isMember = Object.values(parsed.permissions).some((permission) =>
+        (["view", "create", "update", "delete"] as const).some((action) =>
+          permission[action].includes(companyId)
+        )
+      );
+      if (!isMember) {
+        throw new Error("Insufficient permissions");
+      }
     }
 
     return serviceRole;

@@ -25,6 +25,10 @@ msgstr "{0} Активных"
 msgid "{0} ago"
 msgstr "{0} назад"
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "{0} jobs"
+msgstr "{0} производственные заказы"
+
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
@@ -62,6 +66,9 @@ msgstr "{fails} записанных отказов будут НЕ заверш
 
 msgid "+{overflow} more"
 msgstr "+{overflow} ещё"
+
+msgid "A previous completion did not finish. Retrying resumes the remaining steps — quantities are not double-counted."
+msgstr "Предыдущее выполнение не завершилось. Повторное выполнение возобновляет оставшиеся шаги — количество не учитывается дважды."
 
 msgid "About"
 msgstr "О системе"
@@ -138,6 +145,9 @@ msgstr "Вы уверены, что хотите завершить эту оп�
 msgid "Are you sure you want to leave this page?"
 msgstr "Вы уверены, что хотите покинуть эту страницу?"
 
+msgid "Assembly steps"
+msgstr "Шаги сборки"
+
 msgid "Assigned"
 msgstr "Назначенные"
 
@@ -168,6 +178,9 @@ msgstr "Номер партии {0}"
 
 msgid "Batch number is required"
 msgstr "Номер партии обязателен"
+
+msgid "Batched jobs"
+msgstr "Производственные заказы в серии"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Отставание на {daysBehindTarget} дн."
@@ -265,11 +278,17 @@ msgstr "Завершить"
 msgid "Complete All"
 msgstr "Завершить все"
 
+msgid "Complete Batch"
+msgstr "Завершить партию"
+
 msgid "Complete passed"
 msgstr "Завершить пройденные"
 
 msgid "Completed"
 msgstr "Завершено"
+
+msgid "Completing"
+msgstr "Завершение"
 
 msgid "Connecting"
 msgstr "Подключение"
@@ -457,7 +476,7 @@ msgstr "Истек срок"
 
 #. placeholder {0}: formatDate(date)
 msgid "Expired {0}"
-msgstr "Истек {0}"
+msgstr "Истек срок {0}"
 
 msgid "Expires <0/>"
 msgstr "Истекает <0/>"
@@ -473,6 +492,9 @@ msgstr "Неудачные функции"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Не удалось выполнить корректировку запасов"
+
+msgid "Failed to convert image"
+msgstr "Не удалось преобразовать изображение"
 
 msgid "Failed to end operations"
 msgstr "Не удалось завершить операции"
@@ -535,6 +557,9 @@ msgstr "Завершить с неподобранным материалом?"
 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
+
+msgid "General"
+msgstr "Общие"
 
 msgid "Go back to operation"
 msgstr "Вернуться к операции"
@@ -633,6 +658,9 @@ msgstr "Производственные заказы"
 msgid "Keep picking"
 msgstr "Продолжить отбор"
 
+msgid "Keyboard shortcuts"
+msgstr "Клавиатурные сокращения"
+
 msgid "Kit"
 msgstr "Комплект"
 
@@ -644,6 +672,9 @@ msgstr "Последнее завершено"
 
 msgid "Learn more"
 msgstr "Узнать больше"
+
+msgid "Leave an operation at 0 to skip it — it returns to the schedule un-run with no time or quantity recorded."
+msgstr "Оставьте операцию на 0, чтобы пропустить её — она возвращается в график не запущенная без записанного времени и количества."
 
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
@@ -723,6 +754,9 @@ msgstr "Вручную убрать позиции из запасов"
 msgid "Mark Short"
 msgstr "Отметить как недостача"
 
+msgid "Mark the step done / record"
+msgstr "Отметить шаг как готовый / запись"
+
 msgid "matches"
 msgstr "соответствует"
 
@@ -766,6 +800,9 @@ msgstr "Мои часы"
 msgid "Name"
 msgstr "Имя"
 
+msgid "Navigation"
+msgstr "Навигация"
+
 msgid "New"
 msgstr "Новое"
 
@@ -777,6 +814,9 @@ msgstr "Новые в первую очередь"
 
 msgid "Next"
 msgstr "Далее"
+
+msgid "Next step"
+msgstr "Следующий шаг"
 
 msgid "No"
 msgstr "Нет"
@@ -873,6 +913,9 @@ msgstr "Нет серийных номеров"
 
 msgid "No serial numbers found"
 msgstr "Серийные номера не найдены"
+
+msgid "No shortcuts available on this page."
+msgstr "На этой странице нет доступных сокращений."
 
 msgid "No spare parts added yet"
 msgstr "Запасные части ещё не добавлены"
@@ -992,6 +1035,9 @@ msgstr "Выбрать отслеживаемый товар"
 msgid "Picked"
 msgstr "Подобрано"
 
+msgid "Picked as"
+msgstr "Отобрано как"
+
 msgid "Picked quantity"
 msgstr "Выбранное количество"
 
@@ -1003,6 +1049,12 @@ msgstr "Столбец {0} взят с позиции: {1} из {2}"
 
 msgid "Picking"
 msgstr "Отбор"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Отбор вместо {substitutedFrom}, номенклатура в производственном заказе"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Отбор вместо {substitutedFrom}, номенклатура в производственном заказе, для {substitutedAssemblies} сборок"
 
 msgid "Pin Out"
 msgstr "Выход по PIN"
@@ -1025,8 +1077,14 @@ msgstr "Назад"
 msgid "Preventive"
 msgstr "Предупреждающее"
 
+msgid "Previous step"
+msgstr "Предыдущий шаг"
+
 msgid "Print"
 msgstr "Печать"
+
+msgid "Print batch list"
+msgstr "Печать списка серий"
 
 msgid "Printer Settings"
 msgstr "Настройки принтера"
@@ -1112,6 +1170,9 @@ msgstr "Открыть заново узел и создать единицу д
 msgid "Result"
 msgstr "Результат"
 
+msgid "Retry Completion"
+msgstr "Повторить выполнение"
+
 msgid "Rework"
 msgstr "Доработка"
 
@@ -1130,26 +1191,29 @@ msgstr "Заказ покупателя"
 msgid "Save"
 msgstr "Сохранить"
 
+msgid "Save the form you're editing"
+msgstr "Сохранить редактируемую форму"
+
 msgid "Scan"
 msgstr "Сканировать"
 
 msgid "Scan a tracked entity to add the first sample column."
-msgstr "Отсканируйте отслеживаемый объект, чтобы добавить первый столбец образца."
+msgstr "Сканировать отслеживаемый объект, чтобы добавить первый столбец образца."
 
 msgid "Scan or enter serial number"
-msgstr "Отсканируйте или введите серийный номер"
+msgstr "Сканировать или ввести серийный номер"
 
 msgid "Scan or enter tracked entity ID, serial, or batch"
-msgstr "Отсканируйте или введите ID отслеживаемого объекта, серийный номер или серию"
+msgstr "Сканировать или ввести идентификатор отслеживаемого объекта, серийный номер или серию"
 
 msgid "Scan or enter tracking number"
-msgstr "Отсканируйте или введите номер отслеживания"
+msgstr "Сканировать или ввести номер отслеживания"
 
 msgid "Scan or search serial number..."
-msgstr "Отсканируйте или найдите серийный номер..."
+msgstr "Сканировать или найти серийный номер..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "Отсканируйте или выберите отслеживаемый объект из этой партии для добавления его как столбца образца, затем запишите его результат в сетку."
+msgstr "Сканировать или выбрать отслеживаемый объект из этой партии, чтобы добавить его как столбец образца, затем записать его результат в таблицу."
 
 msgid "Schedule"
 msgstr "Расписание"
@@ -1286,6 +1350,9 @@ msgstr "Недостача"
 msgid "Short pick {itemName}"
 msgstr "Короткий отбор {itemName}"
 
+msgid "Show this overlay"
+msgstr "Показать это окно"
+
 msgid "Sign in with Google"
 msgstr "Войти через Google"
 
@@ -1321,6 +1388,9 @@ msgstr "Использованные запасные части"
 
 msgid "Start"
 msgstr "Старт"
+
+msgid "Start or pause the operation"
+msgstr "Запустить или приостановить операцию"
 
 msgid "Station User"
 msgstr "Пользователь станции"
@@ -1384,7 +1454,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "Эти позиции еще содержат материал для отбора. Завершение сейчас отметит список как частичный."
 
 msgid "This lot is expired and can't be picked."
-msgstr "Эта партия истекла и не может быть отобрана."
+msgstr "Срок этой партии истек, и она не может быть отобрана."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Эта деталь была произведена на заказ. Списание может открыть заново ее маршрут для создания замены."
@@ -1398,6 +1468,9 @@ msgstr "Эта единица будет окончательно списана
 msgid "Thumbnail"
 msgstr "Миниатюра"
 
+msgid "Time and cost split across jobs proportionally to quantity."
+msgstr "Время и себестоимость распределяются между производственными заказами пропорционально количеству."
+
 msgid "Time Entries"
 msgstr "Записи учёта времени"
 
@@ -1407,6 +1480,9 @@ msgstr "Отработанное время: {0}"
 
 msgid "Today"
 msgstr "Сегодня"
+
+msgid "Toggle the sidebar"
+msgstr "Открыть/закрыть боковую панель"
 
 msgid "Tools"
 msgstr "Инструменты"
@@ -1524,7 +1600,7 @@ msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowl
 msgstr "Вы начали работу в <0/>. Ниже вы можете изменить время окончания работы или подтвердить, что вы все еще работаете."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "Вы проработали {hoursElapsed} часов. Вы забыли завершить работу?"
+msgstr "Вы находились на работе {hoursElapsed} часов. Вы забыли записать окончание работы?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ваша учетная запись еще не входит ни в одну Организацию. Завершите подготовку к работе в Carbon ERP, чтобы продолжить."

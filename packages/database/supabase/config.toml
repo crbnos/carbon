@@ -145,13 +145,13 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
-[functions.image-resizer]
-enabled = true
-verify_jwt = false
-
 [functions.logo-resizer]
 enabled = true
 verify_jwt = false
+
+[functions.process-image]
+enabled = true
+verify_jwt = true
 
 [functions.sync]
 enabled = true
@@ -213,6 +213,11 @@ entrypoint = "./functions/correct-stock-movement/index.ts"
 enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-nonconformance/index.ts"
+
+[functions.batch-operations]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/batch-operations/index.ts"
 
 
 [functions.transcription]

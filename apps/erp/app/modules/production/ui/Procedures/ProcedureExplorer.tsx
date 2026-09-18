@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Array as ArrayInput,
   Hidden,
@@ -26,8 +25,8 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
   Label,
+  ShortcutKey,
   Tabs,
   TabsContent,
   TabsList,
@@ -37,18 +36,15 @@ import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  toast,
   useDebounce,
   useDisclosure,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { Reorder, useDragControls } from "framer-motion";
-import { nanoid } from "nanoid";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
@@ -68,9 +64,10 @@ import { Empty } from "~/components";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
 import { procedureStepType } from "~/modules/shared";
-import { getPrivateUrl, path } from "~/utils/path";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
+import { path } from "~/utils/path";
 import {
   procedureParameterValidator,
   procedureStepValidator
@@ -80,7 +77,6 @@ import type { Procedure, ProcedureParameter, ProcedureStep } from "../../types";
 const logger = getLogger("erp", "procedureexplorer");
 
 export default function ProcedureExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
   const procedureData = useRouteData<{
@@ -217,24 +213,30 @@ export default function ProcedureExplorer() {
   };
 
   const newAttributeRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+a": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      if (!isDisabled) {
-        newAttributeRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addAttribute,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        if (!isDisabled) {
+          newAttributeRef.current?.click();
+        }
       }
     }
-  });
+  ]);
 
   const newParameterRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+p": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      if (!isDisabled) {
-        newParameterRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addParameter,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        if (!isDisabled) {
+          newParameterRef.current?.click();
+        }
       }
     }
-  });
+  ]);
 
   const attributeMap = useMemo(
     () =>
@@ -342,7 +344,10 @@ export default function ProcedureExplorer() {
                       <span>
                         <Trans>Add Step</Trans>
                       </span>
-                      <Kbd>{prettifyShortcut("Command+Shift+a")}</Kbd>
+                      <ShortcutKey
+                        shortcut={EXPLORER_SHORTCUTS.addAttribute}
+                        variant="small"
+                      />
                     </HStack>
                     {isDisabled && (
                       <span className="text-muted-foreground">
@@ -423,7 +428,10 @@ export default function ProcedureExplorer() {
                     <span>
                       <Trans>Add Parameter</Trans>
                     </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+p")}</Kbd>
+                    <ShortcutKey
+                      shortcut={EXPLORER_SHORTCUTS.addParameter}
+                      variant="small"
+                    />
                   </HStack>
                 </TooltipContent>
               </Tooltip>
@@ -730,11 +738,6 @@ function ProcedureStepForm({
     }
   });
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
   const fetcher = useFetcher<{
     success: boolean;
   }>();
@@ -761,23 +764,7 @@ function ProcedureStepForm({
 
   const isEditing = !!initialValues.id;
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   return (
     <Drawer

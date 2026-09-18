@@ -30,6 +30,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { items, action, locationId } = await request.json();
 
   if (typeof locationId !== "string") {
+    logger.warn("Planning update rejected: locationId missing", {
+      companyId,
+      userId,
+      action,
+      locationIdType: typeof locationId
+    });
     return data(
       {
         success: false,
@@ -40,6 +46,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (typeof action !== "string") {
+    logger.warn("Planning update rejected: action missing", {
+      companyId,
+      userId,
+      locationId,
+      actionType: typeof action
+    });
     return data(
       {
         success: false,
@@ -82,6 +94,13 @@ export async function action({ request }: ActionFunctionArgs) {
           return error.message;
         });
 
+        logger.warn("Planning order payload failed validation", {
+          companyId,
+          userId,
+          locationId,
+          errors: errorMessages,
+          issues: parsedItems.error.issues
+        });
         return data(
           {
             success: false,
@@ -94,6 +113,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const itemsToOrder = parsedItems.data;
       if (itemsToOrder.length === 0) {
+        logger.warn("Planning order payload had no items", {
+          companyId,
+          userId,
+          locationId
+        });
         return data(
           {
             success: false,
@@ -464,6 +488,15 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (errors.length > 0 && processedItems === 0) {
+          logger.error("Failed to process any planning orders", {
+            companyId,
+            userId,
+            locationId,
+            itemIds: Array.from(itemIds),
+            supplierIds: Array.from(supplierIds),
+            periodIds: Array.from(periodIds),
+            errors
+          });
           return data(
             {
               success: false,
@@ -495,6 +528,27 @@ export async function action({ request }: ActionFunctionArgs) {
           ).values()
         );
 
+        if (errors.length > 0) {
+          logger.warn("Planning orders processed with errors", {
+            companyId,
+            userId,
+            locationId,
+            processedItems,
+            totalItems: itemsToOrder.length,
+            purchaseOrderIds: purchaseOrders.map((po) => po.readableId),
+            errors
+          });
+        } else {
+          logger.info("Planning orders processed", {
+            companyId,
+            userId,
+            locationId,
+            processedItems,
+            totalItems: itemsToOrder.length,
+            purchaseOrderIds: purchaseOrders.map((po) => po.readableId)
+          });
+        }
+
         return {
           success: processedItems > 0,
           message,
@@ -504,7 +558,12 @@ export async function action({ request }: ActionFunctionArgs) {
           errors: errors.length > 0 ? errors : undefined
         };
       } catch (error) {
-        logger.error("Unexpected error processing purchase orders", { error });
+        logger.error("Unexpected error processing purchase orders", {
+          companyId,
+          userId,
+          locationId,
+          error
+        });
         return data(
           {
             success: false,

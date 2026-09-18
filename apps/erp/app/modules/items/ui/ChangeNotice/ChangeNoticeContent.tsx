@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
 import {
   Card,
@@ -6,16 +5,14 @@ import {
   CardHeader,
   CardTitle,
   generateHTML,
-  toast,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useFetcher } from "react-router";
-import { usePermissions, useUser } from "~/hooks";
-import { getPrivateUrl, path } from "~/utils/path";
+import { useImageUpload, usePermissions } from "~/hooks";
+import { path } from "~/utils/path";
 
 // The two rich-text columns on the changeOrder header (reasonForChange +
 // description). Both are stored as JSON and read/written the same way; the
@@ -40,33 +37,12 @@ export function ChangeNoticeContentSection({
   // (e.g. the accordion rail) supplies the title + frame.
   embedded?: boolean;
 }) {
-  const {
-    company: { id: companyId }
-  } = useUser();
-  const { carbon } = useCarbon();
-  const { t } = useLingui();
   const permissions = usePermissions();
   const fetcher = useFetcher<{}>();
 
   const [content, setContent] = useState(initialContent ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const onUpdateContent = useDebounce(
     (value: JSONContent) => {

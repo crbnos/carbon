@@ -1,6 +1,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -136,6 +137,7 @@ import {
 import { StepLinkEditor } from "~/components/StepLinkEditor";
 import {
   useCurrencyDecimals,
+  useImageUpload,
   usePermissions,
   useRouteData,
   useUrlParams,
@@ -186,6 +188,13 @@ export type Operation = z.infer<typeof jobOperationValidator> & {
   tags: string[] | null;
   workInstruction: JSONContent | null;
   reworkId: string | null;
+  // Embedded by getJobOperationsByMethodId: which operation batch (if any)
+  // this operation runs in. Only Active/Completing render a badge.
+  jobOperationBatch?: {
+    id: string;
+    readableId: string | null;
+    status: string | null;
+  } | null;
 };
 
 type ItemWithData = Item & {
@@ -258,11 +267,24 @@ function makeItem(
     id: operation.id!,
     title: (
       <VStack spacing={0}>
-        <HStack spacing={2}>
-          <h3 className="font-semibold truncate cursor-pointer">
+        <HStack spacing={2} className="w-full min-w-0">
+          <h3 className="font-semibold min-w-0 truncate cursor-pointer">
             {operation.description}
           </h3>
           {operation.reworkId && <Badge variant="red">Rework</Badge>}
+          {operation.jobOperationBatch &&
+            (operation.jobOperationBatch.status === "Active" ||
+              operation.jobOperationBatch.status === "Completing") && (
+              <Badge
+                variant={
+                  operation.jobOperationBatch.status === "Completing"
+                    ? "yellow"
+                    : "secondary"
+                }
+              >
+                {operation.jobOperationBatch.readableId}
+              </Badge>
+            )}
         </HStack>
         {operation.operationType === "Outside Processing" && (
           <SupplierProcessPreview
@@ -703,23 +725,7 @@ const JobBillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, { upsert: true });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`parts/${selectedItemId}`);
 
   const [productionEvents, setProductionEvents] = useState<
     Database["public"]["Tables"]["productionEvent"]["Row"][]
@@ -1292,23 +1298,7 @@ function StepsForm({
     [allItems, materialItemIds]
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -1316,11 +1306,18 @@ function StepsForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
       const result = await carbon.storage
         .from("private")
-        .upload(fileName, file);
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -1336,6 +1333,8 @@ function StepsForm({
           annotations: []
         }
       ]);
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setDraftUploading(false);
     }
@@ -1943,11 +1942,18 @@ function JobStepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
       const result = await carbon.storage
         .from("private")
-        .upload(fileName, file);
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -1960,6 +1966,8 @@ function JobStepSlides({
         method: "post",
         action: path.to.newJobOperationStepSlide
       });
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setUploading(false);
     }
@@ -2152,28 +2160,8 @@ function StepsListItem({
   const date = updatedAt ?? createdAt;
 
   const unitOfMeasures = useUnitOfMeasure();
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 

@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Button,
   Copy,
@@ -34,6 +35,7 @@ import {
   LuTruck
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
+import type { FetcherWithComponents } from "react-router";
 import { Link, useFetcher, useParams } from "react-router";
 import { useAuditLog } from "~/components/AuditLog";
 import { usePanels } from "~/components/Layout/Panels";
@@ -43,7 +45,6 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
 import { isInvoicePayable } from "~/modules/invoicing";
 import { getPayInvoiceHref } from "~/modules/invoicing/ui/Payment/PaymentForm";
-import type { action } from "~/routes/x+/sales-invoice+/$invoiceId.post";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import SalesInvoicePostModal from "./SalesInvoicePostModal";
@@ -66,7 +67,17 @@ const SalesInvoiceHeader = () => {
     variant: "dropdown"
   });
 
-  const postFetcher = useFetcher<typeof action>();
+  // Post submissions run through the violation hook's fetcher so a blocked
+  // post opens the shared violation modal, with acknowledge-and-resubmit for
+  // warns. The post modal closes itself on success.
+  const postRules = useRuleViolations({
+    action: path.to.salesInvoicePost(invoiceId ?? "")
+  });
+  const postFetcher = postRules.fetcher as FetcherWithComponents<{
+    success?: boolean;
+    message?: string;
+    violations?: unknown[];
+  }>;
 
   const { carbon } = useCarbon();
   const [linesNotAssociatedWithSO, setLinesNotAssociatedWithSO] = useState<
@@ -457,6 +468,7 @@ const SalesInvoiceHeader = () => {
           defaultCc={routeData?.defaultCc ?? []}
         />
       )}
+      <postRules.ViolationModal />
       {voidModal.isOpen && (
         <SalesInvoiceVoidModal onClose={voidModal.onClose} />
       )}

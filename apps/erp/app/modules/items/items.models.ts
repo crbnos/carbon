@@ -445,13 +445,27 @@ export const methodMaterialValidator = z.object({
   unitOfMeasureCode: z
     .string()
     .min(1, { message: "Unit of Measure is required" }),
-  storageUnitIds: z.string().transform((val) => {
-    try {
-      return JSON.parse(val) as Record<string, string>;
-    } catch {
-      return {};
-    }
-  })
+  // A location → storageUnitId map. The BoM web form submits it as a JSON string
+  // (`<Hidden value={JSON.stringify(...)} />`); the MCP/API layer sends the object
+  // map directly. `preprocess` accepts both — a string is JSON-parsed (a malformed
+  // string stays a string and is REJECTED by the record below, never silently
+  // stored) — and the input JSON Schema published to MCP is a clean object map.
+  // `nullish` lets a caller omit it or send `null` to clear (the service applies
+  // the create/update semantics: omitted → preserve on update / {} on create,
+  // explicit null/{} → clear).
+  storageUnitIds: z
+    .preprocess(
+      (val) => {
+        if (typeof val !== "string") return val;
+        try {
+          return JSON.parse(val);
+        } catch {
+          return val;
+        }
+      },
+      z.record(z.string(), z.string())
+    )
+    .nullish()
 });
 
 export const methodOperationValidator = z
@@ -678,7 +692,8 @@ export const supersessionModeMeta: Record<
   },
   "Prefer New": {
     color: "blue",
-    description: "Default to the successor; old part as fallback only"
+    description:
+      "Plan and build with the successor; picking falls back to the old part only while the successor is out of stock"
   },
   "Stock Only": {
     color: "orange",
@@ -705,7 +720,10 @@ export const itemSupersessionValidator = z
     minimumReserveQuantity: zfd.numeric(z.number().min(0).optional())
   })
   .refine(
-    (data) => (data.supersessionMode ? !!data.discontinuationDate : true),
+    (data) =>
+      data.supersessionMode && data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
     {
       message: "Discontinuation date is required",
       path: ["discontinuationDate"]
@@ -737,6 +755,39 @@ export const itemSupersessionValidator = z
     }
   );
 
+export const predecessorSupersessionValidator = z
+  .object({
+    predecessorItemId: z.string().min(1, { message: "Part is required" }),
+    supersessionMode: z.enum(supersessionModes),
+    discontinuationDate: zfd.text(z.string().optional()),
+    successorEffectivityDate: zfd.text(z.string().optional()),
+    conversionFactor: zfd.numeric(z.number().positive().optional())
+  })
+  .refine((data) => data.supersessionMode !== "No Stock", {
+    message: "No Stock has no successor; set it on the part itself",
+    path: ["supersessionMode"]
+  })
+  .refine(
+    (data) =>
+      data.supersessionMode !== "Consume First"
+        ? !!data.discontinuationDate
+        : true,
+    {
+      message: "Discontinuation date is required",
+      path: ["discontinuationDate"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.successorEffectivityDate && data.discontinuationDate
+        ? data.successorEffectivityDate >= data.discontinuationDate
+        : true,
+    {
+      message:
+        "Successor effectivity date must be on or after the discontinuation date",
+      path: ["successorEffectivityDate"]
+    }
+  );
 export const itemPurchasingValidator = z.object({
   itemId: z.string().min(1, { message: "Item ID is required" }),
   preferredSupplierId: zfd.text(z.string().optional()),

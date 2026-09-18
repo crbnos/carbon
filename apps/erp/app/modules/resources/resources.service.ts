@@ -1,4 +1,9 @@
 import type { Database, Json } from "@carbon/database";
+import {
+  type BatchRules,
+  compactBatchRules,
+  resolveBatchRules
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -209,11 +214,12 @@ export async function getAbilities(
   const employeeFilter = args.filters?.find((f) => f.column === "employees");
   const filters = args.filters?.filter((f) => f.column !== "employees");
 
+  // Name/search/sort resolve against the `abilities` view (name comes from the
+  // linked process). employeeAbility is stitched in one .in() query afterward
+  // rather than embedded, so the read never depends on a view→table embed.
   let query = client
-    .from("ability")
-    .select(`*, employeeAbility(employeeId, expiresAt)`, {
-      count: "exact"
-    })
+    .from("abilities")
+    .select(`*`, { count: "exact" })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -238,7 +244,35 @@ export async function getAbilities(
   query = setGenericQueryFilters(query, { ...args, filters }, [
     { column: "name", ascending: true }
   ]);
-  return query;
+
+  const result = await query;
+  if (result.error || !result.data) return result;
+
+  const abilityIds = result.data.map((a) => a.id).filter(Boolean) as string[];
+  const employeeAbilities = await client
+    .from("employeeAbility")
+    .select("abilityId, employeeId, expiresAt")
+    .eq("companyId", companyId)
+    .in("abilityId", abilityIds.length > 0 ? abilityIds : [""]);
+
+  const byAbility = new Map<
+    string,
+    { employeeId: string; expiresAt: string | null }[]
+  >();
+  for (const ea of employeeAbilities.data ?? []) {
+    if (!ea.abilityId) continue;
+    const list = byAbility.get(ea.abilityId) ?? [];
+    list.push({ employeeId: ea.employeeId, expiresAt: ea.expiresAt });
+    byAbility.set(ea.abilityId, list);
+  }
+
+  return {
+    ...result,
+    data: result.data.map((a) => ({
+      ...a,
+      employeeAbility: a.id ? (byAbility.get(a.id) ?? []) : []
+    }))
+  };
 }
 
 export async function getAbilitiesList(
@@ -246,7 +280,7 @@ export async function getAbilitiesList(
   companyId: string
 ) {
   return client
-    .from("ability")
+    .from("abilities")
     .select(`id, name`)
     .eq("companyId", companyId)
     .eq("active", true)
@@ -257,14 +291,33 @@ export async function getAbility(
   client: SupabaseClient<Database>,
   abilityId: string
 ) {
-  return client
-    .from("ability")
-    .select(`*, employeeAbility(id, employeeId, lastTrainingDate, expiresAt)`, {
-      count: "exact"
-    })
+  // Name resolves through the `abilities` view (from the linked process);
+  // employeeAbility is stitched afterward so this never relies on a view embed.
+  const ability = await client
+    .from("abilities")
+    .select(`*`)
     .eq("id", abilityId)
     .eq("active", true)
     .single();
+
+  if (ability.error || !ability.data) return ability;
+
+  const employeeAbility = await client
+    .from("employeeAbility")
+    .select("id, employeeId, lastTrainingDate, expiresAt")
+    .eq("abilityId", abilityId);
+
+  return {
+    ...ability,
+    // The view types id/name as nullable, but the INNER JOIN to a NOT-NULL
+    // process guarantees both — coerce so consumers keep non-null id/name.
+    data: {
+      ...ability.data,
+      id: ability.data.id ?? "",
+      name: ability.data.name ?? "",
+      employeeAbility: employeeAbility.data ?? []
+    }
+  };
 }
 
 export async function getContractor(
@@ -311,7 +364,7 @@ export async function getEmployeeAbilities(
 ) {
   return client
     .from("employeeAbility")
-    .select(`*, ability(id, name, curve, shadowWeeks)`)
+    .select(`*, ability(id, curve, shadowWeeks, process(name))`)
     .eq("employeeId", employeeId)
     .eq("companyId", companyId);
 }
@@ -1115,16 +1168,39 @@ export async function getWorkCentersListWithBlockingStatus(
     .order("name");
 }
 
-export async function insertAbility(
+/**
+ * Processes that do not yet have an ability. Feeds the New Ability picker so a
+ * planner can only mint an ability for a process that lacks one — an ability is
+ * a process's qualification, and a process may have at most one.
+ */
+export async function getProcessesWithoutAbility(
   client: SupabaseClient<Database>,
-  ability: {
-    name: string;
-    recertifyEveryDays?: number | null;
-    companyId: string;
-    createdBy: string;
-  }
+  companyId: string
 ) {
-  return client.from("ability").insert([ability]).select("*").single();
+  const abilities = await client
+    .from("ability")
+    .select("processId")
+    .eq("companyId", companyId);
+  if (abilities.error) return abilities;
+
+  const taken = new Set(
+    (abilities.data ?? [])
+      .map((a) => a.processId)
+      .filter((id): id is string => Boolean(id))
+  );
+
+  const processes = await client
+    .from("process")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .order("name");
+  if (processes.error) return processes;
+
+  return {
+    ...processes,
+    data: (processes.data ?? []).filter((p) => !taken.has(p.id))
+  };
 }
 
 export async function insertTrainingCompletion(
@@ -1179,12 +1255,14 @@ export async function getTrainingGrantedAbilityId(
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
-  ability: Partial<{
-    name: string;
-    recertifyEveryDays: number | null;
-  }>
+  ability: {
+    // Name is not stored — it derives from the linked process. Only the
+    // recertification cadence is editable on an ability.
+    name?: string;
+    recertifyEveryDays?: number | null;
+  }
 ) {
-  return client.from("ability").update(sanitize(ability)).eq("id", id);
+  return client.from("ability").update(ability).eq("id", id);
 }
 
 /**
@@ -1240,9 +1318,9 @@ export async function ensureProcessAbility(
   client: SupabaseClient<Database>,
   args: {
     processId: string;
-    processName: string;
     companyId: string;
     userId: string;
+    recertifyEveryDays?: number | null;
   }
 ) {
   const existing = await client
@@ -1256,17 +1334,19 @@ export async function ensureProcessAbility(
     return existing;
   }
 
+  // Name is not stored — it is the process's name, read live through the
+  // `abilities` view.
   return client
     .from("ability")
     .insert([
       {
-        name: args.processName,
         processId: args.processId,
         companyId: args.companyId,
         curve: {
           data: [{ week: 0, value: 100 }]
         },
         shadowWeeks: 0,
+        recertifyEveryDays: args.recertifyEveryDays ?? null,
         createdBy: args.userId
       }
     ])
@@ -1756,6 +1836,42 @@ export async function upsertPartner(
   }
 }
 
+// Fold the six per-dimension form fields into the sparse `batchRules` JSONB the
+// process row stores. All-default (or empty) → null, which reads back as today's
+// behavior via resolveBatchRules. Returns { batchRules } plus the six fields to
+// strip from the process write (they are not columns).
+function extractBatchRules<
+  T extends {
+    batchRuleItem?: BatchRules["item"];
+    batchRuleSubstance?: BatchRules["substance"];
+    batchRuleGrade?: BatchRules["grade"];
+    batchRuleDimension?: BatchRules["dimension"];
+    batchRuleForm?: BatchRules["form"];
+    batchRuleFinish?: BatchRules["finish"];
+  }
+>(source: T) {
+  const {
+    batchRuleItem,
+    batchRuleSubstance,
+    batchRuleGrade,
+    batchRuleDimension,
+    batchRuleForm,
+    batchRuleFinish,
+    ...rest
+  } = source;
+  const batchRules = compactBatchRules(
+    resolveBatchRules({
+      item: batchRuleItem,
+      substance: batchRuleSubstance,
+      grade: batchRuleGrade,
+      dimension: batchRuleDimension,
+      form: batchRuleForm,
+      finish: batchRuleFinish
+    })
+  ) as Json;
+  return { batchRules, rest };
+}
+
 export async function upsertProcess(
   client: SupabaseClient<Database>,
   process:
@@ -1772,12 +1888,14 @@ export async function upsertProcess(
       })
 ) {
   if ("createdBy" in process) {
-    const { workCenters, ...insert } = process;
+    const { batchRules, rest: withoutRules } = extractBatchRules(process);
+    const { workCenters, ...insert } = withoutRules;
     const processInsert = await client
       .from("process")
       .insert([
         {
           ...insert,
+          batchRules,
           defaultStandardFactor: insert.defaultStandardFactor ?? "Minutes/Piece"
         }
       ])
@@ -1806,10 +1924,14 @@ export async function upsertProcess(
 
     return processInsert;
   }
-  const { workCenters, ...update } = process;
+  const { batchRules, rest: withoutRules } = extractBatchRules(process);
+  const { workCenters, ...update } = withoutRules;
   const processUpdate = await client
     .from("process")
-    .update(sanitize(update))
+    // batchRules isn't in `update` — extractBatchRules destructured the six
+    // batchRule* form fields out and folded them into this value — so it must
+    // be added explicitly (null = all-default, and null must be written).
+    .update({ ...sanitize(update), batchRules })
     .eq("id", process.id);
   if (processUpdate.error) {
     return processUpdate;

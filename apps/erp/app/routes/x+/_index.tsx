@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { getAppUrl } from "@carbon/env";
+import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {
   type CheckStateRow,
   gatesDone,
@@ -157,7 +157,9 @@ export default function AppIndexRoute() {
       <div className="relative z-10 w-full h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
           <div className="mb-8">
-            <OnboardAgentWidget dismissed={agentDismissed} />
+            {!CONTROLLED_ENVIRONMENT && (
+              <OnboardAgentWidget dismissed={agentDismissed} />
+            )}
             <Greeting
               hour={greeting.hour}
               pick={greeting.pick}

@@ -1,0 +1,140 @@
+# Job completion: received quantity must equal completed quantity
+
+Branch `fix/job-completion-tracked-quantity`. Bug fix, no schema change.
+
+## Problem
+
+Completing a job whose made item is serial-tracked, from the ERP, when no unit was
+finished on the shop floor app:
+
+- `JobCompleteModal` (`apps/erp/app/modules/production/ui/Jobs/JobHeader.tsx`) locks
+  Quantity Completed to the sum of `Available` job serials. None are `Available`, so it
+  submits 0.
+- `complete_job_to_inventory` (newest body: `20260805023439_company-timezone-sql-functions.sql`)
+  receives one unit per unconsumed, unrejected job serial regardless of the quantity passed,
+  and flips them all `Available`.
+- `backflush_job_materials` prorates by `quantity / job.quantity`, so 0 consumes nothing.
+
+Result: the finished unit is in stock, its materials never leave stock, `job.quantityComplete`
+is 0. Completing again receives the same serial a second time.
+
+The lock dates from 2025-03-12 (`bce810a17`), when job serials were one unnumbered placeholder
+and got an identity only when finished on the shop floor app. Per-item serial sequences now
+split and number job serials at creation (`assign-serial-numbers`), so the units exist before
+any shop floor activity. The receipt code still carries the original author's TODO about which
+units go into inventory.
+
+Reproduced locally (rolled back) on the seeded serial job J000002: completing at 0 received
+serial J000002-01 and issued 0 of 30 materials; completing at 1 twice received it twice.
+
+## Change
+
+1. **Receipt receives exactly the completed quantity (SQL, new migration).**
+   Recreate `complete_job_to_inventory` verbatim from the newest body; change only the serial
+   branch:
+   - receivable units = job make-method serials not `Consumed`/`Rejected` and with no existing
+     `Assembly Output` / `Job Receipt` ledger row for this job;
+   - receive `p_quantity_complete - prior received` of them, ordering `Available` first (finished
+     on the shop floor app), then by `readableId`, then `createdAt`;
+   - flip only the received units to `Available`;
+   - never receive the same unit twice, so re-completion is safe;
+   - lock the job row first, so concurrent completions cannot compute the same delta;
+   - refuse when fewer single-unit serials are left than the units being completed, and
+     when the cumulative quantity would drop below what was already received.
+   The auto-complete path (`sync_finish_job_operation`) calls the same function and is fixed
+   with it.
+2. **Refuse completion at quantity ≤ 0** in `complete_job_to_inventory` (and therefore every
+   caller: ERP route, MCP tool, auto-complete) except Non-Inventory items, which keep current
+   behavior. The fully-scrapped auto-complete branch never calls the function and is untouched.
+3. **Dialog.** For a serial job whose serials are already split into quantity-1 units, unlock
+   Quantity Completed. The quantity is cumulative, like the database: units the job already
+   received are excluded, the default is what was received plus the unreceived `Available`
+   units (else the rest of the job quantity), the field runs from the received quantity to
+   received + receivable, and the preview lists only the units this completion adds. Keep the lock when the job
+   still has an unsplit placeholder (no serial sequence) — receiving those needs serial numbers,
+   which is out of scope. Complete Job is disabled at quantity ≤ 0 for stocked items; the
+   validator is unchanged, since Non-Inventory completions may still submit 0.
+
+## Out of scope
+
+- Unsplit serial placeholders (items without a serial sequence).
+- Batch-tracked made items: same lock; batch receipt already follows quantity; status handling
+  not yet checked.
+- Serial- or batch-tracked components: backflush skips them and only the shop floor app issues
+  them.
+- Repairing jobs already completed at 0 (Complete is disabled on completed jobs).
+- Interaction with the parked serial-number timing work (numbers assigned at production).
+
+## Verification
+
+- [x] SQL, rolled back, on the seeded serial job: complete at 0 refused; complete at 1 receives
+      one serial and backflushes 27 of 30 lines (the 3 tracked lines are skipped by design);
+      completing again receives nothing new.
+- [x] Multi-unit serial job: complete 2 of 3 receives 2, leaves 1 `Reserved`; complete 3 receives
+      the third.
+- [x] Mixed (SQL, unit marked `Available` directly): the finished unit is the one received first.
+- [x] Mixed, through the shop floor app: 2-unit job with serial-sequence units SAT-0002/SAT-0003;
+      logged SAT-0003 complete on the final operation (operation stays open at 1 of 2); ERP dialog
+      defaulted to 1 listing SAT-0003; completing received SAT-0003, left SAT-0002 `Reserved`,
+      backflushed for one unit.
+- [x] Shop floor only: 2-unit job, both units (SAT-0004, SAT-0005) logged complete on the final
+      operation; operation flipped Done, job auto-completed at 2, both units received once,
+      backflushed for two units (27 of 30 lines).
+- [x] Auto-complete when the last operation goes Done still receives 1 and backflushes.
+- [x] Inventory-tracked completion at 1 unchanged and refused at 0; Non-Inventory at 0 allowed.
+- [x] Browser: J000002 dialog unlocked at 1 with serial J000002-01, Complete disabled at 0,
+      capped at 1, completed (1 received, 27 lines consumed). J000001 with an unsplit placeholder
+      stays locked at 0 with Complete disabled. J000001 split into 3 numbered units: dialog
+      defaults to 3, completed at 2, received -01 and -02, -03 left `Reserved`.
+- [x] Whole units: `complete_job_to_inventory` refuses a fractional quantity for serial-tracked
+      jobs (SQL, rolled back: 1.5 refused, 2 accepted with no double receipt, inventory item at
+      1.5 still accepted). Dialog: at 0.5 shows "Serial-tracked jobs must be completed in whole
+      units." and disables Complete; back at 1 lists the serial and re-enables it.
+- [x] Locked tracked job with nothing finished on the shop floor: dialog shows a warning
+      ("Nothing completed in MES yet") explaining how to proceed, Complete disabled.
+- [x] New strings translated in all 13 erp catalogs (hand-filled using the glossary terms).
+- [x] Typecheck (`erp`), lint, `pnpm db:check:datasets`, `@carbon/checks` clobbers + tests.
+
+## Review follow-up (2026-09-15)
+
+Second-round review plus the open CodeRabbit comment on the migration.
+
+- [x] **Decrease refused for every stocked item**, not only serial. A lower cumulative quantity
+      posted a negative receipt, cost layer and WIP journal for batch and untracked jobs.
+- [x] **Zero-delta re-completion.** No receipt row is posted, and when catch-up production events
+      add WIP the function returns before the WIP discharge instead of dividing by a zero quantity.
+      That WIP stays in WIP and is discharged with the next receipt.
+- [x] **`sync_finish_job_operation`** asks for at least the quantity already received, so marking
+      the last operation Done on a reopened job is not refused by the decrease guard.
+- [x] **Dialog warning.** A serial job still holding a multi-unit placeholder no longer suggests
+      marking every operation Done: that path raises. Batch jobs and single-unit serial jobs keep
+      the original text.
+- [x] **Received units read past RLS** (`getJobReceiptSnapshot`). The browser query returned nothing
+      for users without inventory or accounting view, so already-received units looked receivable
+      again. The dialog fetches them, with the job's received quantity, from
+      `api+/production.job.$jobId.receipts` each time it opens, so a receipt made while the job page
+      is open is not missed (CodeRabbit, second round; the first version read them in the job route
+      loader). Quantity and units come from one Kysely statement, so a receipt committing between two
+      reads cannot pair a new quantity with old units (CodeRabbit, third round).
+- [x] **No stale fallback.** When the receipt read fails, the dialog shows an error with Retry instead
+      of opening the form on the route's job and an empty received set (CodeRabbit, third round).
+- [x] **Dialog minimum** is the received quantity for every stocked job, matching the database.
+- [x] Comment in `getReceivableSerialUnits` on why the dialog locks an unnumbered single unit that
+      the database would receive.
+- Not changed: `Number.isFinite` in `isFractionalSerialQuantity` (it keeps an emptied input from
+  reading as fractional). The auto-complete quantity still sums every last operation, so parallel
+  "With Previous" last operations double-count for all item types; that predates this branch.
+
+Verification:
+
+- [x] Unit tests: `job-complete-logic.test.ts` (22 passing, including `hasUnsplitSerialPlaceholder`).
+- [x] SQL test re-run with the new cases (inventory lower/re-completion, reopened last operation,
+      accounting zero-delta with catch-up WIP): all pass. Against the previously pushed functions the
+      new cases fail, the accounting one with `division by zero`.
+- [x] Browser: a Ready serial job with an unsplit 2-unit placeholder shows the new warning with
+      Complete disabled. Reopened J000001 (2 of 3 received) defaults to 3, lists only J000001-03 from the
+      loader-provided received ids, and clamps a typed 1 to 2. Not run as a production-only user; the
+      receipts read bypasses RLS, so the result does not depend on the viewer's permissions.
+- [x] Browser, stale page: opened a 3-serial job, received JCQ-STALE-01 by SQL without reloading, then
+      opened Complete. The dialog listed only -02 and -03 and clamped a typed 0 to the fresh received
+      quantity of 1.

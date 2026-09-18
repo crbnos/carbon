@@ -1,6 +1,12 @@
-import { type CalendarWindow, intersectWindows } from "./calendar-utils.ts";
+import type { BatchPlacement } from "./batch-scheduler.ts";
+import {
+  type CalendarWindow,
+  intersectWindows,
+  nextWorkingInstant
+} from "./calendar-utils.ts";
 import {
   classifyLatePlacement,
+  composeBatchPredecessorConflict,
   composeLateConflict,
   composePlacementNote
 } from "./conflict-messages.ts";
@@ -333,9 +339,17 @@ export class WorkCenterSelector {
        * (job has no due date), placements are never flagged as late.
        */
       jobDueDate?: string | null;
+      /**
+       * Pre-placed windows for RELEASED-batch member operations, keyed by
+       * operation id (from the batch pre-pass). A member takes its batch's
+       * window verbatim — no per-member placement, no per-member reservation
+       * (the pre-pass wrote the single coalesced batch reservation).
+       */
+      batchPlacements?: Map<string, BatchPlacement> | null;
     }
   ): Map<string, WorkCenterSelection> {
     const jobDueDate = options?.jobDueDate ?? null;
+    const batchPlacements = options?.batchPlacements ?? null;
     const ctx = this.finiteContext;
     if (!ctx) {
       throw new Error(
@@ -369,6 +383,39 @@ export class WorkCenterSelector {
     const sorted = topologicalPlacementOrder(operations, ctx.dependencies);
 
     for (const op of sorted) {
+      // A Released-batch member is pinned to its batch's pre-placed window:
+      // the batch pre-pass owns the single coalesced work-center reservation,
+      // so the member gets NO per-op placement and NO per-op reservation —
+      // successors chain after the batch end, exactly like the pinned
+      // outside-processing path below. A predecessor freshly placed past the
+      // batch start flags a conflict (the pre-pass anchored on last-wave
+      // forecasts; the next wave re-anchors and converges).
+      const batchPlacement = batchPlacements?.get(op.id);
+      if (batchPlacement) {
+        let conflict: string | null = batchPlacement.conflict;
+        if (!conflict) {
+          for (const depId of depsByOperation.get(op.id) ?? []) {
+            const depEnd = placedEndByOperation.get(depId);
+            if (depEnd !== undefined && depEnd > batchPlacement.startAt) {
+              conflict = composeBatchPredecessorConflict({
+                batchReadableId: batchPlacement.batchReadableId,
+                predecessorDescription: descriptionById.get(depId) ?? null
+              });
+              break;
+            }
+          }
+        }
+        placedEndByOperation.set(op.id, batchPlacement.endAt);
+        selections.set(op.id, {
+          workCenterId: batchPlacement.workCenterId,
+          priority: 0,
+          placedStart: msToInstantIso(batchPlacement.startAt),
+          placedEnd: msToInstantIso(batchPlacement.endAt),
+          conflict
+        });
+        continue;
+      }
+
       if (op.operationType === "Outside Processing") {
         // Outside operations consume no internal capacity, but they DO
         // occupy calendar time: place them after their predecessors so
@@ -837,14 +884,21 @@ export class WorkCenterSelector {
         // hold the machine against other jobs. Chaining placedEndByOperation
         // still makes successors wait for it (they can't run before it does).
         if (durationHours > 0 && fallbackWc) {
-          const placeholderEnd = earliestMs + durationHours * 3_600_000;
+          // Snap the marker onto a working day so it never renders on a night or
+          // weekend just because the earliest start fell there — it holds no
+          // capacity, so this only moves where the bar is drawn.
+          const placeholderStart = nextWorkingInstant(
+            ctx.capacityByWorkCenter.get(fallbackWc)?.windows ?? [],
+            earliestMs
+          );
+          const placeholderEnd = placeholderStart + durationHours * 3_600_000;
           this.plannedReservations.push({
             resourceKind: "WorkCenter",
             resourceId: fallbackWc,
             operationId: op.id,
-            startAt: earliestStart,
+            startAt: placeholderStart,
             endAt: placeholderEnd,
-            earliestStartAt: earliestStart,
+            earliestStartAt: placeholderStart,
             scheduleNote: conflictReason,
             workHours: durationHours,
             isPlaceholder: true

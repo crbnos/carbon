@@ -1,4 +1,10 @@
 import { useCarbon } from "@carbon/auth";
+import { downloadText } from "@carbon/files";
+import {
+  CSV_CONTENT_TYPE,
+  encodeCsvTable,
+  parseCsvFile
+} from "@carbon/files/csv";
 import {
   Button,
   cn,
@@ -11,7 +17,6 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
-import Papa from "papaparse";
 import { useCallback, useState } from "react";
 import { flushSync } from "react-dom";
 import { useDropzone } from "react-dropzone";
@@ -58,14 +63,11 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
       if (f.type === "numeric") return `${prefix} — number`;
       return prefix;
     });
-    const csv = Papa.unparse({ fields: headers, data: [hints] });
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${table}-template.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadText(
+      encodeCsvTable(headers, [hints]),
+      `${table}-template.csv`,
+      CSV_CONTENT_TYPE
+    );
   }, [table]);
 
   const processFile = async (file: File) => {
@@ -78,39 +80,44 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
       setLoading(true);
     });
 
-    Papa.parse(file, {
-      header: true,
-      skipEmptyLines: true,
-      error: (error) => {
-        setError(error.message);
-        setFileColumns(null);
-        setFirstRows(null);
-        setLoading(false);
-      },
-      complete: (results) => {
-        const { data, meta } = results;
+    let parsed: Awaited<ReturnType<typeof parseCsvFile>>;
+    try {
+      parsed = await parseCsvFile(file);
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error));
+      setFileColumns(null);
+      setFirstRows(null);
+      setLoading(false);
+      return;
+    }
+    const { rows: data, fields } = parsed;
 
-        if (!data || data.length < 2) {
-          setError(t`CSV file must have at least 2 rows.`);
-          setFileColumns(null);
-          setFirstRows(null);
-          setLoading(false);
-          return;
-        }
+    if (!data || data.length < 2) {
+      setError(t`CSV file must have at least 2 rows.`);
+      setFileColumns(null);
+      setFirstRows(null);
+      setLoading(false);
+      return;
+    }
 
-        if (!meta || !meta.fields || meta.fields.length <= 1) {
-          setError(t`Failed to retrieve CSV column data.`);
-          setFileColumns(null);
-          setFirstRows(null);
-          setLoading(false);
-          return;
-        }
+    // `<= 1` rejected a legitimate single-column file. It was written as a
+    // "this isn't really a CSV" heuristic — PapaParse hands back one field
+    // holding the whole line for a non-delimited file — and was unreachable
+    // while every import type had two or more mappable fields. Scrap
+    // reasons and storage types have exactly one (`name`), so a correct CSV
+    // for them is one column wide. The mapping step is what tells the user
+    // whether the parse was sane; a bad file simply maps to nothing there.
+    if (fields.length < 1) {
+      setError(t`Failed to retrieve CSV column data.`);
+      setFileColumns(null);
+      setFirstRows(null);
+      setLoading(false);
+      return;
+    }
 
-        setFileColumns(meta.fields);
-        setFirstRows(data as Record<string, string>[]);
-        setLoading(false);
-      }
-    });
+    setFileColumns(fields);
+    setFirstRows(data as Record<string, string>[]);
+    setLoading(false);
   };
 
   const uploadFile = async (file: File) => {

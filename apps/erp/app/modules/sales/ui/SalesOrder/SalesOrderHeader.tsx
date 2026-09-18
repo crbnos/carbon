@@ -1,3 +1,5 @@
+import type { Database } from "@carbon/database";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { SelectControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -14,7 +16,6 @@ import {
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle,
@@ -40,7 +41,8 @@ import {
   LuPanelLeft,
   LuPanelRight,
   LuTrash,
-  LuTruck
+  LuTruck,
+  LuUndo2
 } from "react-icons/lu";
 import type { FetcherWithComponents } from "react-router";
 import { Await, Link, useFetcher, useParams } from "react-router";
@@ -57,7 +59,7 @@ import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import type { Job } from "~/modules/production/types";
-import type { action as confirmAction } from "~/routes/x+/sales-order+/$orderId.confirm";
+import { SalesReturnOrderStatus } from "~/modules/sales/ui/SalesReturnOrders";
 import type { action as statusAction } from "~/routes/x+/sales-order+/$orderId.status";
 import { useCustomers } from "~/stores/customers";
 import { path } from "~/utils/path";
@@ -68,12 +70,10 @@ import SalesStatus from "./SalesStatus";
 import { useSalesOrder } from "./useSalesOrder";
 
 const SalesOrderConfirmModal = ({
-  fetcher,
   salesOrder,
   onClose,
   defaultCc = []
 }: {
-  fetcher: FetcherWithComponents<{ success: boolean; message: string }>;
   salesOrder?: SalesOrder;
   onClose: () => void;
   defaultCc?: string[];
@@ -89,14 +89,27 @@ const SalesOrderConfirmModal = ({
     canEmail ? "Email" : "None"
   );
 
-  // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
+  // Confirming re-evaluates sales rules across every line (the terminal gate in
+  // the action). Route the submission through the violations hook so a blocked
+  // confirm opens the shared modal rather than only flashing a toast, and close
+  // this modal only once the action actually succeeds.
+  const ruleViolations = useRuleViolations({
+    action: path.to.salesOrderConfirm(orderId),
+    onSuccess: onClose
+  });
+  const fetcher = ruleViolations.fetcher as FetcherWithComponents<{
+    success?: boolean;
+    message?: string;
+    violations?: unknown[];
+  }>;
+
   useEffect(() => {
-    if (fetcher.data?.success) {
-      onClose();
-    } else if (fetcher.data?.success === false && fetcher.data?.message) {
+    // Violations render in the ViolationModal; don't also toast their message.
+    if ((fetcher.data?.violations ?? []).length > 0) return;
+    if (fetcher.data?.success === false && fetcher.data?.message) {
       toast.error(fetcher.data.message);
     }
-  }, [fetcher.data?.success]);
+  }, [fetcher.data]);
 
   return (
     <Modal
@@ -112,7 +125,6 @@ const SalesOrderConfirmModal = ({
           method="post"
           action={path.to.salesOrderConfirm(orderId)}
           validator={salesConfirmValidator}
-          onSubmit={onClose}
           defaultValues={{
             notification: notificationType,
             customerContact: salesOrder?.customerContactId ?? undefined,
@@ -122,16 +134,16 @@ const SalesOrderConfirmModal = ({
         >
           <ModalHeader>
             <ModalTitle>{t`Confirm ${salesOrder?.salesOrderId}`}</ModalTitle>
-            <ModalDescription>
-              <Trans>
-                Are you sure you want to confirm this sales order? Confirming
-                the order will affect on order quantities used to calculate
-                supply and demand.
-              </Trans>
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                <Trans>
+                  Are you sure you want to confirm this sales order? Confirming
+                  the order will affect on order quantities used to calculate
+                  supply and demand.
+                </Trans>
+              </p>
               {canEmail && (
                 <SelectControlled
                   label={t`Send Via`}
@@ -173,6 +185,7 @@ const SalesOrderConfirmModal = ({
           </ModalFooter>
         </ValidatedForm>
       </ModalContent>
+      <ruleViolations.ViolationModal />
     </Modal>
   );
 };
@@ -193,6 +206,11 @@ const SalesOrderHeader = () => {
       jobs: Job[];
       shipments: Shipment[];
       invoices: SalesInvoice[];
+      salesReturnOrders: {
+        id: string;
+        salesReturnOrderId: string;
+        status: Database["public"]["Enums"]["salesReturnOrderStatus"];
+      }[];
     }>;
     defaultCc: string[];
   }>(path.to.salesOrder(orderId));
@@ -203,7 +221,6 @@ const SalesOrderHeader = () => {
   const isLocked = isSalesOrderLocked(routeData?.salesOrder?.status);
 
   const statusFetcher = useFetcher<typeof statusAction>();
-  const confirmFetcher = useFetcher<typeof confirmAction>();
   const { ship, invoice } = useSalesOrder();
 
   const linesRequireJobs = hasLinesRequiringJobs({
@@ -396,10 +413,8 @@ const SalesOrderHeader = () => {
                   ? "primary"
                   : "secondary"
               }
-              isLoading={confirmFetcher.state !== "idle"}
               onClick={confirmDisclosure.onOpen}
               isDisabled={
-                confirmFetcher.state !== "idle" ||
                 !["Draft", "Needs Approval"].includes(
                   routeData?.salesOrder?.status ?? ""
                 ) ||
@@ -449,6 +464,8 @@ const SalesOrderHeader = () => {
                 {(relatedItems) => {
                   const shipments = relatedItems?.shipments || [];
                   const invoices = relatedItems?.invoices || [];
+                  const salesReturnOrders =
+                    relatedItems?.salesReturnOrders || [];
                   return (
                     <>
                       {shipments.length > 0 ? (
@@ -592,6 +609,38 @@ const SalesOrderHeader = () => {
                           <Trans>Invoice</Trans>
                         </Button>
                       )}
+                      {salesReturnOrders.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              leftIcon={<LuUndo2 />}
+                              rightIcon={<LuChevronDown />}
+                              variant="secondary"
+                            >
+                              <Trans>RMAs</Trans>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {salesReturnOrders.map((returnOrder) => (
+                              <DropdownMenuItem key={returnOrder.id} asChild>
+                                <Link
+                                  to={path.to.salesReturnOrder(returnOrder.id)}
+                                >
+                                  <DropdownMenuIcon icon={<LuUndo2 />} />
+                                  <HStack spacing={8}>
+                                    <span>
+                                      {returnOrder.salesReturnOrderId}
+                                    </span>
+                                    <SalesReturnOrderStatus
+                                      status={returnOrder.status}
+                                    />
+                                  </HStack>
+                                </Link>
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
                     </>
                   );
                 }}
@@ -619,7 +668,6 @@ const SalesOrderHeader = () => {
       )}
       {confirmDisclosure.isOpen && (
         <SalesOrderConfirmModal
-          fetcher={confirmFetcher}
           salesOrder={routeData?.salesOrder}
           onClose={confirmDisclosure.onClose}
           defaultCc={routeData?.defaultCc ?? []}

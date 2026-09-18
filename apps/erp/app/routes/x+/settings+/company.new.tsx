@@ -22,95 +22,111 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "settings", "company");
 
 export async function action({ request }: ActionFunctionArgs) {
-  assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
-    update: ["settings", "users"]
-  });
-  const formData = await request.formData();
-  const validation = await validator(companyValidator).validate(formData);
-  if (validation.error) {
-    return validationError(validation.error);
-  }
+  try {
+    assertIsPost(request);
+    const { userId } = await requirePermissions(request, {
+      update: ["settings", "users"]
+    });
+    const formData = await request.formData();
+    const validation = await validator(companyValidator).validate(formData);
+    if (validation.error) {
+      return validationError(validation.error);
+    }
 
-  const client = getCarbonServiceRole();
+    const client = getCarbonServiceRole();
 
-  const companyInsert = await insertCompany(client, validation.data);
-  if (companyInsert.error) {
-    logger.error("Failed to insert company", { error: companyInsert.error });
-    throw new Error("Fatal: failed to insert company");
-  }
+    const companyInsert = await insertCompany(client, validation.data);
+    if (companyInsert.error) {
+      logger.error("Failed to insert company", { error: companyInsert.error });
+      throw new Error("Fatal: failed to insert company");
+    }
 
-  let companyId = companyInsert.data?.id;
-  if (!companyId) {
-    throw new Error("Fatal: failed to get company ID");
-  }
+    let companyId = companyInsert.data?.id;
+    if (!companyId) {
+      throw new Error("Fatal: failed to get company ID");
+    }
 
-  const seed = await seedCompany(client, companyId, userId);
-  if (seed.error) {
-    logger.error("Failed to seed company", { error: seed.error });
-    throw new Error("Fatal: failed to seed company");
-  }
+    const seed = await seedCompany(client, companyId, userId);
+    if (seed.error) {
+      logger.error("Failed to seed company", { error: seed.error });
+      throw new Error("Fatal: failed to seed company");
+    }
 
-  // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
-  // day one — enable it at company creation, not just when settings are opened.
-  if (CONTROLLED_ENVIRONMENT) {
-    await enableAuditLog(client, companyId).catch((err) =>
-      logger.error("Failed to enable audit log for new company", { error: err })
-    );
-  }
+    // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1) capture audit from
+    // day one — enable it at company creation, not just when settings are opened.
+    if (CONTROLLED_ENVIRONMENT) {
+      await enableAuditLog(client, companyId).catch((err) =>
+        logger.error("Failed to enable audit log for new company", {
+          error: err
+        })
+      );
+    }
 
-  // TODO: move all of this to transaction
-  // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  const { baseCurrencyCode, ...locationData } = validation.data;
-  const locationInsert = await upsertLocation(client, {
-    ...locationData,
-    name: "Headquarters",
-    companyId,
-    // timezone comes from locationData — HQ shares the company's timezone.
-    createdBy: userId
-  });
-
-  if (locationInsert.error) {
-    logger.error("Failed to insert location", { error: locationInsert.error });
-    throw new Error("Fatal: failed to insert location");
-  }
-
-  const locationId = locationInsert.data?.id;
-  if (!locationId) {
-    throw new Error("Fatal: failed to get location ID");
-  }
-
-  const [job] = await Promise.all([
-    insertEmployeeJob(client, {
-      id: userId,
+    // TODO: move all of this to transaction
+    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
+    const { baseCurrencyCode, ...locationData } = validation.data;
+    const locationInsert = await upsertLocation(client, {
+      ...locationData,
+      name: "Headquarters",
       companyId,
-      locationId
-    }),
-    redis.del(getPermissionCacheKey(userId))
-  ]);
+      // timezone comes from locationData — HQ shares the company's timezone.
+      createdBy: userId
+    });
 
-  if (job.error) {
-    logger.error("Failed to insert job", { error: job.error });
-    throw new Error("Fatal: failed to insert job");
+    if (locationInsert.error) {
+      logger.error("Failed to insert location", {
+        error: locationInsert.error
+      });
+      throw new Error("Fatal: failed to insert location");
+    }
+
+    const locationId = locationInsert.data?.id;
+    if (!locationId) {
+      throw new Error("Fatal: failed to get location ID");
+    }
+
+    const [job] = await Promise.all([
+      insertEmployeeJob(client, {
+        id: userId,
+        companyId,
+        locationId
+      }),
+      redis.del(getPermissionCacheKey(userId))
+    ]);
+
+    if (job.error) {
+      logger.error("Failed to insert job", { error: job.error });
+      throw new Error("Fatal: failed to insert job");
+    }
+
+    const { data: companyRecord } = await client
+      .from("company")
+      .select("companyGroupId")
+      .eq("id", companyId)
+      .single();
+
+    const sessionCookie = await updateCompanySession(
+      request,
+      companyId,
+      companyRecord?.companyGroupId ?? ""
+    );
+    const companyIdCookie = setCompanyId(companyId);
+
+    throw redirect(path.to.authenticatedRoot, {
+      headers: [
+        ["Set-Cookie", sessionCookie],
+        ["Set-Cookie", companyIdCookie]
+      ]
+    });
+  } catch (error) {
+    // Thrown Response = React Router control flow (the success redirect above,
+    // or validationError) — rethrow untouched or the client gets nothing.
+    if (error instanceof Response) throw error;
+    logger.error("Company create failed: {message}", {
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+      error
+    });
+    throw error;
   }
-
-  const { data: companyRecord } = await client
-    .from("company")
-    .select("companyGroupId")
-    .eq("id", companyId)
-    .single();
-
-  const sessionCookie = await updateCompanySession(
-    request,
-    companyId,
-    companyRecord?.companyGroupId ?? ""
-  );
-  const companyIdCookie = setCompanyId(companyId);
-
-  throw redirect(path.to.authenticatedRoot, {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie]
-    ]
-  });
 }

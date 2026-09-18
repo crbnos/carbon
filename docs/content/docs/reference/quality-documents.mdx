@@ -11,7 +11,7 @@ The point of controlling it is auditability: you never overwrite a live procedur
 
 A quality document has exactly three states, and only one version of a given document is ever **Active** at a time.
 
-<StatusFlow>
+<StatusFlow entity="qualityDocument">
   <Status name="Draft">The starting state. You edit the name, the work-instruction body, and the steps freely. Not yet authoritative.</Status>
   <Status name="Active" accent>The published, in-force revision. Publishing it archives any other Active version with the same name automatically.</Status>
   <Status name="Archived">A retired revision. Superseded by a newer Active version, or manually pulled. Still readable; can be reactivated.</Status>

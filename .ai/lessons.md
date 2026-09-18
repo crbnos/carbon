@@ -6,6 +6,26 @@ Format: `Context → Problem → Rule → Applies to`
 
 ---
 
+## Onshape individual release assets need the complete source identity
+
+**Context:** Syncing a released part from a multi-part Part Studio to an existing Carbon item.
+
+**Problem:** Omitting `partIds` and `configuration` exports the whole studio; `getElementThumbnail` also depicts the entire element. Refreshing raw data under the same model ID leaves successful optimized artifacts in place and allows old background jobs to overwrite repaired assets.
+
+**Rule:** Resolve one exact released document/version/element/revision and propagate its part ID and configuration. Never fall back to a version-only match or unselected Part Studio export. Render the selected model's thumbnail after optimization. Give corrected individual-part sources deterministic immutable model generations, preserving item IDs and manufacturing records; repeat repairs reuse that generation. Repair existing items with explicit per-release events, not a company-wide backfill or new CAD releases.
+
+**Applies to:** Onshape revision sync, backfill, model export and attachment helpers in `packages/jobs/src/inngest/functions/integrations/`.
+
+## Sales-order Paid Amount uses invoice-target principal
+
+**Context:** Summarizing linked sales-invoice payments on a sales order.
+
+**Problem:** `invoiceSettlement.sourceAmount` is principal in the payment funding source's currency, so it does not represent the amount applied to the invoice. Using it for the order's Paid Amount disagrees with the invoice Payments panel and can mix currency semantics.
+
+**Rule:** Sales-order Paid Amount sums posted payment `appliedAmount` (company base) per invoice, then converts it with that invoice's exchange rate into the matching order currency. Do not use `sourceAmount` for this summary. There is no legacy `baseStatus === "Paid"` fallback that counts the full invoice total — every payment flows through `invoiceSettlement`, so a fully-paid invoice's settlements already sum to its total.
+
+**Applies to:** `getSalesOrderInvoicePaymentsByIds`, the sales-order loader's `invoiceSummary`, and any UI summarizing cash applied to invoice targets.
+
 ## ioredis retryStrategy returning null kills auto-recovery
 
 **Context:** Making the Redis client (`@carbon/kv`) resilient to outages (issue #1076).
@@ -1103,6 +1123,26 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.
 
+## A blanket symbol rename re-homes family-neutral code into one family
+
+**Context:** Renaming the "Item Rules" feature to "Sales Rules" was done with a repo-wide `ItemRule` → `SalesRule` string sweep. It also caught `ItemRuleFilter` / `toItemRuleFilter` in `packages/utils` — a shared item-scoping matcher where "Item" meant *the item being filtered*, not the feature. The result was `toSalesRuleFilter`, imported by the **storage** evaluator, with a docstring still reading "Normalize a raw `storageRule` row". Nothing failed: types, tests, and lint were all green, because a wrong name is not a type error.
+
+**Problem:** A string-match rename cannot distinguish "the feature named X" from "the noun X used as a domain word". Shared code is exactly where the two collide, and the damage is invisible to every automated gate — it only shows up when the next reader trusts the name.
+
+**Rule:** Before a blanket rename, list the symbols that will match and check each one's *consumers*, not just its definition: a symbol used by more than one feature is shared and must get a family-neutral name (`ItemFilter`, not `SalesRuleFilter`), not the new feature's name. After the sweep, grep the renamed symbols inside the OTHER feature's directories — a hit there is the tell. Docstrings and comments are part of the rename: a comment that contradicts its symbol's new name is proof the rename was mechanical.
+
+**Applies to:** `packages/utils/src/rules.ts`, `packages/utils/src/rule-filters.ts`, `packages/ee/src/rules/**`, any repo-wide identifier rename.
+
+## `git add` aborts the whole invocation on one unmatched pathspec
+
+**Context:** Committing a spec that had been moved with `git mv`, the staging command listed both the old and new paths. The old path no longer existed, so `git add` exited with `fatal: pathspec … did not match any files` and staged **nothing** — but the following `git commit` still ran and produced a commit containing only the already-staged deletion. The spec was removed from the branch without its replacement, and it was pushed before anyone noticed.
+
+**Problem:** `git add` is all-or-nothing across its arguments, and a `fatal:` from it does not stop a `&&`-free command sequence. The failure message scrolls past in a multi-command block, and `git commit` happily commits whatever the index already held — which after a `git mv` is exactly the destructive half of the change.
+
+**Rule:** Never list a path that a previous step may have moved or deleted. Build the staging list from `git status --porcelain` output rather than typing paths, and **verify the index before committing** — `git status --porcelain | grep -vc "^[MARD]"` must be 0, or diff `git diff --cached --name-only` against the intended file list. Treat a commit whose file count differs from the intended change as a failed commit, not a done one.
+
+**Applies to:** any commit flow following a `git mv`, `/check-and-commit`, scripted staging.
+
 ## Dating a synthetic-entity journal with company_today() drops it out of the "as of" report window
 
 **Context:** Intercompany elimination journals post to a synthetic "elimination entity" company (no user membership, no location). `generateEliminationEntries` dated them `company_today(elimination_entity)`. Because the elimination entity has no location, `company_today` fell back to UTC — and on an evening-Pacific boundary UTC had already rolled to the next day. The eliminations posted on Aug 18 while the invoices they eliminate posted Aug 17. The consolidated balance sheet ("Aug 2026 to date", cutoff = today = Aug 17) then showed Inter-Company Payables/Receivables = 100 (un-eliminated), while the account drill-down ("all time") correctly netted to 0 — a confusing split where the row and its own drill-down disagree.
@@ -1132,6 +1172,26 @@ canvas hosting Radix popovers/selects.
 **Rule:** In edge functions, batch reads keyed by a large id list go through the Kysely `db` handle (bind parameters, no URL cap) whenever no PostgREST embed is needed. If an embed forces PostgREST, chunk conservatively (≤50 ids) and include `res.error.message` in the thrown error so the failure names its cause. Never swallow a prefetch error into a bare string with no detail.
 
 **Applies to:** `packages/database/supabase/functions/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
+
+## Kysely writes in an edge function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
+
+**Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
+
+**Problem:** Edge functions run on the service-role Kysely handle, which bypasses RLS entirely — the app-layer permission check is the ONLY gate, and it does not scope the rows a subsequent write touches. A caller passing their own `companyId` (to pass the gate) plus another company's `batchId` (a `nanoid`, not enumerable, but leakable) could detach or re-point the victim's operations; the companyId-scoped batch delete right after matched 0 rows but the transaction still committed the unscoped write. A batch-id predicate is not a tenant boundary.
+
+**Rule:** In an edge function, EVERY Kysely read and write carries `.where("companyId","=",companyId)` — even ones that already filter by a scoped foreign key. Assert the row count of a batch-scoped claim (`assertAllOperationsClaimed`) so a concurrent or cross-tenant mismatch rolls back instead of committing a partial. And a two-phase resumable flow must re-validate membership on the resume path exactly as the first pass does — a phase-2 step that flips rows batch-wide but iterates only the payload will strand the rows the short payload omitted.
+
+**Applies to:** `packages/database/supabase/functions/**` (any service-role Kysely write), resumable multi-phase edge flows.
+
+## A tested `assert*` helper that is never imported is worse than none — it reads as a guard that is not there
+
+**Context:** `batch-time-split.ts` exported `assertAllOperationsClaimed` (concurrent-claim race guard) and `assertBatchWorkCenterMutable` (completed-batch immutability guard), both unit-tested. Neither was ever imported by the `batch-operations` edge function — the `update` branch happily re-pointed a Completed batch's work center, and the claim had no `IS NULL` race guard.
+
+**Problem:** The presence of a well-named, tested guard function signals "this invariant is enforced." A reviewer (and the author) reads the export list and assumes coverage. Dead safety helpers give false confidence precisely where the risk is highest.
+
+**Rule:** Wire a safety `assert*` into its call site in the same change that introduces it, or don't write it yet. When reviewing, grep every exported `assert*`/guard for a real importer — an unused one is a finding, not dead weight to leave. Duplicated cross-runtime logic (Node + Deno copies) should re-export one source (`precision.ts` / `batch-time-split.ts` pattern) rather than rely on "keep in sync" comments.
+
+**Applies to:** `packages/utils/src/**`, `packages/database/supabase/functions/shared/**`, any exported guard/assert helper.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.
@@ -1152,6 +1212,52 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/database/supabase/functions/get-method/index.ts` (`quoteToQuote`), `apps/erp/app/modules/sales/sales.service.ts` (`deleteQuote`), any insert into `externalLink`.
 
+## A memo's `direction` means OPPOSITE things on AR and AP
+
+**Context:** Supplier returns settle through an AP `memo`. The RMA spec and
+`createPurchaseReturnOrderCredit` both used `direction: "Credit"` — the same
+value the (correct) customer-side credit uses.
+
+**Problem:** `direction` alone decides the CONTROL side for both parties
+(`buildMemoJournal`): a Credit memo CREDITS the control account, a Debit memo
+DEBITS it. On AR (an asset) a credit REDUCES the balance — right for a customer
+refund. On AP (a liability) a credit INCREASES it — so returning goods made
+Carbon show we owed the supplier MORE, and the reason leg re-debited GR/IR
+instead of clearing what the return shipment had debited, leaving a permanent
+2x residual in a suspense account. Every entry still BALANCED, so no guard
+fired, and it survived four review rounds. The rest of invoicing already
+assumed the opposite (`getAvailableCredits` selects supplier memos with
+`direction = 'Debit'`), so the memos were also invisible to "Apply Credit".
+
+**Rule:** A vendor return is a **Debit** memo (`debitMemo` `DR-` sequence); a
+customer return is a **Credit** memo. Never reason about `direction` without
+naming the party — write out which way the control account moves and whether
+that account is an asset or a liability. Balanced ≠ correct: when a posting has
+a suspense account (GR/IR), assert the CYCLE nets to zero, not just that each
+entry balances.
+
+**Applies to:** `apps/erp/app/modules/purchasing/purchasing.service.ts`
+(`createPurchaseReturnOrderCredit`), `apps/erp/app/modules/sales/sales.service.ts`
+(`createSalesReturnOrderCredit`), `packages/database/supabase/functions/post-memo/*`,
+any new `memo` writer.
+
+## A bare FormLabel outside FormControl 500s the whole route
+
+**Context:** The returns-module line forms (`SalesReturnOrderLineForm`, `PurchaseReturnOrderLineForm`) used `<FormLabel>` as a standalone section heading for the tracked-entity picker area.
+
+**Problem:** `FormLabel` (`packages/react/src/Form/FormLabel.tsx`) calls `useFormControlContext()`, which **throws** outside a `<FormControl>`. The throw happens at render, so the route's error boundary replaces the page — the user sees "Error 500. Something broke on our end." on an otherwise-valid URL. Subtler: when the crash is below a `ValidatedForm`, the form unmounts, so a page can LOOK fine in a stale snapshot while its Save button is dead. The error is only visible in the browser console (`useFormControlContext() must be used inside of a FormControl`); the server log shows nothing useful.
+
+**Rule:** `FormLabel`/`FormError` are only valid inside a `<FormControl>`. For a standalone section heading in a form, use a plain `<label>`/heading element. When a page 500s with no server error, check the browser console for context-hook throws before suspecting the loader — and treat "form renders but Save does nothing" as a possible sibling-render crash, not a submit bug.
+
+**Applies to:** any usage of `packages/react/src/Form/{FormLabel,FormError}.tsx`; form components under `apps/erp/app/modules/*/ui/`.
+
+## Demo-seeded attributes can make a dead query look alive
+
+- **Context:** The supplier-return entity picker filtered `trackedEntity` on `attributes ->> Supplier`. Browser verification on the local DB showed results, so the query looked correct.
+- **Problem:** No production code ever writes a `Supplier` attribute — the 49 local entities carrying it came from MCP demo seeding (Axiom/Northspoke programs). In production the picker would always be empty. Verification against hand-seeded data validated the seed, not the code.
+- **Rule:** Before anchoring a query on a `trackedEntity.attributes` key, grep for the WRITER of that key in app + edge-function code (receipt tracking writes `Receipt`/`Receipt Line`/`Receipt Line Index`; shipment tracking writes `Shipment`/`Shipment Line`). If the only writers are tests or seeds, the key does not exist in production. Local rows proving a filter matches prove nothing about who writes the attribute.
+- **Applies to:** any `attributes ->> X` filter on trackedEntity/trackedActivity; browser verification on a DB that has been demo-seeded.
+
 ## `crbn reload` must load root `.env` — compose-substituted secrets silently reset
 
 **Context:** Enabling GoTrue SAML via `${SAML_ENABLED:-false}` / `${SAML_PRIVATE_KEY:-}` in docker-compose.dev.yml, values kept in root `.env`.
@@ -1161,6 +1267,7 @@ canvas hosting Radix popovers/selects.
 **Rule:** Any crbn command that invokes docker compose must preload BOTH env files into process.env the way `up.ts` does (`loadDotenv(.env.local)` then `loadDotenv(.env)`, both `override: false`). `reload.ts` now does this. After any reload, still verify the dependent feature's health endpoint (e.g. `curl .../sso/saml/metadata` → 200), not just container status.
 
 **Applies to:** packages/dev reload/compose commands; any GoTrue/Kong/storage env sourced from root `.env`.
+
 ## An incremental pull-sweep cursor must advance on the SAME field the query filters on
 
 **Context:** The Stripe Connect payment pull sweep (`stripe-connect-pull-sweep.ts`) queried Stripe with `invoices.list({ status: "paid", created: { gte: since } })` but advanced the cursor to `latest status_transitions.paid_at + 1`. An invoice created before the cursor but paid after it (a normal case — invoices are created, then paid later) would never be returned by a future `created`-filtered query once the cursor passed its `paid_at`, so it was permanently skipped with no error, no log, and no retry.
@@ -1241,6 +1348,26 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/jobs/src/scripts/**`, `packages/database/src/{seed,check}-*.ts`, `ci/src/**`, and any new `tsx`-run script in a CJS-rooted package.
 
+## `CREATE OR REPLACE VIEW` cannot reorder columns — DROP + CREATE when `t.*` grows
+
+**Context:** The work-center batch-capacity migration added `batchCapacity`/`minimumBatchQuantity` to `workCenter` and re-declared the `workCenters` view (which selects `wc.*` before aliased join columns like `locationName`) with `CREATE OR REPLACE VIEW`.
+
+**Problem:** `CREATE OR REPLACE VIEW` can only APPEND columns at the end — the new `wc.*` columns expand in the middle, shifting `locationName` to a new position, and Postgres refuses with `cannot change name of view column "locationName" to "batchCapacity"`. The migration fails at apply time even though the SQL looks like a routine re-declare.
+
+**Rule:** When a view selects `t.*` and the underlying table gains columns that land BEFORE any explicitly-aliased column, re-declare with `DROP VIEW IF EXISTS` + `CREATE VIEW` (checking dependent views first) — not `CREATE OR REPLACE`. Only a pure append at the end of the select list is REPLACE-safe.
+
+**Applies to:** every `packages/database/supabase/migrations/*.sql` that re-declares a `SELECT t.*, …` view after an `ALTER TABLE … ADD COLUMN` (`workCenters`, `processes`, `jobs`, and siblings).
+
+## Single-column FKs on multi-tenant children accept cross-tenant ids
+
+**Context:** `jobOperationBatch` shipped with `locationId`/`processId`/`workCenterId` FKs referencing only the parent's `id`. The `batch-operations` edge fn wrote `payload.locationId`/`workCenterId` straight into the row after `requirePermissions` — which authorizes the CALLER for a company, not the record ids in the body.
+
+**Problem:** A single-column FK checks only that the id EXISTS, so a company-A row pointing at company-B's location/work center satisfies it, and a service-role edge fn bypasses RLS — the write lands, mis-filing the batch and stamping foreign work centers onto job operations. Nothing fails until an export or a human notices.
+
+**Rule:** In an edge fn, re-read every payload record id under `companyId` and refuse on a miss (`assertCompanyRecord` in batch-operations; `schedule` does the same for `jobId`). Structurally, make tenant-scoped FKs composite — `(<col>, "companyId") REFERENCES parent(id, "companyId")` — adding `UNIQUE (id, "companyId")` on parents whose PK is single-column, and using PG15 `ON DELETE SET NULL (<col>)` for nullable FKs so `companyId` survives. Precedents: `20260703143904_composite-tenant-fks.sql`, `20260901132702_batch-composite-tenant-fks.sql`.
+
+**Applies to:** `packages/database/supabase/functions/**` taking record ids in the payload; any migration adding an FK from a `companyId`-scoped table to another tenant-scoped parent.
+
 ## A "did my job finish?" baseline must include the rows a FAILED run left behind
 
 **Context:** The Backups page shows a spinner row while an export runs, and decides the
@@ -1287,6 +1414,13 @@ as the breakdown. Name the two so they cannot be confused (`violations` vs
 (`findExportScopeViolationsDetailed`, `computeScopeExclusions`, `totalExcludedRows`),
 `Manifest.excludedRowsByTable`, and any future "N things are wrong" surface.
 
+## Browser-testing MES flows that write data
+
+- **Context:** Verifying AssemblyView keyboard shortcuts with agent-browser while editing the same file (Vite HMR live).
+- **Problem:** Step records appeared at timestamps with no corresponding keypress; hours went into suspecting the new code. Cause: overlapping test sessions — a page left open across HMR edits (sometimes with a modal up) replays/refires interactions, and interleaved key presses land on freshly auto-advanced steps.
+- **Rule:** When a browser test writes rows, run it as a closed loop: wipe the rows, reload the page fresh, then check the DB after EVERY single action before pressing the next key. Never diagnose from an accumulated tail of prior test sessions.
+- **Applies to:** agent-browser verification of any MES/ERP flow with side effects, especially while HMR is live.
+
 ## Full-screen height calcs must subtract the app-shell inset
 
 **Context:** The ERP app shell (`apps/erp/app/routes/x+/_layout.tsx`, PR #1551) moved
@@ -1329,3 +1463,371 @@ full-screen ERP route.
 **Rule:** Before adding a CHECK on an existing column: (1) grep EVERY writer of that column — app services, edge functions, triggers, seeds — and fix any that can produce a violating value in the same change set; (2) repair existing violating rows in the same migration, before the VALIDATE (`UPDATE … WHERE <violates>` with an explainable value); (3) remember old NUMERIC(p,s) clamps — a widened column can still hold rounded-to-zero values from its clamped era.
 
 **Applies to:** any `ADD CONSTRAINT … CHECK` + `VALIDATE` migration; `packages/database/supabase/functions/**` writers of the constrained column.
+
+## A reservation class that must outlive job status needs an explicit escape in EVERY snapshot filter
+
+**Context:** Batch release schedules a Released operation batch as one coalesced `capacityReservation` anchored (for the NOT NULL `jobId`/`operationId`) on an arbitrary member — whose job may legitimately still be `Draft` (membership handoff pulls members ahead of their jobs).
+
+**Problem:** `getLiveReservations` quietly filters `j."status" IN capacityHoldingJobStatuses` at the END of the query builder — separate from the `excludeJobIds` filter that had already been made batch-aware. The batch row vanished from every snapshot whenever its anchor job was unreleased: the machine looked free and every other job over-booked straight through the batch window.
+
+**Rule:** When a reservation (or any capacity-holding row) must survive independently of its anchor row's status, grep EVERY filter in the read path — not just the one you were pointed at — and give each an explicit escape (`OR "jobOperationBatchId" IS NOT NULL`). A snapshot read with two filters a hundred lines apart is two bugs, not one.
+
+**Applies to:** `packages/ee/src/planning/scheduling/master-data-provider.ts` `getLiveReservations`, any future scenario/what-if reservation reads, and generally any row whose lifecycle is owned by a different entity than its FK anchor.
+
+## A degenerate-input guard on a scheduling surface is a silent-vanish bug, not defensive coding
+
+**Context:** The batch pre-pass had `if (durationSeconds <= 0) continue;` — a released batch whose member operations all carry zero setup/labor/machine time (routinely true for freshly-authored routings) was skipped entirely: no reservation, no auto work-center selection, nothing on the reservation-driven Forecast. The user released BAT000005 and it simply didn't exist anywhere schedule-shaped, indistinguishable from the (separate) dead-Inngest failure being debugged at the same time.
+
+**Problem:** Zero/empty/unsized work still EXISTS. On surfaces whose only rendering source is a derived row (the Forecast draws `capacityReservation` rows and nothing else), a "skip nonsense input" guard doesn't degrade gracefully — it erases the entity, and the erasure reads as any of five other failures (event bus down, filter bug, RLS, wrong week, stale registration).
+
+**Rule:** In the scheduling engine, degenerate input never `continue`s past a persistence step — it emits the flagged placeholder shape (`isPlaceholder = true`, honest `workHours`, a `conflictReason` naming the DATA gap and its fix) so the entity stays visible and self-diagnosing. Match the unplaceable-op precedent; give the placeholder a nominal drawable window when true content is zero.
+
+**Applies to:** `packages/ee/src/planning/scheduling/batch-scheduler.ts`, `work-center-selector.ts` placeholder branches, and any future pre-pass/what-if that turns entities into reservations or timeline rows.
+
+## A shared executor acquires callers nobody planned for — grep every importer before deleting one
+
+**Context:** The oRPC migration plan said MCP `call_tool` and the in-app agent were the two consumers of the MCP `direct-executor.ts`, so once both moved to `callOperation` the file could be deleted. A pre-deletion grep found a THIRD caller: `apps/erp/app/routes/api+/inngest.ts` registered `executeFunction` as the workflow engine's `setWorkflowDispatch` seam — every customer workflow `*.create` action ran through it.
+
+**Problem:** A convenient shared function gets wired into new seams (dependency-injection slots, dispatchers, adapters) without its own file ever changing, so the mental list of "who uses this" goes stale. Deleting it on the strength of the plan's caller list would have broken customer workflow create actions in production while every named caller kept working.
+
+**Rule:** Before deleting or changing the contract of any shared executor/service entry point, grep the WHOLE repo for its name (not just imports of its file — injection sites pass it by value: `setX(fn)`, `register(fn)`, config objects), and treat each hit as a caller to migrate in the same change. A DI/seam registration is a caller even though the dependency arrow points away from the file.
+
+**Applies to:** `apps/erp/app/routes/api+/v1+/lib/call.server.ts` (the shared entry point now), `packages/jobs/src/workflows/actions/dispatcher.ts`, any `set*`/`register*` seam.
+
+## In a bulk API sweep, a 4xx carrying a service's generic fallback string is a finding, not a pass
+
+**Context:** The 1,495-operation API sweep triaged all 274 WRITE-op 400s as "reached the DB, expected FK rejections" and flagged only 500s. `inventory_insertManualInventoryAdjustment` came back 400 with `"Failed to create manual inventory adjustment"` and was waved through — but that string is the service's FALLBACK for an edge-function error whose real message was suppressed. A customer later hit exactly this: the published schema advertised 12 `adjustmentType` values (the validator spread `itemLedgerTypes` into its enum) while the `post-inventory-adjustment` edge function accepts 5, so every LLM-guided "add stock" call failed undiagnosably.
+
+**Problem:** Bucketing sweep results by status code alone treats "the request was validly rejected" and "the error was swallowed somewhere in the chain" as the same outcome. The ops most likely to be broken-by-contract-drift are precisely the ones that fail with a generic message, because the generic message IS the symptom of a suppressed real error.
+
+**Rule:** When triaging sweep failures, grep the response bodies for known fallback strings (`"Failed to *"` service fallbacks, `getEdgeFunctionErrorMessage` second arguments) and treat each match as a defect to root-cause: either the advertised schema disagrees with the actual acceptor (enum/shape drift between a `.models.ts` validator and an edge function's `payloadValidator`), or an error-sanitization layer is eating a legible message. Published-schema enums must be exactly what the write path accepts — never a wider "domain" enum reused for convenience.
+
+**Applies to:** API/MCP sweep scripts, `apps/erp/app/modules/*/[a-z]*.models.ts` validators that feed `client.functions.invoke` wrappers, `packages/database/supabase/functions/lib/response.ts`, `apps/erp/app/utils/error.ts`.
+
+## A creation-time swap must be keyed by its provenance column at every later lookup
+
+**Context:** Supersession swaps a `jobMaterial` to its successor when the job is created (`substitutedFromItemId` records the predecessor). Picking then looked up `itemSupersession` by `jobMaterial.itemId` — which is now the successor, which has no row — so `resolvePickTarget` returned "pick the item unchanged" and `Consume First` never consumed the predecessor's stock. The picking-side branch was dead code for every job created after the effectivity date, and the unit tests (which passed a material still on the predecessor) could not see it.
+
+**Problem:** The rule lives on the OLD item; the row already names the NEW one. Any later stage that re-reads the rule by the row's current item silently finds nothing, and "no rule" is a valid, quiet outcome.
+
+**Rule:** When a row is rewritten by a rule and carries a provenance column (`substitutedFromItemId`, `redirectedFromItemId`, …), every downstream lookup of that rule must key on `COALESCE(provenance, current)`, in BOTH the TS and SQL mirrors. Test the swapped shape explicitly — a fixture that stops at "rule set, nothing swapped yet" proves nothing about what happens after the swap.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` / `generatePickingList`, `get_picking_schedule`, `packages/ee/src/planning/mrp/mrp.ts` (redirected BOM children), any consumer of `jobMaterial.substitutedFromItemId`.
+
+
+## A post-insert fix-up pass must be scoped to the rows the flow inserted, not to the parent entity
+
+**Context:** `pullConsumeFirstPredecessors` in `get-method` ran after every jobMaterial insert and read `WHERE jobId = …`. Three of the four flows rebuild the whole job, so that read was equivalent — but `itemToJobMakeMethod` rebuilds ONE sub-method, and the pass rewrote lines on every other sub-method too, including rows that already had issued quantity in the successor's units.
+
+**Problem:** A pass keyed on the parent id is correct for the flow it was written next to and silently over-broad for any flow that rebuilds a subset. Nothing fails: the rewritten row has plausible numbers and a plausible provenance column, and only the units disagree with what was already issued.
+
+**Rule:** A fix-up pass that runs after inserts takes the inserted row ids (collect them at every insert site of every flow) and filters on them, plus a guard on any state that means "this row's units are already committed" (`quantityIssued > 0`). Never derive the candidate set from the parent entity when some caller rebuilds only part of it.
+
+**Applies to:** `packages/database/supabase/functions/get-method/index.ts` post-insert passes, any future "after all rows are in, patch some" step in the four job flows.
+
+## A provenance column that records both directions of a swap cannot be trusted first
+
+**Context:** `jobMaterial.substitutedFromItemId` holds the predecessor on a line swapped forward at creation, and the SUCCESSOR on a line pulled back onto a stocked predecessor. Picking looked the rule up on that column first — correct for the forward case, and when the successor had a rule of its own (NEW → NEWER) the pulled-back line resolved NEW's rule, the roles inverted, and the pick went back to NEW.
+
+**Problem:** "Column set ⇒ rule lives there" was true until the second writer appeared. The only thing that distinguishes the two shapes is the relation between the row's own item and the column: on a pulled-back line, the row's own rule NAMES the column as its successor.
+
+**Rule:** When a provenance column can be written by more than one direction of a swap, resolve by relation, not by presence: prefer the row's own rule when it points at the column; only then fall back to the column's rule. Mirror the precedence in every SQL twin (`ORDER BY (own AND successor = column) IS TRUE DESC, …`). Or give the two directions distinct columns.
+
+**Applies to:** `apps/erp/app/modules/inventory/supersession-pick.ts` (`resolvePickRule`), `get_picking_schedule`, any reader of `substitutedFromItemId` / `redirectedFromItemId`.
+
+## Consume First splits are per assembly, not per unit (2026-09-15)
+
+- **Context:** the Consume First partial-stock split picked the predecessor for
+  every unit the warehouse had and the successor for the rest.
+- **Problem:** with 2 per assembly and 3 on the shelf that put one old and one
+  new part on the same unit. A customer would rather leave the odd part in
+  stock than fit a mismatched pair; units of a batch may differ, one unit never.
+- **Rule:** round a predecessor's usable on-hand DOWN to a multiple of the
+  line's per-assembly quantity (`consumableInWholeAssemblies`) everywhere the
+  split is computed — job creation, picking, the SQL schedule, the job
+  materials note, Order Status, the planning list, MRP. A quantity rule that
+  lives in seven places needs one helper, or the sites drift.
+- **Applies to:** any allocation of a per-unit component across a batch.
+
+## Consume First is one rule for bought and made parts (2026-09-16)
+
+- **Context:** the Consume First stock-netting was written for bought parts
+  only. A made predecessor always swapped to its successor — at job creation
+  (`loadSupersessionRedirect`'s Make exclusion) and in MRP (full BOM swap) —
+  because the post-explosion pass that moved the bought shortfall could not
+  explode a made successor's BOM.
+- **Problem:** stocked old sub-assemblies were never used: a job named the new
+  bracket while old brackets sat on the shelf, and planning bought the new
+  bracket's ingredients for the whole quantity. The two "made" special cases
+  were a workaround for where the netting lived, not a product decision.
+- **Rule:** put the netting where the successor can still be planned as
+  itself. In MRP that is INSIDE `explodeBom` (`consumeFirstRedirect`): the old
+  part nets its running balance and moves the shortfall to the successor,
+  which then explodes or buys at a deeper level (a synthetic leveling edge
+  keeps it below the predecessor). In job creation the per-line settle pass is
+  the authority for every Pull from Inventory line, and the item-level filter
+  is provisional. When a rule has a replenishment-specific exception, ask
+  whether the exception is a product decision or an artefact of where the
+  code sits.
+- **Applies to:** `lib/mrp-engine.ts`, `packages/ee/src/planning/mrp/mrp.ts`,
+  `get-method` `settleConsumeFirstLines` / `loadSupersessionRedirect`.
+
+## A Make to Order line is never picked, and never split for Consume First (2026-09-16)
+
+- **Context:** a Consume First sub-assembly on a Make to Order BOM line, three
+  old on the shelf, five needed. The job swapped the line to the successor and
+  built five (Plate B 5), and the picking list ALSO staged three old and two
+  new from the shelf for the parent operation.
+- **Problem:** two bugs stacked. `get_picking_schedule` never excluded Make to
+  Order lines, and since unassigned materials are attributed to the first
+  operation every Make to Order sub-assembly got a phantom pick that nothing
+  consumes (`issue`'s backflush skips Make to Order). And the made-line rule
+  "always swap" meant stocked old sub-assemblies were never used. The obvious
+  fix — split the line into "pick 3 old" + "build 2 new" — dies at the next
+  `recalculate`, which rebuilds every line as per-assembly × parent quantity.
+- **Rule:** a Make to Order line follows the bought Consume First rule by
+  CHANGING METHOD TYPE, not by splitting: when the predecessor covers one whole
+  assembly it becomes a Pull from Inventory line on the predecessor (decided in
+  the row builder, before insert, so no sub-method row is ever created), and
+  picking splits per unit as for any picked line; otherwise it swaps and is
+  built. Picking excludes Make to Order lines everywhere (SQL + TS). When a
+  fix needs two rows where the BOM has one, check what `recalculate` will do
+  to them before writing it.
+- **Applies to:** `get-method` row builders (`itemToJob`,
+  `itemToJobMakeMethod`), `generatePickingList`, `get_picking_schedule`,
+  `lib/job-quantities-engine.ts`.
+
+## A helper that models a chain must be tested with a loop (2026-09-16)
+
+- **Context:** `buildConsumeFirstHops` walked one Consume First hop at a time
+  and guarded against loops only while collapsing through non-Consume-First
+  hops. A two-item Consume First loop passed straight through, and in the
+  engine both items would sit on one cycle level and hand demand to an item
+  already planned — silently lost.
+- **Problem:** the guard was written for the path being walked, not for the
+  property that matters ("does this chain terminate?"), and the first test
+  I wrote for it was the one that caught it.
+- **Rule:** any function that follows successor / parent / next pointers
+  gets a cycle test of the smallest loop (two nodes) before anything else,
+  and the guard checks termination of the WHOLE chain, not just the part the
+  function happens to traverse.
+- **Applies to:** `lib/supersession-pick.ts` chain builders, BOM walkers,
+  anything keyed on `successorItemId` or `parentMaterialId`.
+
+## Two readers of the same shelf must share one definition (2026-09-16)
+
+- **Context:** the pick-list generator credited lineside material with an
+  all-or-nothing on-hand check per item, the schedule SQL did its own version,
+  and consumption followed pick lines only. A job whose two assemblies' parts
+  were already at the work centre (one pair picked on a since-cancelled list,
+  one produced by a sub-job straight into the bin) got a list for four more,
+  and would have consumed the wrong part from the wrong bin.
+- **Problem:** three code paths each answered "what is at the machine for
+  this job?" with a different formula, and none of them was wrong in
+  isolation. The trial found it in minutes because real shop floors leave
+  material at the machine in every way except a clean pick.
+- **Rule:** when picking, scheduling and consumption all read the same bin,
+  write the definition ONCE as a pure function (`linesideCredit`), mirror it
+  in SQL under the same name (`get_lineside_credit`), and make every reader
+  call it. Then enumerate the ways stock reaches a bin — pick, cancelled
+  pick, sub-job output, manual transfer, return — and test each against the
+  definition before calling the feature done.
+- **Applies to:** `generatePickingList`, `get_picking_schedule`,
+  `getPickedBudgets` / `issue`, `post-picking`.
+## Resolve adoption assumptions before designing accounting migration machinery
+
+**Context:** The accounting posting-corrections spec raised legacy open-balance migration concerns; the user clarified that accounting can be assumed unused.
+
+**Problem:** Designing calculation versions, correction journals, and cutover tooling before resolving adoption added unnecessary scope to a correctness fix.
+
+**Rule:** Use the user's explicit adoption premise to size compatibility work. For this spec, correct the monetary contract directly; do not add legacy-accounting machinery. An unused accounting module does not imply permission to delete operational records or reset a database.
+
+**Applies to:** `.ai/specs/2026-09-07-accounting-posting-corrections.md` and its implementation; other modules require their own adoption evidence.
+
+
+## Accounting review: carrying balances and source principal
+
+- **Context:** Mixed positive and negative invoice lines, high FX rates, and changes to account defaults during settlement and provider replay.
+- **Problem:** Summing control magnitudes invented FX; recovering document units from rounded base lost valid minor-unit balances; current defaults rewrote original account provenance.
+- **Rule:** Sum signed original control amounts, preserve exact document principal independently of carrying base, and identify original journal roles through the shared exhaustive vocabulary (including intercompany roles). Reject unknown effective principal rather than infer it; retain Draft reservation policy separately from Posted effectiveness.
+- **Applies to:** Invoice/payment/memo posting, open-balance readers, and accounting provider replay.
+
+## Apportion a document total, never concentrate its rounding residual
+
+**Context:** Sales invoices push to QuickBooks/Xero/Rillet as components (merchandise, add-ons, line shipping, header shipping), each rounded at the document currency's precision, and the sum must equal the authoritative document total.
+
+**Problem:** Rounding N components independently leaves a residual of up to N/2 minor units. Assigning that whole residual to one component broke that component's own percent/amount pair — a 20 x $1.99 @ 8.25% invoice gave one line $0.24 tax on $1.99 net (12.06% against a stated 8.25%). QuickBooks re-derives `round(net x percent)` within one minor unit and refused the invoice with `UNMAPPED_TAX_CODES`, a message blaming the customer's QuickBooks configuration, which they cannot act on. A randomised sweep put this at 1.6% of invoices; some cases produced a negative tax on positive revenue, which Xero accepts and posts.
+
+**Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
+
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+
+## Two halves of an intercompany trade must round at the same scale
+
+**Context:** `post-sales-invoice` and `post-purchase-invoice` each write an `intercompanyTransaction` row, and `generate_intercompany_matches` pairs them with `src."amount" = tgt."amount"` — exact NUMERIC equality, no tolerance.
+
+**Problem:** The seller began rounding its half at the document currency's settlement precision (2dp) while the buyer kept internal `SCALE` (5dp). A trade of 3 x 100.005 stored 300.02 against 300.015, so the pair sat `Unmatched` forever and eliminations silently never ran — consolidated income kept the intragroup profit, with no error anywhere.
+
+**Rule:** An amount used as a MATCHING KEY is not a settlement amount. Round both halves at internal `SCALE`. Before changing rounding anywhere, check whether the value is compared for equality by something else — a matcher, a tie-out, or a reconciliation — and change both sides together.
+
+**Applies to:** `calculateSalesIntercompanyAmount`, `post-purchase-invoice`'s IC amount, `generate_intercompany_matches`.
+
+## Prove provider accounting against its independent journal
+
+**Context:** The live Rillet E2E run accepted invoice payloads while ignoring their FX override and crediting deferred revenue.
+
+**Problem:** Request shape and HTTP success did not prove economic parity. AR_ONLY used provider FX; the supported REVENUE_RECOGNITION_ONLY scope accepted fixed document-to-base rates and same-day recognition.
+
+**Rule:** Verify returned account effects in the provider's independent GL, including recognition and voids. Treat Carbon's rate as document units per base unit, invert it for Rillet, and align recognition and FX dates with Carbon's posting date. Check voided mappings before create-idempotency shortcuts and retain durable deletion markers.
+
+**Applies to:** Rillet invoice/bill/payment adapters, native-void reconciliation, and future provider acceptance tests.
+
+## Seed UI-only controlled fields through the form defaults
+
+**Context:** Payment type choices combine counterparty and cash direction while the persisted paymentType remains Receipt or Disbursement.
+
+**Problem:** Passing only SelectControlled.value left the initial registered paymentKind empty in the real browser; unit mocks did not model form initialization. A composer also retained old targets after a saved header identity changed.
+
+**Rule:** Include a UI-only field's initial value in ValidatedForm defaults, and key stateful composers by the document/party/currency/direction identity whose data they hold. Verify the initial label and actual submitted fields in the browser.
+
+**Applies to:** PaymentForm, PaymentApplyTable, and other forms using derived presentation choices.
+
+## A RAISE in a completion RPC aborts the UPDATE that triggered it
+
+**Context:** `complete_job_to_inventory` gained guards refusing a completion it could not satisfy (zero quantity, a fractional serial quantity, fewer receivable units than completed).
+
+**Problem:** That function is not only called from the ERP complete route — `sync_finish_job_operation` calls it from a BEFORE trigger interceptor, and `dispatch_event_interceptors` has no `EXCEPTION` block. So a serial item with no serial sequence (whose job keeps one whole-quantity seed entity, because `assign-serial-numbers` returns early with no sequence) made the raise propagate out and abort the `jobOperation` UPDATE itself: the operator could not mark the operation Done at all.
+
+**Rule:** Before adding a `RAISE` to a SQL function, grep for trigger interceptors that call it. A refusal that is a useful error on a request path is a hard block on a trigger path. Either handle the case rather than refusing it, or make the trigger caller skip the call.
+
+**Applies to:** `complete_job_to_inventory`, `sync_finish_job_operation`, and any function registered through `attach_event_trigger`.
+## A nullable column added by migration needs a reader that tolerates NULL
+
+**Context:** The accounting corrections release added `invoiceSettlement.sourceAmount` (document-currency principal) without backfilling rows written before it, and the migration comment explicitly declared legacy NULLs valid.
+
+**Problem:** The shared TypeScript reducer that computes an invoice's remaining balance and a payment's remaining funding threw "Settlement is missing its document principal" on any NULL. Every invoice with a pre-release partial payment or credit became unpayable: the New Payment loader seeded from such an invoice returned a 500, and posting a payment for that party would have failed the same way. The schema and the code disagreed about what a valid row is.
+
+**Rule:** When a migration adds a nullable column and leaves existing rows NULL, every reader added in the same change must define what NULL means and handle it, or the migration must backfill. Keep the throw only where a DB constraint already guarantees the value (source-linked rows). Derive legacy values from the columns that did exist (`appliedAmount` at the applicable exchange rate) and cover the NULL case in the pure-function tests.
+
+**Applies to:** `payment-funding.ts` reducers, any future column added to `invoiceSettlement`, `journalLine`, or other high-volume tables where a backfill is skipped.
+
+## A JSON column copied through Kysely on deno-postgres only survives as an object
+
+**Context:** Quote → sales order conversion (`convert` edge function) reads the quote with supabase-js and re-inserts its `internalNotes` / `externalNotes` into `salesOrder` through Kysely inside the transaction. One quote had `internalNotes` stored as a JSON string scalar rather than a tiptap document, written through an API path whose validator typed `notes` as `z.any()`.
+
+**Problem:** deno-postgres encodes query parameters by JS type, not by column type: an object is `JSON.stringify`ed, but a string is sent as raw text and an array as a Postgres array literal. A JSON string scalar therefore round-trips as unquoted text and Postgres rejects the insert with `invalid input syntax for type json`. The route sanitised the body, so Vercel only showed "Edge Function returned a non-2xx status code"; the real line was only in the Supabase function log. Every retry failed identically, and the same latent fault sat in RFQ → quote, supplier quote → PO, and quote revision copies.
+
+**Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in an edge function goes through `lib/json.ts` `toJson()`, which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
+
+**Applies to:** `packages/database/supabase/functions/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
+
+**Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
+
+## An unchecked supabase-js insert turns a NOT NULL violation into silence
+
+**Context:** Inspection rejects were supposed to seed `nonConformanceItemTrackedEntity` links on the NCR's default Scrap row so the MRB could split or reassign specific entities. Nothing ever appeared. Both writers — `x+/inspection+/$id.reject.tsx` and `x+/issue+/new.tsx`'s job-operation auto-link — built their rows without `nonConformanceId`, which is `NOT NULL` on that table (`20260421130000_nc-item-tracked-entity.sql`).
+
+**Problem:** Every such insert returned a 23502, and nobody read it. The reject route did `await (serviceRole as any).from(...).insert(rows)` and discarded the result entirely, so the feature had never worked in production and no error surfaced anywhere. supabase-js does not throw — it resolves to `{ data, error }` — so an unchecked insert is indistinguishable from a successful one, and the `as any` cast additionally hid that the row type was missing a required column. A Kysely insert in the same place would have thrown.
+
+**Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read.
+
+**Applies to:** every `.from(...).insert(...)` / `.update(...)` whose result is not bound, especially in post-commit "also link X" tails; fixed for both writers in PR #1612 by moving them into a Kysely transaction under `lockIssueDispositions`.
+
+## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
+
+**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
+
+**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
+
+**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+## pdfjs rejects Node Buffer by constructor check
+
+**Context:** `@carbon/files/pdf` and the shared image pipeline feed bytes from `fs.readFile` / `storage.download().arrayBuffer()` into pdfjs (via unpdf) and jSquash codecs.
+
+**Problem:** pdfjs throws `Please provide binary data as 'Uint8Array', rather than 'Buffer'` — it checks the constructor, and Node's `Buffer` fails despite being a `Uint8Array` subclass. The failure only appears in Node (tests, jobs), never in the browser or Deno.
+
+**Rule:** Normalize at the boundary: wrap as a plain view over the same memory — `new Uint8Array(data.buffer, data.byteOffset, data.byteLength)` — before handing bytes to a wasm codec or pdfjs. `@carbon/files` does this in its `toBytes` helpers; new entry points must too.
+
+**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/database/supabase/functions/shared/image-pipeline.ts`, any future wasm codec wrapper.
+
+## A functions/shared source with npm deps must register them twice
+
+**Context:** `functions/shared/image-pipeline.ts` follows the `precision.ts` pattern (source under `supabase/functions/`, re-exported by a Node package) but, unlike precision, imports npm packages (`libheif-js`, `@jsquash/*`).
+
+**Problem:** Module resolution follows the FILE's location, not the importer's. Deno resolves the bare specifiers via `functions/deno.json` `imports`; Node/Vite resolve them from `packages/database/node_modules` — not from the re-exporting package. Registering the dep in only one place typechecks in one world and crashes in the other, and the versions can silently drift.
+
+**Rule:** A shared `functions/` source with npm deps registers each dep in BOTH `functions/deno.json` `imports` (pinned `npm:` specifier) and `packages/database/package.json` `dependencies`, at the same version. Type declarations it needs must sit next to it (triple-slash reference), not in a consuming package — ambient `.d.ts` files only load for programs that include them.
+
+**Applies to:** `packages/database/supabase/functions/shared/**` and every `@carbon/*` re-export of it.
+
+## unpdf ships a dead 1.5 MB engine chunk unless aliased away
+
+**Context:** `@carbon/files/pdf` uses unpdf but points it at react-pdf's `pdfjs-dist` in the browser (`definePDFJSModule`) so each bundle has one PDF.js engine.
+
+**Problem:** unpdf's fallback `import("unpdf/pdfjs")` is never reached but is statically visible, so Vite emits its bundled serverless engine as a ~1.5 MB lazy chunk in every client build.
+
+**Rule:** Any browser app consuming `@carbon/files/pdf` aliases `unpdf/pdfjs` to `app/ssr-shims/unpdf-pdfjs-stub.mjs` in its Vite config (both apps do). Verify with the built output: exactly one chunk should contain `GlobalWorkerOptions` + `PDFWorker`.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, any new React Router app that reads PDFs client-side.
+
+## crbn reload of storage leaves Kong routing 502s
+
+**Context:** Recreating the `storage` container (`crbn reload storage imgproxy`) after a compose edit.
+
+**Problem:** Kong resolves upstreams via Docker DNS at proxy time but held the old container IP — every `/storage/v1/*` request returned 502 while the storage container itself was healthy and listening.
+
+**Rule:** After `crbn reload` of any service Kong proxies (storage, auth, postgrest, edge-runtime), also run `crbn reload kong`. Verify with `curl $SUPABASE_URL/storage/v1/version` (expect 200), not with `docker ps`.
+
+**Applies to:** `packages/dev` compose workflow, any per-service reload.
+
+## A running total must be subtracted from the pool it was taken from
+
+**Context:** The operation-completion backflush (`issue`, `issueJobOperationMaterials`) allocates every material of the operation against its lineside budgets before inserting any ledger row. A review pointed out that two materials sharing a picked item could both be offered the same unclaimed lineside stock, and asked to track what earlier materials took and subtract it from the next budget.
+
+**Problem:** The budget's `available` was the sum of two pools — the material's OWN pick (private) and the bin's UNCLAIMED stock (shared) — and the fix subtracted a per-item running total of whole takes from that sum. Material A consuming its own private pick therefore zeroed material B's private pick, and B fell back to the warehouse while its staged stock sat at the machine. The fix was written to the reviewer's wording ("subtract it from available"), it had no test with a non-empty running total, and the follow-up review comment landed after the fix was pushed and was never re-polled.
+
+**Rule:** When a value is a sum of pools with different sharing scopes, never subtract a merged total from it. Keep the pools apart on the type, attribute each take to a pool, and subtract a take only from the pool it came from. Every fix that adds a cross-iteration accumulator gets a pure test with the accumulator non-empty before it is committed. After pushing review fixes, re-read the PR's open threads — the reviewer's follow-up is on the FIX commit, not the original diff.
+
+**Applies to:** `lib/picked-consumption.ts` (`SharedTakes`, `recordSharedTakes`, `splitTakeByBin`), `generatePickingList`'s `unclaimedRemaining`, `getPickedBudgets` callers, and any loop that allocates from a shared balance before persisting.
+
+## A cron that walks every tenant must isolate each tenant
+
+**Context:** `accounting-pull-sweep` looped `for (target of targets) await step.run(...)` over every active accounting integration; `mrp` ran every company inside ONE `step.run`. One Xero tenant's refresh token died (`invalid_grant` "Refresh token not found"); one MRP run outgrew Vercel's function timeout.
+
+**Problem:** An Inngest step that exhausts its retries throws into the function and fails the run, so the dead-token company silently skipped every company after it on every sweep — for weeks, with no notification. The single-step MRP was one Vercel invocation for all tenants, timed out, and every retry restarted from company #1. In both cases the run's status said what happened to the run, not to the tenants.
+
+**Rule:** One `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues; return the per-tenant outcomes so the run output says who failed. Classify terminal failures (a refused OAuth grant is `AccountingAuthError`) and return them from the step instead of throwing — retries cannot fix them and only delay the next tenant. Pair the per-tenant step with a `maxDuration` on the serve route: a step's ceiling is that function's ceiling.
+
+**Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
+
+## A merged-away table breaks every existing backup unless the rename map and schema manifest move with it
+
+**Context:** The sales-rules PR (#1382) merged `storageRule` / `storageRuleItemAssignment` / `storageRuleWorkCenterAssignment` into the shared `enforcementRule*` tables and dropped the old ones. The branch shipped with no `TABLE_RENAMES` entries and a stale `packages/jobs/manifests/schema.json` still listing the dropped tables.
+
+**Problem:** A restore that meets an unmapped missing table refuses by design (`applyTableRenames` → `assertBackupImportable`), so every customer backup taken before the merge would stop restoring the moment it shipped. The pre-commit `db:check:backups` gate that catches this only runs against a migrated LOCAL database — on a worktree with no dev stack the hook skips with a warning, which is exactly the state a reviewer or merge-fixer is in.
+
+**Rule:** A migration that renames or drops any tenant-scoped table needs, in the same commit: (1) a `TABLE_RENAMES` entry (`packages/jobs/src/backups/renames.ts` — new name, or `null` if the feature died), (2) a default (or nullability) on any NEW NOT-NULL column of the rename target so old backup rows can load, and (3) a regenerated `manifests/schema.json`, which requires running `pnpm db:migrate` + `pnpm db:check:backups` against a live local DB. If the DB isn't running, say so — a skipped hook is not a passed check.
+
+**Applies to:** `packages/database/supabase/migrations/**` table renames/drops, `packages/jobs/src/backups/renames.ts`, `packages/jobs/manifests/schema.json`, `.claude/rules/workflow-database-migration.md` step 3b.
+
+## OAuth signup bypasses app-level email gates — GoTrue provisions before your code runs
+
+**Context:** The free/disposable-domain self-signup blocklist (#1661) was enforced only on the email/password path (`login.tsx` unknown-user branch, `verify.tsx` before `createEmailAuthAccount`). "Sign in with Google" / "Sign in with Outlook" (`signInWithOAuth`) let a gmail/outlook address self-sign-up anyway.
+
+**Problem:** For OAuth there is no app-code seam before account creation. GoTrue creates the `auth.users` row during the IdP handshake and the `create_public_user` trigger fires inside that same transaction — all before the app's `/callback` action runs. So an email-path-only check has an OAuth-shaped hole, and the callback is the *first* point app code can react. The tempting "let it create, then delete it" teardown is a smell; the truly-earlier options (a GoTrue `before-user-created` hook, `GOTRUE_DISABLE_SIGNUP=true`, or a trigger `RAISE`) each cost more than they save (infra + Cloud config, or breaking existing-user first-time OAuth login, or a DB-resident blocklist + no edition signal + a raw error instead of a message).
+
+**Rule:** Any signup/identity gate must cover OAuth, not just the email path, and OAuth is enforced in the auth callback's non-SSO branch (both ERP and MES). Gate on a GENUINE self-signup only — no company membership AND no pending invite — so existing members and invited contractors pass. Prefer *not minting a session* over deleting the account: a membership-less `user` row can access nothing and is reused by `createEmployeeAccount` if the address is later invited, so no teardown is needed and the email stays invitable. Keep the check + domain list in one shared home (`@carbon/auth/self-signup.server`) so every entry point (ERP login/verify/callback + MES callback) shares one copy.
+
+**Applies to:** `apps/{erp,mes}/app/routes/_public+/callback.tsx` (non-SSO branch), `packages/auth/src/services/self-signup.server.ts`, and any future email/domain restriction — check the OAuth callback, not only the email/password flow.
+
+## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
+
+**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
+
+**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
+
+**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.

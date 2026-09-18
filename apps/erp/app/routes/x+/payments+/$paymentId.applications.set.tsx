@@ -15,8 +15,7 @@ import { path } from "~/utils/path";
 // Apply-table submits the full list of applications as one JSON payload.
 // Each row is validated against invoiceSettlementValidator (with the
 // paymentId injected from the URL), then replaceInvoiceSettlements
-// runs a delete-then-insert under RLS (Draft-only via the parent
-// payment policy).
+// validates authoritative parents and replaces normalized rows in a transaction.
 const setApplicationsValidator = z.object({
   applications: z.string() // JSON-encoded array
 });
@@ -55,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // injected so the validator's required-field check passes without
   // depending on the client to send it on every row.
   const rowsValidator = z.array(
-    invoiceSettlementBase.omit({ paymentId: true })
+    invoiceSettlementBase.omit({ paymentId: true }).strict()
   );
   const rowsResult = rowsValidator.safeParse(parsed);
   if (!rowsResult.success) {
@@ -96,7 +95,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (e) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(request, error(e, "Failed to save applications"))
+      await flash(
+        request,
+        error(e, e instanceof Error ? e.message : "Failed to save applications")
+      )
     );
   }
 

@@ -11,7 +11,7 @@ The whole surface is gated on **accounting enabled** (`companySettings.accountin
 
 A period carries a **close status** (`periodCloseStatus`) that moves in one direction, then back only by explicit reopen. This is a separate axis from the legacy `Active`/`Inactive` flag, which just marks the current period for lazy auto-creation.
 
-<StatusFlow>
+<StatusFlow entity="accountingPeriod">
   <Status name="Open">Postings land freely. Operational documents (receipts, shipments, invoices, payments) and journals both post by their date.</Status>
   <Status name="Locked" accent>Operational postings are refused; accounting adjustments can still be posted. The staging state you review in before finalizing.</Status>
   <Status name="Closed" terminal>The month is final. Nothing enters, leaves, or changes. Balances are snapshotted. Reopen to post again.</Status>

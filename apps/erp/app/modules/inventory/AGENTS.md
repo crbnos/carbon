@@ -7,8 +7,8 @@ Tracks item quantities across locations and storage units. Manages receipts, shi
 - **Storage Unit** — hierarchical container (bin, shelf, rack, zone) within a location. Tree structure via `parentId`. Renamed from `shelf` in migration `20260417000100`. MUST use `storageUnit` naming, never `shelf`. Bulk **CSV import** is wired via the shared import system (`table: "storageUnit"`, permission `inventory`): fields `id`, `name`, `locationId`, `parentName`, `storageTypeNames`, `active`; matched on `(locationId, lower(name))` since names are unique per location, parents linked in a second pass. See `.claude/rules/csv-import-system.md`.
 - **Tracked Entity** — serial/batch/lot-tracked item instance with `readableId` (serial or batch number), `status` (Available/Reserved/On Hold/Consumed/Rejected/Scrapped), `quantity`, and `expirationDate`. `Scrapped` is terminal but recoverable via the Unscrap adjustment. Batch items have `batchProperty` definitions.
 - **Item Ledger** — append-only log of every inventory movement (`itemLedger` table). Source of truth for on-hand quantities. MUST never INSERT directly — always go through service functions.
-- **Receipt** — inbound inventory from POs or production. Lines link to `purchaseOrderLine` or jobs. Posting creates ledger entries and tracked entities.
-- **Shipment** — outbound inventory to customers. Lines link to sales order lines.
+- **Receipt** — inbound inventory from POs, transfers, or customer RMAs (source "Sales Return Order"). Lines link to `purchaseOrderLine`, jobs, or `salesReturnOrderLine`. Posting creates ledger entries and tracked entities; RMA receipts re-enter at the original outbound cost (shipment consumption rows), current cost for blind returns, or zero when the return reason flags `inventoryValueZero`, and reactivate the SAME tracked entity On Hold (ReturnEntityForm re-tags the Consumed entity instead of minting a new serial).
+- **Shipment** — outbound inventory to customers, or return flows: source "Purchase Return Order" ships supplier returns (Cr Inventory / Dr GRNI at carried cost), source "Sales Return Order" ships rejected RMA claims back to the customer (On Hold entities allowed in lines.tracking for that source only).
 - **Stock Transfer** — moves inventory between storage units within the same location.
 - **Warehouse Transfer** — moves inventory between locations (inter-location).
 - **Picking List** — generated pick instructions with FEFO/FIFO ordering and tracked entity allocation.
@@ -78,6 +78,25 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 import { getInventoryItems, insertManualInventoryAdjustment } from "~/modules/inventory";
 import { inventoryAdjustmentValidator, receiptValidator } from "~/modules/inventory";
 ```
+
+## Storage Rules (sub-area)
+
+Configurable if-condition-then-error/warn rules evaluated on **warehouse/MES transaction surfaces** (the storage-legal subset of `enforcementRuleSurface`: receipt, shipment, stockTransfer, warehouseTransfer, inventoryAdjustment, place, pick, operationStart, operationFinish, materialIssue, materialReceive). Lives **inside** this module: validators in `inventory.models.ts`, UI in `ui/StorageRules/`; the admin CRUD is the family-parametrized implementation in `~/modules/shared` (see "Service functions" below). There is no `modules/storage-rules` directory — a rule feature is not its own domain.
+
+Sibling feature to **sales rules** (`~/modules/sales`, sales-document surfaces). Both share the engine in `@carbon/utils` (`rules.ts` + `field-registry.ts` + the zod AST mirror in `rules-schema.ts`), the evaluator/violation UI in `@carbon/ee/rules(.server)`, AND the `enforcementRule` table — one table for both families, discriminated by `family`.
+
+- **Rule** — `enforcementRule` row (`family = 'storage'`; the table is shared with sales rules, so every read/write here MUST filter `family = 'storage'`): `conditionAst` JSONB, `severity` (`error` blocks; `warn` blocks until acknowledged), `targetType` (`item` | `workCenter`, enum `enforcementRuleTargetType`), `surfaces`, `appliesToAll` (workCenter broadcast gate) and the `filteredItem*` columns (item scoping). Assignments are polymorphic across `enforcementRuleItemAssignment` / `enforcementRuleWorkCenterAssignment` — `targetType` picks the table. The item table is shared with the sales family: resolve pinned rules against a family-filtered fetch, never a PostgREST embed.
+- **Evaluator** — `@carbon/ee/rules.server`: `evaluateLinesForSurface`, `isBlocked`, `dedupeViolations`, plan gate `isStorageRulesEnabledForCompany`. Its item load swallows query errors, which silently skips every broadcast rule — a known gap kept for behavior compatibility (see the comment at the call site). New evaluators must throw instead.
+- **One modal** — posting actions return `{ violations, ruleNames }`; callers submit via `useRuleViolations` and render `RuleViolationModal`. Do not fork a second violation UI.
+
+### Storage Rules safety
+
+- The `ui/StorageRules/` components are the **shared** rule-builder surface — sales rules imports `RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, and `ItemFilterSelector` from here by deep path. Changes must stay backward-compatible; parameterize additively rather than rewriting.
+- These components must NOT import a module barrel (`~/modules/inventory`, `~/modules/items`, or `~/modules/sales`) — deep file imports only. `inventory` already depends on `items`, and the sales module imports these components for its SalesRules UI, so a barrel import would create a cycle. `StorageRules` is deliberately **not** re-exported from `ui/index.ts` for the same reason.
+- `getEnforcementRuleAssignmentCounts` (in `~/modules/shared`) spans BOTH assignment tables — a rule lives in exactly one, so the union of single-table counts is correct. Rule ids are globally unique, so counting by id needs no family predicate even though the item table is shared.
+- Never widen the `enforcementRule_storage_surfaces` CHECK to admit sales-document surfaces — that CHECK is what replaced the old per-family enum typing.
+
+Service functions: the admin CRUD is NOT in `inventory.service.ts` — both families share one parametrized implementation in `~/modules/shared` (`getEnforcementRules` / `getEnforcementRule` / `upsertEnforcementRule` / `deleteEnforcementRule` / `getEnforcementRuleAssignmentCounts`), called with `"storage"` as the family. Cross-app `getActiveRulesForTargets` / `getRuleAssignmentsForTarget` / `getStorageRulesList` / `assignStorageRule` / `unassignStorageRule` are imported from `@carbon/ee/rules` DIRECTLY at the call site — this module's barrel deliberately does not re-export them. Routes: `x+/inventory+/storage-rules*`, plus assignment routes under `x+/items+/rules.*` (item targets) and `x+/resources+/work-centers.rules.*` (work-center targets).
 
 ## Related Modules
 

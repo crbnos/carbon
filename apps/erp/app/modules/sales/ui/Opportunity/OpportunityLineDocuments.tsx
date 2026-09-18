@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -27,7 +28,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -43,7 +44,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -239,45 +240,30 @@ const useOpportunityLineDocuments = ({
     [id, submit, type]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (
       files: File[],
       bucket: "opportunity-line" | "parts" = "opportunity-line"
     ) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
       if (bucket === "parts" && !itemId) {
         toast.error(t`Cannot upload to parts bucket without item ID`);
         return;
       }
 
-      for (const file of files) {
-        const fileName = getPath(file, bucket);
-
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath: (file) => getPath(file, bucket),
+        onSuccess: (file, uploadedPath) =>
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size,
             bucket
-          });
-        }
-      }
+          })
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, itemId, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(

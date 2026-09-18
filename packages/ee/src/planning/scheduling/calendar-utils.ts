@@ -275,6 +275,30 @@ export function subtractIntervals(
 }
 
 /** Whether an instant falls inside any window. */
+/**
+ * The earliest working instant >= `from` inside `windows`. When `from` already
+ * falls inside a window it is returned unchanged; otherwise it snaps forward to
+ * the start of the next window (skipping nights/weekends the calendar doesn't
+ * cover). Returns `from` when there are no windows at all, or when every window
+ * is already behind it — a placeholder marker should never move backward.
+ *
+ * Used to place NON-BINDING placeholders (unschedulable ops / no-estimate
+ * batches) so their "where it would run" bar lands on a working day instead of
+ * whatever instant `now` happens to be — a Sunday `now` otherwise draws the
+ * marker on the weekend.
+ */
+export function nextWorkingInstant(
+  windows: CalendarWindow[],
+  from: number
+): number {
+  let best: number | null = null;
+  for (const w of windows) {
+    if (w.start <= from && w.end > from) return from; // already inside a window
+    if (w.start > from && (best === null || w.start < best)) best = w.start;
+  }
+  return best ?? from;
+}
+
 export function coversInstant(windows: CalendarWindow[], at: number): boolean {
   for (const w of windows) {
     if (w.start <= at && w.end > at) {

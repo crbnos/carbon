@@ -2,12 +2,11 @@ import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, toast, useDebounce } from "@carbon/react";
+import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -18,7 +17,7 @@ import {
   useParams
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import { getProcedure, getProcedureVersions } from "~/modules/production";
 import ProcedureExplorer from "~/modules/production/ui/Procedures/ProcedureExplorer";
 import ProcedureHeader from "~/modules/production/ui/Procedures/ProcedureHeader";
@@ -27,7 +26,7 @@ import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -85,7 +84,7 @@ export default function ProcedureRoute() {
                 />
               }
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <ProcedureEditor />
                   <Outlet />
                 </div>
@@ -134,10 +133,7 @@ function ProcedureEditor() {
   }, [canEdit, setLiveTitle]);
 
   const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
 
   const updateProcedure = useDebounce(
     async (content: JSONContent) => {
@@ -180,23 +176,7 @@ function ProcedureEditor() {
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/job/notes/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("job/notes");
 
   return (
     <div className="flex flex-col w-full h-full">

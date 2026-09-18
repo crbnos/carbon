@@ -118,7 +118,7 @@ Carbon is designed to make it easy for you to extend the platform by building yo
 | Auth       | [Supabase](https://supabase.com)                                      |
 | Cache      | [Redis](https://redis.io)                                             |
 | Jobs       | [Inngest](https://inngest.com)                                        |
-| Email      | [Resend](https://resend.com)                                          |
+| Email      | SMTP ([Nodemailer](https://nodemailer.com))                           |
 | i18n       | [Lingui](https://lingui.dev)                                          |
 | Hosting    | [Vercel](https://vercel.com)                                          |
 | Billing    | [Stripe](https://stripe.com)                                          |
@@ -180,7 +180,7 @@ You'll also want accounts with the following external services:
 | ---------------------------------------------------- | -------------------------- |
 | [Posthog](https://us.posthog.com/signup)             | Product analytics platform |
 | [Stripe](https://dashboard.stripe.com/login)         | Payments service           |
-| [Resend](https://resend.com)                         | Email service              |
+| An SMTP provider (e.g. [Resend](https://resend.com)) | Email service              |
 
 Posthog has a free tier which should be plenty to support local development. If you're self hosting and you don't want to use Posthog, it's pretty easy to remove the analytics.
 
@@ -296,7 +296,7 @@ Then configure each service:
 
 Signing in requires you to set up one of two methods:
 
-- Email requires a Resend API key (you'll set this up later on)
+- Email requires SMTP credentials (you'll set this up later on)
 - Sign-in with Google requires a Google auth client with these variables. [See the Supabase docs for instructions on how to set this up](https://supabase.com/docs/guides/auth/social-login/auth-google):
   - Set `Authorized JavaScript origins` to `https://api.carbon.dev`
   - Set `Authorized redirect URIs` to `https://api.carbon.dev/auth/v1/callback`
@@ -316,7 +316,7 @@ Backend services run inside the per-worktree docker stack — `crbn up` boots th
 - `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` — keys minted per-worktree from a random `SUPABASE_JWT_SECRET`
 - `SUPABASE_DB_URL` — direct Postgres URL on a dynamic port
 
-`.env.local` is generated; do not commit it or hand-edit values that came from `crbn up` (they are re-derived on each boot). Put genuine secrets (OAuth client IDs, Stripe keys, Resend) in `.env` only.
+`.env.local` is generated; do not commit it or hand-edit values that came from `crbn up` (they are re-derived on each boot). Put genuine secrets (OAuth client IDs, Stripe keys, SMTP credentials) in `.env` only.
 
 Run `crbn status` at any time to see the live port assignment and the URLs portless is serving.
 
@@ -349,15 +349,20 @@ In Posthog go to `https://[region].posthog.com/project/[project-id]/settings/pro
 </details>
 
 <details>
-<summary><strong>6. Resend (email)</strong></summary>
+<summary><strong>6. SMTP (email)</strong></summary>
 
-[Create a Resend account](https://resend.com) and configure:
+Transactional email (user invitations, email verification, onboarding) is sent over SMTP. Any provider works — Resend, Amazon SES, or your own relay:
 
-- `RESEND_API_KEY="re_**********"`
-- `RESEND_DOMAIN="carbon.ms"` (or your domain, no trailing slashes or protocols)
+- `SMTP_HOST="smtp.example.com"`
+- `SMTP_PORT="587"` (465 uses implicit TLS, 587 uses STARTTLS)
+- `SMTP_USER="********"`
+- `SMTP_PASSWORD="********"`
+- `SMTP_FROM="Carbon <no-reply@example.com>"`
+
+Leave them unset to disable email entirely — the apps boot and run fine without it.
+
+- `RESEND_API_KEY="re_**********"` (Optional — Resend marketing contacts; also a legacy SMTP fallback when `SMTP_*` is unset)
 - `RESEND_AUDIENCE_ID="*****"` (Optional — required for contact management in `packages/jobs`)
-
-Resend is used for transactional emails (user invitations, email verification, onboarding). All three variables are stored in `packages/auth/src/config/env.ts`.
 
 </details>
 
@@ -397,7 +402,7 @@ For local development you don't need email or OAuth configured. `crbn up` seeds 
 
 You'll land on the authenticated dashboard (`/x`) — no inbox check required. The same session cookie works for the MES app at `https://<worktree>.mes.dev`.
 
-> The bypass only applies to the exact address in `DEV_BYPASS_EMAIL` and only when that user is active — it's a dev convenience, not present in production. Any other email falls back to the normal magic-link / verification flow (which needs Resend configured). To sign in as your own account instead, use the magic link and read it from the local mail catcher at `https://<worktree>.mail.dev`.
+> The bypass only applies to the exact address in `DEV_BYPASS_EMAIL` and only when that user is active — it's a dev convenience, not present in production. Any other email falls back to the normal magic-link / verification flow (which needs SMTP configured). To sign in as your own account instead, use the magic link and read it from the local mail catcher at `https://<worktree>.mail.dev`.
 
 <br />
 

@@ -145,15 +145,28 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
         ),
         meta: {
           icon: <LuBookMarked />,
-          // The accessor is the raw item id — export the readable id
-          // the cell shows instead of a UUID.
-          exportValue: (row) => row.readableIdWithRevision ?? null
+          // The accessor is the raw item id — export the bare part number
+          // (no revision suffix; the Revision column carries that) so the
+          // CSV round-trips through the import wizard.
+          exportValue: (row) => row.readableId ?? null
         }
       },
+      // Export-only columns matching the CSV import field labels exactly, so
+      // a downloaded CSV auto-maps in the import wizard.
+      exportOnlyColumn<PartListItem>({
+        id: "revision",
+        header: t`Revision`,
+        value: (row) => row.revision ?? "0"
+      }),
       exportOnlyColumn<PartListItem>({
         id: "itemName",
         header: t`Item Name`,
         value: (row) => row.name ?? null
+      }),
+      exportOnlyColumn<PartListItem>({
+        id: "unitOfMeasure",
+        header: t`Unit of Measure`,
+        value: (row) => row.unitOfMeasureCode ?? null
       }),
       {
         accessorKey: "description",
@@ -186,7 +199,11 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
               label: <Badge variant="secondary">{group.label}</Badge>
             }))
           },
-          icon: <LuGroup />
+          icon: <LuGroup />,
+          exportValue: (row) =>
+            itemPostingGroups.find(
+              (group) => group.value === row.itemPostingGroupId
+            )?.label ?? null
         }
       },
 
@@ -306,7 +323,8 @@ const PartsTable = memo(({ data, tags, count }: PartsTableProps) => {
             })),
             isArray: true
           },
-          icon: <LuTag />
+          icon: <LuTag />,
+          exportValue: (row) => (row.tags?.length ? row.tags.join(", ") : null)
         }
       },
       {

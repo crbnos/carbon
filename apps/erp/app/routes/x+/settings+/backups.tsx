@@ -2,6 +2,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { convertKbToString } from "@carbon/files";
 import {
   Hidden,
   Input,
@@ -34,7 +35,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";

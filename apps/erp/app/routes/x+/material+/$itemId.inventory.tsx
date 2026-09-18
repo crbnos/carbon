@@ -1,7 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { getStorageRulesDataForTarget } from "@carbon/ee/storage-rules.server";
+import {
+  getSalesRuleAssignmentsForItem,
+  getSalesRulesList
+} from "@carbon/ee/rules";
+import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import { pluckUnique } from "@carbon/utils";
@@ -13,6 +17,7 @@ import {
   getTrackedEntityExpirations,
   InventoryDetails
 } from "~/modules/inventory";
+import RuleAssignmentsList from "~/modules/inventory/ui/StorageRules/RuleAssignmentsList";
 import type { Material, UnitOfMeasureListItem } from "~/modules/items";
 import {
   getBomHasShelfLifeManagedInput,
@@ -27,7 +32,7 @@ import {
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
-import RuleAssignmentsList from "~/modules/storage-rules/ui/RuleAssignmentsList";
+import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -157,7 +162,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     shelfLife,
     bomHasShelfLifeManagedInput,
     trackedEntityExpirations,
-    rulesData
+    rulesData,
+    salesRuleAssignments,
+    salesRuleLibrary
   ] = await Promise.all([
     getItemShelfLife(client, itemId),
     getBomHasShelfLifeManagedInput(client, itemId, companyId),
@@ -166,7 +173,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       targetType: "item",
       targetId: itemId,
       companyId
-    })
+    }),
+    getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
+    getSalesRulesList(client, companyId)
   ]);
 
   return {
@@ -179,7 +188,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemId,
     locationId,
     ruleAssignments: rulesData.assignments,
-    ruleLibrary: rulesData.library
+    ruleLibrary: rulesData.library,
+    salesRuleAssignments: salesRuleAssignments.data ?? [],
+    salesRuleLibrary: salesRuleLibrary.data ?? []
   };
 }
 
@@ -254,7 +265,9 @@ export default function MaterialInventoryRoute() {
     trackedEntityExpirations,
     itemId,
     ruleAssignments,
-    ruleLibrary
+    ruleLibrary,
+    salesRuleAssignments,
+    salesRuleLibrary
   } = useLoaderData<typeof loader>();
 
   const materialData = useRouteData<{
@@ -311,6 +324,11 @@ export default function MaterialInventoryRoute() {
         targetId={itemId}
         assignments={ruleAssignments as never}
         library={ruleLibrary as never}
+      />
+      <SalesRuleAssignmentsList
+        itemId={itemId}
+        assignments={salesRuleAssignments as never}
+        library={salesRuleLibrary as never}
       />
     </VStack>
   );

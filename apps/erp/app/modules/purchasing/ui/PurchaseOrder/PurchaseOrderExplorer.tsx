@@ -8,14 +8,13 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Kbd,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure,
-  useKeyboardShortcuts,
   useMount,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -48,6 +47,7 @@ import {
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import type { ItemType } from "~/modules/shared";
 import { itemType } from "~/modules/shared";
+import { EXPLORER_SHORTCUTS } from "~/shortcuts";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -56,7 +56,6 @@ import DeletePurchaseOrderLine from "./DeletePurchaseOrderLine";
 import PurchaseOrderLineForm from "./PurchaseOrderLineForm";
 
 export default function PurchaseOrderExplorer() {
-  const prettifyShortcut = usePrettifyShortcut();
   const { defaults } = useUser();
   const { orderId } = useParams();
   if (!orderId) throw new Error("Could not find orderId");
@@ -69,7 +68,11 @@ export default function PurchaseOrderExplorer() {
 
   const purchaseOrderLineInitialValues = {
     purchaseOrderId: orderId,
-    purchaseOrderLineType: "Item" as ItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type enum.
+    // Posting it made the validator fail with "Type is required" — an error
+    // naming a field the modal doesn't show. Start from a real type; the item
+    // picker overwrites it with the selected item's type on change.
+    purchaseOrderLineType: "Part" as ItemType,
     purchaseQuantity: 1,
     supplierUnitPrice: 0,
     locationId:
@@ -115,12 +118,15 @@ export default function PurchaseOrderExplorer() {
   };
 
   const newButtonRef = useRef<HTMLButtonElement>(null);
-  useKeyboardShortcuts({
-    "Command+Shift+l": (event: KeyboardEvent) => {
-      event.stopPropagation();
-      newButtonRef.current?.click();
+  useShortcutKeyMap([
+    {
+      shortcut: EXPLORER_SHORTCUTS.addLine,
+      action: (event: KeyboardEvent) => {
+        event.stopPropagation();
+        newButtonRef.current?.click();
+      }
     }
-  });
+  ]);
 
   return (
     <>
@@ -198,7 +204,10 @@ export default function PurchaseOrderExplorer() {
                     <span>
                       <Trans>New Line Item</Trans>
                     </span>
-                    <Kbd>{prettifyShortcut("Command+Shift+l")}</Kbd>
+                    <ShortcutKey
+                      shortcut={EXPLORER_SHORTCUTS.addLine}
+                      variant="small"
+                    />
                   </HStack>
                 </TooltipContent>
               </Tooltip>

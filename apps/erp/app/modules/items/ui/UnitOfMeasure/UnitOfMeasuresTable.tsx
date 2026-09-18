@@ -84,6 +84,12 @@ const UnitOfMeasuresTable = memo(
         data={data}
         columns={columns}
         count={count}
+        importCSV={[
+          {
+            table: "unitOfMeasure" as const,
+            label: t`Unit of Measures`
+          }
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <New

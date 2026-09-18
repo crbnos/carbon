@@ -547,6 +547,12 @@ const ServicesTable = memo(({ data, tags, count }: ServicesTableProps) => {
           updatedBy: false,
           updatedAt: false
         }}
+        importCSV={[
+          {
+            table: "service" as const,
+            label: t`Services`
+          }
+        ]}
         primaryAction={
           permissions.can("create", "parts") && (
             <div className="flex items-center gap-2">

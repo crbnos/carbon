@@ -1,4 +1,5 @@
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import {
   Hidden,
   Submit,
@@ -97,16 +98,29 @@ const Suggestion = () => {
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
-      const file = e.target.files[0];
+      let file = e.target.files[0];
       const fileName = file.name;
       toast.info(t`Uploading ${fileName}`);
-      const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
 
       if (file.size > MAX_FILE_SIZE) {
         toast.error(t`File size exceeds 10MB limit`);
         return;
       }
 
+      if (isHeic(file.name, file.type)) {
+        try {
+          file = await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          });
+        } catch {
+          toast.error(t`Failed to convert image`);
+          return;
+        }
+      }
+
+      const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const storagePath = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
       const imageUpload = await carbon.storage
         .from("private")
@@ -138,7 +152,7 @@ const Suggestion = () => {
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           className="hover:scale-100"
           leftIcon={<LuMegaphone />}
         >

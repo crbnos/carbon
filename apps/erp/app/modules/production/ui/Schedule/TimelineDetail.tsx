@@ -17,7 +17,8 @@ import {
   LuX
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { DateTime } from "~/components";
+import { DateTime, ItemThumbnail } from "~/components";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { TimelineNodeDetail } from "./timeline";
 
@@ -128,6 +129,10 @@ export function TimelineDetail({
 
   const linkedJobId = detail.jobId ?? jobId;
 
+  // Show the part's thumbnail in the header when this row carries an item —
+  // a work-center/operator reservation for an operation (a batch has none).
+  const showThumbnail = !!detail.itemReadableId || !!detail.thumbnailPath;
+
   // Real (booked) reservations get plant-clock times; approximate/placeholder
   // rows stay date-only.
   const showTimes =
@@ -186,8 +191,21 @@ export function TimelineDetail({
     detail.durationMs > 0 &&
     detail.durationMs - detail.workMs > 60_000; // >1 min gap — avoid noise
 
+  // A placeholder with zero estimated work is unschedulable BECAUSE its
+  // operations carry no setup/labor/machine time. The bar's span is a nominal
+  // marker, so showing it as "Duration" reads as real work it doesn't have —
+  // surface the 0h estimate instead, the actual reason it can't be scheduled.
+  const zeroWorkPlaceholder =
+    isUnschedulablePlaceholder && detail.estimatedWorkHours === 0;
+
   const stats: { icon: ReactNode; label: string; value: string }[] = [];
-  if (detail.durationMs > 0 && !isUnscheduled) {
+  if (zeroWorkPlaceholder) {
+    stats.push({
+      icon: <LuTimer className="size-3.5 shrink-0" />,
+      label: t`Estimated time`,
+      value: "0h"
+    });
+  } else if (detail.durationMs > 0 && !isUnscheduled) {
     stats.push({
       icon: <LuClock className="size-3.5 shrink-0" />,
       label: hasWork ? t`Span` : t`Duration`,
@@ -215,24 +233,36 @@ export function TimelineDetail({
     <div className="flex h-full flex-col border-l border-border bg-card">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
-          <Heading size="h3" className="truncate">
-            {detail.title}
-          </Heading>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-              <span
-                className={cn("size-1.5 rounded-full", STATUS_DOT[status.tone])}
-              />
-              {status.label}
-            </span>
-            {relative && (
-              <>
-                <span className="text-border">·</span>
-                <span className="tabular-nums">{relative}</span>
-              </>
-            )}
+        <div className="flex min-w-0 items-start gap-3">
+          {showThumbnail && (
+            <ItemThumbnail
+              thumbnailPath={detail.thumbnailPath}
+              type={(detail.itemType as ItemType | undefined) ?? undefined}
+              size="lg"
+            />
+          )}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
+            <Heading size="h3" className="truncate">
+              {detail.title}
+            </Heading>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    STATUS_DOT[status.tone]
+                  )}
+                />
+                {status.label}
+              </span>
+              {relative && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="tabular-nums">{relative}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <IconButton
@@ -257,15 +287,25 @@ export function TimelineDetail({
           </div>
         )}
 
-        {isUnschedulablePlaceholder && (
-          <p className="text-sm italic text-muted-foreground text-pretty">
-            <Trans>
-              This operation can't be scheduled yet — the bar marks where it
-              would run once the conflict is resolved. It isn't holding
-              capacity.
-            </Trans>
-          </p>
-        )}
+        {isUnschedulablePlaceholder &&
+          (zeroWorkPlaceholder ? (
+            <p className="text-sm italic text-muted-foreground text-pretty">
+              <Trans>
+                There's no setup, labor, or machine time on these operations, so
+                there's nothing to size a run from. The bar is a nominal marker
+                and isn't holding capacity — add time standards to the
+                operations to schedule it.
+              </Trans>
+            </p>
+          ) : (
+            <p className="text-sm italic text-muted-foreground text-pretty">
+              <Trans>
+                This operation can't be scheduled yet — the bar marks where it
+                would run once the conflict is resolved. It isn't holding
+                capacity.
+              </Trans>
+            </p>
+          ))}
 
         {/* Why the row starts when it does — hidden when a conflict is shown,
             the conflict message already names the same cause */}
@@ -301,6 +341,17 @@ export function TimelineDetail({
           </div>
         )}
 
+        {/* The operation's own description — the part now titles the panel, so
+            keep the work content here for context. */}
+        {detail.operationDescription && (
+          <div className="space-y-1">
+            <Subheading variant="heavy">{t`Operation`}</Subheading>
+            <p className="text-sm text-foreground text-pretty">
+              {detail.operationDescription}
+            </p>
+          </div>
+        )}
+
         {isUnscheduled ? (
           <p className="text-sm italic text-muted-foreground text-pretty">
             <Trans>
@@ -315,6 +366,21 @@ export function TimelineDetail({
             )}
             {detail.jobReadableId && (
               <DetailRow label={t`Job`} value={detail.jobReadableId} />
+            )}
+            {detail.itemReadableId && (
+              <DetailRow
+                label={t`Part`}
+                value={
+                  <span className="flex flex-col items-end">
+                    <span>{detail.itemReadableId}</span>
+                    {detail.itemName && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {detail.itemName}
+                      </span>
+                    )}
+                  </span>
+                }
+              />
             )}
             {detail.workCenterName && (
               <DetailRow label={t`Work Center`} value={detail.workCenterName} />
@@ -357,8 +423,9 @@ export function TimelineDetail({
         )}
       </div>
 
-      {/* Footer action */}
-      {linkedJobId && (
+      {/* Footer action — a batch reservation opens the batch it coalesces, not
+          the anchor member's job */}
+      {detail.batchId ? (
         <div className="border-t border-border p-4">
           <Button
             asChild
@@ -366,11 +433,26 @@ export function TimelineDetail({
             className="w-full justify-between"
             rightIcon={<LuArrowRight />}
           >
-            <Link to={path.to.job(linkedJobId)}>
-              <Trans>Open job</Trans>
+            <Link to={path.to.operationBatch(detail.batchId)}>
+              <Trans>Open batch</Trans>
             </Link>
           </Button>
         </div>
+      ) : (
+        linkedJobId && (
+          <div className="border-t border-border p-4">
+            <Button
+              asChild
+              variant="primary"
+              className="w-full justify-between"
+              rightIcon={<LuArrowRight />}
+            >
+              <Link to={path.to.job(linkedJobId)}>
+                <Trans>Open job</Trans>
+              </Link>
+            </Button>
+          </div>
+        )
       )}
     </div>
   );

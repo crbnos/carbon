@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import { File, toast } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -21,8 +22,22 @@ const DocumentCreateForm = () => {
 
   const uploadFile = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
-      const file = e.target.files[0];
+      let file = e.target.files[0];
       toast.info(t`Uploading ${file.name}`);
+
+      if (isHeic(file.name, file.type)) {
+        try {
+          file = await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          });
+        } catch {
+          toast.error(t`Failed to convert image`);
+          return;
+        }
+      }
+
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${companyId}/${nanoid()}.${fileExtension}`;
 

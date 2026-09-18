@@ -152,8 +152,16 @@ SelectLabel.displayName = SelectPrimitive.Label.displayName;
 
 const SelectItem = forwardRef<
   ElementRef<typeof SelectPrimitive.Item>,
-  ComponentPropsWithoutRef<typeof SelectPrimitive.Item>
->(({ className, children, ...props }, ref) => (
+  ComponentPropsWithoutRef<typeof SelectPrimitive.Item> & {
+    /**
+     * Secondary description shown under the label in the dropdown only. It sits
+     * outside `ItemText`, so the collapsed trigger still shows just the label.
+     */
+    helper?: string;
+    /** Right-aligned companion to `helper` (e.g. a shortcut or count). */
+    helperRight?: string;
+  }
+>(({ className, children, helper, helperRight, ...props }, ref) => (
   <SelectPrimitive.Item
     ref={ref}
     className={cn(
@@ -167,7 +175,17 @@ const SelectItem = forwardRef<
         <LuCheck className="h-4 w-4" />
       </SelectPrimitive.ItemIndicator>
     </span>
-    <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    {helper ? (
+      <div className="flex flex-col min-w-0 flex-1">
+        <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+        <div className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+          <span className="truncate flex-1">{helper}</span>
+          {helperRight && <span className="flex-shrink-0">{helperRight}</span>}
+        </div>
+      </div>
+    ) : (
+      <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
+    )}
   </SelectPrimitive.Item>
 ));
 SelectItem.displayName = SelectPrimitive.Item.displayName;

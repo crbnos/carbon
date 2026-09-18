@@ -37,32 +37,38 @@ function collectFiles(dir: string): string[] {
   return files;
 }
 
+function relative(filePath: string): string {
+  return path.relative(path.resolve(__dirname, ".."), filePath);
+}
+
+// These assertions mirror `.claude/rules/i18n-lingui-system.md`. Keep them in
+// step with it — this file previously banned the `@lingui/core/macro` MODULE
+// outright, which flagged 284 files for importing `msg`, the very pattern that
+// rule prescribes for route breadcrumbs. A gate that contradicts the documented
+// convention cannot be satisfied, so it was never run and rotted for months.
+// What the rule actually prohibits is narrower, and is what is checked here.
 describe("Lingui React macro migration", () => {
-  it("avoids msg-based translations in React-facing app files", () => {
-    const offenders: string[] = [];
+  it("never imports the non-contextual `t` from @lingui/core/macro", () => {
+    // No `runtimeConfigModule` is configured, so this `t` would resolve against
+    // a global i18n instance rather than the request's.
+    const offenders = collectFiles(appRoot).filter((filePath) =>
+      /import\s*\{[^}]*\bt\b[^}]*\}\s*from\s*['"]@lingui\/core\/macro['"]/.test(
+        readFileSync(filePath, "utf8")
+      )
+    );
 
-    for (const filePath of collectFiles(appRoot)) {
+    expect(offenders.map(relative)).toEqual([]);
+  });
+
+  it("does not unwrap a literal `msg` at runtime instead of using `t`", () => {
+    // `i18n._(msg`Scrap`)` is the long way round to `t`Scrap``. Rendering a
+    // descriptor built ELSEWHERE — `i18n._(someDescriptor)` from a lookup map —
+    // is legitimate and deliberately not matched here.
+    const offenders = collectFiles(appRoot).filter((filePath) => {
       const source = readFileSync(filePath, "utf8");
-      const relativePath = path.relative(path.resolve(__dirname, ".."), filePath);
+      return /[._]\(\s*msg`/.test(source) || source.includes("t(msg(");
+    });
 
-      if (
-        source.includes('@lingui/core/macro') ||
-        source.includes("from '@lingui/core/macro'") ||
-        source.includes("_(msg") ||
-        source.includes("t(msg(")
-      ) {
-        offenders.push(relativePath);
-      }
-
-      if (
-        source.includes("useLingui") &&
-        (source.includes('from "@lingui/react"') ||
-          source.includes("from '@lingui/react'"))
-      ) {
-        offenders.push(relativePath);
-      }
-    }
-
-    expect(offenders).toEqual([]);
+    expect(offenders.map(relative)).toEqual([]);
   });
 });

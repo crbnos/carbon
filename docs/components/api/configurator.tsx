@@ -1,9 +1,15 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { parseBaseUrl } from "./base-url-parse";
-import { DEFAULT_API_BASE, DEFAULT_APP_ORIGIN } from "./config-constants";
+import {
+  CARBON_REGIONS,
+  DEFAULT_API_BASE,
+  DEFAULT_APP_ORIGIN
+} from "./config-constants";
+
 import { HOST_PLACEHOLDER, useApiConfig } from "./config-context";
 
 function ServerIcon({ className }: { className?: string }) {
@@ -76,31 +82,64 @@ function ModeCard({
   );
 }
 
+/** The two planes configure DIFFERENT hosts, so they get different choices.
+ *
+ *  The Carbon API is served by the app, and Carbon Cloud runs it in three regions —
+ *  so the reader picks a region (or their own instance). The Data API is one `rest.`
+ *  host, so it keeps "not sure / cloud / self-hosted". They write different fields
+ *  (`appBase` vs `base`), which is what lets one surface's choice survive the
+ *  other's. */
+type CarbonMode = (typeof CARBON_REGIONS)[number]["id"] | "self";
+type DataMode = "unknown" | "cloud" | "self";
+
 export function Configurator() {
   const {
     base,
     setBase,
+    appBase,
+    setAppBase,
     isDefault,
     isUnknown,
     apiKey,
     setApiKey,
     openRequest,
   } = useApiConfig();
+  // The sidebar already swaps its tree under /api/data (see ContextualNav); the
+  // host control above it follows the same split.
+  const isDataApi = (usePathname() ?? "").startsWith("/api/data");
+
   const [open, setOpen] = useState(false);
-  const [mode, setMode] = useState<"unknown" | "cloud" | "self">("unknown");
+  const [mode, setMode] = useState<DataMode>("unknown");
+  const [region, setRegion] = useState<CarbonMode>("us");
   const [url, setUrl] = useState("");
   const [key, setKey] = useState("");
   const [showKey, setShowKey] = useState(false);
   const [urlError, setUrlError] = useState("");
-  // With no instance configured the trigger shows the placeholder rather than a
-  // hostname, so the sidebar states plainly that the host is not yet known.
-  const host = base === null ? HOST_PLACEHOLDER : base.replace(/^https?:\/\//, "");
+
+  // Each surface's trigger names the host ITS samples actually call. With nothing
+  // configured both show the placeholder rather than a hostname — showing a reader
+  // on their own instance a carbon.ms host is the bug that state exists to fix.
+  const shown = isDataApi ? base : appBase;
+  const host =
+    shown === null ? HOST_PLACEHOLDER : shown.replace(/^https?:\/\//, "");
 
   // Seed the draft from current config whenever the dialog opens.
   const onOpenChange = (next: boolean) => {
     if (next) {
+      const matched = CARBON_REGIONS.find((r) => r.origin === appBase);
+      // No region configured yet defaults the CARD to US — the origin every sample
+      // on this surface is authored against — while the trigger keeps saying
+      // `<your-host>` until Save makes it the reader's own choice.
+      setRegion(matched ? matched.id : appBase ? "self" : "us");
       setMode(isUnknown ? "unknown" : isDefault ? "cloud" : "self");
-      setUrl(isUnknown || isDefault ? "" : (base ?? ""));
+      const selfUrl = isDataApi
+        ? isUnknown || isDefault
+          ? ""
+          : (base ?? "")
+        : matched
+          ? ""
+          : (appBase ?? "");
+      setUrl(selfUrl);
       setKey(apiKey);
       setShowKey(false);
       setUrlError("");
@@ -123,24 +162,46 @@ export function Configurator() {
   }, [openRequest]);
 
   const save = () => {
-    if (mode === "self") {
+    const selfHosted = isDataApi ? mode === "self" : region === "self";
+    let typed: string | null = null;
+    if (selfHosted) {
       const result = parseBaseUrl(url);
       if ("error" in result) {
         setUrlError(result.error);
         return;
       }
-      setBase(result.url);
-    } else if (mode === "cloud") {
-      setBase(DEFAULT_API_BASE, DEFAULT_APP_ORIGIN);
+      typed = result.url;
+    }
+
+    if (isDataApi) {
+      if (typed) setBase(typed);
+      // REST host only — NOT the paired app origin. `appOrigin()` already resolves
+      // the cloud base to app.carbon.ms on its own, and passing it here overwrote
+      // a region the reader had chosen on the Carbon API surface.
+      else if (mode === "cloud") setBase(DEFAULT_API_BASE);
+      else setBase(null);
     } else {
-      setBase(null);
+      setAppBase(
+        typed ?? CARBON_REGIONS.find((r) => r.id === region)?.origin ?? null
+      );
     }
     setApiKey(key);
     setOpen(false);
   };
 
+  // Follows the card the reader has SELECTED, not what is saved: someone picking
+  // EU or their own instance should be sent to that instance's key settings, and
+  // the region cards are the only place this surface knows the origin from.
+  const draftOrigin =
+    region === "self"
+      ? url.trim().replace(/\/+$/, "")
+      : CARBON_REGIONS.find((r) => r.id === region)?.origin;
+  const keyOrigin =
+    (isDataApi ? appBase : draftOrigin) || appBase || DEFAULT_APP_ORIGIN;
+
   const reset = () => {
     setMode("unknown");
+    setRegion("us");
     setUrl("");
     setKey("");
     setUrlError("");
@@ -186,7 +247,9 @@ export function Configurator() {
             <div>
               <Dialog.Title className="m-0 text-ed-16 font-semi text-ink">API configuration</Dialog.Title>
               <Dialog.Description className="m-0 mt-[3px] text-ed-13 leading-normal text-ed-ink/60">
-                Tune the base URL and key used across the code samples.
+                {isDataApi
+                  ? "Tune the base URL and key used across the code samples."
+                  : "Pick the instance the code samples should call, and the key they carry."}
               </Dialog.Description>
             </div>
             <Dialog.Close
@@ -205,12 +268,27 @@ export function Configurator() {
               <p className="m-0 mb-2 font-mono text-ed-11 font-semibold uppercase tracking-[0.07em] text-ed-ink/50">
                 Environment
               </p>
-              <div className="grid grid-cols-3 gap-2">
-                <ModeCard active={mode === "unknown"} onClick={() => setMode("unknown")} title="Not sure" sub="<your-host>" />
-                <ModeCard active={mode === "cloud"} onClick={() => setMode("cloud")} title="Carbon Cloud" sub="rest.carbon.ms" />
-                <ModeCard active={mode === "self"} onClick={() => setMode("self")} title="Self-hosted" sub="Your instance" />
-              </div>
-              {mode === "self" && (
+              {isDataApi ? (
+                <div className="grid grid-cols-3 gap-2">
+                  <ModeCard active={mode === "unknown"} onClick={() => setMode("unknown")} title="Not sure" sub="<your-host>" />
+                  <ModeCard active={mode === "cloud"} onClick={() => setMode("cloud")} title="Carbon Cloud" sub="rest.carbon.ms" />
+                  <ModeCard active={mode === "self"} onClick={() => setMode("self")} title="Self-hosted" sub="Your instance" />
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 gap-2">
+                  {CARBON_REGIONS.map((r) => (
+                    <ModeCard
+                      key={r.id}
+                      active={region === r.id}
+                      onClick={() => setRegion(r.id)}
+                      title={r.label}
+                      sub={r.origin.replace(/^https?:\/\//, "")}
+                    />
+                  ))}
+                  <ModeCard active={region === "self"} onClick={() => setRegion("self")} title="Self-hosted" sub="Your instance" />
+                </div>
+              )}
+              {(isDataApi ? mode === "self" : region === "self") && (
                 <div className="mt-2">
                   <input
                     value={url}
@@ -222,7 +300,11 @@ export function Configurator() {
                     onKeyDown={(e) => {
                       if (e.key === "Enter") save();
                     }}
-                    placeholder="https://api.your-domain.com"
+                    placeholder={
+                      isDataApi
+                        ? "https://api.your-domain.com"
+                        : "https://carbon.your-domain.com"
+                    }
                     aria-invalid={!!urlError}
                     className={`w-full rounded-lg border bg-white px-[11px] py-[9px] font-mono text-ed-12 text-ed-ink outline-none placeholder:text-ed-ink/42 ${
                       urlError ? "border-ed-red-bright focus:border-ed-red-bright" : "border-ed-warm-300 focus:border-ed-brand"
@@ -266,7 +348,7 @@ export function Configurator() {
               <p className="m-0 mt-[7px] text-ed-12 leading-normal text-ed-ink/55">
                 Stored in this browser only and dropped into the samples. Never sent to Carbon.{" "}
                 <a
-                  href="https://app.carbon.ms/x/settings/api-keys"
+                  href={`${keyOrigin}/x/settings/api-keys`}
                   target="_blank"
                   rel="noreferrer"
                   className="text-ed-brand-ink no-underline hover:underline"

@@ -276,7 +276,8 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
       paymentRemoteId,
       amount: totalAmt,
       currencyCode: remote.CurrencyRef?.value ?? null,
-      exchangeRate: remote.ExchangeRate ?? 1,
+      exchangeRate:
+        remote.ExchangeRate == null ? null : 1 / remote.ExchangeRate,
       paidDate,
       // The QBO (bill) payment Id is the human/provider reference.
       reference: paymentRemoteId,

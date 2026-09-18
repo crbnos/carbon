@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { modelPathOptimizeFormat } from "@carbon/utils";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,

@@ -1,6 +1,6 @@
 # Categories & actions
 
-> The two company-scoped lookups that sit alongside change notices — the category list and the reusable action-task templates — plus linking an action task to Linear.
+> The company-scoped lookups beside change notices: the category list and reusable action-task templates, plus linking a task to Linear.
 
 Two configuration lists live next to change notices in the Items nav. Both are company-scoped and edited by
 employees with the `parts` permission.

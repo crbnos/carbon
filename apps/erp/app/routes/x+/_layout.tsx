@@ -59,6 +59,7 @@ import { RealtimeDataProvider } from "~/components";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
+import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
@@ -485,6 +486,7 @@ export default function AuthenticatedRoute() {
                   onDismiss={dismiss}
                 />
                 <AgentRoot />
+                <ShortcutHelp />
                 {companySettings?.timeCardEnabled && (
                   <Suspense fallback={null}>
                     <Await resolve={openClockEntry}>

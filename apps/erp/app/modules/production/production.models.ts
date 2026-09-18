@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -14,7 +13,8 @@ import {
   methodType,
   operationTypes,
   procedureStepType,
-  standardFactorType
+  standardFactorType,
+  toTiptapDoc
 } from "../shared";
 import type {
   ItemOrderStatus,
@@ -1025,6 +1025,47 @@ export const scheduleJobUpdateValidator = z.object({
   priority: schedulePriorityValidator
 });
 
+// Job operation batching — group N job operations on one batchable process into
+// one run. No maximum batch size (product decision). See
+// .ai/specs/2026-08-21-job-operation-batching.md.
+export const jobOperationBatchStatus = [
+  "Planned",
+  "Active",
+  "Completing",
+  "Completed"
+] as const;
+
+export const createJobOperationBatchValidator = z.object({
+  locationId: z.string().min(1, { message: "Location is required" }),
+  workCenterId: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional()),
+  // Create & Release: insert the batch already on the floor ('Active', shown
+  // as "Released"); unchecked creates it 'Planned' — planner-only, not
+  // dispatched to MES until released.
+  release: zfd.checkbox(),
+  // repeatable so a single submitted id still coerces to an array (RVF/zfd)
+  jobOperationIds: zfd.repeatable(
+    z
+      .array(z.string().min(1))
+      .min(1, { message: "Select at least one operation" })
+  )
+});
+
+export const updateJobOperationBatchValidator = z.object({
+  batchId: z.string().min(1, { message: "Batch is required" }),
+  intent: z.enum([
+    "add",
+    "remove",
+    "update",
+    "dissolve",
+    "release",
+    "unrelease"
+  ]),
+  // repeatable so a single submitted id still coerces to an array (RVF/zfd)
+  jobOperationIds: zfd.repeatableOfType(z.string().min(1)).optional(),
+  workCenterId: zfd.text(z.string().optional())
+});
+
 export const scrapReasonValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" })
@@ -1327,20 +1368,9 @@ export const assemblyInstructionVersionValidator = z.object({
  */
 const optionalTiptapDescription = zfd
   .text(z.string().optional())
-  .transform((val): any => {
-    if (val === undefined || val === "") return undefined;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(val);
-    } catch {
-      parsed = val;
-    }
-    // Always store a tiptap doc object, never a scalar string (jsonb scalar
-    // strings break method copies) and never silently drop content to {}.
-    if (typeof parsed === "string") return textToTiptap(parsed);
-    if (parsed && typeof parsed === "object") return parsed;
-    return textToTiptap(String(val));
-  });
+  .transform((val): any =>
+    val === undefined || val === "" ? undefined : toTiptapDoc(val)
+  );
 
 export const assemblyInstructionStepValidator = z
   .object({

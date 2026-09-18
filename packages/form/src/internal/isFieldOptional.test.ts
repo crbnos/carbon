@@ -88,4 +88,20 @@ describe("isFieldOptional", () => {
     expect(isFieldOptional(schema, "root.name")).toBe(true);
     expect(isFieldOptional(schema, "root.child.name")).toBe(true);
   });
+  it("treats .optional().nonoptional() as required", () => {
+    // zod rejects undefined here, so the field IS required; unwrapping used to
+    // continue into the inner ZodOptional and flip it back to optional.
+    const inner = z.string().optional().nonoptional();
+    expect(inner.safeParse(undefined).success).toBe(false);
+    const schema = z.object({ name: inner });
+    expect(isFieldOptional(schema, "name")).toBe(false);
+  });
+
+  it("treats .nonoptional().optional() as optional", () => {
+    // The mirror case: the OUTER wrapper accepts undefined, so it wins.
+    const inner = z.string().nonoptional().optional();
+    expect(inner.safeParse(undefined).success).toBe(true);
+    const schema = z.object({ name: inner });
+    expect(isFieldOptional(schema, "name")).toBe(true);
+  });
 });

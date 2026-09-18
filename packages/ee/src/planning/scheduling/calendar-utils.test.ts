@@ -4,6 +4,7 @@ import {
   countOverlaps,
   expandCalendar,
   findSlot,
+  nextWorkingInstant,
   unionWindows
 } from "./calendar-utils.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
@@ -28,6 +29,35 @@ it("expandCalendar: weekly pattern produces one window per matching day", () => 
   assertEquals(windows[0]?.start, utc("2026-01-05T08:00:00.000Z"));
   assertEquals(windows[0]?.end, utc("2026-01-05T16:00:00.000Z"));
   assertEquals(windows[4]?.start, utc("2026-01-09T08:00:00.000Z"));
+});
+
+it("nextWorkingInstant: a weekend instant snaps to the next window start", () => {
+  // Two weekdays, Fri 01-09 then Mon 01-12 — the weekend gap is uncovered.
+  const windows = expandCalendar(
+    weekdayShifts,
+    utc("2026-01-09T00:00:00Z"),
+    utc("2026-01-13T00:00:00Z")
+  );
+  const sunday = utc("2026-01-11T15:00:00Z");
+  // Snaps forward to Monday 01-12's 08:00 window start.
+  assertEquals(
+    nextWorkingInstant(windows, sunday),
+    utc("2026-01-12T08:00:00Z")
+  );
+});
+
+it("nextWorkingInstant: an instant already inside a window is unchanged", () => {
+  const windows = expandCalendar(weekdayShifts, RANGE_START, RANGE_END);
+  const monday10 = utc("2026-01-05T10:00:00Z");
+  assertEquals(nextWorkingInstant(windows, monday10), monday10);
+});
+
+it("nextWorkingInstant: no window ahead leaves the instant untouched", () => {
+  const windows = expandCalendar(weekdayShifts, RANGE_START, RANGE_END);
+  // After the last Friday window, nothing follows — never move backward.
+  const afterHorizon = utc("2026-01-31T15:00:00Z");
+  assertEquals(nextWorkingInstant(windows, afterHorizon), afterHorizon);
+  assertEquals(nextWorkingInstant([], afterHorizon), afterHorizon);
 });
 
 it("expandCalendar: overlapping shift rows merge into one window", () => {

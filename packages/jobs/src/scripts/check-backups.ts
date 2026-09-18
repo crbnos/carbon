@@ -213,6 +213,15 @@ function writeSchemaFile(catalog: Catalog): void {
   const manifest = catalogAsManifest(catalog, now("UTC").toAbsoluteString());
   mkdirSync(dirname(SCHEMA_FILE), { recursive: true });
   writeFileSync(SCHEMA_FILE, `${JSON.stringify(manifest, null, 2)}\n`);
+  // lint-staged has already run by the time the pre-commit hook stages this file,
+  // so format it here or it never sees Biome at all.
+  try {
+    execFileSync("pnpm", ["exec", "biome", "format", "--write", SCHEMA_FILE], {
+      stdio: "pipe"
+    });
+  } catch {
+    // Cosmetic only — never block a commit on the formatter.
+  }
   try {
     git(["add", SCHEMA_FILE]);
     console.log(

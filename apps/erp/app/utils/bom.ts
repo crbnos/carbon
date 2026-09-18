@@ -12,6 +12,8 @@ export interface WorkCenterRate {
   processes: string[] | null;
 }
 
+export { stripCsvFormulaPrefix } from "@carbon/files/csv";
+
 export function resolveOperationRates(
   workCenterId: string | null,
   processId: string,

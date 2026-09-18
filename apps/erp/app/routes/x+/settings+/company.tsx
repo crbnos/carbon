@@ -50,7 +50,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const formData = await request.formData();
 
   const validation = await validator(companyValidator).validate(formData);
-
+  console.log(validation.error);
   if (validation.error) {
     return validationError(validation.error);
   }
@@ -80,6 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
         }
       );
     } catch (err) {
+      console.error(err);
       return data(
         {},
         await flash(request, error(err, "Failed to update company"))
@@ -90,6 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
       ...validation.data,
       updatedBy: userId
     });
+    console.log(update.error);
     if (update.error)
       return data(
         {},

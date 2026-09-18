@@ -383,6 +383,7 @@ for (const t of allTools) {
     classification: t.classification,
     description: t.description || "",
     schema: t.schema || {},
+    responseSchema: t.responseSchema,
   });
 }
 const toolModules = [...toolsByModule.entries()]

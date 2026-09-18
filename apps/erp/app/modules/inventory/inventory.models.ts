@@ -1,3 +1,12 @@
+import {
+  conditionAstFormField,
+  getFieldDef,
+  isFieldAvailableOnSurfaces,
+  RULE_SEVERITIES,
+  SURFACES_BY_TARGET_TYPE,
+  TARGET_TYPES,
+  TRANSACTION_SURFACES
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
@@ -69,10 +78,18 @@ export const replenishmentSystemTypes = [
   "Buy and Make"
 ] as const;
 
+// Kanban-specific replenishment systems. Distinct from `replenishmentSystemTypes`
+// (an item-level enum used by planning/MRP): a kanban can Buy, Make, or Transfer.
+export const kanbanReplenishmentSystemTypes = [
+  "Buy",
+  "Make",
+  "Transfer"
+] as const;
+
 export const receiptSourceDocumentType = [
   // "Sales Order",
   // "Sales Invoice",
-  // "Sales Return Order",
+  "Sales Return Order",
   "Purchase Order",
   "Purchase Invoice",
   // "Purchase Return Order",
@@ -160,8 +177,14 @@ export const inventoryAdjustmentValidator = z
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     originalStorageUnitId: zfd.text(z.string().optional()),
+    // Exactly the types the post-inventory-adjustment edge function accepts —
+    // NOT itemLedgerTypes. That wider ledger enum leaked into the published API
+    // schema here, so API/MCP callers were offered "Purchase" etc. and every
+    // such call failed with the generic fallback message. Keep in sync with
+    // the edge function's payloadValidator.
     adjustmentType: z.enum([
-      ...itemLedgerTypes,
+      "Positive Adjmt.",
+      "Negative Adjmt.",
       "Set Quantity",
       "Scrap",
       "Unscrap"
@@ -234,7 +257,9 @@ export const kanbanValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     itemId: z.string().min(1, { message: "Item is required" }),
-    replenishmentSystem: z.enum(replenishmentSystemTypes).default("Buy"),
+    replenishmentSystem: z.enum(kanbanReplenishmentSystemTypes, {
+      error: "Replenishment system is required"
+    }),
     autoRelease: zfd.checkbox(),
     autoStartJob: zfd.checkbox(),
     completedBarcodeOverride: zfd.text(z.string().optional()),
@@ -243,6 +268,7 @@ export const kanbanValidator = z
     ),
     locationId: z.string().min(1, { message: "Location is required" }),
     storageUnitId: zfd.text(z.string().optional()),
+    fromStorageUnitId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
     purchaseUnitOfMeasureCode: zfd.text(z.string().optional()),
     conversionFactor: zfd.numeric(z.number().min(0).default(1))
@@ -252,6 +278,34 @@ export const kanbanValidator = z
     {
       message: "Supplier is required",
       path: ["supplierId"]
+    }
+  )
+  // A Transfer moves stock between two storage units, so it needs a source
+  // (fromStorageUnitId) and a destination (storageUnitId).
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ? !!data.fromStorageUnitId : true,
+    {
+      message: "From storage unit is required",
+      path: ["fromStorageUnitId"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer" ? !!data.storageUnitId : true,
+    {
+      message: "To storage unit is required",
+      path: ["storageUnitId"]
+    }
+  )
+  .refine(
+    (data) =>
+      data.replenishmentSystem === "Transfer"
+        ? data.fromStorageUnitId !== data.storageUnitId
+        : true,
+    {
+      message: "From and to storage units must be different",
+      path: ["storageUnitId"]
     }
   );
 
@@ -293,10 +347,10 @@ export const shipmentStatusType = [
 export const shipmentSourceDocumentType = [
   "Sales Order",
   // "Sales Invoice",
-  // "Sales Return Order",
+  "Sales Return Order",
   "Purchase Order",
   // "Purchase Invoice",
-  // "Purchase Return Order",
+  "Purchase Return Order",
   // "Inbound Transfer",
   "Outbound Transfer"
 ] as const;
@@ -594,3 +648,63 @@ export const pickQuantityValidator = z.object({
   quantity: zfd.numeric(z.number().min(0)),
   markShort: zfd.text(z.string().optional())
 });
+
+// -----------------------------------------------------------------------------
+// Storage Rules — predicate rules evaluated on warehouse/MES transaction
+// surfaces (receipt, shipment, pick, place, …). Sibling feature to sales rules
+// (`~/modules/sales`, sales-document surfaces); both share the engine and the
+// AST schema in @carbon/utils.
+// -----------------------------------------------------------------------------
+export const storageRuleSeverities = RULE_SEVERITIES;
+
+export const storageRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(storageRuleSeverities),
+    targetType: z.enum(TARGET_TYPES),
+    // Broadcast gate for workCenter rules. Item-target storage rules ignore
+    // this and use the filteredItem* fields instead (empty = all items).
+    appliesToAll: zfd.checkbox(),
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(TRANSACTION_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject any surface that isn't valid for the chosen targetType. Schema
+    // enforcement only — DB has no CHECK; UI also filters the picker.
+    const allowed = new Set<string>(SURFACES_BY_TARGET_TYPE[val.targetType]);
+    for (let i = 0; i < val.surfaces.length; i++) {
+      const s = val.surfaces[i]!;
+      if (!allowed.has(s)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["surfaces", i],
+          message: `Surface "${s}" not valid for ${val.targetType} rules`
+        });
+      }
+    }
+
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });

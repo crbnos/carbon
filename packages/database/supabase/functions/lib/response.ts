@@ -74,6 +74,34 @@ export function isDataLayerError(err: unknown): boolean {
 }
 
 /**
+ * Compact, surfaceable summary of a ZodError's issues (`path: message; …`).
+ *
+ * A payload-validation failure is the CALLER's input contract, not a data-layer
+ * leak — but the raw `.message` is a JSON dump, so `isDataLayerError` rightly
+ * blocks it. Suppressing it entirely was worse: an API caller sending an
+ * unsupported `adjustmentType` got only the service's generic fallback string,
+ * with nothing to converge on. The issue text names payload fields and expected
+ * values only — never table or constraint names.
+ */
+function zodIssueSummary(err: unknown): string | null {
+  const e = err as { name?: unknown; issues?: unknown };
+  if (e?.name !== "ZodError" || !Array.isArray(e.issues)) return null;
+  const parts = (
+    e.issues as Array<{ path?: unknown[]; message?: unknown }>
+  )
+    .slice(0, 5)
+    .map((issue) => {
+      const path = Array.isArray(issue.path) ? issue.path.join(".") : "";
+      const message =
+        typeof issue.message === "string" ? issue.message : "invalid";
+      return path ? `${path}: ${message}` : message;
+    });
+  if (parts.length === 0) return null;
+  const more = e.issues.length - parts.length;
+  return `Invalid payload — ${parts.join("; ")}${more > 0 ? `; +${more} more` : ""}`;
+}
+
+/**
  * JSON error response built from a thrown value.
  *
  * - Duck-types `.message` (so `Error` and any `{ message }` object work) and accepts a
@@ -104,6 +132,9 @@ export function errorResponse(
   const body: Record<string, unknown> = {};
   if (typeof raw === "string" && raw !== "" && !isDataLayerError(err)) {
     body.message = raw;
+  } else {
+    const zodSummary = zodIssueSummary(err);
+    if (zodSummary) body.message = zodSummary;
   }
 
   if (extra) {

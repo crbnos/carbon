@@ -1,7 +1,6 @@
 import { getMESUrl } from "@carbon/auth";
 import { requireAuthSession } from "@carbon/auth/session.server";
 import { TooltipProvider, useMode } from "@carbon/react";
-import { MeshGradient } from "@paper-design/shaders-react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect } from "react-router";
 
@@ -30,18 +29,7 @@ export default function SelectCompanyLayout() {
   return (
     <TooltipProvider>
       <div className="relative h-screen w-screen">
-        <div className="absolute inset-0" style={{ background }}>
-          <MeshGradient
-            speed={1}
-            colors={colors}
-            distortion={0.8}
-            swirl={0.1}
-            grainMixer={0}
-            grainOverlay={0}
-            className="absolute inset-0 w-full h-full"
-            style={{ height: "100%", width: "100%" }}
-          />
-        </div>
+        <div className="absolute inset-0" style={{ background }} />
         <div className="relative z-10 flex h-full w-full items-center justify-center p-4">
           <Outlet />
         </div>

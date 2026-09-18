@@ -20,12 +20,14 @@ import {
   nonConformanceTypes,
   paymentTerms,
   periodCloseTaskDefinitions,
+  returnReasons,
   scrapReasons,
   sequences,
   unitOfMeasures,
 } from "../lib/seed.ts";
 import { getSupabaseServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
+import { resolveShippingDefault } from "./shipping-default.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -257,6 +259,19 @@ serve(async (req: Request) => {
         )
         .execute();
 
+      // return reason codes (shared by customer RMAs and supplier returns)
+      await trx
+        .insertInto("returnReason")
+        .values(
+          returnReasons.map((name) => ({
+            name,
+            inventoryValueZero: false,
+            companyId,
+            createdBy: "system",
+          }))
+        )
+        .execute();
+
       // payment terms
       await trx
         .insertInto("paymentTerm")
@@ -368,15 +383,29 @@ serve(async (req: Request) => {
         // For subsidiaries joining an existing group, look up account IDs by number
         const existingAccounts = await trx
           .selectFrom("account")
-          .select(["id", "number"])
+          .select(["id", "number", "name", "companyGroupId", "active", "isGroup", "class", "incomeBalance", "accountType", "consolidatedRate", "parentId"])
           .where("companyGroupId", "=", companyGroupId!)
-          .where("number", "is not", null)
           .execute();
         for (const acc of existingAccounts) {
           if (acc.number) {
             accountIdByKey[acc.number] = acc.id;
           }
         }
+        const parentDefaults = parentCompanyId
+          ? await trx.selectFrom("accountDefault")
+              .innerJoin("company", "company.id", "accountDefault.companyId")
+              .select(["accountDefault.salesShippingRevenueAccount", "accountDefault.salesAccount"])
+              .where("accountDefault.companyId", "=", parentCompanyId)
+              .where("company.companyGroupId", "=", companyGroupId!)
+              .executeTakeFirst()
+          : undefined;
+        const parentDefaultId = parentDefaults?.salesShippingRevenueAccount;
+        accountIdByKey["4050"] = resolveShippingDefault({
+          parentDefaultId: parentDefaultId && parentDefaultId !== parentDefaults?.salesAccount
+            ? parentDefaultId : null,
+          accounts: existingAccounts.filter((account) => account.id !== accountIdByKey["4010"]),
+          companyGroupId: companyGroupId!
+        });
       }
 
       // Resolve account numbers to IDs for account defaults

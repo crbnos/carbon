@@ -1,21 +1,11 @@
-import type { Database } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { AuthedContext } from "~/routes/api+/v1+/lib/base.server";
 
 const logger = getLogger("erp", "mcp");
 
-export interface McpContext {
-  client: SupabaseClient<Database>;
-  companyId: string;
-  companyGroupId: string;
-  userId: string;
-}
-
-export type AuthField =
-  | "companyId"
-  | "companyGroupId"
-  | "createdBy"
-  | "updatedBy";
+/** MCP runs as the same identity every Carbon API call runs as. Type-only alias —
+ *  erased at runtime, so no server module enters a client graph through here. */
+export type McpContext = AuthedContext;
 
 export const READ_ONLY_ANNOTATIONS = {
   readOnlyHint: true,
@@ -47,10 +37,9 @@ export function withErrorHandling<T extends Record<string, unknown>>(
 ) {
   return async (params: T) => {
     try {
-      logger.info("Executing handler", { fallbackMessage });
-      const result = await handler(params);
-      logger.info("Handler completed successfully");
-      return result;
+      // No info logging here — each handler logs its own invocation/result;
+      // this wrapper only reports the throw path.
+      return await handler(params);
     } catch (error) {
       logger.error("Error in handler", {
         fallbackMessage,
