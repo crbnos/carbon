@@ -240,9 +240,9 @@ export const completeJobOperationBatchValidator = z.object({
         quantity: zfd.numeric(z.number().int().min(0).optional()),
         scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
         // Batch-tracked output: the member's WIP entity finalized as the
-        // produced lot, and the operator-editable batch number stamped on it.
+        // produced lot. Its lot number was planned at batch creation and is
+        // resolved server-side — never an operator input.
         trackedEntityId: zfd.text(z.string().optional()),
-        batchNumber: zfd.text(z.string().optional()),
         // "Not in this run": the operation was not physically part of the
         // batch run — it detaches back to the schedule instead of being
         // marked Done. String flag (same idiom as productionEventValidator's

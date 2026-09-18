@@ -84,7 +84,13 @@ Progress" has a space). List visibility alone was the leak: nothing else gated
 a direct operation URL.
 
 
-There is **no separate batch page** — the operation view IS the batch UI. When an
+There is **no separate batch page** — the operation view IS the batch UI. A
+`ToggleGroup` beside the batch chip switches `?scope=` between **Batch**
+(default; `BatchOverview`: completed/issued/scrap/output-lot stat cards, one
+materials table from `getBatchMaterialTotals` with the per-job split and a
+batch-wide "Pick N", and the member jobs table) and the member's own job
+details (`?scope=job`, which member links use). The `IssueMaterialModal` is
+mounted in both scopes via `renderIssueModal`. When an
 operation belongs to a batch that is still `Active`/`Completing`, the loader
 (`operation.$operationId.tsx`) reads `jobOperationBatch` (via
 `getJobOperationBatch`; the RPC `get_job_operation_by_id` omits
@@ -130,10 +136,14 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `BatchCompleteModal`, a **spreadsheet-style grid** (bare `<input inputMode="numeric">`
   cells in a bordered `border-separate` table — no react-aria stepper arrows, no
   close-X via `withCloseButton={false}`, Job / Quantity / Scrap columns —
-  the per-member Operation is redundant in a batch; a fourth **Batch Number**
-  column appears when any member's produced item is batch-tracked, pre-filled
-  from that member's WIP `trackedEntity` and editable, submitted alongside a
-  hidden `trackedEntityId`). Rows are pre-filled
+  the per-member Operation is redundant in a batch). **The operator never
+  enters a lot number** — lot identity is planned at batch creation
+  (`jobOperationBatch.mergeOutput` / `outputLotNumber`, or each member's WIP
+  `trackedEntity.readableId`). A merged batch shows a success `Alert` naming
+  the lot; otherwise a read-only **Lot** column lists each member's planned
+  lot, and a tracked member with no planned lot blocks submit with a warning
+  naming the jobs (legacy batches — fix via the job's properties sidebar).
+  Each row still submits a hidden `trackedEntityId`. Rows are pre-filled
   `operationQuantity − quantityComplete`, controlled as strings in local state.
   Completing a batch **auto-stops** any still-running shared timer: the Phase-1
   txn closes open `jobOperationBatchId`-tagged `productionEvent`s with
@@ -148,21 +158,19 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   row 0/0) disables submit. Scrap / Rework /
   Finish are hidden in the actions sheet (per-op writes would double-count a
   member); Maintenance + Quality Issue stay.
-- **Merge by batch number** — there is no post-completion prompt: the batch
-  number IS the merge intent. Producing rows that share a number (same item)
-  get an inline "complete as one merged lot" confirmation in
-  `BatchCompleteModal`; one number across DIFFERENT items blocks submit
-  (and the route re-checks server-side against jobMakeMethod itemIds before
-  invoking completion — two same-named lots of different items must never
-  mint). After completion succeeds, the route's `getOutputLotMergeGroups`
-  groups the PERSISTED output lots by itemId + readableId and invokes
-  `mergeTrackedEntities` per group. The merge carries **no entity ids from
-  the form** — that route invokes `issue` with the SERVICE ROLE (the edge
-  fn's `inventory` permission check then validates the service role, not the
-  operator, so a posted id list would let a production-only user merge any
-  two same-item lots in the company). A merge failure leaves the batch
-  completed with per-member lots; the ERP batch drawer's "Merge output lots"
-  is the recovery path. The batch
+- **Planned merge** — when `batch.mergeOutput`, the completion route passes
+  `outputLotNumber` as every member's batch number, then (after completion
+  succeeds) `getPlannedMergeLots` reads the members' Available output lots and
+  invokes `issue` `mergeTrackedEntities` with that readableId. The merge
+  carries **no entity ids from the form** — the route invokes `issue` with the
+  SERVICE ROLE, so a posted id list would let a production-only user merge any
+  two same-item lots. A merge failure leaves the batch completed with
+  per-member lots; the ERP batch drawer's "Merge output lots" is the recovery
+  path. The route returns `data({ completed: true })` + flash, NOT a
+  redirect: the completion's own writes fire `useOperation`'s realtime
+  `revalidate()` mid-action, and React Router drops a fetcher redirect when a
+  newer navigation started after the submit — `JobOperation` navigates to
+  `path.to.operations` when the fetcher settles with `completed`. The batch
   chip menu also offers
   "Print batch list" (`path.to.file.batchLoadList` → the ERP
   `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is

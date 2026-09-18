@@ -1,5 +1,8 @@
 import { Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   cn,
   Modal,
   ModalBody,
@@ -11,6 +14,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuLayers, LuTriangleAlert } from "react-icons/lu";
 import type { useFetcher } from "react-router";
 import type { z } from "zod";
 import { completeJobOperationBatchValidator } from "~/services/models";
@@ -47,6 +51,8 @@ export function BatchCompleteModal({
   // Any member producing a batch-tracked item gets a batch-number column; its
   // WIP entity is finalized as the produced lot at completion.
   const anyTracked = members.some((m) => m.requiresBatchTracking);
+  // A merged batch states its one lot in a banner; split lots show per row.
+  const showLotColumn = anyTracked && !batch.mergeOutput;
 
   const initialValues = {
     batchId: batch.id as string,
@@ -60,11 +66,6 @@ export function BatchCompleteModal({
       scrapQuantity: 0
     }))
   } satisfies z.infer<typeof completeJobOperationBatchValidator>;
-
-  // Operator-editable batch numbers, pre-filled from each member's WIP entity.
-  const [batchNumbers, setBatchNumbers] = useState(
-    members.map((m) => m.batchNumber ?? "")
-  );
 
   // Controlled per-member quantities as strings (empty while typing): react-aria
   // would add stepper chrome, so the grid uses bare inputs and drives them here.
@@ -89,11 +90,10 @@ export function BatchCompleteModal({
     (r) => toNumber(r.quantity) === 0 && toNumber(r.scrapQuantity) === 0
   );
 
-  // A member that will produce a lot (batch-tracked, quantity > 0) must carry
-  // a batch number: completing without one mints an Available lot with no
-  // readable number. Pre-filled when the job's batch number property (the WIP
-  // entity's readableId, editable in the job detail sidebar) was set.
-  const requiresNumber = (i: number) => {
+  // Lot identity was planned when the batch was created — the floor only
+  // reads it. A merged batch has one lot for everything; otherwise each
+  // batch-tracked member carries its own number (its WIP entity's readableId).
+  const producesLot = (i: number) => {
     const m = members[i];
     return Boolean(
       m?.requiresBatchTracking &&
@@ -101,38 +101,10 @@ export function BatchCompleteModal({
         toNumber(rows[i]?.quantity ?? "0") > 0
     );
   };
-  const missingBatchNumbers = members.some(
-    (_, i) => requiresNumber(i) && !(batchNumbers[i] ?? "").trim()
-  );
-
-  // Rows sharing a batch number complete into ONE merged lot — the number IS
-  // the merge intent, confirmed inline instead of a second prompt after
-  // completion. The same number across DIFFERENT items can never merge, and
-  // two separate lots with one number is worse than either: block submit so
-  // the operator edits the numbers instead.
-  const numberGroups = new Map<
-    string,
-    { indexes: number[]; items: Set<string> }
-  >();
-  members.forEach((m, i) => {
-    if (!requiresNumber(i)) return;
-    const number = (batchNumbers[i] ?? "").trim();
-    if (!number) return;
-    const group = numberGroups.get(number) ?? {
-      indexes: [],
-      items: new Set<string>()
-    };
-    group.indexes.push(i);
-    if (m.itemId) group.items.add(m.itemId);
-    numberGroups.set(number, group);
-  });
-  const mergeGroups = [...numberGroups.entries()].filter(
-    ([, g]) => g.indexes.length > 1 && g.items.size <= 1
-  );
-  const conflictGroups = [...numberGroups.entries()].filter(
-    ([, g]) => g.indexes.length > 1 && g.items.size > 1
-  );
-  const conflictIndexes = new Set(conflictGroups.flatMap(([, g]) => g.indexes));
+  const merged = Boolean(batch.mergeOutput && batch.outputLotNumber);
+  const unplanned = merged
+    ? []
+    : members.filter((m, i) => producesLot(i) && !m.batchNumber?.trim());
 
   return (
     <Modal
@@ -161,6 +133,41 @@ export function BatchCompleteModal({
         >
           <ModalBody>
             <Hidden name="batchId" value={batch.id as string} />
+            {merged && (
+              <Alert variant="success" className="mb-4">
+                <LuLayers />
+                <AlertTitle>
+                  <Trans>
+                    All output goes to lot{" "}
+                    <span className="font-mono">{batch.outputLotNumber}</span>
+                  </Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>Set when the batch was planned.</Trans>
+                </AlertDescription>
+              </Alert>
+            )}
+            {unplanned.length > 0 && (
+              <Alert variant="warning" className="mb-4">
+                <LuTriangleAlert />
+                <AlertTitle>
+                  <Trans>Lot numbers missing</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>
+                    {unplanned
+                      .map(
+                        (m) =>
+                          (m.job as { jobId?: string | null } | null)?.jobId
+                      )
+                      .filter(Boolean)
+                      .join(", ")}{" "}
+                    has no lot number. Set it on the batch or job in Carbon,
+                    then complete.
+                  </Trans>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="overflow-hidden rounded-lg border border-border bg-card">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
@@ -174,14 +181,14 @@ export function BatchCompleteModal({
                     <th
                       className={cn(
                         "w-[140px] border-b border-border px-3 py-2 text-right font-medium text-muted-foreground",
-                        anyTracked && "border-r"
+                        showLotColumn && "border-r"
                       )}
                     >
                       <Trans>Scrap</Trans>
                     </th>
-                    {anyTracked && (
+                    {showLotColumn && (
                       <th className="w-[180px] border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">
-                        <Trans>Batch Number</Trans>
+                        <Trans>Lot</Trans>
                       </th>
                     )}
                   </tr>
@@ -236,7 +243,7 @@ export function BatchCompleteModal({
                         <td
                           className={cn(
                             "border-border p-0 align-middle",
-                            anyTracked && "border-r",
+                            showLotColumn && "border-r",
                             !isLast && "border-b"
                           )}
                         >
@@ -253,43 +260,17 @@ export function BatchCompleteModal({
                             className={cellInputClass}
                           />
                         </td>
-                        {anyTracked && (
+                        {showLotColumn && (
                           <td
                             className={cn(
-                              "border-border p-0 align-middle",
-                              !isLast && "border-b"
+                              "border-border px-3 py-2 align-middle font-mono",
+                              !isLast && "border-b",
+                              !m.batchNumber?.trim() && "text-muted-foreground"
                             )}
                           >
-                            {m.requiresBatchTracking && m.trackedEntityId ? (
-                              <input
-                                type="text"
-                                name={`members[${i}].batchNumber`}
-                                aria-label={t`Batch Number`}
-                                value={batchNumbers[i] ?? ""}
-                                onFocus={(e) => e.currentTarget.select()}
-                                onChange={(e) =>
-                                  setBatchNumbers((prev) =>
-                                    prev.map((v, idx) =>
-                                      idx === i ? e.target.value : v
-                                    )
-                                  )
-                                }
-                                placeholder={t`Required`}
-                                aria-invalid={
-                                  (requiresNumber(i) &&
-                                    !(batchNumbers[i] ?? "").trim()) ||
-                                  conflictIndexes.has(i)
-                                }
-                                className={cn(
-                                  cellInputClass,
-                                  "text-left font-mono placeholder:text-muted-foreground/50",
-                                  ((requiresNumber(i) &&
-                                    !(batchNumbers[i] ?? "").trim()) ||
-                                    conflictIndexes.has(i)) &&
-                                    "ring-1 ring-inset ring-destructive/40"
-                                )}
-                              />
-                            ) : null}
+                            {m.requiresBatchTracking && m.trackedEntityId
+                              ? m.batchNumber?.trim() || "—"
+                              : null}
                           </td>
                         )}
                       </tr>
@@ -298,29 +279,6 @@ export function BatchCompleteModal({
                 </tbody>
               </table>
             </div>
-            {conflictGroups.map(([number]) => (
-              <p
-                key={number}
-                className="mt-3 text-pretty text-xs text-destructive"
-              >
-                <Trans>
-                  Batch number {number} is used for different items — lots of
-                  different items can't merge. Edit the numbers.
-                </Trans>
-              </p>
-            ))}
-            {conflictGroups.length === 0 &&
-              mergeGroups.map(([number, group]) => (
-                <p
-                  key={number}
-                  className="mt-3 text-pretty text-xs text-muted-foreground"
-                >
-                  <Trans>
-                    {group.indexes.length} operations share batch number{" "}
-                    {number} — their output completes as one merged lot.
-                  </Trans>
-                </p>
-              ))}
             <p className="mt-3 text-pretty text-xs text-muted-foreground">
               <Trans>
                 Leave an operation at 0 to skip it — it returns to the schedule
@@ -329,12 +287,7 @@ export function BatchCompleteModal({
             </p>
           </ModalBody>
           <ModalFooter>
-            <Submit
-              size="lg"
-              isDisabled={
-                allExcluded || missingBatchNumbers || conflictGroups.length > 0
-              }
-            >
+            <Submit size="lg" isDisabled={allExcluded || unplanned.length > 0}>
               {/* While the submit is in flight the realtime revalidation sees the
                   batch pass through Completing — don't flip the label mid-run;
                   "Retry" is only true once we are idle and still parked there. */}

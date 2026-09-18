@@ -1610,3 +1610,13 @@ full-screen ERP route.
 **Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read.
 
 **Applies to:** every `.from(...).insert(...)` / `.update(...)` whose result is not bound, especially in post-commit "also link X" tails; fixed for both writers in PR #1612 by moving them into a Kysely transaction under `lockIssueDispositions`.
+
+## A fetcher's redirect is dropped when anything revalidates during the action
+
+**Context:** MES "Complete Batch" posts through a `useFetcher` to an action that runs for several seconds and ends in `redirect(path.to.operations)`. The operation page also subscribes to realtime changes on `jobOperation`/`job` and calls `revalidate()` on each.
+
+**Problem:** The completion's own writes fired the realtime `revalidate()` mid-action. React Router (`handleFetcherAction`) ignores a fetcher's redirect when `pendingNavigationLoadId > originatingLoadId` — any navigation or revalidation started after the submit wins. The redirect was silently discarded, the fetcher went idle, and the page sat on stale loader data from the mid-run revalidation (the batch still "Completing", button reading "Retry Completion") even though the work had landed.
+
+**Rule:** For a long-running fetcher action on a page with realtime revalidation, don't rely on the action's redirect. Return `data({ ok: true }, flashInit)` and navigate from the component when the fetcher settles with that flag. The flash cookie still rides the fetcher response and toasts on the next loader.
+
+**Applies to:** any `useFetcher` submit whose action outlives a realtime/interval `revalidate()` on the same page — MES operation/assembly/inspection views especially.

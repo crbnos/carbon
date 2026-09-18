@@ -265,6 +265,18 @@ All new strings via lingui (`<Trans>`/`t`) in both apps; `/translate` after.
 
 ## Changelog
 
+- 2026-09-18 (Sid): lot identity moves from the floor to planning. The batch
+  builder's Output section sets each member's lot (written to its WIP
+  trackedEntity.readableId at create) or, when every member makes the same
+  batch-tracked item, one combined lot (`jobOperationBatch.mergeOutput` +
+  `outputLotNumber`, 20260918094217). The MES completion modal loses its
+  editable Batch Number column (read-only Lot column / "All output goes to lot
+  X"), and the completion route merges only planned-merge batches. Supersedes
+  the "batch number IS the merge intent" entry below. MES also gains a Batch |
+  job scope switch: the batch view aggregates completion, materials (one pick
+  per material, per-job split) and output across members. Not built: editing
+  the lot plan on an existing batch's drawer.
+
 - 2026-09-16 (live-test follow-up, Sid): completing a batch now completes its
   Draft/Planned member jobs (sync_finish_job_operation admits them when the
   Done op carries a jobOperationBatchId — 20260916155634). Their receipts post

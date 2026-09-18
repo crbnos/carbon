@@ -95,7 +95,7 @@ export async function getJobOperationBatch(
   const operations = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId), job(jobId)"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name)), job(jobId, status)"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
@@ -728,10 +728,25 @@ export async function getJobMakeMethod(
 // every member operation's BOM lines. Feeds the batch-mode materials panel so
 // the operator sees the combined pick (e.g. 6,500 seeds); recording still
 // happens per member via the issue fn's trackedEntitiesToBatch case.
+export type BatchMaterialTotal = {
+  required: number;
+  issued: number;
+  itemReadableId: string | null;
+  name: string | null;
+  unitOfMeasureCode: string | null;
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+  // each member's share, in member order, for the per-job split line
+  perMember: { jobOperationId: string; required: number }[];
+};
+
+// The batch's materials, summed per item across every member. Reads the same
+// op-linked rows the shared pick (issue `trackedEntitiesToBatch`) issues
+// against, so what the batch view shows is exactly what one pick can cover.
 export async function getBatchMaterialTotals(
   client: SupabaseClient<Database>,
   args: { batchId: string; companyId: string }
-): Promise<Record<string, { required: number; issued: number }>> {
+): Promise<Record<string, BatchMaterialTotal>> {
   const members = await client
     .from("jobOperation")
     .select("id")
@@ -740,18 +755,35 @@ export async function getBatchMaterialTotals(
   if (members.error || !members.data?.length) return {};
   const rows = await client
     .from("jobMaterial")
-    .select("itemId, estimatedQuantity, quantityIssued")
+    .select(
+      "itemId, jobOperationId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision)"
+    )
     .in(
       "jobOperationId",
       members.data.map((m) => m.id)
     )
     .eq("companyId", args.companyId);
-  const totals: Record<string, { required: number; issued: number }> = {};
+  const totals: Record<string, BatchMaterialTotal> = {};
   for (const r of rows.data ?? []) {
-    if (!r.itemId) continue;
-    const t = (totals[r.itemId] ??= { required: 0, issued: 0 });
-    t.required += Number(r.estimatedQuantity ?? 0);
+    if (!r.itemId || !r.jobOperationId) continue;
+    const t = (totals[r.itemId] ??= {
+      required: 0,
+      issued: 0,
+      itemReadableId: r.item?.readableIdWithRevision ?? null,
+      name: r.description ?? null,
+      unitOfMeasureCode: r.unitOfMeasureCode ?? null,
+      requiresBatchTracking: Boolean(r.requiresBatchTracking),
+      requiresSerialTracking: Boolean(r.requiresSerialTracking),
+      perMember: []
+    });
+    const required = Number(r.estimatedQuantity ?? 0);
+    t.required += required;
     t.issued += Number(r.quantityIssued ?? 0);
+    const share = t.perMember.find(
+      (m) => m.jobOperationId === r.jobOperationId
+    );
+    if (share) share.required += required;
+    else t.perMember.push({ jobOperationId: r.jobOperationId, required });
   }
   return totals;
 }
