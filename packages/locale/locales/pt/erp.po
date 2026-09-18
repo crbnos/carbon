@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" está feito — todos os {0} itens do seu Mapa de Setup e
 msgid "(excluded for this customer)"
 msgstr "(excluído para este cliente)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# linha vincula dados fora desta empresa, portanto uma cópia de segurança de seus dados atuais não pode ser feita.} other {# linhas vinculam dados fora desta empresa, portanto uma cópia de segurança de seus dados atuais não pode ser feita.}}"
@@ -1340,6 +1343,9 @@ msgstr "Adicionar Requisito de Aprovação"
 msgid "Add Authenticator App"
 msgstr "Adicionar Aplicação Autenticadora"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Adicionar Registro de Calibração"
 
@@ -1523,6 +1529,9 @@ msgstr "Adicionar ao estoque para uso futuro"
 
 msgid "Add tools"
 msgstr "Adicionar ferramentas"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Projeção do melhor caso"
 
 msgid "Best case…"
 msgstr "Melhor caso…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Registros mestres"
 msgid "Match"
 msgstr "Corresponder"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Corresponder a todos"
 
@@ -10099,6 +10114,9 @@ msgstr "Corresponder por nome"
 
 msgid "Match none"
 msgstr "Não corresponder a nenhum"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Nenhum tempo planejado ou registrado."
 
 msgid "No planning data"
 msgstr "Sem dados de planejamento"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Nenhum diário lançado neste período para esta conta"
@@ -12752,8 +12773,14 @@ msgstr "Link do Portal"
 msgid "Portals"
 msgstr "Portais"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Ajuste Positivo"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Publicar"
@@ -18606,6 +18633,9 @@ msgstr "Linhas Extraídas Não Mapeadas"
 
 msgid "Unmapped values"
 msgstr "Valores não mapeados"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Não correspondido"

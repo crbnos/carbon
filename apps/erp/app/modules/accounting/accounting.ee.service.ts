@@ -6899,3 +6899,99 @@ export async function getBankStatements(
     .eq("companyBankAccountId", companyBankAccountId)
     .order("createdAt", { ascending: false });
 }
+
+// NetSuite "Method 1: Manual Match" — hand-entered rows (no bankStatementId,
+// no file) alongside the CSV import path.
+
+export async function insertBankTransaction(
+  client: SupabaseClient<Database>,
+  data: {
+    companyId: string;
+    companyBankAccountId: string;
+    postedDate: string;
+    amount: number;
+    description: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("bankTransaction")
+    .insert([{ ...data, status: "Unmatched" as const }])
+    .select("id")
+    .single();
+}
+
+/**
+ * Posted journalLine rows on the bank's own GL account, excluding any line
+ * already claimed by another bankTransaction — the candidate list for the
+ * manual "match to a GL entry" picker.
+ */
+export async function getUnmatchedJournalLineCandidates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  glAccountId: string
+) {
+  const claimed = await client
+    .from("bankTransaction")
+    .select("matchedJournalLineId")
+    .eq("companyId", companyId)
+    .not("matchedJournalLineId", "is", null);
+
+  if (claimed.error) return claimed;
+
+  const claimedIds = (claimed.data ?? [])
+    .map((row) => row.matchedJournalLineId)
+    .filter((id): id is string => id !== null);
+
+  let query = client
+    .from("journalLine")
+    .select(
+      "id, amount, description, journal:journalId!inner(postingDate, status)"
+    )
+    .eq("companyId", companyId)
+    .eq("accountId", glAccountId)
+    .eq("journal.status", "Posted")
+    .order("createdAt", { ascending: false });
+
+  if (claimedIds.length > 0) {
+    query = query.not("id", "in", `(${claimedIds.join(",")})`);
+  }
+
+  return query;
+}
+
+export async function matchBankTransactionManually(
+  client: SupabaseClient<Database>,
+  args: {
+    bankTransactionId: string;
+    journalLineId: string;
+    updatedBy: string;
+  }
+) {
+  const { bankTransactionId, journalLineId, updatedBy } = args;
+  return client
+    .from("bankTransaction")
+    .update({
+      status: "Matched",
+      matchedJournalLineId: journalLineId,
+      matchType: "Manual",
+      updatedBy
+    })
+    .eq("id", bankTransactionId);
+}
+
+export async function unmatchBankTransaction(
+  client: SupabaseClient<Database>,
+  bankTransactionId: string,
+  updatedBy: string
+) {
+  return client
+    .from("bankTransaction")
+    .update({
+      status: "Unmatched",
+      matchedJournalLineId: null,
+      matchType: null,
+      updatedBy
+    })
+    .eq("id", bankTransactionId);
+}

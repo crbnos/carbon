@@ -48,6 +48,9 @@ msgstr "「{taskName}」は完了しました — セットアップマップの
 msgid "(excluded for this customer)"
 msgstr "（この得意先から除外）"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。} other {# 行はこの会社の外部のデータにリンクしているため、現在のデータの安全なコピーを作成できません。}}"
@@ -1340,6 +1343,9 @@ msgstr "承認要求事項を追加"
 msgid "Add Authenticator App"
 msgstr "認証器アプリを追加"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "校正記録を追加"
 
@@ -1523,6 +1529,9 @@ msgstr "将来の使用のためにストックに追加"
 
 msgid "Add tools"
 msgstr "ツールを追加"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "最良ケース予測"
 
 msgid "Best case…"
 msgstr "最良ケース…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "ベータ"
@@ -10079,6 +10091,9 @@ msgstr "マスターレコード"
 msgid "Match"
 msgstr "マッチ"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "すべてに一致"
 
@@ -10099,6 +10114,9 @@ msgstr "名前で一致"
 
 msgid "Match none"
 msgstr "いずれにも一致しない"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "計画時間または記録時間がありません。"
 
 msgid "No planning data"
 msgstr "計画データなし"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "この期間、このアカウントに転記済の仕訳がありません"
@@ -12752,8 +12773,14 @@ msgstr "ポータルリンク"
 msgid "Portals"
 msgstr "ポータル"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "正の調整"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "転記"
@@ -18606,6 +18633,9 @@ msgstr "マップされていない抽出行"
 
 msgid "Unmapped values"
 msgstr "マップされていない値"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "不一致"

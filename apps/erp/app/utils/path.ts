@@ -412,6 +412,14 @@ export const path = {
     bankAccountImport: (id: string) =>
       generatePath(`${x}/accounting/bank-account/${id}/import`),
     bankAccounts: `${x}/accounting/bank-accounts`,
+    bankTransactionMatch: (id: string, transactionId: string) =>
+      generatePath(
+        `${x}/accounting/bank-account/${id}/transaction/${transactionId}/match`
+      ),
+    bankTransactionUnmatch: (id: string, transactionId: string) =>
+      generatePath(
+        `${x}/accounting/bank-account/${id}/transaction/${transactionId}/unmatch`
+      ),
     batchProperty: (itemId: string) =>
       generatePath(`${x}/inventory/batch-property/${itemId}/property`),
     batchPropertyOrder: (itemId: string) =>
@@ -1507,6 +1515,8 @@ export const path = {
     newAttributeForCategory: (id: string) =>
       generatePath(`${x}/people/attributes/list/${id}/new`),
     newBankAccount: `${x}/accounting/bank-accounts/new`,
+    newBankTransaction: (id: string) =>
+      generatePath(`${x}/accounting/bank-account/${id}/transaction/new`),
     newBatch: `${x}/inventory/batches/new`,
     newBulkJob: `${x}/job/bulk/new`,
     // Create form lives at its own top-level route (like /x/part/new and

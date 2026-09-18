@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" bitti — tüm {0} Kurulum Haritası öğesi yapılandır
 msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.} other {# satır bu şirketin dışındaki verilere bağlantı kuruyor, bu nedenle mevcut verilerinizin güvenli bir kopyası oluşturulamıyor.}}"
@@ -1340,6 +1343,9 @@ msgstr "Onay Gereklilik Ekle"
 msgid "Add Authenticator App"
 msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Kalibrasyon Kaydı Ekle"
 
@@ -1523,6 +1529,9 @@ msgstr "Gelecekteki kullanım için stoğa ekle"
 
 msgid "Add tools"
 msgstr "Araç ekle"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "En iyi durum projeksiyonu"
 
 msgid "Best case…"
 msgstr "En iyi durum…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Ana kayıtlar"
 msgid "Match"
 msgstr "Eşleşme"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Tüm eşleşmeleri yakala"
 
@@ -10099,6 +10114,9 @@ msgstr "Ada göre eşleştir"
 
 msgid "Match none"
 msgstr "Hiçbiriyle eşleşme"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Planlanan veya kaydedilen zaman yok."
 
 msgid "No planning data"
 msgstr "Planlama verisi yok"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Bu dönem için bu hesapta muhasebeleştirilmiş muhasebe fişi yok"
@@ -12752,8 +12773,14 @@ msgstr "Portal Bağlantısı"
 msgid "Portals"
 msgstr "Portal'lar"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Pozitif Düzeltme"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Kaydet"
@@ -18606,6 +18633,9 @@ msgstr "Eşlenmemiş Çıkarılan Satırlar"
 
 msgid "Unmapped values"
 msgstr "Eşlenmemiş değerler"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Eşleşmemiş"

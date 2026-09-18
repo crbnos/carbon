@@ -1,4 +1,5 @@
 import { credit, debit, round, toStoredAmount } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -654,3 +655,46 @@ export function buildDepreciationLines(
 
   return lines;
 }
+
+// -- Bank Reconciliation Match Ranking --
+
+// A GL entry more than this many days from the bank line's posted date
+// contributes nothing to the date component of the score.
+const MATCH_DATE_WINDOW_DAYS = 5;
+
+const AMOUNT_SCORE_WEIGHT = 0.7;
+const DATE_SCORE_WEIGHT = 0.3;
+
+/**
+ * Ranks the manual-match candidate picker (NetSuite "Method 1"). This is a
+ * client-side heuristic for SORT ORDER and a "Best match" hint only — it never
+ * auto-matches. amount closeness dominates (0.7) since two GL entries rarely
+ * share both an amount and a nearby date by coincidence; the date component
+ * (0.3) decays to zero outside `MATCH_DATE_WINDOW_DAYS` and breaks ties among
+ * same-amount candidates (e.g. two payroll runs).
+ */
+export function scoreBankTransactionMatchCandidate(
+  transaction: { amount: number; postedDate: string },
+  candidate: { amount: number; postingDate: string }
+): number {
+  const amountDiff = Math.abs(
+    Number(candidate.amount) - Number(transaction.amount)
+  );
+  const amountScore =
+    amountDiff === 0
+      ? 1
+      : Math.max(
+          0,
+          1 - amountDiff / Math.max(Math.abs(Number(transaction.amount)), 1)
+        );
+
+  const daysDiff = Math.abs(
+    parseDate(candidate.postingDate).compare(parseDate(transaction.postedDate))
+  );
+  const dateScore = Math.max(0, 1 - daysDiff / MATCH_DATE_WINDOW_DAYS);
+
+  return amountScore * AMOUNT_SCORE_WEIGHT + dateScore * DATE_SCORE_WEIGHT;
+}
+
+export const BEST_MATCH_SCORE_THRESHOLD = 0.85;
+export const POSSIBLE_MATCH_SCORE_THRESHOLD = 0.65;

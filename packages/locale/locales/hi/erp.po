@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।}}"
@@ -1340,6 +1343,9 @@ msgstr "अनुमोदन आवश्यकता जोड़ें"
 msgid "Add Authenticator App"
 msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "अंशांकन रिकॉर्ड जोड़ें"
 
@@ -1523,6 +1529,9 @@ msgstr "भविष्य के उपयोग के लिए स्टॉ�
 
 msgid "Add tools"
 msgstr "उपकरण जोड़ें"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "सर्वश्रेष्ठ स्थिति प्रक्ष�
 
 msgid "Best case…"
 msgstr "सर्वश्रेष्ठ स्थिति…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "बीटा"
@@ -10079,6 +10091,9 @@ msgstr "मास्टर रिकॉर्ड"
 msgid "Match"
 msgstr "मेल खाएं"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "सभी से मेल खाएं"
 
@@ -10099,6 +10114,9 @@ msgstr "नाम से मेल खाएं"
 
 msgid "Match none"
 msgstr "कोई भी मेल न खाएं"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "कोई नियोजित या दर्ज समय नही�
 
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "इस अवधि में इस खाते के लिए कोई पोस्ट किए गए जर्नल नहीं हैं"
@@ -12752,8 +12773,14 @@ msgstr "पोर्टल लिंक"
 msgid "Portals"
 msgstr "पोर्टल"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "सकारात्मक समायोजन"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "पोस्ट करें"
@@ -18606,6 +18633,9 @@ msgstr "अनमैप किए गए निकाली गई लाइन�
 
 msgid "Unmapped values"
 msgstr "अनमैप्ड मान"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "बेमेल"

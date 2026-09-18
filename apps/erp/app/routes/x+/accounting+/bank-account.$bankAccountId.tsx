@@ -14,6 +14,7 @@ import {
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
+import { LuCirclePlus } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { usePermissions } from "~/hooks";
@@ -21,10 +22,14 @@ import {
   companyBankAccountValidator,
   getBankTransactions,
   getCompanyBankAccount,
+  getUnmatchedJournalLineCandidates,
   upsertCompanyBankAccount
 } from "~/modules/accounting";
+import type { BankTransactionListItem } from "~/modules/accounting/types";
 import {
   BankStatementUpload,
+  BankTransactionForm,
+  BankTransactionMatchModal,
   BankTransactionsTable,
   CompanyBankAccountForm
 } from "~/modules/accounting/ui/BankReconciliation";
@@ -37,7 +42,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
@@ -56,9 +61,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // Only needed for the manual-match picker — skip the query when nothing on
+  // this account is unmatched.
+  const hasUnmatched = (transactions.data ?? []).some(
+    (txn) => txn.status === "Unmatched"
+  );
+  const candidates = hasUnmatched
+    ? await getUnmatchedJournalLineCandidates(
+        client,
+        companyId,
+        account.data.glAccountId
+      )
+    : { data: [] };
+
   return {
     account: account.data,
-    transactions: transactions.data ?? []
+    transactions: transactions.data ?? [],
+    candidates: candidates.data ?? []
   };
 }
 
@@ -102,16 +121,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function BankAccountRoute() {
-  const { account, transactions } = useLoaderData<typeof loader>();
+  const { account, transactions, candidates } = useLoaderData<typeof loader>();
   const { t } = useLingui();
   const permissions = usePermissions();
   const [isEditing, setIsEditing] = useState(false);
+  const [isAddingTransaction, setIsAddingTransaction] = useState(false);
+  const [matchingTransaction, setMatchingTransaction] =
+    useState<BankTransactionListItem | null>(null);
 
-  // Full-page form submission redirects back to this same route, so the
-  // component doesn't remount — close the modal once the save lands.
+  // Full-page form submissions redirect back to this same route, so the
+  // component doesn't remount — close any open modal once the save lands.
   useEffect(() => {
     setIsEditing(false);
-  }, [account.updatedAt]);
+    setIsAddingTransaction(false);
+    setMatchingTransaction(null);
+  }, [account.updatedAt, transactions]);
 
   const matchedCount = transactions.filter(
     (txn) => txn.status === "Matched"
@@ -143,6 +167,19 @@ export default function BankAccountRoute() {
       <BankTransactionsTable
         data={transactions}
         currencyCode={account.currencyCode}
+        companyBankAccountId={account.id}
+        onMatch={(transaction) => setMatchingTransaction(transaction)}
+        primaryAction={
+          permissions.can("create", "accounting") && (
+            <Button
+              leftIcon={<LuCirclePlus />}
+              variant="secondary"
+              onClick={() => setIsAddingTransaction(true)}
+            >
+              {t`Add Transaction`}
+            </Button>
+          )
+        }
       />
 
       {isEditing && (
@@ -156,6 +193,26 @@ export default function BankAccountRoute() {
             active: account.active
           }}
           onClose={() => setIsEditing(false)}
+        />
+      )}
+
+      {isAddingTransaction && (
+        <BankTransactionForm
+          companyBankAccountId={account.id}
+          onClose={() => setIsAddingTransaction(false)}
+        />
+      )}
+
+      {matchingTransaction && (
+        <BankTransactionMatchModal
+          companyBankAccountId={account.id}
+          transactionId={matchingTransaction.id}
+          transactionDescription={matchingTransaction.description}
+          transactionAmount={matchingTransaction.amount}
+          transactionPostedDate={matchingTransaction.postedDate}
+          currencyCode={account.currencyCode}
+          candidates={candidates}
+          onClose={() => setMatchingTransaction(null)}
         />
       )}
     </VStack>

@@ -1028,3 +1028,17 @@ export const companyBankAccountValidator = z.object({
   currencyCode: z.string().min(1, { message: "Currency is required" }),
   active: zfd.checkbox()
 });
+
+// NetSuite "Method 1: Manual Match" — a bank transaction entered by hand
+// (paper statement, no file) rather than parsed from a CSV/OFX/BAI2/CAMT.053
+// upload. It lands in the same bankTransaction table and goes through the
+// same matching pass as an imported row.
+export const bankTransactionValidator = z.object({
+  postedDate: z.string().min(1, { message: "Date is required" }),
+  amount: zfd.numeric(z.number()),
+  description: z.string().min(1, { message: "Description is required" })
+});
+
+export const bankTransactionMatchValidator = z.object({
+  journalLineId: z.string().min(1, { message: "GL entry is required" })
+});

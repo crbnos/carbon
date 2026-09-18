@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" è completato — tutti i {0} articoli della sua Mappa di
 msgid "(excluded for this customer)"
 msgstr "(escluso per questo cliente)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda, quindi non è possibile fare una copia di sicurezza dei dati attuali.} other {# righe si collegano ai dati al di fuori di questa Azienda, quindi non è possibile fare una copia di sicurezza dei dati attuali.}}"
@@ -1340,6 +1343,9 @@ msgstr "Aggiungi Requisito di Approvazione"
 msgid "Add Authenticator App"
 msgstr "Aggiungi app autenticatore"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Aggiungi un registro di taratura"
 
@@ -1523,6 +1529,9 @@ msgstr "Aggiungi alle scorte per uso futuro"
 
 msgid "Add tools"
 msgstr "Aggiungi strumenti"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Proiezione migliore"
 
 msgid "Best case…"
 msgstr "Caso migliore…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Anagrafi principali"
 msgid "Match"
 msgstr "Corrispondenza"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Corrisponde a tutti"
 
@@ -10099,6 +10114,9 @@ msgstr "Corrispondi per nome"
 
 msgid "Match none"
 msgstr "Non corrispondere a nessuno"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Nessun tempo pianificato o registrato."
 
 msgid "No planning data"
 msgstr "Nessun dato di pianificazione"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Nessuna prima nota registrata in questo periodo per questo conto"
@@ -12752,8 +12773,14 @@ msgstr "Collegamento Portale"
 msgid "Portals"
 msgstr "Portali"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Rettifica Positiva"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Registra"
@@ -18606,6 +18633,9 @@ msgstr "Linee Estratte Non Mappate"
 
 msgid "Unmapped values"
 msgstr "Valori non mappati"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Non abbinato"

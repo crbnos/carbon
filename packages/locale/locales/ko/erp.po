@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" 완료 — 설정 맵 항목 {0}개가 모두 설정되�
 msgid "(excluded for this customer)"
 msgstr "(이 고객에게는 제외됨)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.} other {# 행은 이 회사 외부의 데이터에 연결되어 있어서 현재 데이터의 안전한 사본을 만들 수 없습니다.}}"
@@ -1340,6 +1343,9 @@ msgstr "승인 요구사항 추가"
 msgid "Add Authenticator App"
 msgstr "인증 앱 추가"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "교정 기록 추가"
 
@@ -1523,6 +1529,9 @@ msgstr "향후 사용을 위해 재고에 추가"
 
 msgid "Add tools"
 msgstr "도구 추가"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "최선의 경우 예측"
 
 msgid "Best case…"
 msgstr "최선의 경우…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "베타"
@@ -10079,6 +10091,9 @@ msgstr "마스터 레코드"
 msgid "Match"
 msgstr "일치"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "모두 일치"
 
@@ -10099,6 +10114,9 @@ msgstr "이름으로 일치"
 
 msgid "Match none"
 msgstr "일치 안 함"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "계획되거나 기록된 시간이 없습니다."
 
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "이 계정의 이 기간에 전기된 전표가 없습니다."
@@ -12752,8 +12773,14 @@ msgstr "포털 링크"
 msgid "Portals"
 msgstr "포털"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "양수 조정"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "전기"
@@ -18606,6 +18633,9 @@ msgstr "매핑되지 않은 추출 라인"
 
 msgid "Unmapped values"
 msgstr "매핑되지 않은 값"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "일치하지 않음"

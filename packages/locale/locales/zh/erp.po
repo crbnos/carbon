@@ -48,6 +48,9 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -1340,6 +1343,9 @@ msgstr "添加审批要求"
 msgid "Add Authenticator App"
 msgstr "添加身份验证器应用"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "添加校准记录"
 
@@ -1523,6 +1529,9 @@ msgstr "添加到库存以供将来使用"
 
 msgid "Add tools"
 msgstr "添加工具"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "最佳情况预测"
 
 msgid "Best case…"
 msgstr "最佳情况…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "测试版"
@@ -10079,6 +10091,9 @@ msgstr "主记录"
 msgid "Match"
 msgstr "匹配"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "全部匹配"
 
@@ -10099,6 +10114,9 @@ msgstr "按名称匹配"
 
 msgid "Match none"
 msgstr "不匹配任何条件"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "没有计划或记录的时间。"
 
 msgid "No planning data"
 msgstr "没有计划数据"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "此期间此账户没有已过账的凭证"
@@ -12752,8 +12773,14 @@ msgstr "门户链接"
 msgid "Portals"
 msgstr "门户"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "正向调整"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "过账"
@@ -18606,6 +18633,9 @@ msgstr "未映射的提取行"
 
 msgid "Unmapped values"
 msgstr "未映射的值"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "未匹配"

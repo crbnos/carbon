@@ -13,7 +13,8 @@ import {
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  scoreBankTransactionMatchCandidate
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -818,5 +819,54 @@ describe("buildDepreciationLines", () => {
     // Book SL: 108k/60mo * 12mo = $21,600
     // Tax MACRS 5-yr HY: 120k * 20% = $24,000
     expect(lines[0].taxAmount!).toBeGreaterThan(lines[0].amount);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Bank reconciliation match ranking
+// ---------------------------------------------------------------------------
+
+describe("scoreBankTransactionMatchCandidate", () => {
+  const transaction = { amount: 500, postedDate: "2026-03-10" };
+
+  it("scores an exact amount + same-day match at 1", () => {
+    const score = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 500,
+      postingDate: "2026-03-10"
+    });
+    expect(score).toBe(1);
+  });
+
+  it("ranks an exact amount above a same-day amount mismatch", () => {
+    const exactAmount = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 500,
+      postingDate: "2026-03-12"
+    });
+    const wrongAmount = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 300,
+      postingDate: "2026-03-10"
+    });
+    expect(exactAmount).toBeGreaterThan(wrongAmount);
+  });
+
+  it("breaks a same-amount tie by date proximity", () => {
+    const near = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 500,
+      postingDate: "2026-03-11"
+    });
+    const far = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 500,
+      postingDate: "2026-03-30"
+    });
+    expect(near).toBeGreaterThan(far);
+  });
+
+  it("floors the date component at zero outside the match window", () => {
+    const score = scoreBankTransactionMatchCandidate(transaction, {
+      amount: 500,
+      postingDate: "2026-06-01"
+    });
+    // Amount is exact, so the floor is the amount weight alone (0.7).
+    expect(score).toBeCloseTo(0.7, 5);
   });
 });

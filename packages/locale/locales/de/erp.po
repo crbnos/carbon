@@ -48,6 +48,9 @@ msgstr "„{taskName}\" ist erledigt – alle {0} seiner Setup-Map-Elemente sind
 msgid "(excluded for this customer)"
 msgstr "(für diesen Kunden ausgeschlossen)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.}}"
@@ -1340,6 +1343,9 @@ msgstr "Genehmigungsanforderung hinzufügen"
 msgid "Add Authenticator App"
 msgstr "Authentifikator-App hinzufügen"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Kalibrierprotokoll hinzufügen"
 
@@ -1523,6 +1529,9 @@ msgstr "Zum Bestand hinzufügen zur zukünftigen Verwendung"
 
 msgid "Add tools"
 msgstr "Werkzeuge hinzufügen"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Prognose für den besten Fall"
 
 msgid "Best case…"
 msgstr "Bester Fall…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Stammdaten"
 msgid "Match"
 msgstr "Übereinstimmung"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Alle abgleichen"
 
@@ -10099,6 +10114,9 @@ msgstr "Nach Namen abgleichen"
 
 msgid "Match none"
 msgstr "Keine Übereinstimmung"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Keine geplante oder aufgezeichnete Zeit."
 
 msgid "No planning data"
 msgstr "Keine Planungsdaten"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Keine gebuchten Buchungssätze in diesem Zeitraum für dieses Konto"
@@ -12752,8 +12773,14 @@ msgstr "Portal-Link"
 msgid "Portals"
 msgstr "Portale"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Positive Korrektur"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Buchen"
@@ -18606,6 +18633,9 @@ msgstr "Nicht zugeordnete extrahierte Zeilen"
 
 msgid "Unmapped values"
 msgstr "Nicht zugeordnete Werte"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Nicht abgestimmt"

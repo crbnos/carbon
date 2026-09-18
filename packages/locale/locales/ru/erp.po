@@ -48,6 +48,9 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -1340,6 +1343,9 @@ msgstr "Добавить требование утверждения"
 msgid "Add Authenticator App"
 msgstr "Добавить приложение-аутентификатор"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
 
@@ -1523,6 +1529,9 @@ msgstr "Добавить в запас для будущего использо�
 
 msgid "Add tools"
 msgstr "Добавить инструменты"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Прогноз лучшего случая"
 
 msgid "Best case…"
 msgstr "Лучший случай…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Бета"
@@ -10079,6 +10091,9 @@ msgstr "Основные записи"
 msgid "Match"
 msgstr "Совпадение"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Совпадают все"
 
@@ -10099,6 +10114,9 @@ msgstr "Совпадение по имени"
 
 msgid "Match none"
 msgstr "Не совпадает ни одно"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Нет запланированного или записанного в
 
 msgid "No planning data"
 msgstr "Нет данных планирования"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Нет проведенных операций в этом периоде по этому счету"
@@ -12752,8 +12773,14 @@ msgstr "Ссылка портала"
 msgid "Portals"
 msgstr "Порталы"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Положительная корректировка"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Опубликовать"
@@ -18606,6 +18633,9 @@ msgstr "Неотображённые извлечённые строки"
 
 msgid "Unmapped values"
 msgstr "Неотображенные значения"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Несопоставленный"

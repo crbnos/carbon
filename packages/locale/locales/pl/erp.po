@@ -48,6 +48,9 @@ msgstr "„{taskName}\" jest gotowe — wszystkie {0} jego elementów Setup Map 
 msgid "(excluded for this customer)"
 msgstr "(wykluczone dla tego klienta)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# wiersz łączy się z danymi spoza tej firmy, dlatego nie można utworzyć kopii bezpieczeństwa bieżących danych.} other {# wierszy łączy się z danymi spoza tej firmy, dlatego nie można utworzyć kopii bezpieczeństwa bieżących danych.}}"
@@ -1340,6 +1343,9 @@ msgstr "Dodaj Wymaganie Zatwierdzenia"
 msgid "Add Authenticator App"
 msgstr "Dodaj aplikację Authenticator"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Dodaj Zapis wzorcowania"
 
@@ -1523,6 +1529,9 @@ msgstr "Dodaj do zapasów do przyszłego użytku"
 
 msgid "Add tools"
 msgstr "Dodaj narzędzia"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Projekcja najlepszego scenariusza"
 
 msgid "Best case…"
 msgstr "Najlepszy scenariusz…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Rekordy główne"
 msgid "Match"
 msgstr "Dopasuj"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Dopasuj wszystkie"
 
@@ -10099,6 +10114,9 @@ msgstr "Dopasuj po nazwie"
 
 msgid "Match none"
 msgstr "Nie dopasuj żaden"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Brak zaplanowanego lub zarejestrowanego czasu."
 
 msgid "No planning data"
 msgstr "Brak danych planowania"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "Brak zaksięgowanych dowodów księgowych w tym okresie dla tego konta"
@@ -12752,8 +12773,14 @@ msgstr "Link do portalu"
 msgid "Portals"
 msgstr "Portale"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Dodatnia Korekta"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Opublikuj"
@@ -18606,6 +18633,9 @@ msgstr "Niemapowane wyodrębnione linie"
 
 msgid "Unmapped values"
 msgstr "Niezamapowane wartości"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Niedopasowane"

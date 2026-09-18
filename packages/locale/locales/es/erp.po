@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" está hecho — todos los {0} elementos de su Mapa de Con
 msgid "(excluded for this customer)"
 msgstr "(excluido para este cliente)"
 
+msgid "(No description)"
+msgstr ""
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# fila vincula a datos fuera de esta empresa, por lo que no se puede hacer una copia de seguridad de sus datos actuales.} other {# filas vinculan a datos fuera de esta empresa, por lo que no se puede hacer una copia de seguridad de sus datos actuales.}}"
@@ -1340,6 +1343,9 @@ msgstr "Agregar Requisito de Aprobación"
 msgid "Add Authenticator App"
 msgstr "Agregar aplicación de autenticación"
 
+msgid "Add Bank Transaction"
+msgstr ""
+
 msgid "Add Calibration Record"
 msgstr "Agregar Registro de Calibración"
 
@@ -1523,6 +1529,9 @@ msgstr "Agregar al inventario para uso futuro"
 
 msgid "Add tools"
 msgstr "Agregar herramientas"
+
+msgid "Add Transaction"
+msgstr ""
 
 #. placeholder {0}: copy.noun
 msgid "Add your first {0}"
@@ -2975,6 +2984,9 @@ msgstr "Proyección del mejor caso"
 
 msgid "Best case…"
 msgstr "Mejor caso…"
+
+msgid "Best match"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -10079,6 +10091,9 @@ msgstr "Registros maestros"
 msgid "Match"
 msgstr "Coincidir"
 
+msgid "Match \"{transactionDescription}\""
+msgstr ""
+
 msgid "Match all"
 msgstr "Coincidir todos"
 
@@ -10099,6 +10114,9 @@ msgstr "Coincidir por nombre"
 
 msgid "Match none"
 msgstr "No coincide ninguno"
+
+msgid "Match to GL Entry"
+msgstr ""
 
 msgid "Match Type"
 msgstr ""
@@ -11310,6 +11328,9 @@ msgstr "Sin tiempo planificado o registrado."
 
 msgid "No planning data"
 msgstr "Sin datos de planificación"
+
+msgid "No posted GL entries are available to match against this account."
+msgstr ""
 
 msgid "No posted journals in this period for this account"
 msgstr "No hay asientos contabilizados en este período para esta cuenta"
@@ -12752,8 +12773,14 @@ msgstr "Enlace del Portal"
 msgid "Portals"
 msgstr "Portales"
 
+msgid "Positive = money in, negative = money out"
+msgstr ""
+
 msgid "Positive Adjustment"
 msgstr "Ajuste Positivo"
+
+msgid "Possible match"
+msgstr ""
 
 msgid "Post"
 msgstr "Registrar"
@@ -18606,6 +18633,9 @@ msgstr "Líneas Extraídas Sin Asignar"
 
 msgid "Unmapped values"
 msgstr "Valores sin mapear"
+
+msgid "Unmatch"
+msgstr ""
 
 msgid "Unmatched"
 msgstr "Sin emparejar"
