@@ -1258,7 +1258,8 @@ export async function updateAbility(
   ability: {
     // Name is not stored — it derives from the linked process. Only the
     // recertification cadence is editable on an ability.
-    recertifyEveryDays: number | null;
+    name?: string;
+    recertifyEveryDays?: number | null;
   }
 ) {
   return client.from("ability").update(ability).eq("id", id);
