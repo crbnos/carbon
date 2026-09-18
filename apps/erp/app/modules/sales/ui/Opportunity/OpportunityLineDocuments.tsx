@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -28,7 +29,6 @@ import {
   VStack
 } from "@carbon/react";
 import {
-  convertKbToString,
   downloadCompanyPrivateObject,
   getCompanyPrivateBucket,
   MODEL_RAW_KEEP_MAX_BYTES,
@@ -49,7 +49,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -118,7 +118,7 @@ const useOpportunityLineDocuments = ({
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, company.id, revalidator, t]
+    [getPath, carbon?.storage, revalidator, t, company.id]
   );
 
   const deleteModel = useCallback(
@@ -251,46 +251,30 @@ const useOpportunityLineDocuments = ({
     [id, submit, type]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (
       files: File[],
       bucket: "opportunity-line" | "parts" = "opportunity-line"
     ) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
       if (bucket === "parts" && !itemId) {
         toast.error(t`Cannot upload to parts bucket without item ID`);
         return;
       }
 
-      const storageBucket = getCompanyPrivateBucket(company.id);
-      for (const file of files) {
-        const fileName = getPath(file, bucket);
-
-        const fileUpload = await carbon.storage
-          .from(storageBucket)
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath: (file) => getPath(file, bucket),
+        onSuccess: (file, uploadedPath) =>
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size,
             bucket
-          });
-        }
-      }
+          })
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, company.id, revalidator, itemId, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(
@@ -319,7 +303,6 @@ const useOpportunityLineDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const storageBucket = getCompanyPrivateBucket(company.id);
         const { data: downloadData } = await downloadCompanyPrivateObject({
           storage: carbon.storage,
           companyId: company.id,
@@ -334,7 +317,7 @@ const useOpportunityLineDocuments = ({
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
         const { error: uploadError } = await carbon.storage
-          .from(storageBucket)
+          .from(getCompanyPrivateBucket(company.id))
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -368,7 +351,7 @@ const useOpportunityLineDocuments = ({
         logger.error("Failed to process file operation", { error });
       }
     },
-    [carbon, company.id, itemId, getPath, revalidator, t]
+    [carbon, itemId, getPath, revalidator, t, company.id]
   );
 
   return {

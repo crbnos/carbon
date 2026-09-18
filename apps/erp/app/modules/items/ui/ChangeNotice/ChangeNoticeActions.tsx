@@ -1,14 +1,7 @@
 import { useCarbon } from "@carbon/auth";
-import {
-  IconButton,
-  type JSONContent,
-  toast,
-  useDebounce
-} from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
+import { IconButton, type JSONContent, useDebounce } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
-import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
 import { LuTrash2 } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -22,10 +15,10 @@ import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatu
 import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
 import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
 import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useRouteData, useUser } from "~/hooks";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import type { ListItem } from "~/types";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import type { ChangeNoticeActionTask } from "../../types";
 
 // Change-order actions — a thin wrapper over the shared ActionTaskList (same
@@ -105,10 +98,7 @@ function ActionItem({
   const { t } = useLingui();
   const permissions = usePermissions();
   const integrations = useIntegrations();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const statusFetcher = useFetcher<{ success: boolean }>();
   const deleteFetcher = useFetcher<{ success: boolean }>();
@@ -117,17 +107,7 @@ function ActionItem({
   const status = (action.status ?? "Pending") as ActionTaskStatus;
   const canEdit = permissions.can("update", "parts") && !isDisabled;
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-    if (result?.error || !result?.data) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result?.error?.message ?? "Failed to upload image");
-    }
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const hasLinearLink = !!action.linearIssue;
   const hasJiraLink = !!action.jiraIssue;

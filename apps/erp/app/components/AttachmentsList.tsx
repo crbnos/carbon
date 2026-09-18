@@ -1,4 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString } from "@carbon/files";
+import { MediaUploader, wasConvertedFromHeic } from "@carbon/files/media";
 import {
   Badge,
   HStack,
@@ -9,7 +11,6 @@ import {
   VStack
 } from "@carbon/react";
 import {
-  convertKbToString,
   getCompanyPrivateBucket,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
   PO_EMAIL_ATTACHMENT_WARN_MB,
@@ -88,12 +89,28 @@ export default function AttachmentsList({
       }
       setUploading(true);
       try {
-        const bucket = getCompanyPrivateBucket(company.id);
-        for (const file of acceptedFiles) {
+        // HEIC is never stored — convert to JPEG first.
+        const uploader = new MediaUploader(carbon, {
+          bucket: getCompanyPrivateBucket(company.id),
+          directory: `${company.id}/tmp`
+        });
+        const files = await uploader.prepareForUpload(acceptedFiles);
+        for (const file of files) {
           const safeName = stripSpecialCharacters(file.name);
           const storagePath = `${company.id}/supplier-interaction/${supplierInteractionId}/${safeName}`;
+          if (wasConvertedFromHeic(file)) {
+            const existing = await carbon.storage
+              .from(getCompanyPrivateBucket(company.id))
+              .info(storagePath);
+            if (!existing.error && existing.data) {
+              toast.error(
+                t`A file named ${file.name} already exists — delete or rename it first`
+              );
+              continue;
+            }
+          }
           const upload = await carbon.storage
-            .from(bucket)
+            .from(getCompanyPrivateBucket(company.id))
             .upload(storagePath, file, {
               cacheControl: `${12 * 60 * 60}`,
               upsert: true
@@ -103,6 +120,8 @@ export default function AttachmentsList({
           }
         }
         revalidator.revalidate();
+      } catch {
+        toast.error(t`Failed to convert image`);
       } finally {
         setUploading(false);
       }

@@ -27,7 +27,7 @@ msgstr "{0} पहले"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} नौकरियां"
+msgstr "{0} जॉब"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -101,7 +101,7 @@ msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
 msgid "Add a printer in the printing settings to print labels directly."
-msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि सीधे लेबल प्रिंट कर सकें।"
+msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
 msgid "Batched jobs"
-msgstr "बैच की गई नौकरियां"
+msgstr "बैच जॉब"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
@@ -229,7 +229,7 @@ msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
 
 msgid "Clear Search"
-msgstr "खोज साफ करें"
+msgstr "खोज साफ़ करें"
 
 msgid "Clear station default"
 msgstr "स्टेशन डिफ़ॉल्ट को साफ़ करें"
@@ -493,6 +493,9 @@ msgstr "विफल सुविधाएँ"
 msgid "Failed to complete inventory adjustment"
 msgstr "इन्वेंटरी समायोजन पूरा करने में विफल"
 
+msgid "Failed to convert image"
+msgstr "इमेज को परिवर्तित करने में विफल"
+
 msgid "Failed to end operations"
 msgstr "ऑपरेशन समाप्त करने में विफल"
 
@@ -510,10 +513,10 @@ msgstr "परिणाम को सहेजने में विफल"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
-msgstr "फ़ाइल अपलोड करने में विफल: {0}"
+msgstr "फाइल अपलोड करने में विफल: {0}"
 
 msgid "Failed to upload image"
-msgstr "छवि अपलोड करने में विफल"
+msgstr "इमेज अपलोड करने में विफल"
 
 msgid "Feature"
 msgstr "सुविधा"
@@ -834,7 +837,7 @@ msgid "No assigned operations"
 msgstr "कोई नियुक्त ऑपरेशन नहीं"
 
 msgid "No available filters"
-msgstr "कोई उपलब्ध फ़िल्टर नहीं है"
+msgstr "कोई उपलब्ध फ़िल्टर नहीं"
 
 msgid "No available serial numbers found"
 msgstr "कोई उपलब्ध सीरियल नंबर नहीं मिला"
@@ -1032,6 +1035,9 @@ msgstr "ट्रैक किए गए आइटम को चुनें"
 msgid "Picked"
 msgstr "उठाया गया"
 
+msgid "Picked as"
+msgstr "के रूप में पिक किया गया"
+
 msgid "Picked quantity"
 msgstr "चुना गया मात्रा"
 
@@ -1043,6 +1049,12 @@ msgstr "कॉलम {0} को स्थिति {1} पर उठाया �
 
 msgid "Picking"
 msgstr "पिकिंग"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "पिकिंग {substitutedFrom} की जगह, जॉब पर आइटम, {substitutedAssemblies} असेंबलीज के लिए"
 
 msgid "Pin Out"
 msgstr "पिन आउट"
@@ -1457,7 +1469,7 @@ msgid "Thumbnail"
 msgstr "थंबनेल"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "समय और लागत को मात्रा के अनुपात में कार्यों में विभाजित किया जाता है।"
+msgstr "समय और लागत मात्रा के अनुपात में जॉब में विभाजित है।"
 
 msgid "Time Entries"
 msgstr "समय प्रविष्टियाँ"
@@ -1585,7 +1597,7 @@ msgid "Yes"
 msgstr "हां"
 
 msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowledge that you're still working."
-msgstr "आपने <0/> पर कार्य शुरू किया। आप नीचे अपने कार्य समाप्ति समय को संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
+msgstr "आप <0/> पर घड़ी में आए हैं। आप नीचे अपने घड़ी से बाहर का समय संपादित कर सकते हैं या स्वीकार कर सकते हैं कि आप अभी भी काम कर रहे हैं।"
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
 msgstr "आप {hoursElapsed} घंटों से कार्य पर हैं। क्या आप कार्य समाप्त करना भूल गए?"

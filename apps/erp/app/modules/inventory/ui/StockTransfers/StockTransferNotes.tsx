@@ -6,17 +6,13 @@ import {
   CardHeader,
   CardTitle,
   generateHTML,
-  toast,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
+import { Trans } from "@lingui/react/macro";
 import { useState } from "react";
-import { usePermissions, useUser } from "~/hooks";
-import { getPrivateUrl } from "~/utils/path";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
 const ShipmentNotes = ({
   id,
@@ -25,33 +21,12 @@ const ShipmentNotes = ({
   id: string | null;
   notes?: JSONContent;
 }) => {
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
-  const { t } = useLingui();
   const permissions = usePermissions();
   const [notes, setNotes] = useState(initialNotes ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/inventory/${id}/${nanoid()}.${fileType}`;
-
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`inventory/${id}`);
 
   const onUpdateNotes = useDebounce(
     async (content: JSONContent) => {

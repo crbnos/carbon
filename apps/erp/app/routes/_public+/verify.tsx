@@ -5,6 +5,10 @@ import {
   signInWithEmail
 } from "@carbon/auth/auth.server";
 import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   flash,
   getAuthSession,
   setAuthSession
@@ -86,6 +90,16 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { email, code, redirectTo } = validation.data;
+
+  // Defense in depth: the login action already refuses a blocked domain before
+  // any code is sent, so a valid code should never exist for one — but this is
+  // the route that actually creates the account, so gate it here too.
+  if (isSelfSignupBlockedForEmail(email)) {
+    return data(
+      { success: false, message: SELF_SIGNUP_BLOCKED_MESSAGE },
+      await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+    );
+  }
 
   // Verify the email code
   const isCodeValid = await verifyEmailCode(email, code);

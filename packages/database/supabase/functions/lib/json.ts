@@ -19,3 +19,26 @@ export function toJson(value: unknown): string | null | undefined {
   if (value === null || value === undefined) return value;
   return JSON.stringify(value);
 }
+
+/**
+ * Runs `toJson` over a fixed list of jsonb columns on a row read back from
+ * Supabase, for re-inserting that row (or a spread of it) through Kysely —
+ * e.g. `{ ...line, ...toJsonColumns(line, QUOTE_LINE_JSON_COLUMNS) }`.
+ *
+ * A document-copy that spreads a source row raw (`{...line, quoteId, companyId}`)
+ * silently regresses to the unserialised bug the day a new jsonb column is
+ * added to that table and the spread picks it up untouched. Naming the
+ * column list here, next to the call site, makes that list something a
+ * future column addition has to be checked against, and something a test can
+ * assert against directly.
+ */
+export function toJsonColumns<T extends Record<string, unknown>, K extends keyof T>(
+  row: T,
+  keys: readonly K[]
+): { [P in K]: string | null | undefined } {
+  const out = {} as { [P in K]: string | null | undefined };
+  for (const key of keys) {
+    out[key] = toJson(row[key]);
+  }
+  return out;
+}

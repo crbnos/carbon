@@ -1,46 +1,17 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
+import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import {
   downloadCompanyPrivateObject,
-  hasCompanyPrivateObjectPathPrefix,
-  supportedModelTypes
+  hasCompanyPrivateObjectPathPrefix
 } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
-
-const supportedFileTypes: Record<string, string> = {
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  avif: "image/avif",
-  webp: "image/webp",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  wmv: "video/x-ms-wmv",
-  mp3: "audio/mpeg",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-  flac: "audio/flac",
-  dxf: "application/dxf",
-  dwg: "application/dxf",
-  stl: "application/stl",
-  obj: "application/obj",
-  glb: "application/glb",
-  gltf: "application/gltf",
-  fbx: "application/fbx",
-  ply: "application/ply",
-  off: "application/off",
-  step: "application/step"
-};
 
 const logger = getLogger("erp", "share", "customer-portal");
 
@@ -124,11 +95,11 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   if (
     !fileType ||
-    (!(fileType in supportedFileTypes) &&
+    (!(fileType in MEDIA_CONTENT_TYPES) &&
       !supportedModelTypes.includes(fileType))
   )
     throw new Error(`File type ${fileType} not supported`);
-  const contentType = supportedFileTypes[fileType];
+  const contentType = getContentType(fileType);
 
   async function downloadFile() {
     const result = await downloadCompanyPrivateObject({

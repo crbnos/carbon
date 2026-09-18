@@ -27,7 +27,7 @@ msgstr "{0} temu"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} zadań"
+msgstr "{0} Zlecenia produkcyjne"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
 msgid "Batched jobs"
-msgstr "Zadania zgrupowane"
+msgstr "Zbiorcze zlecenia produkcyjne"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Opóźnione o {daysBehindTarget} dni"
@@ -493,6 +493,9 @@ msgstr "Funkcje nie powiodły się"
 msgid "Failed to complete inventory adjustment"
 msgstr "Nie udało się zakończyć korekty zapasów"
 
+msgid "Failed to convert image"
+msgstr "Nie udało się przekształcić obraz"
+
 msgid "Failed to end operations"
 msgstr "Nie udało się zakończyć operacji"
 
@@ -513,7 +516,7 @@ msgid "Failed to upload file: {0}"
 msgstr "Nie udało się przesłać pliku: {0}"
 
 msgid "Failed to upload image"
-msgstr "Nie udało się przesłać obrazu"
+msgstr "Nie udało się przesłać plik"
 
 msgid "Feature"
 msgstr "Funkcja"
@@ -577,7 +580,7 @@ msgid "I'm Still Working"
 msgstr "Nadal pracuję"
 
 msgid "Ideas, suggestions or problems?"
-msgstr "Pomysły, sugestie czy problemy?"
+msgstr "Pomysły, propozycje czy problemy?"
 
 msgid "Idle for"
 msgstr "Bezczynny przez"
@@ -1032,6 +1035,9 @@ msgstr "Wybierz śledzony element"
 msgid "Picked"
 msgstr "Pobrane"
 
+msgid "Picked as"
+msgstr "Pobrano jako"
+
 msgid "Picked quantity"
 msgstr "Pobrana ilość"
 
@@ -1043,6 +1049,12 @@ msgstr "Podniesiono kolumnę {0} na pozycji: {1} z {2}"
 
 msgid "Picking"
 msgstr "Kompletowanie"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "kompletacja zamiast {substitutedFrom}, artykułu w zleceniu produkcyjnym"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "kompletacja zamiast {substitutedFrom}, artykułu w zleceniu produkcyjnym, dla {substitutedAssemblies} montaży"
 
 msgid "Pin Out"
 msgstr "Wyloguj PIN"
@@ -1457,7 +1469,7 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Czas i koszt podzielone między zadania proporcjonalnie do ilości."
+msgstr "Czas i koszt rozdzielone na zlecenia produkcyjne proporcjonalnie do ilości."
 
 msgid "Time Entries"
 msgstr "Wpisy czasu pracy"

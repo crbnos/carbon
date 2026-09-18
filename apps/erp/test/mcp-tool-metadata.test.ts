@@ -273,8 +273,10 @@ describe("mcp tool-metadata generator", () => {
     ).toBeGreaterThan(0);
 
     const ability = props(get("resources_updateAbility")).ability;
-    expect(Object.keys(ability?.properties ?? {})).toContain("name");
-    expect(ability?.required).toBeUndefined();
+    expect(Object.keys(ability?.properties ?? {})).toContain(
+      "recertifyEveryDays"
+    );
+    expect(ability?.required).toEqual(["recertifyEveryDays"]);
   });
 
   // Insert-vs-update discriminator, BOTH directions, gets a required `_operation`.

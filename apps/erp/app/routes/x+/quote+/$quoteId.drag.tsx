@@ -3,13 +3,13 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import {
   downloadCompanyPrivateObject,
   getCompanyPrivateBucket,
-  removeCompanyPrivateObjects,
-  supportedModelTypes
+  removeCompanyPrivateObjects
 } from "@carbon/utils";
 import { generateObject } from "ai";
 import { nanoid } from "nanoid";

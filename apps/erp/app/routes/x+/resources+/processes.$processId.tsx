@@ -87,7 +87,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (d.requiresAbility) {
     const abilityResult = await ensureProcessAbility(client, {
       processId: id,
-      processName: d.name,
       companyId,
       userId
     });

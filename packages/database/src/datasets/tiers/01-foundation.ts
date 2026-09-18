@@ -30,13 +30,9 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Abilities ─────────────────────────────────────────────────────────────
-  ctx.log("abilities");
-  for (const name of data.abilities) {
-    ctx.refs.abilities[name] = await insertId(ctx, "ability", { name });
-  }
-
   // ── Processes ─────────────────────────────────────────────────────────────
+  // Processes come before abilities: an ability is a process's qualification
+  // (it carries no name of its own), so each ability must link to a process.
   ctx.log("processes");
   for (const p of data.processes) {
     ctx.refs.processes[p.name] = await insertId(ctx, "process", {
@@ -44,6 +40,30 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       defaultStandardFactor: p.factor,
       processType: p.type
     });
+  }
+
+  // ── Abilities ─────────────────────────────────────────────────────────────
+  // Each ability is the qualification for a process. Reuse a same-named process
+  // when the dataset already defines one (marking it as requiring the ability);
+  // otherwise mint a dedicated process for the qualification.
+  ctx.log("abilities");
+  for (const name of data.abilities) {
+    let processId = ctx.refs.processes[name];
+    if (processId) {
+      await ctx.client.query(
+        `UPDATE "process" SET "requiresAbility" = true WHERE "id" = $1 AND "companyId" = $2`,
+        [processId, ctx.companyId]
+      );
+    } else {
+      processId = await insertId(ctx, "process", {
+        name,
+        defaultStandardFactor: "Minutes/Piece",
+        processType: "Process",
+        requiresAbility: true
+      });
+      ctx.refs.processes[name] = processId;
+    }
+    ctx.refs.abilities[name] = await insertId(ctx, "ability", { processId });
   }
 
   // ── Item posting groups ───────────────────────────────────────────────────

@@ -1,0 +1,40 @@
+{
+  "name": "@carbon/files",
+  "version": "0.0.0",
+  "private": true,
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./media": "./src/media/index.ts",
+    "./media/node": "./src/media/node.ts",
+    "./cad": "./src/cad/index.ts",
+    "./csv": "./src/csv/index.ts",
+    "./pdf": "./src/pdf/index.ts",
+    "./pdf/worker": "./src/pdf/worker.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@carbon/database": "workspace:*",
+    "@jsquash/jpeg": "1.6.0",
+    "@jsquash/png": "3.1.1",
+    "@jsquash/resize": "2.1.1",
+    "@jsquash/webp": "1.5.0",
+    "@supabase/supabase-js": "catalog:",
+    "libheif-js": "1.23.2",
+    "nanoid": "catalog:",
+    "papaparse": "5.3.2",
+    "pdfjs-dist": "5.4.296",
+    "unpdf": "1.8.1"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@types/papaparse": "5.5.2",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

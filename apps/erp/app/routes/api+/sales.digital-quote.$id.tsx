@@ -1,5 +1,9 @@
 import { assertIsPost, notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument
+} from "@carbon/ee/rules.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -11,6 +15,7 @@ import {
   getSalesOrder,
   selectedLinesValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompanySettings } from "~/modules/settings";
 import { generateAndAttachSalesOrderPdf } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
@@ -87,6 +92,67 @@ export async function action(args: ActionFunctionArgs) {
       let purchaseOrderNumber = "";
       if (file instanceof File && file.name.toLowerCase().endsWith(".pdf")) {
         purchaseOrderNumber = file.name.replace(/\.pdf$/i, "");
+      }
+
+      // Terminal gate on the customer-facing accept. This endpoint is
+      // unauthenticated — the share link is the only credential — so it is
+      // HARD-BLOCK-ONLY: there is no employee here, nobody who may legitimately
+      // acknowledge a warning, and internal compliance text must never reach
+      // the customer. Errors refuse with a neutral message; warnings are logged
+      // for the seller and the order proceeds.
+      const { violations: salesRuleViolations, ruleNames: salesRuleNames } =
+        await evaluateSalesRulesForSalesDocument({
+          client: serviceRole,
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id
+        });
+      // Only the lines the customer selected convert — a deselected line's
+      // violations must not block the acceptance.
+      const acceptedLineIds = new Set(
+        Object.entries(selectedLines)
+          .filter(([, line]) => (line.quantity ?? 0) > 0)
+          .map(([lineId]) => lineId)
+      );
+      const dedupedSalesRuleViolations = dedupeViolations(
+        salesRuleViolations
+      ).filter((v) => !v.lineId || acceptedLineIds.has(v.lineId));
+      const blockingViolations = dedupedSalesRuleViolations.filter(
+        (v) => v.severity === "error"
+      );
+
+      if (blockingViolations.length > 0) {
+        logger.error("Digital quote acceptance blocked by sales rules", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: blockingViolations
+        });
+        // The customer is told to contact their rep — the rep needs the
+        // signal: write the same evidence + notification every internal gate
+        // writes, attributed to the quote's owner (there is no session user).
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId: quote.data.companyId,
+          userId: quote.data.createdBy,
+          documentType: "quote",
+          documentId: quote.data.id,
+          outcome: "blocked",
+          violations: blockingViolations,
+          ruleNames: salesRuleNames
+        });
+        return {
+          success: false,
+          message:
+            "This quote can no longer be accepted online. Please contact your sales representative."
+        };
+      }
+
+      if (dedupedSalesRuleViolations.length > 0) {
+        logger.warn("Digital quote accepted with sales rule warnings", {
+          quoteId: quote.data.id,
+          companyId: quote.data.companyId,
+          violations: dedupedSalesRuleViolations
+        });
       }
 
       const [convert] = await Promise.all([

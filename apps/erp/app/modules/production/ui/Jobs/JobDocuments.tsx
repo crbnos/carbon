@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -28,7 +29,6 @@ import {
   VStack
 } from "@carbon/react";
 import {
-  convertKbToString,
   downloadCompanyPrivateObject,
   getCompanyPrivateBucket,
   MODEL_RAW_KEEP_MAX_BYTES,
@@ -49,7 +49,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -149,15 +149,7 @@ const useJobDocuments = ({
       );
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Failed to process file operation", { error });
@@ -203,43 +195,27 @@ const useJobDocuments = ({
     [jobId, submit]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[], bucket: "job" | "parts" = "job") => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
       if (bucket === "parts" && !itemId) {
         toast.error(t`Cannot upload to parts bucket without item ID`);
         return;
       }
 
-      const storageBucket = getCompanyPrivateBucket(company.id);
-      for (const file of files) {
-        const fileName = getPath(file, bucket);
-
-        const fileUpload = await carbon.storage
-          .from(storageBucket)
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath: (file) => getPath(file, bucket),
+        onSuccess: (file, uploadedPath) =>
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size,
             bucket
-          });
-        }
-      }
+          })
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, company.id, revalidator, itemId, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(
@@ -267,7 +243,6 @@ const useJobDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const storageBucket = getCompanyPrivateBucket(company.id);
         const { data: downloadData } = await downloadCompanyPrivateObject({
           storage: carbon.storage,
           companyId: company.id,
@@ -282,7 +257,7 @@ const useJobDocuments = ({
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
         const { error: uploadError } = await carbon.storage
-          .from(storageBucket)
+          .from(getCompanyPrivateBucket(company.id))
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -316,7 +291,7 @@ const useJobDocuments = ({
         logger.error("Failed to process file operation", { error });
       }
     },
-    [carbon, company.id, itemId, getPath, revalidator, t]
+    [carbon, itemId, getPath, revalidator, t]
   );
 
   return {

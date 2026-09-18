@@ -1,18 +1,16 @@
 import { useCarbon } from "@carbon/auth";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, toast, useDebounce } from "@carbon/react";
+import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { useFetcher, useLoaderData, useParams } from "react-router";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import type { loader } from "~/routes/x+/quality-document+/$id";
 import type { action } from "~/routes/x+/quality-document+/update";
 import { useDocumentStore } from "~/stores";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export default function QualityDocumentEditor() {
   const { id } = useParams();
@@ -30,10 +28,7 @@ export default function QualityDocumentEditor() {
   );
 
   const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
 
   const updateContent = useDebounce(
     async (next: JSONContent) => {
@@ -72,19 +67,7 @@ export default function QualityDocumentEditor() {
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const ext = file.name.split(".").pop();
-    const storagePath = `${companyId}/parts/${nanoid()}.${ext}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(storagePath, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-    if (!result?.data) throw new Error("Failed to upload image");
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const isDraft = loaderData?.document?.status === "Draft";
   const canEdit = permissions.can("update", "quality") && isDraft;

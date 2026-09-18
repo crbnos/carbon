@@ -41,6 +41,7 @@ pnpm --filter @carbon/auth test
 | `./company.server` | Company switching, `updateCompanySession` |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
+| `./self-signup.server` | Cloud self-signup blocklist: `isSelfSignupBlockedForEmail`, `SELF_SIGNUP_BLOCKED_MESSAGE` (free/disposable email domains; used by ERP login/verify/callback + MES callback) |
 | `./middleware/flash.server` | Flash message middleware |
 
 SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth

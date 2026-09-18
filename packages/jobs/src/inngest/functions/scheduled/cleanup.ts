@@ -13,6 +13,12 @@ const STAGED_RAW_TTL_DAYS = 7;
 // Agent chat threads are transient — purge after 30 days of inactivity.
 const AGENT_THREAD_TTL_DAYS = 30;
 
+// Everything under `{companyId}/tmp/` in the private bucket is transient by
+// contract: HEIC-conversion round-trip files (removed in a `finally`, but a
+// crash can leak them) and staged signed-URL uploads an MCP agent PUT but
+// never registered. One day is generous — both are seconds-to-minutes lived.
+const TMP_STAGING_TTL_HOURS = 24;
+
 type NotifyEvent = {
   name: "carbon/notify";
   data: {
@@ -497,6 +503,75 @@ export const cleanupFunction = inngest.createFunction(
         logger.info("Pruned stale staged raws", {
           relocated: relocated.size,
           orphaned: orphans.length
+        });
+      }
+    });
+
+    await step.run("prune-tmp-staging", async () => {
+      logger.info("Pruning stale private-bucket tmp staging objects...");
+      const cutoff = new Date(
+        Date.now() - TMP_STAGING_TTL_HOURS * 60 * 60 * 1000
+      ).toISOString();
+
+      // Staging now lives in each company's own bucket (bucket id = companyId),
+      // with the legacy shared `private` bucket still holding pre-migration
+      // objects — so select the bucket alongside the name and prune per bucket
+      // rather than assuming one shared bucket.
+      const stale = await serviceRole
+        .schema("storage")
+        .from("objects")
+        .select("name, bucket_id")
+        .like("name", "%/tmp/%")
+        .lt("created_at", cutoff)
+        .limit(1000);
+
+      if (stale.error) {
+        logger.error("Error listing stale tmp objects", { error: stale.error });
+        return;
+      }
+
+      // The LIKE matches "/tmp/" anywhere; only the SECOND segment being
+      // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
+      // folders are never named tmp, but don't rely on that for a delete.
+      const byBucket = new Map<string, string[]>();
+      for (const object of stale.data ?? []) {
+        const name = object.name;
+        const bucketId = object.bucket_id;
+        if (typeof name !== "string" || typeof bucketId !== "string") continue;
+        if (name.split("/")[1] !== "tmp") continue;
+        // A company bucket is named for its company, and its object keys keep
+        // the `{companyId}/` prefix — so a key whose first segment is not this
+        // bucket belongs to neither this company nor the legacy bucket layout.
+        if (bucketId !== LEGACY_PRIVATE_BUCKET && name.split("/")[0] !== bucketId)
+          continue;
+        const existing = byBucket.get(bucketId);
+        if (existing) existing.push(name);
+        else byBucket.set(bucketId, [name]);
+      }
+
+      const toRemoveCount = [...byBucket.values()].reduce(
+        (total, names) => total + names.length,
+        0
+      );
+      if (toRemoveCount === 0) {
+        logger.info("No stale tmp staging objects");
+        return;
+      }
+
+      let failed = false;
+      for (const [bucketId, names] of byBucket) {
+        const removed = await serviceRole.storage.from(bucketId).remove(names);
+        if (removed.error) {
+          failed = true;
+          logger.error("Error pruning tmp staging objects", {
+            bucket: bucketId,
+            error: removed.error
+          });
+        }
+      }
+      if (!failed) {
+        logger.info("Pruned stale tmp staging objects", {
+          count: toRemoveCount
         });
       }
     });

@@ -1,5 +1,11 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob } from "@carbon/files";
+import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
+import {
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import {
   Card,
   CardContent,
@@ -21,11 +27,6 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import {
-  convertKbToString,
-  getCompanyPrivateBucket,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactNode } from "react";
@@ -75,11 +76,21 @@ export default function DefaultAttachmentsPanel({
         toast.error(t`Storage client not available`);
         return;
       }
-      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of acceptedFiles) {
         const safeName = stripSpecialCharacters(file.name);
+        if (wasConvertedFromHeic(file)) {
+          const existing = await carbon.storage
+            .from(getCompanyPrivateBucket(company.id))
+            .info(fullPath(safeName));
+          if (!existing.error && existing.data) {
+            toast.error(
+              t`A file named ${file.name} already exists — delete or rename it first`
+            );
+            continue;
+          }
+        }
         const upload = await carbon.storage
-          .from(bucket)
+          .from(getCompanyPrivateBucket(company.id))
           .upload(fullPath(safeName), file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -96,15 +107,7 @@ export default function DefaultAttachmentsPanel({
       const url = path.to.file.previewFile(`private/${fullPath(name)}`);
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), name);
       } catch (err) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: err });

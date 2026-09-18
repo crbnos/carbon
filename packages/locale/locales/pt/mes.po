@@ -27,7 +27,7 @@ msgstr "há {0}"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} trabalhos"
+msgstr "{0} ordens de produção"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "Número do lote é obrigatório"
 
 msgid "Batched jobs"
-msgstr "Trabalhos agrupados"
+msgstr "Ordens de produção em lote"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Atraso de {daysBehindTarget} dia(s)"
@@ -492,6 +492,9 @@ msgstr "Recursos com falha"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Falha ao concluir ajuste de estoque"
+
+msgid "Failed to convert image"
+msgstr "Falha ao converter imagem"
 
 msgid "Failed to end operations"
 msgstr "Falha ao encerrar operações"
@@ -1032,6 +1035,9 @@ msgstr "Selecionar item rastreado"
 msgid "Picked"
 msgstr "Apanhado"
 
+msgid "Picked as"
+msgstr "Separado como"
+
 msgid "Picked quantity"
 msgstr "Quantidade colhida"
 
@@ -1043,6 +1049,12 @@ msgstr "Coluna {0} selecionada na posição: {1} de {2}"
 
 msgid "Picking"
 msgstr "Separação"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "separação em lugar de {substitutedFrom}, o item da ordem de produção"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "separação em lugar de {substitutedFrom}, o item da ordem de produção, para {substitutedAssemblies} conjuntos"
 
 msgid "Pin Out"
 msgstr "Desconectar"
@@ -1457,7 +1469,7 @@ msgid "Thumbnail"
 msgstr "Miniatura"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Tempo e custo divididos entre trabalhos proporcionalmente à quantidade."
+msgstr "Tempo e custo divididos entre as ordens de produção na proporção da quantidade."
 
 msgid "Time Entries"
 msgstr "Registros de Horas"

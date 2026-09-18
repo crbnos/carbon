@@ -1,5 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -117,7 +118,12 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useImageUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
   OperationParameter,
@@ -381,25 +387,7 @@ const BillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file, {
-      upsert: true,
-      cacheControl: "3600"
-    });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`parts/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
     if (isReadOnly) return;
@@ -497,10 +485,6 @@ const BillOfProcess = ({
       return rest;
     });
   };
-
-  const {
-    company: { id: companyId }
-  } = useUser();
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -2015,24 +1999,7 @@ function AttributesForm({
   }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   // Upload a chosen image to storage immediately and buffer it as a draft slide.
   const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2041,10 +2008,18 @@ function AttributesForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const bucket = getCompanyPrivateBucket(companyId);
-      const result = await carbon.storage.from(bucket).upload(fileName, file);
+      const result = await carbon.storage
+        .from(getCompanyPrivateBucket(companyId))
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -2060,6 +2035,8 @@ function AttributesForm({
           annotations: []
         }
       ]);
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setDraftUploading(false);
     }
@@ -2577,29 +2554,7 @@ function AttributesListItem({
     attribute.description ?? {}
   );
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 
@@ -3124,10 +3079,18 @@ function StepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: getCompanyPrivateBucket(companyId),
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const bucket = getCompanyPrivateBucket(companyId);
-      const result = await carbon.storage.from(bucket).upload(fileName, file);
+      const result = await carbon.storage
+        .from(getCompanyPrivateBucket(companyId))
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -3140,6 +3103,8 @@ function StepSlides({
         method: "post",
         action: path.to.newMethodOperationStepSlide
       });
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setUploading(false);
     }

@@ -35,7 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket, INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -101,6 +101,7 @@ import {
 } from "~/components/SortableList";
 import {
   useCurrencyDecimals,
+  useImageUpload,
   usePermissions,
   useRouteData,
   useUser
@@ -124,7 +125,7 @@ import type { action as editQuoteOperationStepAction } from "~/routes/x+/quote+/
 import type { action as editQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.$id";
 import type { action as newQuoteOperationToolAction } from "~/routes/x+/quote+/methods+/operation.tool.new";
 import { useItems, useTools } from "~/stores";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import { quoteOperationValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
@@ -298,10 +299,7 @@ const QuoteBillOfProcess = ({
   const sortOrderFetcher = useFetcher<{}>();
   const deleteOperationFetcher = useFetcher<{ success: boolean }>();
   const permissions = usePermissions();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
 
   const [allItems] = useItems();
 
@@ -414,24 +412,7 @@ const QuoteBillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/opportunity-line/${selectedItemId}/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage
-      .from(bucket)
-      .upload(fileName, file, { upsert: true });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error(t`Failed to upload image`);
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`opportunity-line/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
     if (!permissions.can("update", "parts")) return;
@@ -909,29 +890,7 @@ function AttributesForm({
 
   const [description, setDescription] = useState<JSONContent>({});
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const typeOptions = useMemo(
     () =>
@@ -1218,29 +1177,7 @@ function AttributesListItem({
     attribute.description ?? {}
   );
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 

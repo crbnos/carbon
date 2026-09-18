@@ -9,14 +9,13 @@ import type {
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
-  getCompanyPrivateBucket,
   listCompanyPrivateObjects
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { buildDocumentUploadPath } from "~/modules/documents/documents.models";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -892,6 +891,47 @@ export async function getItemQuantities(
     .maybeSingle();
 }
 
+/**
+ * On-hand quantity per item for the Item picker's badge, as a plain map.
+ *
+ * `locationId` of "all" totals every location (including the '' bucket for
+ * ledger rows with no location), matching what the picker shows when no
+ * location is in play. Zero rows are dropped — the picker renders no badge for
+ * an item it has no row for, so they carry no information and are the bulk of
+ * the table on a tenant with history.
+ */
+export async function getItemStockQuantitiesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const { data, error } = await fetchAllFromTable<{
+    itemId: string;
+    quantityOnHand: number;
+  }>(client, "itemStockQuantities", "itemId, quantityOnHand", (query) => {
+    const scoped = query
+      .eq("companyId", companyId)
+      .neq("quantityOnHand", 0)
+      // Total order across the whole key: fetchAllFromTable pages, and without
+      // one a concurrent write can shift a row across a page boundary.
+      .order("itemId")
+      .order("locationId");
+
+    return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
+  });
+
+  if (error) return { data: null, error };
+
+  const quantities: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (!row.itemId) continue;
+    quantities[row.itemId] =
+      (quantities[row.itemId] ?? 0) + (Number(row.quantityOnHand) || 0);
+  }
+
+  return { data: quantities, error: null };
+}
+
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -919,6 +959,21 @@ export async function getItemSupersession(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .maybeSingle();
+}
+
+export async function getItemSupersessionsForItems(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+) {
+  if (itemIds.length === 0) return { data: [], error: null };
+  return client
+    .from("itemSupersession")
+    .select(
+      "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor, successor:item!itemSupersession_successorItemId_fkey(readableIdWithRevision)"
+    )
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
 }
 
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
@@ -1782,7 +1837,7 @@ export async function getOpenJobMaterials(
   return client
     .from("openJobMaterialLines")
     .select(
-      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, quantityPerParent, documentReadableId:jobReadableId, documentId:jobId, dueDate"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
@@ -3800,6 +3855,57 @@ export async function upsertItemPurchasing(
     .eq("itemId", update.itemId);
 }
 
+export const SUPERSESSION_CYCLE_CODE = "SUPERSESSION_CYCLE";
+
+const SUPERSESSION_CHAIN_LIMIT = 10;
+
+async function findSupersessionCycle(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  successorItemId: string,
+  companyId: string
+): Promise<
+  | { kind: "ok" }
+  | { kind: "cycle"; path: string[] }
+  | { kind: "tooLong" }
+  | { kind: "error"; error: PostgrestError }
+> {
+  const path = [itemId, successorItemId];
+  const visited = new Set(path);
+  let currentId = successorItemId;
+  let closed = false;
+  for (let hop = 0; hop < SUPERSESSION_CHAIN_LIMIT; hop++) {
+    const link = await client
+      .from("itemSupersession")
+      .select("successorItemId")
+      .eq("itemId", currentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (link.error) return { kind: "error", error: link.error };
+    const next = link.data?.successorItemId;
+    if (!next) return { kind: "ok" };
+    path.push(next);
+    if (visited.has(next)) {
+      closed = true;
+      break;
+    }
+    visited.add(next);
+    currentId = next;
+  }
+  if (!closed) return { kind: "tooLong" };
+
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", Array.from(new Set(path)))
+    .eq("companyId", companyId);
+  if (items.error) return { kind: "error", error: items.error };
+  const readable = new Map(
+    (items.data ?? []).map((i) => [i.id, i.readableIdWithRevision ?? i.id])
+  );
+  return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
+}
+
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -3844,6 +3950,35 @@ export async function upsertItemSupersession(
   }
 
   const isNoStock = supersessionMode === "No Stock";
+
+  if (!isNoStock && successorItemId) {
+    const check = await findSupersessionCycle(
+      client,
+      itemId,
+      successorItemId,
+      companyId
+    );
+    if (check.kind === "error") return { data: null, error: check.error };
+    if (check.kind === "tooLong") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `Supersession chains longer than ${SUPERSESSION_CHAIN_LIMIT} hops are not allowed`
+        }
+      };
+    }
+    if (check.kind === "cycle") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `This would create a supersession loop: ${check.path.join(" → ")}`
+        }
+      };
+    }
+  }
+
   const row = {
     supersessionMode,
     // No Stock has no successor (nothing takes over the demand).
@@ -8161,13 +8296,10 @@ export async function createItemDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; itemId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "parts",
     entityId: args.itemId,
     name: args.name
   });
-  return client.storage
-    .from(getCompanyPrivateBucket(args.companyId))
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }

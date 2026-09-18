@@ -1,9 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
 import {
   getCompanyPrivateBucket,
-  listCompanyPrivateObjects,
-  modelPathOptimizeFormat
+  listCompanyPrivateObjects
 } from "@carbon/utils";
 import { inngest } from "../../client";
 import {

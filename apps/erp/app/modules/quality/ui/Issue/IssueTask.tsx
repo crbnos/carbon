@@ -13,14 +13,11 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-  toast,
   useDebounce
 } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
-import { nanoid } from "nanoid";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { LuCalendar, LuContainer, LuRedoDot } from "react-icons/lu";
 import { RxCheck } from "react-icons/rx";
@@ -37,6 +34,7 @@ import { useProcesses } from "~/components/Form/Process";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import {
   useDateFormatter,
+  useImageUpload,
   usePermissions,
   useRouteData,
   useUser
@@ -50,7 +48,7 @@ import type {
   IssueReviewer
 } from "~/modules/quality";
 import { useSuppliers } from "~/stores";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 // TaskProgress moved to the shared ActionTasks folder (SSOT with Change Notices);
 // re-exported here so existing `~/modules/quality/ui/Issue` importers keep working.
@@ -361,33 +359,12 @@ function useTaskNotes({
   hasLinearLink?: boolean;
   hasJiraLink?: boolean;
 }) {
-  const { t } = useLingui();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
 
   const [content, setContent] = useState(initialContent ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   const table = getTable(type);
 
@@ -464,7 +441,7 @@ function useTaskStatus({
   const permissions = usePermissions();
   const optimisticStatus = useOptimisticTaskStatus(task.id!);
 
-  const isDisabled = !permissions.can("update", "production") || disabled;
+  const isDisabled = !permissions.can("update", "quality") || disabled;
 
   const onOperationStatusChange = useCallback(
     (id: string, status: IssueActionTask["status"]) => {

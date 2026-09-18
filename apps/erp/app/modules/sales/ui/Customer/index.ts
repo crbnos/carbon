@@ -1,3 +1,5 @@
+import CustomerBankAccountForm from "./CustomerBankAccountForm";
+import CustomerBankAccounts from "./CustomerBankAccounts";
 import CustomerContactForm from "./CustomerContactForm";
 import CustomerContacts from "./CustomerContacts";
 import CustomerForm from "./CustomerForm";
@@ -10,6 +12,8 @@ import CustomerSidebar from "./CustomerSidebar";
 import CustomerTaxForm from "./CustomerTaxForm";
 
 export {
+  CustomerBankAccountForm,
+  CustomerBankAccounts,
   CustomerContactForm,
   CustomerContacts,
   CustomerForm,

@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import { ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -12,13 +11,10 @@ import {
   ModalDrawerHeader,
   ModalDrawerProvider,
   ModalDrawerTitle,
-  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -31,13 +27,13 @@ import {
   Submit,
   TextArea
 } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions } from "~/hooks";
 import {
   riskRegisterType,
   riskRegisterValidator,
   riskStatus
 } from "~/modules/quality/quality.models";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import { RiskRating } from "./RiskRating";
 import RiskStatus from "./RiskStatus";
 
@@ -59,10 +55,6 @@ const RiskRegisterForm = ({
 }: RiskRegisterFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const {
-    company: { id: companyId }
-  } = useUser();
-  const { carbon } = useCarbon();
   const fetcher = useFetcher<{
     data: { id: string } | null;
     error: any;
@@ -84,24 +76,7 @@ const RiskRegisterForm = ({
     }
   });
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/quality/${nanoid()}.${fileType}`;
-
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("quality");
 
   const isEditing = !!initialValues.id;
   const isDisabled = isEditing

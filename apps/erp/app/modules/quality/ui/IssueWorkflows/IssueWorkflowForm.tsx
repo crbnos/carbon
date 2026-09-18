@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import { MultiSelect, Select, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -10,21 +9,18 @@ import {
   Heading,
   HStack,
   LabelWithHelp,
-  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Reorder, useDragControls } from "framer-motion";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { LuGripVertical, LuX } from "react-icons/lu";
 import type { z } from "zod";
 import { Hidden, Input, Submit } from "~/components/Form";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions } from "~/hooks";
 import type { ListItem } from "~/types";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import {
   issueWorkflowValidator,
   nonConformanceApprovalRequirement,
@@ -126,29 +122,7 @@ const IssueWorkflowForm = ({
     setSelectedActionIds(selectedActionIds.filter((id) => id !== actionId));
   };
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const bucket = getCompanyPrivateBucket(companyId);
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   return (
     <ValidatedForm

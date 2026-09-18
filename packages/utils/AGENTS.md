@@ -1,30 +1,30 @@
 # @carbon/utils
 
-Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, numeric precision and formatting, math, strings, status helpers, storage rules, URL manipulation, and more.
+Pure utility functions shared across all Carbon packages and apps. Covers accounting, arrays, BOM, dates, numeric precision and formatting, math, strings, status helpers, the storage/sales rule engine, URL manipulation, and more.
 
 ## Always
 
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
 - Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
-- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` are allowed runtime deps.
+- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` (plus `nanoid` and `@supabase/supabase-js` for the typed `supabase.ts` wrappers) are allowed runtime deps.
 
 ## Ask First
 
 - Adding new dependencies — this package is imported everywhere; new deps increase bundle size across all apps.
-- Modifying `storage-rules.ts` — the `Operator` union is shared with `@carbon/workflows`, and the evaluator gates real inventory transactions.
+- Modifying `rules.ts` / `field-registry.ts` / `rules-schema.ts` — the rule-evaluation engine (condition AST compiler, operators, field registry) and its zod mirror. The `Operator` union is shared with `@carbon/workflows`; the evaluator gates real inventory transactions and sales-document lines. Used by storage rules (`~/modules/inventory`) and sales rules (`~/modules/sales`) across ERP and MES.
 - Changing `Edition` enum or `isBrowser` detection — used by `@carbon/env` and auth logic.
 
 ## Never
 
 - Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) from here — `@carbon/utils` must remain client-safe. **Deliberate edge-shared utilities:** `precision.ts`, `accounting-currency.ts`, `accounting-posting.ts`, `payment-funding.ts`, `sales-posting-amounts.ts`, `batch-time-split.ts`, and `batch-compatibility.ts` each re-export their namesake under `packages/database/supabase/functions/shared/` by relative path (`math.ts` consumes `precision.ts`). Those implementations live there because the Supabase edge runtime only mounts `supabase/functions/`; re-exporting rather than duplicating keeps ONE source of truth so the Node and Deno sides never drift. They are client-safe source imports, not imports of the server/database package, and not something to "fix" (same pattern as `packages/database/src/sampling.ts`). Keep their dependency graphs pure.
-- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers).
+- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers). File/image handling lives in `@carbon/files`, not here.
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/utils test        # Runs storage-rules tests etc.
+pnpm --filter @carbon/utils test        # Runs rule-engine tests etc.
 pnpm --filter @carbon/utils typecheck
 ```
 
@@ -48,11 +48,13 @@ pnpm --filter @carbon/utils typecheck
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
 | `status` | Status resolution, status color mapping |
+| `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and sales rules |
+| `rule-filters` | Item scoping for broadcast rules (`ItemFilter`, `ruleAppliesToItem`, `toItemFilter`) — family-neutral, split out of `rules.ts` |
+| `rules-schema` | Zod mirror of the rule AST (`conditionAstSchema`, `conditionAstFormField`, `RULE_OPERATORS`/`RULE_MATCH_KINDS`/`RULE_SEVERITIES`). Shared by both ERP rule form validators so neither module imports the other |
 | `storage` | Company-private file-storage contract: `getCompanyPrivateBucket` (bucket id = companyId; THROWS on an empty id — never resolves bucket `""`), `buildCompanyPrivateStorageTarget` (object keys keep the `companyId/` prefix), `LEGACY_PRIVATE_BUCKET`, and the fallback-aware helpers (`downloadCompanyPrivateObject` / `createCompanyPrivateSignedUrl` — both REFUSE an `objectPath` outside `${companyId}/`, since under a service-role client that prefix is the only tenant boundary on the shared legacy bucket; `listCompanyPrivateObjects` — unions both buckets; `removeCompanyPrivateObjects` — deletes from both). All legacy-bucket fallback lives here so removing it later is a one-file change |
-| `storage-rules` | Inventory/storage rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |
-| `field-registry` | Fields a storage rule may test, and which operators each one allows |
+| `field-registry` | Fields a rule may test, which operators each one allows, and which fields the builder/evaluator may reference |
 | `labels` | Human-readable label generation |
 | `url` | URL construction and manipulation |
 

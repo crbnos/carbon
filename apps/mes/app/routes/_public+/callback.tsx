@@ -9,6 +9,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   destroyAuthSession,
   flash,
   getAuthSession,
@@ -175,6 +179,40 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Self-signup blocklist (Cloud only). OAuth (Google/Azure) has no pre-create
+    // seam — GoTrue creates the auth user and the `create_public_user` trigger
+    // fires before this action runs — so the callback is where we refuse it,
+    // mirroring the ERP callback. Only a GENUINE self-signup is refused: a user
+    // who already belongs to a company, or who holds a pending invite, is never
+    // a self-signup. We simply decline to mint a session and leave the inert,
+    // membership-less account; there is nothing to tear down.
+    const memberships = companies.data ?? [];
+    if (
+      memberships.length === 0 &&
+      isSelfSignupBlockedForEmail(authSession.email)
+    ) {
+      // ilike for the case fold only — escape LIKE metacharacters so %/_ in an
+      // address can never act as wildcards and match someone else's invite.
+      const invitePattern = authSession.email.replace(
+        /[\\%_]/g,
+        (match) => `\\${match}`
+      );
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("id")
+        .ilike("email", invitePattern)
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .limit(1);
+
+      if (!pendingInvite.data?.length) {
+        return redirect(
+          path.to.root,
+          await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+        );
+      }
+    }
+
     // Require-SSO gate: this is the non-SSO path (magic link, Google/Azure
     // OAuth, magic links minted elsewhere) — a covered + enforced domain may
     // only authenticate via SSO, so refuse before any session state is minted.

@@ -1,10 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";

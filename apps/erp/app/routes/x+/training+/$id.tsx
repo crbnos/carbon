@@ -2,12 +2,10 @@ import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { JSONContent } from "@carbon/react";
-import { generateHTML, Input, toast, useDebounce } from "@carbon/react";
+import { generateHTML, Input, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import {
@@ -18,7 +16,7 @@ import {
   useParams
 } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 import {
   getTraining,
   TrainingExplorer,
@@ -28,7 +26,7 @@ import {
 import { getTagsList } from "~/modules/shared";
 import type { action } from "~/routes/x+/training+/update";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -109,10 +107,7 @@ function TrainingEditor() {
   );
 
   const { carbon } = useCarbon();
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
 
   const updateTraining = useDebounce(
     async (content: JSONContent) => {
@@ -144,25 +139,7 @@ function TrainingEditor() {
     });
   };
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/training/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage
-      .from(getCompanyPrivateBucket(companyId))
-      .upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("training");
 
   return (
     <div className="flex flex-col gap-6 w-full h-full p-6">

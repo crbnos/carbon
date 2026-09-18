@@ -1,4 +1,10 @@
 import { useCarbon } from "@carbon/auth";
+import { removeCompanyPrivateObjects } from "@carbon/utils";
+import {
+  convertKbToString,
+  downloadBlob,
+  isPreviewableDocumentType
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -25,24 +31,23 @@ import {
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import {
-  convertKbToString,
-  getCompanyPrivateBucket,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
 import { Suspense, useCallback, useState } from "react";
 import { LuEllipsisVertical, LuUpload } from "react-icons/lu";
 import { Await, useRevalidator } from "react-router";
 import { DocumentPreview, FileDropzone } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import {
+  useFileUpload,
+  useImageUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { getDocumentType } from "~/modules/shared";
 import type { StorageItem } from "~/types";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
 const logger = getLogger("erp", "maintenancedispatchnotes");
@@ -56,33 +61,13 @@ export function MaintenanceDispatchNotes({
   content: JSONContent;
   isDisabled: boolean;
 }) {
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
 
   const [content, setContent] = useState(initialContent ?? {});
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
-    const bucket = getCompanyPrivateBucket(companyId);
-
-    const result = await carbon?.storage.from(bucket).upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("maintenance");
 
   const onUpdateContent = useDebounce(
     async (content: JSONContent) => {
@@ -208,33 +193,18 @@ function MaintenanceFilesContent({
     [company.id, dispatchId]
   );
 
+  const { upload: uploadToStorage } = useFileUpload();
   const upload = useCallback(
     async (filesToUpload: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      const bucket = getCompanyPrivateBucket(company.id);
-      for (const file of filesToUpload) {
-        const filePath = getFilePath(file.name);
-
-        const result = await carbon.storage
-          .from(bucket)
-          .upload(filePath, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (result.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else {
+      await uploadToStorage(filesToUpload, {
+        getPath: (file) => getFilePath(file.name),
+        onSuccess: (file) => {
           toast.success(t`${file.name} uploaded successfully`);
         }
-      }
+      });
       revalidator.revalidate();
     },
-    [carbon, company.id, getFilePath, revalidator, t]
+    [uploadToStorage, getFilePath, revalidator, t]
   );
 
   const download = useCallback(
@@ -243,15 +213,7 @@ function MaintenanceFilesContent({
       const url = path.to.file.previewFile(`private/${filePath}`);
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -331,7 +293,7 @@ function MaintenanceFilesContent({
                     <span
                       className="font-medium cursor-pointer"
                       onClick={() => {
-                        if (["PDF", "Image"].includes(type)) {
+                        if (isPreviewableDocumentType(type)) {
                           window.open(
                             path.to.file.previewFile(
                               `private/${getFilePath(file.name)}`
@@ -343,11 +305,10 @@ function MaintenanceFilesContent({
                         }
                       }}
                     >
-                      {["PDF", "Image"].includes(type) ? (
+                      {isPreviewableDocumentType(type) ? (
                         <DocumentPreview
                           bucket="private"
                           pathToFile={getFilePath(file.name)}
-                          // @ts-expect-error
                           type={type}
                         >
                           {file.name}

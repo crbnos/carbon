@@ -146,7 +146,7 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
                 onDrop={onDrop}
                 accept={{
                   "application/pdf": [".pdf"],
-                  "image/*": [".png", ".jpg", ".jpeg"]
+                  "image/*": [".png", ".jpg", ".jpeg", ".heic", ".heif"]
                 }}
                 multiple={false}
               />

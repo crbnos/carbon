@@ -385,6 +385,7 @@ export function ValidatedForm<
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     setFieldErrors(backendError?.fieldErrors ?? {});
+    if (backendError?.fieldErrors) endSubmit();
     if (!disableFocusOnError && backendError?.fieldErrors) {
       focusFirstInvalidInput(
         backendError.fieldErrors,
@@ -396,6 +397,7 @@ export function ValidatedForm<
     backendError?.fieldErrors,
     customFocusHandlers,
     disableFocusOnError,
+    endSubmit,
     setFieldErrors,
     setFieldError
   ]);

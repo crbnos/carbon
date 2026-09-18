@@ -49,8 +49,10 @@ verify_jwt = true                              # JWT required (the common case)
 
 - `verify_jwt = true` — protected (almost all Carbon functions; the JWT/API-key is
   re-checked in-function anyway, see step 4).
-- `verify_jwt = false` — only for genuinely public endpoints (`image-resizer`,
-  `logo-resizer`).
+- `verify_jwt = false` — only for genuinely public endpoints (`logo-resizer`).
+  Image processing for API/server callers is `process-image` (`verify_jwt = true`,
+  in-function `requirePermissions`); it runs the shared pipeline in
+  `shared/image-pipeline.ts` — see `packages/files/AGENTS.md`.
 
 ## 3. Function skeleton
 
