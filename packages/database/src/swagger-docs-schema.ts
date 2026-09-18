@@ -47401,6 +47401,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -47583,6 +47586,9 @@ export default {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -47717,6 +47723,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.purchaseInvoiceLine.totalAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.purchaseInvoiceLine.projectId"
           },
           {
             $ref: "#/parameters/body.purchaseInvoiceLine"
@@ -48280,6 +48289,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -48378,6 +48390,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -48428,6 +48443,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
           },
           {
             $ref: "#/parameters/body.cardTransactionLine"
@@ -111695,7 +111713,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -111751,7 +111769,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -128109,6 +128127,10 @@ export default {
         totalAmount: {
           format: "numeric",
           type: "number"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -128350,6 +128372,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -175086,6 +175112,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.purchaseInvoiceLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.materialForm": {
       name: "materialForm",
       description: "materialForm",
@@ -175352,6 +175384,12 @@ export default {
     },
     "rowFilter.cardTransactionLine.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.cardTransactionLine.projectId": {
+      name: "projectId",
       required: false,
       in: "query",
       type: "string"
