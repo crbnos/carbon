@@ -13655,7 +13655,7 @@ export type Database = {
           customFields: Json | null
           departmentId: string | null
           id: string
-          locationId: string | null
+          locationId: string
           managerId: string | null
           shiftId: string | null
           startDate: string | null
@@ -13669,7 +13669,7 @@ export type Database = {
           customFields?: Json | null
           departmentId?: string | null
           id: string
-          locationId?: string | null
+          locationId: string
           managerId?: string | null
           shiftId?: string | null
           startDate?: string | null
@@ -13683,7 +13683,7 @@ export type Database = {
           customFields?: Json | null
           departmentId?: string | null
           id?: string
-          locationId?: string | null
+          locationId?: string
           managerId?: string | null
           shiftId?: string | null
           startDate?: string | null
