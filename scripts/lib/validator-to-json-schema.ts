@@ -83,11 +83,21 @@ function isStringEncodedBoolean(field: unknown): boolean {
   try {
     const asTrue = f.safeParse("true");
     const asFalse = f.safeParse("false");
+    // A JSON-parsing transform ALSO maps "true"/"false" to the booleans —
+    // `JSON.parse("true") === true` — so those two probes alone false-positive on
+    // fields whose string is a JSON payload (methodMaterial.storageUnitIds's
+    // location→bin map, the issue-workflow `content`, gauge/risk `notes`), which
+    // then published a bogus `enum: ["true","false"]` and rejected any real value.
+    // A genuine string-encoded boolean maps EVERY string to a boolean; a JSON
+    // parser maps an arbitrary non-JSON string to a non-boolean (its object/array
+    // fallback) or rejects it. One extra probe tells the two apart.
+    const asOther = f.safeParse("__carbon_not_a_boolean__");
     return (
       asTrue.success &&
       asTrue.data === true &&
       asFalse.success &&
-      asFalse.data === false
+      asFalse.data === false &&
+      (!asOther.success || typeof asOther.data === "boolean")
     );
   } catch {
     return false;

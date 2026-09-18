@@ -6,6 +6,7 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
+import { toJson } from "../lib/json.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -603,8 +604,8 @@ serve(async (req: Request) => {
                   quote.data.currencyCode ??
                   company.data?.baseCurrencyCode ??
                   "USD",
-                externalNotes: quote.data.externalNotes,
-                internalNotes: quote.data.internalNotes,
+                externalNotes: toJson(quote.data.externalNotes),
+                internalNotes: toJson(quote.data.internalNotes),
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
                   quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
@@ -686,8 +687,8 @@ serve(async (req: Request) => {
                 locationId: line.locationId ?? quote.data.locationId,
                 methodType: line.methodType,
                 storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
-                internalNotes: line.internalNotes,
-                externalNotes: line.externalNotes,
+                internalNotes: toJson(line.internalNotes),
+                externalNotes: toJson(line.externalNotes),
                 saleQuantity: price.quantity,
                 status: "Ordered",
                 unitOfMeasureCode: line.unitOfMeasureCode,
@@ -1177,8 +1178,8 @@ serve(async (req: Request) => {
                 ).add({ days: 30 }).toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
-                externalNotes: salesRfq.data?.externalNotes,
-                internalNotes: salesRfq.data?.internalNotes,
+                externalNotes: toJson(salesRfq.data?.externalNotes),
+                internalNotes: toJson(salesRfq.data?.internalNotes),
                 companyId,
                 createdBy: userId,
                 currencyCode,
@@ -1240,8 +1241,8 @@ serve(async (req: Request) => {
               locationId: salesRfq.data?.locationId,
               methodType: line.methodType!,
               modelUploadId: line.modelUploadId,
-              internalNotes: line.internalNotes,
-              externalNotes: line.externalNotes,
+              internalNotes: toJson(line.internalNotes),
+              externalNotes: toJson(line.externalNotes),
               quantity: line.quantity,
               status: "Not Started",
               unitOfMeasureCode: line.unitOfMeasureCode,
@@ -1709,8 +1710,8 @@ serve(async (req: Request) => {
                     )?.defaultStorageUnitId ?? null,
                   exchangeRate: quote.data.exchangeRate ?? 1,
                   conversionFactor: line.conversionFactor,
-                  internalNotes: line.internalNotes,
-                  externalNotes: line.externalNotes,
+                  internalNotes: toJson(line.internalNotes),
+                  externalNotes: toJson(line.externalNotes),
                   purchaseQuantity: selectedLines![line.id!].quantity,
                   inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
                   purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,

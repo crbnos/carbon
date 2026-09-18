@@ -14,6 +14,7 @@ const spies = vi.hoisted(() => ({
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
   upsertJobMaterial: vi.fn(),
+  upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
@@ -46,7 +47,9 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
   applyCreditsToInvoices: spies.applyCreditsToInvoices
 }));
-vi.mock("~/modules/items/items.service", () => ({}));
+vi.mock("~/modules/items/items.service", () => ({
+  upsertMethodMaterial: spies.upsertMethodMaterial
+}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
@@ -65,6 +68,13 @@ vi.mock("~/modules/sales/sales.service", () => ({
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
+// The sales-rule gate imports `~/modules/sales/sales.server` and
+// `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
+// validation at import). Dispatch behavior under a gate block is not what
+// these golden tests pin, so stub it as "no block".
+vi.mock("./sales-rules-gate.server", () => ({
+  checkSalesRulesForOperation: vi.fn(async () => null)
+}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
@@ -132,6 +142,7 @@ const allSpies = [
   spies.getTrialBalance,
   spies.upsertAccount,
   spies.upsertJobMaterial,
+  spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
@@ -151,6 +162,68 @@ beforeEach(() => {
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
+  // items_upsertMethodMaterial exposes storageUnitIds as a proper object map. The
+  // MCP path (unlike the web form) does NOT run the zod transform, so the object
+  // must reach the service verbatim — the old required-string-enum schema made a
+  // caller send "false", which the service spread into {"0":"f",…}.
+  const methodMaterialFields = {
+    id: "mm1",
+    makeMethodId: "mk1",
+    order: 1,
+    itemType: "Part",
+    methodType: "Pull from Inventory",
+    sourcingType: "Specified",
+    quantity: 2,
+    unitOfMeasureCode: "EA"
+  };
+
+  it("passes an object storageUnitIds map straight through on create", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      {
+        ...methodMaterialFields,
+        storageUnitIds: { loc1: "su1" },
+        _operation: "create"
+      }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    expect(result.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          ...methodMaterialFields,
+          storageUnitIds: { loc1: "su1" },
+          companyId: "c1",
+          createdBy: "u1"
+        }
+      ]
+    ]);
+  });
+
+  it("omits storageUnitIds from the service payload when the caller omits it (update preserves)", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect("storageUnitIds" in payload).toBe(false);
+    expect(payload).toMatchObject({ companyId: "c1", updatedBy: "u1" });
+  });
+
+  it("forwards an explicit null storageUnitIds to clear on update", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, storageUnitIds: null, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload.storageUnitIds).toBeNull();
+  });
+
   it.each([
     undefined,
     "forged-user"

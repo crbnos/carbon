@@ -28,12 +28,23 @@ import {
     traverseQuoteMethod,
 } from "../lib/methods.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
+import { toJson, toJsonColumns } from "../lib/json.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
 import { importTypeScript } from "../lib/sandbox.ee.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
+import { effectiveReplenishment } from "../lib/mrp-engine.ts";
 import {
   buildSupersessionRedirectMap,
   type SupersessionRow,
+  pullBackQuantities,
+  buildConsumeFirstHops,
+  buildConsumeFirstRules,
+  consumeFirstStockItems,
+  reserveConsumeFirstStock,
+  resolveMadeLinePull,
+  settleConsumeFirstLine,
+  type SupersessionContext,
+  withoutStockedConsumeFirst,
 } from "../lib/supersession-pick.ts";
 import { toTiptapDoc } from "../shared/tiptap.ts";
 import {
@@ -45,6 +56,16 @@ import { scrapAllowance } from "../shared/precision.ts";
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 const logger = getFunctionLogger("get-method");
+
+// quoteLine's jsonb columns — run through toJsonColumns() in quoteToQuote's per-line copy.
+const QUOTE_LINE_JSON_COLUMNS = [
+  "additionalCharges",
+  "configuration",
+  "customFields",
+  "externalNotes",
+  "internalNotes",
+  "priceTrace",
+] as const satisfies readonly (keyof Database["public"]["Tables"]["quoteLine"]["Row"])[];
 
 // Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
 const normalizeOperationType = (value: unknown) =>
@@ -522,11 +543,12 @@ serve(async (req: Request) => {
         // build date, using the SAME shared logic as MRP so the job's materials
         // match what planning already redirected. Applied to Buy/Pick lines in the
         // mapper below.
-        const supersessionRedirect = await loadSupersessionRedirect(
+        const supersessionContext = await loadSupersessionRedirect(
           client,
           companyId,
           job.data
         );
+        const supersessionRedirect = supersessionContext.redirect;
 
         const hydratedConfiguration = await hydrateConfiguration(
           client,
@@ -801,6 +823,7 @@ serve(async (req: Request) => {
         }, {});
 
         await db.transaction().execute(async (trx) => {
+          const insertedJobMaterialIds: string[] = [];
           if (isConfigured) {
             await trx.updateTable("job")
               .set({
@@ -1062,7 +1085,7 @@ serve(async (req: Request) => {
                   processId,
                   op.operationSupplierProcessId
                 ),
-                workInstruction: (!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {},
+                workInstruction: toJson((!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {}),
                 targetQuantity,
                 operationQuantity,
                 companyId,
@@ -1363,6 +1386,7 @@ serve(async (req: Request) => {
               let substitutionFactor: number | null = null;
               // Captured before the swap so the revert below can undo it whole.
               const quantityBeforeSupersession = quantity;
+              const methodTypeBeforeSupersession = methodType;
               // Post-configuration, pre-supersession. A configuration rule may
               // already have moved this line off the BOM's item, and that choice
               // has to survive a failed successor lookup — see the fallback chain
@@ -1375,6 +1399,21 @@ serve(async (req: Request) => {
                   substitutionFactor = redirect.factor;
                   itemId = redirect.to;
                   quantity = quantity * redirect.factor;
+                }
+              } else {
+                const pulledFrom = resolveMadeLinePull(
+                  itemId,
+                  quantity,
+                  supersessionContext
+                );
+                if (pulledFrom) {
+                  methodType = "Pull from Inventory";
+                  if (pulledFrom.itemId !== itemId) {
+                    substitutedFromItemId = itemId;
+                    substitutionFactor = pulledFrom.factor;
+                    itemId = pulledFrom.itemId;
+                    quantity = quantity * pulledFrom.factor;
+                  }
                 }
               }
 
@@ -1425,6 +1464,7 @@ serve(async (req: Request) => {
                 // plausible-looking but wrong quantity nothing downstream can
                 // detect or repair.
                 quantity = quantityBeforeSupersession;
+                methodType = methodTypeBeforeSupersession;
                 substitutedFromItemId = null;
                 substitutionFactor = null;
               }
@@ -1474,7 +1514,7 @@ serve(async (req: Request) => {
                 ),
                 itemId,
                 itemType,
-                kit: child.data.kit,
+                kit: methodType === "Make to Order" && child.data.kit,
                 methodType,
                 order: child.data.order,
                 description,
@@ -1515,7 +1555,7 @@ serve(async (req: Request) => {
             let materialsWithConfiguredFields = jobMaterialResults.filter(
               (m): m is NonNullable<typeof m> => m !== null
             );
-            const configuredChildren = validJobMaterialIndices.map(i => node.children[i]);
+            let configuredChildren = validJobMaterialIndices.map(i => node.children[i]);
 
             const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
             let bomConfiguration: string[] | null = null;
@@ -1528,20 +1568,31 @@ serve(async (req: Request) => {
             }
 
             if (bomConfiguration) {
-              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              materialsWithConfiguredFields = bomConfiguration
-                .map((readableIdWithRevision, index) => {
-                  const material = materialsWithConfiguredFields.find(
-                    (material) => material.itemId === itemId
-                  );
-                  if (material) {
-                    return {
-                      ...material,
-                      order: index + 1,
-                    };
+              const pairByReadableId = new Map<
+                string,
+                { material: (typeof materialsWithConfiguredFields)[number]; child: MethodTreeItem }
+              >();
+              configuredChildren.forEach((child, i) => {
+                const material = materialsWithConfiguredFields[i];
+                if (!material) return;
+                const data = child.data as {
+                  itemReadableId?: string | null;
+                  readableIdWithRevision?: string | null;
+                };
+                for (const key of [data.readableIdWithRevision, data.itemReadableId]) {
+                  if (key && !pairByReadableId.has(key)) {
+                    pairByReadableId.set(key, { material, child });
                   }
-                })
-                .filter(Boolean);
+                }
+              });
+              const pairs = bomConfiguration.flatMap((readableId, index) => {
+                const pair = pairByReadableId.get(readableId);
+                return pair
+                  ? [{ material: { ...pair.material, order: index + 1 }, child: pair.child }]
+                  : [];
+              });
+              materialsWithConfiguredFields = pairs.map((pair) => pair.material);
+              configuredChildren = pairs.map((pair) => pair.child);
             }
 
             const madeMaterials = materialsWithConfiguredFields.filter(
@@ -1554,7 +1605,8 @@ serve(async (req: Request) => {
               );
 
             const madeChildren = configuredChildren.filter(
-              (child) => child.data.methodType === "Make to Order"
+              (_, i) =>
+                materialsWithConfiguredFields[i]?.methodType === "Make to Order"
             );
 
             if (madeMaterials.length > 0) {
@@ -1562,6 +1614,7 @@ serve(async (req: Request) => {
                 ...m,
                 id: nanoid(),
               }));
+              insertedJobMaterialIds.push(...madeMaterialsWithIds.map((m) => m.id));
 
               await trx
                 .insertInto("jobMaterial")
@@ -1649,6 +1702,7 @@ serve(async (req: Request) => {
                 ...m,
                 id: (m as { id?: string }).id ?? nanoid(),
               }));
+              insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
               await trx
                 .insertInto("jobMaterial")
                 .values(
@@ -1695,6 +1749,16 @@ serve(async (req: Request) => {
             assemblyOperationsToLink,
             companyId
           );
+
+          await settleConsumeFirstLines({
+            client,
+            trx,
+            companyId,
+            jobId: jobId,
+            jobMaterialIds: insertedJobMaterialIds,
+            locationId: job.data?.locationId,
+            asOfDate: jobBuildDate(job.data),
+          });
         });
 
         break;
@@ -1813,11 +1877,12 @@ serve(async (req: Request) => {
         // reads sequentially inside the transaction holding the pool's single
         // connection. The map depends only on the company and the job's build
         // date, both fixed for the request, so per-node reload bought nothing.
-        const supersessionRedirect = await loadSupersessionRedirect(
+        const supersessionContext = await loadSupersessionRedirect(
           client,
           companyId,
           job.data
         );
+        const supersessionRedirect = supersessionContext.redirect;
 
         const getLaborAndOverheadRates = getRatesFromWorkCenters(
           workCenters?.data
@@ -1835,6 +1900,7 @@ serve(async (req: Request) => {
         }, {});
 
         await db.transaction().execute(async (trx: Transaction) => {
+          const insertedJobMaterialIds: string[] = [];
           // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
           await Promise.all([
             parts.billOfMaterial
@@ -1938,7 +2004,7 @@ serve(async (req: Request) => {
                   op.operationSupplierProcessId
                 ),
                 tags: op.tags ?? [],
-                workInstruction: parts.workInstructions ? op.workInstruction : {},
+                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
                 targetQuantity,
                 operationQuantity,
                 companyId,
@@ -2148,15 +2214,33 @@ serve(async (req: Request) => {
               // Buy/Pick only — resolveJobMaterialSupersession returns null for
               // Make to Order, which swapMadeSubAssembly handles during its own
               // explosion.
-              const supersession = await resolveJobMaterialSupersession(
-                client,
-                companyId,
-                supersessionRedirect,
-                {
-                  itemId: child.data.itemId,
-                  methodType: child.data.methodType,
-                }
-              );
+              const pulledFrom =
+                child.data.methodType === "Make to Order"
+                  ? resolveMadeLinePull(
+                      child.data.itemId,
+                      child.data.quantity ?? 1,
+                      supersessionContext
+                    )
+                  : null;
+              const methodType = pulledFrom
+                ? "Pull from Inventory"
+                : child.data.methodType;
+              const supersession =
+                pulledFrom && pulledFrom.itemId === child.data.itemId
+                  ? null
+                  : await resolveJobMaterialSupersession(
+                      client,
+                      companyId,
+                      pulledFrom
+                        ? new Map([
+                            [
+                              child.data.itemId,
+                              { to: pulledFrom.itemId, factor: pulledFrom.factor },
+                            ],
+                          ])
+                        : supersessionRedirect,
+                      { itemId: child.data.itemId, methodType }
+                    );
               const itemId = supersession?.itemId ?? child.data.itemId;
               // 1 old part = `factor` successors. The line's methodType and unit
               // of measure are deliberately preserved; the factor translates the
@@ -2188,7 +2272,7 @@ serve(async (req: Request) => {
               // For Make: estimatedQuantity is the good quantity (without scrap)
               // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
               const childEstimatedQuantity =
-                child.data.methodType === "Make to Order"
+                methodType === "Make to Order"
                   ? childTargetQuantity
                   : childTotalWithScrap;
 
@@ -2211,9 +2295,9 @@ serve(async (req: Request) => {
                   methodStepsToJobSteps
                 ),
                 itemId,
-                kit: child.data.kit,
+                kit: methodType === "Make to Order" && child.data.kit,
                 itemType: supersession?.itemType ?? child.data.itemType,
-                methodType: child.data.methodType,
+                methodType,
                 order: child.data.order,
                 description:
                   supersession?.description ?? child.data.description,
@@ -2256,17 +2340,16 @@ serve(async (req: Request) => {
 
             const madeMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
               [];
+            const madeChildren: MethodTreeItem[] = [];
             const pickedOrBoughtMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
               [];
 
             for await (const child of node.children) {
-              // A zero-quantity BOM line is removed from the method. `madeChildren`
-              // below filters the same way, so a skipped made row stays index-aligned
-              // and its sub-tree is never exploded.
               if (isZeroQuantity(child.data.quantity)) continue;
               const material = await mapMethodMaterialToJobMaterial(child);
-              if (child.data.methodType === "Make to Order") {
+              if (material.methodType === "Make to Order") {
                 madeMaterials.push(material);
+                madeChildren.push(child);
               } else {
                 pickedOrBoughtMaterials.push(material);
               }
@@ -2282,6 +2365,7 @@ serve(async (req: Request) => {
                 ...m,
                 id: nanoid(),
               }));
+              insertedJobMaterialIds.push(...madeMaterialsWithIds.map((m) => m.id));
 
               await trx
                 .insertInto("jobMaterial")
@@ -2315,12 +2399,6 @@ serve(async (req: Request) => {
                   .values(madeStepRows)
                   .execute();
               }
-
-              const madeChildren = node.children.filter(
-                (child) =>
-                  child.data.methodType === "Make to Order" &&
-                  !isZeroQuantity(child.data.quantity)
-              );
 
               for (const [index, child] of madeChildren.entries()) {
                 const materialId = madeMaterialsWithIds[index].id;
@@ -2374,6 +2452,7 @@ serve(async (req: Request) => {
                 ...m,
                 id: (m as { id?: string }).id ?? nanoid(),
               }));
+              insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
               await trx
                 .insertInto("jobMaterial")
                 .values(
@@ -2419,6 +2498,16 @@ serve(async (req: Request) => {
             assemblyOperationsToLink,
             companyId
           );
+
+          await settleConsumeFirstLines({
+            client,
+            trx,
+            companyId,
+            jobId: jobMakeMethod.data.jobId,
+            jobMaterialIds: insertedJobMaterialIds,
+            locationId: job.data?.locationId,
+            asOfDate: jobBuildDate(job.data),
+          });
         });
         break;
       }
@@ -2771,7 +2860,7 @@ serve(async (req: Request) => {
                 ),
                 operationMinimumCost: op.operationMinimumCost ?? 0,
                 tags: op.tags ?? [],
-                workInstruction: (!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {},
+                workInstruction: toJson((!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {}),
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -3335,7 +3424,7 @@ serve(async (req: Request) => {
                   op.operationSupplierProcessId
                 ),
                 tags: op.tags ?? [],
-                workInstruction: parts.workInstructions ? op.workInstruction : {},
+                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -3752,7 +3841,7 @@ serve(async (req: Request) => {
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
               tags: op.tags ?? [],
-              workInstruction: parts.workInstructions ? op.workInstruction : {},
+              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
               companyId,
               createdBy: userId,
               customFields: {},
@@ -4075,7 +4164,7 @@ serve(async (req: Request) => {
               operationUnitCost: op.operationUnitCost ?? 0,
               operationSupplierProcessId: op.operationSupplierProcessId,
               tags: op.tags ?? [],
-              workInstruction: parts.workInstructions ? op.workInstruction : {},
+              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
               companyId,
               createdBy: userId,
               customFields: {},
@@ -4355,11 +4444,8 @@ serve(async (req: Request) => {
         // path does. The source job's rows were swapped live at ITS creation;
         // this re-resolves as-of the TARGET job's build date, so a supersession
         // that became effective since then still redirects the copy.
-        const supersessionRedirect = await loadSupersessionRedirect(
-          client,
-          companyId,
-          targetJob.data
-        );
+        const { redirect: supersessionRedirect } =
+          await loadSupersessionRedirect(client, companyId, targetJob.data);
 
         let selfConsumedItem: string | null = null;
         traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
@@ -4438,6 +4524,7 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
+          const insertedJobMaterialIds: string[] = [];
           await traverseJobMethodAsync(
             jobMethodTree,
             async (node: JobMethodTreeItem) => {
@@ -4640,6 +4727,9 @@ serve(async (req: Request) => {
                   .insertInto("jobMaterial")
                   .values(jobMaterialInserts)
                   .execute();
+                insertedJobMaterialIds.push(
+                  ...jobMaterialInserts.flatMap((m) => (m.id ? [m.id] : []))
+                );
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
@@ -4704,9 +4794,9 @@ serve(async (req: Request) => {
                   operationLeadTime: op.operationLeadTime ?? 0,
                   operationUnitCost: op.operationUnitCost ?? 0,
                   tags: op.tags ?? [],
-                  workInstruction: parts.workInstructions
-                    ? op.workInstruction
-                    : {},
+                  workInstruction: toJson(
+                    parts.workInstructions ? op.workInstruction : {}
+                  ),
                   targetQuantity: opQuantities.targetQuantity,
                   // Fractional targets flow through; the scrap allowance is already whole
                   operationQuantity: opQuantities.totalWithScrap,
@@ -4958,6 +5048,16 @@ serve(async (req: Request) => {
             assemblyOperationsToLink,
             companyId
           );
+
+          await settleConsumeFirstLines({
+            client,
+            trx,
+            companyId,
+            jobId: targetJobId,
+            jobMaterialIds: insertedJobMaterialIds,
+            locationId: targetJob.data?.locationId,
+            asOfDate: jobBuildDate(targetJob.data),
+          });
         });
 
         break;
@@ -5281,7 +5381,7 @@ serve(async (req: Request) => {
           await trx
             .updateTable("jobOperation")
             .set({
-              workInstruction: procedure.data.content,
+              workInstruction: toJson(procedure.data.content),
               procedureId: procedureId,
             })
             .where("id", "=", operationId)
@@ -5499,7 +5599,7 @@ serve(async (req: Request) => {
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
               tags: op.tags ?? [],
-              workInstruction: parts.workInstructions ? op.workInstruction : {},
+              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
               companyId,
               createdBy: userId,
               customFields: {},
@@ -5818,7 +5918,7 @@ serve(async (req: Request) => {
               operationLeadTime: op.operationLeadTime ?? 0,
               operationUnitCost: op.operationUnitCost ?? 0,
               tags: op.tags ?? [],
-              workInstruction: parts.workInstructions ? op.workInstruction : {},
+              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
               companyId,
               createdBy: userId,
               customFields: {},
@@ -6035,11 +6135,8 @@ serve(async (req: Request) => {
         // nodes issued N full-table reads sequentially inside the transaction
         // holding the pool's single connection. The map depends only on the
         // company and the job's build date, both fixed for the request.
-        const supersessionRedirect = await loadSupersessionRedirect(
-          client,
-          companyId,
-          job.data
-        );
+        const { redirect: supersessionRedirect } =
+          await loadSupersessionRedirect(client, companyId, job.data);
 
         const quoteMaterialIdToJobMaterialId: Record<string, string> = {};
         const quoteMakeMethodIdToJobMakeMethodId: Record<string, string> = {};
@@ -6082,6 +6179,7 @@ serve(async (req: Request) => {
               : Promise.resolve(),
           ]);
 
+          const insertedJobMaterialIds: string[] = [];
           await traverseQuoteMethod(
             quoteMethodTree,
             async (node: QuoteMethodTreeItem) => {
@@ -6294,6 +6392,9 @@ serve(async (req: Request) => {
                   .insertInto("jobMaterial")
                   .values(jobMaterialInserts)
                   .execute();
+                insertedJobMaterialIds.push(
+                  ...jobMaterialInserts.flatMap((m) => (m.id ? [m.id] : []))
+                );
               }
 
               if (parts.billOfMaterial && jobMakeMethodInserts.length > 0) {
@@ -6356,7 +6457,7 @@ serve(async (req: Request) => {
                 operationLeadTime: op.operationLeadTime ?? 0,
                 operationUnitCost: op.operationUnitCost ?? 0,
                 tags: op.tags ?? [],
-                workInstruction: parts.workInstructions ? op.workInstruction : {},
+                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
                 targetQuantity: opQuantities.targetQuantity,
                 // Fractional targets flow through; the scrap allowance is already whole
                 operationQuantity: opQuantities.totalWithScrap,
@@ -6491,6 +6592,16 @@ serve(async (req: Request) => {
             assemblyOperationsToLink,
             companyId
           );
+
+          await settleConsumeFirstLines({
+            client,
+            trx,
+            companyId,
+            jobId: jobId,
+            jobMaterialIds: insertedJobMaterialIds,
+            locationId: job.data?.locationId,
+            asOfDate: jobBuildDate(job.data),
+          });
         });
 
         break;
@@ -6723,7 +6834,7 @@ serve(async (req: Request) => {
               operationUnitCost: op.operationUnitCost ?? 0,
               overheadRate: op.overheadRate,
               tags: op.tags ?? [],
-              workInstruction: parts.workInstructions ? op.workInstruction : {},
+              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
               companyId,
               createdBy: userId,
               customFields: {},
@@ -6959,8 +7070,8 @@ serve(async (req: Request) => {
                 ).add({ days: 30 }).toString(),
                 salesPersonId: sourceQuote.data?.salesPersonId ?? userId,
                 status: "Draft",
-                externalNotes: sourceQuote.data?.externalNotes,
-                internalNotes: sourceQuote.data?.internalNotes,
+                externalNotes: toJson(sourceQuote.data?.externalNotes),
+                internalNotes: toJson(sourceQuote.data?.internalNotes),
                 currencyCode: sourceQuote.data?.currencyCode,
                 exchangeRate: sourceQuote.data?.exchangeRate,
                 exchangeRateUpdatedAt: new Date().toISOString(),
@@ -7016,6 +7127,7 @@ serve(async (req: Request) => {
               .insertInto("quoteLine")
               .values({
                 ...line,
+                ...toJsonColumns(line, QUOTE_LINE_JSON_COLUMNS),
                 quoteId: quote.id,
                 companyId,
               })
@@ -7262,7 +7374,7 @@ serve(async (req: Request) => {
                 operationUnitCost: op.operationUnitCost ?? 0,
                 overheadRate: op.overheadRate,
                 tags: op.tags ?? [],
-                workInstruction: op.workInstruction,
+                workInstruction: toJson(op.workInstruction),
                 companyId,
                 createdBy: userId,
                 customFields: {},
@@ -7424,8 +7536,15 @@ function jobBuildDate(
 async function loadSupersessionRedirect(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: { startDate?: string | null; dueDate?: string | null } | null | undefined
-): Promise<Map<string, { to: string; factor: number }>> {
+  job:
+    | {
+        locationId?: string | null;
+        startDate?: string | null;
+        dueDate?: string | null;
+      }
+    | null
+    | undefined
+): Promise<SupersessionContext> {
   // Paged, exactly like MRP's read of the same table (mrp/index.ts): a bare
   // select stops at PostgREST's 1000-row `max_rows` cap and silently drops the
   // rest, so a tenant past that many supersessions would redirect an arbitrary
@@ -7455,10 +7574,96 @@ async function loadSupersessionRedirect(
       `Failed to load supersessions: ${supersessionRows.error.message}`
     );
   }
-  return buildSupersessionRedirectMap(
-    supersessionRows.data ?? [],
-    jobBuildDate(job)
-  );
+  let rows = supersessionRows.data ?? [];
+
+  const consumeFirstItemIds = rows
+    .filter((r) => r.supersessionMode === "Consume First")
+    .map((r) => r.itemId);
+  const consumeFirstOnHand = new Map<string, number>();
+  if (consumeFirstItemIds.length > 0 && job?.locationId) {
+    const [stock, items] = await Promise.all([
+      fetchAll<{ itemId: string; quantityOnHand: number | string | null }>(() =>
+        client
+          .from("itemStockQuantities")
+          .select("itemId, quantityOnHand")
+          .eq("companyId", companyId)
+          .eq("locationId", job.locationId!)
+          .in("itemId", consumeFirstItemIds)
+          .order("itemId")
+      ),
+      fetchAll<{ id: string; replenishmentSystem: string | null }>(() =>
+        client
+          .from("item")
+          .select("id, replenishmentSystem")
+          .eq("companyId", companyId)
+          .in("id", consumeFirstItemIds)
+          .order("id")
+      ),
+    ]);
+    if (stock.error) {
+      throw new Error(
+        `Failed to load predecessor stock: ${stock.error.message}`
+      );
+    }
+    if (items.error) {
+      throw new Error(
+        `Failed to load predecessor replenishment: ${items.error.message}`
+      );
+    }
+    const onHandByItem = new Map<string, number>();
+    for (const r of stock.data ?? []) {
+      onHandByItem.set(
+        r.itemId,
+        (onHandByItem.get(r.itemId) ?? 0) + Number(r.quantityOnHand ?? 0)
+      );
+    }
+    const madeItemIds = new Set(
+      (items.data ?? [])
+        .filter((i) => effectiveReplenishment(i.replenishmentSystem) === "Make")
+        .map((i) => i.id)
+    );
+    for (const id of madeItemIds) {
+      consumeFirstOnHand.set(id, onHandByItem.get(id) ?? 0);
+    }
+    rows = withoutStockedConsumeFirst(
+      rows,
+      new Set(
+        [...onHandByItem]
+          .filter(([id, onHand]) => onHand > 0 && !madeItemIds.has(id))
+          .map(([id]) => id)
+      )
+    );
+  }
+
+  const redirect = buildSupersessionRedirectMap(rows, jobBuildDate(job));
+  const consumeFirstHops = buildConsumeFirstHops(rows, jobBuildDate(job));
+  for (const id of [...consumeFirstOnHand.keys()]) {
+    if (!redirect.has(id)) consumeFirstOnHand.delete(id);
+  }
+  const boughtSuccessors = new Set<string>();
+  const successorIds = [...new Set([...redirect.values()].map((r) => r.to))];
+  if (successorIds.length > 0) {
+    const successors = await fetchAll<{ id: string; replenishmentSystem: string | null }>(
+      () =>
+        client
+          .from("item")
+          .select("id, replenishmentSystem")
+          .eq("companyId", companyId)
+          .in("id", successorIds)
+          .order("id")
+    );
+    if (successors.error) {
+      throw new Error(
+        `Failed to load successor replenishment: ${successors.error.message}`
+      );
+    }
+    for (const i of successors.data ?? []) {
+      if (effectiveReplenishment(i.replenishmentSystem) !== "Make") {
+        boughtSuccessors.add(i.id);
+      }
+    }
+  }
+  return { redirect, consumeFirstOnHand, consumeFirstHops, boughtSuccessors };
 }
 
 // EVERY jobMaterial field that is a function of WHICH ITEM the row is for, in
@@ -7621,6 +7826,138 @@ async function swapMadeSubAssembly(opts: {
   return true;
 }
 
+async function settleConsumeFirstLines(opts: {
+  client: SupabaseClient<Database>;
+  trx: Transaction<DB>;
+  companyId: string;
+  jobId: string;
+  jobMaterialIds: string[];
+  locationId: string | null | undefined;
+  asOfDate: string;
+}) {
+  const { client, trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } =
+    opts;
+  if (!locationId || jobMaterialIds.length === 0) return;
+
+  const rules = await fetchAll<{
+    itemId: string;
+    successorItemId: string | null;
+    successorEffectivityDate: string | null;
+    conversionFactor: number | string | null;
+  }>(() =>
+    client
+      .from("itemSupersession")
+      .select(
+        "itemId, successorItemId, successorEffectivityDate, conversionFactor"
+      )
+      .eq("companyId", companyId)
+      .eq("supersessionMode", "Consume First")
+      .not("successorItemId", "is", null)
+      .order("itemId")
+  );
+  if (rules.error) {
+    throw new Error(`Failed to load supersessions: ${rules.error.message}`);
+  }
+  const consumeFirstRules = buildConsumeFirstRules(rules.data ?? [], asOfDate);
+  const { successorByPredecessor, predecessorsBySuccessor } = consumeFirstRules;
+  if (successorByPredecessor.size === 0) return;
+
+  const materials = await trx
+    .selectFrom("jobMaterial")
+    .select([
+      "id",
+      "itemId",
+      "quantity",
+      "estimatedQuantity",
+      "scrapQuantity",
+      "substitutedFromItemId",
+      "substitutionFactor",
+    ])
+    .where("jobId", "=", jobId)
+    .where("companyId", "=", companyId)
+    .where("id", "in", jobMaterialIds)
+    .where("methodType", "!=", "Make to Order")
+    .where((eb) =>
+      eb.or([
+        eb("quantityIssued", "is", null),
+        eb("quantityIssued", "<=", 0),
+      ])
+    )
+    .where("itemId", "in", [
+      ...new Set([
+        ...successorByPredecessor.keys(),
+        ...predecessorsBySuccessor.keys(),
+      ]),
+    ])
+    .execute();
+  if (materials.length === 0) return;
+
+  const predecessorIds = new Set<string>();
+  for (const m of materials) {
+    for (const id of consumeFirstStockItems(m, consumeFirstRules)) {
+      predecessorIds.add(id);
+    }
+  }
+  const stock = await trx
+    .selectFrom("itemStockQuantities")
+    .select(["itemId", "quantityOnHand"])
+    .where("companyId", "=", companyId)
+    .where("locationId", "=", locationId)
+    .where("itemId", "in", [...predecessorIds])
+    .execute();
+  const onHandByItem = new Map<string, number>();
+  for (const row of stock) {
+    onHandByItem.set(
+      row.itemId,
+      (onHandByItem.get(row.itemId) ?? 0) + Number(row.quantityOnHand ?? 0)
+    );
+  }
+
+  const swapLine = async (
+    m: (typeof materials)[number],
+    toItemId: string,
+    factor: number,
+    provenance: {
+      substitutedFromItemId: string | null;
+      substitutionFactor: number | null;
+    }
+  ) => {
+    const fields = await itemDerivedJobMaterialFields({
+      client,
+      trx,
+      companyId,
+      itemId: toItemId,
+      locationId,
+    });
+    if (!fields) return;
+    const quantities = pullBackQuantities(m, factor, fields.itemScrapPercentage);
+    await trx
+      .updateTable("jobMaterial")
+      .set({
+        ...fields,
+        ...quantities,
+        ...provenance,
+      })
+      .where("id", "=", m.id)
+      .execute();
+  };
+
+  materials.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
+  for (const m of materials) {
+    const settlement = settleConsumeFirstLine(m, consumeFirstRules, onHandByItem);
+    reserveConsumeFirstStock(m, settlement, consumeFirstRules, onHandByItem);
+    if (!settlement) continue;
+    await swapLine(
+      m,
+      settlement.toItemId,
+      settlement.factor,
+      settlement.kind === "revert"
+        ? { substitutedFromItemId: null, substitutionFactor: null }
+        : { substitutedFromItemId: m.itemId, substitutionFactor: settlement.factor }
+    );
+  }
+}
+
 // Shared by every *-ToJob path. For a Buy/Pick job-material row whose item has an
 // effective supersession successor (per the redirect map), returns the successor's
 // item fields so the row points at the right part with consistent tracking / type /
@@ -7779,7 +8116,7 @@ async function insertProcedureDataForJobOperation(
   await trx
     .updateTable("jobOperation")
     .set({
-      workInstruction: procedure?.data?.content ?? {},
+      workInstruction: toJson(procedure?.data?.content ?? {}),
     })
     .where("id", "=", operationId)
     .execute();

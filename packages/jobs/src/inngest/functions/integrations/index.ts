@@ -10,6 +10,7 @@ export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";
 export { rampSweepFunction } from "./ramp-sweep";
 export { rampSyncFunction } from "./ramp-sync";
+export { rilletImportContactsFunction } from "./rillet-import-contacts";
 export {
   slackDocumentAssignmentUpdateFunction,
   slackDocumentCreatedFunction,

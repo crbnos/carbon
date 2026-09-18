@@ -128,7 +128,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
 - **`stockTransfer*`** — intra-location moves (separate from warehouse transfers).
 - **`pickMethod`** — default storage unit for picking an item at a location (`defaultStorageUnitId`).
 - **`itemPlanning`** / **`itemReplenishment`** — reorder/planning params and replenishment strategy.
-- **`storageRule`** + assignment tables — renamed from `customRule`/`itemRule` (`20260603130000`).
+- **`enforcementRule`** + assignment tables — ONE table for storage and sales rules, discriminated by `family` (`20260817143022`/`20260817143512`). Storage-family reads must filter `family = 'storage'`. Lineage: `itemRule` → `customRule` → `storageRule` → merged into `enforcementRule`.
 
 `get_inventory_quantities(company_id TEXT, location_id TEXT, item_id TEXT DEFAULT NULL)` — the central
 read. Newest definition is `20260713235406_item-ledger-snapshot.sql` (snapshot + delta via
@@ -148,7 +148,7 @@ Relevant enums: `itemLedgerType`, `itemLedgerDocumentType` (includes `Scrap`,
 ## Gotchas
 
 - **Migrations are timestamp-ordered; tables get renamed.** `shelf`→`storageUnit`/`shelfId`→`storageUnitId`,
-  `customRule`→`storageRule`. Grep the NEWEST migration for the real name; never trust an older one or the
+  `customRule`→`storageRule`→`enforcementRule` (merged with `salesRule`). Grep the NEWEST migration for the real name; never trust an older one or the
   old cache. The `shelf`→`storageUnit` rename was split across paired migrations
   `20260417000100` (rename, M2) + `..000300` (recreate dependents, M4) — they must apply together.
 - **Short-closed PO lines don't count as incoming supply.** `get_inventory_quantities`,

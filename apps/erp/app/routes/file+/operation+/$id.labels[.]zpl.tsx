@@ -5,11 +5,13 @@ import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getTrackedEntitiesByMakeMethodId } from "~/modules/inventory";
 import {
-  getCompany,
   getCompanySettings,
   getDocumentTemplateConfig
 } from "~/modules/settings";
-import { resolveLabelLogo } from "~/modules/settings/labelLogo.server";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/modules/settings/labelLogo.server";
 
 import { path } from "~/utils/path";
 
@@ -93,8 +95,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     "trackingLabel"
   );
 
-  const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   // Generate ZPL for each item
   const zplCommands = items.map((item) =>

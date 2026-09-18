@@ -55,7 +55,6 @@ declare global {
       QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
-      RESEND_DOMAIN: string;
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
@@ -64,6 +63,11 @@ declare global {
       SLACK_OAUTH_REDIRECT_URL: string;
       SLACK_SIGNING_SECRET: string;
       SLACK_STATE_SECRET: string;
+      SMTP_FROM: string;
+      SMTP_HOST: string;
+      SMTP_PASSWORD: string;
+      SMTP_PORT: string;
+      SMTP_USER: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_CONNECT_WEBHOOK_SECRET: string;
@@ -306,10 +310,24 @@ export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isSecret: true
 });
 
-export const RESEND_DOMAIN =
-  getEnv("RESEND_DOMAIN", {
+export const SMTP_FROM = getEnv("SMTP_FROM", {
+  isRequired: false
+});
+export const SMTP_HOST = getEnv("SMTP_HOST", {
+  isRequired: false
+});
+export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD", {
+  isRequired: false,
+  isSecret: true
+});
+export const SMTP_PORT = Number(
+  getEnv("SMTP_PORT", {
     isRequired: false
-  }) ?? "carbon.ms";
+  }) || 587
+);
+export const SMTP_USER = getEnv("SMTP_USER", {
+  isRequired: false
+});
 
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false
@@ -485,6 +503,18 @@ export const SUPABASE_URL = getEnv("SUPABASE_URL", { isSecret: false });
 export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false
 });
+
+// Server-only. In a BYOC/self-hosted k8s deployment, the server's own calls to
+// Supabase can be pointed at an in-cluster address (bypassing the ingress hop
+// that some clusters — k3s's load balancer refusing pod-to-own-LB traffic in
+// particular — cannot route) while the browser keeps the public SUPABASE_URL.
+// Falls back to SUPABASE_URL so every existing deployment (Vercel included) is
+// unaffected when unset. Same pattern as INNGEST_BASE_URL: read directly, never
+// added to getBrowserEnv() or the Window.env interface, so it cannot leak to
+// the browser by construction.
+export const SUPABASE_INTERNAL_URL =
+  getEnv("SUPABASE_INTERNAL_URL", { isRequired: false, isSecret: false }) ||
+  SUPABASE_URL;
 
 export const DEFAULT_LANGUAGE =
   getEnv("DEFAULT_LANGUAGE", {

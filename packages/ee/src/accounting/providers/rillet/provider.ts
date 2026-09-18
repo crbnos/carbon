@@ -232,9 +232,18 @@ export function buildRilletIdempotencyKey(args: {
 // \********************************************************/
 
 /**
- * Entities Rillet syncs in v1 — every one of them PUSH-ONLY (Carbon →
- * Rillet). Rillet is the ledger of record for what Carbon pushes; pulling
- * master data back is a follow-up.
+ * Entities whose AUTOMATIC sync is PUSH-ONLY (Carbon → Rillet). Carbon is
+ * the system of record for all of them, so no sweep, webhook or event ever
+ * pulls one on its own.
+ *
+ * `customer` and `vendor` are still pullable ON DEMAND: the "Import
+ * customers & vendors" action (`rillet-import-contacts`) enqueues explicit
+ * `pull-from-accounting` ledger operations, which the drain routes to the
+ * syncer's pull path regardless of this direction — the same override the
+ * inbound webhook path uses. `owner: "carbon"` below is what keeps that
+ * safe: `BaseEntitySyncer.pullBatchFromAccounting` skips a record that is
+ * already linked, so a re-import can seed new Rillet contacts but can never
+ * overwrite a Carbon-owned one.
  */
 export const RILLET_PUSH_ONLY_ENTITIES = [
   "customer",
@@ -724,20 +733,40 @@ export class RilletProvider extends BaseProvider {
     });
   }
 
-  /** All Rillet customers (cursor-drained). Throws on API failure. */
+  // Memoized per provider INSTANCE. The contact import lists the full set
+  // once (to enqueue ids) and then each drained batch re-reads it through the
+  // customer/vendor syncer's fetchRemoteBatch — Rillet has no get-many
+  // endpoint, so without this a 10k-record import re-scans /customers once per
+  // 50-id batch (~200 full cursor drains). Reusing ONE provider across the
+  // whole import collapses that to a single drain per entity type. Not shared
+  // across provider instances, so an unrelated caller that wants fresh data
+  // constructs its own provider (as every sweep/webhook already does).
+  private listedCustomers?: Promise<Rillet.Customer[]>;
+  private listedVendors?: Promise<Rillet.Vendor[]>;
+
+  /** All Rillet customers (cursor-drained, memoized). Throws on API failure. */
   async listCustomers(): Promise<Rillet.Customer[]> {
-    return this.listPaginated<Rillet.Customer>(
+    this.listedCustomers ??= this.listPaginated<Rillet.Customer>(
       "/customers",
       (data) => data.customers as Rillet.Customer[] | undefined
-    );
+    ).catch((err) => {
+      // Don't cache a rejection — a retried batch must be able to list again.
+      this.listedCustomers = undefined;
+      throw err;
+    });
+    return this.listedCustomers;
   }
 
-  /** All Rillet vendors (cursor-drained). Throws on API failure. */
+  /** All Rillet vendors (cursor-drained, memoized). Throws on API failure. */
   async listVendors(): Promise<Rillet.Vendor[]> {
-    return this.listPaginated<Rillet.Vendor>(
+    this.listedVendors ??= this.listPaginated<Rillet.Vendor>(
       "/vendors",
       (data) => data.vendors as Rillet.Vendor[] | undefined
-    );
+    ).catch((err) => {
+      this.listedVendors = undefined;
+      throw err;
+    });
+    return this.listedVendors;
   }
 
   // =================================================================

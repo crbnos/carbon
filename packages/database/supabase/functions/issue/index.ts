@@ -29,6 +29,15 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import {
+  allocateAcrossBudgets,
+  getOperationLinesideBin,
+  getPickedBudgets,
+  orderOldFirst,
+  recordSharedTakes,
+  type SharedTakes,
+  splitTakeByBin,
+} from "../lib/picked-consumption.ts";
 import { resolveTrackedEntityBin } from "./resolve-tracked-entity-bin.ts";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
@@ -215,6 +224,11 @@ async function issueJobOperationMaterials(
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];
 
+  const opStorageUnitId = await getOperationLinesideBin(trx, {
+    jobOperationId,
+    companyId,
+  });
+  const takenShared: SharedTakes = new Map();
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
     // mirroring backflush_job_materials. Without this, materials already
@@ -231,85 +245,122 @@ async function issueJobOperationMaterials(
 
     if (quantityToIssue <= 0) continue;
 
-    let proposedStorageUnitId = material.storageUnitId;
+    const budgets = orderOldFirst(
+      await getPickedBudgets(trx, {
+        material,
+        locationId: job.locationId,
+        companyId,
+        opStorageUnitId,
+        takenShared,
+      }),
+      material.itemId
+    );
+    const { takes, remaining } = allocateAcrossBudgets(
+      quantityToIssue,
+      budgets,
+      Number(material.quantity ?? 0)
+    );
+    recordSharedTakes(takenShared, takes);
+    for (const take of takes) {
+      if (!take.budget.isInventory) continue;
+      for (const row of splitTakeByBin(take)) {
+        itemLedgerInserts.push({
+          entryType: "Consumption",
+          documentType: "Job Consumption",
+          documentId: jobId,
+          documentLineId: jobOperationId,
+          companyId,
+          itemId: take.budget.itemId,
+          quantity: -row.quantity,
+          locationId: job.locationId,
+          storageUnitId: row.storageUnitId,
+          postingDate: today,
+          createdBy: userId,
+        });
+      }
+    }
 
-    if (!proposedStorageUnitId) {
-      if (material.defaultStorageUnit) {
-        const pickMethod = await trx
-          .selectFrom("pickMethod")
-          .where("itemId", "=", material.itemId)
-          .where("locationId", "=", job.locationId!)
-          .where("companyId", "=", companyId)
-          .select("defaultStorageUnitId")
-          .executeTakeFirst();
+    if (remaining > 0) {
+      let proposedStorageUnitId = material.storageUnitId;
 
-        proposedStorageUnitId = pickMethod?.defaultStorageUnitId;
+      if (!proposedStorageUnitId) {
+        if (material.defaultStorageUnit) {
+          const pickMethod = await trx
+            .selectFrom("pickMethod")
+            .where("itemId", "=", material.itemId)
+            .where("locationId", "=", job.locationId!)
+            .where("companyId", "=", companyId)
+            .select("defaultStorageUnitId")
+            .executeTakeFirst();
 
-        if (!proposedStorageUnitId) {
+          proposedStorageUnitId = pickMethod?.defaultStorageUnitId;
+
+          if (!proposedStorageUnitId) {
+            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
+              trx,
+              material.itemId,
+              job.locationId!
+            );
+          }
+        } else {
           proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
             trx,
             material.itemId,
             job.locationId!
           );
         }
-      } else {
-        proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-          trx,
-          material.itemId,
-          job.locationId!
-        );
       }
-    }
 
-    const currentStorageUnitQuantity = await trx
-      .selectFrom("itemLedger")
-      .select((eb) => eb.fn.sum("quantity").as("quantity"))
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", job.locationId!)
-      .where("storageUnitId", "=", proposedStorageUnitId ?? "")
-      .executeTakeFirst();
+      const currentStorageUnitQuantity = await trx
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum("quantity").as("quantity"))
+        .where("itemId", "=", material.itemId)
+        .where("locationId", "=", job.locationId!)
+        .where("storageUnitId", "=", proposedStorageUnitId ?? "")
+        .executeTakeFirst();
 
-    const allStorageUnitQuantities = await trx
-      .selectFrom("itemLedger")
-      .select([
-        "storageUnitId",
-        (eb) => eb.fn.sum("quantity").as("quantity"),
-      ])
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", job.locationId!)
-      .groupBy("storageUnitId")
-      .having((eb) => eb.fn.sum("quantity"), ">", 0)
-      .execute();
+      const allStorageUnitQuantities = await trx
+        .selectFrom("itemLedger")
+        .select([
+          "storageUnitId",
+          (eb) => eb.fn.sum("quantity").as("quantity"),
+        ])
+        .where("itemId", "=", material.itemId)
+        .where("locationId", "=", job.locationId!)
+        .groupBy("storageUnitId")
+        .having((eb) => eb.fn.sum("quantity"), ">", 0)
+        .execute();
 
-    let finalStorageUnitId = proposedStorageUnitId;
-    const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
+      let finalStorageUnitId = proposedStorageUnitId;
+      const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
 
-    if (
-      currentQuantity < quantityToIssue &&
-      allStorageUnitQuantities.length > 0
-    ) {
-      const bestStorageUnit = allStorageUnitQuantities.reduce((best, current) =>
-        Number(current.quantity) > Number(best.quantity) ? current : best
-      );
-      finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
-    }
+      if (
+        currentQuantity < remaining &&
+        allStorageUnitQuantities.length > 0
+      ) {
+        const bestStorageUnit = allStorageUnitQuantities.reduce((best, current) =>
+          Number(current.quantity) > Number(best.quantity) ? current : best
+        );
+        finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
+      }
 
-    const isTracked = itemIdIsTracked.get(material.itemId);
+      const isTracked = itemIdIsTracked.get(material.itemId);
 
-    if (isTracked) {
-      itemLedgerInserts.push({
-        entryType: "Consumption",
-        documentType: "Job Consumption",
-        documentId: jobId,
-        documentLineId: jobOperationId,
-        companyId,
-        itemId: material.itemId,
-        quantity: -quantityToIssue,
-        locationId: job.locationId,
-        storageUnitId: finalStorageUnitId,
-        postingDate: today,
-        createdBy: userId,
-      });
+      if (isTracked) {
+        itemLedgerInserts.push({
+          entryType: "Consumption",
+          documentType: "Job Consumption",
+          documentId: jobId,
+          documentLineId: jobOperationId,
+          companyId,
+          itemId: material.itemId,
+          quantity: -remaining,
+          locationId: job.locationId,
+          storageUnitId: finalStorageUnitId,
+          postingDate: today,
+          createdBy: userId,
+        });
+      }
     }
 
     await trx
@@ -1992,25 +2043,62 @@ serve(async (req: Request) => {
                 ? Number(quantity)
                 : Number(quantity) - Number(material?.quantityIssued); // set quantity
 
-            if (
-              material?.methodType !== "Make to Order" &&
-              item?.itemTrackingType === "Inventory"
-            ) {
-              itemLedgerInserts.push({
-                entryType: "Consumption",
-                documentType: "Job Consumption",
-                documentId: material?.jobId,
-                documentLineId: id,
-                companyId,
-                itemId: material?.itemId!,
-                locationId: job?.locationId,
-                storageUnitId,
-                quantity:
-                  adjustmentType === "Positive Adjmt."
-                    ? Number(quantityToIssue)
-                    : -Number(quantityToIssue),
-                createdBy: userId,
-              });
+            if (material && material.methodType !== "Make to Order") {
+              let remaining = Number(quantityToIssue);
+              if (adjustmentType !== "Positive Adjmt." && remaining > 0) {
+                const budgets = orderOldFirst(
+                  await getPickedBudgets(trx, {
+                    material,
+                    locationId: job?.locationId!,
+                    companyId,
+                    opStorageUnitId: await getOperationLinesideBin(trx, {
+                      jobOperationId: material.jobOperationId,
+                      companyId,
+                    }),
+                  }),
+                  material.itemId
+                );
+                const allocation = allocateAcrossBudgets(
+                  remaining,
+                  budgets,
+                  Number(material.quantity ?? 0)
+                );
+                remaining = allocation.remaining;
+                for (const take of allocation.takes) {
+                  if (!take.budget.isInventory) continue;
+                  for (const row of splitTakeByBin(take)) {
+                    itemLedgerInserts.push({
+                      entryType: "Consumption",
+                      documentType: "Job Consumption",
+                      documentId: material.jobId,
+                      documentLineId: id,
+                      companyId,
+                      itemId: take.budget.itemId,
+                      locationId: job?.locationId,
+                      storageUnitId: row.storageUnitId,
+                      quantity: -row.quantity,
+                      createdBy: userId,
+                    });
+                  }
+                }
+              }
+              if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+                itemLedgerInserts.push({
+                  entryType: "Consumption",
+                  documentType: "Job Consumption",
+                  documentId: material.jobId,
+                  documentLineId: id,
+                  companyId,
+                  itemId: material.itemId,
+                  locationId: job?.locationId,
+                  storageUnitId,
+                  quantity:
+                    adjustmentType === "Positive Adjmt."
+                      ? Number(remaining)
+                      : -Number(remaining),
+                  createdBy: userId,
+                });
+              }
             }
 
             await trx

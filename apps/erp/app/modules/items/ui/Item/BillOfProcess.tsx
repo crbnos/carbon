@@ -1,5 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -48,6 +49,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import {
   LuActivity,
+  LuBox,
   LuChevronLeft,
   LuChevronRight,
   LuCirclePlus,
@@ -104,7 +106,12 @@ import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
-import { SlidesEditor, uploadStepSlideModel } from "~/components/SlidesEditor";
+import {
+  SlidePinOverlay,
+  SlidesEditor,
+  uploadStepSlideModel,
+  useSlideModels
+} from "~/components/SlidesEditor";
 import type { Item, SortableItemRenderProps } from "~/components/SortableList";
 import {
   SortableList,
@@ -113,7 +120,12 @@ import {
   SortableListItemToggle
 } from "~/components/SortableList";
 import { StepLinkEditor } from "~/components/StepLinkEditor";
-import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
+import {
+  useCurrencyDecimals,
+  useImageUpload,
+  usePermissions,
+  useUser
+} from "~/hooks";
 import { useTags } from "~/hooks/useTags";
 import type {
   OperationParameter,
@@ -377,26 +389,7 @@ const BillOfProcess = ({
     true
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, {
-        upsert: true,
-        cacheControl: "3600"
-      });
-
-    if (result?.error) {
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`parts/${selectedItemId}`);
 
   const onToggleItem = (id: string) => {
     if (isReadOnly) return;
@@ -494,10 +487,6 @@ const BillOfProcess = ({
       return rest;
     });
   };
-
-  const {
-    company: { id: companyId }
-  } = useUser();
 
   const [tabChangeRerender, setTabChangeRerender] = useState<number>(1);
   const renderListItem = ({
@@ -2012,23 +2001,7 @@ function AttributesForm({
   }, [tools, allTools]);
   const [draftTools, setDraftTools] = useState<string[]>([]);
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   // Upload a chosen image to storage immediately and buffer it as a draft slide.
   const onAddDraftSlide = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -2037,11 +2010,18 @@ function AttributesForm({
     if (!file || !carbon) return;
     setDraftUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
       const result = await carbon.storage
         .from("private")
-        .upload(fileName, file);
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -2057,6 +2037,8 @@ function AttributesForm({
           annotations: []
         }
       ]);
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setDraftUploading(false);
     }
@@ -2574,28 +2556,7 @@ function AttributesListItem({
     attribute.description ?? {}
   );
 
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
-
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   if (!id) return null;
 
@@ -3120,11 +3081,18 @@ function StepSlides({
     if (!file || !carbon || !step.id) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
       const result = await carbon.storage
         .from("private")
-        .upload(fileName, file);
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -3137,6 +3105,8 @@ function StepSlides({
         method: "post",
         action: path.to.newMethodOperationStepSlide
       });
+    } catch {
+      toast.error(t`Failed to convert image`);
     } finally {
       setUploading(false);
     }
@@ -3536,12 +3506,41 @@ function OperationPreview({
   const { t } = useLingui();
   const allTools = useTools();
   const [current, setCurrent] = useState(0);
+  const [slideIdx, setSlideIdx] = useState(0);
+
+  // Move to a step and reset to its first slide.
+  const goToStep = (next: number) => {
+    setCurrent(next);
+    setSlideIdx(0);
+  };
 
   const sorted = [...steps].sort(
     (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
   );
 
-  if (sorted.length === 0) {
+  // Computed before the early return so the hooks below run unconditionally.
+  const idx = Math.min(current, Math.max(0, sorted.length - 1));
+  const step = sorted[idx] as OperationStep | undefined;
+  const slides = (
+    (step?.methodOperationStepSlide ?? []) as OperationStepSlide[]
+  )
+    .slice()
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+
+  // Model thumbnails (+ conversion status polling) for the model slides, reusing
+  // the same hook the editor uses.
+  const slideModels = useSlideModels(
+    slides.map((s) => ({
+      key: s.id,
+      imagePath: s.imagePath,
+      modelUploadId: s.modelUploadId,
+      caption: s.caption,
+      size: s.size,
+      annotations: s.annotations
+    }))
+  );
+
+  if (sorted.length === 0 || !step) {
     return (
       <div className="rounded-lg border bg-card p-6 text-center text-sm text-muted-foreground">
         <Trans>Add steps to preview the operator view.</Trans>
@@ -3549,15 +3548,15 @@ function OperationPreview({
     );
   }
 
-  const idx = Math.min(current, sorted.length - 1);
-  const step = sorted[idx];
-  const slides = [...(step.methodOperationStepSlide ?? [])].sort(
-    (a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-  );
-  // First IMAGE slide for the preview panel — model slides render only in the MES
-  // assembly view; here they'd have no picture to show.
-  const firstImagePath = slides.find((s) => s.imagePath)?.imagePath;
-  const image = firstImagePath ? getPrivateUrl(firstImagePath) : null;
+  const sIdx = Math.min(slideIdx, Math.max(0, slides.length - 1));
+  const slide = slides[sIdx];
+  const slideModel = slide?.modelUploadId
+    ? slideModels[slide.modelUploadId]
+    : undefined;
+  const slideImage = slide?.imagePath ? getPrivateUrl(slide.imagePath) : null;
+  const slideModelThumb = slideModel?.thumbnailPath
+    ? getPrivateUrl(slideModel.thumbnailPath)
+    : null;
 
   // Tools scoped to this step + operation-level (no links) tools shown on every step
   // (tool ↔ step is many-to-many).
@@ -3592,7 +3591,7 @@ function OperationPreview({
             isIcon
             aria-label={t`Previous step`}
             isDisabled={idx <= 0}
-            onClick={() => setCurrent((c) => Math.max(0, c - 1))}
+            onClick={() => goToStep(Math.max(0, idx - 1))}
           >
             <LuChevronLeft />
           </Button>
@@ -3602,28 +3601,97 @@ function OperationPreview({
             isIcon
             aria-label={t`Next step`}
             isDisabled={idx >= sorted.length - 1}
-            onClick={() =>
-              setCurrent((c) => Math.min(sorted.length - 1, c + 1))
-            }
+            onClick={() => goToStep(Math.min(sorted.length - 1, idx + 1))}
           >
             <LuChevronRight />
           </Button>
         </div>
       </div>
 
-      <div className="flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted/40">
-        {image ? (
-          <img
-            src={image}
-            alt=""
-            className="max-h-full max-w-full object-contain"
-          />
+      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+        {!slide ? (
+          <span className="text-xs text-muted-foreground">
+            <Trans>No reference image</Trans>
+          </span>
+        ) : slide.modelUploadId ? (
+          <>
+            {slideModelThumb ? (
+              <img
+                src={slideModelThumb}
+                alt={slide.caption ?? slideModel?.name ?? "3D model"}
+                className="max-h-full max-w-full object-contain"
+              />
+            ) : (
+              <LuBox className="size-10 text-muted-foreground" />
+            )}
+            <span className="pointer-events-none absolute left-2 top-2 rounded bg-background/80 px-1 text-[10px] font-semibold text-muted-foreground">
+              3D
+            </span>
+          </>
+        ) : slideImage ? (
+          <div className="relative h-full w-full">
+            <img
+              src={slideImage}
+              alt={slide.caption ?? ""}
+              className="h-full w-full object-contain"
+            />
+            <SlidePinOverlay pins={slide.annotations ?? []} />
+          </div>
         ) : (
           <span className="text-xs text-muted-foreground">
             <Trans>No reference image</Trans>
           </span>
         )}
       </div>
+
+      {slide?.caption ? (
+        <p className="text-xs text-muted-foreground">{slide.caption}</p>
+      ) : null}
+
+      {slides.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2">
+          {slides.map((s, i) => {
+            const model = s.modelUploadId
+              ? slideModels[s.modelUploadId]
+              : undefined;
+            const thumb = s.modelUploadId
+              ? model?.thumbnailPath
+                ? getPrivateUrl(model.thumbnailPath)
+                : null
+              : s.imagePath
+                ? getPrivateUrl(s.imagePath)
+                : null;
+            return (
+              <button
+                key={s.id}
+                type="button"
+                aria-label={s.caption || t`Slide ${i + 1}`}
+                title={s.caption ?? undefined}
+                onClick={() => setSlideIdx(i)}
+                className={cn(
+                  "relative flex h-12 w-16 shrink-0 items-center justify-center overflow-hidden rounded-md border-2 bg-muted/40",
+                  i === sIdx ? "border-foreground" : "border-transparent"
+                )}
+              >
+                {thumb ? (
+                  <img
+                    src={thumb}
+                    alt=""
+                    className="h-full w-full object-contain"
+                  />
+                ) : (
+                  <LuBox className="size-5 text-muted-foreground" />
+                )}
+                {s.modelUploadId && (
+                  <span className="pointer-events-none absolute bottom-0.5 right-0.5 rounded bg-background/80 px-0.5 text-[8px] font-semibold text-muted-foreground">
+                    3D
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex items-center gap-2">
         <span className="flex size-6 items-center justify-center rounded-full bg-foreground text-xs font-bold text-background">

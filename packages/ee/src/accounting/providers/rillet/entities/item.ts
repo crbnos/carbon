@@ -11,7 +11,7 @@ import {
   loadCompanyBaseCurrency,
   loadCurrencyDecimalPlaces,
   loadRilletAccountCodesById,
-  RilletEntitySyncer,
+  RilletPushOnlyEntitySyncer,
   toRilletMoney,
   writeDroppingUnregisteredReferences
 } from "./shared";
@@ -163,7 +163,7 @@ function mergeProductWrite(
   };
 }
 
-export class RilletItemSyncer extends RilletEntitySyncer<
+export class RilletItemSyncer extends RilletPushOnlyEntitySyncer<
   Accounting.Item,
   Rillet.Product,
   RilletWriteOmit

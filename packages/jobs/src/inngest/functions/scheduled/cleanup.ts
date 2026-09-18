@@ -12,6 +12,12 @@ const STAGED_RAW_TTL_DAYS = 7;
 // Agent chat threads are transient — purge after 30 days of inactivity.
 const AGENT_THREAD_TTL_DAYS = 30;
 
+// Everything under `{companyId}/tmp/` in the private bucket is transient by
+// contract: HEIC-conversion round-trip files (removed in a `finally`, but a
+// crash can leak them) and staged signed-URL uploads an MCP agent PUT but
+// never registered. One day is generous — both are seconds-to-minutes lived.
+const TMP_STAGING_TTL_HOURS = 24;
+
 type NotifyEvent = {
   name: "carbon/notify";
   data: {
@@ -486,6 +492,54 @@ export const cleanupFunction = inngest.createFunction(
         logger.info("Pruned stale staged raws", {
           relocated: relocated.size,
           orphaned: orphans.length
+        });
+      }
+    });
+
+    await step.run("prune-tmp-staging", async () => {
+      logger.info("Pruning stale private-bucket tmp staging objects...");
+      const cutoff = new Date(
+        Date.now() - TMP_STAGING_TTL_HOURS * 60 * 60 * 1000
+      ).toISOString();
+
+      const stale = await serviceRole
+        .schema("storage")
+        .from("objects")
+        .select("name")
+        .eq("bucket_id", "private")
+        .like("name", "%/tmp/%")
+        .lt("created_at", cutoff)
+        .limit(1000);
+
+      if (stale.error) {
+        logger.error("Error listing stale tmp objects", { error: stale.error });
+        return;
+      }
+
+      // The LIKE matches "/tmp/" anywhere; only the SECOND segment being
+      // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
+      // folders are never named tmp, but don't rely on that for a delete.
+      const toRemove = (stale.data ?? [])
+        .map((o) => o.name)
+        .filter(
+          (n): n is string => typeof n === "string" && n.split("/")[1] === "tmp"
+        );
+
+      if (toRemove.length === 0) {
+        logger.info("No stale tmp staging objects");
+        return;
+      }
+
+      const removed = await serviceRole.storage
+        .from("private")
+        .remove(toRemove);
+      if (removed.error) {
+        logger.error("Error pruning tmp staging objects", {
+          error: removed.error
+        });
+      } else {
+        logger.info("Pruned stale tmp staging objects", {
+          count: toRemove.length
         });
       }
     });

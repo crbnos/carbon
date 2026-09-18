@@ -6,7 +6,7 @@ import { useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { memo, useEffect, useMemo } from "react";
 import { LuX } from "react-icons/lu";
-import OperatorCombobox from "~/modules/storage-rules/ui/OperatorCombobox";
+import OperatorCombobox from "~/modules/inventory/ui/StorageRules/OperatorCombobox";
 import {
   propertyLabelKey,
   useWorkflowCatalog,

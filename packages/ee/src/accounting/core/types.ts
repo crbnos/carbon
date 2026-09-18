@@ -55,6 +55,18 @@ export interface OAuthClientOptions {
   redirectUri?: string;
   getAuthUrl: (scopes: string[], redirectUri: string) => string;
   onTokenRefresh?: (creds: ProviderCredentials) => Promise<void>;
+  /**
+   * Re-read the stored credentials right before a refresh. Several runners
+   * (pull/outbound sweeps, webhooks, event sync) hold the same pair and the
+   * providers rotate refresh tokens, so whoever refreshes second burns a token
+   * that is already dead. Returning a pair whose refreshToken differs from the
+   * in-memory one means another runner already rotated: adopt it, skip the call.
+   */
+  beforeRefresh?: () => Promise<{
+    accessToken: string;
+    refreshToken: string;
+    expiresAt?: string;
+  } | null>;
 }
 
 export interface AuthProvider {
@@ -69,6 +81,7 @@ export type ProviderConfig<T = unknown> = {
   companyId: string;
   syncConfig: GlobalSyncConfig;
   onTokenRefresh?: OAuthClientOptions["onTokenRefresh"];
+  beforeRefresh?: OAuthClientOptions["beforeRefresh"];
 } & T;
 
 /**

@@ -145,13 +145,13 @@ vector_port = 54328
 # Configure one of the supported backends: `postgres`, `bigquery`.
 backend = "postgres"
 
-[functions.image-resizer]
-enabled = true
-verify_jwt = false
-
 [functions.logo-resizer]
 enabled = true
 verify_jwt = false
+
+[functions.process-image]
+enabled = true
+verify_jwt = true
 
 [functions.sync]
 enabled = true

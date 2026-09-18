@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
@@ -28,6 +29,7 @@ import type { ExpressionBuilder } from "kysely";
 import { sql } from "kysely";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { StorageItem } from "~/types";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -1115,7 +1117,7 @@ export async function getCapacityReservationsForResources(
     .select(
       `id, operationId, jobId, resourceKind, resourceId, startAt, endAt, scheduleNote, workHours, isPlaceholder, jobOperationBatchId,
        job!inner(jobId, status, dueDate, locationId),
-       jobOperation(description, hasConflict, conflictReason),
+       jobOperation(description, hasConflict, conflictReason, jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, type))),
        jobOperationBatch(readableId)`
     )
     .eq("companyId", companyId)
@@ -1340,7 +1342,8 @@ export async function getJobMaterialShortfallByItem(
   jobId: string,
   companyId: string,
   locationId: string,
-  materials: JobItemAvailability[]
+  materials: JobItemAvailability[],
+  asOfDate?: string
 ): Promise<Record<string, ItemShortfall>> {
   // Two pools per item, kept separate so allocation can hand out already-received
   // on-hand stock BEFORE incoming supply. quantityOnPurchaseOrder /
@@ -1366,13 +1369,58 @@ export async function getJobMaterialShortfallByItem(
   const itemIds = Array.from(onHandByItem.keys());
   if (itemIds.length === 0) return {};
 
+  const successorByItem = new Map<string, { itemId: string; factor: number }>();
+  const rules = await client
+    .from("itemSupersession")
+    .select(
+      "itemId, successorItemId, successorEffectivityDate, conversionFactor"
+    )
+    .in("itemId", itemIds)
+    .eq("companyId", companyId)
+    .eq("supersessionMode", "Consume First");
+  for (const rule of rules.data ?? []) {
+    if (!rule.successorItemId) continue;
+    if (
+      asOfDate &&
+      rule.successorEffectivityDate &&
+      rule.successorEffectivityDate > asOfDate
+    ) {
+      continue;
+    }
+    successorByItem.set(rule.itemId, {
+      itemId: rule.successorItemId,
+      factor: Number(rule.conversionFactor ?? 1) || 1
+    });
+  }
+  const successorIds = Array.from(
+    new Set(
+      Array.from(successorByItem.values())
+        .map((s) => s.itemId)
+        .filter((id) => !onHandByItem.has(id))
+    )
+  );
+  for (const successorId of successorIds) {
+    const quantities = await client.rpc("get_inventory_quantities", {
+      location_id: locationId,
+      company_id: companyId,
+      item_id: successorId
+    });
+    const row = quantities.data?.[0];
+    onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
+    incomingByItem.set(
+      successorId,
+      Number(row?.quantityOnPurchaseOrder ?? 0) +
+        Number(row?.quantityOnProductionOrder ?? 0)
+    );
+  }
+
   // Remaining demand for those items across every active job at this location.
   const { data } = await client
     .from("jobMaterial")
     .select(
-      "id, itemId, jobId, methodType, quantityToIssue, job!inner(priority, status, locationId)"
+      "id, itemId, jobId, methodType, quantity, quantityToIssue, job!inner(priority, status, locationId)"
     )
-    .in("itemId", itemIds)
+    .in("itemId", [...itemIds, ...successorIds])
     .eq("companyId", companyId)
     .neq("methodType", "Make to Order")
     .in("job.status", ACTIVE_JOB_STATUSES)
@@ -1384,6 +1432,7 @@ export async function getJobMaterialShortfallByItem(
   type Line = {
     materialId: string;
     remaining: number;
+    perAssembly: number;
     methodType: MethodType | null;
   };
   const demandByItem = new Map<string, Map<string, Demand>>();
@@ -1410,7 +1459,12 @@ export async function getJobMaterialShortfallByItem(
 
     if (rowJobId === jobId && row.id) {
       const lines = thisJobLinesByItem.get(itemId) ?? [];
-      lines.push({ materialId: row.id, remaining, methodType: row.methodType });
+      lines.push({
+        materialId: row.id,
+        remaining,
+        perAssembly: Number(row.quantity ?? 0),
+        methodType: row.methodType
+      });
       thisJobLinesByItem.set(itemId, lines);
     }
   }
@@ -1447,8 +1501,12 @@ export async function getJobMaterialShortfallByItem(
                 ? 1
                 : 0)
         );
+      const consumeFirst = successorByItem.has(itemId);
       for (const line of lines) {
-        const fromOnHand = Math.min(line.remaining, Math.max(onHand, 0));
+        const usable = consumeFirst
+          ? consumableInWholeAssemblies(onHand, line.perAssembly)
+          : Math.max(onHand, 0);
+        const fromOnHand = Math.min(line.remaining, usable);
         onHand -= fromOnHand;
         let need = line.remaining - fromOnHand;
         const fromIncoming = Math.min(need, Math.max(incoming, 0));
@@ -1460,6 +1518,33 @@ export async function getJobMaterialShortfallByItem(
           coveredByOnHand: need <= 0 && fromIncoming === 0
         };
       }
+    }
+    onHandByItem.set(itemId, onHand);
+    incomingByItem.set(itemId, incoming);
+  }
+
+  for (const [itemId, lines] of thisJobLinesByItem) {
+    const successor = successorByItem.get(itemId);
+    if (!successor) continue;
+    for (const line of lines) {
+      const current = shortfallByMaterial[line.materialId];
+      if (!current || current.shortfall <= 0) continue;
+      let need = current.shortfall * successor.factor;
+      let onHand = onHandByItem.get(successor.itemId) ?? 0;
+      let incoming = incomingByItem.get(successor.itemId) ?? 0;
+      const fromOnHand = Math.min(need, Math.max(onHand, 0));
+      onHand -= fromOnHand;
+      need -= fromOnHand;
+      const fromIncoming = Math.min(need, Math.max(incoming, 0));
+      incoming -= fromIncoming;
+      need -= fromIncoming;
+      onHandByItem.set(successor.itemId, onHand);
+      incomingByItem.set(successor.itemId, incoming);
+      shortfallByMaterial[line.materialId] = {
+        shortfall: need > 0 ? need : 0,
+        coveredByOnHand: need <= 0 && fromIncoming === 0,
+        substituteItemId: successor.itemId
+      };
     }
   }
   return shortfallByMaterial;
@@ -1484,7 +1569,8 @@ function getJobMaterialOrderStatus(
   poLines: JobMaterialPurchaseOrderLine[],
   supplyJobLines: JobMaterialSupplyJobLine[],
   shortfall: number,
-  coveredByOnHand: boolean
+  coveredByOnHand: boolean,
+  substituteItemId: string | null = null
 ): ItemOrderStatus {
   // Fully pulled into the job (its whole requirement has been issued/consumed).
   const estimated = material.estimatedQuantity ?? 0;
@@ -1526,6 +1612,7 @@ function getJobMaterialOrderStatus(
     needsOrder,
     needsJob,
     shortfall,
+    substituteItemId,
     status,
     supplyJobStatus,
     coveredByOnHand,
@@ -1562,19 +1649,22 @@ function getJobOrderStatusByMaterial(
   const byMaterialId: Record<string, ItemOrderStatus> = {};
   for (const material of materials) {
     if (!material.id) continue;
-    const poLines = material.jobMaterialItemId
-      ? (linesByItemId.get(material.jobMaterialItemId) ?? [])
-      : [];
-    const jobLines = material.jobMaterialItemId
-      ? (jobLinesByItemId.get(material.jobMaterialItemId) ?? [])
-      : [];
     const lineShortfall = shortfallByMaterialId[material.id];
+    const supplyItemIds = [
+      material.jobMaterialItemId,
+      lineShortfall?.substituteItemId
+    ].filter((id): id is string => Boolean(id));
+    const poLines = supplyItemIds.flatMap((id) => linesByItemId.get(id) ?? []);
+    const jobLines = supplyItemIds.flatMap(
+      (id) => jobLinesByItemId.get(id) ?? []
+    );
     byMaterialId[material.id] = getJobMaterialOrderStatus(
       material,
       poLines,
       jobLines,
       lineShortfall?.shortfall ?? 0,
-      lineShortfall?.coveredByOnHand ?? false
+      lineShortfall?.coveredByOnHand ?? false,
+      lineShortfall?.substituteItemId ?? null
     );
   }
   return byMaterialId;
@@ -1590,7 +1680,8 @@ export async function getJobOrderStatusMap(
   jobStatus: string | null | undefined,
   materials: NonNullable<
     Awaited<ReturnType<typeof getJobMaterialsWithQuantityOnHand>>["data"]
-  >
+  >,
+  asOfDate?: string
 ): Promise<Record<string, ItemOrderStatus>> {
   // Completed/Draft/Cancelled/Closed jobs show no procurement indicators.
   if (isJobOrderStatusHidden(jobStatus)) return {};
@@ -1606,14 +1697,41 @@ export async function getJobOrderStatusMap(
         jobId,
         companyId,
         locationId,
-        materials
+        materials,
+        asOfDate
       )
     ]);
 
+  const materialItemIds = new Set(
+    materials.map((material) => material.jobMaterialItemId)
+  );
+  const substitutes = Array.from(
+    new Set(
+      Object.values(shortfallByMaterialId)
+        .map((shortfall) => shortfall.substituteItemId)
+        .filter(
+          (id): id is string =>
+            typeof id === "string" && !materialItemIds.has(id)
+        )
+    )
+  ).map((jobMaterialItemId) => ({ jobMaterialItemId }));
+  const [substitutePurchaseOrderLines, substituteSupplyJobLines] =
+    substitutes.length > 0
+      ? await Promise.all([
+          getJobMaterialPurchaseOrderLines(client, substitutes, locationId),
+          getJobMaterialSupplyJobLines(
+            client,
+            substitutes,
+            companyId,
+            locationId
+          )
+        ])
+      : [[], []];
+
   return getJobOrderStatusByMaterial(
     materials,
-    purchaseOrderLines,
-    supplyJobLines,
+    purchaseOrderLines.concat(substitutePurchaseOrderLines),
+    supplyJobLines.concat(substituteSupplyJobLines),
     shortfallByMaterialId
   );
 }
@@ -2506,6 +2624,40 @@ export async function getTrackedEntitiesByJobId(
     .eq("companyId", jobMakeMethod.data.companyId)
     .is("attributes ->> Split Entity ID", null)
     .is("attributes ->> Split From Entity ID", null);
+}
+
+/**
+ * What a job has already received to inventory: its received quantity and the
+ * tracked entities its receipts posted. One statement, so both come from the
+ * same snapshot and a receipt committing mid-read cannot pair a new quantity
+ * with old units. Kysely because itemLedger is readable only with inventory or
+ * accounting view, and production users need the answer; the route authorizes.
+ */
+export async function getJobReceiptSnapshot(
+  db: Kysely<KyselyDatabase>,
+  jobId: string,
+  companyId: string
+) {
+  return db
+    .selectFrom("job")
+    .leftJoin("itemLedger", (join) =>
+      join
+        .onRef("itemLedger.documentId", "=", "job.id")
+        .onRef("itemLedger.companyId", "=", "job.companyId")
+        .on("itemLedger.documentType", "=", "Job Receipt")
+    )
+    .select([
+      "job.quantityReceivedToInventory",
+      sql<
+        string[]
+      >`COALESCE(array_agg("itemLedger"."trackedEntityId") FILTER (WHERE "itemLedger"."trackedEntityId" IS NOT NULL), '{}')`.as(
+        "trackedEntityIds"
+      )
+    ])
+    .where("job.id", "=", jobId)
+    .where("job.companyId", "=", companyId)
+    .groupBy(["job.id", "job.companyId"])
+    .executeTakeFirst();
 }
 
 /**
@@ -4931,8 +5083,9 @@ export async function getWorkCenterRequiredAbilities(
     .map((p) => p.id);
   if (gatedProcessIds.length === 0) return { data: [], error: null };
 
+  // The `abilities` view carries the name from the linked process.
   const abilities = await client
-    .from("ability")
+    .from("abilities")
     .select("id, name, processId")
     .eq("companyId", companyId)
     .eq("active", true)
@@ -4948,7 +5101,13 @@ export async function getWorkCenterRequiredAbilities(
     ({ workCenterId, processId }) => {
       const ability = abilityByProcess.get(processId);
       return ability
-        ? [{ workCenterId, abilityId: ability.id, abilityName: ability.name }]
+        ? [
+            {
+              workCenterId,
+              abilityId: ability.id ?? "",
+              abilityName: ability.name ?? ""
+            }
+          ]
         : [];
     }
   );
@@ -4964,7 +5123,7 @@ export async function getActiveEmployeeAbilities(
   // people board can badge each person with what they can do.
   return client
     .from("employeeAbility")
-    .select("employeeId, abilityId, expiresAt, ability(name)")
+    .select("employeeId, abilityId, expiresAt, ability(process(name))")
     .eq("companyId", companyId);
 }
 
@@ -9648,7 +9807,7 @@ export async function saveInspectionDocumentAtomic(
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
 
 // `issueMaterial`, `completeJob`, and `scheduleJob` moved to `production.mcp.server.ts`: they
-// depend on server-only modules (`@carbon/ee/storage-rules.server`, `@carbon/auth/users.server`)
+// depend on server-only modules (`@carbon/ee/rules.server`, `@carbon/auth/users.server`)
 // that cannot be referenced from this file, which is client-reachable via the module barrel.
 
 /**
@@ -9830,4 +9989,22 @@ export async function completeOperation(
   }
 
   return issue;
+}
+
+/**
+ * Create a presigned upload URL for a job document. First step of the two-step
+ * upload flow: PUT the file bytes to the returned `signedUrl`, then call
+ * `documents_insertUploadedDocument` with the returned `path`,
+ * `sourceDocument: "Job"`, and `sourceDocumentId: jobId`.
+ */
+export async function createJobDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; jobId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "job",
+    entityId: args.jobId,
+    name: args.name
+  });
 }

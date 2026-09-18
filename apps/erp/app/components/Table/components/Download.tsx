@@ -1,3 +1,4 @@
+import { downloadCsv } from "@carbon/files/csv";
 import {
   IconButton,
   Tooltip,
@@ -5,7 +6,6 @@ import {
   TooltipTrigger
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { json2csv } from "json-2-csv";
 import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useCustomers, useItems, usePeople, useSuppliers } from "~/stores";
@@ -21,22 +21,6 @@ type DownloadProps = {
   // included in the CSV, regardless of visibility.
   exportOnlyColumns: string[];
 };
-
-// Last-resort guardrail so an export never ships `[object Object]` or explodes a
-// nested object into stray columns. Arrays/dates/primitives are left untouched —
-// json2csv already serializes them consistently. A column whose value is a plain
-// object should supply a readable `exportValue` rather than rely on this.
-function serializeForCsv(value: unknown): unknown {
-  if (
-    value != null &&
-    typeof value === "object" &&
-    !Array.isArray(value) &&
-    !(value instanceof Date)
-  ) {
-    return JSON.stringify(value);
-  }
-  return value;
-}
 
 const Download = ({
   data,
@@ -80,7 +64,7 @@ const Download = ({
     if (!data?.length) {
       return;
     }
-    // Build label-keyed rows so json2csv emits the view's header labels, in the
+    // Build label-keyed rows so the CSV emits the view's header labels, in the
     // view's column order, substituting names for id columns.
     const rows = data.map((row) => {
       const out: Record<string, unknown> = {};
@@ -94,25 +78,11 @@ const Download = ({
           const map = idNameMaps[key];
           value = map && raw != null ? (map.get(String(raw)) ?? raw) : raw;
         }
-        out[columnAccessors[key]] = serializeForCsv(value);
+        out[columnAccessors[key]] = value;
       }
       return out;
     });
-    // preventCsvInjection strips formula-leading characters (=, +, -, @) from
-    // non-numeric strings so exported cells can't execute in spreadsheet apps;
-    // numbers and numeric strings pass through untouched.
-    let csvData = json2csv(rows, {
-      emptyFieldValue: "",
-      preventCsvInjection: true
-    });
-    // Create a CSV file and allow the user to download it
-    let blob = new Blob([csvData], { type: "text/csv" });
-    let url = window.URL.createObjectURL(blob);
-    let a = document.createElement("a");
-    a.href = url;
-    a.download = "data.csv";
-    document.body.appendChild(a);
-    a.click();
+    downloadCsv(rows, "data.csv");
   }, [data, exportColumns, idNameMaps, columnAccessors, exportValues]);
 
   if (!data?.length) {

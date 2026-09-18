@@ -14,6 +14,7 @@ import {
   getQuote,
   getSalesOrder,
   getSalesOrderInvoiceLines,
+  getSalesOrderInvoicePaymentsByIds,
   getSalesOrderInvoicesByIds,
   getSalesOrderLines,
   getSalesOrderRelatedItems
@@ -118,7 +119,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   let currencyMismatchCount = 0;
 
   if (invoiceIds.length > 0) {
-    const invoices = await getSalesOrderInvoicesByIds(client, invoiceIds);
+    const [invoices, payments] = await Promise.all([
+      getSalesOrderInvoicesByIds(client, invoiceIds),
+      getSalesOrderInvoicePaymentsByIds(client, companyId, invoiceIds)
+    ]);
 
     if (invoices.error) {
       throw redirect(
@@ -127,6 +131,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           request,
           error(invoices.error, "Failed to load sales invoice totals")
         )
+      );
+    }
+
+    if (payments.error) {
+      throw redirect(
+        path.to.salesOrder(orderId),
+        await flash(
+          request,
+          error(payments.error, "Failed to load sales invoice payments")
+        )
+      );
+    }
+
+    const paidBaseByInvoiceId = new Map<string, number>();
+    for (const payment of payments.data ?? []) {
+      if (!payment.targetSalesInvoiceId) continue;
+      paidBaseByInvoiceId.set(
+        payment.targetSalesInvoiceId,
+        (paidBaseByInvoiceId.get(payment.targetSalesInvoiceId) ?? 0) +
+          payment.appliedAmount
       );
     }
 
@@ -152,14 +176,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         continue;
       }
 
-      invoicedAmount += invoiceTotal;
-
-      // Paid = the settled portion in document currency (invoiceTotal - balance
-      // from the salesInvoices view, which only counts posted payments/memos).
-      // A fully-Paid invoice reports balance 0, a partially-paid one reports its
-      // outstanding remainder — so partial payments are counted, not ignored.
-      const balance = invoice.balance ?? 0;
-      paidAmount += invoiceTotal - balance;
+      invoicedAmount += invoiceTotal * (invoice.exchangeRate ?? 1);
+      if (invoice.id) {
+        paidAmount +=
+          (paidBaseByInvoiceId.get(invoice.id) ?? 0) *
+          (invoice.exchangeRate ?? 1);
+      }
     }
   }
 

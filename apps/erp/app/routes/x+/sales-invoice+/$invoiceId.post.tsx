@@ -4,6 +4,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -36,6 +41,7 @@ import {
   STRIPE_CONNECT_INTEGRATION
 } from "~/modules/invoicing/stripe-customer.server";
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
@@ -503,14 +509,71 @@ export async function action(args: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
+  const formData = await request.formData();
   const validation = await validator(salesInvoicePostValidator).validate(
-    await request.formData()
+    formData
   );
 
   if (validation.error) {
     return {
       success: false,
       message: "Invalid notification type"
+    };
+  }
+
+  // Sales-rule terminal gate. Posting is the revenue checkpoint and the only
+  // gate an invoice raised with no upstream document ever passes — lines can
+  // arrive from the convert edge function, the API, or MCP without the
+  // per-line check. Re-reads the whole document, so it also catches
+  // staleness (a rule authored after the lines were written). Must run
+  // BEFORE the optimistic `Pending` write below, or a blocked post strands
+  // the invoice in `Pending`; running first also prevents the Stripe send
+  // and the customer email.
+  const acknowledged = formData.get("acknowledged") === "true";
+  // An evaluator throw (failed rule/item/ship-to load) must fail closed but
+  // not as a raw 500 — surface it like the Stripe preflight below.
+  let salesRuleResult: Awaited<
+    ReturnType<typeof evaluateSalesRulesForSalesDocument>
+  >;
+  try {
+    salesRuleResult = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId
+    });
+  } catch (err) {
+    logger.error("Sales rule evaluation failed", { error: err, invoiceId });
+    return {
+      success: false,
+      message: `Invoice not posted — ${
+        err instanceof Error ? err.message : "sales rule evaluation failed"
+      }`
+    };
+  }
+  const { ruleNames: salesRuleNames } = salesRuleResult;
+  const salesRuleViolations = dedupeViolations(salesRuleResult.violations);
+  if (
+    salesRuleViolations.length > 0 &&
+    isBlocked(salesRuleViolations, acknowledged)
+  ) {
+    // Record the same evidence + notification the per-line checks write —
+    // posting is the revenue checkpoint, the strongest override there is.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "blocked",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
+    return {
+      success: false,
+      message: "Sales rules blocked posting this invoice",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
     };
   }
 
@@ -613,6 +676,21 @@ export async function action(args: ActionFunctionArgs) {
       success: false,
       message: "Failed to post sales invoice"
     };
+  }
+
+  // Acknowledged-override evidence only once the post has committed — a
+  // trail (and notification) for a post that then failed would be false, and
+  // a retry would duplicate it.
+  if (salesRuleViolations.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "acknowledged",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
   }
 
   const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);

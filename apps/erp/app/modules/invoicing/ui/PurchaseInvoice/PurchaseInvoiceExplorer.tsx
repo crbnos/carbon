@@ -68,7 +68,9 @@ export default function PurchaseInvoiceExplorer() {
 
   const purchaseInvoiceLineInitialValues = {
     invoiceId: invoiceId,
-    invoiceLineType: "Item" as ItemType,
+    // "Item" is the picker's generic mode, not a member of the line-type
+    // enum; posting it failed validation with "Type is required".
+    invoiceLineType: "Part" as ItemType,
     purchaseQuantity: 1,
     locationId:
       purchaseInvoiceData?.purchaseInvoice?.locationId ??

@@ -4,7 +4,10 @@ paths:
   - "sst.config.ts"
   - "ci/**"
   - ".github/workflows/deploy.yml"
+  - ".github/workflows/inngest.yml"
   - "Dockerfile"
+  - "apps/erp/app/utils/inngest-self-sync.server.ts"
+  - "apps/erp/app/entry.server.tsx"
 ---
 
 # SST / AWS ECS Deployment (managed cloud path)
@@ -74,6 +77,41 @@ Triggers on push to `main` touching `apps/erp/**`, `apps/mes/**`, `packages/**`
   database_url`, `CARBON_EDITION` defaults `"enterprise"`), then runs SST from repo
   root (`cwd: ".."` relative to `ci/`): `npx --yes sst@3.17.24 deploy --stage prod`.
 - Per-workspace failures are caught; the script exits non-zero if any failed.
+
+## Inngest function sync — two mechanisms, both fire on every deploy
+
+Inngest (Cloud or self-hosted) only knows an app's current function list once
+something PUTs its serve endpoint (`/api/inngest`) — that's Inngest's own
+registration handshake, not Carbon-specific. Two independent triggers exist:
+
+- **Boot self-sync** (`apps/erp/app/utils/inngest-self-sync.server.ts`,
+  wired from `apps/erp/app/entry.server.tsx`): on every process boot where
+  `NODE_ENV=production` (both this ECS/SST path and self-hosted Swarm), the
+  app retries `PUT http://127.0.0.1:${PORT}/api/inngest` against itself
+  (up to 10 attempts, 2s apart) until it succeeds, then stops. Fire-and-forget
+  — never blocks or fails server boot. Covers every case a per-workspace
+  fan-out can't: ECS task reschedules, autoscale-out, self-host restarts —
+  not just a `main` push. No-ops in local `pnpm dev`/`vitest` (gated on
+  `NODE_ENV === "production"`, which those don't set), and no-ops on a real
+  Vercel deployment (`VERCEL_DEPLOYMENT_ID` set) — a serverless function has
+  no persistent port to self-connect to; Vercel's own Inngest integration
+  syncs via a deploy webhook instead. Carbon doesn't deploy to real Vercel
+  today (the `VERCEL_ENV`/`VERCEL_URL` vars above are just an env shim for
+  app code that reads them for its own base-URL detection), but the adapter
+  path (`server/app.ts`, `@vercel/react-router` in `entry.server.tsx`) is
+  still live, so this stays inert there rather than retrying uselessly.
+- **CI-triggered sync** (`.github/workflows/inngest.yml`, `ci/src/jobs.ts`):
+  runs after "Deploy Apps" succeeds on `main`. Reads every row in the
+  `workspaces` table and does the same `PUT .../api/inngest` against each
+  `url_erp`. Redundant with boot self-sync today, but kept as an
+  externally-triggered backstop (e.g. if a task's own retries were exhausted
+  before the app was reachable). Only targets `url_erp`, never `url_mes` — MES
+  has no `/api/inngest` route to sync.
+
+Both hit the same handler (`apps/erp/app/routes/api+/inngest.ts`, `serve()`
+from `inngest/remix`) — the registration target URL is fixed by that route's
+`serveHost` config (`INNGEST_SERVE_HOST || ERP_URL`), so it doesn't matter
+whether the PUT arrives via loopback or the public domain.
 
 ## Migrations are a separate CI step
 SST deploy does **not** run DB migrations. Migrations live in

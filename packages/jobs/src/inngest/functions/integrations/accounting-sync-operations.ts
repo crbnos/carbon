@@ -28,6 +28,7 @@
  */
 import { type Database, fetchAllFromTable } from "@carbon/database";
 import {
+  AccountingAuthError,
   type AccountingEntityType,
   type AccountingProvider,
   type BatchSyncResult,
@@ -829,9 +830,11 @@ export function getSyncOperationCloseDecision(
  * through the JournalEntrySyncer.
  *
  * A RatelimitError propagates so the caller's retry machinery applies;
- * claimed rows stay In Flight and become re-claimable once stale. Any other
- * group-level error marks that group's operations Failed and the drain
- * continues with the next group.
+ * claimed rows stay In Flight and become re-claimable once stale. An
+ * AccountingAuthError propagates the same way — a dead grant fails every
+ * group identically, and the cron's per-tenant handler must see it to count
+ * it toward auto-disable. Any other group-level error marks that group's
+ * operations Failed and the drain continues with the next group.
  */
 export async function drainSyncOperations(args: {
   client: SupabaseClient<Database>;
@@ -973,6 +976,9 @@ export async function drainSyncOperations(args: {
           });
         }
       } catch (error) {
+        if (error instanceof AccountingAuthError) {
+          throw error;
+        }
         if (error instanceof RatelimitError) {
           const { retryAfterSeconds } = error.rateLimitInfo;
           console.warn(

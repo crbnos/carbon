@@ -18,6 +18,7 @@ import type {
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -38,6 +39,7 @@ import {
 } from "../shared/shared.service";
 import type {
   customerAccountingValidator,
+  customerBankAccountValidator,
   customerContactValidator,
   customerPaymentValidator,
   customerShippingValidator,
@@ -338,6 +340,64 @@ export async function deleteCustomer(
   customerId: string
 ) {
   return client.from("customer").delete().eq("id", customerId);
+}
+
+export async function deleteCustomerBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("customerBankAccount").delete().eq("id", id);
+}
+
+export async function getCustomerBankAccounts(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client
+    .from("customerBankAccount")
+    .select("*")
+    .eq("customerId", customerId)
+    .order("name");
+}
+
+export async function upsertCustomerBankAccount(
+  db: Kysely<KyselyDatabase>,
+  bankAccount:
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const { customerId, companyId } = bankAccount;
+
+  if ("createdBy" in bankAccount) {
+    return await db
+      .insertInto("customerBankAccount")
+      .values(bankAccount)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  }
+
+  const { id, ...update } = bankAccount;
+
+  // customerId and companyId are scoping columns, not editable fields. They are
+  // also re-asserted in the WHERE clause so a forged form value cannot move
+  // this row to another customer.
+  return await db
+    .updateTable("customerBankAccount")
+    .set({ ...update, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("customerId", "=", customerId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
 }
 
 export async function deleteCustomerContact(
@@ -1776,8 +1836,31 @@ export async function getSalesOrderInvoicesByIds(
 ) {
   return client
     .from("salesInvoices")
-    .select("id, invoiceTotal, balance, status, currencyCode")
+    .select("id, invoiceTotal, balance, status, currencyCode, exchangeRate")
     .in("id", invoiceIds);
+}
+
+export async function getSalesOrderInvoicePaymentsByIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  invoiceIds: string[]
+) {
+  return fetchAllFromTable<{
+    targetSalesInvoiceId: string | null;
+    appliedAmount: number;
+    payment: { status: string } | null;
+  }>(
+    client,
+    "invoiceSettlement",
+    "targetSalesInvoiceId, appliedAmount, payment:payment!invoiceSettlement_paymentId_fkey!inner(status)",
+    (query) =>
+      query
+        .eq("companyId", companyId)
+        .eq("payment.companyId", companyId)
+        .eq("payment.status", "Posted")
+        .in("targetSalesInvoiceId", invoiceIds)
+        .order("id")
+  );
 }
 
 export async function getSalesOrderLinesByItemId(
@@ -7081,7 +7164,7 @@ export async function getShippedTrackedEntitiesForCustomer(
       (entities.data ?? [])
         .map(
           (entity) =>
-            (entity.attributes as Record<string, unknown> | null)?.["Shipment"]
+            (entity.attributes as Record<string, unknown> | null)?.Shipment
         )
         .filter((value): value is string => typeof value === "string")
     )
@@ -7107,9 +7190,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 
   return {
     data: (entities.data ?? []).filter((entity) => {
-      const shipmentId = (
-        entity.attributes as Record<string, unknown> | null
-      )?.["Shipment"];
+      const shipmentId = (entity.attributes as Record<string, unknown> | null)
+        ?.Shipment;
       return (
         typeof shipmentId === "string" && customerShipmentIds.has(shipmentId)
       );
@@ -7712,4 +7794,42 @@ export async function setSalesReturnOrderLineDisposition(
   }
 
   return { data: { id: lineId }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for an opportunity (quote/sales order/RFQ/sales
+ * invoice) document. First step of the two-step upload flow: PUT the file bytes to
+ * the returned `signedUrl`, then call `documents_insertUploadedDocument` with the
+ * returned `path`, the document type as `sourceDocument`, and the quote/order id as
+ * `sourceDocumentId`. The storage folder is scoped by `opportunityId`, which is a
+ * different id from `sourceDocumentId`.
+ */
+export async function createOpportunityDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; opportunityId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "opportunity",
+    entityId: args.opportunityId,
+    name: args.name
+  });
+}
+
+/**
+ * Create a presigned upload URL for an opportunity LINE document. First step of the
+ * two-step upload flow: PUT the file bytes to the returned `signedUrl`, then call
+ * `documents_insertUploadedDocument` with the returned `path`, the line's document
+ * type as `sourceDocument`, and the line id as `sourceDocumentId`.
+ */
+export async function createOpportunityLineDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; lineId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "opportunity-line",
+    entityId: args.lineId,
+    name: args.name
+  });
 }

@@ -1,6 +1,7 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -54,7 +55,6 @@ import type { TrackedEntityAttributes } from "@carbon/utils";
 import {
   batchPlanBreakdown,
   convertDateStringToIsoString,
-  convertKbToString,
   formatDate,
   formatDurationMilliseconds,
   getItemReadableId,
@@ -226,6 +226,54 @@ function PickedBadge({
       <LuPackageCheck className="size-3" />
       {isFullyPicked ? <Trans>Picked</Trans> : `${picked}/${toPick}`}
     </Badge>
+  );
+}
+
+function PickedBreakdown({
+  materialItemId,
+  pickedByItem
+}: {
+  materialItemId: string | null | undefined;
+  pickedByItem?:
+    | {
+        itemId: string;
+        itemReadableId: string;
+        quantityPicked: number;
+        quantityToPick: number;
+      }[]
+    | null;
+}) {
+  const picks = pickedByItem ?? [];
+  if (!picks.some((p) => p.itemId !== materialItemId)) return null;
+  return (
+    <div className="flex flex-wrap items-center gap-1 text-xs text-blue-700 dark:text-blue-300">
+      <span>
+        <Trans>Picked as</Trans>
+      </span>
+      {picks.map((pick) => {
+        const isFullyPicked =
+          pick.quantityToPick > 0 && pick.quantityPicked >= pick.quantityToPick;
+        return (
+          <Badge
+            key={pick.itemId}
+            variant={
+              isFullyPicked
+                ? "green"
+                : pick.quantityPicked > 0
+                  ? "orange"
+                  : "secondary"
+            }
+            className="gap-1 shrink-0"
+          >
+            {isFullyPicked
+              ? pick.quantityPicked
+              : `${pick.quantityPicked}/${pick.quantityToPick}`}
+            {" × "}
+            {pick.itemReadableId}
+          </Badge>
+        );
+      })}
+    </div>
   );
 }
 
@@ -1360,6 +1408,21 @@ export const JobOperation = ({
                                               <span className="text-muted-foreground text-sm truncate max-w-full">
                                                 {material.description}
                                               </span>
+                                              <PickedBreakdown
+                                                materialItemId={material.itemId}
+                                                pickedByItem={
+                                                  (
+                                                    material as {
+                                                      pickedByItem?: {
+                                                        itemId: string;
+                                                        itemReadableId: string;
+                                                        quantityPicked: number;
+                                                        quantityToPick: number;
+                                                      }[];
+                                                    }
+                                                  ).pickedByItem
+                                                }
+                                              />
                                             </VStack>
                                             {material.requiresBatchTracking ? (
                                               <Badge variant="secondary">
@@ -1561,6 +1624,23 @@ export const JobOperation = ({
                                                     <span className="text-muted-foreground text-xs truncate max-w-full">
                                                       {kittedChild.description}
                                                     </span>
+                                                    <PickedBreakdown
+                                                      materialItemId={
+                                                        kittedChild.itemId
+                                                      }
+                                                      pickedByItem={
+                                                        (
+                                                          kittedChild as {
+                                                            pickedByItem?: {
+                                                              itemId: string;
+                                                              itemReadableId: string;
+                                                              quantityPicked: number;
+                                                              quantityToPick: number;
+                                                            }[];
+                                                          }
+                                                        ).pickedByItem
+                                                      }
+                                                    />
                                                   </VStack>
                                                   {kittedChild.requiresBatchTracking ? (
                                                     <Badge variant="secondary">

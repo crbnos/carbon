@@ -1,9 +1,12 @@
-import type { Database, Tables } from "@carbon/database";
+import type { Database, Json, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getContentType, getFileExtension } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
+import type { ConditionAst, Severity } from "@carbon/utils";
+import { datetime, getPurchaseOrderStatus } from "@carbon/utils";
 import type {
+  PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
 } from "@supabase/supabase-js";
@@ -12,7 +15,6 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   approvalDocumentType,
-  documentTypes,
   PriceBreak,
   SupplierPriceMap
 } from "./shared.models";
@@ -706,24 +708,22 @@ export async function getBase64ImageFromSupabase(
   client: SupabaseClient<Database>,
   path: string
 ) {
-  function arrayBufferToBase64(buffer: ArrayBuffer): string {
-    return Buffer.from(buffer).toString("base64");
-  }
+  // Legacy stored HEIC can't be decoded by consumers (PDF rendering) — serve
+  // the imgproxy JPEG rendition instead. Everything else passes through raw.
+  const extension = getFileExtension(path);
+  const heic = extension === "heic" || extension === "heif";
 
-  const { data, error } = await client.storage.from("private").download(path);
+  const { data, error } = await client.storage
+    .from("private")
+    .download(path, heic ? { transform: { quality: 90 } } : undefined);
   if (error) {
     return null;
   }
 
-  const arrayBuffer = await data.arrayBuffer();
-  const base64String = arrayBufferToBase64(arrayBuffer);
+  const base64String = Buffer.from(await data.arrayBuffer()).toString("base64");
 
-  // Determine the mime type based on file extension
-  const fileExtension = path.split(".").pop()?.toLowerCase();
-  const mimeType =
-    fileExtension === "jpg" || fileExtension === "jpeg"
-      ? "image/jpeg"
-      : "image/png";
+  const contentType = heic ? "image/jpeg" : getContentType(extension);
+  const mimeType = contentType.startsWith("image/") ? contentType : "image/png";
 
   return `data:${mimeType};base64,${base64String}`;
 }
@@ -776,52 +776,7 @@ export async function getLatestApprovalRequestForDocument(
   };
 }
 
-export function getDocumentType(
-  fileName: string
-): (typeof documentTypes)[number] {
-  const extension = fileName.split(".").pop()?.toLowerCase() ?? "";
-  if (["zip", "rar", "7z", "tar", "gz"].includes(extension)) {
-    return "Archive";
-  }
-
-  if (["pdf"].includes(extension)) {
-    return "PDF";
-  }
-
-  if (["doc", "docx", "txt", "rtf"].includes(extension)) {
-    return "Document";
-  }
-
-  if (["ppt", "pptx"].includes(extension)) {
-    return "Presentation";
-  }
-
-  if (["csv", "xls", "xlsx"].includes(extension)) {
-    return "Spreadsheet";
-  }
-
-  if (["txt"].includes(extension)) {
-    return "Text";
-  }
-
-  if (["png", "jpg", "jpeg", "gif", "avif"].includes(extension)) {
-    return "Image";
-  }
-
-  if (["mp4", "mov", "avi", "wmv", "flv", "mkv"].includes(extension)) {
-    return "Video";
-  }
-
-  if (["mp3", "wav", "wma", "aac", "ogg", "flac"].includes(extension)) {
-    return "Audio";
-  }
-
-  if (supportedModelTypes.includes(extension)) {
-    return "Model";
-  }
-
-  return "Other";
-}
+export { getDocumentType } from "@carbon/files";
 
 /**
  * The item's CAD model in the same shape the line views expose it, so it drops
@@ -1449,4 +1404,204 @@ export function resolveSupplierPrice(
     ? lookupPriceFromBreaks(priceBreaks, quantity, fallbackUnitPrice)
     : fallbackUnitPrice;
   return basePrice * exchangeRate;
+}
+
+// -----------------------------------------------------------------------------
+// Enforcement Rules (storage + sales families)
+// -----------------------------------------------------------------------------
+// Both rule families live in ONE `enforcementRule` table discriminated by
+// `family`, so the admin CRUD is written once here rather than duplicated in
+// `inventory.service.ts` and `sales.service.ts`. Callers pass their family
+// explicitly — there is no per-family wrapper to keep in sync, and adding a
+// third family costs nothing here.
+//
+// Cross-app queries (assignment loaders, evaluator fetches) live in
+// `@carbon/ee/rules`; this file is the ERP-only admin surface, because it
+// depends on ERP request-utils (GenericQueryFilters, sanitize).
+
+export type EnforcementRuleFamily =
+  Database["public"]["Enums"]["enforcementRuleFamily"];
+
+export type EnforcementRuleRow =
+  Database["public"]["Tables"]["enforcementRule"]["Row"];
+
+/** Item-scoping columns shared by both families (empty arrays = every item). */
+type RuleItemFilterFields = {
+  filteredItemTypes?: string[];
+  filteredItemGroupIds?: string[];
+  filteredItemMatchAll?: boolean;
+};
+
+/**
+ * Storage-family-only shape. The DB pins sales rows to `targetType: 'item'` /
+ * `appliesToAll: false` via the `enforcementRule_sales_shape` CHECK, so these
+ * stay optional here and simply go unset for sales.
+ */
+type RuleTargetFields = {
+  targetType?: Database["public"]["Enums"]["enforcementRuleTargetType"];
+  appliesToAll?: boolean;
+};
+
+type RuleSurfaces = Database["public"]["Enums"]["enforcementRuleSurface"][];
+
+export type EnforcementRuleInsert = RuleItemFilterFields &
+  RuleTargetFields & {
+    name: string;
+    description?: string | null;
+    message: string;
+    severity: Severity;
+    conditionAst: ConditionAst;
+    surfaces: RuleSurfaces;
+    active: boolean;
+    createdBy: string;
+    customFields?: Json;
+  };
+
+export type EnforcementRuleUpdate = RuleItemFilterFields &
+  RuleTargetFields & {
+    id: string;
+    name: string;
+    description?: string | null;
+    message: string;
+    severity: Severity;
+    conditionAst: ConditionAst;
+    surfaces: RuleSurfaces;
+    active: boolean;
+    updatedBy: string;
+    customFields?: Json;
+  };
+
+export async function getEnforcementRules(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+    targetType?:
+      | Database["public"]["Enums"]["enforcementRuleTargetType"]
+      | null;
+  }
+): Promise<PostgrestResponse<EnforcementRuleRow>> {
+  let query = client
+    .from("enforcementRule")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("family", family);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+  if (args?.targetType) {
+    query = query.eq("targetType", args.targetType);
+  }
+
+  // The `family` argument is a union rather than a literal, which is enough to
+  // drop PostgREST's inferred row type to `any`; state it once here so every
+  // caller gets a real row instead of re-annotating at each call site.
+  return setGenericQueryFilters(query, args ?? {}, [
+    { column: "name", ascending: true }
+  ]) as unknown as Promise<PostgrestResponse<EnforcementRuleRow>>;
+}
+
+export async function getEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  id: string,
+  companyId: string
+): Promise<PostgrestSingleResponse<EnforcementRuleRow>> {
+  return (
+    client
+      .from("enforcementRule")
+      .select("*")
+      .eq("id", id)
+      .eq("family", family)
+      // RLS scopes the user client already; the explicit predicate is
+      // defense-in-depth for service-role callers (these functions are
+      // MCP-exposed).
+      .eq("companyId", companyId)
+      // Same union-family `any` collapse as `getEnforcementRules` above.
+      .single() as unknown as Promise<
+      PostgrestSingleResponse<EnforcementRuleRow>
+    >
+  );
+}
+
+export async function upsertEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  companyId: string,
+  rule: EnforcementRuleInsert | EnforcementRuleUpdate
+) {
+  if ("createdBy" in rule) {
+    return client
+      .from("enforcementRule")
+      .insert({
+        ...rule,
+        companyId,
+        family,
+        conditionAst: rule.conditionAst as unknown as Json
+      })
+      .select("id")
+      .single();
+  }
+  return client
+    .from("enforcementRule")
+    .update({
+      ...sanitize(rule),
+      conditionAst: rule.conditionAst as unknown as Json,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", rule.id)
+    .eq("family", family)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function deleteEnforcementRule(
+  client: SupabaseClient<Database>,
+  family: EnforcementRuleFamily,
+  id: string,
+  companyId: string
+) {
+  return client
+    .from("enforcementRule")
+    .delete()
+    .eq("id", id)
+    .eq("family", family)
+    .eq("companyId", companyId);
+}
+
+/**
+ * Pin counts per rule id. Rule ids are globally unique, so counting by id needs
+ * no family predicate even though the item table is shared between families.
+ * Work-center pins only exist for the storage family; passing sales ids simply
+ * matches nothing there.
+ */
+export async function getEnforcementRuleAssignmentCounts(
+  client: SupabaseClient<Database>,
+  ruleIds: string[]
+) {
+  if (ruleIds.length === 0) return { data: {}, error: null };
+
+  const tables = [
+    "enforcementRuleItemAssignment",
+    "enforcementRuleWorkCenterAssignment"
+  ] as const;
+
+  const results = await Promise.all(
+    tables.map((table) =>
+      client.from(table).select("ruleId").in("ruleId", ruleIds)
+    )
+  );
+
+  const counts: Record<string, number> = {};
+  for (const { data, error } of results) {
+    if (error) return { data: {}, error };
+    for (const row of (data ?? []) as Array<{ ruleId: string }>) {
+      counts[row.ruleId] = (counts[row.ruleId] ?? 0) + 1;
+    }
+  }
+
+  return { data: counts, error: null };
 }

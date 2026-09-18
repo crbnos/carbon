@@ -1,3 +1,13 @@
+import {
+  bicMatchesCountry,
+  conditionAstFormField,
+  getBankFieldConfig,
+  getFieldDef,
+  isFieldAvailableOnSalesRuleSurfaces,
+  isValidSwiftBic,
+  RULE_SEVERITIES,
+  SALES_RULE_SURFACES
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -9,6 +19,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
 } from "../shared";
@@ -100,6 +111,109 @@ export const customerTaxValidator = z
       path: ["taxExemptionReason"]
     }
   );
+
+export const customerBankAccountValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerId: z.string().min(1, { message: "Customer is required" }),
+    name: zfd.text(z.string().min(1, { message: "Name is required" })),
+    accountHolderName: zfd.text(z.string().optional()),
+    bankName: zfd.text(z.string().min(1, { message: "Bank name is required" })),
+    // Correspondent banks route international wires on this.
+    bankAddress: zfd.text(
+      z.string().min(1, { message: "Bank address is required" })
+    ),
+    // Required because it SELECTS the validation rules below — left blank, the
+    // permissive default applies and nothing is really checked.
+    countryCode: zfd.text(
+      z.string().min(1, { message: "Country is required" })
+    ),
+    currencyCode: zfd.text(z.string().optional()),
+    // Generic by design: `accountNumber` holds an IBAN in SEPA and a plain
+    // account number elsewhere; `bankCode` holds an ABA / sort code / BSB /
+    // IFSC / transit. countryCode decides which validator applies, so a new
+    // country is an entry in getBankFieldConfig, not a migration.
+    accountNumber: zfd.text(z.string().optional()),
+    bankCode: zfd.text(z.string().optional()),
+    swiftBic: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    const config = getBankFieldConfig(data.countryCode);
+
+    if (!data.accountNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "An account number is required",
+        path: ["accountNumber"]
+      });
+    } else if (
+      config.validateAccount &&
+      !config.validateAccount(data.accountNumber)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid account number for the selected country",
+        path: ["accountNumber"]
+      });
+    }
+
+    if (config.bankCodeLabel !== null) {
+      // A country that defines a routing identifier always needs it — there is
+      // no scheme where it is optional.
+      if (!data.bankCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A bank code is required for the selected country",
+          path: ["bankCode"]
+        });
+      } else if (
+        config.validateBankCode &&
+        !config.validateBankCode(data.bankCode)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid bank code for the selected country",
+          path: ["bankCode"]
+        });
+      }
+    }
+
+    // Cross-border payments will not route without a BIC, so where the country
+    // config demands one, absence is an error rather than a blank field.
+    if (!data.swiftBic) {
+      if (config.requiresSwift) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A SWIFT/BIC code is required for this country",
+          path: ["swiftBic"]
+        });
+      }
+    } else if (!isValidSwiftBic(data.swiftBic)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid SWIFT/BIC code",
+        path: ["swiftBic"]
+      });
+    } else if (!bicMatchesCountry(data.swiftBic, data.countryCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "This SWIFT/BIC belongs to a different country",
+        path: ["swiftBic"]
+      });
+    }
+  })
+  // Countries with no routing identifier (SEPA: the IBAN carries it) unmount the
+  // input, so nothing is submitted. Left undefined, an update would skip the
+  // column entirely and strand the previous country's code on the row — so it is
+  // explicitly nulled rather than merely absent.
+  .transform((data) => ({
+    ...data,
+    bankCode:
+      getBankFieldConfig(data.countryCode).bankCodeLabel === null
+        ? null
+        : (data.bankCode ?? null)
+  }));
 
 export const customerPaymentValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
@@ -288,7 +402,7 @@ export const quoteValidator = z.object({
   customerReference: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   status: z.enum(quoteStatusType).optional(),
-  notes: z.any().optional(),
+  notes: optionalTiptapDoc,
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
@@ -980,6 +1094,49 @@ export function isQuoteLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
 
+// -----------------------------------------------------------------------------
+// Sales Rules — predicate rules evaluated when an item is added to a sales
+// document (quote line / sales order line). Distinct from storage rules
+// (`~/modules/inventory`, warehouse/MES surfaces) and the configurator's
+// `configurationRule`. The AST schema and engine are shared via @carbon/utils.
+// -----------------------------------------------------------------------------
+export const salesRuleSeverities = RULE_SEVERITIES;
+
+export const salesRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(salesRuleSeverities),
+    // Sales rules are always item-target and broadcast via the filteredItem*
+    // columns (empty = all items), so there is no targetType/appliesToAll.
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(SALES_RULE_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });
 // ─── Sales Return Orders (RMAs) ───
 
 export const salesReturnOrderStatusType = [

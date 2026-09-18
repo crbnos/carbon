@@ -392,6 +392,7 @@ export class QboProvider extends BaseProvider {
       redirectUri: config.redirectUri,
       tokenUrl: QBO_TOKEN_URL,
       onTokenRefresh: config.onTokenRefresh,
+      beforeRefresh: config.beforeRefresh,
       getAuthUrl(scopes: string[], redirectURL: string): string {
         const params = new URLSearchParams({
           response_type: "code",
