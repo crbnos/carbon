@@ -16289,7 +16289,6 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe уже имеет клиента с этим адресом электронной почты"
 msgstr "В Stripe уже есть покупатель с этим адресом электронной почты"
 
 msgid "Stripe Due Date"
@@ -17754,7 +17753,6 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "Приглашение присоединиться к {0} истекло. Вы можете запросить отправку нового приглашения на вашу электронную почту."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "У этого счета нет полезной даты выполнения — выберите один для Stripe."
 msgstr "Эта Счет-фактура не имеет пригодной даты Срока выполнения — выберите одну для Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

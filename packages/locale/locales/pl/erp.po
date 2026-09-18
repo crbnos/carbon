@@ -16292,7 +16292,6 @@ msgid "Stripe already has a customer with this email"
 msgstr "Stripe już ma klienta z tym adresem e-mail"
 
 msgid "Stripe Due Date"
-msgstr "Termin płatności Stripe"
 msgstr "Pasek daty terminu"
 
 msgid "Stripe emails the invoice to the customer, so an address is required. This will also be saved to the contact in Carbon."
@@ -17754,7 +17753,6 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "To zaproszenie do dołączenia do {0} wygasło. Możesz poprosić o wysłanie nowego zaproszenia na Twoją wiadomość e-mail."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Ta faktura nie ma użytecznego terminu płatności — wybierz jeden dla Stripe."
 msgstr "Ta faktura nie ma użytecznego terminu — wybierz jeden dla Stripe."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."

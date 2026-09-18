@@ -2,7 +2,7 @@
 #
 # One domain per line (case-insensitive). Blank lines and lines starting with
 # "#" are ignored. A new-user signup whose email domain matches an entry here is
-# refused in the Cloud edition only (see self-signup-blocklist.server.ts).
+# refused in the Cloud edition only (see self-signup.server.ts).
 #
 # This list is edited by hand and shipped with the app — add or remove a domain
 # and deploy. It holds consumer/free webmail and disposable/temp-mail providers;

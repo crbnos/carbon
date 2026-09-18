@@ -5,6 +5,10 @@ import {
   signInWithEmail
 } from "@carbon/auth/auth.server";
 import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   flash,
   getAuthSession,
   setAuthSession
@@ -36,10 +40,6 @@ import {
 } from "react-router";
 import { z } from "zod";
 
-import {
-  isSelfSignupBlockedForEmail,
-  SELF_SIGNUP_BLOCKED_MESSAGE
-} from "~/modules/shared/self-signup-blocklist.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
