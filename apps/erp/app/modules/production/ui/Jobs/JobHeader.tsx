@@ -649,11 +649,16 @@ export function JobStartModal({
       existingPurchaseOrderLines.data?.map((pol) => pol.jobOperationId) ?? []
     );
 
-    // Filter out operations that already have purchase order lines
-    const operationsNeedingPurchaseOrders = outsideOperations.filter(
-      (op) =>
-        !existingJobOperationIds.has(op.id) && op.operationSupplierProcessId
+    // Outside operations that still need handling (no existing purchase order line)
+    const outsideOperationsWithoutPurchaseOrders = outsideOperations.filter(
+      (op) => !existingJobOperationIds.has(op.id)
     );
+
+    // Of those, the ones that have a supplier process and can create a purchase order
+    const operationsNeedingPurchaseOrders =
+      outsideOperationsWithoutPurchaseOrders.filter(
+        (op) => op.operationSupplierProcessId
+      );
 
     const uniqueOutsideProcessIds = operationsNeedingPurchaseOrders.map(
       (op) => op.operationSupplierProcessId!
@@ -757,13 +762,16 @@ export function JobStartModal({
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
 
-      // Only show purchase order UI if there are outside operations that need purchase orders
-      setHasOutsideOperations(operationsNeedingPurchaseOrders.length > 0);
+      // Show the release UI whenever there are outside operations still needing handling,
+      // whether or not they have a supplier yet
+      setHasOutsideOperations(
+        outsideOperationsWithoutPurchaseOrders.length > 0
+      );
 
-      // Check if all outside operations that need purchase orders have suppliers
+      // Check every outside operation that still needs handling has a supplier
       setEachOutsideOperationHasASupplier(
-        operationsNeedingPurchaseOrders.length === 0 ||
-          operationsNeedingPurchaseOrders.every(
+        outsideOperationsWithoutPurchaseOrders.length === 0 ||
+          outsideOperationsWithoutPurchaseOrders.every(
             (op) => op.operationSupplierProcessId !== null
           )
       );
