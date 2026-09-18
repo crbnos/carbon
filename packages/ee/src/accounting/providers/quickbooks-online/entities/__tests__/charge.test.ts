@@ -81,7 +81,9 @@ describe("mapCardTransactionToQboPurchase", () => {
       Line: [
         {
           Amount: 431.68,
-          Description: "Airfare",
+          // Merchant identity leads the line description now that all card spend
+          // shares one catch-all vendor (the vendor no longer carries it).
+          Description: "Delta Air Lines",
           DetailType: "AccountBasedExpenseLineDetail",
           AccountBasedExpenseLineDetail: {
             AccountRef: { value: "61", name: "Travel" }
@@ -153,9 +155,27 @@ describe("mapCardTransactionToQboPurchase", () => {
     expect(payload.DepartmentRef).toBeUndefined();
   });
 
-  it("falls back to the card memo when a line has no description", () => {
+  it("uses the merchant name on the line over the line label", () => {
     const payload = mapCardTransactionToQboPurchase({
-      charge: charge(),
+      charge: charge({ merchantName: "Acme Fuel" }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.Line[0]?.Description).toBe("Acme Fuel");
+  });
+
+  it("falls back to the line label when there is no merchant name", () => {
+    const payload = mapCardTransactionToQboPurchase({
+      charge: charge({ merchantName: null }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.Line[0]?.Description).toBe("Airfare");
+  });
+
+  it("falls back to the card memo when there is no merchant name or line description", () => {
+    const payload = mapCardTransactionToQboPurchase({
+      charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
     });

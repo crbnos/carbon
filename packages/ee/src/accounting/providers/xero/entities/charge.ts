@@ -209,7 +209,11 @@ export function mapCardTransactionToXeroBankTransaction(args: {
   const lineItems: Xero.BankTransactionLineItem[] = transactionLines.map(
     (line) => {
       const tracking = buildXeroLineTracking(line, args.dimensions);
-      const description = line.description ?? charge.memo ?? undefined;
+      // Merchant identity rides here on the charge line: card spend now shares
+      // one catch-all vendor, so without this the pushed charge would lose which
+      // merchant it was at (the vendor no longer carries it).
+      const description =
+        charge.merchantName ?? line.description ?? charge.memo ?? undefined;
       return {
         ...(description ? { Description: description } : {}),
         Quantity: 1,

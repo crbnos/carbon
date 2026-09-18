@@ -70,8 +70,10 @@ describe("mapCardTransactionToRilletCharge", () => {
       items: [
         {
           account_code: "6100",
+          // Merchant identity leads the line description now that all card spend
+          // shares one catch-all vendor (the vendor no longer carries it).
           amount: { amount: "431.68", currency: "USD" },
-          description: "Airfare"
+          description: "Delta Air Lines"
         }
       ],
       charge_date: "2026-09-07",
@@ -113,9 +115,27 @@ describe("mapCardTransactionToRilletCharge", () => {
     expect(payload.items[0]?.fields).toBeUndefined();
   });
 
-  it("falls back to the card memo when a line has no description", () => {
+  it("uses the merchant name on the line over the line label", () => {
     const payload = mapCardTransactionToRilletCharge({
-      charge: charge(),
+      charge: charge({ merchantName: "Acme Fuel" }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.items[0]?.description).toBe("Acme Fuel");
+  });
+
+  it("falls back to the line label when there is no merchant name", () => {
+    const payload = mapCardTransactionToRilletCharge({
+      charge: charge({ merchantName: null }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.items[0]?.description).toBe("Airfare");
+  });
+
+  it("falls back to the card memo when there is no merchant name or line description", () => {
+    const payload = mapCardTransactionToRilletCharge({
+      charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
     });

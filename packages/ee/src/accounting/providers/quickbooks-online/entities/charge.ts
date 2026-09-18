@@ -200,7 +200,11 @@ export function mapCardTransactionToQboPurchase(args: {
         }
       }
     }
-    const description = line.description ?? charge.memo ?? undefined;
+    // Merchant identity rides here on the charge line: card spend now shares one
+    // catch-all vendor, so without this the pushed charge would lose which
+    // merchant it was at (the vendor no longer carries it).
+    const description =
+      charge.merchantName ?? line.description ?? charge.memo ?? undefined;
     return {
       // Already rounded at the document boundary by toTransactionCurrencyLines;
       // a refund flips the credit-signed line to its positive magnitude

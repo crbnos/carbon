@@ -106,7 +106,9 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
       CurrencyRate: undefined,
       LineItems: [
         {
-          Description: "Airfare",
+          // Merchant identity leads the line description now that all card spend
+          // shares one catch-all vendor (the vendor no longer carries it).
+          Description: "Delta Air Lines",
           Quantity: 1,
           UnitAmount: 431.68,
           AccountCode: "6100",
@@ -129,7 +131,8 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
     expect(payload.BankAccount).toEqual({ Code: "2100" });
     expect(payload.LineItems).toEqual([
       {
-        Description: "Airfare",
+        // Merchant identity leads the line description (catch-all vendor).
+        Description: "Delta Air Lines",
         Quantity: 1,
         UnitAmount: 431.68,
         AccountCode: "6100",
@@ -173,9 +176,27 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
     expect(payload.LineItems[0]?.Tracking).toBeUndefined();
   });
 
-  it("falls back to the card memo when a line has no description", () => {
+  it("uses the merchant name on the line over the line label", () => {
     const payload = mapCardTransactionToXeroBankTransaction({
-      charge: charge(),
+      charge: charge({ merchantName: "Acme Fuel" }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.LineItems[0]?.Description).toBe("Acme Fuel");
+  });
+
+  it("falls back to the line label when there is no merchant name", () => {
+    const payload = mapCardTransactionToXeroBankTransaction({
+      charge: charge({ merchantName: null }),
+      costing: costing(),
+      ...base
+    });
+    expect(payload.LineItems[0]?.Description).toBe("Airfare");
+  });
+
+  it("falls back to the card memo when there is no merchant name or line description", () => {
+    const payload = mapCardTransactionToXeroBankTransaction({
+      charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
     });

@@ -159,7 +159,11 @@ export function mapCardTransactionToRilletCharge(args: {
         fieldRefs.push({ field_id: fieldId, field_value_id: fieldValueId });
       }
     }
-    const description = line.description ?? charge.memo ?? undefined;
+    // Merchant identity rides here on the charge line: card spend now shares one
+    // catch-all vendor, so without this the pushed charge would lose which
+    // merchant it was at (the vendor no longer carries it).
+    const description =
+      charge.merchantName ?? line.description ?? charge.memo ?? undefined;
     return {
       // Presence asserted above; the non-null assertion is the mapped code.
       account_code: args.accountCodesById.get(line.accountId!)!,
