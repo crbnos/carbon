@@ -213,7 +213,11 @@ when `parentIsSerial`) Serial Numbers.
 
 `useOperation` subscribes on topic `job-operations:${operation.id}` to postgres changes
 on `job`, `productionEvent` (filtered by `jobOperationId`), and `jobOperation`. Event
-inserts/updates/deletes patch local state; job/operation updates `revalidate()`. A
+inserts/updates/deletes patch local state; a job update revalidates through
+`useRealtimeRevalidator` (`~/hooks`), which skips while any fetcher is
+submitting — a submission's own writes echo back mid-action, and a revalidation
+started then makes React Router drop the action's redirect. `AssemblyView`'s
+live sync uses the same hook. A
 deleted operation toasts and redirects to `path.to.operations`.
 
 ## Key tables (newest migrations)
