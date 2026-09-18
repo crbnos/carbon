@@ -79,7 +79,7 @@ export const ButtonWithTooltip = forwardRef<
 >(({ tooltip, children, ...props }, ref) => {
   return (
     <Tooltip>
-      <TooltipTrigger>
+      <TooltipTrigger asChild>
         <button ref={ref} {...props}>
           {children}
         </button>
