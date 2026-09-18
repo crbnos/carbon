@@ -16,11 +16,7 @@ import {
   getQuote,
   isQuoteLocked,
   quoteLineValidator,
-  recalculateQuoteLinePrices,
-  resolvePurchaseToOrderPrices,
-  resolveQuoteLinePrices,
-  upsertQuoteLine,
-  upsertQuoteLineMethod
+  startQuoteLine
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { setCustomFields } from "~/utils/form";
@@ -108,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { error: null, data: null, violations: deduped, ruleNames };
   }
 
-  const createQuotationLine = await upsertQuoteLine(serviceRole, {
+  const result = await startQuoteLine(serviceRole, {
     ...d,
     companyId,
     configuration,
@@ -116,31 +112,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
-  if (createQuotationLine.error) {
+  if (!result.data) {
     logger.error("Failed to create quote line", {
-      error: createQuotationLine.error
+      error: result.error
     });
     throw redirect(
       path.to.quote(quoteId),
-      await flash(
-        request,
-        error(createQuotationLine.error, "Failed to create quote line.")
-      )
+      await flash(request, error(result.error, "Failed to create quote line."))
     );
   }
 
-  const quoteLineId = createQuotationLine.data.id;
-
-  // Acknowledged proceed: persist override evidence now that the line exists
-  // so documentLineId captures the created line (and the notification only
-  // fires for a line that actually landed).
+  // Record rule acknowledgment only if there were violations (which passed as acknowledged).
   if (deduped.length > 0) {
     await recordSalesRuleOutcome(serviceRole, {
       companyId,
       userId,
       documentType: "quote",
       documentId: quoteId,
-      documentLineId: quoteLineId,
+      documentLineId: result.data.quoteLineId,
       itemId: d.itemId ?? null,
       outcome: "acknowledged",
       violations: deduped,
@@ -148,86 +137,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  if (d.methodType === "Purchase to Order") {
-    const quantities = d.quantity ?? [1];
-    const priceResult = await resolvePurchaseToOrderPrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    if (priceResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(priceResult.error, "Failed to resolve Purchase to Order prices")
+  if (result.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, result.data.quoteLineId),
+      await flash(
+        request,
+        error(
+          result.error,
+          "Quote line created, but setup encountered an issue."
         )
-      );
-    }
+      )
+    );
   }
 
-  if (d.methodType === "Pull from Inventory") {
-    const quantities = d.quantity ?? [1];
-    const priceResult = await resolveQuoteLinePrices(
-      serviceRole,
-      companyId,
-      quoteId,
-      quoteLineId,
-      quantities,
-      userId
-    );
-    if (priceResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(
-            priceResult.error,
-            "Failed to resolve Pull from Inventory prices"
-          )
-        )
-      );
-    }
-  }
-
-  if (d.methodType === "Make to Order") {
-    const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
-      quoteId,
-      quoteLineId,
-      itemId: d.itemId,
-      configuration,
-      companyId,
-      userId
-    });
-
-    if (upsertMethod.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(upsertMethod.error, "Failed to create quote line method.")
-        )
-      );
-    }
-    const recalcResult = await recalculateQuoteLinePrices(
-      serviceRole,
-      quoteId,
-      quoteLineId,
-      userId
-    );
-    if (recalcResult?.error) {
-      throw redirect(
-        path.to.quoteLine(quoteId, quoteLineId),
-        await flash(
-          request,
-          error(recalcResult.error, "Failed to recalculate quote line prices")
-        )
-      );
-    }
-  }
-
-  throw redirect(path.to.quoteLine(quoteId, quoteLineId));
+  throw redirect(path.to.quoteLine(quoteId, result.data.quoteLineId));
 }

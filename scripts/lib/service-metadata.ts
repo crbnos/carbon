@@ -105,6 +105,9 @@ const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   // authenticated creator for every replacement row.
   invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
   invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
+  // startQuoteLine creates a quote line with side effects (method setup, pricing).
+  // It requires the authenticated creator for the line and all derived rows.
+  sales_startQuoteLine: ["companyId", "createdBy"],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`
