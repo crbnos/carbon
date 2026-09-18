@@ -5,6 +5,8 @@ import {
   type CompanyBackup,
   type ForeignKey,
   isUserScopedIdentityTable,
+  READABLE_ID_TABLES,
+  STORAGE_PATH_COLUMNS,
   selectWipeableTables,
   type TableInfo
 } from "./company-backup";
@@ -740,5 +742,115 @@ describe("mapCollidingRows", () => {
       [{ id: "tgt", name: null }]
     );
     expect(skippedSourceIds.size).toBe(0);
+  });
+});
+
+// ── Cross-company restore: readable ids and storage paths ────────────────────
+// Both guards pin a hardcoded list that a future schema change can silently
+// invalidate. Each list went stale exactly once already and produced a restore
+// that looked successful and was not: the Items pages rendered empty
+// (readable ids rewritten) and assemblies would not load (path columns left
+// pointing at the source company).
+describe("cross-company restore invariants", () => {
+  // Composite-PK tables backed by a global UNIQUE (id). Their ids MUST be
+  // remapped or a cross-company restore collides with the source company's
+  // still-live rows. Verified against pg_index on 2026-09-18.
+  const GLOBAL_UNIQUE_ID_TABLES = [
+    "balloon",
+    "changeOrderRequiredAction",
+    "demandProjection",
+    "inspectionDocument",
+    "inspectionFeature"
+  ];
+
+  // Every path column on `modelUpload`, verified against the live schema on
+  // 2026-09-18. Adding one to the table means adding it here AND to
+  // STORAGE_PATH_COLUMNS.
+  const MODEL_UPLOAD_PATH_COLUMNS = [
+    "modelPath",
+    "thumbnailPath",
+    "glbPath",
+    "graphPath"
+  ];
+
+  it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const workflow = table("workflow", [col("id"), col("companyId")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part, workflow], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }],
+      workflow: [{ id: "wf_1", companyId: "src-co" }]
+    });
+    expect(idMaps.has("part")).toBe(false);
+    expect(idMaps.get("workflow")?.get("wf_1")).toBeTypeOf("string");
+    expect(idMaps.get("workflow")?.get("wf_1")).not.toBe("wf_1");
+  });
+
+  it("preserves a part number verbatim through a cross-company restamp", () => {
+    // The `parts` view inner-joins part.id = item."readableId"; a rewritten id
+    // matches nothing and the Parts page renders empty against a full table.
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }]
+    });
+    const transforms = buildRowTransforms(part, part.columns, {
+      remap: true,
+      companyId: "target-co",
+      userId: "importer",
+      targetGroupId: "target-grp",
+      sourceCompanyId: "src-co",
+      idMaps,
+      idRewrite: new Map<string, string>()
+    });
+    const row: Record<string, unknown> = {
+      id: "ADCS-001",
+      companyId: "src-co",
+      name: "Widget"
+    };
+    const out: Record<string, unknown> = {};
+    part.columns.forEach((c, i) => {
+      out[c.name] = transforms[i]!(row[c.name]);
+    });
+    expect(out).toEqual({
+      id: "ADCS-001",
+      companyId: "target-co",
+      name: "Widget"
+    });
+  });
+
+  // One row per `itemType` enum member, verified against the live enum on
+  // 2026-09-18. `fixture` is unpopulated in every local database, so a
+  // data-driven sweep does not see it — this list is what catches it.
+  const ITEM_CHILD_TABLES = [
+    "part",
+    "material",
+    "tool",
+    "service",
+    "consumable",
+    "fixture"
+  ];
+
+  it("exempts the child table of every item type", () => {
+    const missing = ITEM_CHILD_TABLES.filter((t) => !READABLE_ID_TABLES.has(t));
+    expect(missing).toEqual([]);
+  });
+
+  it("never exempts a table that needs a fresh id to avoid a unique collision", () => {
+    const overlap = GLOBAL_UNIQUE_ID_TABLES.filter((t) =>
+      READABLE_ID_TABLES.has(t)
+    );
+    expect(overlap).toEqual([]);
+  });
+
+  it("covers every modelUpload artifact column in STORAGE_PATH_COLUMNS", () => {
+    const missing = MODEL_UPLOAD_PATH_COLUMNS.filter(
+      (c) => !STORAGE_PATH_COLUMNS.has(c)
+    );
+    expect(missing).toEqual([]);
   });
 });
