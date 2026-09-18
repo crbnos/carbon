@@ -1863,9 +1863,9 @@ serve(async (req: Request) => {
           return jsonResponse({ success: true, created: false });
         }
 
-        // An Available lot must carry a number. The modal enforces this; the
-        // check here is the backstop for direct calls. A resume passes because
-        // the prior attempt already wrote the entity's readableId.
+        // An Available lot must carry a number. Batch creation plans it (the
+        // entity's readableId, or the merged lot passed as readableId); this is
+        // the backstop for direct calls and for batches planned before that.
         if (!readableId && !entity.data.readableId) {
           throw new Error(
             `Operation ${jobOperationId} produces a batch-tracked item — its batch number is required`

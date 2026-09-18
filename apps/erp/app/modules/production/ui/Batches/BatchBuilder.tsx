@@ -71,6 +71,13 @@ import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
 import {
+  BatchOutputLots,
+  initialOutputLots,
+  type OutputLotsState,
+  outputLotsPayload,
+  outputLotsProblem
+} from "./BatchOutputLots";
+import {
   type BatchAddTarget,
   batchPlanBreakdown,
   candidateValueSets,
@@ -325,6 +332,8 @@ export function BatchBuilder({
   const [dueWindow, setDueWindow] = useState<number | null>(null);
   const [workCenterId, setWorkCenterId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [outputLots, setOutputLots] =
+    useState<OutputLotsState>(initialOutputLots);
   const view: BuilderView = stored.view ?? "table";
 
   // Selection is held here (not via the Table's index-keyed rowSelection, which
@@ -731,6 +740,13 @@ export function BatchBuilder({
       fd.set("locationId", locationId);
       if (workCenterId) fd.set("workCenterId", workCenterId);
       if (notes.trim()) fd.set("notes", notes.trim());
+      const lots = outputLotsPayload(selected, outputLots);
+      if (lots.mergeOutput) {
+        fd.set("mergeOutput", "on");
+        fd.set("outputLotNumber", lots.outputLotNumber ?? "");
+      } else if (lots.lotNumbers?.length) {
+        fd.set("lotNumbers", JSON.stringify(lots.lotNumbers));
+      }
       // Create & Release: the create validator's zfd.checkbox reads "on" and
       // the edge fn inserts the batch already Active (on the floor).
       if (opts?.release) fd.set("release", "on");
@@ -743,6 +759,8 @@ export function BatchBuilder({
   };
 
   const isSubmitting = submitFetcher.state !== "idle";
+  // Output lots are planned here; a batch never reaches the floor without them.
+  const lotPlanIncomplete = outputLotsProblem(selected, outputLots) !== null;
   const isLoading = candidatesFetcher.state !== "idle";
 
   const locationOptions = useMemo(
@@ -913,6 +931,8 @@ export function BatchBuilder({
               }
               notes={notes}
               onNotesChange={setNotes}
+              outputLots={outputLots}
+              onOutputLotsChange={setOutputLots}
             />
           }
         />
@@ -939,7 +959,9 @@ export function BatchBuilder({
               // Released batch that lacks it.
               <Button
                 variant="secondary"
-                isDisabled={selected.length === 0 || isSubmitting}
+                isDisabled={
+                  selected.length === 0 || isSubmitting || lotPlanIncomplete
+                }
                 onClick={() => submit(undefined, { release: true })}
               >
                 {t`Create & Release`}
@@ -948,7 +970,11 @@ export function BatchBuilder({
             <Button
               leftIcon={<LuLayers />}
               isLoading={isSubmitting}
-              isDisabled={selected.length === 0 || isSubmitting}
+              isDisabled={
+                selected.length === 0 ||
+                isSubmitting ||
+                (!isAddMode && lotPlanIncomplete)
+              }
               onClick={() => submit()}
             >
               {isAddMode
@@ -2188,7 +2214,9 @@ function ReviewPanel({
   batchCapacity,
   minimumBatchQuantity,
   notes,
-  onNotesChange
+  onNotesChange,
+  outputLots,
+  onOutputLotsChange
 }: {
   isAddMode: boolean;
   existingMembers: BatchBuilderBatch["members"];
@@ -2211,6 +2239,8 @@ function ReviewPanel({
   minimumBatchQuantity: number | null;
   notes: string;
   onNotesChange: (v: string) => void;
+  outputLots: OutputLotsState;
+  onOutputLotsChange: (next: OutputLotsState) => void;
 }) {
   const { t } = useLingui();
 
@@ -2368,6 +2398,14 @@ function ReviewPanel({
             placeholder={t`Notes (optional)`}
           />
         </VStack>
+      )}
+
+      {!isAddMode && (
+        <BatchOutputLots
+          selected={selected}
+          value={outputLots}
+          onChange={onOutputLotsChange}
+        />
       )}
 
       <div className="flex-1 min-h-0 w-full overflow-y-auto">

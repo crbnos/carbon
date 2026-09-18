@@ -6163,6 +6163,9 @@ export async function createJobOperationBatch(
     // Create & Release: insert the batch already 'Active' (on the floor);
     // omitted/false creates it 'Planned'.
     release?: boolean;
+    mergeOutput?: boolean;
+    outputLotNumber?: string | null;
+    lotNumbers?: { jobOperationId: string; lotNumber: string }[];
     companyId: string;
     userId: string;
   }
