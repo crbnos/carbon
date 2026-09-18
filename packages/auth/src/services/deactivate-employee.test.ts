@@ -28,6 +28,7 @@ vi.mock("../config/env", () => ({
   SESSION_MAX_AGE: 60 * 60 * 24 * 7,
   SESSION_SECRET: "test-session-secret",
   SUPABASE_URL: "http://localhost:54321",
+  SUPABASE_INTERNAL_URL: "http://localhost:54321",
   SUPABASE_ANON_KEY: "test-anon-key",
   SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key",
   SUPABASE_JWT_SECRET: "test-jwt-secret"
