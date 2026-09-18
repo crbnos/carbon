@@ -153,7 +153,65 @@ export async function action({ request, params }: ActionFunctionArgs) {
         >
       );
       if (operationSupplierChoices.length > 0) {
-        await Promise.all(
+        // Both ids come from the form and drive a service-role (RLS-bypassing)
+        // write that purchaseOrderFromJob later consumes, so validate them before
+        // persisting: the operation must belong to THIS job, and the chosen
+        // supplier process must belong to that operation's own process. Otherwise
+        // a crafted submit could retarget another job or create a PO for an
+        // unrelated supplier.
+        const operationIds = operationSupplierChoices.map(
+          ([operationId]) => operationId
+        );
+        const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
+
+        const [
+          { data: jobOperations, error: jobOperationsError },
+          { data: supplierProcesses, error: supplierProcessesError }
+        ] = await Promise.all([
+          serviceRole
+            .from("jobOperation")
+            .select("id, processId")
+            .eq("jobId", id)
+            .eq("companyId", companyId)
+            .in("id", operationIds),
+          serviceRole
+            .from("supplierProcess")
+            .select("id, processId")
+            .eq("companyId", companyId)
+            .in("id", supplierProcessIds)
+        ]);
+        if (jobOperationsError) throw new Error(jobOperationsError.message);
+        if (supplierProcessesError)
+          throw new Error(supplierProcessesError.message);
+
+        const operationProcessById = new Map(
+          (jobOperations ?? []).map((op) => [op.id, op.processId])
+        );
+        const supplierProcessProcessById = new Map(
+          (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
+        );
+
+        for (const [
+          operationId,
+          supplierProcessId
+        ] of operationSupplierChoices) {
+          const operationProcessId = operationProcessById.get(operationId);
+          if (!operationProcessId) {
+            throw new Error(
+              `Operation ${operationId} does not belong to this job`
+            );
+          }
+          if (
+            supplierProcessProcessById.get(supplierProcessId) !==
+            operationProcessId
+          ) {
+            throw new Error(
+              "Selected supplier does not belong to the operation's process"
+            );
+          }
+        }
+
+        const updateResults = await Promise.all(
           operationSupplierChoices.map(([operationId, supplierProcessId]) =>
             serviceRole
               .from("jobOperation")
@@ -165,6 +223,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
               .eq("companyId", companyId)
           )
         );
+        const failedUpdate = updateResults.find((result) => result.error);
+        if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
       }
 
       // Forecast-first scheduling regenerates the whole location the job is in.

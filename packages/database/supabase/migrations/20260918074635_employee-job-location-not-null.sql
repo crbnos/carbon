@@ -14,4 +14,23 @@ FROM (
 WHERE ej."locationId" IS NULL
   AND ej."companyId" = first_location."companyId";
 
+-- Any row still NULL belongs to a company with no location at all. Every company
+-- is created with one, but all of them can be deleted (there is no last-location
+-- guard), so there is nothing to backfill from. Fail with an actionable message
+-- naming the companies rather than a bare NOT NULL violation — the fix is to give
+-- each company a location (or remove the orphaned employeeJob rows) and re-run.
+DO $$
+DECLARE
+  orphan_companies text;
+BEGIN
+  SELECT string_agg(DISTINCT "companyId", ', ')
+  INTO orphan_companies
+  FROM "employeeJob"
+  WHERE "locationId" IS NULL;
+
+  IF orphan_companies IS NOT NULL THEN
+    RAISE EXCEPTION 'Cannot set employeeJob.locationId NOT NULL: companies with employeeJob rows but no location: %', orphan_companies;
+  END IF;
+END $$;
+
 ALTER TABLE "employeeJob" ALTER COLUMN "locationId" SET NOT NULL;

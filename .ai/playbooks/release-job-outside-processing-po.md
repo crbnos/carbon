@@ -45,5 +45,7 @@ Route: /x/job/$jobId/details (also the per-job Release button on
   one supplier. Fixed by resolving effective supplier = op's own
   `operationSupplierProcessId` ?? the process's sole `supplierProcess`, in both
   `JobHeader.tsx` (modal) and `create/index.ts` `purchaseOrderFromJob` (PO build).
-- A process with 2+ suppliers is still ambiguous → warning + disabled Release
-  (needs an explicit per-operation supplier pick).
+- A process with 2+ suppliers shows a per-operation supplier picker defaulting
+  to the first candidate; Release stays ENABLED and stamps the chosen (or
+  defaulted) supplier on release. Release is blocked only when an operation's
+  process has NO suppliers at all (genuine "Missing Suppliers").
