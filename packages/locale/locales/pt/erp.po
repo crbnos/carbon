@@ -1725,6 +1725,9 @@ msgstr "Valor a aplicar para {0}"
 msgid "Amount Type"
 msgstr "Tipo de Valor"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Uma habilidade é a qualificação de um processo. Apenas processos sem uma são listados."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Um grupo contábil que agrupa despesas por departamento ou função para que a Razão possa relatar gasto por grupo, não apenas por conta."
 

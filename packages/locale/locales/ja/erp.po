@@ -1725,6 +1725,9 @@ msgstr "{0}に適用する金額"
 msgid "Amount Type"
 msgstr "金額タイプ"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "スキルは工法の適格条件です。適格条件のない工法のみが表示されます。"
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "部門または機能ごとに費用をグループ化する会計カテゴリで、総勘定元帳がアカウントだけでなくグループごとの支出を報告できます。"
 

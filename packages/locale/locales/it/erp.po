@@ -1725,6 +1725,9 @@ msgstr "Importo da applicare per {0}"
 msgid "Amount Type"
 msgstr "Tipo di Importo"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Una competenza è la qualificazione di un processo. Solo i processi senza una sono elencati."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Un bucket di contabilità che raggruppa le spese per reparto o funzione in modo che la Contabilità generale possa riportare le spese per gruppo, non solo per conto."
 

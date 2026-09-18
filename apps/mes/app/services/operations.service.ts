@@ -1256,7 +1256,7 @@ export async function getOperationEligibility(
 
   const ability = await client
     .from("ability")
-    .select("id, name")
+    .select("id")
     .eq("processId", operation.data.processId)
     .eq("companyId", companyId)
     .eq("active", true)
@@ -1272,7 +1272,8 @@ export async function getOperationEligibility(
     return { eligible: true, reason: null };
   }
 
-  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+  // The ability's name IS the process's name (abilities no longer store one).
+  const abilityName = process.data.name ?? "ability";
 
   const employeeAbility = await client
     .from("employeeAbility")

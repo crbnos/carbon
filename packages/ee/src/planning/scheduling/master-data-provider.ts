@@ -615,7 +615,8 @@ export class KyselyMasterDataProvider implements MasterDataProvider {
       .select([
         "p.id as processId",
         "a.id as abilityId",
-        "a.name as abilityName"
+        // The ability's name IS the process's name (abilities store none).
+        "p.name as abilityName"
       ])
       .where("p.id", "in", processIds)
       .where("p.companyId", "=", this.companyId)

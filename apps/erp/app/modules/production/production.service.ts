@@ -5083,8 +5083,9 @@ export async function getWorkCenterRequiredAbilities(
     .map((p) => p.id);
   if (gatedProcessIds.length === 0) return { data: [], error: null };
 
+  // The `abilities` view carries the name from the linked process.
   const abilities = await client
-    .from("ability")
+    .from("abilities")
     .select("id, name, processId")
     .eq("companyId", companyId)
     .eq("active", true)
@@ -5100,7 +5101,13 @@ export async function getWorkCenterRequiredAbilities(
     ({ workCenterId, processId }) => {
       const ability = abilityByProcess.get(processId);
       return ability
-        ? [{ workCenterId, abilityId: ability.id, abilityName: ability.name }]
+        ? [
+            {
+              workCenterId,
+              abilityId: ability.id ?? "",
+              abilityName: ability.name ?? ""
+            }
+          ]
         : [];
     }
   );
@@ -5116,7 +5123,7 @@ export async function getActiveEmployeeAbilities(
   // people board can badge each person with what they can do.
   return client
     .from("employeeAbility")
-    .select("employeeId, abilityId, expiresAt, ability(name)")
+    .select("employeeId, abilityId, expiresAt, ability(process(name))")
     .eq("companyId", companyId);
 }
 

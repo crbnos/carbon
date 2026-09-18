@@ -1725,6 +1725,9 @@ msgstr "{0} için uygulanacak tutar"
 msgid "Amount Type"
 msgstr "Tutar Türü"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Bir yetkinlik, bir prosesin niteliğidir. Bunun olmadığı prosesler listelenir."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Giderleri departman veya işlev tarafından gruplandıran ve Büyük Defteri harcamaları hesap yerine grup tarafından rapor etmesine izin veren bir muhasebe kategorisi."
 
@@ -17753,7 +17756,6 @@ msgid "This invitation to join {0} has expired. You can request a new invite to 
 msgstr "{0} grubuna katılma davetinizin süresi doldu. Yeni bir davet talebinde bulunabilirsiniz ve bu e-postanıza gönderilir."
 
 msgid "This invoice has no usable due date — choose one for Stripe."
-msgstr "Bu fatura kullanılabilir bir son tarih yok — Stripe için birini seçin."
 msgstr "Bu faturanın kullanılabilir bir son tarihi yok — Stripe için birini seçin."
 
 msgid "This invoice will be billed to the Stripe customer already linked to this Carbon customer. To change its details, edit it in the Stripe dashboard."
