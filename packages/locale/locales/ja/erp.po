@@ -1861,6 +1861,9 @@ msgstr "そして{hidden}個以上"
 msgid "and {remaining} more"
 msgstr "そして{remaining}件以上"
 
+msgid "Annotate"
+msgstr "注釈を付ける"
+
 msgid "Annotation added"
 msgstr "注釈が追加されました"
 

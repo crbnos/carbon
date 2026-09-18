@@ -1861,6 +1861,9 @@ msgstr "e {hidden} altri"
 msgid "and {remaining} more"
 msgstr "e {remaining} altri"
 
+msgid "Annotate"
+msgstr "Annota"
+
 msgid "Annotation added"
 msgstr "Annotazione aggiunta"
 

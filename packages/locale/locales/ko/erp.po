@@ -1861,6 +1861,9 @@ msgstr "및 {hidden}개 더"
 msgid "and {remaining} more"
 msgstr "외 {remaining}개"
 
+msgid "Annotate"
+msgstr "주석 달기"
+
 msgid "Annotation added"
 msgstr "주석이 추가됨"
 

@@ -1861,6 +1861,9 @@ msgstr "и {hidden} еще"
 msgid "and {remaining} more"
 msgstr "и ещё {remaining}"
 
+msgid "Annotate"
+msgstr "Аннотировать"
+
 msgid "Annotation added"
 msgstr "Аннотация добавлена"
 

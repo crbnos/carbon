@@ -1861,6 +1861,9 @@ msgstr "ve {hidden} tane daha"
 msgid "and {remaining} more"
 msgstr "ve daha fazla"
 
+msgid "Annotate"
+msgstr "Açıklama ekle"
+
 msgid "Annotation added"
 msgstr "Açıklama eklendi"
 

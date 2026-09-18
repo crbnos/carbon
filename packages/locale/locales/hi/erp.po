@@ -1861,6 +1861,9 @@ msgstr "और {hidden} अधिक"
 msgid "and {remaining} more"
 msgstr "और {remaining} अधिक"
 
+msgid "Annotate"
+msgstr "एनोटेट करें"
+
 msgid "Annotation added"
 msgstr "एनोटेशन जोड़ा गया"
 

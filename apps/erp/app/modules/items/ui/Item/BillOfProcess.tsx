@@ -60,6 +60,7 @@ import {
   LuList,
   LuListChecks,
   LuLock,
+  LuMapPin,
   LuMaximize2,
   LuMinimize2,
   LuSquareFunction,
@@ -106,6 +107,7 @@ import { getUnitHint } from "~/components/Form/UnitHint";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
 import { OperationTypeIcon, ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
+import { SlideAnnotator } from "~/components/SlideAnnotator";
 import {
   SlidePinOverlay,
   SlidesEditor,
@@ -749,7 +751,11 @@ const BillOfProcess = ({
         label: <span>Preview</span>,
         content: (
           <div className="flex w-full flex-col py-4">
-            <OperationPreview steps={steps} tools={tools} />
+            <OperationPreview
+              steps={steps}
+              tools={tools}
+              isDisabled={isReadOnly}
+            />
           </div>
         )
       }
@@ -3498,20 +3504,43 @@ function ParametersListItem({
 // scoped to that step (unscoped tools show on every step). No live job, no mutations.
 function OperationPreview({
   steps,
-  tools
+  tools,
+  isDisabled = false
 }: {
   steps: OperationStep[];
   tools: OperationTool[];
+  isDisabled?: boolean;
 }) {
   const { t } = useLingui();
   const allTools = useTools();
+  const annotationFetcher = useFetcher();
   const [current, setCurrent] = useState(0);
   const [slideIdx, setSlideIdx] = useState(0);
+  const [annotating, setAnnotating] = useState(false);
 
   // Move to a step and reset to its first slide.
   const goToStep = (next: number) => {
     setCurrent(next);
     setSlideIdx(0);
+  };
+
+  // Persist annotations edited from the preview, reusing the same slide upsert
+  // route the editor uses. Sends the required fields plus the new pins so the
+  // route updates (id present) rather than inserts.
+  const saveAnnotations = (
+    slide: OperationStepSlide,
+    annotations: SlideAnnotation[]
+  ) => {
+    const fd = new FormData();
+    fd.append("id", slide.id);
+    fd.append("stepId", slide.stepId);
+    if (slide.imagePath) fd.append("imagePath", slide.imagePath);
+    fd.append("sortOrder", String(slide.sortOrder ?? 1));
+    fd.append("annotations", JSON.stringify(annotations));
+    annotationFetcher.submit(fd, {
+      method: "post",
+      action: path.to.newMethodOperationStepSlide
+    });
   };
 
   const sorted = [...steps].sort(
@@ -3636,6 +3665,17 @@ function OperationPreview({
               className="h-full w-full object-contain"
             />
             <SlidePinOverlay pins={slide.annotations ?? []} />
+            {!isDisabled && (
+              <Button
+                variant="secondary"
+                size="sm"
+                leftIcon={<LuMapPin />}
+                className="absolute right-2 top-2"
+                onClick={() => setAnnotating(true)}
+              >
+                {t`Annotate`}
+              </Button>
+            )}
           </div>
         ) : (
           <span className="text-xs text-muted-foreground">
@@ -3691,6 +3731,19 @@ function OperationPreview({
             );
           })}
         </div>
+      )}
+
+      {annotating && slide?.imagePath && (
+        <SlideAnnotator
+          open
+          imageUrl={getPrivateUrl(slide.imagePath)}
+          initial={slide.annotations ?? []}
+          onSave={(next) => {
+            saveAnnotations(slide, next);
+            setAnnotating(false);
+          }}
+          onClose={() => setAnnotating(false)}
+        />
       )}
 
       <div className="flex items-center gap-2">

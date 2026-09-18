@@ -1861,6 +1861,9 @@ msgstr "以及{hidden}个更多"
 msgid "and {remaining} more"
 msgstr "和 {remaining} 个更多"
 
+msgid "Annotate"
+msgstr "标注"
+
 msgid "Annotation added"
 msgstr "注释已添加"
 

@@ -1861,6 +1861,9 @@ msgstr "und {hidden} weitere"
 msgid "and {remaining} more"
 msgstr "und {remaining} weitere"
 
+msgid "Annotate"
+msgstr "Kommentieren"
+
 msgid "Annotation added"
 msgstr "Anmerkung hinzugefügt"
 
