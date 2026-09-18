@@ -1725,6 +1725,9 @@ msgstr "Сумма для применения для {0}"
 msgid "Amount Type"
 msgstr "Тип суммы"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Навык — это квалификация процесса. Отображаются только процессы без него."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Бухгалтерская группа, которая группирует расходы по отделам или функциям, позволяя главной книге отчитываться по группам, а не только по счетам."
 
@@ -15916,6 +15919,10 @@ msgstr "Разбить расходы по местоположению, цен�
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Разделить выручку по покупателям, типам покупателей или любому измерению"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Слайд {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."

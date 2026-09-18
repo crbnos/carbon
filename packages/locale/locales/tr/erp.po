@@ -1725,6 +1725,9 @@ msgstr "{0} için uygulanacak tutar"
 msgid "Amount Type"
 msgstr "Tutar Türü"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Bir yetkinlik, bir prosesin niteliğidir. Bunun olmadığı prosesler listelenir."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Giderleri departman veya işlev tarafından gruplandıran ve Büyük Defteri harcamaları hesap yerine grup tarafından rapor etmesine izin veren bir muhasebe kategorisi."
 
@@ -15916,6 +15919,10 @@ msgstr "Konum, maliyet merkezi veya herhangi bir boyuta göre giderleri böl"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Hasılatı müşteriye, müşteri türüne veya herhangi bir boyuta göre böl"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Slayt {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."

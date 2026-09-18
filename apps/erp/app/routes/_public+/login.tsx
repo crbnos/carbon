@@ -19,6 +19,10 @@ import {
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   clearAuthCookies,
   flash,
   getAuthSession,
@@ -62,10 +66,6 @@ import {
   useLoaderData,
   useSearchParams
 } from "react-router";
-import {
-  isSelfSignupBlockedForEmail,
-  SELF_SIGNUP_BLOCKED_MESSAGE
-} from "~/modules/shared/self-signup-blocklist.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 

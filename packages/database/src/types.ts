@@ -42,8 +42,7 @@ export type Database = {
           createdBy: string
           curve: Json
           id: string
-          name: string
-          processId: string | null
+          processId: string
           recertifyEveryDays: number | null
           shadowWeeks: number
           updatedAt: string | null
@@ -56,8 +55,7 @@ export type Database = {
           createdBy: string
           curve?: Json
           id?: string
-          name: string
-          processId?: string | null
+          processId: string
           recertifyEveryDays?: number | null
           shadowWeeks?: number
           updatedAt?: string | null
@@ -70,8 +68,7 @@ export type Database = {
           createdBy?: string
           curve?: Json
           id?: string
-          name?: string
-          processId?: string | null
+          processId?: string
           recertifyEveryDays?: number | null
           shadowWeeks?: number
           updatedAt?: string | null
@@ -8529,6 +8526,13 @@ export type Database = {
             foreignKeyName: "contractorAbility_abilityId_fkey"
             columns: ["abilityId"]
             isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contractorAbility_abilityId_fkey"
+            columns: ["abilityId"]
+            isOneToOne: false
             referencedRelation: "ability"
             referencedColumns: ["id"]
           },
@@ -13590,6 +13594,13 @@ export type Database = {
           lastTrainingDate?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "employeeAbilities_abilityId_fkey"
+            columns: ["abilityId"]
+            isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "employeeAbilities_abilityId_fkey"
             columns: ["abilityId"]
@@ -36744,6 +36755,13 @@ export type Database = {
           updatedBy?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "partner_abilityId_fkey"
+            columns: ["abilityId"]
+            isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partner_abilityId_fkey"
             columns: ["abilityId"]
@@ -60853,6 +60871,13 @@ export type Database = {
             foreignKeyName: "training_grantsAbilityId_fkey"
             columns: ["grantsAbilityId"]
             isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_grantsAbilityId_fkey"
+            columns: ["grantsAbilityId"]
+            isOneToOne: false
             referencedRelation: "ability"
             referencedColumns: ["id"]
           },
@@ -63140,6 +63165,13 @@ export type Database = {
             foreignKeyName: "workCenter_requiredAbilityId_fkey"
             columns: ["requiredAbilityId"]
             isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenter_requiredAbilityId_fkey"
+            columns: ["requiredAbilityId"]
+            isOneToOne: false
             referencedRelation: "ability"
             referencedColumns: ["id"]
           },
@@ -64404,6 +64436,136 @@ export type Database = {
       }
     }
     Views: {
+      abilities: {
+        Row: {
+          active: boolean | null
+          companyId: string | null
+          createdAt: string | null
+          createdBy: string | null
+          curve: Json | null
+          id: string | null
+          name: string | null
+          processId: string | null
+          recertifyEveryDays: number | null
+          shadowWeeks: number | null
+          updatedAt: string | null
+          updatedBy: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "abilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "abilities_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "abilities_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_createdBy_fkey"
+            columns: ["createdBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "abilities_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "abilities_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "ability_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "process"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ability_processId_fkey"
+            columns: ["processId"]
+            isOneToOne: false
+            referencedRelation: "processes"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       accounts: {
         Row: {
           accountType: Database["public"]["Enums"]["accountType"] | null
@@ -71502,10 +71664,18 @@ export type Database = {
           supplierId: string | null
           supplierLocationId: string | null
           supplierName: string | null
+          tags: string[] | null
           updatedAt: string | null
           updatedBy: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "partner_abilityId_fkey"
+            columns: ["abilityId"]
+            isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "partner_abilityId_fkey"
             columns: ["abilityId"]
@@ -80690,6 +80860,13 @@ export type Database = {
             foreignKeyName: "training_grantsAbilityId_fkey"
             columns: ["grantsAbilityId"]
             isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "training_grantsAbilityId_fkey"
+            columns: ["grantsAbilityId"]
+            isOneToOne: false
             referencedRelation: "ability"
             referencedColumns: ["id"]
           }
@@ -80848,6 +81025,13 @@ export type Database = {
             foreignKeyName: "workCenter_requiredAbilityId_fkey"
             columns: ["requiredAbilityId"]
             isOneToOne: false
+            referencedRelation: "abilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenter_requiredAbilityId_fkey"
+            columns: ["requiredAbilityId"]
+            isOneToOne: false
             referencedRelation: "ability"
             referencedColumns: ["id"]
           },
@@ -80992,6 +81176,13 @@ export type Database = {
             columns: ["locationId"]
             isOneToOne: false
             referencedRelation: "location"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workCenter_requiredAbilityId_fkey"
+            columns: ["requiredAbilityId"]
+            isOneToOne: false
+            referencedRelation: "abilities"
             referencedColumns: ["id"]
           },
           {

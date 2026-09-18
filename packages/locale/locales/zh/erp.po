@@ -1725,6 +1725,9 @@ msgstr "应用于 {0} 的金额"
 msgid "Amount Type"
 msgstr "金额类型"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "技能是工艺的资格要求。仅列出没有该资格的工艺。"
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "一个会计分类，按部门或职能对费用进行分组，以便总账可以按组而不仅按账户报告支出"
 
@@ -15916,6 +15919,10 @@ msgstr "按地点、成本中心或任何维度分割费用"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "按客户、客户类型或任何维度划分收入"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "幻灯片 {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"

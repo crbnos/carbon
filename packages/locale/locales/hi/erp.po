@@ -1725,6 +1725,9 @@ msgstr "{0} के लिए लागू करने की राशि"
 msgid "Amount Type"
 msgstr "राशि प्रकार"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "कौशल एक प्रक्रिया की योग्यता है। केवल बिना कौशल की प्रक्रियाएं सूचीबद्ध हैं।"
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "एक लेखांकन बकेट जो विभाग या कार्य द्वारा व्यय को समूहित करता है ताकि सामान्य खाता बही समूह द्वारा व्यय की रिपोर्ट कर सकें, केवल खाता द्वारा नहीं।"
 
@@ -15916,6 +15919,10 @@ msgstr "स्थान, लागत केंद्र, या किसी �
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "ग्राहक, ग्राहक प्रकार, या किसी भी आयाम द्वारा राजस्व को स्लाइस करें"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "स्लाइड {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "बैचिंग के लायक सबसे छोटा रन। कोई नहीं के लिए खाली छोड़ें।"

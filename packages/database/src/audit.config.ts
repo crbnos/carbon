@@ -726,7 +726,8 @@ export const auditConfig = {
 export const fkDisplayRegistry: {
   [T in TableName]?: readonly ColumnOf<T>[];
 } = {
-  ability: ["name"],
+  // ability has no name of its own — it displays via the process one hop away
+  // (see fkDisplayHops below).
   account: ["number", "name"],
   address: ["addressLine1", "city"],
   assemblyInstruction: ["name"],
@@ -820,6 +821,11 @@ export const fkDisplayHops: {
     };
   }[TableName];
 } = {
+  ability: {
+    column: "processId",
+    table: "process",
+    displayColumns: ["name"]
+  },
   customerContact: {
     column: "contactId",
     table: "contact",

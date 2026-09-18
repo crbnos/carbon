@@ -76,7 +76,7 @@ type SlideModelMeta = {
 // client-side so the editors don't have to thread a modelUpload join through their
 // loaders. Re-polls while a STEP → GLB conversion is in flight so the "Converting…"
 // badge resolves without a reload.
-function useSlideModels(slides: EditorSlide[]) {
+export function useSlideModels(slides: EditorSlide[]) {
   const { carbon } = useCarbon();
   const [models, setModels] = useState<Record<string, SlideModelMeta>>({});
 
@@ -123,6 +123,25 @@ function useSlideModels(slides: EditorSlide[]) {
   }, [carbon, idsKey, hasPending]);
 
   return models;
+}
+
+// Read-only numbered pin overlay for an annotated image slide. Absolutely
+// positioned, so the caller must be a `relative` container sized to the image.
+// Shared by the slide cards below and the Bill of Process preview.
+export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
+  return pins.map((pin, i) => (
+    <span
+      key={pin.id}
+      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
+      style={{
+        left: `${pin.x * 100}%`,
+        top: `${pin.y * 100}%`,
+        backgroundColor: pin.color ?? "#ef4444"
+      }}
+    >
+      {i + 1}
+    </span>
+  ));
 }
 
 // Presentational slides grid — header + "Add slide" / "Add model" + cards. An image
@@ -271,19 +290,7 @@ export function SlidesEditor({
                         )}
                       />
                       {/* Read-only pin preview so an annotated slide reads at a glance. */}
-                      {pins.map((pin, i) => (
-                        <span
-                          key={pin.id}
-                          className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
-                          style={{
-                            left: `${pin.x * 100}%`,
-                            top: `${pin.y * 100}%`,
-                            backgroundColor: pin.color ?? "#ef4444"
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                      ))}
+                      <SlidePinOverlay pins={pins} />
                     </>
                   )}
                   {!isDisabled && (

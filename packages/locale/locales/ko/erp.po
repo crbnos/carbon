@@ -1725,6 +1725,9 @@ msgstr "{0}에 적용할 금액"
 msgid "Amount Type"
 msgstr "금액 유형"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "역량은 공법의 자격입니다. 역량이 없는 공법만 나열됩니다."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "부서나 기능별로 비용을 그룹화하여 총계정원장이 계정뿐 아니라 그룹별로도 지출을 보고할 수 있게 하는 회계 버킷입니다."
 
@@ -15916,6 +15919,10 @@ msgstr "비용을 사업장, 원가 센터 또는 모든 차원으로 분할"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "매출을 고객, 고객 유형 또는 모든 차원으로 분할"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "슬라이드 {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세요."

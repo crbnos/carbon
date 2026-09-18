@@ -59,12 +59,17 @@ const PersonAbilities = ({ personId, abilities }: PersonAbilitiesProps) => {
                 employeeAbility.id
               );
 
+              // The ability's name IS the linked process's name.
+              const process = Array.isArray(employeeAbility.ability.process)
+                ? employeeAbility.ability.process[0]
+                : employeeAbility.ability.process;
+
               return (
                 <li key={employeeAbility.id}>
                   <HStack className="w-full justify-between">
                     <HStack spacing={2}>
                       <Link className="font-medium" to={editPath}>
-                        {employeeAbility.ability.name}
+                        {process?.name}
                       </Link>
                       <EmployeeAbilityStatus
                         employeeAbility={employeeAbility}

@@ -1,9 +1,10 @@
 import { CarbonEdition } from "@carbon/auth";
 import { Edition } from "@carbon/utils";
 
-// The list ships with the app (bundled via `?raw`, same as the MCP setup prompt),
-// so editing `self-signup-blocked-domains.txt` and deploying is how it's
-// maintained. One domain per line; blank lines and `#` comments are ignored.
+// The list ships with this package and is bundled into the consuming app (ERP /
+// MES) by its Vite build via `?raw`, so editing `self-signup-blocked-domains.txt`
+// and deploying is how it's maintained. One domain per line; blank lines and `#`
+// comments are ignored.
 import blockedDomainsRaw from "./self-signup-blocked-domains.txt?raw";
 
 const blockedDomains = new Set(
@@ -21,8 +22,12 @@ export const SELF_SIGNUP_BLOCKED_MESSAGE =
  * Whether a brand-new self-signup should be refused for this email. Only the
  * Cloud edition enforces the blocklist — self-hosted/enterprise installs manage
  * their own signup gating (edition check in login.tsx, `GOTRUE_DISABLE_SIGNUP`).
- * Existing users are unaffected: the login action only reaches this on the
- * unknown-user signup branch.
+ *
+ * Callers gate on "brand-new" themselves so existing users are unaffected:
+ * login.tsx/verify.tsx only reach this on the unknown-user signup branch, and
+ * the OAuth callback additionally requires no company membership and no pending
+ * invite before blocking (an existing gmail employee or an invited contractor
+ * is not a self-signup).
  */
 export function isSelfSignupBlockedForEmail(email: string): boolean {
   if (CarbonEdition !== Edition.Cloud) return false;

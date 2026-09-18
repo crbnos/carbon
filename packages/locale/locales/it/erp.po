@@ -1725,6 +1725,9 @@ msgstr "Importo da applicare per {0}"
 msgid "Amount Type"
 msgstr "Tipo di Importo"
 
+msgid "An ability is a process's qualification. Only processes without one are listed."
+msgstr "Una competenza è la qualificazione di un processo. Solo i processi senza una sono elencati."
+
 msgid "An accounting bucket that groups expenses by department or function so the GL can report spend by group, not just by account."
 msgstr "Un bucket di contabilità che raggruppa le spese per reparto o funzione in modo che la Contabilità generale possa riportare le spese per gruppo, non solo per conto."
 
@@ -15916,6 +15919,10 @@ msgstr "Suddividi le spese per ubicazione, centro di costo o qualsiasi dimension
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Seziona ricavi per cliente, tipo cliente o qualsiasi dimensione"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Diapositiva {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "La corsa più piccola che vale la pena raggruppare in lotti. Lasciare vuoto per nessuno."
