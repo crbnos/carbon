@@ -53,19 +53,19 @@ gated by `isAuthProviderEnabled(...)`.
 Routes live under `_public+/` (`login`, `callback`, `logout`, `magic-link`, `verify`,
 `invite.$code`, `refresh-session`). MES mirrors a subset under its own `_public+/`.
 
-## Sign-in history (`login-history.server.ts`)
+## Sign-in records (`user-login.server.ts`)
 
 Every completed first factor writes a `userLogin` row (method, app, IP,
-`x-vercel-ip-*` geo, user agent; migration `20260910000000`) via
-`recordLogin` from `@carbon/auth/login-history.server` — called in ERP/MES
+`x-vercel-ip-*` geo, user agent; migration `20260910171715_user-login.sql`) via
+`recordLogin` from `@carbon/auth/user-login.server` — called in ERP/MES
 `callback.tsx` and `passkey.authenticate.verify.ts` (before the TOTP gate),
 ERP `login.tsx` dev bypass, and ERP `verify.tsx` signup. It NEVER throws
-(fail-open: a login must not fail because history did), prunes the user's rows
+(fail-open: a login must not fail because the record did), prunes the user's rows
 older than 90 days on each insert, and emits `logAuthEvent("login_success")`.
 `unlock`, `refresh-session`, and `/mfa` are re-auth/second-factor, not logins —
 no rows. The table is user-owned (no `companyId`, owner-only SELECT policy, no
 write policies — service-role writes only). It feeds the "Your devices" card
-on Account → Security (`getLoginHistory` in the ERP account module).
+on Account → Security (`getUserLogins` in the ERP account module).
 `deriveLoginMethod` classifies the callback's method from the access token's
 `amr` claim, best-effort, falling back to `unknown`. Spec:
 `.ai/specs/2026-08-26-user-devices-login-history.md`.

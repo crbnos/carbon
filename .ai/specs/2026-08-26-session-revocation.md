@@ -96,7 +96,7 @@ revocation looks up `auth.sessions` by its own PK.
 ### `@carbon/auth`
 
 - **`getSessionId(accessToken: string): string | null`** (in
-  `login-history.server.ts`) — decode the JWT payload, return the
+  `user-login.server.ts`) — decode the JWT payload, return the
   `session_id` claim; null on anything malformed.
 - **`recordLogin`** gains an `accessToken` param and stores
   `sessionId: getSessionId(accessToken)`. All six call sites already hold
@@ -227,7 +227,7 @@ the shared `destroyAuthSession`.
   displayed — the table remains the recording backbone.
   `getActiveSessionIds` → `getActiveSessions`.
 - 2026-08-26: Implemented on branch `jackson` (migration
-  `20260910000000_user-devices-login-history.sql`; `getSessionId` + `sessionId`
+  `20260910171715_user-login.sql`; `getSessionId` + `sessionId`
   capture in `recordLogin`; logout revocation in `destroyAuthSession`;
   `getActiveSessionIds`/`revokeSession` in the account module; status badges +
   Sign out / Sign out other devices on Account → Security). Typecheck ×4 and

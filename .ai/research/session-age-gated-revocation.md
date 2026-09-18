@@ -274,7 +274,7 @@ Verified on branch `user-devices-login-history`; file:line references are to tha
    the cookie value is optional for back-compat and is *reset* by MFA completion
    (`session.server.ts:180-185`), so it is a lock clock, not a session-identity clock.
 2. **`auth_time` is already in the token and already parsed.** `decodeAccessToken` reads the
-   `amr` array including `amr[].timestamp` (`packages/auth/src/services/login-history.server.ts:24-40`,
+   `amr` array including `amr[].timestamp` (`packages/auth/src/services/user-login.server.ts:24-40`,
    `deriveLoginMethod` at `:64-93`); the timestamp value is decoded but unused. That is the
    OIDC `auth_time` equivalent — the input a step-up gate needs, available with no DB query.
 3. **A working re-auth flow already ships.** `/unlock`
@@ -296,9 +296,9 @@ Verified on branch `user-devices-login-history`; file:line references are to tha
    so rows already survive user deletion — exactly the property the proposal asks for.
    `SYSTEM_ACTOR = "system"` exists for unattributed actions.
 5. **`userLogin` partially satisfies the audit requirement.** `sessionId` has **no FK**
-   (`20260910000000_user-devices-login-history.sql`), so history survives session deletion —
-   good. But `userId` is `ON DELETE CASCADE` (`20260910000000_user-devices-login-history.sql`)
-   and rows are pruned at **90 days** on every insert (`login-history.server.ts:13,145-158`).
+   (`20260910171715_user-login.sql`), so history survives session deletion —
+   good. But `userId` is `ON DELETE CASCADE` (`20260910171715_user-login.sql`)
+   and rows are pruned at **90 days** on every insert (`user-login.server.ts:13,145-158`).
    RLS is SELECT-only for the owner by design ("a user must not be able to forge or erase
    their own sign-in audit trail").
 6. **Notification channels: email only, and it is also the login channel.**

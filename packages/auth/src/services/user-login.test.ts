@@ -3,7 +3,7 @@ import {
   deriveLoginMethod,
   getSessionId,
   recordLogin
-} from "./login-history.server";
+} from "./user-login.server";
 
 const mocks = vi.hoisted(() => {
   const insert = vi.fn();
@@ -268,7 +268,7 @@ describe("recordLogin", () => {
     // Via RPC, not a bare delete: the SQL function keeps each device's earliest
     // row so the revoke gate's "first seen" cannot be pruned forward.
     expect(mocks.rpc).toHaveBeenCalledWith(
-      "prune_user_login_history",
+      "prune_user_logins",
       expect.objectContaining({ p_user_id: "user_1" })
     );
     const { p_cutoff: cutoff } = mocks.rpc.mock.calls[0]![1] as {

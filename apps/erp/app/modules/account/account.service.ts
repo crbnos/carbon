@@ -58,7 +58,7 @@ export async function revokeSession(
   return Number(result.numAffectedRows ?? 0);
 }
 
-export async function getLoginHistory(
+export async function getUserLogins(
   client: SupabaseClient<Database>,
   userId: string,
   limit = 20

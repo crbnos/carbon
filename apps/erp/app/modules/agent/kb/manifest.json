@@ -596,18 +596,23 @@
     {
       "slug": "docs/reference/devices",
       "title": "Your devices",
-      "description": "Every live session on your account across ERP and MES, what Carbon records about each sign-in, and how to sign out a device you don't recognize.",
+      "description": "See every device signed in to your account across ERP and MES, sign out the ones you don't recognize, and get an email when a new device signs in.",
       "keywords": ["your", "devices", "docs", "reference"],
       "headings": [
         "Reading the list",
-        "Signing a device out",
-        "The record behind the card",
+        "Signing out a device",
+        "Why some devices say \"Newer device\"",
+        "The new-device email",
+        "What Carbon records",
         "Troubleshooting",
-        "A row says \"Unknown device\" with no location",
-        "The rows read \"Local network\" or \"Unknown location\"",
-        "The device I signed out is still on screen",
+        "A row shows \"Newer device\" instead of a sign-out button",
         "\"Sign out other devices\" is disabled",
-        "Two identical rows"
+        "The device cookie",
+        "No new-device email arrived",
+        "A row says \"Unknown device\" with no location",
+        "Rows read \"Local network\" or \"Unknown location\"",
+        "The device I signed out is still on screen",
+        "A sign-in stuck at the two-factor prompt"
       ]
     },
     {

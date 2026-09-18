@@ -3,13 +3,13 @@ import { signInWithPasskey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
-import { recordLogin } from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
 import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { recordLogin } from "@carbon/auth/user-login.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
 import { parseUserAgent } from "@carbon/utils";

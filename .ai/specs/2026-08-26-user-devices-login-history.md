@@ -44,7 +44,7 @@ by owner-scoped RLS.
 | Scope | History table + user-facing view only; **no emails, no device cookie** in this iteration | **User decision** ("for now let's just add user activity"). Emails/device recognition are additive later — see Future Work |
 | Multi-tenancy (heuristic 1) | `userLogin` is **user-owned**: no `companyId`, PK on `id` alone, FK to `user` | Deliberate deviation with precedent: a login predates company selection; `passkeyCredential` (no companyId) and `notificationPreference` (PK on `id`) establish the pattern |
 | RLS (heuristic 3) | SELECT owner-only (`auth.uid()::text = "userId"`); **no INSERT/UPDATE/DELETE policies** | Writes happen pre-session via service role; users must not be able to forge or erase their own sign-in audit trail |
-| Service shape (heuristic 2) | Write helper `recordLogin` in `packages/auth` (service-role internally, never throws, fire-and-forget); read via `getLoginHistory(client, userId)` in the ERP `account` module returning `{ data, error }` | Login routes are pre-session (no user client exists yet); reads follow module conventions |
+| Service shape (heuristic 2) | Write helper `recordLogin` in `packages/auth` (service-role internally, never throws, fire-and-forget); read via `getUserLogins(client, userId)` in the ERP `account` module returning `{ data, error }` | Login routes are pre-session (no user client exists yet); reads follow module conventions |
 | Record timing | At **first-factor success**, before the TOTP gate | Matches where `AccountLockout.reset()` already sits; a TOTP-abandoned attempt still carried a valid first factor and belongs in the record |
 | What is NOT a login | `unlock.tsx` (idle re-auth), `refresh-session.tsx` (token refresh), `/mfa` (second factor of an already-recorded login) | No rows from these routes |
 | Geo source | `x-vercel-ip-city` / `x-vercel-ip-country` request headers, nullable | Existing precedent (invite flows read `x-vercel-ip-city`); no geo-IP dependency or lookup service. Absent headers (self-hosted) render "Unknown" |
@@ -98,7 +98,7 @@ mutator; matches `notificationPreference`'s user-owned shape.
 
 ## API / Service Changes
 
-### `packages/auth/src/services/login-history.server.ts` (new)
+### `packages/auth/src/services/user-login.server.ts` (new)
 
 The one write path, imported by ERP and MES routes. Never throws — every I/O
 failure is swallowed and logged (a login must not fail because history did;
@@ -148,7 +148,7 @@ try/caught call (or `void recordLogin(...)`).
 `apps/erp/app/modules/account/account.service.ts`:
 
 ```ts
-export async function getLoginHistory(
+export async function getUserLogins(
   client: SupabaseClient<Database>,
   userId: string,
   limit = 20
@@ -169,7 +169,7 @@ see its own rows regardless.
 
 **Account → Security (`apps/erp/app/routes/x+/account+/security.tsx`)** — one
 new Card below Passkeys: "Recent sign-in activity" ("Sign-ins to your account
-across Carbon apps over the last 90 days"). Loader adds `getLoginHistory`.
+across Carbon apps over the last 90 days"). Loader adds `getUserLogins`.
 Table (simple `@carbon/react` table primitives, not DataTable) with columns:
 
 - **When** — `formatDate` with time, newest first
@@ -277,7 +277,7 @@ additive on top of this table:
   `userLogin` recording, retention, and RLS are unchanged and now serve as the
   join source for device detail.
 - 2026-08-26: Implemented on branch `jackson` (migration
-  `20260910000000_user-devices-login-history.sql`, `@carbon/auth/login-history.server`,
-  `parseUserAgent` in `@carbon/utils`, six call sites, `getLoginHistory` +
+  `20260910171715_user-login.sql`, `@carbon/auth/user-login.server`,
+  `parseUserAgent` in `@carbon/utils`, six call sites, `getUserLogins` +
   activity card on Account → Security). Typecheck + unit tests green; RLS
   verified against the local DB in a rolled-back transaction.

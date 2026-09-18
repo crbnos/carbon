@@ -30355,13 +30355,13 @@ export default {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
           },
           {
-            $ref: "#/parameters/rowFilter.userLogin.createdAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.userLogin.deviceId"
           },
           {
             $ref: "#/parameters/rowFilter.userLogin.mfaPending"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
           },
           {
             $ref: "#/parameters/select"
@@ -30450,13 +30450,13 @@ export default {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
           },
           {
-            $ref: "#/parameters/rowFilter.userLogin.createdAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.userLogin.deviceId"
           },
           {
             $ref: "#/parameters/rowFilter.userLogin.mfaPending"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -30499,13 +30499,13 @@ export default {
             $ref: "#/parameters/rowFilter.userLogin.sessionId"
           },
           {
-            $ref: "#/parameters/rowFilter.userLogin.createdAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.userLogin.deviceId"
           },
           {
             $ref: "#/parameters/rowFilter.userLogin.mfaPending"
+          },
+          {
+            $ref: "#/parameters/rowFilter.userLogin.createdAt"
           },
           {
             $ref: "#/parameters/body.userLogin"
@@ -100274,6 +100274,45 @@ export default {
         tags: ["(rpc) sync_delete_tracked_entity_on_job_make_method"]
       }
     },
+    "/rpc/prune_user_logins": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_cutoff: {
+                  format: "timestamp with time zone",
+                  type: "string"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_user_id", "p_cutoff"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) prune_user_logins"]
+      }
+    },
     "/rpc/sync_job_complete_or_canceled": {
       post: {
         parameters: [
@@ -100434,45 +100473,6 @@ export default {
           }
         },
         tags: ["(rpc) get_job_quantity_on_hand"]
-      }
-    },
-    "/rpc/prune_user_login_history": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                p_cutoff: {
-                  format: "timestamp with time zone",
-                  type: "string"
-                },
-                p_user_id: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["p_user_id", "p_cutoff"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) prune_user_login_history"]
       }
     },
     "/rpc/sync_archive_other_procedures": {
@@ -110286,7 +110286,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -110335,7 +110335,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -118482,7 +118482,7 @@ export default {
       type: "object"
     },
     userLogin: {
-      required: ["id", "userId", "method", "app", "createdAt", "mfaPending"],
+      required: ["id", "userId", "method", "app", "mfaPending", "createdAt"],
       properties: {
         id: {
           default: "public.xid()",
@@ -118524,11 +118524,6 @@ export default {
           format: "text",
           type: "string"
         },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
         deviceId: {
           format: "text",
           type: "string"
@@ -118537,6 +118532,11 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
         }
       },
       type: "object"
@@ -164121,12 +164121,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.userLogin.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.userLogin.deviceId": {
       name: "deviceId",
       required: false,
@@ -164135,6 +164129,12 @@ export default {
     },
     "rowFilter.userLogin.mfaPending": {
       name: "mfaPending",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.userLogin.createdAt": {
+      name: "createdAt",
       required: false,
       in: "query",
       type: "string"

@@ -4,10 +4,10 @@ import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import { logAuthEvent } from "./auth-events.server";
 import { getDeviceId } from "./device.server";
 
-const log = getLogger("auth", "login-history");
+const log = getLogger("auth", "user-login");
 
 /**
- * How long sign-in history is kept. Pruned opportunistically on each insert so
+ * How long sign-in records are kept. Pruned opportunistically on each insert so
  * the table is self-cleaning without a scheduled job, and stored IPs (PII) are
  * bounded (spec: .ai/specs/2026-08-26-user-devices-login-history.md).
  */
@@ -181,7 +181,7 @@ export async function recordLogin(params: {
       mfaPending
     });
     if (error) {
-      log.warn("Failed to record login history", { error, userId, app });
+      log.warn("Failed to record user login", { error, userId, app });
     }
 
     // Retention cutoff is an absolute instant (timezone-agnostic), so raw
@@ -197,12 +197,12 @@ export async function recordLogin(params: {
     // row has to as well). Everything else, which is the IP/geo history that
     // retention is actually about, still goes. One statement so it cannot race
     // with a concurrent login.
-    const { error: pruneError } = await serviceRole.rpc(
-      "prune_user_login_history",
-      { p_user_id: userId, p_cutoff: cutoff }
-    );
+    const { error: pruneError } = await serviceRole.rpc("prune_user_logins", {
+      p_user_id: userId,
+      p_cutoff: cutoff
+    });
     if (pruneError) {
-      log.warn("Failed to prune login history", { error: pruneError, userId });
+      log.warn("Failed to prune user logins", { error: pruneError, userId });
     }
 
     logAuthEvent("login_success", {
@@ -215,7 +215,7 @@ export async function recordLogin(params: {
 
     return { isNewDevice };
   } catch (error) {
-    log.warn("Failed to record login history", { error, userId, app });
+    log.warn("Failed to record user login", { error, userId, app });
     // Report "not new" on failure: a spurious alert is worse than a missed one,
     // and we genuinely do not know.
     return { isNewDevice: false };

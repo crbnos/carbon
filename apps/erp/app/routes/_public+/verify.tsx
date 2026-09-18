@@ -5,12 +5,12 @@ import {
   signInWithEmail
 } from "@carbon/auth/auth.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
-import { recordLogin } from "@carbon/auth/login-history.server";
 import {
   flash,
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { recordLogin } from "@carbon/auth/user-login.server";
 import { verifyEmailCode } from "@carbon/auth/verification.server";
 import { Hidden, InputOTP, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";

@@ -18,7 +18,7 @@
     "./download-token.server": "./src/lib/download-token.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./device.server": "./src/services/device.server.ts",
-    "./login-history.server": "./src/services/login-history.server.ts",
+    "./user-login.server": "./src/services/user-login.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",
     "./users.server": "./src/services/users.server.ts",

@@ -208,7 +208,7 @@ cd packages/utils && pnpm exec vitest run src/ip.test.ts
 
 **Depends on:** Task 1
 **Files:**
-- Modify: `packages/auth/src/services/login-history.server.ts` — replace the IP read
+- Modify: `packages/auth/src/services/user-login.server.ts` — replace the IP read
 
 **Steps:**
 
@@ -245,7 +245,7 @@ cd packages/utils && pnpm exec vitest run src/ip.test.ts
 ```bash
 pnpm exec turbo run typecheck --filter=@carbon/auth
 # Expected: "Tasks: 1 successful", no TS errors
-cd packages/auth && pnpm exec vitest run src/services/login-history.test.ts
+cd packages/auth && pnpm exec vitest run src/services/user-login.test.ts
 # Expected: all existing tests still pass
 ```
 
@@ -265,13 +265,13 @@ IP — it encoded the vulnerability being fixed.
 
 **Depends on:** none
 **Files:**
-- Create: `packages/database/supabase/migrations/{timestamp}_user-login-device-id.sql`
+- Create: `packages/database/supabase/migrations/20260910171715_user-login.sql (merged into the table migration)`
 
 **Steps:**
 
 1. Generate the file:
    ```bash
-   pnpm db:migrate:new user-login-device-id
+   pnpm db:migrate:new user-login
    ```
 2. Write exactly this into the generated file:
    ```sql
@@ -299,7 +299,7 @@ pnpm db:migrate
 ```
 
 **Out of scope:** Do NOT fold this into
-`20260910000000_user-devices-login-history.sql`. That migration is committed and
+`20260910171715_user-login.sql`. That migration is committed and
 may already be applied elsewhere; this is a separate, additive change.
 
 ---
@@ -487,7 +487,7 @@ cd packages/auth && pnpm exec vitest run src/services/device.test.ts
 
 **Depends on:** Tasks 4, 5
 **Files:**
-- Modify: `packages/auth/src/services/login-history.server.ts`
+- Modify: `packages/auth/src/services/user-login.server.ts`
 
 **Steps:**
 
@@ -528,7 +528,7 @@ cd packages/auth && pnpm exec vitest run src/services/device.test.ts
 ```bash
 pnpm exec turbo run typecheck --filter=@carbon/auth
 # Expected: "Tasks: 1 successful"
-cd packages/auth && pnpm exec vitest run src/services/login-history.test.ts
+cd packages/auth && pnpm exec vitest run src/services/user-login.test.ts
 # Expected: existing tests pass; update any that assert a void return
 ```
 
@@ -594,11 +594,11 @@ logins and must not record or mint anything.
 **Depends on:** Task 4
 **Files:**
 - Modify: `apps/erp/app/modules/account/account.service.ts`
-- Copy from (precedent): the existing `getLoginHistory` in the same file
+- Copy from (precedent): the existing `getUserLogins` in the same file
 
 **Steps:**
 
-1. Add below `getLoginHistory`:
+1. Add below `getUserLogins`:
    ```ts
    /**
     * When this device was FIRST seen for this user, or null if never.

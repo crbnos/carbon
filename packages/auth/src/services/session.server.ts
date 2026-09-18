@@ -26,12 +26,12 @@ import {
   verifyAuthSession
 } from "./auth.server";
 import { setCompanyId } from "./company.server";
-import { markLoginMfaComplete } from "./login-history.server";
 import {
   getTotpFactors,
   userHasVerifiedTotpFactor,
   verifyTotpChallenge
 } from "./mfa.server";
+import { markLoginMfaComplete } from "./user-login.server";
 import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(

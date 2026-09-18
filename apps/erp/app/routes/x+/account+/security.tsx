@@ -8,10 +8,10 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getDeviceId } from "@carbon/auth/device.server";
-import { getSessionId } from "@carbon/auth/login-history.server";
 import type { TotpFactor } from "@carbon/auth/mfa.server";
 import { getTotpFactors } from "@carbon/auth/mfa.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
+import { getSessionId } from "@carbon/auth/user-login.server";
 import {
   Alert,
   AlertDescription,
@@ -61,7 +61,7 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import {
   getActiveSessions,
   getDeviceFirstSeenAt,
-  getLoginHistory,
+  getUserLogins,
   revokeSession
 } from "~/modules/account";
 import { TwoFactorUpgradeDialog } from "~/modules/settings";
@@ -100,7 +100,7 @@ async function getDevices(request: Request, sessionUserId: string) {
   const [loginsResult, activeSessions, deviceFirstSeenAt] = await Promise.all([
     // History rows are the JOIN SOURCE for device/location detail, not a
     // displayed list — fetch enough to cover every live session's login.
-    getLoginHistory(client as any, sessionUserId, 100),
+    getUserLogins(client as any, sessionUserId, 100),
     getActiveSessions(getDatabaseClient(), sessionUserId),
     getDeviceFirstSeenAt(
       client as any,

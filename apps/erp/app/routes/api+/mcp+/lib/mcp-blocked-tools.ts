@@ -51,7 +51,7 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // reachable by any company key acting as that user.
   "account_revokeSession",
   "account_getActiveSessions",
-  "account_getLoginHistory",
+  "account_getUserLogins",
   "account_getDeviceFirstSeenAt"
 ];
 

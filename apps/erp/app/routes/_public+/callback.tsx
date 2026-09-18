@@ -10,10 +10,6 @@ import { refreshAccessToken } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
-import {
-  deriveLoginMethod,
-  recordLogin
-} from "@carbon/auth/login-history.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
   destroyAuthSession,
@@ -22,6 +18,7 @@ import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { deriveLoginMethod, recordLogin } from "@carbon/auth/user-login.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import {
   deleteJitSsoUser,
