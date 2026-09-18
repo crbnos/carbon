@@ -1,3 +1,5 @@
+import type { Database } from "@carbon/database";
+import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import {
   type Catalog,
@@ -763,15 +765,39 @@ describe("cross-company restore invariants", () => {
     "inspectionFeature"
   ];
 
-  // Every path column on `modelUpload`, verified against the live schema on
-  // 2026-09-18. Adding one to the table means adding it here AND to
-  // STORAGE_PATH_COLUMNS.
+  // Every `modelUpload` column whose name ends in `Path`, typed against the
+  // GENERATED row type: `satisfies` makes this list fail to COMPILE if a column
+  // is renamed or removed, and the `Exclude` below fails to compile if a new
+  // `*Path` column is added and not listed. The runtime assertion then checks
+  // STORAGE_PATH_COLUMNS covers them all.
+  type ModelUploadPathColumn = Extract<
+    keyof Database["public"]["Tables"]["modelUpload"]["Row"],
+    `${string}Path`
+  >;
   const MODEL_UPLOAD_PATH_COLUMNS = [
     "modelPath",
     "thumbnailPath",
+    "originalPath",
+    "optimizedModelPath",
     "glbPath",
     "graphPath"
-  ];
+  ] as const satisfies readonly ModelUploadPathColumn[];
+  // Fails to compile when a new `*Path` column exists that the list omits.
+  type _EveryPathColumnListed =
+    Exclude<
+      ModelUploadPathColumn,
+      (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+    > extends never
+      ? true
+      : [
+          "unlisted modelUpload *Path column",
+          Exclude<
+            ModelUploadPathColumn,
+            (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+          >
+        ];
+  const _pathColumnsExhaustive: _EveryPathColumnListed = true;
+  void _pathColumnsExhaustive;
 
   it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
     const part = table("part", [col("id"), col("companyId"), col("name")], [], {
@@ -823,20 +849,14 @@ describe("cross-company restore invariants", () => {
     });
   });
 
-  // One row per `itemType` enum member, verified against the live enum on
-  // 2026-09-18. `fixture` is unpopulated in every local database, so a
-  // data-driven sweep does not see it — this list is what catches it.
-  const ITEM_CHILD_TABLES = [
-    "part",
-    "material",
-    "tool",
-    "service",
-    "consumable",
-    "fixture"
-  ];
-
   it("exempts the child table of every item type", () => {
-    const missing = ITEM_CHILD_TABLES.filter((t) => !READABLE_ID_TABLES.has(t));
+    // Derived from the GENERATED enum, not a hand-copied list: adding an
+    // itemType member ships a new child table keyed on the same readable id,
+    // and `fixture` is unpopulated in every local database, so a data-driven
+    // sweep cannot see it. Regenerating types is what makes this test fail.
+    const missing = Constants.public.Enums.itemType
+      .map((t) => t.toLowerCase())
+      .filter((t) => !READABLE_ID_TABLES.has(t));
     expect(missing).toEqual([]);
   });
 

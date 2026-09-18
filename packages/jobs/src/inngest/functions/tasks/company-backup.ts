@@ -60,11 +60,14 @@ export const STORAGE_BUCKET = "private";
  * these columns — so every `modelUpload` artifact is carried regardless, and a
  * column missing here silently survives the restore still pointing at the SOURCE
  * company. Add a new `modelUpload` path column here too; the coverage test in
- * `company-backup.closure.test.ts` fails otherwise.
+ * `company-backup.closure.test.ts` fails to COMPILE otherwise — it derives the
+ * column set from the generated `modelUpload` row type.
  */
 export const STORAGE_PATH_COLUMNS = new Set([
   "thumbnailPath",
   "modelPath",
+  "originalPath",
+  "optimizedModelPath",
   "glbPath",
   "graphPath"
 ]);
