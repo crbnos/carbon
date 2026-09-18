@@ -75,7 +75,9 @@ Conventions (see also `conventions-services.md`):
 - The ten endpoints backed by the big multi-join **views** (`parts`, `materials`, `tools`, `consumables`, `services`, `purchaseOrders`, `quotes`, `salesOrders`, `purchaseInvoices`, `salesInvoices`) additionally select an explicit `*_LIST_COLUMNS` constant instead of `select("*")`, so Postgres can prune the views' unreferenced computed columns. Adding a column to one of those tables means adding it to the constant — `apps/erp/test/list-select-columns.test.ts` fails if an `accessorKey` is missing, because the CSV export reads accessors untyped. The rationale lives once on `LIST_COUNT` in `apps/erp/app/utils/query.ts`, not at each constant.
 - Use `sanitize(...)` (re-exported from `@carbon/utils`) to strip empty values before insert/update.
 - Upserts are done either with a manual `id ? update : insert` branch or supabase's native `.upsert(...)`; both are in use.
-- `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets.
+- `fetchAllFromTable(client, table, columns, qb)` (from `@carbon/database`) pages through large result sets:
+  the first page alone, then the rest in concurrent waves, and deliberately WITHOUT a count — `count: "exact"`
+  there was a `COUNT(*) OVER ()` on every page (see `LIST_COUNT` above for the same trap on list endpoints).
 
 ## N+1 reads
 

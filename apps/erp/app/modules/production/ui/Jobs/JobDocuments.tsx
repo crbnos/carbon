@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -27,7 +28,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -43,7 +44,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -137,15 +138,7 @@ const useJobDocuments = ({
       );
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Failed to process file operation", { error });
@@ -191,42 +184,27 @@ const useJobDocuments = ({
     [jobId, submit]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[], bucket: "job" | "parts" = "job") => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
       if (bucket === "parts" && !itemId) {
         toast.error(t`Cannot upload to parts bucket without item ID`);
         return;
       }
 
-      for (const file of files) {
-        const fileName = getPath(file, bucket);
-
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath: (file) => getPath(file, bucket),
+        onSuccess: (file, uploadedPath) =>
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size,
             bucket
-          });
-        }
-      }
+          })
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, itemId, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(

@@ -82,8 +82,11 @@ process.env before invoking compose so these survive a recreate; see the
 endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
 (`/api/webhook/stripe-connect`, connected-account events) are signed separately.
 
-**Email** — `RESEND_API_KEY`, `RESEND_DOMAIN` (default `carbon.ms`),
-`DISABLE_RESEND` (short-circuits sends), optional `RESEND_AUDIENCE_ID`.
+**Email** — `SMTP_HOST`, `SMTP_PORT` (465 = implicit TLS, 587 = STARTTLS,
+default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
+`Carbon <no-reply@carbon.ms>`). All optional — unset disables email sending.
+Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
+smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 
 **Integrations (all optional)** — Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
@@ -114,9 +117,9 @@ set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
 - Required-var validation runs at **module load** — a missing `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `REDIS_URL`, `SESSION_SECRET`,
   `POSTHOG_*`, or `VERCEL_URL` crashes boot, not lazily at first use.
-- `packages/lib/src/resend.server.ts` does `new Resend(process.env.RESEND_API_KEY!)`
-  at module load, so ERP needs a non-empty `RESEND_API_KEY` to boot even if you
-  don't send email (use any placeholder, e.g. `re_placeholder`).
+- Email is deliberately lazy: `packages/lib/src/email.server.ts` builds the
+  SMTP transport on first send, never at import, so a deployment with no mail
+  config boots fine and `sendEmail` no-ops.
 - Only keys in `getBrowserEnv()` reach the client; adding a public var means
   adding it there AND to the `Window.env` interface declaration.
 - Don't put ports/URLs/Supabase/Redis/Inngest dev values in `.env` — `crbn up`

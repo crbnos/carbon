@@ -1,8 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  MODEL_RAW_KEEP_MAX_BYTES,
-  modelPathOptimizeFormat
-} from "@carbon/utils";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,

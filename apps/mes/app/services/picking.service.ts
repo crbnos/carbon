@@ -29,7 +29,7 @@ export async function getPickingListForExecution(
   const { data: lines, error: lineError } = await client
     .from("pickingListLine")
     .select(
-      "*, item:item(name, readableId), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
+      "*, item:item(name, readableId), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")

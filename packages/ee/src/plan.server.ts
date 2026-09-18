@@ -2,6 +2,7 @@ import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import { Edition, normalizePlanId, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { redirect } from "react-router";
@@ -11,6 +12,8 @@ import {
   planMeetsRequirement,
   resolveRequirement
 } from "./plan";
+
+const logger = getLogger("ee", "plan");
 
 function isBypassCompany(companyId: string): boolean {
   if (!STRIPE_BYPASS_COMPANY_IDS) return false;
@@ -23,11 +26,20 @@ async function getCompanyPlan(
   client: SupabaseClient<Database>,
   companyId: string
 ): Promise<Plan> {
-  const { data } = await client
+  const { data, error: planError } = await client
     .from("companyPlan")
     .select("planId")
     .eq("id", companyId)
     .single();
+
+  // A read error normalizes to the lowest plan, which turns plan-gated
+  // ENFORCEMENT (storage/sales rules) off — fail-open. Callers are UI gates
+  // and evaluators that should not 500 on a transient blip, so log rather
+  // than throw; the signal is what was missing when this silently disabled
+  // rules.
+  if (planError) {
+    logger.error("getCompanyPlan failed", { companyId, error: planError });
+  }
 
   return normalizePlanId(data?.planId);
 }

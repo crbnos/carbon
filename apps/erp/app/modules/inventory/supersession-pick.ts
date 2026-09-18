@@ -1,19 +1,16 @@
+import type { Database } from "@carbon/database";
+import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 // Picking-side supersession resolution: given a job material's item and its
 // supersession config, decide which item a pick should actually target.
 //
 // This is intentionally SEPARATE from the MRP / job-creation redirect map
-// (packages/database/supabase/functions/lib/supersession-pick.ts), which only
-// redirects `Consume First` / `Prefer New`. Picking has different rules: a
-// `Stock Only` predecessor is reserved for service and must NOT be picked for
-// production, so its effective successor is used instead; a `No Stock`
-// predecessor is obsolete and is skipped entirely. The SQL in
 // `get_picking_schedule` mirrors this exactly.
 //
 // Dates are ISO "YYYY-MM-DD" strings; lexicographic comparison is exact for that
 // format (same convention as the shared redirect map).
 
 export type PickSupersession = {
-  supersessionMode: string;
+  supersessionMode: Database["public"]["Enums"]["supersessionMode"];
   successorItemId: string | null;
   successorEffectivityDate: string | null;
   conversionFactor: number | string | null;
@@ -38,9 +35,30 @@ export function effectiveSuccessorId(
   return ss.successorItemId;
 }
 
-function toFactor(value: number | string | null): number {
+function toFactor(value: number | string | null | undefined): number {
   const n = Number(value ?? 1);
   return Number.isFinite(n) && n > 0 ? n : 1;
+}
+
+export function pickSupersessionItemId(material: {
+  itemId: string;
+  substitutedFromItemId?: string | null;
+}): string {
+  return material.substitutedFromItemId ?? material.itemId;
+}
+
+export function resolvePickRule<R extends PickSupersession>(
+  material: { itemId: string; substitutedFromItemId?: string | null },
+  ruleByItem: Map<string, R>
+): { rule: R | undefined; swappedFromItemId: string | null } {
+  const ownRule = ruleByItem.get(material.itemId);
+  const from = material.substitutedFromItemId ?? null;
+  if (from && ownRule?.successorItemId === from) {
+    return { rule: ownRule, swappedFromItemId: null };
+  }
+  const swappedRule = from ? ruleByItem.get(from) : undefined;
+  if (swappedRule) return { rule: swappedRule, swappedFromItemId: from };
+  return { rule: ownRule, swappedFromItemId: null };
 }
 
 /**
@@ -51,17 +69,14 @@ function toFactor(value: number | string | null): number {
  * - `Stock Only` → pick the effective successor (never the spares-only
  *   predecessor); skip when there is no effective successor.
  * - `Prefer New` → pick the effective successor; fall back to the predecessor
- *   until the successor is effective.
  * - `Consume First` → pick the predecessor; redirect to the successor ONLY when
  *   the predecessor has no warehouse stock and an effective successor with stock
- *   exists (never leaves predecessor stock unused, and satisfies
- *   "predecessor out of stock → pick successor").
  *
- * When redirecting to a successor, `factor` is the conversion factor
- * (1 old = N new); otherwise 1.
  */
 export function resolvePickTarget(args: {
   itemId: string;
+  substitutedFromItemId?: string | null;
+  substitutionFactor?: number | string | null;
   supersession: PickSupersession | undefined;
   /** predecessor has a resolvable warehouse source (non-lineside on-hand). */
   predecessorInStock: boolean;
@@ -69,8 +84,27 @@ export function resolvePickTarget(args: {
   successorInStock: boolean;
   asOfDate: string;
 }): PickTarget {
-  const { itemId, supersession: ss } = args;
+  const { itemId, substitutedFromItemId, supersession: ss } = args;
   if (!ss) return { kind: "pick", itemId, factor: 1 };
+
+  if (substitutedFromItemId) {
+    const predecessor = {
+      kind: "pick" as const,
+      itemId: substitutedFromItemId,
+      factor: 1 / toFactor(args.substitutionFactor)
+    };
+    const successor = { kind: "pick" as const, itemId, factor: 1 };
+    switch (ss.supersessionMode) {
+      case "Consume First":
+        return args.predecessorInStock ? predecessor : successor;
+      case "Prefer New":
+        return !args.successorInStock && args.predecessorInStock
+          ? predecessor
+          : successor;
+      default:
+        return successor;
+    }
+  }
 
   const successor = effectiveSuccessorId(ss, args.asOfDate);
   const factor = toFactor(ss.conversionFactor);
@@ -83,9 +117,10 @@ export function resolvePickTarget(args: {
         ? { kind: "pick", itemId: successor, factor }
         : { kind: "skip" };
     case "Prefer New":
-      return successor
-        ? { kind: "pick", itemId: successor, factor }
-        : { kind: "pick", itemId, factor: 1 };
+      if (successor && (args.successorInStock || !args.predecessorInStock)) {
+        return { kind: "pick", itemId: successor, factor };
+      }
+      return { kind: "pick", itemId, factor: 1 };
     case "Consume First":
       if (successor && !args.predecessorInStock && args.successorInStock) {
         return { kind: "pick", itemId: successor, factor };
@@ -94,4 +129,66 @@ export function resolvePickTarget(args: {
     default:
       return { kind: "pick", itemId, factor: 1 };
   }
+}
+
+export type ConsumeFirstPick = {
+  item: "predecessor" | "successor";
+  quantity: number;
+};
+
+export function splitConsumeFirstPick(args: {
+  needOld: number;
+  perAssemblyOld: number;
+  newPerOld: number;
+  stagedOld: number;
+  stagedNew: number;
+  warehouseOld: number;
+  successorInStock: boolean;
+}): {
+  picks: ConsumeFirstPick[];
+  warehouseOldUsed: number;
+  stagedOldUsed: number;
+  stagedNewUsed: number;
+} {
+  const {
+    needOld,
+    perAssemblyOld,
+    stagedOld,
+    stagedNew,
+    warehouseOld,
+    successorInStock
+  } = args;
+  const newPerOld = args.newPerOld > 0 ? args.newPerOld : 1;
+  const perAssemblyNew = perAssemblyOld * newPerOld;
+  const stagedOldUsed = Math.min(
+    needOld,
+    consumableInWholeAssemblies(stagedOld, perAssemblyOld)
+  );
+  const stagedNewUsed = Math.min(
+    (needOld - stagedOldUsed) * newPerOld,
+    consumableInWholeAssemblies(stagedNew, perAssemblyNew)
+  );
+  const remaining = Math.max(
+    0,
+    needOld - stagedOldUsed - stagedNewUsed / newPerOld
+  );
+  if (remaining <= 0) {
+    return { picks: [], warehouseOldUsed: 0, stagedOldUsed, stagedNewUsed };
+  }
+
+  const usable = Math.min(
+    remaining,
+    consumableInWholeAssemblies(warehouseOld, perAssemblyOld)
+  );
+  const picks: ConsumeFirstPick[] = [];
+  if (usable > 0) picks.push({ item: "predecessor", quantity: usable });
+  const rest = remaining - usable;
+  if (rest > 0) {
+    picks.push(
+      usable > 0 || successorInStock
+        ? { item: "successor", quantity: rest * newPerOld }
+        : { item: "predecessor", quantity: rest }
+    );
+  }
+  return { picks, warehouseOldUsed: usable, stagedOldUsed, stagedNewUsed };
 }

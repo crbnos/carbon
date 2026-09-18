@@ -27,7 +27,7 @@ msgstr "{0} 전"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0}개 작업"
+msgstr "{0} 작업 지시"
 
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
@@ -48,7 +48,7 @@ msgstr "{1} 중 {0} 완료됨"
 
 #. placeholder {0}: rows.length
 msgid "{0} queued"
-msgstr "{0} 대기 중"
+msgstr "{0} 대기열"
 
 #. placeholder {0}: activeWork.length
 msgid "{0} running"
@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
 msgid "Batched jobs"
-msgstr "일괄 작업"
+msgstr "일괄 작업 지시"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "목표에서 {daysBehindTarget}일 뒤짐"
@@ -303,7 +303,7 @@ msgid "Consumed"
 msgstr "소비됨"
 
 msgid "Consumed expired"
-msgstr "소모 만료"
+msgstr "소모됨 만료됨"
 
 msgid "Continue"
 msgstr "계속"
@@ -492,6 +492,9 @@ msgstr "실패한 기능"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "재고 조정을 완료하지 못했습니다"
+
+msgid "Failed to convert image"
+msgstr "이미지 전환 실패"
 
 msgid "Failed to end operations"
 msgstr "공정작업을 종료하지 못했습니다"
@@ -912,7 +915,7 @@ msgid "No serial numbers found"
 msgstr "시리얼 번호를 찾을 수 없습니다"
 
 msgid "No shortcuts available on this page."
-msgstr "이 페이지에서 사용 가능한 단축키가 없습니다."
+msgstr "이 페이지에서는 사용 가능한 바로가기가 없습니다."
 
 msgid "No spare parts added yet"
 msgstr "아직 추가된 예비 부품이 없습니다"
@@ -1032,6 +1035,9 @@ msgstr "추적 품목 선택"
 msgid "Picked"
 msgstr "피킹됨"
 
+msgid "Picked as"
+msgstr "피킹 항목"
+
 msgid "Picked quantity"
 msgstr "피킹 수량"
 
@@ -1043,6 +1049,12 @@ msgstr "열 {0}을(를) 집었습니다 — 위치: {2}개 중 {1}번째"
 
 msgid "Picking"
 msgstr "피킹"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom} 대신 피킹, 작업의 품목"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "{substitutedFrom} 대신 피킹, 작업의 품목, {substitutedAssemblies}개 조립"
 
 msgid "Pin Out"
 msgstr "PIN 로그아웃"
@@ -1303,7 +1315,7 @@ msgid "Serial Number {0}"
 msgstr "시리얼 번호 {0}"
 
 msgid "Serial number is not available"
-msgstr "시리얼 번호를 사용할 수 없습니다"
+msgstr "시리얼 번호가 가용하지 않습니다."
 
 msgid "Serial number is required"
 msgstr "시리얼 번호가 필요합니다"
@@ -1442,7 +1454,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "This lot is expired and can't be picked."
-msgstr "이 로트는 만료되었으므로 피킹할 수 없습니다."
+msgstr "로트가 만료되었으며 피킹할 수 없습니다."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "이 부품은 주문 제작되었습니다. 이를 스크랩하면 라우팅을 다시 열어서 대체 부품을 만들 수 있습니다."
@@ -1457,7 +1469,7 @@ msgid "Thumbnail"
 msgstr "썸네일"
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "시간과 비용은 수량에 비례하여 작업에 걸쳐 분할됩니다."
+msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."
 
 msgid "Time Entries"
 msgstr "시간 기록"
@@ -1597,7 +1609,7 @@ msgid "Your organization requires an authenticator app. Set it up in Carbon, the
 msgstr "조직에서 인증 앱을 요구하고 있습니다. Carbon에서 설정한 후 여기로 돌아오세요."
 
 msgid "Your session was locked after inactivity."
-msgstr "세션이 비활성 후 잠겼습니다."
+msgstr "비활성 후 세션이 잠겼습니다."
 
 #. placeholder {0}: peopleStation.name
 msgid "Your station: {0}"

@@ -242,6 +242,42 @@ export function getProviderIntegration(
         provider,
         error
       });
+      // The provider has already rotated the pair; losing the write means the
+      // stored refresh token is dead and the next runner reads "Refresh token
+      // not found" with no trail back to here. Fail now, loudly.
+      throw new Error(
+        `Failed to persist refreshed ${provider} tokens: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+  };
+
+  // Re-read the vault right before refreshing: if another runner already
+  // rotated the pair, adopt it instead of burning the token a second time.
+  // Any failure here just falls through to a normal refresh.
+  const beforeRefresh = async () => {
+    try {
+      const latest = await getAccountingIntegration(
+        client,
+        companyId,
+        provider
+      );
+      const stored = latest.metadata.credentials
+        ? parseStoredCredentials(latest.metadata.credentials)
+        : undefined;
+      if (stored?.type !== "oauth2" || !stored.refreshToken) return null;
+      return {
+        accessToken: stored.accessToken,
+        refreshToken: stored.refreshToken,
+        expiresAt: stored.expiresAt
+      };
+    } catch (error) {
+      logger.warning("Could not re-read stored credentials before refresh", {
+        provider,
+        error
+      });
+      return null;
     }
   };
 
@@ -271,7 +307,8 @@ export function getProviderIntegration(
         clientSecret: process.env.QUICKBOOKS_CLIENT_SECRET!,
         redirectUri: process.env.QUICKBOOKS_REDIRECT_URI,
         syncConfig,
-        onTokenRefresh
+        onTokenRefresh,
+        beforeRefresh
       });
     }
     case "xero": {
@@ -285,7 +322,8 @@ export function getProviderIntegration(
         clientSecret: process.env.XERO_CLIENT_SECRET!,
         redirectUri: process.env.XERO_REDIRECT_URI,
         syncConfig,
-        onTokenRefresh
+        onTokenRefresh,
+        beforeRefresh
       });
     }
     // Add other providers as needed

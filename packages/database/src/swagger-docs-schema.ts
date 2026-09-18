@@ -1551,267 +1551,6 @@ export default {
         tags: ["salesOrderShipment"]
       }
     },
-    "/storageRule": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/storageRule"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["storageRule"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.storageRule"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["storageRule"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRule"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRule.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.name"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.message"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.severity"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.conditionAst"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.surfaces"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.active"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.targetType"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.appliesToAll"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemTypes"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemGroupIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRule.filteredItemMatchAll"
-          },
-          {
-            $ref: "#/parameters/body.storageRule"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRule"]
-      }
-    },
     "/documentLabels": {
       get: {
         parameters: [
@@ -20763,6 +20502,222 @@ export default {
         tags: ["jobs"]
       }
     },
+    "/enforcementRuleAcknowledgment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleAcknowledgment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleAcknowledgment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.ruleName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.documentLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.outcome"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleAcknowledgment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleAcknowledgment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleAcknowledgment"]
+      }
+    },
     "/itemSerialSequences": {
       get: {
         parameters: [
@@ -26226,6 +26181,150 @@ export default {
         tags: ["workCenters"]
       }
     },
+    "/enforcementRuleWorkCenterAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleWorkCenterAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleWorkCenterAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.workCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleWorkCenterAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleWorkCenterAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleWorkCenterAssignment"]
+      }
+    },
     "/contractorAbility": {
       get: {
         parameters: [
@@ -27544,6 +27643,285 @@ export default {
           }
         },
         tags: ["salesOrder"]
+      }
+    },
+    "/supplierBankAccount": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/supplierBankAccount"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["supplierBankAccount"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.supplierBankAccount"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["supplierBankAccount"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["supplierBankAccount"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.supplierBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/body.supplierBankAccount"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["supplierBankAccount"]
       }
     },
     "/jobOperationTool": {
@@ -30131,6 +30509,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.openJobMaterialLines.dueDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.openJobMaterialLines.quantityPerParent"
           },
           {
             $ref: "#/parameters/select"
@@ -48138,6 +48519,150 @@ export default {
         tags: ["supplierContact"]
       }
     },
+    "/enforcementRuleItemAssignment": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRuleItemAssignment"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRuleItemAssignment"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.ruleId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRuleItemAssignment.updatedBy"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRuleItemAssignment"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRuleItemAssignment"]
+      }
+    },
     "/oauthClient": {
       get: {
         parameters: [
@@ -53502,150 +54027,6 @@ export default {
         tags: ["companyIntegration"]
       }
     },
-    "/storageRuleWorkCenterAssignment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/storageRuleWorkCenterAssignment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.storageRuleWorkCenterAssignment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.workCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleWorkCenterAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.storageRuleWorkCenterAssignment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleWorkCenterAssignment"]
-      }
-    },
     "/salesOrderStatusHistory": {
       get: {
         parameters: [
@@ -55816,150 +56197,6 @@ export default {
           }
         },
         tags: ["activeMaintenanceDispatchesByLocation"]
-      }
-    },
-    "/storageRuleItemAssignment": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/storageRuleItemAssignment"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.storageRuleItemAssignment"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.itemId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.ruleId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.storageRuleItemAssignment.updatedBy"
-          },
-          {
-            $ref: "#/parameters/body.storageRuleItemAssignment"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["storageRuleItemAssignment"]
       }
     },
     "/shipmentFixedAssetLine": {
@@ -73002,6 +73239,276 @@ export default {
         tags: ["methodOperationStep"]
       }
     },
+    "/enforcementRule": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/enforcementRule"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["enforcementRule"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.enforcementRule"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["enforcementRule"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRule"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.family"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.message"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.severity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.conditionAst"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.surfaces"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.appliesToAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemTypes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemGroupIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.filteredItemMatchAll"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.enforcementRule.customFields"
+          },
+          {
+            $ref: "#/parameters/body.enforcementRule"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["enforcementRule"]
+      }
+    },
     "/tag": {
       get: {
         parameters: [
@@ -74899,6 +75406,285 @@ export default {
           }
         },
         tags: ["quoteMaterialStep"]
+      }
+    },
+    "/customerBankAccount": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerBankAccount"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerBankAccount"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerBankAccount"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerBankAccount"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerBankAccount"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankAddress"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.countryCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.accountNumber"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.bankCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.swiftBic"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.isPrimary"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.active"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerBankAccount.tags"
+          },
+          {
+            $ref: "#/parameters/body.customerBankAccount"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerBankAccount"]
       }
     },
     "/nonConformanceSupplier": {
@@ -90001,6 +90787,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -90204,6 +90993,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -90359,6 +91151,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
@@ -95552,6 +96347,63 @@ export default {
         tags: ["(rpc) sync_update_quote_material_make_method_item_id"]
       }
     },
+    "/rpc/get_unit_of_measure_usage": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_unit_of_measure_usage"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_unit_of_measure_usage"]
+      }
+    },
     "/rpc/sync_update_supplier_type_group_name": {
       post: {
         parameters: [
@@ -100340,6 +101192,125 @@ export default {
         tags: ["(rpc) get_material_naming_details"]
       }
     },
+    "/rpc/get_lineside_credit": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_storage_unit_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_item_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_material_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_lineside_credit"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_item_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_material_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_storage_unit_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_company_id",
+                "p_location_id",
+                "p_storage_unit_id",
+                "p_item_id",
+                "p_job_id",
+                "p_job_material_id"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_lineside_credit"]
+      }
+    },
     "/rpc/get_api_key_scopes": {
       post: {
         parameters: [
@@ -104471,125 +105442,6 @@ export default {
         incotermLocation: {
           format: "text",
           type: "string"
-        }
-      },
-      type: "object"
-    },
-    storageRule: {
-      required: [
-        "id",
-        "companyId",
-        "name",
-        "message",
-        "severity",
-        "conditionAst",
-        "surfaces",
-        "active",
-        "createdBy",
-        "createdAt",
-        "targetType",
-        "appliesToAll",
-        "filteredItemTypes",
-        "filteredItemGroupIds",
-        "filteredItemMatchAll"
-      ],
-      properties: {
-        id: {
-          default: "public.xid()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        name: {
-          format: "text",
-          type: "string"
-        },
-        description: {
-          format: "text",
-          type: "string"
-        },
-        message: {
-          format: "text",
-          type: "string"
-        },
-        severity: {
-          format: "text",
-          type: "string"
-        },
-        conditionAst: {
-          format: "jsonb"
-        },
-        surfaces: {
-          format: 'public."transactionSurface"[]',
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        active: {
-          default: true,
-          format: "boolean",
-          type: "boolean"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        customFields: {
-          format: "jsonb"
-        },
-        targetType: {
-          default: "item",
-          enum: ["item", "workCenter"],
-          format: 'public."storageRuleTargetType"',
-          type: "string"
-        },
-        appliesToAll: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
-        },
-        filteredItemTypes: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        filteredItemGroupIds: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
-        filteredItemMatchAll: {
-          default: false,
-          format: "boolean",
-          type: "boolean"
         }
       },
       type: "object"
@@ -110049,7 +110901,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -110098,7 +110950,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -113555,6 +114407,87 @@ export default {
       },
       type: "object"
     },
+    enforcementRuleAcknowledgment: {
+      required: [
+        "id",
+        "companyId",
+        "documentType",
+        "documentId",
+        "severity",
+        "outcome",
+        "message",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          format: "text",
+          type: "string"
+        },
+        ruleName: {
+          format: "text",
+          type: "string"
+        },
+        documentType: {
+          format: "text",
+          type: "string"
+        },
+        documentId: {
+          format: "text",
+          type: "string"
+        },
+        documentLineId: {
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          format: "text",
+          type: "string"
+        },
+        severity: {
+          format: "text",
+          type: "string"
+        },
+        outcome: {
+          format: "text",
+          type: "string"
+        },
+        message: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     itemSerialSequences: {
       properties: {
         id: {
@@ -116234,6 +117167,52 @@ export default {
       },
       type: "object"
     },
+    enforcementRuleWorkCenterAssignment: {
+      required: [
+        "workCenterId",
+        "ruleId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        workCenterId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     contractorAbility: {
       required: [
         "contractorId",
@@ -116907,6 +117886,121 @@ export default {
             "Note:\nThis is a Foreign Key to `customerContact.id`.<fk table='customerContact' column='id'/>",
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    supplierBankAccount: {
+      required: [
+        "id",
+        "companyId",
+        "supplierId",
+        "name",
+        "isPrimary",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('sba'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        accountHolderName: {
+          format: "text",
+          type: "string"
+        },
+        bankName: {
+          format: "text",
+          type: "string"
+        },
+        bankAddress: {
+          format: "text",
+          type: "string"
+        },
+        countryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "character",
+          maxLength: 2,
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        accountNumber: {
+          format: "text",
+          type: "string"
+        },
+        bankCode: {
+          format: "text",
+          type: "string"
+        },
+        swiftBic: {
+          format: "text",
+          type: "string"
+        },
+        isPrimary: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -118192,6 +119286,10 @@ export default {
         dueDate: {
           format: "date",
           type: "string"
+        },
+        quantityPerParent: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -123250,7 +124348,9 @@ export default {
             "Issue",
             "Gauge Calibration Record",
             "Purchasing Request for Quote",
-            "Supplier Quote"
+            "Supplier Quote",
+            "Supplier",
+            "Customer"
           ],
           format: 'public."documentSourceType"',
           type: "string"
@@ -126683,6 +127783,46 @@ export default {
       },
       type: "object"
     },
+    enforcementRuleItemAssignment: {
+      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
+      properties: {
+        itemId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        ruleId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     oauthClient: {
       required: [
         "id",
@@ -128964,53 +130104,6 @@ export default {
       },
       type: "object"
     },
-    storageRuleWorkCenterAssignment: {
-      required: [
-        "workCenterId",
-        "ruleId",
-        "companyId",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        workCenterId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `workCenter.id`.<fk table='workCenter' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `storageRule.id`.<fk table='storageRule' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
     salesOrderStatusHistory: {
       required: [
         "id",
@@ -129951,47 +131044,6 @@ export default {
           type: "string"
         },
         actualFailureModeName: {
-          format: "text",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    storageRuleItemAssignment: {
-      required: ["itemId", "ruleId", "companyId", "createdBy", "createdAt"],
-      properties: {
-        itemId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        ruleId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `storageRule.id`.<fk table='storageRule' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
           type: "string"
         }
@@ -138159,7 +139211,9 @@ export default {
             "Issue",
             "Gauge Calibration Record",
             "Purchasing Request for Quote",
-            "Supplier Quote"
+            "Supplier Quote",
+            "Supplier",
+            "Customer"
           ],
           format: 'public."documentSourceType"',
           type: "string"
@@ -138298,6 +139352,132 @@ export default {
             "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    enforcementRule: {
+      required: [
+        "id",
+        "companyId",
+        "family",
+        "name",
+        "message",
+        "severity",
+        "conditionAst",
+        "surfaces",
+        "targetType",
+        "appliesToAll",
+        "filteredItemTypes",
+        "filteredItemGroupIds",
+        "filteredItemMatchAll",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        family: {
+          default: "storage",
+          enum: ["storage", "sales"],
+          format: 'public."enforcementRuleFamily"',
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        message: {
+          format: "text",
+          type: "string"
+        },
+        severity: {
+          format: "text",
+          type: "string"
+        },
+        conditionAst: {
+          format: "jsonb"
+        },
+        surfaces: {
+          format: 'public."enforcementRuleSurface"[]',
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        targetType: {
+          default: "item",
+          enum: ["item", "workCenter"],
+          format: 'public."enforcementRuleTargetType"',
+          type: "string"
+        },
+        appliesToAll: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        filteredItemTypes: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        filteredItemGroupIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
+        filteredItemMatchAll: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -138955,6 +140135,121 @@ export default {
         quantity: {
           format: "numeric",
           type: "number"
+        }
+      },
+      type: "object"
+    },
+    customerBankAccount: {
+      required: [
+        "id",
+        "companyId",
+        "customerId",
+        "name",
+        "isPrimary",
+        "active",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cba'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          format: "text",
+          type: "string"
+        },
+        name: {
+          format: "text",
+          type: "string"
+        },
+        accountHolderName: {
+          format: "text",
+          type: "string"
+        },
+        bankName: {
+          format: "text",
+          type: "string"
+        },
+        bankAddress: {
+          format: "text",
+          type: "string"
+        },
+        countryCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `country.alpha2`.<fk table='country' column='alpha2'/>",
+          format: "character",
+          maxLength: 2,
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        accountNumber: {
+          format: "text",
+          type: "string"
+        },
+        bankCode: {
+          format: "text",
+          type: "string"
+        },
+        swiftBic: {
+          format: "text",
+          type: "string"
+        },
+        isPrimary: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        active: {
+          default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        },
+        tags: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -146469,6 +147764,7 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
+        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds"
@@ -146717,6 +148013,13 @@ export default {
           default: "job",
           format: "text",
           type: "string"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         showCurrencyTrailingZeros: {
           default: true,
@@ -148204,129 +149507,6 @@ export default {
     },
     "rowFilter.salesOrderShipment.incotermLocation": {
       name: "incotermLocation",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.storageRule": {
-      name: "storageRule",
-      description: "storageRule",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/storageRule"
-      }
-    },
-    "rowFilter.storageRule.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.name": {
-      name: "name",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.message": {
-      name: "message",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.severity": {
-      name: "severity",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.conditionAst": {
-      name: "conditionAst",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.surfaces": {
-      name: "surfaces",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.active": {
-      name: "active",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.targetType": {
-      name: "targetType",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.appliesToAll": {
-      name: "appliesToAll",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.filteredItemTypes": {
-      name: "filteredItemTypes",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.filteredItemGroupIds": {
-      name: "filteredItemGroupIds",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRule.filteredItemMatchAll": {
-      name: "filteredItemMatchAll",
       required: false,
       in: "query",
       type: "string"
@@ -158462,6 +159642,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.enforcementRuleAcknowledgment": {
+      name: "enforcementRuleAcknowledgment",
+      description: "enforcementRuleAcknowledgment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/enforcementRuleAcknowledgment"
+      }
+    },
+    "rowFilter.enforcementRuleAcknowledgment.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.ruleName": {
+      name: "ruleName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentType": {
+      name: "documentType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentId": {
+      name: "documentId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.documentLineId": {
+      name: "documentLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.outcome": {
+      name: "outcome",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.message": {
+      name: "message",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleAcknowledgment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itemSerialSequences": {
       name: "itemSerialSequences",
       description: "itemSerialSequences",
@@ -161479,6 +162752,51 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.enforcementRuleWorkCenterAssignment": {
+      name: "enforcementRuleWorkCenterAssignment",
+      description: "enforcementRuleWorkCenterAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/enforcementRuleWorkCenterAssignment"
+      }
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.workCenterId": {
+      name: "workCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleWorkCenterAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.contractorAbility": {
       name: "contractorAbility",
       description: "contractorAbility",
@@ -162255,6 +163573,141 @@ export default {
     },
     "rowFilter.salesOrder.customerEngineeringContactId": {
       name: "customerEngineeringContactId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.supplierBankAccount": {
+      name: "supplierBankAccount",
+      description: "supplierBankAccount",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/supplierBankAccount"
+      }
+    },
+    "rowFilter.supplierBankAccount.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.accountHolderName": {
+      name: "accountHolderName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.bankName": {
+      name: "bankName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.bankAddress": {
+      name: "bankAddress",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.countryCode": {
+      name: "countryCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.accountNumber": {
+      name: "accountNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.bankCode": {
+      name: "bankCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.swiftBic": {
+      name: "swiftBic",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.isPrimary": {
+      name: "isPrimary",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.supplierBankAccount.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
@@ -163706,6 +165159,12 @@ export default {
     },
     "rowFilter.openJobMaterialLines.dueDate": {
       name: "dueDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.openJobMaterialLines.quantityPerParent": {
+      name: "quantityPerParent",
       required: false,
       in: "query",
       type: "string"
@@ -173045,6 +174504,51 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.enforcementRuleItemAssignment": {
+      name: "enforcementRuleItemAssignment",
+      description: "enforcementRuleItemAssignment",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/enforcementRuleItemAssignment"
+      }
+    },
+    "rowFilter.enforcementRuleItemAssignment.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.ruleId": {
+      name: "ruleId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRuleItemAssignment.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.oauthClient": {
       name: "oauthClient",
       description: "oauthClient",
@@ -175626,51 +177130,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.storageRuleWorkCenterAssignment": {
-      name: "storageRuleWorkCenterAssignment",
-      description: "storageRuleWorkCenterAssignment",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/storageRuleWorkCenterAssignment"
-      }
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.workCenterId": {
-      name: "workCenterId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleWorkCenterAssignment.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.salesOrderStatusHistory": {
       name: "salesOrderStatusHistory",
       description: "salesOrderStatusHistory",
@@ -176715,51 +178174,6 @@ export default {
       },
     "rowFilter.activeMaintenanceDispatchesByLocation.actualFailureModeName": {
       name: "actualFailureModeName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.storageRuleItemAssignment": {
-      name: "storageRuleItemAssignment",
-      description: "storageRuleItemAssignment",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/storageRuleItemAssignment"
-      }
-    },
-    "rowFilter.storageRuleItemAssignment.itemId": {
-      name: "itemId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.ruleId": {
-      name: "ruleId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.storageRuleItemAssignment.updatedBy": {
-      name: "updatedBy",
       required: false,
       in: "query",
       type: "string"
@@ -186048,6 +187462,135 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.enforcementRule": {
+      name: "enforcementRule",
+      description: "enforcementRule",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/enforcementRule"
+      }
+    },
+    "rowFilter.enforcementRule.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.family": {
+      name: "family",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.message": {
+      name: "message",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.severity": {
+      name: "severity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.conditionAst": {
+      name: "conditionAst",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.surfaces": {
+      name: "surfaces",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.targetType": {
+      name: "targetType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.appliesToAll": {
+      name: "appliesToAll",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.filteredItemTypes": {
+      name: "filteredItemTypes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.filteredItemGroupIds": {
+      name: "filteredItemGroupIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.filteredItemMatchAll": {
+      name: "filteredItemMatchAll",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.enforcementRule.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.tag": {
       name: "tag",
       description: "tag",
@@ -186734,6 +188277,141 @@ export default {
     },
     "rowFilter.quoteMaterialStep.quantity": {
       name: "quantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.customerBankAccount": {
+      name: "customerBankAccount",
+      description: "customerBankAccount",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerBankAccount"
+      }
+    },
+    "rowFilter.customerBankAccount.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.accountHolderName": {
+      name: "accountHolderName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.bankName": {
+      name: "bankName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.bankAddress": {
+      name: "bankAddress",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.countryCode": {
+      name: "countryCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.accountNumber": {
+      name: "accountNumber",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.bankCode": {
+      name: "bankCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.swiftBic": {
+      name: "swiftBic",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.isPrimary": {
+      name: "isPrimary",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.active": {
+      name: "active",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerBankAccount.tags": {
+      name: "tags",
       required: false,
       in: "query",
       type: "string"
@@ -195328,6 +197006,12 @@ export default {
     },
     "rowFilter.companySettings.returnPickedMaterialTiming": {
       name: "returnPickedMaterialTiming",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

@@ -1,4 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -15,12 +17,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import {
-  convertKbToString,
-  getFileSizeLimit,
-  INPUT_FORMAT,
-  supportedModelTypes
-} from "@carbon/utils";
+import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";

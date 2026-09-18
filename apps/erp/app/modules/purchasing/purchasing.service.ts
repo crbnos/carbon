@@ -17,6 +17,7 @@ import type {
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
@@ -44,6 +45,7 @@ import type {
   purchasingRfqStatusType,
   selectedLinesValidator,
   supplierAccountingValidator,
+  supplierBankAccountValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
@@ -270,6 +272,64 @@ export async function deleteSupplierLocation(
       .eq("supplierId", supplierId)
       .eq("id", supplierLocationId);
   }
+}
+
+export async function deleteSupplierBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("supplierBankAccount").delete().eq("id", id);
+}
+
+export async function getSupplierBankAccounts(
+  client: SupabaseClient<Database>,
+  supplierId: string
+) {
+  return client
+    .from("supplierBankAccount")
+    .select("*")
+    .eq("supplierId", supplierId)
+    .order("name");
+}
+
+export async function upsertSupplierBankAccount(
+  db: Kysely<KyselyDatabase>,
+  bankAccount:
+    | (Omit<z.infer<typeof supplierBankAccountValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierBankAccountValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const { supplierId, companyId } = bankAccount;
+
+  if ("createdBy" in bankAccount) {
+    return await db
+      .insertInto("supplierBankAccount")
+      .values(bankAccount)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  }
+
+  const { id, ...update } = bankAccount;
+
+  // supplierId and companyId are scoping columns, not editable fields. They are
+  // also re-asserted in the WHERE clause so a forged form value cannot move
+  // this row to another supplier.
+  return await db
+    .updateTable("supplierBankAccount")
+    .set({ ...update, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("supplierId", "=", supplierId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
 }
 
 export async function deleteSupplierProcess(
@@ -896,6 +956,47 @@ export async function getSupplierShipping(
     .select("*")
     .eq("supplierId", supplierId)
     .single();
+}
+
+// Batched report data for the Suppliers CSV export: the Purchasing/Invoice/Shipping
+// contact + address, one query per role. Queries supplierPayment/supplierShipping as
+// the FROM table (forward FK to supplierContact/supplierLocation) rather than
+// embedding them into `suppliers` — their FK back to supplier is composite
+// (supplierId, companyId), which supabase-js's type generator marks `isOneToOne:
+// false` even though supplierId alone is the real PK, so a reverse embed would type
+// (and risk behaving) as an array instead of a single object.
+export async function getSupplierReportContacts(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  supplierIds: string[]
+) {
+  return Promise.all([
+    client
+      .from("supplier")
+      .select(
+        `id, purchasingContact:supplierContact!supplier_purchasingContactId_fkey(contact(fullName, email, workPhone))`
+      )
+      .eq("companyId", companyId)
+      .in("id", supplierIds),
+    client
+      .from("supplierPayment")
+      .select(
+        `supplierId,
+         invoiceContact:supplierContact!supplierPayment_invoiceSupplierContactId_fkey(contact(fullName, email, workPhone)),
+         invoiceLocation:supplierLocation!supplierPayment_invoiceSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
+      )
+      .eq("companyId", companyId)
+      .in("supplierId", supplierIds),
+    client
+      .from("supplierShipping")
+      .select(
+        `supplierId,
+         shippingContact:supplierContact!supplierShipping_shippingSupplierContactId_fkey(contact(fullName, email, workPhone)),
+         shippingLocation:supplierLocation!supplierShipping_shippingSupplierLocationId_fkey(address(addressLine1, addressLine2, city, stateProvince, postalCode, country(name)))`
+      )
+      .eq("companyId", companyId)
+      .in("supplierId", supplierIds)
+  ]);
 }
 
 export async function getSuppliers(
@@ -4371,4 +4472,41 @@ export async function createReplacementPurchaseOrder(
   if (link.error) return { data: null, error: link.error };
 
   return { data: { id: purchaseOrderId }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for a supplier interaction (purchase order/supplier
+ * quote/RFQ) document. First step of the two-step upload flow: PUT the file bytes to
+ * the returned `signedUrl`, then call `documents_insertUploadedDocument` with the
+ * returned `path`, the document type as `sourceDocument`, and the document id as
+ * `sourceDocumentId`. The storage folder is scoped by `interactionId`.
+ */
+export async function createSupplierInteractionDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; interactionId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "supplier-interaction",
+    entityId: args.interactionId,
+    name: args.name
+  });
+}
+
+/**
+ * Create a presigned upload URL for a supplier interaction LINE document. First step
+ * of the two-step upload flow: PUT the file bytes to the returned `signedUrl`, then
+ * call `documents_insertUploadedDocument` with the returned `path`, the line's
+ * document type as `sourceDocument`, and the line id as `sourceDocumentId`.
+ */
+export async function createSupplierInteractionLineDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; lineId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "supplier-interaction-line",
+    entityId: args.lineId,
+    name: args.name
+  });
 }

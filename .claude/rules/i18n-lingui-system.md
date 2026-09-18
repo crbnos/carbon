@@ -39,13 +39,32 @@ runs via `@lingui/vite-plugin` (`lingui()` plugin in `apps/erp/vite.config.ts` a
 
 1. **Mark** strings with macros (see patterns below).
 2. **Extract** (`lingui:extract`) scans configured sources → updates `{locale}/{erp,mes}.po`.
-3. **Compile** (`lingui:compile`) → `{locale}/{erp,mes}.mjs` (build artifact, gitignored).
-4. **Load (server)**: `apps/{erp,mes}/app/services/lingui.server.ts` →
-   `loadLinguiCatalogForRequest(request, locale)` resolves the language and lazy-imports
-   the matching compiled catalog (`erp.mjs` / `mes.mjs`) via `import.meta.glob(..., { import: "messages" })`;
-   returns `{}` if not found.
-5. **Provide (client)**: `root.tsx` loader calls the loader, then renders
-   `<LocaleProvider locale={appLanguage} catalog={linguiCatalog}>` from `@carbon/locale`.
+3. **Compile**: `@lingui/vite-plugin` (wired in both apps' `vite.config.ts`) compiles a
+   `.po` import into a JS module (`export const messages`) in every Vite environment —
+   SSR and client — so the catalog is a hashed, immutable chunk per locale. The
+   `lingui:compile` → `.mjs` step is no longer read by the apps; it stays only as the
+   turbo build input that invalidates the build cache when a `.po` changes. Catalog
+   paths in `lingui.config.js` use `<rootDir>/…` because the plugin resolves them
+   against the config dir while Vite runs from `apps/<app>` — a bare relative path
+   fails with "not matched to any of your catalogs paths".
+4. **Load**: `apps/{erp,mes}/app/services/lingui.ts` (isomorphic, one per app because
+   the glob names the app's catalog) — `import.meta.glob("…/*/{erp,mes}.po", { import: "messages" })`
+   behind a module-level `Map`. `preloadCatalog(locale)` fills it; `getCatalog(locale)`
+   reads it (`{}` if missing); `useCatalog(locale)` reads and, on a cache miss, preloads
+   then re-renders — that is the live language switch (`/api/locale` → root revalidates
+   with the new cookie → the new chunk is fetched).
+   - Server: the root loader awaits `preloadCatalog(appLanguage)` so SSR is translated,
+     and returns NOTHING about the catalog. It used to return the whole catalog as
+     loader data — ~465 KB raw in every HTML and in every `.data` response, which
+     single-fetch serves uncompressed (`text/x-script`), and the root loader re-ran on
+     every action and search-param change. `root.tsx` now also has a `shouldRevalidate`
+     that skips same-pathname GETs (`isSearchParamOnlyNavigation`); actions still
+     revalidate because root carries the flash `result`.
+   - Client: `entry.client.tsx` awaits `preloadCatalog(document.documentElement.lang)`
+     BEFORE `hydrateRoot` — otherwise a non-`en` page hydrates against an empty catalog
+     and mismatches the server markup. `<html lang>` is the resolved language, set by root.
+5. **Provide**: `root.tsx` renders
+   `<LocaleProvider locale={appLanguage} catalog={useCatalog(appLanguage)}>` from `@carbon/locale`.
    `LocaleProvider` (`packages/locale/src/i18n.tsx`) builds a per-render runtime with
    `setupI18n()`, `runtime.load(language, catalog)`, `runtime.activate(language)`, and
    wraps children in Lingui's `<I18nProvider>`. This is the only active i18n instance.

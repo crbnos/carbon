@@ -9,6 +9,7 @@ import type {
   getPurchasingRFQSuppliers,
   getPurchasingRFQs,
   getSupplier,
+  getSupplierBankAccounts,
   getSupplierContacts,
   getSupplierInteraction,
   getSupplierLocations,
@@ -16,6 +17,7 @@ import type {
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines,
   getSupplierQuotes,
+  getSupplierReportContacts,
   getSuppliers,
   getSupplierTypes
 } from "./purchasing.service";
@@ -84,12 +86,42 @@ export type SupplierContact = NonNullable<
   Awaited<ReturnType<typeof getSupplierContacts>>["data"]
 >[number];
 
+// Element types of each of the 3 parallel queries in getSupplierReportContacts,
+// keyed by supplier id / supplierId. Used to type the per-supplier report-contact
+// map built in the suppliers.tsx loader and consumed by SuppliersTable's CSV
+// export-only columns.
+type SupplierReportContactsResult = Awaited<
+  ReturnType<typeof getSupplierReportContacts>
+>;
+export type SupplierPurchasingContact = NonNullable<
+  SupplierReportContactsResult[0]["data"]
+>[number]["purchasingContact"];
+export type SupplierPaymentContact = NonNullable<
+  SupplierReportContactsResult[1]["data"]
+>[number];
+export type SupplierShippingContact = NonNullable<
+  SupplierReportContactsResult[2]["data"]
+>[number];
+
+export type SupplierReportContactsBySupplierId = Record<
+  string,
+  {
+    purchasingContact: SupplierPurchasingContact | null;
+    payment: SupplierPaymentContact | null;
+    shipping: SupplierShippingContact | null;
+  }
+>;
+
 export type SupplierInteraction = NonNullable<
   Awaited<ReturnType<typeof getSupplierInteraction>>["data"]
 >;
 
 export type SupplierLocation = NonNullable<
   Awaited<ReturnType<typeof getSupplierLocations>>["data"]
+>[number];
+
+export type SupplierBankAccount = NonNullable<
+  Awaited<ReturnType<typeof getSupplierBankAccounts>>["data"]
 >[number];
 
 export type SupplierProcess = NonNullable<

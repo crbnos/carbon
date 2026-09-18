@@ -143,6 +143,7 @@ export type ItemOrderStatus = {
   needsOrder: boolean;
   needsJob: boolean;
   shortfall: number;
+  substituteItemId: string | null;
   status: PurchaseOrderStatus | null;
   supplyJobStatus: JobStatus | null;
   coveredByOnHand: boolean;
@@ -165,6 +166,7 @@ export type JobOrderStatusCategory =
 export type ItemShortfall = {
   shortfall: number;
   coveredByOnHand: boolean;
+  substituteItemId?: string | null;
 };
 
 export type ProductionEvent = NonNullable<

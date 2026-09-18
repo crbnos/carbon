@@ -13,7 +13,8 @@
     "tsup": "catalog:",
     "tsx": "catalog:",
     "typescript": "catalog:",
-    "uuid": "9.0.0"
+    "uuid": "9.0.0",
+    "vitest": "catalog:"
   },
   "exports": {
     ".": "./src/index.ts",
@@ -24,6 +25,7 @@
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
+    "./picked-consumption": "./src/picked-consumption.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
     "./quality": "./src/quality.ts",
@@ -48,12 +50,18 @@
     "db:seed:dev": "tsx src/seed-dev.ts",
     "deploy": "supabase link --project-ref $SUPABASE_PROJECT_ID && supabase db push",
     "lint": "biome lint --write ",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsgo --noEmit"
   },
   "sideEffects": false,
   "version": "0.0.0",
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@jsquash/jpeg": "1.6.0",
+    "@jsquash/png": "3.1.1",
+    "@jsquash/resize": "2.1.1",
+    "@jsquash/webp": "1.5.0",
     "@logtape/logtape": "catalog:",
     "@logtape/redaction": "catalog:",
     "@supabase/postgrest-js": "catalog:",
@@ -61,6 +69,7 @@
     "dompurify": "catalog:",
     "kysely": "catalog:",
     "kysely-supabase": "0.2.1",
+    "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "pg": "8.20.0",
     "react-pdf": "catalog:",

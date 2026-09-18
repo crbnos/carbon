@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
-import { supportedModelTypes } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";

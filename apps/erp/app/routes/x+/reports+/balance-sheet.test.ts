@@ -516,14 +516,13 @@ describe("balance sheet configured CTA", () => {
   it("exports the corrected leaf, intermediate equity group, and root values", async () => {
     const result = await runLoader();
     let downloaded: Blob | undefined;
-    vi.stubGlobal("window", {
-      URL: {
-        createObjectURL: (blob: Blob) => {
-          downloaded = blob;
-          return "blob:report";
-        },
-        revokeObjectURL: vi.fn()
-      }
+    // downloadBlob (@carbon/files) uses the bare URL global, not window.URL.
+    vi.stubGlobal("URL", {
+      createObjectURL: (blob: Blob) => {
+        downloaded = blob;
+        return "blob:report";
+      },
+      revokeObjectURL: vi.fn()
     });
     vi.stubGlobal("document", {
       createElement: () => ({ click: vi.fn() }),

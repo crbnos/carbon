@@ -3,6 +3,7 @@ import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
 import type {
   getCustomer,
+  getCustomerBankAccounts,
   getCustomerContacts,
   getCustomerLocations,
   getCustomerStatuses,
@@ -147,6 +148,10 @@ export type CostEffects = {
 
 export type Customer = NonNullable<
   Awaited<ReturnType<typeof getCustomers>>["data"]
+>[number];
+
+export type CustomerBankAccount = NonNullable<
+  Awaited<ReturnType<typeof getCustomerBankAccounts>>["data"]
 >[number];
 
 export type CustomerContact = NonNullable<

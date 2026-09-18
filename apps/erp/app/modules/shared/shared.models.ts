@@ -78,19 +78,7 @@ export const chartIntervals = [
   { key: "custom", label: "Custom" }
 ];
 
-export const documentTypes = [
-  "Archive",
-  "Document",
-  "Presentation",
-  "PDF",
-  "Spreadsheet",
-  "Text",
-  "Image",
-  "Video",
-  "Audio",
-  "Model",
-  "Other"
-] as const;
+export { documentTypes } from "@carbon/files";
 
 export const incoterms = [
   "EXW",

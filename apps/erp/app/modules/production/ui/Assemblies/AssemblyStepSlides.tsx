@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { toast } from "@carbon/react";
 import { nanoid } from "nanoid";
 import { useRef, useState } from "react";
@@ -50,11 +51,18 @@ export default function AssemblyStepSlides({
     if (!file || !carbon) return;
     setUploading(true);
     try {
-      const ext = file.name.split(".").pop();
+      const upload = isHeic(file.name, file.type)
+        ? await convertHeicToJpeg(carbon, {
+            bucket: "private",
+            directory: `${companyId}/tmp`,
+            file
+          })
+        : file;
+      const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${ext}`;
       const result = await carbon.storage
         .from("private")
-        .upload(fileName, file);
+        .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error("Failed to upload image");
         return;
@@ -67,6 +75,8 @@ export default function AssemblyStepSlides({
         method: "post",
         action: path.to.newAssemblyStepSlide(instructionId)
       });
+    } catch {
+      toast.error("Failed to convert image");
     } finally {
       setUploading(false);
     }
