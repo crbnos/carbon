@@ -10,6 +10,7 @@ import {
   pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
+  runMRP as runMRPService,
   upsertJobMaterial as upsertJobMaterialRow
 } from "./production.service";
 
@@ -303,4 +304,49 @@ export async function upsertJobMaterial(
   }
 
   return upserted;
+}
+
+/**
+ * Run MRP for a company/location/job/salesOrder/item/purchaseOrder. Wraps
+ * `production.service.ts`'s `runMRP` with the positional companyId/userId shape
+ * the MCP executor injects automatically -- see `scheduleJob` above for the same
+ * pattern.
+ *
+ * `production.service.ts`'s `runMRP` requires `userId` inside its merged `params`
+ * object, but the generic dispatch's `enrichWithAuthContext`/`AuthField` only
+ * know how to stamp `createdBy`/`updatedBy`/`companyId`/`companyGroupId` onto a
+ * payload -- there is no `"userId"` case, so it can never produce that key. Every
+ * non-UI caller of `production_runMRP` failed with a Zod error on a `userId`
+ * field the tool's own schema never told them to supply. Declaring
+ * `companyId`/`userId` as top-level positional parameters here (instead of
+ * merged into an object) routes through the dispatcher's unconditional
+ * `serviceParams` injection instead, which has no such gap.
+ *
+ * Unlike `scheduleJob`/`completeJob`, this intentionally does NOT re-apply a
+ * single `hasPermission` gate: `runMRP`'s five existing ERP callers each guard
+ * it with a different permission depending on `type` (production, sales,
+ * purchasing, or inventory update) -- there is no one permission that is
+ * correct for every `type` this tool accepts, so a single inline check here
+ * would either under- or over-restrict it.
+ */
+export async function runMRP(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  args: {
+    type:
+      | "company"
+      | "location"
+      | "job"
+      | "salesOrder"
+      | "item"
+      | "purchaseOrder";
+    id: string;
+  }
+) {
+  return runMRPService(client, getDatabaseClient(), {
+    ...args,
+    companyId,
+    userId
+  });
 }
