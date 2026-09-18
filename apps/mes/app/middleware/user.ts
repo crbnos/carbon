@@ -35,7 +35,15 @@ export const userMiddleware: MiddlewareFunction = async ({
     // Redirect back to the originally-requested URL (not the root) so deep
     // links survive the one-time location-cookie bootstrap. The re-run finds
     // the cookie set, so `updated` is false the second time through.
-    return redirect(request.url, {
+    //
+    // RELATIVE, never `request.url`: behind a reverse proxy (portless locally,
+    // any load balancer in production) `request.url` is the server's internal
+    // origin (`http://127.0.0.1:<port>`). An absolute Location sent the
+    // browser there on the first visit, off the public domain its session
+    // cookie is scoped to — landing on a login page at 127.0.0.1. A relative
+    // Location resolves against whatever origin the browser is actually on.
+    const { pathname, search } = new URL(request.url);
+    return redirect(`${pathname}${search}`, {
       headers: {
         "Set-Cookie": setLocation(companyId, location)
       }
