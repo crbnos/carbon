@@ -25,7 +25,11 @@ import {
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { convertKbToString } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import { nanoid } from "nanoid";
@@ -64,8 +68,9 @@ export function MaintenanceDispatchNotes({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");
@@ -210,11 +215,12 @@ function MaintenanceFilesContent({
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of filesToUpload) {
         const filePath = getFilePath(file.name);
 
         const result = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(filePath, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -228,7 +234,7 @@ function MaintenanceFilesContent({
       }
       revalidator.revalidate();
     },
-    [carbon, getFilePath, revalidator, t]
+    [carbon, company.id, getFilePath, revalidator, t]
   );
 
   const download = useCallback(
@@ -262,17 +268,21 @@ function MaintenanceFilesContent({
       }
 
       const filePath = getFilePath(file.name);
-      const result = await carbon.storage.from("private").remove([filePath]);
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [filePath]
+      });
 
-      if (result.error) {
-        toast.error(result.error.message || "Error deleting file");
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon, getFilePath, revalidator, t]
+    [carbon, company.id, getFilePath, revalidator, t]
   );
 
   const onDrop = useCallback(

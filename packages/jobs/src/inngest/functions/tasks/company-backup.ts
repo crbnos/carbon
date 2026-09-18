@@ -4,6 +4,7 @@ import { Readable } from "node:stream";
 import { createGunzip, createGzip } from "node:zlib";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { nanoid } from "nanoid";
@@ -42,10 +43,11 @@ export const EXPORTS_PREFIX = "exports";
 export const TEMPLATE_BUCKET = "company-templates";
 
 /**
- * The bucket the app stores per-company assets in (3D models, item thumbnails,
- * document attachments), all under a `{companyId}/` prefix. A backup copies these
- * into its own `assets/` folder (see `copyAssetsToBackup`); they are NOT in the
- * per-company bucket.
+ * The LEGACY shared bucket that held per-company assets (3D models, item
+ * thumbnails, document attachments) under a `{companyId}/` prefix. Current
+ * writes go to the company's own bucket (bucket id = companyId, same object
+ * keys); files uploaded before the per-company bucket migration may still live
+ * here, so backup reads try the company bucket first and fall back.
  */
 export const STORAGE_BUCKET = "private";
 
@@ -633,12 +635,27 @@ export async function copyAssetsToBackup(
     sourcePaths,
     ASSET_COPY_CONCURRENCY,
     async (path) => {
-      const { ok, error } = await copyStorageObject(client, {
-        srcBucket: STORAGE_BUCKET,
+      // Assets live in the company's own bucket (keys start with companyId);
+      // pre-migration files still live in the legacy shared bucket. A key with
+      // no companyId segment can only live in the legacy bucket.
+      const companySegment = path.split("/")[0] ?? "";
+      const companyBucket = companySegment
+        ? getCompanyPrivateBucket(companySegment)
+        : STORAGE_BUCKET;
+      let { ok, error } = await copyStorageObject(client, {
+        srcBucket: companyBucket,
         srcPath: path,
         destBucket,
         destPath: `${destPrefix}/${path}`
       });
+      if (!ok) {
+        ({ ok, error } = await copyStorageObject(client, {
+          srcBucket: STORAGE_BUCKET,
+          srcPath: path,
+          destBucket,
+          destPath: `${destPrefix}/${path}`
+        }));
+      }
       if (ok) {
         copied++;
       } else {
@@ -652,9 +669,9 @@ export async function copyAssetsToBackup(
 }
 
 /**
- * Copy a backup's stored assets back into the shared `private` bucket for the
- * target company, rewriting each path for a foreign/reseed restore (no-op for an
- * own restore). Server-side, best-effort. Every write is guarded to the target
+ * Copy a backup's stored assets back into the target company's own private
+ * bucket, rewriting each path for a foreign/reseed restore (no-op for an own
+ * restore). Server-side, best-effort. Every write is guarded to the target
  * company's own `{companyId}/` prefix so a malformed path can never land in
  * another tenant's space.
  */
@@ -695,7 +712,7 @@ export async function restoreAssetsFromBackup(
     const { ok, error } = await copyStorageObject(client, {
       srcBucket,
       srcPath: `${srcPrefix}/${file.path}`,
-      destBucket: STORAGE_BUCKET,
+      destBucket: getCompanyPrivateBucket(companyId),
       destPath: targetPath
     });
     if (ok) {

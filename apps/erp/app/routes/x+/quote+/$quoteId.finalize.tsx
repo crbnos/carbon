@@ -5,7 +5,12 @@ import { QuoteEmail } from "@carbon/documents/email";
 import { getQuoteDisplayId } from "@carbon/documents/pdf";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { datetime } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import {
+  createCompanyPrivateSignedUrl,
+  datetime,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -23,6 +28,8 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "quote", "finalize");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -83,7 +90,7 @@ export async function action(args: ActionFunctionArgs) {
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
 
     const documentFileUpload = await client.storage
-      .from("private")
+      .from(getCompanyPrivateBucket(companyId))
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -192,9 +199,19 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await client.storage
-          .from("private")
-          .createSignedUrl(documentFilePath, 3600);
+        const { signedUrl, errors: signedUrlErrors } =
+          await createCompanyPrivateSignedUrl({
+            storage: client.storage,
+            companyId,
+            objectPath: documentFilePath,
+            expiresIn: 3600
+          });
+        if (!signedUrl) {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath: documentFilePath,
+            errors: signedUrlErrors
+          });
+        }
 
         await trigger("send-email", {
           to: [user.data.email, customerContact.data.contact!.email!],
@@ -203,10 +220,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Quote ${getQuoteDisplayId(quote.data)}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signedUrl
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signedUrl,
                   filename: fileName
                 }
               ]

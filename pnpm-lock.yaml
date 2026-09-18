@@ -2791,6 +2791,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@carbon/workflows':
         specifier: workspace:*
         version: link:../workflows

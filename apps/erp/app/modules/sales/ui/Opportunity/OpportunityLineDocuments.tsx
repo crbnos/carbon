@@ -27,7 +27,13 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  convertKbToString,
+  downloadCompanyPrivateObject,
+  getCompanyPrivateBucket,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -94,19 +100,25 @@ const useOpportunityLineDocuments = ({
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "opportunity-line";
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file, bucket as "opportunity-line" | "parts")]);
+      if (!carbon?.storage) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getPath(file, bucket as "opportunity-line" | "parts")]
+      });
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon?.storage, company.id, revalidator, t]
   );
 
   const deleteModel = useCallback(
@@ -254,11 +266,12 @@ const useOpportunityLineDocuments = ({
         return;
       }
 
+      const storageBucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         const fileName = getPath(file, bucket);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(storageBucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -277,7 +290,7 @@ const useOpportunityLineDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, itemId, t]
+    [getPath, createDocumentRecord, carbon, company.id, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(
@@ -306,9 +319,12 @@ const useOpportunityLineDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const { data: downloadData } = await carbon.storage
-          .from("private")
-          .download(sourcePath);
+        const storageBucket = getCompanyPrivateBucket(company.id);
+        const { data: downloadData } = await downloadCompanyPrivateObject({
+          storage: carbon.storage,
+          companyId: company.id,
+          objectPath: sourcePath
+        });
 
         if (!downloadData) {
           toast.error(t`Failed to download file for moving`);
@@ -318,7 +334,7 @@ const useOpportunityLineDocuments = ({
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
         const { error: uploadError } = await carbon.storage
-          .from("private")
+          .from(storageBucket)
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -330,11 +346,13 @@ const useOpportunityLineDocuments = ({
         }
 
         // Delete from old location
-        const { error: deleteError } = await carbon.storage
-          .from("private")
-          .remove([sourcePath]);
+        const { errors: deleteErrors } = await removeCompanyPrivateObjects({
+          storage: carbon.storage,
+          companyId: company.id,
+          objectPaths: [sourcePath]
+        });
 
-        if (deleteError) {
+        if (deleteErrors.length > 0) {
           toast.error(t`Failed to delete file from old location`);
           return;
         }
@@ -350,7 +368,7 @@ const useOpportunityLineDocuments = ({
         logger.error("Failed to process file operation", { error });
       }
     },
-    [carbon, itemId, getPath, revalidator, t]
+    [carbon, company.id, itemId, getPath, revalidator, t]
   );
 
   return {

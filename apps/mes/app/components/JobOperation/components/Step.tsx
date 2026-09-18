@@ -35,6 +35,7 @@ import {
 } from "@carbon/react";
 import {
   documentHasImages,
+  getCompanyPrivateBucket,
   parseMentionsFromDocument,
   stripSpecialCharacters,
   tiptapToText
@@ -481,7 +482,7 @@ export function RecordModal({
     const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${safeName}`;
 
     const upload = await carbon?.storage
-      .from("private")
+      .from(getCompanyPrivateBucket(company.id))
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true

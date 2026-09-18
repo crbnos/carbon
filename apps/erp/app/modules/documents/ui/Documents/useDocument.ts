@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
+import { downloadCompanyPrivateObject } from "@carbon/utils";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -166,16 +167,24 @@ export const useDocument = () => {
   const makePreview = useCallback(
     async (doc: DocumentType) => {
       if (!doc.path) throw new Error("Document path is undefined");
-      const result = await carbon?.storage.from("private").download(doc.path);
+      if (!carbon) {
+        toast.error("Error previewing file");
+        return null;
+      }
+      const { data, errors } = await downloadCompanyPrivateObject({
+        storage: carbon.storage,
+        companyId: user.company.id,
+        objectPath: doc.path
+      });
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error previewing file");
+      if (!data) {
+        toast.error(errors[0]?.error?.message || "Error previewing file");
         return null;
       }
 
-      return window.URL.createObjectURL(result.data);
+      return window.URL.createObjectURL(data);
     },
-    [carbon]
+    [carbon, user.company.id]
   );
 
   const removeLabel = useCallback(

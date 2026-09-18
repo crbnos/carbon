@@ -29,6 +29,7 @@ import { Document, Page } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import type { Database } from "@carbon/database";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuChevronDown,
@@ -2214,8 +2215,9 @@ export default function InspectionDocumentEditor({
       setUploading(true);
 
       const storagePath = `${companyId}/inspectionDocument/${diagramId}/${nanoid()}.pdf`;
+      const bucket = getCompanyPrivateBucket(companyId);
       const result = await carbon.storage
-        .from("private")
+        .from(bucket)
         .upload(storagePath, file);
 
       setUploading(false);

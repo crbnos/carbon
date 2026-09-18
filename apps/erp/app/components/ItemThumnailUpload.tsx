@@ -10,6 +10,7 @@ import {
   TooltipTrigger,
   toast
 } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -185,8 +186,9 @@ export function ItemThumbnailUpload({
             type: contentType
           });
 
+          const bucket = getCompanyPrivateBucket(company.id);
           const { data, error } = await carbon.storage
-            .from("private")
+            .from(bucket)
             .upload(
               `${company.id}/thumbnails/${itemId}/${fileName}`,
               thumbnailFile,

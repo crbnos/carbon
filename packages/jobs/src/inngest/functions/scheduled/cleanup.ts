@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { NotificationEvent } from "@carbon/notifications";
+import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/utils";
 import { inngest } from "../../client";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
@@ -417,17 +418,27 @@ export const cleanupFunction = inngest.createFunction(
       // reader probes/falls back to `private`.
       const relocated = new Set<string>();
       const CHUNK = 20;
+      // A durable copy may live in the company's own bucket (current pipeline)
+      // or the legacy shared `private` bucket (pre-migration relocations), so
+      // probe both. Object keys start with the companyId segment.
+      const probeDurableCopy = async (name: string) => {
+        const companyId = name.split("/")[0] ?? "";
+        for (const bucket of [
+          getCompanyPrivateBucket(companyId),
+          LEGACY_PRIVATE_BUCKET
+        ]) {
+          const found = await serviceRole.storage
+            .from(bucket)
+            .info(name)
+            .then((r) => Boolean(!r.error && r.data))
+            .catch(() => false);
+          if (found) return name;
+        }
+        return null;
+      };
       for (let i = 0; i < staleNames.length; i += CHUNK) {
         const chunk = staleNames.slice(i, i + CHUNK);
-        const probes = await Promise.all(
-          chunk.map((name) =>
-            serviceRole.storage
-              .from("private")
-              .info(name)
-              .then((r) => (!r.error && r.data ? name : null))
-              .catch(() => null)
-          )
-        );
+        const probes = await Promise.all(chunk.map(probeDurableCopy));
         for (const name of probes) {
           if (name) relocated.add(name);
         }

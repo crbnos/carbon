@@ -21,7 +21,12 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -343,19 +348,25 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const deleteFile = useCallback(
     async (file: FileObject) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file)]);
+      if (!carbon?.storage) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getPath(file)]
+      });
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`File deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon?.storage, company.id, revalidator, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -423,12 +434,13 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         toast.info(t`Uploading ${file.name}`);
         const fileName = getPath(file);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -455,7 +467,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       }
       revalidator.revalidate();
     },
-    [getPath, carbon, revalidator, submit, type, itemId, t]
+    [getPath, carbon, company.id, revalidator, submit, type, itemId, t]
   );
 
   return {

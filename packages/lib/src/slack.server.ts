@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
+import { createCompanyPrivateSignedUrl } from "@carbon/utils";
 import type { WebClientOptions } from "@slack/web-api";
 import { WebClient } from "@slack/web-api";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -114,10 +115,12 @@ export async function postSuggestionToCarbonSlack(
             .single()
         : Promise.resolve(null),
       input.attachmentPath
-        ? client.storage
-            .from("private")
-            .createSignedUrl(input.attachmentPath, 60 * 60 * 24 * 7)
-            .then((result) => result.data?.signedUrl ?? null)
+        ? createCompanyPrivateSignedUrl({
+            storage: client.storage,
+            companyId: input.companyId,
+            objectPath: input.attachmentPath,
+            expiresIn: 60 * 60 * 24 * 7
+          }).then((result) => result.signedUrl)
         : Promise.resolve(null)
     ]);
 

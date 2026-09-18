@@ -1,7 +1,10 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { supportedModelTypes } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  supportedModelTypes
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "public");
@@ -52,10 +55,18 @@ export async function loader({ params }: LoaderFunctionArgs) {
     supportedFileTypes[fileType] ??
     (fileType === "glb" ? "model/gltf-binary" : "application/octet-stream");
 
+  // No auth session on this public route — the object path's first segment is
+  // the companyId, which selects the per-company bucket (with legacy fallback).
+  const companyId = path.split("/")[0];
+
   async function downloadFile() {
-    const result = await client.storage.from("private").download(`${path}`);
-    if (result.error) {
-      logger.error(result.error);
+    const result = await downloadCompanyPrivateObject({
+      storage: client.storage,
+      companyId,
+      objectPath: `${path}`
+    });
+    if (!result.data) {
+      logger.error("Failed to download file", { errors: result.errors });
       return null;
     }
     return result.data;

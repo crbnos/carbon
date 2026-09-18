@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { isModelRawDownloadable } from "@carbon/utils";
+import { getCompanyPrivateBucket, isModelRawDownloadable } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -43,16 +43,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // compaction settles / when oversized — probe both (same resolution as the
   // model.artifacts route).
   const serviceRole = getCarbonServiceRole();
-  const probe = (bucket: "private" | "temp-staging") =>
+  const probe = (bucket: string) =>
     serviceRole.storage
       .from(bucket)
       .info(candidate)
       .catch(() => ({ data: null, error: true as const }));
-  const durable = await probe("private");
-  let bucket: string | null = !durable.error && durable.data ? "private" : null;
-  if (!bucket) {
-    const staged = await probe("temp-staging");
-    if (!staged.error && staged.data) bucket = "temp-staging";
+  // Durable raws live in the company's own bucket since the per-company bucket
+  // migration; pre-migration raws in legacy `private`; staged ones in
+  // `temp-staging`. The row is companyId-scoped, so the session's own bucket
+  // is the right one — never derive it from the path.
+  const companyBucket = getCompanyPrivateBucket(companyId);
+  let bucket: string | null = null;
+  for (const candidateBucket of [companyBucket, "private", "temp-staging"]) {
+    const found = await probe(candidateBucket);
+    if (!found.error && found.data) {
+      bucket = candidateBucket;
+      break;
+    }
   }
   if (!bucket) {
     throw new Response("Original model file is not available", { status: 404 });

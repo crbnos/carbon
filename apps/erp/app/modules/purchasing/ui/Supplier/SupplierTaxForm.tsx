@@ -10,7 +10,7 @@ import {
   HStack,
   toast
 } from "@carbon/react";
-import { isEoriCountry } from "@carbon/utils";
+import { getCompanyPrivateBucket, isEoriCountry } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
@@ -53,10 +53,9 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
 
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/tax-certificates/${nanoid()}.${fileExtension}`;
+      const bucket = getCompanyPrivateBucket(companyId);
 
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
 
       if (result.error) {
         toast.error(t`Failed to upload certificate`);

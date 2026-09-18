@@ -7,7 +7,12 @@ import type {
   KyselyTx
 } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import {
+  datetime,
+  getCompanyPrivateBucket,
+  listCompanyPrivateObjects
+} from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -788,10 +793,12 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  const result = await listCompanyPrivateObjects({
+    storage: client.storage,
+    companyId,
+    prefix: `${companyId}/parts/${itemId}`
+  });
+  return result.data as FileObject[];
 }
 
 export async function getItemPostingGroup(
@@ -8161,6 +8168,6 @@ export async function createItemDocumentUploadUrl(
     name: args.name
   });
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }

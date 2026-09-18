@@ -2365,7 +2365,8 @@ export const getParams = (request: Request) => {
 export const getPrivateUrl = (path: string) => {
   // Demo-template artwork ships with the app, so it never goes through the
   // storage proxy. Anything else is a real tenant file.
-  return getDatasetAssetUrl(path) ?? `/file/preview/private/${path}`;
+  const bucket = path.split("/")[0] || "private";
+  return getDatasetAssetUrl(path) ?? `/file/preview/${bucket}/${path}`;
 };
 
 /** Raw model source for the viewer's WASM fallback tier — bucket varies by era

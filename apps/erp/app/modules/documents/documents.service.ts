@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -216,7 +217,7 @@ export async function createDocumentUploadUrl(
 ) {
   const documentPath = buildDocumentUploadPath(args);
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }
 

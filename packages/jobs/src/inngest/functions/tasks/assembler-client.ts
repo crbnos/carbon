@@ -10,6 +10,7 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
+import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 
@@ -78,11 +79,13 @@ export function assemblerBaseUrl(): string {
 }
 
 // Where a retained raw lands: uploads/compaction stage in `temp-staging`
-// (EPHEMERAL, 2.5 GB), and the retained raw is relocated to `private` (DURABLE,
-// 50 MB served cap) so it survives — or pruned when it can't fit and a GLB
-// preview already exists. The 50 MB gate is `MODEL_RAW_KEEP_MAX_BYTES`.
+// (EPHEMERAL, 2.5 GB), and the retained raw is relocated to the company's own
+// private bucket (DURABLE, 50 MB served cap) so it survives — or pruned when it
+// can't fit and a GLB preview already exists. The 50 MB gate is
+// `MODEL_RAW_KEEP_MAX_BYTES`. Object keys start with the companyId segment,
+// which is also the durable bucket's id; pre-migration raws still live in the
+// legacy `private` bucket, so readers probe both.
 export const RAW_STAGING_BUCKET = "temp-staging";
-export const RAW_DURABLE_BUCKET = "private";
 
 /**
  * COPY a staged object into the durable bucket, same key, server-side (no
@@ -99,9 +102,15 @@ export async function copyRawToDurable(
   client: SupabaseClient<Database>,
   path: string
 ): Promise<string | null> {
+  // The durable home is the company's own bucket; keys start with companyId.
+  // A key with no companyId segment has no durable home — refuse rather than
+  // resolve to a wrong bucket.
+  const companySegment = path.split("/")[0] ?? "";
+  if (!companySegment) return `path has no companyId prefix: ${path}`;
+  const durableBucket = getCompanyPrivateBucket(companySegment);
   const { error } = await client.storage
     .from(RAW_STAGING_BUCKET)
-    .copy(path, path, { destinationBucket: RAW_DURABLE_BUCKET });
+    .copy(path, path, { destinationBucket: durableBucket });
   if (!error) return null;
   return /already exists|duplicate/i.test(error.message) ? null : error.message;
 }
@@ -134,19 +143,30 @@ export async function signSourceUrl(
 
 /**
  * Resolve which bucket a model's raw source lives in. Current uploads land in
- * `temp-staging`; rows from before the assembler pipeline live in `private` —
- * signing against the wrong bucket fails with "Object not found", so probe
- * temp-staging and fall back (same resolution as the ERP model.artifacts route).
+ * `temp-staging`, durable copies in the company's own bucket, and pre-migration
+ * rows in the legacy `private` bucket — signing against the wrong bucket fails
+ * with "Object not found", so probe in that order (same resolution as the ERP
+ * model.artifacts route).
  */
 export async function resolveModelSourceBucket(
   client: SupabaseClient<Database>,
   modelPath: string
-): Promise<"temp-staging" | "private"> {
-  const staged = await client.storage
-    .from("temp-staging")
-    .info(modelPath)
-    .catch(() => ({ data: null, error: true as const }));
-  return staged.error || !staged.data ? "private" : "temp-staging";
+): Promise<string> {
+  const companySegment = modelPath.split("/")[0] ?? "";
+  const buckets = [
+    RAW_STAGING_BUCKET,
+    // A key with no companyId segment can't resolve a company bucket.
+    ...(companySegment ? [getCompanyPrivateBucket(companySegment)] : []),
+    LEGACY_PRIVATE_BUCKET
+  ];
+  for (const bucket of buckets) {
+    const probe = await client.storage
+      .from(bucket)
+      .info(modelPath)
+      .catch(() => ({ data: null, error: true as const }));
+    if (!probe.error && probe.data) return bucket;
+  }
+  return LEGACY_PRIVATE_BUCKET;
 }
 
 /**

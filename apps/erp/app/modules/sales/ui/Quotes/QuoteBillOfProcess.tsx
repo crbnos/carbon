@@ -35,7 +35,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { getCompanyPrivateBucket, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -417,8 +417,9 @@ const QuoteBillOfProcess = ({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/opportunity-line/${selectedItemId}/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
     const result = await carbon?.storage
-      .from("private")
+      .from(bucket)
       .upload(fileName, file, { upsert: true });
 
     if (result?.error) {
@@ -916,8 +917,9 @@ function AttributesForm({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -1224,8 +1226,9 @@ function AttributesListItem({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");

@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
-import { supportedModelTypes } from "@carbon/utils";
+import { getCompanyPrivateBucket, supportedModelTypes } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -33,8 +33,9 @@ export async function uploadStepSlideModel(
 ): Promise<string | null> {
   const modelUploadId = nanoid();
   const ext = file.name.split(".").pop();
+  const bucket = getCompanyPrivateBucket(companyId);
   const upload = await carbon.storage
-    .from("private")
+    .from(bucket)
     .upload(`${companyId}/models/${modelUploadId}.${ext}`, file, {
       upsert: true
     });

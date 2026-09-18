@@ -692,10 +692,13 @@ export const auditConfig = {
   /** Retention period before archival (days) */
   retentionDays: 30,
 
-  /** Archive storage path template */
-  archivePath: "audit-logs/{companyId}/{year}/{month}.jsonl.gz",
+  /** Archive storage path template (company-bucket keys keep the companyId
+   * prefix; pre-migration archives used audit-logs/{companyId}/... in the
+   * legacy bucket — readers resolve via the stored archivePath) */
+  archivePath: "{companyId}/audit-logs/{year}/{month}.jsonl.gz",
 
-  /** Storage bucket name for archives */
+  /** LEGACY shared bucket for pre-migration archives (read fallback only —
+   * new archives are written to the company's own private bucket) */
   archiveBucket: "private"
 } as const;
 

@@ -3,13 +3,10 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { verifyDownloadToken } from "@carbon/auth/download-token.server";
+import { downloadCompanyPrivateObject } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
-
-// Documents live in the "private" storage bucket, keyed directly by `document.path`
-// (mirrors useDocument.ts).
-const DOCUMENTS_BUCKET = "private";
 
 // Pure resource route (loader only, no default export): it always returns a
 // Response — the file bytes on success, or a redirect to the friendly error page
@@ -48,11 +45,15 @@ export async function loader({ params }: LoaderFunctionArgs) {
     if (doc.error || !doc.data?.path) return fail("unavailable");
 
     // Access already proven above; fetch the bytes with the service role.
-    const file = await getCarbonServiceRole()
-      .storage.from(DOCUMENTS_BUCKET)
-      .download(doc.data.path);
+    // Documents live in the company's private bucket (legacy `private`
+    // fallback), keyed directly by `document.path` (mirrors useDocument.ts).
+    const file = await downloadCompanyPrivateObject({
+      storage: getCarbonServiceRole().storage,
+      companyId,
+      objectPath: doc.data.path
+    });
 
-    if (file.error || !file.data) return fail("unavailable");
+    if (!file.data) return fail("unavailable");
 
     // Best-effort audit log mirroring useDocument's "Download" transaction, so
     // history stays consistent. Never block the download on a logging failure.

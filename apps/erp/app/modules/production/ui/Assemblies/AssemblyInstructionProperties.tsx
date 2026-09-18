@@ -26,6 +26,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { AssemblyGraphIndex, NamedUnit } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
 import { nanoid } from "nanoid";
@@ -386,7 +387,8 @@ function StepForm({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const bucket = getCompanyPrivateBucket(companyId);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error("Failed to upload image");

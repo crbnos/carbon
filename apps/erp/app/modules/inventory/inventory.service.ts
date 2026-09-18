@@ -2,7 +2,7 @@ import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, listCompanyPrivateObjects } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -740,30 +740,32 @@ export async function getReceiptFiles(
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
-      .list(`${companyId}/inventory/${lineId}`)
-      .then((result) => ({
-        ...result,
-        lineId
-      }))
+    listCompanyPrivateObjects({
+      storage: client.storage,
+      companyId,
+      prefix: `${companyId}/inventory/${lineId}`
+    }).then((result) => ({
+      ...result,
+      lineId
+    }))
   );
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  // A single-bucket miss is expected during the legacy fallback window; only
+  // fail when both the company and legacy buckets errored.
+  const firstError = results.find((result) => result.errors.length >= 2);
   if (firstError) {
     return {
       data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
+      error: firstError.errors[0]?.error?.message ?? "Failed to fetch files"
     };
   }
 
   // Merge data arrays and add lineId as bucketName
   return {
     data: results.flatMap((result) =>
-      (result.data ?? []).map((file) => ({
+      (result.data as StorageItem[]).map((file) => ({
         ...file,
         bucket: result.lineId
       }))
@@ -1196,30 +1198,32 @@ export async function getShipmentFiles(
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
-      .list(`${companyId}/inventory/${lineId}`)
-      .then((result) => ({
-        ...result,
-        lineId
-      }))
+    listCompanyPrivateObjects({
+      storage: client.storage,
+      companyId,
+      prefix: `${companyId}/inventory/${lineId}`
+    }).then((result) => ({
+      ...result,
+      lineId
+    }))
   );
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  // A single-bucket miss is expected during the legacy fallback window; only
+  // fail when both the company and legacy buckets errored.
+  const firstError = results.find((result) => result.errors.length >= 2);
   if (firstError) {
     return {
       data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
+      error: firstError.errors[0]?.error?.message ?? "Failed to fetch files"
     };
   }
 
   // Merge data arrays and add lineId as bucketName
   return {
     data: results.flatMap((result) =>
-      (result.data ?? []).map((file) => ({
+      (result.data as StorageItem[]).map((file) => ({
         ...file,
         bucket: result.lineId
       }))

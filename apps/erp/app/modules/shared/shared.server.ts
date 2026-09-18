@@ -2,6 +2,10 @@ import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
+import {
+  createCompanyPrivateSignedUrl,
+  getCompanyPrivateBucket
+} from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -188,7 +192,7 @@ export async function generateAndAttachSalesOrderPdf(args: {
   const documentFilePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
   const uploadResult = await serviceRole.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(companyId))
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -262,7 +266,7 @@ export async function generateAndAttachSalesReturnOrderPdf(
   const documentFilePath = `${companyId}/sales-return-order/${id}/${fileName}`;
 
   const uploadResult = await serviceRole.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(companyId))
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -339,7 +343,7 @@ export async function generateAndAttachPurchaseReturnOrderPdf(
   const documentFilePath = `${companyId}/purchase-return-order/${id}/${fileName}`;
 
   const uploadResult = await serviceRole.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(companyId))
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -470,9 +474,12 @@ export async function sendSalesOrderEmail(args: {
 
   const html = await renderAsync(emailTemplate);
   const text = await renderAsync(emailTemplate, { plainText: true });
-  const { data: signedUrlData } = await serviceRole.storage
-    .from("private")
-    .createSignedUrl(documentFilePath, 3600);
+  const { signedUrl } = await createCompanyPrivateSignedUrl({
+    storage: serviceRole.storage,
+    companyId,
+    objectPath: documentFilePath,
+    expiresIn: 3600
+  });
 
   await trigger("send-email", {
     to: [seller.data.email, customer.data.contact.email!],
@@ -481,10 +488,10 @@ export async function sendSalesOrderEmail(args: {
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
     html,
     text,
-    attachments: signedUrlData?.signedUrl
+    attachments: signedUrl
       ? [
           {
-            path: signedUrlData.signedUrl,
+            path: signedUrl,
             filename: fileName
           }
         ]

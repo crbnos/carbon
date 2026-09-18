@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { EXTRACTION_CONFIDENCE_THRESHOLD } from "@carbon/env";
+import { downloadCompanyPrivateObject } from "@carbon/utils";
 import { inngest } from "../../client";
 import { invoiceExtractionSchema, rfqExtractionSchema } from "./schemas";
 
@@ -63,12 +64,19 @@ export const extractDocumentFunction = inngest.createFunction(
 
       try {
         // 3. Download PDF from Supabase Storage
-        const { data: fileData, error: downloadErr } = await client.storage
-          .from("private")
-          .download(extraction.storagePath);
+        const { data: fileData, errors: downloadErrors } =
+          await downloadCompanyPrivateObject({
+            storage: client.storage,
+            companyId,
+            objectPath: extraction.storagePath
+          });
 
-        if (downloadErr || !fileData) {
-          throw new Error(`Failed to download PDF: ${downloadErr?.message}`);
+        if (!fileData) {
+          throw new Error(
+            `Failed to download PDF: ${downloadErrors
+              .map((e) => `${e.bucket}: ${e.error?.message}`)
+              .join("; ")}`
+          );
         }
 
         // 4. Extract text from PDF using pdfjs-dist

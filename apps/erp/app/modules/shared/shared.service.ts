@@ -2,7 +2,11 @@ import type { Database, Tables } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { getPurchaseOrderStatus, supportedModelTypes } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  getPurchaseOrderStatus,
+  supportedModelTypes
+} from "@carbon/utils";
 import type {
   PostgrestSingleResponse,
   SupabaseClient
@@ -710,8 +714,14 @@ export async function getBase64ImageFromSupabase(
     return Buffer.from(buffer).toString("base64");
   }
 
-  const { data, error } = await client.storage.from("private").download(path);
-  if (error) {
+  // Private object paths are prefixed with the owning company's id.
+  const companyId = path.split("/")[0];
+  const { data } = await downloadCompanyPrivateObject({
+    storage: client.storage,
+    companyId,
+    objectPath: path
+  });
+  if (!data) {
     return null;
   }
 

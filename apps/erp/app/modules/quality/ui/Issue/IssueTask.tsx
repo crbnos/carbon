@@ -16,6 +16,7 @@ import {
   toast,
   useDebounce
 } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -373,7 +374,8 @@ function useTaskNotes({
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const bucket = getCompanyPrivateBucket(companyId);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);

@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { tiptapToHTML } from "@carbon/utils";
+import { createCompanyPrivateSignedUrl, tiptapToHTML } from "@carbon/utils";
 import type { JSONContent } from "@tiptap/react";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -240,12 +240,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     for (const doc of rfqDocs) {
       const storagePath = `${companyId}/supplier-interaction/${rfqId}/${doc.name}`;
-      const { data: signedUrlData } = await client.storage
-        .from("private")
-        .createSignedUrl(storagePath, 3600);
+      const { signedUrl, errors } = await createCompanyPrivateSignedUrl({
+        storage: client.storage,
+        companyId,
+        objectPath: storagePath,
+        expiresIn: 3600
+      });
 
-      if (signedUrlData?.signedUrl) {
-        attachments.push({ filename: doc.name, path: signedUrlData.signedUrl });
+      if (signedUrl) {
+        attachments.push({ filename: doc.name, path: signedUrl });
+      } else {
+        logger.error("Failed to create signed URL for attachment", {
+          storagePath,
+          errors
+        });
       }
     }
 
@@ -261,14 +269,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       for (const doc of lineDocs) {
         const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-        const { data: signedUrlData } = await client.storage
-          .from("private")
-          .createSignedUrl(storagePath, 3600);
+        const { signedUrl, errors } = await createCompanyPrivateSignedUrl({
+          storage: client.storage,
+          companyId,
+          objectPath: storagePath,
+          expiresIn: 3600
+        });
 
-        if (signedUrlData?.signedUrl) {
+        if (signedUrl) {
           attachments.push({
             filename: doc.name,
-            path: signedUrlData.signedUrl
+            path: signedUrl
+          });
+        } else {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath,
+            errors
           });
         }
       }

@@ -37,7 +37,11 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import { getItemById, INPUT_FORMAT } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  getItemById,
+  INPUT_FORMAT
+} from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -380,12 +384,11 @@ const BillOfProcess = ({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage
-      .from("private")
-      .upload(fileName, file, {
-        upsert: true,
-        cacheControl: "3600"
-      });
+    const bucket = getCompanyPrivateBucket(companyId);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file, {
+      upsert: true,
+      cacheControl: "3600"
+    });
 
     if (result?.error) {
       throw new Error(result.error.message);
@@ -2015,8 +2018,9 @@ function AttributesForm({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -2039,9 +2043,8 @@ function AttributesForm({
     try {
       const ext = file.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const bucket = getCompanyPrivateBucket(companyId);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -2582,8 +2585,9 @@ function AttributesListItem({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -3122,9 +3126,8 @@ function StepSlides({
     try {
       const ext = file.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const bucket = getCompanyPrivateBucket(companyId);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;

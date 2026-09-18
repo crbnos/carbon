@@ -10,6 +10,7 @@ import {
   type FlatTree,
   flattenTree,
   generateBomIds,
+  listCompanyPrivateObjects,
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -612,13 +613,21 @@ const getItemFiles = async (
   items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await client.storage
-      .from("private")
-      .list(`${companyId}/parts/${id}`);
+    const res = await listCompanyPrivateObjects({
+      storage: client.storage,
+      companyId,
+      prefix: `${companyId}/parts/${id}`
+    });
 
-    if (res.error || !res.data) return null;
+    if (res.data.length === 0) return null;
 
-    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+    // The union helper types entries as StorageFileLike; at runtime they are
+    // the supabase FileObjects StorageItem expects.
+    return res.data.map((f) => ({
+      ...f,
+      bucket: "parts",
+      itemId: id
+    })) as unknown as StorageItem[];
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -638,30 +647,46 @@ export async function getJobFiles(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
-      client.storage
-        .from("private")
-        .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      listCompanyPrivateObjects({
+        storage: client.storage,
+        companyId,
+        prefix: `${companyId}/opportunity-line/${opportunityLine}`
+      }),
+      listCompanyPrivateObjects({
+        storage: client.storage,
+        companyId,
+        prefix: `${companyId}/job/${job.id}`
+      }),
       getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data?.map((f) => ({
+      ...(opportunityLineFiles.data.map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      })) as unknown as StorageItem[]),
+      ...(jobFiles.data.map((f) => ({
+        ...f,
+        bucket: "job"
+      })) as unknown as StorageItem[]),
       ...itemFiles
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      listCompanyPrivateObjects({
+        storage: client.storage,
+        companyId,
+        prefix: `${companyId}/job/${job.id}`
+      }),
       getItemFiles(client, companyId, items)
     ]);
 
     return [
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(jobFiles.data.map((f) => ({
+        ...f,
+        bucket: "job"
+      })) as unknown as StorageItem[]),
       ...itemFiles
     ];
   }

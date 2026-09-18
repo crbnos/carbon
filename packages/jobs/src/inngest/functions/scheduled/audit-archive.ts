@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, getCompanyPrivateBucket } from "@carbon/utils";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "audit-archive");
@@ -65,11 +65,18 @@ async function archiveCompanyLogs(
   const month = String(utcToday.month).padStart(2, "0");
   const day = String(utcToday.day).padStart(2, "0");
   const timestamp = `${year}-${month}-${day}`;
-  const archivePath = `audit-logs/${companyId}/${year}/${month}/${timestamp}.jsonl.gz`;
+  // Keys in the company bucket start with `${companyId}/` — the module-wide
+  // private-storage invariant (it is what backup listing and the prefix-guarded
+  // helpers key off). Pre-migration archives used `audit-logs/${companyId}/...`
+  // in the legacy shared bucket; readers resolve via the stored `archivePath`,
+  // so both shapes stay readable.
+  const archivePath = `${companyId}/audit-logs/${year}/${month}/${timestamp}.jsonl.gz`;
 
-  // Upload to storage
+  // Upload to the company's own private bucket (auditConfig.archiveBucket is
+  // the legacy shared bucket, kept only as a read fallback for old archives).
+  const archiveBucket = getCompanyPrivateBucket(companyId);
   const { error: uploadError } = await client.storage
-    .from(auditConfig.archiveBucket)
+    .from(archiveBucket)
     .upload(archivePath, gzipped, {
       contentType: "application/gzip",
       upsert: true
@@ -95,7 +102,7 @@ async function archiveCompanyLogs(
 
   if (archiveError) {
     // Try to clean up uploaded file
-    await client.storage.from(auditConfig.archiveBucket).remove([archivePath]);
+    await client.storage.from(archiveBucket).remove([archivePath]);
     throw new Error(`Failed to record archive: ${archiveError.message}`);
   }
 

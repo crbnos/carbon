@@ -2,7 +2,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasPlan } from "@carbon/ee/plan.server";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { supportedModelTypes } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  hasCompanyPrivateObjectPathPrefix,
+  supportedModelTypes
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
@@ -71,7 +75,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
-  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
+  // hoisted so the narrowing survives into downloadFile's closure
+  const shareCompanyId = customer.data.companyId;
+
+  const hasPlan = await companyHasPlan(serviceRole, shareCompanyId, {
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
@@ -79,11 +86,16 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   let path = params["*"];
-  let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
 
   if (!path) throw new Error("Path not found");
 
   path = decodeURIComponent(path);
+
+  // Private objects are keyed by companyId — a path outside the portal's
+  // company must not resolve to another tenant's bucket.
+  if (!hasCompanyPrivateObjectPathPrefix(customer.data.companyId, path)) {
+    return new Response(null, { status: 404 });
+  }
 
   const jobFile = parseJobFilePath(path);
 
@@ -119,9 +131,13 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const contentType = supportedFileTypes[fileType];
 
   async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
-    if (result.error) {
-      logger.error("Failed to download file", { error: result.error });
+    const result = await downloadCompanyPrivateObject({
+      storage: serviceRole.storage,
+      companyId: shareCompanyId,
+      objectPath: `${path}`
+    });
+    if (!result.data) {
+      logger.error("Failed to download file", { errors: result.errors });
       return null;
     }
     return result.data;

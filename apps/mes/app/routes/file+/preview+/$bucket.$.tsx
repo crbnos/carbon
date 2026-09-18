@@ -1,6 +1,12 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import type { StorageClientLike } from "@carbon/utils";
+import {
+  downloadCompanyPrivateObject,
+  getCompanyPrivateBucket,
+  LEGACY_PRIVATE_BUCKET
+} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const log = getLogger("mes");
@@ -86,14 +92,39 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
+  // `public` and `temp-staging` are shared buckets legitimately served through
+  // this route (file previews, staged CAD raw downloads); any other bucket id
+  // that isn't the caller's own company bucket (or legacy `private`) would be
+  // another tenant's private bucket — refuse it. The ownsPath check alone is
+  // not enough: a slash-bounded match allows `<otherCo>/x/<yourCo>/file`.
+  const isPrivateBucket =
+    bucket === getCompanyPrivateBucket(companyId) ||
+    bucket === LEGACY_PRIVATE_BUCKET;
+  if (!isPrivateBucket && bucket !== "public" && bucket !== "temp-staging") {
+    return new Response(null, { status: 403 });
+  }
+
   const serviceRole = await getCarbonServiceRole();
 
   async function downloadFile() {
-    if (!path) throw new Error("Path not found");
+    if (!path || !bucket) throw new Error("Path not found");
     // Use the original encoded path for the storage API call
-    const result = await serviceRole.storage.from(bucket!).download(path);
-    if (result.error) {
-      log.error("Failed to download file", { error: result.error });
+    if (!isPrivateBucket) {
+      const direct = await serviceRole.storage.from(bucket).download(path);
+      if (direct.error || !direct.data) {
+        log.error("Failed to download file", { error: direct.error });
+        return null;
+      }
+      return direct.data;
+    }
+    const result = await downloadCompanyPrivateObject({
+      // supabase-js storage option params don't structurally match StorageClientLike
+      storage: serviceRole.storage as StorageClientLike,
+      companyId,
+      objectPath: path
+    });
+    if (!result.data) {
+      log.error("Failed to download file", { errors: result.errors });
       return null;
     }
     return result.data;

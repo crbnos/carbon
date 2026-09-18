@@ -1252,7 +1252,7 @@
     {"name":"sales_getOpenSalesOrderLinesForItem","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"334d8429d21a","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getOpportunity","classification":"READ","paramCount":1,"schema":"5e54451f6705","response":"cdaf9ce57087","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getOpportunityDocuments","classification":"READ","paramCount":1,"schema":"a4fcfa20a027","response":"18998cbb23b4","injectAuth":"companyId","permission":"sales:view","paginates":false},
-    {"name":"sales_getOpportunityLineDocuments","classification":"READ","paramCount":2,"schema":"067400ea63f8","response":"5483e69d7515","injectAuth":"companyId","permission":"sales:view","paginates":false},
+    {"name":"sales_getOpportunityLineDocuments","classification":"READ","paramCount":2,"schema":"067400ea63f8","response":"18998cbb23b4","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRule","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"f7007e889f64","injectAuth":"companyId","permission":"sales:view","paginates":false},
     {"name":"sales_getPricingRules","classification":"READ","paramCount":3,"schema":"cae7e7e05408","response":"af7bb9de307a","injectAuth":"companyId","permission":"sales:view","paginates":true},
     {"name":"sales_getQuote","classification":"READ","paramCount":1,"schema":"c726ae407913","response":"ee5f623bf074","injectAuth":"companyId","permission":"sales:view","paginates":false},

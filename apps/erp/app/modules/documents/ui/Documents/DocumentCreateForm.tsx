@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import { getLogger } from "@carbon/logger";
 import { File, toast } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
@@ -25,9 +26,10 @@ const DocumentCreateForm = () => {
       toast.info(t`Uploading ${file.name}`);
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${companyId}/${nanoid()}.${fileExtension}`;
+      const bucket = getCompanyPrivateBucket(companyId);
 
       const fileUpload = await carbon.storage
-        .from("private")
+        .from(bucket)
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true

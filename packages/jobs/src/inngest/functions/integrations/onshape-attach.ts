@@ -1,5 +1,6 @@
 import { openAsBlob } from "node:fs";
 import type { Database } from "@carbon/database";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
@@ -50,7 +51,8 @@ export interface AttachOnshapeAssetsResult {
   preservedPriorModelAsDocument: boolean;
 }
 
-const BUCKET = "private";
+// Durable files land in the company's own private bucket (bucket id =
+// companyId; object keys keep the companyId prefix).
 // Raw model sources live in temp-staging (same as manual CadModel uploads); the
 // model-optimize job reads from there and later zstd-compacts the raw in place.
 const STAGING_BUCKET = "temp-staging";
@@ -246,7 +248,7 @@ export async function attachModelThumbnail(
 ): Promise<void> {
   const thumbnailPath = `${input.companyId}/thumbnails/${input.modelUploadId}/${input.modelUploadId}.png`;
   const uploaded = await carbon.storage
-    .from(BUCKET)
+    .from(getCompanyPrivateBucket(input.companyId))
     .upload(thumbnailPath, input.pngBytes, {
       upsert: true,
       contentType: "image/png"
@@ -449,8 +451,9 @@ export async function attachOnshapeAssetsToItem(
         );
         const preservedPath = `${companyId}/parts/${itemId}/${preservedName}`;
         // Raw sources live in temp-staging since the assembler pipeline;
-        // pre-pipeline rows live in private. Copy into private either way so
-        // the preserved file sits with the item's documents.
+        // older rows live in the company or legacy private bucket. Copy into
+        // the company bucket so the preserved file sits with the item's
+        // documents.
         const priorBucket = await resolveModelSourceBucket(
           carbon,
           priorModel.modelPath
@@ -458,7 +461,7 @@ export async function attachOnshapeAssetsToItem(
         const copied = await carbon.storage
           .from(priorBucket)
           .copy(priorModel.modelPath, preservedPath, {
-            destinationBucket: BUCKET
+            destinationBucket: getCompanyPrivateBucket(companyId)
           });
         if (copied.error && !/already exists/i.test(copied.error.message)) {
           console.error(
@@ -507,7 +510,7 @@ export async function attachOnshapeAssetsToItem(
     const documentPath = `${companyId}/parts/${itemId}/${safeName}`;
 
     const documentUpload = await carbon.storage
-      .from(BUCKET)
+      .from(getCompanyPrivateBucket(companyId))
       .upload(documentPath, document.bytes, { upsert: true });
     if (documentUpload.error) {
       throw new Error(

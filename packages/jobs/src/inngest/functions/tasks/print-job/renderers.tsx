@@ -17,7 +17,7 @@ import {
 import { ERP_URL, SUPABASE_INTERNAL_URL } from "@carbon/env";
 import { renderWithBinderyPress } from "@carbon/printing/printing.server";
 import type { LabelSize, ProductLabelItem } from "@carbon/utils";
-import { labelSizes } from "@carbon/utils";
+import { downloadCompanyPrivateObject, labelSizes } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ReactElement } from "react";
@@ -201,9 +201,13 @@ async function renderKanbanCardPDF(
 
   let thumbnail: string | null = null;
   if (item.thumbnailPath) {
-    const { data } = await client.storage
-      .from("private")
-      .download(item.thumbnailPath);
+    // Private object paths are prefixed with the owning companyId segment.
+    const companyId = item.thumbnailPath.split("/")[0] ?? "";
+    const { data } = await downloadCompanyPrivateObject({
+      storage: client.storage,
+      companyId,
+      objectPath: item.thumbnailPath
+    });
     if (data) {
       const buffer = Buffer.from(await data.arrayBuffer());
       const ext = item.thumbnailPath.split(".").pop()?.toLowerCase();

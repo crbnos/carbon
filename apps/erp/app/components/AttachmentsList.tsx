@@ -10,8 +10,10 @@ import {
 } from "@carbon/react";
 import {
   convertKbToString,
+  getCompanyPrivateBucket,
   PO_EMAIL_ATTACHMENT_LIMIT_MB,
-  PO_EMAIL_ATTACHMENT_WARN_MB
+  PO_EMAIL_ATTACHMENT_WARN_MB,
+  removeCompanyPrivateObjects
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useMemo, useState } from "react";
@@ -86,11 +88,12 @@ export default function AttachmentsList({
       }
       setUploading(true);
       try {
+        const bucket = getCompanyPrivateBucket(company.id);
         for (const file of acceptedFiles) {
           const safeName = stripSpecialCharacters(file.name);
           const storagePath = `${company.id}/supplier-interaction/${supplierInteractionId}/${safeName}`;
           const upload = await carbon.storage
-            .from("private")
+            .from(bucket)
             .upload(storagePath, file, {
               cacheControl: `${12 * 60 * 60}`,
               upsert: true
@@ -115,14 +118,18 @@ export default function AttachmentsList({
   const onRemovePoFile = useCallback(
     async (a: ResolvedAttachmentItem) => {
       if (!carbon) return;
-      const result = await carbon.storage.from("private").remove([a.path]);
-      if (result.error) {
-        toast.error(result.error.message || t`Error removing file`);
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [a.path]
+      });
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || t`Error removing file`);
       } else {
         revalidator.revalidate();
       }
     },
-    [carbon, revalidator, t]
+    [carbon, company.id, revalidator, t]
   );
 
   return (

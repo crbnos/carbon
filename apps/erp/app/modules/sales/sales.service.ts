@@ -8,9 +8,12 @@ import type { PickPartial } from "@carbon/utils";
 import {
   datetime,
   EPSILON,
+  getCompanyPrivateBucket,
   getSalesReturnOrderStatus,
+  listCompanyPrivateObjects,
   round
 } from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -1087,18 +1090,24 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/opportunity/${opportunityId}`);
+  const result = await listCompanyPrivateObjects({
+    storage: client.storage,
+    companyId,
+    prefix: `${companyId}/opportunity/${opportunityId}`
+  });
 
-  if (result.error) {
+  // A single-bucket miss is expected during the legacy fallback window.
+  if (result.errors.length >= 2) {
     logger.error("Failed to list opportunity documents", {
-      error: result.error
+      error: result.errors[0]?.error
     });
     return [];
   }
 
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
+  return (result.data as FileObject[]).map((f) => ({
+    ...f,
+    bucket: "opportunity"
+  }));
 }
 
 export async function getOpportunityLineDocuments(
@@ -1108,30 +1117,42 @@ export async function getOpportunityLineDocuments(
   itemId?: string | null
 ) {
   const [opportunityLineResult, itemResult] = await Promise.all([
-    client.storage
-      .from("private")
-      .list(`${companyId}/opportunity-line/${lineId}`),
+    listCompanyPrivateObjects({
+      storage: client.storage,
+      companyId,
+      prefix: `${companyId}/opportunity-line/${lineId}`
+    }),
     itemId
-      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
-      : Promise.resolve({ data: [] as any[], error: null })
+      ? listCompanyPrivateObjects({
+          storage: client.storage,
+          companyId,
+          prefix: `${companyId}/parts/${itemId}`
+        })
+      : Promise.resolve({ data: [] as any[], errors: [] })
   ]);
 
-  if (opportunityLineResult.error) {
+  // A single-bucket miss is expected during the legacy fallback window.
+  if (opportunityLineResult.errors.length >= 2) {
     logger.error("Failed to list opportunity line documents", {
-      error: opportunityLineResult.error
+      error: opportunityLineResult.errors[0]?.error
     });
   }
-  if (itemResult.error) {
-    logger.error("Failed to list item documents", { error: itemResult.error });
+  if (itemResult.errors.length >= 2) {
+    logger.error("Failed to list item documents", {
+      error: itemResult.errors[0]?.error
+    });
   }
 
-  const opportunityLineDocs =
-    opportunityLineResult.data?.map((f) => ({
+  const opportunityLineDocs = (opportunityLineResult.data as FileObject[]).map(
+    (f) => ({
       ...f,
       bucket: "opportunity-line"
-    })) ?? [];
-  const itemDocs =
-    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+    })
+  );
+  const itemDocs = (itemResult.data as FileObject[]).map((f) => ({
+    ...f,
+    bucket: "parts"
+  }));
 
   return [...opportunityLineDocs, ...itemDocs];
 }
@@ -7757,7 +7778,7 @@ export async function createOpportunityDocumentUploadUrl(
     name: args.name
   });
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }
 
@@ -7778,6 +7799,6 @@ export async function createOpportunityLineDocumentUploadUrl(
     name: args.name
   });
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }

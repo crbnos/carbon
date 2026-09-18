@@ -21,6 +21,7 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import data from "@emoji-mart/data";
 import Picker from "@emoji-mart/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -91,7 +92,7 @@ const Suggestion = () => {
 
       const fileName = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
       const imageUpload = await carbon.storage
-        .from("private")
+        .from(getCompanyPrivateBucket(companyId))
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true

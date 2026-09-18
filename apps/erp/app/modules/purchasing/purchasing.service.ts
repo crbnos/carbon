@@ -5,10 +5,13 @@ import { getLogger } from "@carbon/logger";
 import {
   datetime,
   EPSILON,
+  getCompanyPrivateBucket,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
+  listCompanyPrivateObjects,
   round
 } from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestResponse,
@@ -670,18 +673,24 @@ export async function getSupplierInteractionDocuments(
   companyId: string,
   interactionId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/supplier-interaction/${interactionId}`);
+  const result = await listCompanyPrivateObjects({
+    storage: client.storage,
+    companyId,
+    prefix: `${companyId}/supplier-interaction/${interactionId}`
+  });
 
-  if (result.error) {
-    logger.error("Failed to list supplier interaction documents", result.error);
+  // A single-bucket miss is expected during the legacy fallback window.
+  if (result.errors.length >= 2) {
+    logger.error("Failed to list supplier interaction documents", {
+      errors: result.errors
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction" })) ?? []
-  );
+  return (result.data as FileObject[]).map((f) => ({
+    ...f,
+    bucket: "supplier-interaction"
+  }));
 }
 
 export async function getSupplierInteractionLineDocuments(
@@ -689,24 +698,24 @@ export async function getSupplierInteractionLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  const result = await client.storage
-    .from("private")
-    .list(`${companyId}/supplier-interaction-line/${lineId}`);
+  const result = await listCompanyPrivateObjects({
+    storage: client.storage,
+    companyId,
+    prefix: `${companyId}/supplier-interaction-line/${lineId}`
+  });
 
-  if (result.error) {
-    logger.error(
-      "Failed to list supplier interaction line documents",
-      result.error
-    );
+  // A single-bucket miss is expected during the legacy fallback window.
+  if (result.errors.length >= 2) {
+    logger.error("Failed to list supplier interaction line documents", {
+      errors: result.errors
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({
-      ...f,
-      bucket: "supplier-interaction-line"
-    })) ?? []
-  );
+  return (result.data as FileObject[]).map((f) => ({
+    ...f,
+    bucket: "supplier-interaction-line"
+  }));
 }
 
 export async function getSupplierLocations(
@@ -3096,12 +3105,19 @@ export async function getDefaultAttachmentsForPO(
   }
 
   const results = await Promise.all(
-    prefixes.map(({ path }) => client.storage.from("private").list(path))
+    prefixes.map(({ path }) =>
+      listCompanyPrivateObjects({
+        storage: client.storage,
+        companyId,
+        prefix: path
+      })
+    )
   );
 
   return results.flatMap((result, idx) => {
     const { source, path: prefix } = prefixes[idx];
-    return (result.data ?? []).map((f) => ({
+    // the union helper's structural type omits supabase's metadata field
+    return (result.data as FileObject[]).map((f) => ({
       source,
       name: f.name,
       size:
@@ -4433,7 +4449,7 @@ export async function createSupplierInteractionDocumentUploadUrl(
     name: args.name
   });
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }
 
@@ -4454,6 +4470,6 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
     name: args.name
   });
   return client.storage
-    .from("private")
+    .from(getCompanyPrivateBucket(args.companyId))
     .createSignedUploadUrl(documentPath, { upsert: true });
 }

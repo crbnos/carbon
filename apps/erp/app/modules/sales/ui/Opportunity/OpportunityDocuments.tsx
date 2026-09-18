@@ -22,7 +22,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { useDndContext, useDraggable } from "@dnd-kit/core";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
@@ -318,19 +322,25 @@ export const useOpportunityDocuments = ({
 
   const deleteAttachment = useCallback(
     async (attachment: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
-        .remove([getPath(attachment)]);
+      if (!carbon?.storage) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getPath(attachment)]
+      });
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error deleting file");
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getPath, revalidator, t]
+    [carbon?.storage, company.id, getPath, revalidator, t]
   );
 
   const download = useCallback(
@@ -389,12 +399,13 @@ export const useOpportunityDocuments = ({
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         const fileName = getPath(file);
         toast.info(t`Uploading ${file.name}`);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -413,7 +424,7 @@ export const useOpportunityDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, t]
+    [getPath, createDocumentRecord, carbon, company.id, revalidator, t]
   );
 
   return {

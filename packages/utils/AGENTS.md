@@ -48,6 +48,7 @@ pnpm --filter @carbon/utils typecheck
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `revalidate` | `isSearchParamOnlyNavigation` — shared by both apps' shell `shouldRevalidate` |
 | `status` | Status resolution, status color mapping |
+| `storage` | Company-private file-storage contract: `getCompanyPrivateBucket` (bucket id = companyId; THROWS on an empty id — never resolves bucket `""`), `buildCompanyPrivateStorageTarget` (object keys keep the `companyId/` prefix), `LEGACY_PRIVATE_BUCKET`, and the fallback-aware helpers (`downloadCompanyPrivateObject` / `createCompanyPrivateSignedUrl` — both REFUSE an `objectPath` outside `${companyId}/`, since under a service-role client that prefix is the only tenant boundary on the shared legacy bucket; `listCompanyPrivateObjects` — unions both buckets; `removeCompanyPrivateObjects` — deletes from both). All legacy-bucket fallback lives here so removing it later is a one-file change |
 | `storage-rules` | Inventory/storage rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |

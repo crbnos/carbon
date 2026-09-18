@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import { toast } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { useRef, useState } from "react";
 import { useFetcher } from "react-router";
@@ -52,9 +53,8 @@ export default function AssemblyStepSlides({
     try {
       const ext = file.name.split(".").pop();
       const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const bucket = getCompanyPrivateBucket(companyId);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
       if (result.error || !result.data) {
         toast.error("Failed to upload image");
         return;

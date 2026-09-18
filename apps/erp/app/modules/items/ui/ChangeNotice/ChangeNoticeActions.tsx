@@ -5,6 +5,7 @@ import {
   toast,
   useDebounce
 } from "@carbon/react";
+import { getCompanyPrivateBucket } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { nanoid } from "nanoid";
@@ -119,7 +120,8 @@ function ActionItem({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const bucket = getCompanyPrivateBucket(companyId);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
     if (result?.error || !result?.data) {
       toast.error(t`Failed to upload image`);
       throw new Error(result?.error?.message ?? "Failed to upload image");

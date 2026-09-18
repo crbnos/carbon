@@ -21,7 +21,12 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  MODEL_RAW_KEEP_MAX_BYTES,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -108,19 +113,25 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getReadPath(file)]);
+      if (!carbon?.storage) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getReadPath(file)]
+      });
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t]
+    [carbon?.storage, company.id, getReadPath, revalidator, t]
   );
 
   const downloadModel = useCallback(
@@ -189,11 +200,12 @@ const Documents = ({
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         const fileName = getWritePath({ name: file.name });
         toast.info(t`Uploading ${file.name}`);
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -227,6 +239,7 @@ const Documents = ({
     [
       getWritePath,
       carbon,
+      company.id,
       revalidator,
       submit,
       sourceDocument,

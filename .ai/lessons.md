@@ -1590,3 +1590,13 @@ full-screen ERP route.
 **Rule:** One `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues; return the per-tenant outcomes so the run output says who failed. Classify terminal failures (a refused OAuth grant is `AccountingAuthError`) and return them from the step instead of throwing — retries cannot fix them and only delay the next tenant. Pair the per-tenant step with a `maxDuration` on the serve route: a step's ceiling is that function's ceiling.
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
+
+## Sweeping storage call sites by one literal misses named-constant buckets
+
+**Context:** The company-private-bucket migration swept every `storage.from("private")` call in the repo to per-company buckets. The literal grep found ~160 call sites and missed six more: `RAW_DURABLE_BUCKET = "private"` (assembler-client), `STORAGE_BUCKET = "private"` (company-backup/export), `BUCKET = "private"` (onshape-attach), `DOCUMENTS_BUCKET = "private"` (download.$token), `archiveBucket: "private"` (audit.config), and the `["private", "temp-staging"]` probe arrays in both apps' model.artifacts/model.download routes.
+
+**Problem:** Each miss was a real defect, not noise — new CAD raws kept landing in the legacy bucket, backups silently skipped assets uploaded to company buckets, restores wrote assets back into the legacy bucket, and token downloads / audit-archive reads would 404 on new files once the legacy fallback is removed.
+
+**Rule:** When migrating a string-keyed resource (a bucket, a queue, a topic), grep for the VALUE in every syntactic position — `= "x"`, `: "x"`, `"x",`, `("x"`, and type unions — not just the one call pattern you are rewriting. Constants exist precisely to hide the literal from the call site.
+
+**Applies to:** any repo-wide sweep keyed on a string literal; storage buckets (`private`, `temp-staging`, `company-templates`), PGMQ queue names, Inngest event names.

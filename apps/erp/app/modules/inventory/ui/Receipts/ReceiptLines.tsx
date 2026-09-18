@@ -35,6 +35,10 @@ import {
   VStack
 } from "@carbon/react";
 import type { TrackedEntityAttributes } from "@carbon/utils";
+import {
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
@@ -1333,11 +1337,12 @@ function useReceiptFiles(receiptId: string) {
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         const fileName = getPath({ name: file.name }, lineId);
         toast.info(`Uploading ${file.name}`);
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -1364,24 +1369,30 @@ function useReceiptFiles(receiptId: string) {
       }
       revalidator.revalidate();
     },
-    [carbon, revalidator, getPath, receiptId, submit, t]
+    [carbon, company.id, revalidator, getPath, receiptId, submit, t]
   );
 
   const deleteFile = useCallback(
     async (file: StorageItem, lineId: string) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file, lineId)]);
+      if (!carbon?.storage) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getPath(file, lineId)]
+      });
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || "Error deleting file");
         return;
       }
 
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator]
+    [getPath, carbon?.storage, company.id, revalidator]
   );
 
   return { upload, deleteFile, getPath };

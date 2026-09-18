@@ -21,7 +21,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -77,19 +81,25 @@ const useSupplierInteractionLineDocuments = ({
 
   const deleteFile = useCallback(
     async (file: ItemFile) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
-        .remove([getPath(file)]);
+      if (!carbon?.storage) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { errors } = await removeCompanyPrivateObjects({
+        storage: carbon.storage,
+        companyId: company.id,
+        objectPaths: [getPath(file)]
+      });
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (errors.length > 0) {
+        toast.error(errors[0]?.error?.message || "Error deleting file");
         return;
       }
 
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator]
+    [getPath, carbon?.storage, company.id, revalidator]
   );
 
   const download = useCallback(
@@ -148,11 +158,12 @@ const useSupplierInteractionLineDocuments = ({
         return;
       }
 
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of files) {
         const fileName = getPath(file);
 
         const fileUpload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -170,7 +181,7 @@ const useSupplierInteractionLineDocuments = ({
       }
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, t]
+    [getPath, createDocumentRecord, carbon, company.id, revalidator, t]
   );
 
   return {

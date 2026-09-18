@@ -52,6 +52,7 @@ import { Editor } from "@carbon/react/Editor";
 import {
   formatDate,
   formatDurationMilliseconds,
+  getCompanyPrivateBucket,
   INPUT_FORMAT
 } from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
@@ -726,8 +727,9 @@ const JobBillOfProcess = ({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${selectedItemId}/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
     const result = await carbon?.storage
-      .from("private")
+      .from(bucket)
       .upload(fileName, file, { upsert: true });
 
     if (result?.error) {
@@ -1315,8 +1317,9 @@ function StepsForm({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);
@@ -1338,9 +1341,8 @@ function StepsForm({
     try {
       const ext = file.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const bucket = getCompanyPrivateBucket(companyId);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -1965,9 +1967,8 @@ function JobStepSlides({
     try {
       const ext = file.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
-        .upload(fileName, file);
+      const bucket = getCompanyPrivateBucket(companyId);
+      const result = await carbon.storage.from(bucket).upload(fileName, file);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
         return;
@@ -2180,8 +2181,9 @@ function StepsListItem({
   const onUploadImage = async (file: File) => {
     const fileType = file.name.split(".").pop();
     const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
+    const bucket = getCompanyPrivateBucket(companyId);
 
-    const result = await carbon?.storage.from("private").upload(fileName, file);
+    const result = await carbon?.storage.from(bucket).upload(fileName, file);
 
     if (result?.error) {
       toast.error(t`Failed to upload image`);

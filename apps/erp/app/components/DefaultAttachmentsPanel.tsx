@@ -21,7 +21,11 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
+import {
+  convertKbToString,
+  getCompanyPrivateBucket,
+  removeCompanyPrivateObjects
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ReactNode } from "react";
@@ -71,10 +75,11 @@ export default function DefaultAttachmentsPanel({
         toast.error(t`Storage client not available`);
         return;
       }
+      const bucket = getCompanyPrivateBucket(company.id);
       for (const file of acceptedFiles) {
         const safeName = stripSpecialCharacters(file.name);
         const upload = await carbon.storage
-          .from("private")
+          .from(bucket)
           .upload(fullPath(safeName), file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -83,7 +88,7 @@ export default function DefaultAttachmentsPanel({
       }
       revalidator.revalidate();
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   const onDownload = useCallback(
@@ -117,11 +122,13 @@ export default function DefaultAttachmentsPanel({
       const storagePath = fullPath(name);
       setDeletingPath(storagePath);
       try {
-        const result = await carbon.storage
-          .from("private")
-          .remove([storagePath]);
-        if (result.error) {
-          toast.error(result.error.message || t`Error deleting file`);
+        const { errors } = await removeCompanyPrivateObjects({
+          storage: carbon.storage,
+          companyId: company.id,
+          objectPaths: [storagePath]
+        });
+        if (errors.length > 0) {
+          toast.error(errors[0]?.error?.message || t`Error deleting file`);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();
@@ -130,7 +137,7 @@ export default function DefaultAttachmentsPanel({
         setDeletingPath(null);
       }
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   return (
