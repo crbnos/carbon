@@ -22,8 +22,11 @@ const LIST_PAGE_SIZE = 1000;
 
 const isDryRun = process.argv.includes("--dry-run");
 
-const { SUPABASE_URL: supabaseUrl, SUPABASE_SERVICE_ROLE: serviceRoleKey } =
-  readLocalScriptConfig(["SUPABASE_URL", "SUPABASE_SERVICE_ROLE"], process.env);
+const { SUPABASE_URL: supabaseUrl, SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey } =
+  readLocalScriptConfig(
+    ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY"],
+    process.env
+  );
 
 function createServiceRoleClient(url: string, serviceRole: string) {
   // The database workspace declares and pins this dependency; root scripts do not.
