@@ -1345,7 +1345,7 @@
     {"name":"sales_resolveQuoteLinePrices","classification":"WRITE","paramCount":3,"schema":"160e0d2cf116","response":"af602e7b257e","injectAuth":"companyId","permission":"sales:update","paginates":false},
     {"name":"sales_setSalesReturnOrderLineDisposition","classification":"WRITE","paramCount":2,"schema":"a8526e566c94","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_shortCloseSalesReturnOrderLine","classification":"WRITE","paramCount":3,"schema":"a3098b18fc68","response":"none","injectAuth":"companyId","permission":"sales:update","paginates":false},
-    {"name":"sales_startQuoteLine","classification":"WRITE","paramCount":16,"schema":"4da68772a4ab","response":"82414c08ff0c","injectAuth":"companyId","permission":"sales:update","paginates":false},
+    {"name":"sales_startQuoteLine","classification":"WRITE","paramCount":16,"schema":"4da68772a4ab","response":"82414c08ff0c","injectAuth":"companyId+createdBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerAccounting","classification":"WRITE","paramCount":2,"schema":"165c42d97441","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerContact","classification":"WRITE","paramCount":4,"schema":"f0fc7be0eef2","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
     {"name":"sales_updateCustomerLocation","classification":"WRITE","paramCount":4,"schema":"9d205b68ee4f","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"sales:update","paginates":false},
