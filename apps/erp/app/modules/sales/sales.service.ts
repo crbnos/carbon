@@ -3923,6 +3923,96 @@ export async function upsertQuoteLine(
     .single();
 }
 
+export async function startQuoteLine(
+  client: SupabaseClient<Database>,
+  line: Omit<z.infer<typeof quoteLineValidator>, "id"> & {
+    companyId: string;
+    createdBy: string;
+    customFields?: Json;
+  }
+) {
+  const existing = await client
+    .from("quoteLine")
+    .select("sortOrder")
+    .eq("quoteId", line.quoteId);
+
+  const maxSortOrder = (existing.data ?? []).reduce(
+    (max, row) => Math.max(max, row.sortOrder ?? 0),
+    0
+  );
+
+  const lineResult = await client
+    .from("quoteLine")
+    .insert([{ ...line, sortOrder: maxSortOrder + 1 }])
+    .select("*")
+    .single();
+
+  if (lineResult.error) {
+    return { data: null, error: lineResult.error };
+  }
+
+  const quoteLineId = lineResult.data.id;
+
+  // If methodType is Make to Order, populate the method via get-method edge function
+  if (line.methodType === "Make to Order" && line.itemId) {
+    const methodResult = await client.functions.invoke("get-method", {
+      body: {
+        type: "itemToQuoteLine",
+        sourceId: line.itemId,
+        targetId: `${line.quoteId}:${quoteLineId}`,
+        companyId: line.companyId,
+        userId: line.createdBy,
+        configuration: line.configuration
+      }
+    });
+
+    if (methodResult.error) {
+      return { data: null, error: methodResult.error };
+    }
+  }
+
+  // Recalculate prices based on methodType
+  if (line.methodType === "Make to Order") {
+    const priceResult = await recalculateQuoteLinePrices(
+      client,
+      line.quoteId,
+      quoteLineId,
+      line.createdBy
+    );
+    if (priceResult?.error) {
+      return { data: null, error: priceResult.error };
+    }
+  } else if (line.methodType === "Pull from Inventory") {
+    const quantities = line.quantity ?? [1];
+    const priceResult = await resolveQuoteLinePrices(
+      client,
+      line.companyId,
+      line.quoteId,
+      quoteLineId,
+      quantities,
+      line.createdBy
+    );
+    if (priceResult?.error) {
+      return { data: null, error: priceResult.error };
+    }
+  } else if (line.methodType === "Purchase to Order") {
+    const quantities = line.quantity ?? [1];
+    const priceResult = await resolvePurchaseToOrderPrices(
+      client,
+      line.companyId,
+      line.quoteId,
+      quoteLineId,
+      quantities,
+      line.createdBy
+    );
+    if (priceResult?.error) {
+      return { data: null, error: priceResult.error };
+    }
+  }
+
+  return { data: { id: quoteLineId, quoteLineId }, error: null };
+}
+
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
   updates: { id: string; sortOrder: number; updatedBy: string }[]
