@@ -15914,6 +15914,10 @@ msgstr "Разбить расходы по местоположению, цен�
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Разделить выручку по покупателям, типам покупателей или любому измерению"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Слайд {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Минимальный размер партии для комплектования. Оставьте пусто без значения."
 

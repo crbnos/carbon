@@ -15914,6 +15914,10 @@ msgstr "Ventiler les charges par site, centre de coûts ou axe analytique"
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Ventiler les revenus par client, type de client ou axe analytique"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Diapositive {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Plus petite taille de lot acceptable. Laissez vide pour aucune."
 

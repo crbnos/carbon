@@ -15914,6 +15914,10 @@ msgstr "Dividir despesas por localização, centro de custo ou qualquer dimensã
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Dividir receita por cliente, tipo de cliente ou qualquer dimensão"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Slide {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Menor passagem que justifique lote de produção. Deixe vazio para nenhuma."
 

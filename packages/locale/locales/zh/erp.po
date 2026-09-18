@@ -15914,6 +15914,10 @@ msgstr "按地点、成本中心或任何维度分割费用"
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "按客户、客户类型或任何维度划分收入"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "幻灯片 {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"
 

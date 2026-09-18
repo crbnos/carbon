@@ -15914,6 +15914,10 @@ msgstr "स्थान, लागत केंद्र, या किसी �
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "ग्राहक, ग्राहक प्रकार, या किसी भी आयाम द्वारा राजस्व को स्लाइस करें"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "स्लाइड {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "बैचिंग के लायक सबसे छोटा रन। कोई नहीं के लिए खाली छोड़ें।"
 

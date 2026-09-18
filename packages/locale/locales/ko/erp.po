@@ -15914,6 +15914,10 @@ msgstr "비용을 사업장, 원가 센터 또는 모든 차원으로 분할"
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "매출을 고객, 고객 유형 또는 모든 차원으로 분할"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "슬라이드 {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세요."
 

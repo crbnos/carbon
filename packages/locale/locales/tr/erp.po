@@ -15914,6 +15914,10 @@ msgstr "Konum, maliyet merkezi veya herhangi bir boyuta göre giderleri böl"
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Hasılatı müşteriye, müşteri türüne veya herhangi bir boyuta göre böl"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Slayt {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın."
 

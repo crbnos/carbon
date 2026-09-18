@@ -15914,6 +15914,10 @@ msgstr "Podziel wydatki według lokalizacji, miejsca powstawania kosztów lub do
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "Podziel przychody ze sprzedaży według klienta, typu klienta lub dowolnego wymiaru"
 
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "Slajd {0}"
+
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "Najmniejszy cykl do tworzenia partii. Zostaw puste, aby go pominąć."
 
