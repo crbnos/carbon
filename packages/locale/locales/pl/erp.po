@@ -11402,6 +11402,9 @@ msgstr "Nie certyfikowany"
 msgid "Not configured"
 msgstr "Nie skonfigurowano"
 
+msgid "Not Configured"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
 

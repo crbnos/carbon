@@ -11402,6 +11402,9 @@ msgstr "인증되지 않음"
 msgid "Not configured"
 msgstr "구성되지 않음"
 
+msgid "Not Configured"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 

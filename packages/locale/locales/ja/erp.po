@@ -11402,6 +11402,9 @@ msgstr "認定されていない"
 msgid "Not configured"
 msgstr "未設定"
 
+msgid "Not Configured"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 

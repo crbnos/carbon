@@ -11402,6 +11402,9 @@ msgstr "Не сертифицировано"
 msgid "Not configured"
 msgstr "Не настроено"
 
+msgid "Not Configured"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 

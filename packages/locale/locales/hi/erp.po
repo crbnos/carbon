@@ -11402,6 +11402,9 @@ msgstr "प्रमाणित नहीं"
 msgid "Not configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
+msgid "Not Configured"
+msgstr ""
+
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 

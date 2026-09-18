@@ -83,7 +83,7 @@ export function IntegrationCard({
           ) : null
         ) : (
           <Badge className="flex-shrink-0" variant="secondary">
-            <Trans>Coming soon</Trans>
+            <Trans>Not Configured</Trans>
           </Badge>
         )}
       </div>
