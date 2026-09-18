@@ -300,7 +300,7 @@ const PeopleTable = memo(
             permissions.can("create", "users") && (
               <New
                 label={t`Employee`}
-                to={`${path.to.newEmployee}?${params.toString()}`}
+                to={`${path.to.bulkInviteEmployees}?${params.toString()}`}
               />
             )
           }

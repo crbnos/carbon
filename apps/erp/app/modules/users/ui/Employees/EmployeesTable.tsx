@@ -458,7 +458,10 @@ const EmployeesTable = memo(
           defaultColumnVisibility={defaultColumnVisibility}
           primaryAction={
             permissions.can("create", "users") && (
-              <New label={t`Account`} to={`new?${params.toString()}`} />
+              <New
+                label={t`Account`}
+                to={`${path.to.bulkInviteEmployees}?${params.toString()}`}
+              />
             )
           }
           renderActions={renderActions}
