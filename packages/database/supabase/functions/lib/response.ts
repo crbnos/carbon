@@ -35,6 +35,26 @@ export function jsonResponse(body: unknown, status = 200): Response {
 }
 
 /**
+ * True for a plain PL/pgSQL `RAISE EXCEPTION` with no explicit code (SQLSTATE
+ * P0001) — the class our own migrations use for authored, human-readable
+ * business messages (e.g. "Job % has % serial unit(s) left to receive, fewer
+ * than the % being completed"), written for the person who triggers them,
+ * exactly like a `throw new Error("...")` at a TS call site. The code can live
+ * at `err.code` (Postgrest-js, node-postgres) or `err.fields.code`
+ * (deno-postgres `PostgresError`).
+ */
+function isAuthoredRaiseException(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const e = err as Record<string, unknown>;
+  if (e.code === "P0001") return true;
+  const fields = e.fields;
+  if (fields && typeof fields === "object") {
+    return (fields as Record<string, unknown>).code === "P0001";
+  }
+  return false;
+}
+
+/**
  * True when `err` came from the data layer rather than from our own `throw`.
  *
  * Classification is STRUCTURAL — an `instanceof` against a real imported class, or the
@@ -46,6 +66,17 @@ export function jsonResponse(body: unknown, status = 200): Response {
  * case, and defaulting to "surface" preserves their behavior exactly.
  */
 export function isDataLayerError(err: unknown): boolean {
+  // 0. A plain PL/pgSQL `RAISE EXCEPTION` with no explicit code (SQLSTATE P0001) is
+  //    an AUTHORED, human-readable business message — e.g. "Job % has % serial
+  //    unit(s) left to receive, fewer than the % being completed" — written for the
+  //    person who triggers it, exactly like a `throw new Error("...")` at a TS call
+  //    site. It is never a structural leak (no table/column/constraint names), so it
+  //    must not be swallowed by the sanitizer below. Every other SQLSTATE (constraint
+  //    violations, connection errors, etc.) stays sanitized. Checked before the
+  //    shape-specific branches because the code can live at `err.code` (Postgrest-js,
+  //    node-postgres) or `err.fields.code` (deno-postgres `PostgresError`).
+  if (isAuthoredRaiseException(err)) return false;
+
   // 1. deno.land/x/postgres — thrown by the Kysely pool via lib/driver.ts.
   //    Real imported class, so this is an exact check with no duck-typing.
   if (err instanceof PostgresError) return true;

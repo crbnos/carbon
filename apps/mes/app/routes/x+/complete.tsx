@@ -13,6 +13,7 @@ import {
   finishJobOperation,
   insertProductionQuantity
 } from "~/services/operations.service";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
@@ -152,10 +153,14 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (response.error) {
+      const message = await getEdgeFunctionErrorMessage(
+        response.error,
+        "Failed to complete job operation"
+      );
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(response.error, message),
           flash: "error"
         })
       );
@@ -169,10 +174,14 @@ export async function action({ request }: ActionFunctionArgs) {
       });
 
       if (finishOperation.error) {
+        const message = await getEdgeFunctionErrorMessage(
+          finishOperation.error,
+          "Failed to finish operation"
+        );
         return data(
           {},
           await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
+            ...error(finishOperation.error, message),
             flash: "error"
           })
         );
@@ -213,10 +222,14 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (response.error) {
+      const message = await getEdgeFunctionErrorMessage(
+        response.error,
+        "Failed to complete job operation"
+      );
       return data(
         {},
         await flash(request, {
-          ...error(response.error, "Failed to complete job operation"),
+          ...error(response.error, message),
           flash: "error"
         })
       );
@@ -241,10 +254,14 @@ export async function action({ request }: ActionFunctionArgs) {
       });
 
       if (finishOperation.error) {
+        const message = await getEdgeFunctionErrorMessage(
+          finishOperation.error,
+          "Failed to finish operation"
+        );
         return data(
           {},
           await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
+            ...error(finishOperation.error, message),
             flash: "error"
           })
         );
@@ -270,13 +287,14 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (insertProduction.error) {
+      const message = await getEdgeFunctionErrorMessage(
+        insertProduction.error,
+        "Failed to record production quantity"
+      );
       return data(
         {},
         await flash(request, {
-          ...error(
-            insertProduction.error,
-            "Failed to record production quantity"
-          ),
+          ...error(insertProduction.error, message),
           flash: "error"
         })
       );
@@ -293,10 +311,14 @@ export async function action({ request }: ActionFunctionArgs) {
     });
 
     if (issue.error) {
+      const message = await getEdgeFunctionErrorMessage(
+        issue.error,
+        "Failed to issue materials"
+      );
       return data(
         {},
         await flash(request, {
-          ...error(issue.error, "Failed to issue materials"),
+          ...error(issue.error, message),
           flash: "error"
         })
       );
@@ -310,10 +332,14 @@ export async function action({ request }: ActionFunctionArgs) {
       });
 
       if (finishOperation.error) {
+        const message = await getEdgeFunctionErrorMessage(
+          finishOperation.error,
+          "Failed to finish operation"
+        );
         return data(
           {},
           await flash(request, {
-            ...error(finishOperation.error, "Failed to finish operation"),
+            ...error(finishOperation.error, message),
             flash: "error"
           })
         );

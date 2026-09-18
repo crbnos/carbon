@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { finishValidator } from "~/services/models";
 import { finishJobOperation } from "~/services/operations.service";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -28,12 +29,13 @@ export async function action({ request }: ActionFunctionArgs) {
   });
 
   if (finishOperation.error) {
+    const message = await getEdgeFunctionErrorMessage(
+      finishOperation.error,
+      "Failed to finish operation"
+    );
     return data(
       {},
-      await flash(
-        request,
-        error(finishOperation.error, "Failed to finish operation")
-      )
+      await flash(request, error(finishOperation.error, message))
     );
   }
 
