@@ -16,14 +16,17 @@ import {
   Th,
   Thead,
   Tr,
+  useDisclosure,
   VStack
 } from "@carbon/react";
 import { formatDate } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import type { LoaderFunctionArgs } from "react-router";
-import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
+import { redirect, useLoaderData, useNavigate } from "react-router";
+import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { CardTransactionStatus, getCardTransaction } from "~/modules/invoicing";
 import { path } from "~/utils/path";
@@ -59,7 +62,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...lines.map((line) => line.accountId)
   ].filter((value): value is string => Boolean(value));
 
-  const [accounts, receipts] = await Promise.all([
+  const [accounts, receipts, journal] = await Promise.all([
     accountIds.length > 0
       ? client
           .from("account")
@@ -74,10 +77,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .from("document")
       .select("id, name, path")
       .eq("companyId", companyId)
-      .ilike("path", `${companyId}/card-transaction/${id}/%`)
+      .ilike("path", `${companyId}/card-transaction/${id}/%`),
+    cardTransaction.data.journalId
+      ? client
+          .from("journal")
+          .select("id, journalEntryId")
+          .eq("id", cardTransaction.data.journalId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({
+          data: null as { id: string; journalEntryId: string } | null,
+          error: null
+        })
   ]);
 
-  const auxiliaryError = accounts.error ?? receipts.error;
+  const auxiliaryError = accounts.error ?? receipts.error ?? journal.error;
   if (auxiliaryError) {
     throw redirect(
       path.to.cardTransactions,
@@ -96,18 +110,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     cardTransaction: cardTransaction.data,
     lines,
     accountsById,
-    receipts: receipts.data ?? []
+    receipts: receipts.data ?? [],
+    journal: journal.data
   };
 }
 
 export default function CardTransactionDetailRoute() {
-  const { cardTransaction, lines, accountsById, receipts } =
+  const { cardTransaction, lines, accountsById, receipts, journal } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
   const navigate = useNavigate();
   const permissions = usePermissions();
-  const voidFetcher = useFetcher<{}>();
+  const voidModal = useDisclosure();
   const currencyFormatter = useCurrencyFormatter({
     currency: cardTransaction.currencyCode
   });
@@ -170,7 +185,15 @@ export default function CardTransactionDetailRoute() {
                   <dt className="text-muted-foreground">
                     <Trans>Journal</Trans>
                   </dt>
-                  <dd>{cardTransaction.journalId}</dd>
+                  <dd>
+                    {journal ? (
+                      <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
+                        {journal.journalEntryId}
+                      </Hyperlink>
+                    ) : (
+                      cardTransaction.journalId
+                    )}
+                  </dd>
                 </>
               )}
             </dl>
@@ -242,18 +265,9 @@ export default function CardTransactionDetailRoute() {
         <DrawerFooter>
           <HStack>
             {canVoid && (
-              <voidFetcher.Form
-                method="post"
-                action={path.to.cardTransactionVoid(cardTransaction.id)}
-              >
-                <Button
-                  type="submit"
-                  variant="destructive"
-                  isDisabled={voidFetcher.state !== "idle"}
-                >
-                  <Trans>Void</Trans>
-                </Button>
-              </voidFetcher.Form>
+              <Button variant="destructive" onClick={voidModal.onOpen}>
+                <Trans>Void</Trans>
+              </Button>
             )}
             <Button
               variant="secondary"
@@ -264,6 +278,17 @@ export default function CardTransactionDetailRoute() {
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {canVoid && voidModal.isOpen && (
+        <Confirm
+          action={path.to.cardTransactionVoid(cardTransaction.id)}
+          title={t`Void Card Transaction`}
+          text={t`Are you sure you want to void ${cardTransaction.cardTransactionId}? This posts a reversing journal entry and cannot be undone.`}
+          confirmText={t`Void`}
+          confirmVariant="destructive"
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
+        />
+      )}
     </Drawer>
   );
 }
