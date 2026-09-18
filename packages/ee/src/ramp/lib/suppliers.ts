@@ -87,6 +87,9 @@ export async function resolveRampSupplier(
 /** The `supplierType` auto-created suppliers for card merchants are tagged with. */
 export const CARD_MERCHANT_SUPPLIER_TYPE = "Card Merchant";
 
+/** The single house supplier all one-off card merchants collapse to. */
+export const CARD_MERCHANT_SUPPLIER_NAME = "Card Merchant";
+
 /** Find-or-create a named `supplierType` for the company; returns its id. */
 async function ensureSupplierTypeId(
   serviceRole: SupabaseClient<Database>,
@@ -118,10 +121,14 @@ async function ensureSupplierTypeId(
 /**
  * Resolve the MERCHANT of a Ramp card transaction to a Carbon `supplier` id so
  * the charge can carry a vendor to the accounting provider (Rillet `charge`,
- * QBO `Purchase`, Xero SPEND bank transaction all require one). Mapping-first
- * under the `"merchant"` entityType keyed by Ramp's `merchant_id`, then a
- * case-insensitive name match, then auto-create tagged "Card Merchant" so the
- * supplier list stays filterable. Modeled on {@link resolveEmployeeSupplier}.
+ * QBO `Purchase`, Xero SPEND bank transaction all require one). Match-or-default:
+ * mapping-first under the `"merchant"` entityType keyed by Ramp's `merchant_id`,
+ * then an exact-name match to an EXISTING supplier (a merchant that is already a
+ * real vendor), then the single "Card Merchant" house supplier. It NEVER creates
+ * a supplier per merchant — that polluted the vendor master with hundreds of
+ * one-off rows (see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`).
+ * Merchant identity is preserved on `cardTransaction.merchantName` and pushed
+ * onto the provider charge line description.
  */
 export async function resolveMerchantSupplier(
   serviceRole: SupabaseClient<Database>,
@@ -129,19 +136,90 @@ export async function resolveMerchantSupplier(
   companyId: string,
   merchant: { id?: string | null; name: string }
 ): Promise<string> {
+  const mapping = createMappingService(kyselyDb, companyId);
   const supplierTypeId = await ensureSupplierTypeId(
     serviceRole,
     companyId,
     CARD_MERCHANT_SUPPLIER_TYPE
   );
-  return resolveRampSupplier(
+
+  // 1. Mapping-first — a merchant we've resolved before keeps its supplier.
+  if (merchant.id) {
+    const mapped = await mapping.getEntityId(RAMP, merchant.id, "merchant");
+    if (mapped) return mapped;
+  }
+
+  // 2. Exact-name match to an EXISTING supplier. If the merchant is a real
+  // vendor you already trade with, link card spend to it. `%`/`_` escaped so a
+  // merchant like "50% Off Supply" cannot become a wildcard pattern.
+  const escapedName = merchant.name.replace(/[\\%_]/g, (m) => `\\${m}`);
+  const { data: matches } = await serviceRole
+    .from("supplier")
+    .select("id")
+    .eq("companyId", companyId)
+    .ilike("name", escapedName)
+    .limit(1);
+  const matchedId = matches?.[0]?.id ?? null;
+  if (matchedId) {
+    if (merchant.id) {
+      await mapping.link("merchant", matchedId, RAMP, merchant.id, {
+        createdBy: "system"
+      });
+    }
+    return matchedId;
+  }
+
+  // 3. Fall back to the ONE "Card Merchant" house supplier — never a new
+  // supplier per merchant. Deliberately NO per-merchant mapping is written, so
+  // the mapping table does not re-accumulate one row per merchant; the catch-all
+  // is resolved by its stable identity every sync.
+  return resolveCardMerchantCatchAllSupplier(
     serviceRole,
     companyId,
-    merchant,
-    "system",
-    kyselyDb,
-    { entityType: "merchant", supplierTypeId }
+    supplierTypeId
   );
+}
+
+/**
+ * Find-or-create the ONE house "Card Merchant" supplier for the company — the
+ * catch-all that carries card spend whose merchant is not (yet) a real vendor.
+ * One row per company; the card sync's per-company concurrency (limit 1)
+ * serializes creation, so a plain find-then-insert is race-safe.
+ */
+async function resolveCardMerchantCatchAllSupplier(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  supplierTypeId: string
+): Promise<string> {
+  const existing = await serviceRole
+    .from("supplier")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("name", CARD_MERCHANT_SUPPLIER_NAME)
+    .eq("supplierTypeId", supplierTypeId)
+    .maybeSingle();
+  if (existing.data?.id) return existing.data.id;
+
+  const created = await serviceRole
+    .from("supplier")
+    .insert([
+      {
+        name: CARD_MERCHANT_SUPPLIER_NAME,
+        supplierTypeId,
+        companyId,
+        createdBy: "system"
+      }
+    ])
+    .select("id")
+    .single();
+  if (created.error || !created.data) {
+    throw new Error(
+      `Failed to create the Card Merchant supplier: ${
+        created.error?.message ?? "unknown error"
+      }`
+    );
+  }
+  return created.data.id;
 }
 
 /**
