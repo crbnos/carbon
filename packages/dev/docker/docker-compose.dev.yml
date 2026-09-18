@@ -290,6 +290,11 @@ services:
       SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
+      # Studio's SQL-editor snippets are read from a directory on disk; with the
+      # var unset it throws "SNIPPETS_MANAGEMENT_FOLDER env var is not set" on
+      # the SQL editor page. Studio creates the folder itself if missing. Not a
+      # mounted volume on purpose — snippets are scratch SQL, not project state.
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
 
   inbucket:
     image: inbucket/inbucket:3.1.1
