@@ -4027,7 +4027,10 @@ export async function startQuoteLine(
     });
 
     if (methodResult.error) {
-      return { data: null, error: methodResult.error };
+      return {
+        data: { id: quoteLineId, quoteLineId },
+        error: methodResult.error
+      };
     }
   }
 
@@ -4040,7 +4043,10 @@ export async function startQuoteLine(
       line.createdBy
     );
     if (priceResult?.error) {
-      return { data: null, error: priceResult.error };
+      return {
+        data: { id: quoteLineId, quoteLineId },
+        error: priceResult.error
+      };
     }
   } else if (line.methodType === "Pull from Inventory") {
     const quantities = line.quantity ?? [1];
@@ -4053,7 +4059,10 @@ export async function startQuoteLine(
       line.createdBy
     );
     if (priceResult?.error) {
-      return { data: null, error: priceResult.error };
+      return {
+        data: { id: quoteLineId, quoteLineId },
+        error: priceResult.error
+      };
     }
   } else if (line.methodType === "Purchase to Order") {
     const quantities = line.quantity ?? [1];
@@ -4066,7 +4075,10 @@ export async function startQuoteLine(
       line.createdBy
     );
     if (priceResult?.error) {
-      return { data: null, error: priceResult.error };
+      return {
+        data: { id: quoteLineId, quoteLineId },
+        error: priceResult.error
+      };
     }
   }
 

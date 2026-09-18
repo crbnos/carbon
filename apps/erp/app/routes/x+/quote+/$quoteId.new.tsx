@@ -112,8 +112,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     customFields: setCustomFields(formData)
   });
 
-  if (result.error || !result.data) {
-    logger.error("Failed to start quote line", {
+  if (!result.data) {
+    logger.error("Failed to create quote line", {
       error: result.error
     });
     throw redirect(
@@ -122,17 +122,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  await recordSalesRuleOutcome(serviceRole, {
-    companyId,
-    userId,
-    documentType: "quote",
-    documentId: quoteId,
-    documentLineId: result.data.quoteLineId,
-    itemId: d.itemId ?? null,
-    outcome: "applied",
-    violations: deduped,
-    ruleNames
-  });
+  // Record rule acknowledgment only if there were violations (which passed as acknowledged).
+  if (deduped.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "quote",
+      documentId: quoteId,
+      documentLineId: result.data.quoteLineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: deduped,
+      ruleNames
+    });
+  }
+
+  if (result.error) {
+    throw redirect(
+      path.to.quoteLine(quoteId, result.data.quoteLineId),
+      await flash(
+        request,
+        error(
+          result.error,
+          "Quote line created, but setup encountered an issue."
+        )
+      )
+    );
+  }
 
   throw redirect(path.to.quoteLine(quoteId, result.data.quoteLineId));
 }
