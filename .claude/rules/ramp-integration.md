@@ -497,11 +497,19 @@ The forward reconciliation migration gives `cardTransaction` a tenant-composite
 **`supplierId`** foreign key and an **event trigger**
 (`attach_event_trigger('cardTransaction', …)`). The card
 family resolves the Ramp merchant to a Carbon supplier before posting —
-`resolveMerchantSupplier` (`lib/suppliers.ts`): mapping-first under entityType
-`"merchant"` keyed by Ramp `merchant_id`, then a case-insensitive `supplier.name`
-match, then auto-create tagged with the `"Card Merchant"` supplier type (it delegates to
-`resolveRampSupplier`, which now takes `{ entityType, supplierTypeId }`). A transaction
-with no merchant name still posts with `supplierId` null. A Posted `Charge` (and, where
+`resolveMerchantSupplier` (`lib/suppliers.ts`) is **match-or-default, never one
+supplier per merchant** (that polluted the vendor master with hundreds of one-off
+rows; see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`): mapping-first
+under entityType `"merchant"` keyed by Ramp `merchant_id`, then an exact-name match
+to an EXISTING supplier (a merchant that is already a real vendor — links it and
+writes the mapping), then the single `"Card Merchant"` house supplier per company
+(`resolveCardMerchantCatchAllSupplier`, tagged the `"Card Merchant"` supplierType,
+find-or-create — NO per-merchant mapping written on this fallback). It no longer
+delegates to `resolveRampSupplier` (that stays the bill/PO `"vendor"` path and keeps
+its auto-create). A transaction with no merchant name still posts with `supplierId`
+null. Because all card spend now shares the catch-all vendor, merchant identity
+rides on the provider charge **line description**
+(`charge.merchantName ?? line.description ?? charge.memo`), not on `vendor_id` alone. A Posted `Charge` (and, where
 the provider can represent a refund, `Credit`) with a supplier is then pushed to the
 accounting provider as its native **card-charge object** (Rillet charge, QBO Purchase,
 Xero SPEND bank transaction) with the merchant and cost-center dimension, and its journal

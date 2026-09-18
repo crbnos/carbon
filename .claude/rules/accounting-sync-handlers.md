@@ -359,9 +359,13 @@ The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-gener
 
 `cardTransaction.supplierId` (same migration) is the merchant resolved to a Carbon
 supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
-`merchant` by Ramp `merchant_id` → case-insensitive name → auto-create tagged
-"Card Merchant"); the existing vendor syncers carry it to the provider via
-`ensureDependencySynced("vendor")`.
+`merchant` by Ramp `merchant_id` → exact-name match to an existing supplier → the
+single `"Card Merchant"` **house supplier** per company — never one supplier per
+merchant; see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`); the existing
+vendor syncers carry it to the provider via `ensureDependencySynced("vendor")`. Since
+card spend collapses to that catch-all vendor, each charge adapter now sets the charge
+**line description** to `charge.merchantName ?? line.description ?? charge.memo` so the
+pushed charge still shows which merchant the spend was at.
 
 **Ramp inbound financial records are staged transactionally.** Card transactions and bills
 advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
