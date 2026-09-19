@@ -152,10 +152,6 @@ msgid "All jobs"
 msgstr "Все производственные заказы"
 
 #. placeholder {0}: batch.outputLotNumber
-msgid "All output → <0>{0}</0>"
-msgstr ""
-
-#. placeholder {0}: batch.outputLotNumber
 msgid "All output goes to lot <0>{0}</0>"
 msgstr "Весь выпуск идёт в партию <0>{0}</0>"
 
@@ -501,6 +497,9 @@ msgstr "Дублированный серийный номер"
 
 msgid "Duration"
 msgstr "Длительность"
+
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
 
 msgid "Edit"
 msgstr "Изменить"
@@ -1596,6 +1595,9 @@ msgstr "Тег"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
 
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Партия будет отмечена как Пройдена, и {remaining} оставшихся единиц будут завершены в этой операции."
 
@@ -1766,9 +1768,6 @@ msgstr "Просмотреть заявку на техобслуживание"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Мы отправили вам ссылку для входа в ваш аккаунт."
-
-msgid "What goes into this run, job by job."
-msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Что такое {translatedTerm}?"

@@ -84,13 +84,38 @@ Progress" has a space). List visibility alone was the leak: nothing else gated
 a direct operation URL.
 
 
-There is **no separate batch page** — the operation view IS the batch UI. A
-`ToggleGroup` beside the batch chip switches `?scope=` between **Batch**
+There is **no separate batch page** — the operation view IS the batch UI. In
+batch mode the job heading is replaced by ONE scope switcher — an outlined
+`rounded-full` pill `(BAT… N jobs | Jobs ⌄)` whose selected segment gets a soft
+`bg-accent` fill; the second segment IS the member-job picker (it reads the
+open job's id in the job scope) — which sets
+`?scope=` between **Batch**
 (default; `BatchOverview`: completed/issued/scrap/output-lot stat cards, one
 materials table from `getBatchMaterialTotals` with the per-job split and a
-batch-wide "Pick N", and the member jobs table) and the member's own job
+batch-wide "Pick N", the steps/parameters/files of every member, and the
+member jobs table — each list in a bordered panel with the DS `Table`) and the member's own job
 details (`?scope=job`, which member links use). The `IssueMaterialModal` is
-mounted in both scopes via `renderIssueModal`. When an
+mounted in both scopes via `renderIssueModal`. The batch scope shows no member's
+values anywhere: the context bar reads batch status (Released/Completing),
+customers, the batch plan and the earliest member due date; the dock's Item is
+the batch's item (or "N items"); the ⋮ menu offers only the batch list (plus
+Item Master when every member makes the same item). The tabs stay as on a
+single job: Details (`BatchOverview view="details"`: stats, a load list only when parts must be
+kept apart (the jobs make different items, or each job gets its own output lot)
+— each job's quantity to run with due date/customer and a total — materials grouped "To pick" / "Used automatically at completion",
+and files) and Instructions
+(`view="instructions"`: the batch's steps and process parameters); Chat is
+disabled on the batch because notes (`jobOperationNote`) belong to one job
+operation. The job scope
+opens with a banner saying the job runs in the batch — timer and completion are
+shared — with "Back to batch". Work-instruction steps are recorded
+for the whole batch from `BatchRecordModal` — a per-job grid with an "All
+jobs" row that fills every cell (typed cells for Measurement/Value/List/Person,
+ticks for Task/Checkbox/Timestamp, one upload copied into each job's own step
+folder for File/Inspection) posting to `batch.$batchId.record.tsx`
+(`insertBatchStepRecords`: steps re-read under the batch + company, upsert at
+record set 0, then the per-step backflush). Only new or changed rows are sent,
+since a re-record re-runs the step's backflush. When an
 operation belongs to a batch that is still `Active`/`Completing`, the loader
 (`operation.$operationId.tsx`) reads `jobOperationBatch` (via
 `getJobOperationBatch`; the RPC `get_job_operation_by_id` omits
@@ -130,8 +155,9 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   "0 milliseconds"), and the per-piece header divides the shared elapsed time by
   the members' summed `quantityComplete` — a quantity-weighted per-piece rate
   consistent with the completion split's `operationQuantity` weights.
-- **Batch chip** — a `DropdownMenu` in the info bar (`BAT… · N jobs`, yellow
-  `Completing` badge) lists members as `Link`s to hop between them.
+- **Scope switcher** — the batch segment carries the yellow `Completing`
+  badge; the chevron menu lists members as `Link`s to their `?scope=job` view.
+  "Print batch list" lives in the job's ⋮ menu.
 - **Completion** — the "Log Completed" button becomes "Complete Batch" and opens
   `BatchCompleteModal`, a **spreadsheet-style grid** (bare `<input inputMode="numeric">`
   cells in a bordered `border-separate` table — no react-aria stepper arrows, no
@@ -170,8 +196,8 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   redirect: the completion's own writes fire `useOperation`'s realtime
   `revalidate()` mid-action, and React Router drops a fetcher redirect when a
   newer navigation started after the submit — `JobOperation` navigates to
-  `path.to.operations` when the fetcher settles with `completed`. The batch
-  chip menu also offers
+  `path.to.operations` when the fetcher settles with `completed`. The job's ⋮
+  menu also offers
   "Print batch list" (`path.to.file.batchLoadList` → the ERP
   `/file/batch/:id.pdf` route, `BatchListPDF`). The kanban keyboard wedge is
   disabled (`active: !!kanban?.id && !isBatched`) — it completes a single op,
@@ -183,11 +209,9 @@ In batch mode `JobOperation` derives `isBatched = !!batch`,
   `Tabs`, header/job-info bar, and all detail sections.
 - **`JobOperation/components/Controls.tsx`** — exports `Controls`, `Times`,
   `WorkTypeToggle`, `StartStopButton`, `IconButtonWithTooltip`, `FloatingActionMenu`,
-  `PlayButton`/`PauseButton`. The right/bottom control panel: work center, work-type
+  `PlayButton`/`PauseButton`. The dock / bottom action bar (see Layout): work center, work-type
   toggle (Setup/Labor/Machine), big start-stop button, "Log Completed", and a "More
-  Actions" sheet (Scrap, Rework, Finish, Maintenance, Quality Issue). Carries
-  **mobile-only** job/customer/deadline info in a `md:hidden` block (the header hides
-  that info on mobile).
+  Actions" sheet (Scrap, Rework, Finish, Maintenance, Quality Issue).
 - **`components/Step.tsx`** — exports `StepsListItem`, **`RecordModal`**, and
   **`DeleteStepRecordModal`** (these are NOT separate files). File/Inspection step
   uploads go to the private bucket at
@@ -239,22 +263,39 @@ Serial Numbers section uses shared `~/components` `PrintButton` with
 per-entity (`sourceDocument="Entity"`, `trackedEntityLabel*`). See
 `.claude/rules/` printing notes / cache for fallback-to-download behavior.
 
-## Responsive / CSS gotchas
+## Layout (application shell)
 
-- CSS vars: **`--controls-width: 220px`** (260px at xl, in `apps/mes/app/styles/tailwind.css`),
-  `--controls-height` set inline from a computed `controlsHeight` memo, `--header-height`
-  from `@carbon/react`. Details scrollport classes live **inline on the details
-  container in `JobOperation.tsx`** (no separate helper):
-  - **Below `lg`:** `h-auto` + page scroll — Controls/Times stack inline under content so
-    Files / Serial Numbers stay reachable (do **not** put a viewport-filling fixed height
-    here; that nested-scroll trap was #959).
-  - **`lg+`:** fixed height
-    `calc(100dvh - var(--header-height)*2 - var(--controls-height) - 2rem)` with
-    `lg:pr-[var(--controls-gutter)]` so absolute Controls/Times dock without overlap.
-- Root Tabs is `min-h-screen h-auto lg:h-screen` for the same reason.
-- Header detail metadata is `hidden lg:flex` (so `Controls` shows it on mobile instead);
-  Materials "Source" column is `hidden lg:table-cell`; Procedure steps list is
-  `hidden lg:block`; the `Controls` panel is inline on mobile, `lg:absolute` top-right
-  on desktop.
+The `Tabs` root in `JobOperation.tsx` IS the shell: a CSS grid of named areas,
+each pane scrolling on its own — nothing is absolutely positioned and no height
+is computed in JS (the old `--controls-height` / `--controls-gutter` /
+`calc(100dvh - …)` scheme is gone).
 
-<!-- UNVERIFIED: exact column set of jobOperation (status/duration fields) not fully audited here; check the live schema or 20240909194622_jobs.sql + later alters when relying on specific fields. -->
+- **Areas.** Below `lg`: one column — `header`, `context`, `sep`, `main`,
+  `status`, `dock`. From `lg`: `main`/`status` on the left, `dock` spanning both
+  on the right (`minmax(0,1fr) auto`). Every TabsContent sits in `main`
+  (inactive ones are `display:none`, so they take no track); `Times` is
+  `status`; `Controls` is `dock`.
+- **Height.** The MES outlet frame (`x+/_layout.tsx`) is only `min-h-svh`
+  bounded because other screens page-scroll, so the shell sizes itself:
+  `h-svh md:h-[calc(100svh-1rem)]` (the frame's `md:my-2` inset). Never
+  `h-screen`/`h-full` here — the first overflowed the inset frame (clipped the
+  status bar), the second resolves to content height.
+- **Dock (`Controls`).** ONE mounted instance — it owns the start/stop form and
+  the modal triggers, so it is re-laid-out by CSS, never rendered twice: a
+  `--controls-width` column from `lg` (collapsible to a 76px rail via
+  `data-collapsed` + `group/dock` variants, persisted per device in
+  localStorage `mes:operation-dock-collapsed`, read after mount), a pinned
+  bottom action bar below `lg` (toggle · start/stop · complete · more). Play/Pause
+  and `IconButtonWithTooltip` size by context (`size-14`/`size-12` in the bar
+  and rail, full size in the dock).
+- **Status bar (`Times`).** A footer row, not a floating card: one meter per
+  planned work type plus quantity. A plan of ≤1ms is the batch no-plan
+  placeholder — it shows elapsed time alone over an empty track (never
+  "0ms/1ms").
+- **Context bar.** Wraps below `lg`; its metadata row (customer, description,
+  status, duration, deadline) scrolls sideways (`scrollbar-hide`, items
+  `shrink-0`) instead of hiding, so there is no mobile-only duplicate in the
+  dock. Header tabs scroll sideways too (`ml-auto` on the list, never
+  `justify-end` on an overflow container — it strands the start).
+- Materials "Source" column stays `hidden lg:table-cell`; Procedure steps list
+  `hidden lg:block`.

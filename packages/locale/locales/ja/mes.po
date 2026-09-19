@@ -152,10 +152,6 @@ msgid "All jobs"
 msgstr "すべての製造指図"
 
 #. placeholder {0}: batch.outputLotNumber
-msgid "All output → <0>{0}</0>"
-msgstr ""
-
-#. placeholder {0}: batch.outputLotNumber
 msgid "All output goes to lot <0>{0}</0>"
 msgstr "すべての出力がロット<0>{0}</0>に入ります"
 
@@ -501,6 +497,9 @@ msgstr "シリアル番号の複製"
 
 msgid "Duration"
 msgstr "時間"
+
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
 
 msgid "Edit"
 msgstr "編集"
@@ -1596,6 +1595,9 @@ msgstr "タグ"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
 
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
 
@@ -1766,9 +1768,6 @@ msgstr "保全指示を表示"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "アカウントにサインインするためのマジックリンクをお送りしました。"
-
-msgid "What goes into this run, job by job."
-msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}とは何ですか?"

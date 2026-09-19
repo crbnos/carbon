@@ -152,10 +152,6 @@ msgid "All jobs"
 msgstr "Tutti gli ordini di produzione"
 
 #. placeholder {0}: batch.outputLotNumber
-msgid "All output → <0>{0}</0>"
-msgstr ""
-
-#. placeholder {0}: batch.outputLotNumber
 msgid "All output goes to lot <0>{0}</0>"
 msgstr "Tutto l'output va al Lotto <0>{0}</0>"
 
@@ -501,6 +497,9 @@ msgstr "Numero di serie duplicato"
 
 msgid "Duration"
 msgstr "Durata"
+
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
 
 msgid "Edit"
 msgstr "Modifica"
@@ -1596,6 +1595,9 @@ msgstr "Etichetta"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La quantità completata per questa operazione è inferiore alla quantità richiesta di {targetQuantity}."
 
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "Il lotto sarà contrassegnato come Superato e {remaining} unità/unità rimanente/i saranno completate in questa operazione."
 
@@ -1766,9 +1768,6 @@ msgstr "Visualizza intervento di manutenzione"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Ti abbiamo inviato un link di accesso al tuo account."
-
-msgid "What goes into this run, job by job."
-msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "Cos'è {translatedTerm}?"

@@ -49,6 +49,7 @@ export const path = {
     authenticatedRoot: x,
     batch: (id: string) => generatePath(`${x}/batch/${id}`),
     batchComplete: (id: string) => generatePath(`${x}/batch/${id}/complete`),
+    batchRecord: (id: string) => generatePath(`${x}/batch/${id}/record`),
     callback: "/callback",
     companySwitch: (companyId: string) =>
       generatePath(`${x}/company/switch/${companyId}`),

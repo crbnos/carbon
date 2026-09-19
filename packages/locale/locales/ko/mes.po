@@ -152,10 +152,6 @@ msgid "All jobs"
 msgstr "모든 작업 지시"
 
 #. placeholder {0}: batch.outputLotNumber
-msgid "All output → <0>{0}</0>"
-msgstr ""
-
-#. placeholder {0}: batch.outputLotNumber
 msgid "All output goes to lot <0>{0}</0>"
 msgstr "모든 산출물이 로트 <0>{0}</0>로 이동합니다."
 
@@ -501,6 +497,9 @@ msgstr "중복된 시리얼 번호"
 
 msgid "Duration"
 msgstr "기간"
+
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
 
 msgid "Edit"
 msgstr "편집"
@@ -1596,6 +1595,9 @@ msgstr "태그"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
 
@@ -1766,9 +1768,6 @@ msgstr "유지보수 지시 보기"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "계정에 로그인할 수 있는 매직 링크를 보내드렸습니다."
-
-msgid "What goes into this run, job by job."
-msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}란 무엇인가요?"

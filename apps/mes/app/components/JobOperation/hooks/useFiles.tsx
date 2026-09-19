@@ -12,6 +12,7 @@ export function useFiles(job: Job) {
 
   const getFilePath = useCallback(
     (file: StorageItem) => {
+      if (file.storagePath) return file.storagePath;
       const companyId = user.company.id;
       const { bucket } = file;
       let id: string | null = "";

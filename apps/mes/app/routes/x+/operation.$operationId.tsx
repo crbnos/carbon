@@ -9,6 +9,7 @@ import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
   getBatchMaterialTotals,
+  getBatchWorkInstructions,
   getJobByOperationId,
   getJobFiles,
   getJobMakeMethod,
@@ -248,6 +249,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           companyId
         })
       : null,
+    // Batch mode: steps, parameters and files across every member (deferred).
+    batchWorkInstructions: batch
+      ? getBatchWorkInstructions(serviceRole, {
+          batchId: batch.id as string,
+          companyId
+        })
+      : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
       trackedEntityId:
@@ -291,6 +299,7 @@ export default function OperationRoute() {
   const {
     batch,
     batchMaterialTotals,
+    batchWorkInstructions,
     events,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
@@ -313,6 +322,7 @@ export default function OperationRoute() {
       key={`job-operation-${operationId}`}
       batch={batch}
       batchMaterialTotals={batchMaterialTotals}
+      batchWorkInstructions={batchWorkInstructions}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
       autoSelectMaterialWithoutPickingList={

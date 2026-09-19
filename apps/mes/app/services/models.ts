@@ -112,6 +112,25 @@ export const stepRecordValidator = z.object({
   userValue: zfd.text(z.string().optional())
 });
 
+// One step recorded for several batch members at once (the batch view's
+// Record). Rows are the members the operator filled in; unchanged ones are
+// never sent, so a re-open can't re-trigger a step's backflush.
+export const batchStepRecordsValidator = z.object({
+  records: z
+    .array(
+      z.object({
+        jobOperationStepId: z.string().min(1),
+        value: zfd.text(z.string().optional()),
+        numericValue: zfd.numeric(z.number().optional()),
+        booleanValue: zfd
+          .text(z.enum(["true", "false"]).transform((val) => val === "true"))
+          .optional(),
+        userValue: zfd.text(z.string().optional())
+      })
+    )
+    .min(1, { message: "Record at least one job" })
+});
+
 export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),

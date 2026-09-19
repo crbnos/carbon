@@ -3510,23 +3510,51 @@ serve(async (req: Request) => {
             throw new Error("Batch has no member operations");
           }
           const memberIds = members.map((m) => m.id);
+          const memberIdSet = new Set(memberIds);
+          // A member's materials are what its operation view lists: the
+          // operation's make method BOM. A row linked straight to a member
+          // operation stays with it; the rest belong to the member on its make
+          // method (BOMs are usually not assigned per operation, and jobs built
+          // from an item never carry the link).
+          const memberByMakeMethod = new Map(
+            members
+              .filter((m) => m.jobMakeMethodId)
+              .map((m) => [m.jobMakeMethodId as string, m.id])
+          );
 
           // Lock the member material rows so a concurrent batch pick (or a
           // member-level manual issue) cannot double-allocate the remaining
           // requirement.
           const materialRows = await trx
             .selectFrom("jobMaterial")
-            .select(["id", "jobOperationId", "estimatedQuantity", "quantityIssued"])
+            .select([
+              "id",
+              "jobOperationId",
+              "jobMakeMethodId",
+              "estimatedQuantity",
+              "quantityIssued",
+            ])
             .where("companyId", "=", companyId)
             .where("itemId", "=", itemId)
-            .where("jobOperationId", "in", memberIds)
+            .where((eb) =>
+              eb.or([
+                eb("jobOperationId", "in", memberIds),
+                ...(memberByMakeMethod.size
+                  ? [eb("jobMakeMethodId", "in", [...memberByMakeMethod.keys()])]
+                  : []),
+              ])
+            )
             .forUpdate()
             .execute();
 
           const rowByOp = new Map<string, string>();
           const remainingByOp = new Map<string, number>();
           for (const row of materialRows) {
-            const opId = row.jobOperationId as string;
+            const opId =
+              row.jobOperationId && memberIdSet.has(row.jobOperationId)
+                ? row.jobOperationId
+                : memberByMakeMethod.get(row.jobMakeMethodId as string);
+            if (!opId) continue;
             const remaining = Math.max(
               0,
               Number(row.estimatedQuantity ?? 0) - Number(row.quantityIssued ?? 0)
