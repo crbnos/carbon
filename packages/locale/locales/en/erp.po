@@ -3478,6 +3478,9 @@ msgstr "Check your email"
 msgid "Checking Stripe for this customer…"
 msgstr "Checking Stripe for this customer…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Checking the batch's jobs..."
+
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
 
@@ -4451,6 +4454,9 @@ msgstr "Create {0} values"
 msgid "Create & Release"
 msgstr "Create & Release"
 
+msgid "Create & release batch"
+msgstr "Create & release batch"
+
 msgid "Create & Snapshot"
 msgstr "Create & Snapshot"
 
@@ -4522,6 +4528,9 @@ msgstr "Create Jobs"
 
 msgid "Create Kanban"
 msgstr "Create Kanban"
+
+msgid "Create New"
+msgstr "Create New"
 
 msgid "Create new rule"
 msgstr "Create new rule"
@@ -6197,6 +6206,9 @@ msgstr "Each operation's unused material returns as soon as the operation is don
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+
 msgid "Each, lb, ft…"
 msgstr "Each, lb, ft…"
 
@@ -7694,6 +7706,9 @@ msgstr "Fit view"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Fix the problems with this workflow before testing it"
+
+msgid "Fix these jobs before releasing"
+msgstr "Fix these jobs before releasing"
 
 msgid "Fixed"
 msgstr "Fixed"
@@ -9844,6 +9859,9 @@ msgstr "Manufacturer Part Number"
 msgid "Manufacturing"
 msgstr "Manufacturing"
 
+msgid "manufacturing is blocked"
+msgstr "manufacturing is blocked"
+
 msgid "Map accounts"
 msgstr "Map accounts"
 
@@ -11109,6 +11127,10 @@ msgstr "No open sales order lines"
 
 msgid "No operations found."
 msgstr "No operations found."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "no operations on {0}"
 
 msgid "No operations require picking at this location"
 msgstr "No operations require picking at this location"
@@ -13705,6 +13727,11 @@ msgstr "Release {0} batches"
 msgid "Release Batch"
 msgstr "Release Batch"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Release batch {0}"
+
 msgid "Release change notice"
 msgstr "Release change notice"
 
@@ -13732,6 +13759,9 @@ msgstr "Released revision"
 
 msgid "Released revision is locked"
 msgstr "Released revision is locked"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Releasing the batch releases its jobs, and each one must be ready for the floor."
 
 msgid "Remaining"
 msgstr "Remaining"
@@ -16711,6 +16741,9 @@ msgstr "The backup job reported this error."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "The batch goes to the shop floor. Its jobs are already released."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "The batch runs at its most urgent member's time — the others are pulled early"
 
@@ -17517,6 +17550,11 @@ msgstr "These rows link to data outside this company, so they could never be res
 
 msgid "this ability"
 msgstr "this ability"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
 
 msgid "This backup could not be completed."
 msgstr "This backup could not be completed."

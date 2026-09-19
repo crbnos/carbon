@@ -31,7 +31,7 @@ import {
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCirclePlay,
   LuCombine,
@@ -65,6 +65,7 @@ import type {
 } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
 import { BatchStatus } from "./BatchesTable";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import { batchPlanBreakdown } from "./batch-builder-logic";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
@@ -162,9 +163,19 @@ export function BatchDetailDrawer({
     }
   }, [releaseFetcher.state, releaseFetcher.data]);
 
-  const submitBatchIntent = (intent: "release" | "unrelease") => {
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const submitBatchIntent = (
+    intent: "release" | "unrelease",
+    purchaseOrdersBySupplierId?: Record<string, string>
+  ) => {
     releaseFetcher.submit(
-      { intent, batchId: batch.id },
+      {
+        intent,
+        batchId: batch.id,
+        ...(purchaseOrdersBySupplierId && {
+          purchaseOrdersBySupplierId: JSON.stringify(purchaseOrdersBySupplierId)
+        })
+      },
       { method: "post", action: path.to.priorityBatchingUpdate }
     );
   };
@@ -689,7 +700,7 @@ export function BatchDetailDrawer({
                 leftIcon={<LuCirclePlay />}
                 isLoading={releaseFetcher.state !== "idle"}
                 isDisabled={releaseFetcher.state !== "idle"}
-                onClick={() => submitBatchIntent("release")}
+                onClick={() => setReleaseOpen(true)}
               >
                 {t`Release`}
               </Button>
@@ -697,6 +708,18 @@ export function BatchDetailDrawer({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {releaseOpen && (
+        <BatchReleaseModal
+          target={{ batchId: batch.id }}
+          title={t`Release batch ${batch.readableId}`}
+          confirmLabel={t`Release Batch`}
+          onClose={() => setReleaseOpen(false)}
+          onConfirm={(purchaseOrders) => {
+            submitBatchIntent("release", purchaseOrders);
+            setReleaseOpen(false);
+          }}
+        />
+      )}
     </Drawer>
   );
 }

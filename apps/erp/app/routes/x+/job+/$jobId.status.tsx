@@ -7,11 +7,13 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
+  getJobReleaseReadiness,
   jobStatus,
   recalculateJobRequirements,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { releaseJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -57,6 +59,61 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
+  // The Release dialog: the shared release path (also run by batch release),
+  // re-checking what the dialog checked, then one schedule run for the location.
+  if (status === "Ready" && shouldSchedule) {
+    const readiness = await getJobReleaseReadiness(client, [id], companyId);
+    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
+    if (readiness.error || missing.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            readiness.error,
+            readiness.error
+              ? "Failed to validate job"
+              : `Assign an operation to each assembly before releasing: ${missing
+                  .map((m) => m.description)
+                  .join(", ")}`
+          )
+        )
+      );
+    }
+
+    const released = await releaseJobs({
+      client,
+      db: getDatabaseClient(),
+      jobIds: [id],
+      companyId,
+      userId,
+      purchaseOrdersBySupplierId: JSON.parse(
+        selectedPurchaseOrdersBySupplierId ?? "{}"
+      )
+    });
+    if (released.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(null, released.error))
+      );
+    }
+
+    try {
+      await scheduleJobLocation({ id, companyId, userId });
+    } catch (err) {
+      logger.error("Error", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to schedule job"))
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(id),
+      await flash(request, success("Updated job status"))
+    );
+  }
+
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
     await recalculateJobRequirements(serviceRole, {
@@ -95,33 +152,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
+  if (status === "Planned" && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
       );
-
-      const serviceRole = getCarbonServiceRole();
-      // Forecast-first scheduling regenerates the whole location the job is in.
-      const { data: jobLocation } = await serviceRole
-        .from("job")
-        .select("locationId")
-        .eq("id", id)
-        .single();
-      if (!jobLocation?.locationId) {
-        throw new Error("Job has no location to schedule");
-      }
-      // Regenerate the whole location IN-PROCESS (Node) — no edge cold-start or
-      // HTTP hop. Throws on failure (caught below), in parallel with PO creation.
+      // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
-        runLocationSchedule({
-          db: getDatabaseClient(),
-          client: serviceRole,
-          locationId: jobLocation.locationId,
-          companyId,
-          userId
-        }),
-        serviceRole.functions.invoke("create", {
+        scheduleJobLocation({ id, companyId, userId }),
+        getCarbonServiceRole().functions.invoke("create", {
           body: {
             type: "purchaseOrderFromJob",
             jobId: id,
@@ -131,15 +170,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           }
         })
       ]);
-
-      if (status === "Ready") {
-        await client
-          .from("job")
-          .update({
-            releasedDate: new Date().toISOString()
-          })
-          .eq("id", id);
-      }
     } catch (err) {
       logger.error("Error", { error: err });
       throw redirect(
@@ -167,4 +197,33 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
+}
+
+// Forecast-first scheduling regenerates the whole location the job is in,
+// in-process (Node) — no edge cold-start or HTTP hop. Throws on failure.
+async function scheduleJobLocation({
+  id,
+  companyId,
+  userId
+}: {
+  id: string;
+  companyId: string;
+  userId: string;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const { data: jobLocation } = await serviceRole
+    .from("job")
+    .select("locationId")
+    .eq("id", id)
+    .single();
+  if (!jobLocation?.locationId) {
+    throw new Error("Job has no location to schedule");
+  }
+  await runLocationSchedule({
+    db: getDatabaseClient(),
+    client: serviceRole,
+    locationId: jobLocation.locationId,
+    companyId,
+    userId
+  });
 }

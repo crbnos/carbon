@@ -3478,6 +3478,9 @@ msgstr "メールを確認してください"
 msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
 
+msgid "Checking the batch's jobs..."
+msgstr "バッチの製造指図を確認しています..."
+
 msgid "Checkpoint ·"
 msgstr "チェックポイント ·"
 
@@ -4451,6 +4454,9 @@ msgstr "{0}個の値を作成"
 msgid "Create & Release"
 msgstr "作成 & リリース"
 
+msgid "Create & release batch"
+msgstr "バッチを作成してリリース"
+
 msgid "Create & Snapshot"
 msgstr "作成とスナップショット"
 
@@ -4522,6 +4528,9 @@ msgstr "製造指図を作成"
 
 msgid "Create Kanban"
 msgstr "かんばんを作成"
+
+msgid "Create New"
+msgstr "新規作成"
 
 msgid "Create new rule"
 msgstr "新しいルールを作成"
@@ -6197,6 +6206,9 @@ msgstr "各操作の未使用材料は操作が完了するとすぐに戻され
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "各物理的な個が独自の追跡対象と一意番号を取得します。1 追跡対象 = 1 個。"
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "各仕入先の全製造指図からの外注工程は、1つの新規発注書、または選択した既存の下書きに計上されます。"
+
 msgid "Each, lb, ft…"
 msgstr "各、ポンド、フィート…"
 
@@ -7694,6 +7706,9 @@ msgstr "ビューに合わせる"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "テストする前に、このワークフローの問題を修正してください"
+
+msgid "Fix these jobs before releasing"
+msgstr "リリースする前にこれらの製造指図を修正してください"
 
 msgid "Fixed"
 msgstr "固定"
@@ -9844,6 +9859,9 @@ msgstr "メーカー部品番号"
 msgid "Manufacturing"
 msgstr "製造"
 
+msgid "manufacturing is blocked"
+msgstr "製造がブロックされています"
+
 msgid "Map accounts"
 msgstr "勘定をマップ"
 
@@ -11109,6 +11127,10 @@ msgstr "オープン受注明細がありません"
 
 msgid "No operations found."
 msgstr "工程が見つかりません。"
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0}に工程がありません"
 
 msgid "No operations require picking at this location"
 msgstr "この拠点でピッキングが必要な工程はありません"
@@ -13705,6 +13727,11 @@ msgstr "{0}個のバッチをリリース"
 msgid "Release Batch"
 msgstr "バッチをリリース"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "バッチ {0} をリリース"
+
 msgid "Release change notice"
 msgstr "変更通知をリリース"
 
@@ -13732,6 +13759,9 @@ msgstr "リリースされたリビジョン"
 
 msgid "Released revision is locked"
 msgstr "発行済みリビジョンはロック中です"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
 
 msgid "Remaining"
 msgstr "残高"
@@ -16711,6 +16741,9 @@ msgstr "バックアップジョブがこのエラーを報告しました。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "その製造指図を時間通りに保つために、工程が終了する必要のある後方計算日であり、工程の期日に書き込まれます。進捗を測定するための安定した目標であり、配置の制約ではありません。"
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "バッチが製造現場に移動します。その製造指図は既にリリース済です。"
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "バッチは最も急ぎのメンバーに合わせて実行され、他は前倒しになります"
 
@@ -17517,6 +17550,11 @@ msgstr "これらの行は会社外のデータにリンクしているため、
 
 msgid "this ability"
 msgstr "このスキル"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "これにより{0}個の製造指図({1})もリリースされます。それらは製造現場で利用可能になり、購買と生産を推進します。"
 
 msgid "This backup could not be completed."
 msgstr "このバックアップを完了できませんでした。"

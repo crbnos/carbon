@@ -3478,6 +3478,9 @@ msgstr "Sprawdź swoją pocztę"
 msgid "Checking Stripe for this customer…"
 msgstr "Sprawdzanie Stripe dla tego klienta…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Sprawdzanie zleceń partii produkcyjnej..."
+
 msgid "Checkpoint ·"
 msgstr "Punkt kontrolny ·"
 
@@ -4451,6 +4454,9 @@ msgstr "Utwórz {0} wartości"
 msgid "Create & Release"
 msgstr "Utwórz i zwolnij"
 
+msgid "Create & release batch"
+msgstr "Utwórz i zwolnij partię produkcyjną"
+
 msgid "Create & Snapshot"
 msgstr "Utwórz i Snapshot"
 
@@ -4522,6 +4528,9 @@ msgstr "Utwórz zlecenia produkcyjne"
 
 msgid "Create Kanban"
 msgstr "Utwórz Kanban"
+
+msgid "Create New"
+msgstr "Utwórz nowy"
 
 msgid "Create new rule"
 msgstr "Utwórz nową regułę"
@@ -6197,6 +6206,9 @@ msgstr "Niewykorzystany materiał z każdej operacji powraca natychmiast po zako
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Każda jednostka fizyczna otrzymuje swoją własną jednostkę śledzenia i unikalny numer — jedna jednostka, jedna jednostka."
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Operacje zewnętrzne każdego dostawcy z każdego zlecenia produkcyjnego trafiają na nowe zamówienie zakupu lub na istniejącą wersję roboczą, którą wybierzesz."
+
 msgid "Each, lb, ft…"
 msgstr "Każdy, lb, ft…"
 
@@ -7694,6 +7706,9 @@ msgstr "Dopasuj widok"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Napraw problemy tego przepływu pracy przed jego testowaniem"
+
+msgid "Fix these jobs before releasing"
+msgstr "Napraw te zlecenia produkcyjne przed zwolnieniem"
 
 msgid "Fixed"
 msgstr "Stałe"
@@ -9844,6 +9859,9 @@ msgstr "Numer części producenta"
 msgid "Manufacturing"
 msgstr "Produkcja"
 
+msgid "manufacturing is blocked"
+msgstr "produkcja jest zablokowana"
+
 msgid "Map accounts"
 msgstr "Zmapuj konta"
 
@@ -11109,6 +11127,10 @@ msgstr "Brak otwartych pozycji zamówienia sprzedaży"
 
 msgid "No operations found."
 msgstr "Nie znaleziono operacji."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "brak operacji na {0}"
 
 msgid "No operations require picking at this location"
 msgstr "Żadne operacje nie wymagają kompletacji w tej lokalizacji"
@@ -13705,6 +13727,11 @@ msgstr "Zwolnij {0} partie produkcyjne"
 msgid "Release Batch"
 msgstr "Zwolnij partię produkcyjną"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Zwolnij partię produkcyjną {0}"
+
 msgid "Release change notice"
 msgstr "Zwolnij zawiadomienie o zmianie"
 
@@ -13732,6 +13759,9 @@ msgstr "Zwolniona rewizja"
 
 msgid "Released revision is locked"
 msgstr "Zwolniona rewizja jest zablokowana"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Zwolnienie partii produkcyjnej zwalnia jej zlecenia produkcyjne, a każde musi być gotowe na halę produkcyjną."
 
 msgid "Remaining"
 msgstr "Pozostało"
@@ -16711,6 +16741,9 @@ msgstr "Zadanie kopii zapasowej zgłosiło ten błąd."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Data obliczona wstecz, do której operacja musi być ukończona, aby zlecenie produkcyjne dotrzymało terminu, zapisana jako termin operacji. Stabilny punkt odniesienia do pomiaru postępu — nigdy nie jest ograniczeniem na rozmieszczenie pracy."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "Partia produkcyjna przechodzi na halę produkcyjną. Jej zlecenia produkcyjne są już zwolnione."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Partia biegnie według najpilniejszego elementu — pozostałe są przyspieszane"
 
@@ -17517,6 +17550,11 @@ msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie m
 
 msgid "this ability"
 msgstr "ta zdolność"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "To również zwalnia {0} zleceń produkcyjnych ({1}). Stają się dostępne dla hali produkcyjnej i napędzają zakupy i produkcję."
 
 msgid "This backup could not be completed."
 msgstr "Nie można było ukończyć tej kopii zapasowej."

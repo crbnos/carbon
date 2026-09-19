@@ -77,6 +77,7 @@ import {
   outputLotsPayload,
   outputLotsProblem
 } from "./BatchOutputLots";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import {
   type BatchAddTarget,
   batchPlanBreakdown,
@@ -728,7 +729,14 @@ export function BatchBuilder({
     }
   }, [submitFetcher.state, submitFetcher.data, isAddMode, batch?.id, navigate]);
 
-  const submit = (targetBatchId?: string, opts?: { release?: boolean }) => {
+  const [createReleaseOpen, setCreateReleaseOpen] = useState(false);
+  const submit = (
+    targetBatchId?: string,
+    opts?: {
+      release?: boolean;
+      purchaseOrdersBySupplierId?: Record<string, string>;
+    }
+  ) => {
     const fd = new FormData();
     if (isAddMode || targetBatchId) {
       addTargetRef.current = targetBatchId ?? null;
@@ -750,6 +758,12 @@ export function BatchBuilder({
       // Create & Release: the create validator's zfd.checkbox reads "on" and
       // the edge fn inserts the batch already Active (on the floor).
       if (opts?.release) fd.set("release", "on");
+      if (opts?.purchaseOrdersBySupplierId) {
+        fd.set(
+          "purchaseOrdersBySupplierId",
+          JSON.stringify(opts.purchaseOrdersBySupplierId)
+        );
+      }
     }
     for (const id of selectedById.keys()) fd.append("jobOperationIds", id);
     submitFetcher.submit(fd, {
@@ -962,7 +976,9 @@ export function BatchBuilder({
                 isDisabled={
                   selected.length === 0 || isSubmitting || lotPlanIncomplete
                 }
-                onClick={() => submit(undefined, { release: true })}
+                // Opens the Release dialog: the selected jobs are checked and
+                // any outside-operation POs chosen before the batch is created.
+                onClick={() => setCreateReleaseOpen(true)}
               >
                 {t`Create & Release`}
               </Button>
@@ -984,6 +1000,18 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {createReleaseOpen && (
+        <BatchReleaseModal
+          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+          title={t`Create & release batch`}
+          confirmLabel={t`Create & Release`}
+          onClose={() => setCreateReleaseOpen(false)}
+          onConfirm={(purchaseOrdersBySupplierId) => {
+            submit(undefined, { release: true, purchaseOrdersBySupplierId });
+            setCreateReleaseOpen(false);
+          }}
+        />
+      )}
     </Drawer>
   );
 }

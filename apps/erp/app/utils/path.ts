@@ -91,6 +91,14 @@ export const path = {
         ),
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
+      batchReleaseReadiness: (
+        target: { batchId: string } | { jobIds: string[] }
+      ) =>
+        `${api}/production/release-readiness?${
+          "batchId" in target
+            ? new URLSearchParams({ batchId: target.batchId })
+            : new URLSearchParams(target.jobIds.map((id) => ["jobId", id]))
+        }`,
 
       billOfMaterials: (methodId: string, withOperations: boolean = false) =>
         generatePath(

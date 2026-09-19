@@ -3478,6 +3478,9 @@ msgstr "이메일을 확인하세요"
 msgid "Checking Stripe for this customer…"
 msgstr "이 고객의 Stripe 확인 중…"
 
+msgid "Checking the batch's jobs..."
+msgstr "배치의 작업 지시 확인 중..."
+
 msgid "Checkpoint ·"
 msgstr "체크포인트 ·"
 
@@ -4451,6 +4454,9 @@ msgstr "{0} 값 생성"
 msgid "Create & Release"
 msgstr "생성 & 릴리스"
 
+msgid "Create & release batch"
+msgstr "배치 생성 및 릴리스"
+
 msgid "Create & Snapshot"
 msgstr "생성 및 스냅샷"
 
@@ -4522,6 +4528,9 @@ msgstr "작업 지시 생성"
 
 msgid "Create Kanban"
 msgstr "칸반 생성"
+
+msgid "Create New"
+msgstr "새로 생성"
 
 msgid "Create new rule"
 msgstr "새 규칙 생성"
@@ -6197,6 +6206,9 @@ msgstr "각 작업의 미사용 재료는 해당 작업이 완료되는 즉시 �
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "각 물리적 개는 자신의 추적 대상과 고유 번호를 받습니다 — 하나의 추적 대상, 하나의 개."
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "각 공급업체의 외주 공정은 모든 작업 지시에서 새로운 발주서 하나에 배치되거나 선택한 기존 초안에 배치됩니다."
+
 msgid "Each, lb, ft…"
 msgstr "개, lb, ft…"
 
@@ -7694,6 +7706,9 @@ msgstr "보기에 맞춤"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "테스트하기 전에 이 워크플로우의 문제를 해결하십시오"
+
+msgid "Fix these jobs before releasing"
+msgstr "릴리스하기 전에 이 작업 지시들을 수정하세요"
 
 msgid "Fixed"
 msgstr "고정"
@@ -9844,6 +9859,9 @@ msgstr "제조사 부품 번호"
 msgid "Manufacturing"
 msgstr "제조"
 
+msgid "manufacturing is blocked"
+msgstr "제조가 차단되었습니다"
+
 msgid "Map accounts"
 msgstr "계정 매핑"
 
@@ -11109,6 +11127,10 @@ msgstr "미결 수주 라인이 없습니다."
 
 msgid "No operations found."
 msgstr "공정을 찾을 수 없습니다."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0}에 공정이 없습니다"
 
 msgid "No operations require picking at this location"
 msgstr "이 위치에서 피킹이 필요한 공정작업이 없습니다"
@@ -13705,6 +13727,11 @@ msgstr "{0}개 배치 릴리스"
 msgid "Release Batch"
 msgstr "배치 릴리스"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "배치 {0} 릴리스"
+
 msgid "Release change notice"
 msgstr "변경 통지 릴리스"
 
@@ -13732,6 +13759,9 @@ msgstr "릴리스된 리비전"
 
 msgid "Released revision is locked"
 msgstr "발행된 리비전은 잠겨 있습니다"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고, 각각은 현장에 준비되어야 합니다."
 
 msgid "Remaining"
 msgstr "남음"
@@ -16711,6 +16741,9 @@ msgstr "백업 작업이 이 오류를 보고했습니다."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "공정이 작업 지시를 제때 완료하기 위해 마감일까지 완료되어야 하는 역계산된 날짜이며 공정의 마감일에 기록됩니다. 진행 상황을 측정하기 위한 안정적인 목표 — 배치에 대한 제약 조건이 아닙니다."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "배치가 현장으로 이동합니다. 포함된 작업 지시들은 이미 릴리스되었습니다."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "배치는 가장 급한 항목의 일정에 맞춰 실행되며 나머지는 앞당겨집니다"
 
@@ -17517,6 +17550,11 @@ msgstr "이 행들은 회사 외부의 데이터와 연결되어 있어 복원�
 
 msgid "this ability"
 msgstr "이 능력"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "또한 {0}개의 작업 지시({1})를 릴리스합니다. 현장에 가용하게 되어 구매 및 생산을 추진합니다."
 
 msgid "This backup could not be completed."
 msgstr "이 백업을 완료할 수 없습니다."

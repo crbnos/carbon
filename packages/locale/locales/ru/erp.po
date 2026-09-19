@@ -3478,6 +3478,9 @@ msgstr "Проверьте вашу почту"
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Проверка производственных заказов серии..."
+
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
 
@@ -4451,6 +4454,9 @@ msgstr "Создать {0} значений"
 msgid "Create & Release"
 msgstr "Создать и запустить в работу"
 
+msgid "Create & release batch"
+msgstr "Создать и запустить в работу серию"
+
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
@@ -4522,6 +4528,9 @@ msgstr "Создать производственные заказы"
 
 msgid "Create Kanban"
 msgstr "Создать канбан"
+
+msgid "Create New"
+msgstr "Создать"
 
 msgid "Create new rule"
 msgstr "Создать новое правило"
@@ -6197,6 +6206,9 @@ msgstr "Неиспользованный материал каждой опер�
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Внешние операции каждого поставщика из каждого производственного заказа размещаются на одном новом заказе поставщику или на существующем черновике на ваш выбор."
+
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
 
@@ -7694,6 +7706,9 @@ msgstr "Уместить в окно"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
+
+msgid "Fix these jobs before releasing"
+msgstr "Исправьте эти производственные заказы перед запуском"
 
 msgid "Fixed"
 msgstr "Фиксированный"
@@ -9844,6 +9859,9 @@ msgstr "Номер детали производителя"
 msgid "Manufacturing"
 msgstr "Производство"
 
+msgid "manufacturing is blocked"
+msgstr "Производство заблокировано"
+
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
@@ -11109,6 +11127,10 @@ msgstr "Нет открытых строк заказов покупателя"
 
 msgid "No operations found."
 msgstr "Операции не найдены."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "нет операций на {0}"
 
 msgid "No operations require picking at this location"
 msgstr "Ни одна операция не требует отбора на этой площадке"
@@ -13705,6 +13727,11 @@ msgstr "Запустить {0} серий"
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Запустить в работу серию {0}"
+
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
 
@@ -13732,6 +13759,9 @@ msgstr "Выпущенная ревизия"
 
 msgid "Released revision is locked"
 msgstr "Выпущенная ревизия заблокирована"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
 
 msgid "Remaining"
 msgstr "Остаток"
@@ -16711,6 +16741,9 @@ msgstr "Задача резервного копирования сообщил�
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Дата завершения операции, вычисленная в обратном порядке, чтобы производственный заказ был выполнен вовремя, записываемая в срок выполнения операции. Стабильная цель для измерения прогресса — никогда не является ограничением при размещении."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "Серия поступает на цех. Её производственные заказы уже запущены."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
@@ -17517,6 +17550,11 @@ msgstr "Эти строки ссылаются на данные вне этой
 
 msgid "this ability"
 msgstr "этот навык"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "Это также запускает {0} производственных заказов ({1}). Они становятся доступны цеху и управляют закупками и производством."
 
 msgid "This backup could not be completed."
 msgstr "Эта резервная копия не может быть завершена."

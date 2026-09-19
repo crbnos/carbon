@@ -3478,6 +3478,9 @@ msgstr "अपना ईमेल जांचें"
 msgid "Checking Stripe for this customer…"
 msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
 
+msgid "Checking the batch's jobs..."
+msgstr "बैच की जॉब्स को जाँच रहे हैं..."
+
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
 
@@ -4451,6 +4454,9 @@ msgstr "{0} मान बनाएं"
 msgid "Create & Release"
 msgstr "बनाएँ और जारी करें"
 
+msgid "Create & release batch"
+msgstr "बैच बनाएँ और जारी करें"
+
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
@@ -4522,6 +4528,9 @@ msgstr "जॉब बनाएँ"
 
 msgid "Create Kanban"
 msgstr "कानबान बनाएँ"
+
+msgid "Create New"
+msgstr "नया बनाएँ"
 
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
@@ -6197,6 +6206,9 @@ msgstr "प्रत्येक ऑपरेशन की अप्रयुक
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
+
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
 
@@ -7694,6 +7706,9 @@ msgstr "व्यू फिट करें"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
+
+msgid "Fix these jobs before releasing"
+msgstr "जारी करने से पहले इन जॉब्स को ठीक करें"
 
 msgid "Fixed"
 msgstr "निश्चित"
@@ -9844,6 +9859,9 @@ msgstr "निर्माता भाग संख्या"
 msgid "Manufacturing"
 msgstr "विनिर्माण"
 
+msgid "manufacturing is blocked"
+msgstr "विनिर्माण अवरुद्ध है"
+
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
 
@@ -11109,6 +11127,10 @@ msgstr "कोई खुली विक्रय आदेश पंक्त�
 
 msgid "No operations found."
 msgstr "कोई ऑपरेशन नहीं मिला।"
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0} में कोई ऑपरेशन नहीं"
 
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
@@ -13705,6 +13727,11 @@ msgstr "{0} बैच जारी करें"
 msgid "Release Batch"
 msgstr "बैच जारी करें"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "बैच {0} जारी करें"
+
 msgid "Release change notice"
 msgstr "परिवर्तन सूचना जारी करें"
 
@@ -13732,6 +13759,9 @@ msgstr "जारी रिवीजन"
 
 msgid "Released revision is locked"
 msgstr "जारी रिवीजन लॉक है"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
 
 msgid "Remaining"
 msgstr "शेष"
@@ -16711,6 +16741,9 @@ msgstr "बैकअप जॉब ने इस त्रुटि की रि
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "बैच शॉप फ्लोर पर जाता है। इसकी जॉब्स पहले से ही जारी हैं।"
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
@@ -17517,6 +17550,11 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 
 msgid "this ability"
 msgstr "यह क्षमता"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "यह {0} जॉब्स ({1}) भी जारी करता है। वे शॉप फ्लोर के लिए उपलब्ध हो जाती हैं और क्रय और उत्पादन को चलाती हैं।"
 
 msgid "This backup could not be completed."
 msgstr "यह बैकअप पूर्ण नहीं किया जा सका।"

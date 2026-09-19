@@ -17896,6 +17896,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -17994,6 +18000,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -18044,6 +18056,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
           },
           {
             $ref: "#/parameters/body.jobOperationBatch"
@@ -110049,7 +110067,7 @@ export default {
       properties: {
         id: {
           description:
-            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -110098,7 +110116,7 @@ export default {
         },
         supplierLocationId: {
           description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
+            "Note:\nThis is a Foreign Key to `supplierLocation.id`.<fk table='supplierLocation' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -112045,7 +112063,8 @@ export default {
         "locationId",
         "status",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "mergeOutput"
       ],
       properties: {
         id: {
@@ -112108,6 +112127,15 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        mergeOutput: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        outputLotNumber: {
+          format: "text",
           type: "string"
         }
       },
@@ -156839,6 +156867,18 @@ export default {
     },
     "rowFilter.jobOperationBatch.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.mergeOutput": {
+      name: "mergeOutput",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.outputLotNumber": {
+      name: "outputLotNumber",
       required: false,
       in: "query",
       type: "string"

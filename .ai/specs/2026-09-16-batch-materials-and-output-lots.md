@@ -265,6 +265,20 @@ All new strings via lingui (`<Trans>`/`t`) in both apps; `/translate` after.
 
 ## Changelog
 
+- 2026-09-18 (Sid): releasing a batch releases its Draft/Planned member jobs
+  through the job page's own path (`releaseJobs`: recalc, MRP, Ready,
+  outside-operation POs, releasedDate), after validating every one
+  (`getJobReleaseReadiness`: assemblies without operations, manufacturing
+  blocked). Decisions: an invalid member job blocks the WHOLE batch; the
+  Release dialog chooses a PO per supplier once for all jobs (a supplier's
+  first new PO is reused, so a batch lands on one PO per supplier); bulk
+  release has no dialog, so it releases clean batches and skips — naming —
+  any that need a fix or have Draft POs to choose from. The job Release route
+  now re-checks missing operations server-side (previously browser-only).
+  Open: the job dialog's "Missing Suppliers" check never fires (outside
+  operations without a supplier are silently skipped, not blocked) — left
+  as shipped pending a decision.
+
 - 2026-09-18 (Sid): lot identity moves from the floor to planning. The batch
   builder's Output section sets each member's lot (written to its WIP
   trackedEntity.readableId at create) or, when every member makes the same

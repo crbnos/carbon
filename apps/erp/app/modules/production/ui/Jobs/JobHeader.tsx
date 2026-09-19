@@ -94,6 +94,10 @@ import {
   getReceivableSerialUnits,
   type JobReceiptSnapshot
 } from "./job-complete-logic";
+import {
+  makeMethodsMissingOperations,
+  outsideOperationsNeedingPurchaseOrders
+} from "./job-release-logic";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -649,11 +653,12 @@ export function JobStartModal({
       existingPurchaseOrderLines.data?.map((pol) => pol.jobOperationId) ?? []
     );
 
-    // Filter out operations that already have purchase order lines
-    const operationsNeedingPurchaseOrders = outsideOperations.filter(
-      (op) =>
-        !existingJobOperationIds.has(op.id) && op.operationSupplierProcessId
-    );
+    // Shared with batch release (job-release-logic) so both apply one rule.
+    const operationsNeedingPurchaseOrders =
+      outsideOperationsNeedingPurchaseOrders(
+        operations.data ?? [],
+        existingJobOperationIds as Set<string>
+      );
 
     const uniqueOutsideProcessIds = operationsNeedingPurchaseOrders.map(
       (op) => op.operationSupplierProcessId!
@@ -702,27 +707,6 @@ export function JobStartModal({
       )
     );
 
-    const kittedMakeMethodIds = new Set(
-      materials.data
-        ?.filter((m) => m.jobMaterialMakeMethodId && m.kit)
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // make methods for materials
-    const uniqueMakeMethodIds = new Set(
-      materials.data
-        ?.filter(
-          (m) =>
-            m.jobMaterialMakeMethodId &&
-            m.methodType === "Make to Order" &&
-            !kittedMakeMethodIds.has(m.jobMaterialMakeMethodId)
-        )
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // top-level make method
-    uniqueMakeMethodIds.add(makeMethod.data?.id!);
-
     const flatMethod =
       methodTree.data && methodTree.data.length > 0
         ? flattenTree(methodTree.data[0])
@@ -738,21 +722,16 @@ export function JobStartModal({
       ])
     );
 
-    const missingAssemblies = Array.from(uniqueMakeMethodIds)
-      .filter(
-        (makeMethodId) =>
-          !(
-            operations.data?.some(
-              (op) => op.jobMakeMethodId === makeMethodId
-            ) ?? false
-          )
-      )
-      .map((makeMethodId) => {
-        const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
-        return info
-          ? { bomId: info.bomId, description: info.description }
-          : { bomId: "?", description: makeMethodId ?? "Unknown" };
-      });
+    const missingAssemblies = makeMethodsMissingOperations(
+      makeMethod.data?.id ?? null,
+      materials.data ?? [],
+      operations.data ?? []
+    ).map((makeMethodId) => {
+      const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
+      return info
+        ? { bomId: info.bomId, description: info.description }
+        : { bomId: "?", description: makeMethodId ?? "Unknown" };
+    });
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);

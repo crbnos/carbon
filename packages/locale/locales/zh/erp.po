@@ -3478,6 +3478,9 @@ msgstr "检查您的电子邮件"
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
 
+msgid "Checking the batch's jobs..."
+msgstr "正在检查生产批次的工单..."
+
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
 
@@ -4451,6 +4454,9 @@ msgstr "创建 {0} 个值"
 msgid "Create & Release"
 msgstr "创建并下达"
 
+msgid "Create & release batch"
+msgstr "创建并下达生产批次"
+
 msgid "Create & Snapshot"
 msgstr "创建并快照"
 
@@ -4522,6 +4528,9 @@ msgstr "创建工单"
 
 msgid "Create Kanban"
 msgstr "创建看板"
+
+msgid "Create New"
+msgstr "新建"
 
 msgid "Create new rule"
 msgstr "创建新规则"
@@ -6197,6 +6206,9 @@ msgstr "每个工序的未使用原材料在工序完成后立即退回。"
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
+
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
 
@@ -7694,6 +7706,9 @@ msgstr "缩放到适应"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
+
+msgid "Fix these jobs before releasing"
+msgstr "在下达前修复这些工单"
 
 msgid "Fixed"
 msgstr "固定"
@@ -9844,6 +9859,9 @@ msgstr "制造商零件号"
 msgid "Manufacturing"
 msgstr "制造"
 
+msgid "manufacturing is blocked"
+msgstr "生产受阻"
+
 msgid "Map accounts"
 msgstr "映射科目"
 
@@ -11109,6 +11127,10 @@ msgstr "没有未结销售订单行"
 
 msgid "No operations found."
 msgstr "未找到工序。"
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0}上没有工序"
 
 msgid "No operations require picking at this location"
 msgstr "此地点没有工序需要拣货"
@@ -13705,6 +13727,11 @@ msgstr "下达{0}个生产批次"
 msgid "Release Batch"
 msgstr "下达生产批次"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "下达生产批次{0}"
+
 msgid "Release change notice"
 msgstr "下达变更通知"
 
@@ -13732,6 +13759,9 @@ msgstr "已下达修订版"
 
 msgid "Released revision is locked"
 msgstr "已下达修订版已锁定"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -16711,6 +16741,9 @@ msgstr "备份工作报告了此错误。"
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "生产批次送往车间。其工单已下达。"
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
 
@@ -17517,6 +17550,11 @@ msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他
 
 msgid "this ability"
 msgstr "此能力"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "这也下达了{0}个工单({1})。它们对车间可用，并驱动采购和生产。"
 
 msgid "This backup could not be completed."
 msgstr "无法完成此备份。"

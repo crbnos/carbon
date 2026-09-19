@@ -25,9 +25,17 @@ msgstr "{0} Ativo(s)"
 msgid "{0} ago"
 msgstr "há {0}"
 
+#. placeholder {0}: batchFacts.customers.length
+msgid "{0} customers"
+msgstr ""
+
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
 msgstr "{0} não tem número de lote. Defina-o no lote de produção ou ordem de produção no Carbon, depois concluir."
+
+#. placeholder {0}: batchFacts.items.length
+msgid "{0} items"
+msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
@@ -60,6 +68,11 @@ msgstr "{0} na fila"
 msgid "{0} running"
 msgstr "{0} em execução"
 
+#. placeholder {0}: operation.jobReadableId
+#. placeholder {1}: batch.readableId
+msgid "{0} runs in batch {1}"
+msgstr ""
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} Refugado(s)"
@@ -72,6 +85,10 @@ msgstr "{completions} unidade(s) aprovada(s) será(ão) concluída(s)."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} falha(s) amostrada(s) registrada(s) e NÃO será(ão) concluída(s) — resolva-as no menu de ações."
+
+#. placeholder {0}: step.perMember.length
+msgid "{recorded}/{0} jobs"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} mais"
@@ -131,9 +148,12 @@ msgstr "Todos"
 msgid "All clear"
 msgstr "Tudo limpo"
 
+msgid "All jobs"
+msgstr "Todas as ordens de produção"
+
 #. placeholder {0}: batch.outputLotNumber
-msgid "all output → <0>{0}</0>"
-msgstr "toda saída → <0>{0}</0>"
+msgid "All output → <0>{0}</0>"
+msgstr ""
 
 #. placeholder {0}: batch.outputLotNumber
 msgid "All output goes to lot <0>{0}</0>"
@@ -187,8 +207,8 @@ msgstr "disponível"
 msgid "Available"
 msgstr "Disponível"
 
-msgid "Backflushed at completion"
-msgstr "Consumido na conclusão"
+msgid "Back to batch"
+msgstr ""
 
 msgid "Batch"
 msgstr "Lote"
@@ -203,17 +223,20 @@ msgstr "Número do Lote {0}"
 msgid "Batch number is required"
 msgstr "Número do lote é obrigatório"
 
-msgid "Batch required"
-msgstr "Lote de produção obrigatório"
+msgid "Batch quantity"
+msgstr "Quantidade do lote de produção"
 
 msgid "batch total"
 msgstr "total do lote de produção"
 
-msgid "Batched jobs"
-msgstr "Trabalhos agrupados"
-
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "Atraso de {daysBehindTarget} dia(s)"
+
+#. placeholder {0}: step.minValue
+#. placeholder {1}: step.maxValue
+#. placeholder {2}: step.unitOfMeasureCode ?? ""
+msgid "Between {0} and {1} {2}"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -252,6 +275,9 @@ msgstr "Chat"
 msgid "Check your email"
 msgstr "Verifique seu e-mail"
 
+msgid "Choose a job"
+msgstr ""
+
 msgid "Clear"
 msgstr "Limpar"
 
@@ -278,6 +304,9 @@ msgstr "Fechar"
 
 msgid "Collapse features table"
 msgstr "Recolher tabela de recursos"
+
+msgid "Collapse panel"
+msgstr "Recolher painel"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -307,6 +336,9 @@ msgstr "Concluir"
 
 msgid "Complete All"
 msgstr "Completar Tudo"
+
+msgid "Complete batch"
+msgstr ""
 
 msgid "Complete Batch"
 msgstr "Completar Lote"
@@ -407,6 +439,9 @@ msgstr "Exibição"
 msgid "Displays"
 msgstr "Exibições"
 
+msgid "Done"
+msgstr ""
+
 msgid "Down"
 msgstr "Parado"
 
@@ -439,9 +474,12 @@ msgstr "Arraste para redimensionar desenho e recursos"
 msgid "Dragging {0} cancelled."
 msgstr "Arraste de {0} cancelado."
 
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
+msgid "Due"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "Vencimento {0}"
 
@@ -479,6 +517,9 @@ msgstr "Centros de trabalho vazios"
 msgid "End Operations"
 msgstr "Encerrar Operações"
 
+msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
+msgstr ""
+
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
 msgstr "Insira o PIN de {0}"
@@ -495,11 +536,17 @@ msgstr "Erro"
 msgid "Estimated"
 msgstr "Estimado"
 
+msgid "Every job in the batch follows these steps. Record a step for all of them at once."
+msgstr ""
+
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Cada unidade tem um veredicto: {passes} aprovada(s) e {fails} reprovada(s). O lote fecha com cada unidade encaminhada para seu próprio resultado."
 
 msgid "Expand features table"
 msgstr "Expandir tabela de recursos"
+
+msgid "Expand panel"
+msgstr "Expandir painel"
 
 msgid "Expired"
 msgstr "Vencido"
@@ -537,6 +584,10 @@ msgstr "Falha ao salvar medição"
 
 msgid "Failed to save result"
 msgstr "Falha ao salvar resultado"
+
+#. placeholder {0}: file.name
+msgid "Failed to upload {0}"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -582,6 +633,10 @@ msgstr "Finalize a configuração de sua conta"
 msgid "Finish with material unpicked?"
 msgstr "Finalizar com material não selecionado?"
 
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
+msgid "First due {0}"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de apontar fim?"
 
@@ -593,6 +648,9 @@ msgstr "Voltar para operação"
 
 msgid "Go to onboarding"
 msgstr "Ir para integração"
+
+msgid "Hide description"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "Quantos foram realmente apanhados?"
@@ -685,9 +743,6 @@ msgstr "Ficha de acompanhamento"
 msgid "Jobs"
 msgstr "Ordens de produção"
 
-msgid "Jobs in this batch"
-msgstr "Ordens de produção neste lote de produção"
-
 msgid "Keep picking"
 msgstr "Continuar separação"
 
@@ -721,6 +776,9 @@ msgstr "linhas"
 msgid "List view"
 msgstr "Visualização em lista"
 
+msgid "Load list"
+msgstr ""
+
 msgid "Loading item details..."
 msgstr "Carregando detalhes do item..."
 
@@ -732,6 +790,9 @@ msgstr "Local"
 
 msgid "Location"
 msgstr "Localização"
+
+msgid "Log completed"
+msgstr ""
 
 msgid "Log Completed"
 msgstr "Registrar Concluído"
@@ -762,6 +823,9 @@ msgstr "Lote"
 
 msgid "Lot numbers missing"
 msgstr "Números de lote ausentes"
+
+msgid "Lot tracked"
+msgstr ""
 
 msgid "Machine"
 msgstr "Máquina"
@@ -1001,6 +1065,10 @@ msgstr "Impacto OEE"
 msgid "OEM Required"
 msgstr "OEM Necessário"
 
+#. placeholder {0}: m.operationQuantity ?? 0
+msgid "of {0}"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "Mais antigo primeiro"
 
@@ -1010,8 +1078,8 @@ msgstr "um lote combinado · planejado"
 msgid "one per job · planned"
 msgstr "um por ordem de produção · planejado"
 
-msgid "One pick covers the whole batch, split across jobs by what each still needs."
-msgstr "Uma separação cobre todo o lote de produção, dividida entre as ordens de produção conforme cada uma ainda precisa."
+msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
+msgstr ""
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -1025,6 +1093,9 @@ msgstr "Aberto"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "Abra uma exibição na tela montada no centro de trabalho e deixe-a em execução. Cada quadro se atualiza automaticamente."
+
+msgid "Open a job in this batch"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "Abrir um NCR para disposição MRB"
@@ -1070,6 +1141,9 @@ msgstr "Parcial"
 
 msgid "Partial Disposition"
 msgstr "Disposição Parcial"
+
+msgid "Passed inspection"
+msgstr ""
 
 msgid "Passed Inspection"
 msgstr "Aprovado na Inspeção"
@@ -1147,6 +1221,9 @@ msgstr "Procedimento"
 msgid "Process"
 msgstr "Processo"
 
+msgid "Process parameters"
+msgstr "Parâmetros do processo"
+
 msgid "Process Parameters"
 msgstr "Parâmetros do Processo"
 
@@ -1189,17 +1266,27 @@ msgstr "Registrar"
 msgid "Record {0}"
 msgstr "Registro {0}"
 
+#. placeholder {0}: changed.length
+msgid "Record {0} jobs"
+msgstr ""
+
 msgid "Record only"
 msgstr "Apenas registrar"
 
 msgid "Record Partial"
 msgstr "Registrar Parcial"
 
+msgid "Recorded"
+msgstr ""
+
 msgid "Reject"
 msgstr "Rejeitar"
 
 msgid "Reject Lot"
 msgstr "Rejeitar Lote"
+
+msgid "Released"
+msgstr ""
 
 msgid "Remove"
 msgstr "Remover"
@@ -1215,6 +1302,9 @@ msgstr "Remover peça"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "Reabrir o subconjunto e criar uma unidade de substituição"
+
+msgid "Required"
+msgstr "Obrigatório"
 
 msgid "Result"
 msgstr "Resultado"
@@ -1236,6 +1326,9 @@ msgstr "Em execução"
 
 msgid "Sales Order"
 msgstr "Pedido de Venda"
+
+msgid "Same for every job"
+msgstr ""
 
 msgid "Save"
 msgstr "Salvar"
@@ -1378,6 +1471,9 @@ msgstr "Números de série"
 msgid "Serial Numbers"
 msgstr "Números de Série"
 
+msgid "Serialized"
+msgstr ""
+
 msgid "Session locked"
 msgstr "Sessão bloqueada"
 
@@ -1404,6 +1500,9 @@ msgstr "Falta"
 
 msgid "Short pick {itemName}"
 msgstr "Colheita curta {itemName}"
+
+msgid "Show description"
+msgstr ""
 
 msgid "Show this overlay"
 msgstr "Mostrar esta sobreposição"
@@ -1443,6 +1542,10 @@ msgstr "Peças de reposição utilizadas"
 
 msgid "Start"
 msgstr "Iniciar"
+
+#. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+msgid "Start {0}"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "Iniciar ou pausar a operação"
@@ -1499,6 +1602,10 @@ msgstr "O lote será marcado como Aprovado e {remaining} unidade(s) restante(s) 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "O lote ainda será disposicionado, mas um NCR não pode ser criado até que pelo menos um Tipo de Problema seja configurado."
 
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+msgstr ""
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Não há peças rastreadas disponíveis ou consumidas para este material."
 
@@ -1508,11 +1615,8 @@ msgstr "Existem materiais rastreados por série ou lote na lista de materiais qu
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "Estes itens ainda têm material para selecionar. Finalizar agora marca a lista como Parcial."
 
-msgid "this job"
-msgstr "esta ordem de produção"
-
-msgid "This job"
-msgstr "Esta ordem de produção"
+msgid "This batch has no work instructions."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "Este lote está vencido e não pode ser separado."
@@ -1529,6 +1633,9 @@ msgstr "Esta unidade será permanentemente descartada e um novo número de séri
 msgid "Thumbnail"
 msgstr "Miniatura"
 
+msgid "Tick the jobs this was done for."
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "Tempo e custo divididos entre trabalhos proporcionalmente à quantidade."
 
@@ -1539,6 +1646,12 @@ msgstr "Registros de Horas"
 msgid "Time Worked: {0}"
 msgstr "Tempo Trabalhado: {0}"
 
+msgid "To pick"
+msgstr ""
+
+msgid "To run"
+msgstr ""
+
 msgid "Today"
 msgstr "Hoje"
 
@@ -1547,6 +1660,9 @@ msgstr "Alternar barra lateral"
 
 msgid "Tools"
 msgstr "Ferramentas"
+
+msgid "Total"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "Quantidade Total"
@@ -1636,6 +1752,12 @@ msgstr "Enviando {0}"
 msgid "Use a different account"
 msgstr "Usar uma conta diferente"
 
+msgid "Used automatically at completion"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
 msgid "Verify"
 msgstr "Verificar"
 
@@ -1644,6 +1766,9 @@ msgstr "Visualizar ordem de manutenção"
 
 msgid "We've sent you a magic link to sign in to your account."
 msgstr "Enviamos um link mágico para você entrar na sua conta."
+
+msgid "What goes into this run, job by job."
+msgstr ""
 
 msgid "What is {translatedTerm}?"
 msgstr "O que é {translatedTerm}?"
@@ -1659,6 +1784,9 @@ msgstr "Centro de Trabalho"
 
 msgid "Work Center Displays"
 msgstr "Exibições do Centro de Trabalho"
+
+msgid "Work instructions"
+msgstr "Instruções de trabalho"
 
 msgid "Yes"
 msgstr "Sim"

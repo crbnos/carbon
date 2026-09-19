@@ -3478,6 +3478,9 @@ msgstr "Überprüfen Sie Ihre E-Mail"
 msgid "Checking Stripe for this customer…"
 msgstr "Überprüfung von Stripe für diesen Kunden…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Überprüfung der Aufträge des Loses..."
+
 msgid "Checkpoint ·"
 msgstr "Checkpoint ·"
 
@@ -4451,6 +4454,9 @@ msgstr "Erstelle {0} Werte"
 msgid "Create & Release"
 msgstr "Erstellen & Freigeben"
 
+msgid "Create & release batch"
+msgstr "Los erstellen und freigeben"
+
 msgid "Create & Snapshot"
 msgstr "Erstellen & Snapshot"
 
@@ -4522,6 +4528,9 @@ msgstr "Fertigungsaufträge erstellen"
 
 msgid "Create Kanban"
 msgstr "Kanban erstellen"
+
+msgid "Create New"
+msgstr "Neu erstellen"
 
 msgid "Create new rule"
 msgstr "Neue Regel erstellen"
@@ -6197,6 +6206,9 @@ msgstr "Die ungenutzten Materialien jedes Arbeitsgangs werden zurückgegeben, so
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Jede physische Einheit erhält ihre eigene verfolgte Einheit und eine eindeutige Nummer – eine verfolgte Einheit, ein Stück."
 
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Die Fremdarbeitsgänge jedes Lieferanten aus jedem Fertigungsauftrag werden auf einer neuen Bestellung oder auf einem bestehenden Entwurf platziert, den Sie wählen."
+
 msgid "Each, lb, ft…"
 msgstr "Stück, kg, m…"
 
@@ -7694,6 +7706,9 @@ msgstr "Ansicht anpassen"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Beheben Sie die Probleme mit diesem Workflow, bevor Sie ihn testen"
+
+msgid "Fix these jobs before releasing"
+msgstr "Beheben Sie diese Fertigungsaufträge vor der Freigabe"
 
 msgid "Fixed"
 msgstr "Fest"
@@ -9844,6 +9859,9 @@ msgstr "Herstellerteilnummer"
 msgid "Manufacturing"
 msgstr "Fertigung"
 
+msgid "manufacturing is blocked"
+msgstr "Fertigung ist blockiert"
+
 msgid "Map accounts"
 msgstr "Konten zuordnen"
 
@@ -11109,6 +11127,10 @@ msgstr "Keine offenen Kundenauftragsposition"
 
 msgid "No operations found."
 msgstr "Keine Arbeitsgänge gefunden."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "keine Arbeitsgänge auf {0}"
 
 msgid "No operations require picking at this location"
 msgstr "Keine Arbeitsgänge erfordern Kommissionierung an diesem Standort"
@@ -13705,6 +13727,11 @@ msgstr "{0} Lose freigeben"
 msgid "Release Batch"
 msgstr "Los freigeben"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Los {0} freigeben"
+
 msgid "Release change notice"
 msgstr "Änderungsmitteilung freigeben"
 
@@ -13732,6 +13759,9 @@ msgstr "Freigegebene Revision"
 
 msgid "Released revision is locked"
 msgstr "Freigegebene Revision ist gesperrt"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Die Freigabe des Loses gibt seine Fertigungsaufträge frei, und jeder muss für die Werkstatt bereit sein."
 
 msgid "Remaining"
 msgstr "Verbleibend"
@@ -16711,6 +16741,9 @@ msgstr "Der Sicherungsvorgang hat diesen Fehler gemeldet."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Das rückwärts berechnete Datum, bis zu dem ein Arbeitsgang beendet sein muss, um seinen Fertigungsauftrag pünktlich zu halten, geschrieben auf das Fälligkeitsdatum des Arbeitsgangs. Ein stabiles Ziel zur Messung des Fortschritts - niemals eine Platzierungsbeschränkung."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "Das Los geht in die Werkstatt. Seine Fertigungsaufträge sind bereits freigegeben."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Der Batch läuft zum Termin seines dringendsten Auftrags — die übrigen werden vorgezogen"
 
@@ -17517,6 +17550,11 @@ msgstr "Diese Zeilen sind mit Daten außerhalb dieses Unternehmens verknüpft, d
 
 msgid "this ability"
 msgstr "diese Fähigkeit"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "Dies gibt auch {0} Fertigungsaufträge ({1}) frei. Sie werden für die Werkstatt verfügbar und fördern Einkauf und Produktion."
 
 msgid "This backup could not be completed."
 msgstr "Diese Sicherung konnte nicht abgeschlossen werden."

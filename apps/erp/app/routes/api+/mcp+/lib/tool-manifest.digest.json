@@ -1,5 +1,5 @@
 {
-  "totalTools": 1556,
+  "totalTools": 1557,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
@@ -720,6 +720,7 @@
     {"name":"production_getJobPromiseDate","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"f6521bc077a4","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getJobPurchaseOrderLines","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"309dea2a265c","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getJobReceiptSnapshot","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"af63ddd51939","injectAuth":"companyId","permission":"production:view","paginates":false},
+    {"name":"production_getJobReleaseReadiness","classification":"READ","paramCount":1,"schema":"267b4780c1d3","response":"318b160d93cf","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getJobs","classification":"READ","paramCount":1,"schema":"75e0e9e0be40","response":"630059095fdc","injectAuth":"companyId","permission":"production:view","paginates":true},
     {"name":"production_getJobsByDateRange","classification":"READ","paramCount":3,"schema":"00794c516592","response":"737259a0d747","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getJobsBySalesOrderLine","classification":"READ","paramCount":1,"schema":"58e3c9762923","response":"630059095fdc","injectAuth":"companyId","permission":"production:view","paginates":false},
