@@ -2320,6 +2320,10 @@ msgstr "가격 규칙 {0}을(를) 삭제하시겠습니까? 이 작업은 되돌
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "프린터 \"{0}\"을(를) 삭제하시겠습니까? 이 프린터를 참조하는 모든 배정이 해제됩니다. 이 작업은 되돌릴 수 없습니다."
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
+msgstr ""
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2497,6 +2501,10 @@ msgstr "이 사용자들에게 초대를 보내시겠습니까?"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "이 사용자에게 초대를 보내시겠습니까?"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "이 메모를 무효 처리하시겠습니까? 회계 항목 및 적용 내역이 역변환됩니다. 이 작업은 되돌릴 수 없습니다."
@@ -3397,6 +3405,12 @@ msgstr "Carbon의 현장 앱으로 작업자가 공정을 실행하고, 수량�
 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon의 부품 번호를 가진 모든 것에 대한 단일 레코드 — 부품, 자재, 공구, 서비스, 소모품 또는 지그 — 작업 지시, 방법, 주문 및 재고 관리가 모두 참조합니다."
+
+msgid "Card Holder"
+msgstr "카드 소유자"
+
+msgid "Card Transactions"
+msgstr "카드 거래"
 
 msgid "Cards"
 msgstr "카드"
@@ -4461,6 +4475,9 @@ msgstr "작업 일정을 변경할 수 없습니다. 다시 시도하세요."
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 연결을 저장할 수 없습니다"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp 연결을 저장할 수 없습니다"
+
 msgid "Count"
 msgstr "실사"
 
@@ -4716,6 +4733,9 @@ msgstr "지불 조건이 생성되었습니다."
 
 msgid "Created process"
 msgstr "공정 생성됨"
+
+msgid "Created project"
+msgstr ""
 
 msgid "Created required action"
 msgstr "필수 조치 생성됨"
@@ -5547,6 +5567,9 @@ msgstr "절차서 삭제"
 
 msgid "Delete Process"
 msgstr "공정 삭제"
+
+msgid "Delete Project"
+msgstr ""
 
 msgid "Delete Purchase Invoice"
 msgstr "매입 송장 삭제"
@@ -6486,6 +6509,9 @@ msgstr "생산 이벤트 편집"
 msgid "Edit Production Quantity"
 msgstr "생산 수량 편집"
 
+msgid "Edit Project"
+msgstr ""
+
 msgid "Edit purchase order line type"
 msgstr "발주서 라인 유형 편집"
 
@@ -7010,6 +7036,9 @@ msgstr "환율 업데이트 시간"
 msgid "Exchange Rates"
 msgstr "환율"
 
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "액세스 권한을 얻기 위한 인증 코드 교환에 실패했습니다. 다시 연결해 보세요."
+
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "인증 코드를 액세스 토큰으로 교환하지 못했습니다. 다시 연결해 보세요."
 
@@ -7332,6 +7361,10 @@ msgstr "지불 조건 생성 실패: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "공정 생성 실패: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr ""
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10233,6 +10266,9 @@ msgstr "메모 날짜"
 msgid "Memo ID"
 msgstr "메모 ID"
 
+msgid "Merchant"
+msgstr "가맹점"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10765,6 +10801,9 @@ msgstr "신규 절차서"
 msgid "New Process"
 msgstr "새 공정"
 
+msgid "New Project"
+msgstr ""
+
 msgid "New Quality Document"
 msgstr "새 품질 문서"
 
@@ -11159,6 +11198,9 @@ msgstr "생성된 작업 지시가 없음"
 msgid "No journal lines in scope for this period"
 msgstr "이 기간의 범위 내 전표 라인이 없음"
 
+msgid "No lines"
+msgstr "항목 없음"
+
 msgid "No lines to map"
 msgstr "매핑할 라인이 없습니다"
 
@@ -11497,6 +11539,9 @@ msgstr "인증되지 않음"
 
 msgid "Not configured"
 msgstr "구성되지 않음"
+
+msgid "Not Configured"
+msgstr ""
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
@@ -11879,6 +11924,9 @@ msgstr "미결 예약 정비"
 
 msgid "Open task details"
 msgstr "작업 세부정보 열기"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp 연동을 열고 다시 연결하여 설정을 완료해 보세요."
 
 msgid "Open the Setup Map"
 msgstr "설정 맵 열기"
@@ -13021,6 +13069,9 @@ msgstr "예상. {0}"
 msgid "Project"
 msgstr "프로젝트"
 
+msgid "Project Name"
+msgstr ""
+
 msgid "Project owner"
 msgstr "프로젝트 책임자"
 
@@ -13071,6 +13122,9 @@ msgstr "예측"
 
 msgid "Projections"
 msgstr "예측"
+
+msgid "Projects"
+msgstr ""
 
 msgid "Promised Date"
 msgstr "약속일"
@@ -13518,6 +13572,24 @@ msgstr "매주 상태 검토 회의에서 제기하세요"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 문제는 작은 수정이지만, 오픈 시점에 같은 문제가 나오면 지연으로 이어집니다."
+
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp에서 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp가 연결되었지만 설정이 완료되지 않았습니다"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp에서 연결을 거부했습니다"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp에서 인증 코드를 반환하지 않았습니다"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp에서 인증을 거부했습니다"
 
 msgid "Rate"
 msgstr "환율"
@@ -14312,6 +14384,9 @@ msgstr "반품 사유"
 
 msgid "Return Reasons"
 msgstr "반품 사유"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "연동으로 돌아가 Ramp를 다시 연결하세요."
 
 msgid "returnable"
 msgstr "반품 가능"
@@ -16894,6 +16969,9 @@ msgstr "모든 재고 이동을 추가 전용으로 기록한 원장으로, 보�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape에서 인증이 거부되었습니다. 다시 연결해 보세요."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Ramp에서 인증이 거부되었습니다. 다시 연결해 보세요."
+
 msgid "The backup job reported this error."
 msgstr "백업 작업이 이 오류를 보고했습니다."
 
@@ -17412,6 +17490,9 @@ msgstr "견적이 생성되었습니다"
 msgid "The quote will be copied with a revision suffix"
 msgstr "견적이 리비전 접미사와 함께 복사됩니다"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp 연결 만료됨"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "구매하고 소비하는 원자재 재고 및 자재 마스터"
 
@@ -17451,6 +17532,9 @@ msgstr "작업 마감 시 남은 재공품(WIP)으로, 생산 차이 계정으�
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape의 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp 응답에 필수 매개변수가 없습니다. 다시 연결해 보세요."
 
 msgid "The restore job reported this error."
 msgstr "복원 작업이 이 오류를 보고했습니다."
@@ -18329,6 +18413,12 @@ msgstr "아카데미와 인앱 가이드를 통한 팀 교육"
 
 msgid "Trainings"
 msgstr "교육"
+
+msgid "Transaction Date"
+msgstr "거래 일자"
+
+msgid "Transaction ID"
+msgstr "거래 ID"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "거래에 따라 전표 항목이 생성되고 총계정원장이 업데이트됩니다."
@@ -19209,6 +19299,9 @@ msgstr "무효 처리"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "{0} 무효 처리"
+
+msgid "Void Card Transaction"
+msgstr ""
 
 msgid "Void Invoice"
 msgstr "송장 무효 처리"

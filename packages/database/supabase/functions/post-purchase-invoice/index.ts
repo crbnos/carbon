@@ -533,6 +533,7 @@ serve(async (req: Request) => {
             "Item",
             "Location",
             "CostCenter",
+            "Project",
             "Process",
             "FixedAssetClass",
           ]),
@@ -660,6 +661,7 @@ serve(async (req: Request) => {
       itemId: string | null;
       locationId: string | null;
       costCenterId: string | null;
+      projectId: string | null;
       processId: string | null;
       fixedAssetClassId: string | null;
     }[] = [];
@@ -955,6 +957,7 @@ serve(async (req: Request) => {
                   itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
+                  projectId: null,
                   processId: null,
                   fixedAssetClassId: null,
                 };
@@ -1331,6 +1334,7 @@ serve(async (req: Request) => {
                   itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
+                  projectId: null,
                   processId: lineProcessId,
                   fixedAssetClassId: null,
                 };
@@ -1425,6 +1429,7 @@ serve(async (req: Request) => {
                   itemId: invoiceLine.itemId ?? null,
                   locationId: invoiceLine.locationId ?? null,
                   costCenterId: null,
+                  projectId: null,
                   processId: accrualProcessId,
                   fixedAssetClassId: null,
                 };
@@ -1648,6 +1653,7 @@ serve(async (req: Request) => {
               itemId: null,
               locationId: invoiceLine.locationId ?? purchaseOrderLine?.locationId ?? faLocationId,
               costCenterId: null,
+              projectId: null,
               processId: null,
               fixedAssetClassId: faFixedAssetClassId,
             };
@@ -1712,6 +1718,7 @@ serve(async (req: Request) => {
               itemId: null,
               locationId: invoiceLine.locationId ?? null,
               costCenterId: invoiceLine.costCenterId ?? null,
+              projectId: invoiceLine.projectId ?? null,
               processId: null,
               fixedAssetClassId: null,
             };
@@ -1959,6 +1966,14 @@ serve(async (req: Request) => {
                 journalLineId: jl.id,
                 dimensionId: dimensionMap.get("CostCenter")!,
                 valueId: meta.costCenterId,
+                companyId,
+              });
+            }
+            if (meta.projectId && dimensionMap.has("Project")) {
+              journalLineDimensionInserts.push({
+                journalLineId: jl.id,
+                dimensionId: dimensionMap.get("Project")!,
+                valueId: meta.projectId,
                 companyId,
               });
             }

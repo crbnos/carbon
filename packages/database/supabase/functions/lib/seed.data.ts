@@ -20,6 +20,7 @@ export const dimensions = [
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
   { name: "Scrap Reason", entityType: "ScrapReason" },
+  { name: "Project", entityType: "Project" },
 ] as const;
 
 export const supplierStatuses = [
@@ -488,6 +489,15 @@ export const sequences = [
     table: "payment",
     name: "Payment",
     prefix: "PAY-%{yyyy}-%{mm}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "cardTransaction",
+    name: "Card Transaction",
+    prefix: "CARD-%{yyyy}-%{mm}-",
     suffix: null,
     next: 0,
     size: 6,
