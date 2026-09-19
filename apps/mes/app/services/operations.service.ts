@@ -462,6 +462,20 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  batchIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+}
+
 export async function getActiveJobCount(
   client: SupabaseClient<Database>,
   args: {
@@ -1198,7 +1212,8 @@ export async function getJobMaterialsByOperationId(
   const pickedFor = (materialId: string | null) =>
     (materialId ? pickedByMaterial[materialId] : undefined) ?? {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     };
 
   if (requiresSerialTracking) {
@@ -1580,10 +1595,6 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (operation.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch jobOperation",
-      operation.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1599,10 +1610,6 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (process.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch process",
-      process.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1612,17 +1619,13 @@ export async function getOperationEligibility(
 
   const ability = await client
     .from("ability")
-    .select("id, name")
+    .select("id")
     .eq("processId", operation.data.processId)
     .eq("companyId", companyId)
     .eq("active", true)
     .maybeSingle();
 
   if (ability.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch ability",
-      ability.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1632,7 +1635,8 @@ export async function getOperationEligibility(
     return { eligible: true, reason: null };
   }
 
-  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+  // The ability's name IS the process's name (abilities no longer store one).
+  const abilityName = process.data.name ?? "ability";
 
   const employeeAbility = await client
     .from("employeeAbility")
@@ -1643,10 +1647,6 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (employeeAbility.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch employeeAbility",
-      employeeAbility.error
-    );
     return { eligible: true, reason: null };
   }
 

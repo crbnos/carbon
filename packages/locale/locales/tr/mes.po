@@ -39,7 +39,7 @@ msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} iş"
+msgstr "{0} iş emri"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -569,6 +569,9 @@ msgstr "Başarısız özellikler"
 msgid "Failed to complete inventory adjustment"
 msgstr "Stok düzeltme tamamlanamadı"
 
+msgid "Failed to convert image"
+msgstr "Resim dönüştürülemedi"
+
 msgid "Failed to end operations"
 msgstr "Operasyonlar sonlandırılamadı"
 
@@ -972,7 +975,7 @@ msgid "No materials on this batch."
 msgstr "Bu Partide Malzeme yok."
 
 msgid "No open jobs"
-msgstr "Açık iş emri yok"
+msgstr "Açık iş emirleri yok"
 
 msgid "No open units to allocate"
 msgstr "Tahsis edilecek açık birim yok"
@@ -1166,6 +1169,9 @@ msgstr "Takip edilen öğeyi seç"
 msgid "Picked"
 msgstr "Alındı"
 
+msgid "Picked as"
+msgstr "Toplandı olarak"
+
 msgid "Picked quantity"
 msgstr "Alınan miktar"
 
@@ -1177,6 +1183,12 @@ msgstr "Sütun {0} alındı, konumu: {1} / {2}"
 
 msgid "Picking"
 msgstr "Toplama"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "{substitutedFrom} yerine toplama, iş emrindeki stok kartı, {substitutedAssemblies} montaj için"
 
 msgid "Pin Out"
 msgstr "Çıkış Yap"
@@ -1621,13 +1633,13 @@ msgid "This batch has no work instructions."
 msgstr ""
 
 msgid "This lot is expired and can't be picked."
-msgstr "Bu lot süresi dolmuştur ve toplanamaz."
+msgstr "Bu lot'un süresi doldu ve toplanamaz."
 
 msgid "This part was made to order. Scrapping it can reopen its routing to make a replacement."
 msgstr "Bu parça siparişe göre yapılmıştır. Hurdalaması, bir yedek yapmak için rotasını yeniden açabilir."
 
 msgid "This part will be scrapped from stock. Its requirement stays open so you can issue a replacement."
-msgstr "Bu parça stoktan fire olacaktır. Gereksinimli açık kalacak, böylece yedek talep edebilirsiniz."
+msgstr "Bu parça stoktan hurdaya ayrılacak. Gerekliliği açık kalacak, böylece bir yedek sağlayabilirsiniz."
 
 msgid "This unit will be permanently scrapped and a replacement serial number will be created."
 msgstr "Bu birim kalıcı olarak hurdaya çıkarılacak ve yedek bir seri numarası oluşturulacaktır."
@@ -1639,7 +1651,7 @@ msgid "Tick the jobs this was done for."
 msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Zaman ve maliyet, miktara orantılı olarak işler arasında bölünür."
+msgstr "Zaman ve maliyet, miktar ile orantılı olarak iş emirleri arasında bölünür."
 
 msgid "Time Entries"
 msgstr "Zaman Girişleri"

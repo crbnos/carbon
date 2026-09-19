@@ -66,7 +66,10 @@ export function BatchReleaseModal({
   }, [readiness]);
 
   const blocked = (readiness?.jobs ?? []).filter(
-    (job) => job.manufacturingBlocked || job.missingAssemblies.length > 0
+    (job) =>
+      job.manufacturingBlocked ||
+      job.missingAssemblies.length > 0 ||
+      job.outsideOperationsWithoutSupplier.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
   const canRelease = !!readiness && blocked.length === 0 && !isSubmitting;
@@ -118,11 +121,21 @@ export function BatchReleaseModal({
                             {job.jobId}
                           </Link>
                           {" — "}
-                          {job.manufacturingBlocked
-                            ? t`manufacturing is blocked`
-                            : t`no operations on ${job.missingAssemblies
+                          {[
+                            job.manufacturingBlocked &&
+                              t`manufacturing is blocked`,
+                            job.missingAssemblies.length > 0 &&
+                              t`no operations on ${job.missingAssemblies
                                 .map((m) => m.description)
-                                .join(", ")}`}
+                                .join(", ")}`,
+                            ...job.outsideOperationsWithoutSupplier.map((op) =>
+                              op.missing === "choose"
+                                ? t`choose a supplier for ${op.description} on the job`
+                                : t`${op.description} has no supplier`
+                            )
+                          ]
+                            .filter(Boolean)
+                            .join("; ")}
                         </li>
                       ))}
                     </ul>

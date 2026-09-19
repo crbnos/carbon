@@ -6,10 +6,12 @@ import { runLocationSchedule } from "@carbon/ee/planning";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
   getJobReleaseReadiness,
   jobStatus,
   recalculateJobRequirements,
+  returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
@@ -35,6 +37,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const status = formData.get("status") as (typeof jobStatus)[number];
   const selectedPurchaseOrdersBySupplierId = formData.get(
     "selectedPurchaseOrdersBySupplierId"
+  ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
   ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
@@ -78,6 +83,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
                   .join(", ")}`
           )
         )
+      );
+    }
+
+    try {
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
+    } catch (err) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to save the supplier choice"))
       );
     }
 
@@ -138,6 +157,40 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // (no inventory receipt, no backflush) and therefore also skips the
   // picked-material return sweep. The UI never sends Completed to this route —
   // the Complete button uses $jobId.complete.tsx, which runs both.
+  if (status === "Cancelled") {
+    const sweep = await returnPickedRemaindersForJob(getCarbonServiceRole(), {
+      jobId: id,
+      userId,
+      companyId
+    });
+    if (sweep.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(sweep.error, "Cancel aborted: returning picked material failed")
+        )
+      );
+    }
+    const picks = await cancelOpenPickingListsForJob(getDatabaseClient(), {
+      jobId: id,
+      companyId,
+      userId
+    });
+    if (picks.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            picks.error,
+            "Cancel aborted: its picking lists could not be closed"
+          )
+        )
+      );
+    }
+  }
+
   const update = await updateJobStatus(client, {
     id,
     companyId,
@@ -157,6 +210,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const purchaseOrdersBySupplierId = JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
       );
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
@@ -226,4 +285,89 @@ async function scheduleJobLocation({
     companyId,
     userId
   });
+}
+
+// The release dialog's supplier pick for an outside operation whose process has
+// several suppliers, stamped on the operation so purchaseOrderFromJob resolves
+// it. Must land BEFORE the purchase orders are created.
+async function stampSupplierChoices({
+  jobId,
+  companyId,
+  userId,
+  choices
+}: {
+  jobId: string;
+  companyId: string;
+  userId: string;
+  choices: Record<string, string>;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const operationSupplierChoices = Object.entries(choices);
+  if (operationSupplierChoices.length > 0) {
+    // Both ids come from the form and drive a service-role (RLS-bypassing)
+    // write that purchaseOrderFromJob later consumes, so validate them before
+    // persisting: the operation must belong to THIS job, and the chosen
+    // supplier process must belong to that operation's own process. Otherwise
+    // a crafted submit could retarget another job or create a PO for an
+    // unrelated supplier.
+    const operationIds = operationSupplierChoices.map(
+      ([operationId]) => operationId
+    );
+    const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
+
+    const [
+      { data: jobOperations, error: jobOperationsError },
+      { data: supplierProcesses, error: supplierProcessesError }
+    ] = await Promise.all([
+      serviceRole
+        .from("jobOperation")
+        .select("id, processId")
+        .eq("jobId", jobId)
+        .eq("companyId", companyId)
+        .in("id", operationIds),
+      serviceRole
+        .from("supplierProcess")
+        .select("id, processId")
+        .eq("companyId", companyId)
+        .in("id", supplierProcessIds)
+    ]);
+    if (jobOperationsError) throw new Error(jobOperationsError.message);
+    if (supplierProcessesError) throw new Error(supplierProcessesError.message);
+
+    const operationProcessById = new Map(
+      (jobOperations ?? []).map((op) => [op.id, op.processId])
+    );
+    const supplierProcessProcessById = new Map(
+      (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
+    );
+
+    for (const [operationId, supplierProcessId] of operationSupplierChoices) {
+      const operationProcessId = operationProcessById.get(operationId);
+      if (!operationProcessId) {
+        throw new Error(`Operation ${operationId} does not belong to this job`);
+      }
+      if (
+        supplierProcessProcessById.get(supplierProcessId) !== operationProcessId
+      ) {
+        throw new Error(
+          "Selected supplier does not belong to the operation's process"
+        );
+      }
+    }
+
+    const updateResults = await Promise.all(
+      operationSupplierChoices.map(([operationId, supplierProcessId]) =>
+        serviceRole
+          .from("jobOperation")
+          .update({
+            operationSupplierProcessId: supplierProcessId,
+            updatedBy: userId
+          })
+          .eq("id", operationId)
+          .eq("companyId", companyId)
+      )
+    );
+    const failedUpdate = updateResults.find((result) => result.error);
+    if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
+  }
 }

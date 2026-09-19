@@ -1,31 +1,11 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
-import { supportedModelTypes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "public");
-
-const supportedFileTypes: Record<string, string> = {
-  glb: "model/gltf-binary",
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  avif: "image/avif",
-  webp: "image/webp",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  wmv: "video/x-ms-wmv",
-  mp3: "audio/mpeg",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-  flac: "audio/flac"
-};
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const client = getCarbonServiceRole();
@@ -42,15 +22,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   if (
     !fileType ||
-    (!(fileType in supportedFileTypes) &&
+    (!(fileType in MEDIA_CONTENT_TYPES) &&
       !supportedModelTypes.includes(fileType))
   )
     throw new Error(`File type ${fileType} not supported`);
-  // Model extensions (step, glb, …) aren't in supportedFileTypes — without a
-  // fallback they'd be served with "Content-Type: undefined".
-  const contentType =
-    supportedFileTypes[fileType] ??
-    (fileType === "glb" ? "model/gltf-binary" : "application/octet-stream");
+  const contentType = getContentType(fileType);
 
   async function downloadFile() {
     const result = await client.storage.from("private").download(`${path}`);

@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   makeMethodsMissingOperations,
-  outsideOperationsNeedingPurchaseOrders
+  outsideOperationsNeedingPurchaseOrders,
+  resolveOperationSupplier,
+  type SupplierProcessRef
 } from "../app/modules/production/ui/Jobs/job-release-logic";
 
 const op = (
@@ -34,7 +36,7 @@ describe("makeMethodsMissingOperations", () => {
 });
 
 describe("outsideOperationsNeedingPurchaseOrders", () => {
-  it("keeps supplied outside operations that have no PO line yet", () => {
+  it("keeps outside operations with no PO line yet, supplier or not", () => {
     const ops = [
       op("a", "root", "Outside Processing", "sp1"),
       op("b", "root", "Outside Processing", "sp2"),
@@ -43,6 +45,56 @@ describe("outsideOperationsNeedingPurchaseOrders", () => {
     ];
     expect(
       outsideOperationsNeedingPurchaseOrders(ops, new Set(["b"])).map((o) => o.id)
-    ).toEqual(["a"]);
+    ).toEqual(["a", "c"]);
+  });
+});
+
+describe("resolveOperationSupplier", () => {
+  const sp = (id: string, processId: string): SupplierProcessRef => ({
+    id,
+    supplierId: `sup-${id}`,
+    processId
+  });
+  const byId = new Map([["own", sp("own", "plating")]]);
+  const byProcess = new Map([
+    ["anodize", [sp("a1", "anodize")]],
+    ["heat", [sp("h1", "heat"), sp("h2", "heat")]]
+  ]);
+
+  it("uses the operation's own supplier process first", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: "own", processId: "heat" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ supplierProcess: byId.get("own") });
+  });
+
+  it("falls back to the process's sole supplier", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "anodize" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ supplierProcess: sp("a1", "anodize") });
+  });
+
+  it("asks for a choice when the process has several, and flags none", () => {
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "heat" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ missing: "choose" });
+    expect(
+      resolveOperationSupplier(
+        { operationSupplierProcessId: null, processId: "paint" },
+        byId,
+        byProcess
+      )
+    ).toEqual({ missing: "none" });
   });
 });

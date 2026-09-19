@@ -160,9 +160,12 @@ export default function SalesOrderExplorer() {
     ? true
     : salesOrderData?.salesOrder?.status !== "Draft";
 
+  const modelPaths = (salesOrderData?.lines ?? [])
+    .map((d) => d.modelPath)
+    .filter(Boolean);
   useRealtime(
     "modelUpload",
-    `modelPath=in.(${salesOrderData?.lines.map((d) => d.modelPath).join(",")})`
+    modelPaths.length ? `modelPath=in.(${modelPaths.join(",")})` : undefined
   );
 
   const onDeleteLine = (line: SalesOrderLine) => {

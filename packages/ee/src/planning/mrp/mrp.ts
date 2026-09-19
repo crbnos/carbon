@@ -11,11 +11,16 @@ import {
   makeActualKey,
   makeKey,
   makeLocationItemKey,
+  netConsumeFirstContributors,
   type ReplenishmentSystem,
   splitActualKey,
   splitKey
 } from "@carbon/database/mrp-engine";
-import { buildSupersessionRedirectMap } from "@carbon/database/supersession-pick";
+import {
+  buildConsumeFirstHops,
+  buildSupersessionRedirectMap,
+  type Redirect
+} from "@carbon/database/supersession-pick";
 import {
   type CalendarDate,
   parseDate,
@@ -214,7 +219,7 @@ export async function runMrp(
     // JS Date objects, which parseDate() can't take.
     const supersessions = await fetchAll<{
       itemId: string;
-      supersessionMode: string;
+      supersessionMode: Database["public"]["Enums"]["supersessionMode"];
       successorItemId: string | null;
       successorEffectivityDate: string | null;
       conversionFactor: number | null;
@@ -231,7 +236,7 @@ export async function runMrp(
     const supersessionByItem = new Map<
       string,
       {
-        supersessionMode: string;
+        supersessionMode: Database["public"]["Enums"]["supersessionMode"];
         successorItemId: string | null;
         successorEffectivityDate: string | null;
         conversionFactor: number;
@@ -253,6 +258,10 @@ export async function runMrp(
     // build date. (supersessionByItem above is kept for the Consume-First on-hand
     // draw-down below.)
     const redirectByItem = buildSupersessionRedirectMap(
+      supersessions.data ?? [],
+      today.toString()
+    );
+    const consumeFirstHops = buildConsumeFirstHops(
       supersessions.data ?? [],
       today.toString()
     );
@@ -544,7 +553,8 @@ export async function runMrp(
           sourceType: "Job Material",
           jobId: line.jobId,
           parentItemId: line.itemId,
-          quantity: line.quantityToIssue
+          quantity: line.quantityToIssue,
+          perAssemblyQuantity: Number(line.quantityPerParent) || undefined
         });
         topLevelContributors.set(key, contributors);
       }
@@ -559,16 +569,31 @@ export async function runMrp(
     // outright (the old part stays available only as a manual fallback). The
     // effectivity check is item-level: redirection begins on the first MRP run
     // on/after successorEffectivityDate.
-    for (const [oldItemId, { to: successorId, factor }] of redirectByItem) {
+    const remainingConsumeFirstOnHand = new Map<string, number>();
+    const redirectOrder: string[] = [];
+    const ordered = new Set<string>();
+    const orderAfterHops = (id: string) => {
+      if (ordered.has(id) || !redirectByItem.has(id)) return;
+      ordered.add(id);
+      const next = consumeFirstHops.get(id)?.to;
+      if (next) orderAfterHops(next);
+      redirectOrder.push(id);
+    };
+    for (const id of redirectByItem.keys()) orderAfterHops(id);
+    redirectOrder.reverse();
+    for (const oldItemId of redirectOrder) {
+      const collapsed = redirectByItem.get(oldItemId)!;
       const consumeOnHand =
         supersessionByItem.get(oldItemId)?.supersessionMode === "Consume First";
+      const { to: successorId, factor } =
+        (consumeOnHand ? consumeFirstHops.get(oldItemId) : undefined) ??
+        collapsed;
 
       for (const location of locations.data) {
         // Consume First draws down the old item's on-hand before redirecting.
+        const locationItemKey = makeLocationItemKey(location.id, oldItemId);
         let oldOnHand = consumeOnHand
-          ? (baseInventoryByLocationItem.get(
-              makeLocationItemKey(location.id, oldItemId)
-            ) ?? 0)
+          ? (baseInventoryByLocationItem.get(locationItemKey) ?? 0)
           : 0;
 
         for (const period of periods) {
@@ -576,32 +601,81 @@ export async function runMrp(
           const demand = grossDemand.get(oldKey);
           if (!demand) continue;
 
-          const consumed = Math.min(oldOnHand, demand);
-          oldOnHand -= consumed;
+          const contributors = topLevelContributors.get(oldKey) ?? [];
+          topLevelContributors.delete(oldKey);
+          const netted = netConsumeFirstContributors({
+            itemId: oldItemId,
+            contributors,
+            grossQty: demand,
+            running: consumeOnHand ? oldOnHand : 0,
+            factor,
+            perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0
+          });
+          const consumed = netted.consumed;
+          if (consumeOnHand) oldOnHand = netted.running;
+          const movedContributors = netted.moved;
           // Convert the redirected (old-part) shortfall into successor units.
           const redirect = (demand - consumed) * factor;
 
           grossDemand.delete(oldKey);
-          const contributors = topLevelContributors.get(oldKey);
-          topLevelContributors.delete(oldKey);
+
+          const keptShare = demand > 0 ? consumed / demand : 1;
+          const sumByType = (list: DemandContributor[], type: string) =>
+            list
+              .filter((c) => c.sourceType === type)
+              .reduce((sum, c) => sum + c.quantity, 0);
+          for (const [actuals, sourceType] of [
+            [jobMaterialDemandByKey, "Job Material"],
+            [salesDemandByKey, "Sales Order"]
+          ] as const) {
+            const actualKey = makeActualKey(
+              oldItemId,
+              location.id,
+              period.id ?? "",
+              sourceType
+            );
+            const actual = actuals.get(actualKey);
+            if (!actual) continue;
+            const attributed = contributors.some(
+              (c) => c.sourceType === sourceType
+            );
+            const kept = attributed
+              ? Math.min(actual, sumByType(netted.kept, sourceType))
+              : actual * keptShare;
+            if (kept > 0) actuals.set(actualKey, kept);
+            else actuals.delete(actualKey);
+            const moved = attributed
+              ? sumByType(movedContributors, sourceType)
+              : (actual - kept) * factor;
+            if (moved > 0) {
+              const newActualKey = makeActualKey(
+                successorId,
+                location.id,
+                period.id ?? "",
+                sourceType
+              );
+              actuals.set(
+                newActualKey,
+                (actuals.get(newActualKey) ?? 0) + moved
+              );
+            }
+          }
 
           if (redirect > 0) {
             const newKey = makeKey(location.id, period.id ?? "", successorId);
             grossDemand.set(newKey, (grossDemand.get(newKey) ?? 0) + redirect);
-            if (contributors) {
-              // Mark the moved demand so it can be shown as redirected from the
-              // old part on the successor's planning row (in successor units).
-              const stamped = contributors.map((c) => ({
-                ...c,
-                quantity: c.quantity * factor,
-                redirectedFromItemId: oldItemId
-              }));
+            if (movedContributors.length > 0) {
               topLevelContributors.set(
                 newKey,
-                (topLevelContributors.get(newKey) ?? []).concat(stamped)
+                (topLevelContributors.get(newKey) ?? []).concat(
+                  movedContributors
+                )
               );
             }
           }
+        }
+        if (consumeOnHand) {
+          remainingConsumeFirstOnHand.set(locationItemKey, oldOnHand);
         }
       }
     }
@@ -628,18 +702,28 @@ export async function runMrp(
     // generates the successor's demand instead of the old part's. (Top-level
     // demand was handled above; component demand is created here, during
     // explosion, so it must be redirected at the BOM level.)
+    const consumeFirstRedirect = new Map<string, Redirect>(consumeFirstHops);
     if (redirectByItem.size > 0) {
       for (const children of bomByItem.values()) {
         for (const child of children) {
           const redirect = redirectByItem.get(child.itemId);
-          if (redirect) {
-            child.redirectedFromItemId = child.itemId;
-            child.itemId = redirect.to;
-            // 1 old part = `factor` successors.
-            child.quantity = child.quantity * redirect.factor;
+          if (!redirect) continue;
+          if (
+            supersessionByItem.get(child.itemId)?.supersessionMode ===
+            "Consume First"
+          ) {
+            continue;
           }
+          child.redirectedFromItemId = child.itemId;
+          child.itemId = redirect.to;
+          child.quantity = child.quantity * redirect.factor;
         }
       }
+    }
+
+    const onHandForExplosion = new Map(baseInventoryByLocationItem);
+    for (const [locationItemKey, remaining] of remainingConsumeFirstOnHand) {
+      onHandForExplosion.set(locationItemKey, remaining);
     }
 
     const { bomDerivedDemand, demandContributors, cycleItemIds } = explodeBom({
@@ -648,9 +732,10 @@ export async function runMrp(
       replenishmentSystemByItem,
       leadTimeByItem,
       periods: periods.map((p) => ({ id: p.id ?? "" })),
-      onHandByLocationItem: new Map(baseInventoryByLocationItem),
+      onHandByLocationItem: onHandForExplosion,
       jobSupplyByLocationPeriodItem: jobAndPoSupplyByLocationPeriodItem,
-      topLevelContributors
+      topLevelContributors,
+      consumeFirstRedirect
     });
 
     if (cycleItemIds.size > 0) {

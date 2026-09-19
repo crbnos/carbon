@@ -46,4 +46,4 @@ import { LocaleProvider, supportedLanguages, resolveLanguage, defaultLanguage,
 - `.claude/rules/i18n-lingui-system.md` — full i18n system docs, marking patterns, gotchas
 - `lingui.config.js` (root) — catalog config, source paths, locale list
 - `@carbon/glossary` — terms use `msg` descriptors for i18n
-- `apps/{erp,mes}/app/services/lingui.server.ts` — server-side catalog loading
+- `apps/{erp,mes}/app/services/lingui.ts` — isomorphic catalog loading (`preloadCatalog` / `getCatalog` / `useCatalog`)

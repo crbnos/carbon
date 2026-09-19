@@ -39,7 +39,7 @@ msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} trabajos"
+msgstr "{0} órdenes de trabajo"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -281,7 +281,7 @@ msgid "Clear Filters"
 msgstr "Limpiar filtros"
 
 msgid "Clear Search"
-msgstr "Limpiar búsqueda"
+msgstr "Limpiar Búsqueda"
 
 msgid "Clear station default"
 msgstr "Borrar estación predeterminada"
@@ -568,6 +568,9 @@ msgstr "Características fallidas"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Error al completar el ajuste de inventario"
+
+msgid "Failed to convert image"
+msgstr "No se pudo convertir la imagen"
 
 msgid "Failed to end operations"
 msgstr "Error al finalizar las operaciones"
@@ -1166,6 +1169,9 @@ msgstr "Seleccionar artículo rastreado"
 msgid "Picked"
 msgstr "Recogido"
 
+msgid "Picked as"
+msgstr "Preparado como"
+
 msgid "Picked quantity"
 msgstr "Cantidad recogida"
 
@@ -1177,6 +1183,12 @@ msgstr "Se tomó la columna {0} en la posición: {1} de {2}"
 
 msgid "Picking"
 msgstr "Picking"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "picking en lugar de {substitutedFrom}, el artículo de la orden de trabajo"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "picking en lugar de {substitutedFrom}, el artículo de la orden de trabajo, para {substitutedAssemblies} ensamblajes"
 
 msgid "Pin Out"
 msgstr "Cerrar sesión con PIN"
@@ -1477,7 +1489,7 @@ msgid "Session locked"
 msgstr "Sesión bloqueada"
 
 msgid "Set Clock Out"
-msgstr "Establecer hora de salida"
+msgstr "Establecer Fichar salida"
 
 msgid "Set clock-out time"
 msgstr "Establecer hora de salida"
@@ -1639,7 +1651,7 @@ msgid "Tick the jobs this was done for."
 msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "El tiempo y costo se dividen entre trabajos proporcionalmente a la cantidad."
+msgstr "El tiempo y el costo se distribuyen entre las órdenes de trabajo proporcionalmente a la cantidad."
 
 msgid "Time Entries"
 msgstr "Registros de tiempo"

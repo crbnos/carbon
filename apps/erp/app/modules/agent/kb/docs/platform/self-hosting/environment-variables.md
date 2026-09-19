@@ -58,8 +58,12 @@ Override the Inngest endpoint (self-hosted or dev).
 
 ## Email & billing
 
-Resend API key for transactional email.
-Verified sending domain.
+SMTP server for transactional email. Unset disables email sending.
+SMTP port; 465 uses implicit TLS, 587 (default) uses STARTTLS.
+SMTP username.
+SMTP password.
+From-address for outgoing email, e.g. `Carbon <no-reply@example.com>`.
+Optional. Resend marketing-contacts API; also a legacy SMTP fallback when `SMTP_*` is unset.
 Stripe secret key, Cloud / Enterprise billing.
 Verifies inbound Stripe webhooks.
 Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).

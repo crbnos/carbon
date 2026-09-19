@@ -39,7 +39,7 @@ msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} lavori"
+msgstr "{0} ordini di produzione"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -183,7 +183,7 @@ msgid "Are you sure you want to leave this page?"
 msgstr "Sei sicuro di voler lasciare questa pagina?"
 
 msgid "Assembly steps"
-msgstr "Fasi di montaggio"
+msgstr "Passi di assemblaggio"
 
 msgid "Assigned"
 msgstr "Assegnato"
@@ -569,6 +569,9 @@ msgstr "Funzionalità non riuscite"
 msgid "Failed to complete inventory adjustment"
 msgstr "Impossibile completare la rettifica di magazzino"
 
+msgid "Failed to convert image"
+msgstr "Impossibile convertire l'immagine"
+
 msgid "Failed to end operations"
 msgstr "Impossibile terminare le operazioni"
 
@@ -664,7 +667,7 @@ msgid "I'm Still Working"
 msgstr "Sto Ancora Lavorando"
 
 msgid "Ideas, suggestions or problems?"
-msgstr "Idee, suggerimenti o problemi?"
+msgstr "Idee, proposte o problemi?"
 
 msgid "Idle for"
 msgstr "Inattivo per"
@@ -1166,6 +1169,9 @@ msgstr "Seleziona articolo tracciato"
 msgid "Picked"
 msgstr "Prelevato"
 
+msgid "Picked as"
+msgstr "Prelevato come"
+
 msgid "Picked quantity"
 msgstr "Quantità prelevata"
 
@@ -1177,6 +1183,12 @@ msgstr "Colonna {0} presa dalla posizione: {1} di {2}"
 
 msgid "Picking"
 msgstr "Prelievo"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Prelievo in luogo di {substitutedFrom}, l'articolo dell'ordine di produzione"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Prelievo in luogo di {substitutedFrom}, l'articolo dell'ordine di produzione, per {substitutedAssemblies} assiemi"
 
 msgid "Pin Out"
 msgstr "Disconnetti"
@@ -1639,7 +1651,7 @@ msgid "Tick the jobs this was done for."
 msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Tempo e costo suddivisi tra i lavori proporzionalmente alla quantità."
+msgstr "Tempo e costo ripartiti tra gli ordini di produzione in proporzione alla quantità."
 
 msgid "Time Entries"
 msgstr "Registrazioni Orarie"

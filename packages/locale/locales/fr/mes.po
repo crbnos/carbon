@@ -39,7 +39,7 @@ msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} emplois"
+msgstr "{0} ordres de fabrication"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -81,7 +81,7 @@ msgid "{completed} of {quantity}"
 msgstr "{completed} sur {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
-msgstr "{completions} unité(s) conforme(s) vont être terminées."
+msgstr "{completions} unité(s) réussie(s) seront terminées."
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} défaut(s) échantillonné(s) enregistré(s) et ne seront PAS complété(s) — résolvez-les à partir du menu des actions."
@@ -568,6 +568,9 @@ msgstr "Fonctionnalités échouées"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Échec de l'ajustement de stock"
+
+msgid "Failed to convert image"
+msgstr "Impossible de convertir l'image"
 
 msgid "Failed to end operations"
 msgstr "Échec de l'arrêt des opérations"
@@ -1145,7 +1148,7 @@ msgid "Passed inspection"
 msgstr ""
 
 msgid "Passed Inspection"
-msgstr "Inspection réussie"
+msgstr "Contrôle réussi"
 
 msgid "Passkey unlock failed"
 msgstr "Le déverrouillage par clé d'accès a échoué"
@@ -1166,6 +1169,9 @@ msgstr "Sélectionner un article suivi"
 msgid "Picked"
 msgstr "Prélevé"
 
+msgid "Picked as"
+msgstr "Prélevé comme"
+
 msgid "Picked quantity"
 msgstr "Quantité prélevée"
 
@@ -1177,6 +1183,12 @@ msgstr "Colonne {0} saisie à la position : {1} sur {2}"
 
 msgid "Picking"
 msgstr "Prélèvement"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Prélèvement à la place de {substitutedFrom}, l'article de l'ordre de fabrication, pour {substitutedAssemblies} assemblages"
 
 msgid "Pin Out"
 msgstr "Déconnecter"
@@ -1639,7 +1651,7 @@ msgid "Tick the jobs this was done for."
 msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Le temps et le coût sont répartis entre les tâches proportionnellement à la quantité."
+msgstr "Le temps et le coût sont répartis entre les ordres de fabrication proportionnellement à la quantité."
 
 msgid "Time Entries"
 msgstr "Saisies de temps"

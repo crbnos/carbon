@@ -317,6 +317,23 @@ function GenericNotification({
           {...props}
         />
       );
+    case NotificationEvent.SalesRuleViolation: {
+      // Compound documentId: "<quote|salesOrder|salesInvoice>:<documentId>:<outcome>"
+      const [docType, docId] = id.split(":");
+      return (
+        <Notification
+          icon={<LuShieldAlert />}
+          to={
+            docType === "salesInvoice"
+              ? path.to.salesInvoiceDetails(docId ?? "")
+              : docType === "salesOrder"
+                ? path.to.salesOrderDetails(docId ?? "")
+                : path.to.quoteDetails(docId ?? "")
+          }
+          {...props}
+        />
+      );
+    }
     case NotificationEvent.IntegrationSync:
       // id is the provider id ("rillet", "xero", ...) — link to that
       // integration's settings page, where the Sync Activity tab lives.

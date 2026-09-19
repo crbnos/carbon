@@ -1,3 +1,4 @@
+import { convertKbToString } from "@carbon/files";
 import {
   Badge,
   Button,
@@ -18,7 +19,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { convertKbToString, formatDate, groupBy } from "@carbon/utils";
+import { formatDate, groupBy } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, Suspense, useCallback, useState } from "react";

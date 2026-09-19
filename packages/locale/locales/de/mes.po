@@ -39,7 +39,7 @@ msgstr ""
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
-msgstr "{0} Aufträge"
+msgstr "{0} Fertigungsaufträge"
 
 #. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
@@ -569,6 +569,9 @@ msgstr "Fehlgeschlagene Funktionen"
 msgid "Failed to complete inventory adjustment"
 msgstr "Bestandskorrektur konnte nicht abgeschlossen werden"
 
+msgid "Failed to convert image"
+msgstr "Fehler beim Umwandeln des Bildes"
+
 msgid "Failed to end operations"
 msgstr "Arbeitsgänge konnten nicht beendet werden"
 
@@ -590,10 +593,10 @@ msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
-msgstr "Datei-Upload fehlgeschlagen: {0}"
+msgstr "Fehler beim Hochladen der Datei: {0}"
 
 msgid "Failed to upload image"
-msgstr "Bild-Upload fehlgeschlagen"
+msgstr "Fehler beim Hochladen des Bildes"
 
 msgid "Feature"
 msgstr "Funktion"
@@ -637,7 +640,7 @@ msgid "First due {0}"
 msgstr ""
 
 msgid "Forgot to Clock Out?"
-msgstr "Vergessen auszustempeln?"
+msgstr "Ausstempeln vergessen?"
 
 msgid "General"
 msgstr "Allgemein"
@@ -1166,6 +1169,9 @@ msgstr "Verfolgtes Element auswählen"
 msgid "Picked"
 msgstr "Gepickt"
 
+msgid "Picked as"
+msgstr "Kommissioniert als"
+
 msgid "Picked quantity"
 msgstr "Gepickte Menge"
 
@@ -1177,6 +1183,12 @@ msgstr "Spalte {0} aufgenommen an Position: {1} von {2}"
 
 msgid "Picking"
 msgstr "Kommissionierung"
+
+msgid "picking in place of {substitutedFrom}, the item on the job"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel im Fertigungsauftrag"
+
+msgid "picking in place of {substitutedFrom}, the item on the job, for {substitutedAssemblies} assemblies"
+msgstr "Kommissionierung anstelle von {substitutedFrom}, dem Artikel im Fertigungsauftrag, für {substitutedAssemblies} Baugruppen"
 
 msgid "Pin Out"
 msgstr "Abmelden"
@@ -1339,7 +1351,7 @@ msgid "Scan"
 msgstr "Scannen"
 
 msgid "Scan a tracked entity to add the first sample column."
-msgstr "Verfolgte Einheit scannen, um die erste Probe-Spalte hinzuzufügen."
+msgstr "Scannen Sie eine Verfolgte Einheit, um die erste Probenspalte hinzuzufügen."
 
 msgid "Scan or enter serial number"
 msgstr "Seriennummer scannen oder eingeben"
@@ -1354,7 +1366,7 @@ msgid "Scan or search serial number..."
 msgstr "Seriennummer scannen oder suchen..."
 
 msgid "Scan or select a tracked entity from this lot to add it as a sample column, then record its result in the grid."
-msgstr "Verfolgte Einheit aus dieser Charge scannen oder auswählen, um sie als Probe-Spalte hinzuzufügen, dann ihr Ergebnis im Raster eintragen."
+msgstr "Scannen oder wählen Sie eine Verfolgte Einheit aus dieser Charge, um sie als Probenspalte hinzuzufügen, dann erfassen Sie das Ergebnis in der Tabelle."
 
 msgid "Schedule"
 msgstr "Zeitplan"
@@ -1639,7 +1651,7 @@ msgid "Tick the jobs this was done for."
 msgstr ""
 
 msgid "Time and cost split across jobs proportionally to quantity."
-msgstr "Zeit und Kosten werden proportional zur Menge auf die Aufträge verteilt."
+msgstr "Zeit und Kosten werden proportional zur Menge auf die Fertigungsaufträge verteilt."
 
 msgid "Time Entries"
 msgstr "Zeiteinträge"
@@ -1794,7 +1806,7 @@ msgid "You clocked in at <0/>. You can edit your clock-out time below or acknowl
 msgstr "Sie haben sich um <0/> angemeldet. Sie können Ihre Ausstempelzeit unten bearbeiten oder bestätigen, dass Sie noch arbeiten."
 
 msgid "You've been clocked in for {hoursElapsed} hours. Did you forget to clock out?"
-msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie vergessen, sich auszustempeln?"
+msgstr "Sie sind seit {hoursElapsed} Stunden eingestempelt. Haben Sie das Ausstempeln vergessen?"
 
 msgid "Your account isn't part of a company yet. Complete onboarding in the Carbon ERP to continue."
 msgstr "Ihr Konto ist noch nicht Teil eines Unternehmens. Schließen Sie das Onboarding in Carbon ERP ab, um fortzufahren."

@@ -68,8 +68,9 @@ optional, export/sort-related fields:
 
 `apps/erp/app/components/Table/components/Download.tsx`:
 
-- **Library:** `json2csv` from `json-2-csv`. Called as
-  `json2csv(rows, { emptyFieldValue: "" })`.
+- **Library:** `downloadCsv` from `@carbon/files/csv` (papaparse underneath) —
+  the ONE CSV encoder, injection-safe by construction (`stripCsvFormulaPrefix`
+  on every string cell). `json-2-csv` is gone from the app.
 - **Filename:** hardcoded `"data.csv"` (a Blob + anchor click; no server roundtrip).
 - **Column selection** (respects the saved view): delegated to the pure
   `selectExportColumns({ columnAccessors, columnOrder, columnVisibility,
@@ -100,12 +101,11 @@ optional, export/sort-related fields:
   ```
 - **Per-cell value:** for each kept column, if `exportValues[key]` exists it is
   called with the full row to produce the value; otherwise the raw accessor read
-  is used, with the id→name substitution below. The result is then passed through
-  `serializeForCsv` — a last-resort guardrail that `JSON.stringify`s a plain
-  object (so a nested object never ships as `[object Object]` or explodes into
-  stray columns); arrays, dates, and primitives pass through untouched. A column
-  whose value is an object should supply a readable `meta.exportValue` rather than
-  rely on this.
+  is used, with the id→name substitution below. `encodeCsv` (inside
+  `downloadCsv`) then sanitizes every cell — plain objects are
+  `JSON.stringify`ed (never `[object Object]` or stray columns), strings are
+  injection-stripped. A column whose value is an object should still supply a
+  readable `meta.exportValue` rather than rely on the stringify guardrail.
 - **ID → name substitution** (only on the raw-accessor path, i.e. no
   `meta.exportValue`): for the accessor keys `itemId`, `supplierId`,
   `employeeId`, `customerId`, the raw id is replaced with the record's `name`
@@ -153,5 +153,14 @@ Just render `<Table>` — the button comes for free. No `enableExport`-style pro
 ## Unrelated standalone CSV
 
 `apps/erp/app/modules/accounting/ui/ExchangeRates/ExchangeRateForm.tsx` also
-calls `json2csv` directly for its own download (`{code}-exchange-rates.csv`); it
-is independent of the shared Table component.
+downloads its own CSV (`{code}-exchange-rates.csv`) via the same
+`downloadCsv` from `@carbon/files/csv`; it is independent of the shared Table
+component. The report exports (`exportReport.ts`, `purchases.tsx`,
+`analytics.$reportKey.tsx`) and the CSV-import template/error downloads go
+through `@carbon/files/csv` too — there are no hand-rolled encoders left.
+
+Injection handling is the STRIP semantic everywhere (`stripCsvFormulaPrefix`,
+pinned by `apps/erp/app/utils/bom.test.ts`): formula-leading characters are
+removed, not apostrophe-prefixed. The purchases/analytics exports previously
+prefixed `'` — they now follow the shared rule, so a text cell like
+`-Adjustments` exports as `Adjustments`. Deliberate: one rule, one encoder.

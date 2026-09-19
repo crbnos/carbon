@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { isPreviewableDocumentType } from "@carbon/files";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -663,20 +664,16 @@ function ReceiptLineItem({
                   <div className="flex flex-col gap-2">
                     {lineFiles.map((file) => {
                       const documentType = getDocumentType(file.name);
-                      const isPreviewable = ["PDF", "Image"].includes(
-                        documentType
-                      );
 
                       return (
                         <HStack key={file.id}>
                           <DocumentIcon type={documentType} />
                           <span className="font-medium text-sm">
-                            {isPreviewable ? (
+                            {isPreviewableDocumentType(documentType) ? (
                               <DocumentPreview
                                 bucket="private"
                                 pathToFile={getPath(file)}
-                                // @ts-expect-error
-                                type={getDocumentType(file.name)}
+                                type={documentType}
                               >
                                 {file.name}
                               </DocumentPreview>

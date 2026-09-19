@@ -37,12 +37,17 @@ export const abilityCurveValidator = z.object({
   )
 });
 
-export const abilityNameValidator = z.object({
-  name: z.string().trim().min(1, { message: "Name is required" })
+// An ability is a process's qualification: it is created ONLY by picking a
+// process, and it carries no free-form name — the name derives from the linked
+// process (renaming the process renames the ability).
+export const abilityValidator = z.object({
+  processId: z.string().min(1, { message: "Process is required" }),
+  recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
 });
 
-export const abilityValidator = z.object({
-  name: z.string().trim().min(1, { message: "Name is required" }),
+// The edit form only adjusts the recertification cadence; the process (and
+// therefore the name) is fixed for the life of the ability.
+export const abilityRecertifyValidator = z.object({
   recertifyEveryDays: zfd.numeric(z.number().int().min(1).optional())
 });
 

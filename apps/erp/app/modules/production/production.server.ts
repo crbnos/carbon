@@ -187,7 +187,14 @@ export async function releaseBatchMemberJobs({
             .map((m) => m.description)
             .join(", ")}`
         ]
-      : [])
+      : []),
+    // No per-operation supplier picker here: an ambiguous or missing supplier
+    // is settled on the job's own Release.
+    ...job.outsideOperationsWithoutSupplier.map((op) =>
+      op.missing === "choose"
+        ? `${job.jobId}: choose a supplier for ${op.description} on the job`
+        : `${job.jobId}: ${op.description} has no supplier`
+    )
   ]);
   if (problems.length > 0) {
     return { error: `Fix these jobs before releasing: ${problems.join("; ")}` };

@@ -1,9 +1,4 @@
-import {
-  CONTROLLED_ENVIRONMENT,
-  error,
-  RESEND_DOMAIN,
-  success
-} from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,7 +6,7 @@ import { InviteEmail } from "@carbon/documents/email";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
@@ -106,7 +101,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     await sendEmail({
-      from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: user.data.email,
       subject: `You have been invited to join ${company.data?.name} on Carbon`,
       headers: {

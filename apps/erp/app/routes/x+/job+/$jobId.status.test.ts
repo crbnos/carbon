@@ -18,14 +18,11 @@ vi.mock("@carbon/auth/client.server", () => ({
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ error: vi.fn() })
-}));
-// Scheduling moved OUT of the `schedule` edge function and into Node in #1151:
-// the release path now regenerates the job's whole location in-process via
-// `runLocationSchedule` instead of `serviceRole.functions.invoke("schedule")`.
 vi.mock("@carbon/ee/planning", () => ({
   runLocationSchedule: vi.fn()
+}));
+vi.mock("@carbon/logger", () => ({
+  getLogger: () => ({ error: vi.fn() })
 }));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
@@ -38,6 +35,9 @@ vi.mock("~/utils/path", () => ({
     }
   },
   requestReferrer: () => null
+}));
+vi.mock("~/modules/inventory", () => ({
+  cancelOpenPickingListsForJob: vi.fn()
 }));
 vi.mock("~/modules/production", () => ({
   jobStatus: [
@@ -52,6 +52,7 @@ vi.mock("~/modules/production", () => ({
   ],
   getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
+  returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
@@ -74,7 +75,12 @@ vi.mock("~/modules/production/production.server", async () => {
   };
 });
 
-import { getJobReleaseReadiness, updateJobStatus } from "~/modules/production";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory";
+import {
+  getJobReleaseReadiness,
+  returnPickedRemaindersForJob,
+  updateJobStatus
+} from "~/modules/production";
 import { action } from "./$jobId.status";
 
 type QueryResult = { data: unknown; error: unknown };
@@ -139,7 +145,8 @@ function setup() {
           jobId: "J000001",
           status: "Draft",
           manufacturingBlocked: false,
-          missingAssemblies: []
+          missingAssemblies: [],
+          outsideOperationsWithoutSupplier: []
         }
       ],
       suppliers: []
@@ -148,10 +155,27 @@ function setup() {
   });
   vi.mocked(runLocationSchedule).mockImplementation(async () => {
     events.push("runLocationSchedule");
-    return {} as any;
+    return undefined as any;
+  });
+  vi.mocked(returnPickedRemaindersForJob).mockImplementation(async () => {
+    events.push("returnPickedRemainders");
+    return { data: {}, error: null } as any;
+  });
+  vi.mocked(cancelOpenPickingListsForJob).mockImplementation(async () => {
+    events.push("cancelOpenPickingLists");
+    return { error: null };
   });
 
   return { client, serviceRole };
+}
+
+function cancelRequest() {
+  const body = new FormData();
+  body.set("status", "Cancelled");
+  return new Request("http://localhost/x/job/job-1/status", {
+    method: "POST",
+    body
+  });
 }
 
 function releaseRequest() {
@@ -192,10 +216,9 @@ describe("Job release status action", () => {
     expect(updateJobStatus).toHaveBeenCalledOnce();
     expect(events).toContain("updateJobStatus");
     expect(events).toContain("runLocationSchedule");
-    // Regression guard: the scheduler only batches jobs already Ready/In
-    // Progress/Paused. If the status is committed AFTER the scheduler runs, the
-    // freshly released job is filtered out of its own schedule run and never
-    // lands in capacityReservation / the forecast.
+    // Ready/In Progress/Paused. If the status is committed AFTER the scheduler
+    // runs, the freshly released job is filtered out of its own schedule run and
+    // never lands in capacityReservation / the forecast.
     expect(events.indexOf("updateJobStatus")).toBeLessThan(
       events.indexOf("runLocationSchedule")
     );
@@ -212,7 +235,8 @@ describe("Job release status action", () => {
             manufacturingBlocked: false,
             missingAssemblies: [
               { makeMethodId: "mm-2", description: "Bracket" }
-            ]
+            ],
+            outsideOperationsWithoutSupplier: []
           }
         ],
         suppliers: []
@@ -225,5 +249,26 @@ describe("Job release status action", () => {
     expect(updateJobStatus).not.toHaveBeenCalled();
     expect(runLocationSchedule).not.toHaveBeenCalled();
     expect(success).not.toHaveBeenCalled();
+  });
+});
+
+describe("Job cancel status action", () => {
+  it("returns staged material, then cancels the job's open picking lists", async () => {
+    await expect(
+      action({
+        request: cancelRequest(),
+        params: { jobId: "job-1" },
+        context: {}
+      } as any)
+    ).rejects.toBeInstanceOf(Response);
+
+    expect(returnPickedRemaindersForJob).toHaveBeenCalledOnce();
+    expect(cancelOpenPickingListsForJob).toHaveBeenCalledWith(
+      expect.anything(),
+      { jobId: "job-1", companyId: "company-1", userId: "user-1" }
+    );
+    expect(events.indexOf("returnPickedRemainders")).toBeLessThan(
+      events.indexOf("cancelOpenPickingLists")
+    );
   });
 });

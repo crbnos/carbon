@@ -40,6 +40,7 @@ import {
   getOnboardingDraft,
   setOnboardingDraft
 } from "~/services/onboarding-draft.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -168,7 +169,7 @@ export default function OnboardingCompany() {
                 Previous
               </Link>
             </Button>
-            <Submit>Next</Submit>
+            <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>Next</Submit>
           </HStack>
         </CardFooter>
       </ValidatedForm>

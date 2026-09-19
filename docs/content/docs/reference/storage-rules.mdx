@@ -94,7 +94,7 @@ A rule reaches the lines it applies to in one of two ways:
   <Field name="Message">Shown on a violation; supports `{token}` interpolation.</Field>
   <Field name="Surfaces">Which transactions the rule fires on.</Field>
   <Field name="Target">`item` or `workCenter`.</Field>
-  <Field name="Item filters">Item types and/or groups to scope an item rule (empty = all items).</Field>
+  <Field name="Item filters">Item types and/or groups to scope a rule (empty = all items).</Field>
   <Field name="Active">Whether the rule is currently evaluated.</Field>
 </FieldTable>
 
@@ -111,6 +111,10 @@ plans the screen shows an upgrade prompt and no rules are evaluated.
 ## Related
 
 <Cards>
+  <Card title="Sales rules" href="/docs/reference/sales-rules">
+    The sibling rule family: the same condition builder, applied to quote, sales order, and sales invoice
+    lines.
+  </Card>
   <Card title="Items" href="/docs/reference/items">
     The most common rule target: scope by item type or group, or assign per item.
   </Card>

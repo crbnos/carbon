@@ -5,6 +5,7 @@ import {
 import {
   computeLowLevelCodes,
   explodeBom,
+  netConsumeFirstContributors,
   makeActualKey,
   makeKey,
   makeLocationItemKey,
@@ -192,4 +193,429 @@ Deno.test("a clean parent still explodes onto a cycle item, but nothing explodes
   assertEquals(bomDerivedDemand.get(makeKey(loc, "p1", "cyc1")), 10);
   // cyc1 is a leaf, so no phantom demand is manufactured around the loop.
   assertEquals(bomDerivedDemand.get(makeKey(loc, "p1", "cyc2")), undefined);
+});
+
+
+Deno.test("Consume First made predecessor: stock covers first, only the successor's BOM explodes for the shortfall", () => {
+  const top = "top", oldPart = "old-bracket", newPart = "new-bracket";
+  const plateA = "plate-a", plateB = "plate-b";
+  const location = "loc";
+  const periods = [{ id: "p1" }];
+  const noLead = new Map([
+    [oldPart, 0],
+    [newPart, 0],
+    [plateA, 0],
+    [plateB, 0],
+  ]);
+
+  const bomByItem = new Map<string, BomChild[]>([
+    [top, [{ itemId: oldPart, quantity: 1, methodType: "Pull from Inventory" }]],
+    [oldPart, [{ itemId: plateA, quantity: 1, methodType: "Purchase to Order" }]],
+    [newPart, [{ itemId: plateB, quantity: 1, methodType: "Purchase to Order" }]],
+  ]);
+
+  const { bomDerivedDemand, demandContributors } = explodeBom({
+    grossDemand: new Map([[makeKey(location, "p1", top), 10]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      [top, "Make"],
+      [oldPart, "Make"],
+      [newPart, "Make"],
+      [plateA, "Buy"],
+      [plateB, "Buy"],
+    ]),
+    leadTimeByItem: noLead,
+    periods,
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey(location, oldPart), 3],
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map([
+      [
+        makeKey(location, "p1", top),
+        [
+          {
+            sourceType: "Sales Order" as const,
+            salesOrderLineId: "so-1",
+            parentItemId: top,
+            quantity: 10,
+          },
+        ],
+      ],
+    ]),
+    consumeFirstRedirect: new Map([[oldPart, { to: newPart, factor: 1 }]]),
+  });
+
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", oldPart)), 3);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", newPart)), 7);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", plateB)), 7);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", plateA)), undefined);
+  const moved = demandContributors.get(makeKey(location, "p1", newPart)) ?? [];
+  assertEquals(moved.length, 1);
+  assertEquals(moved[0]!.quantity, 7);
+  assertEquals(moved[0]!.redirectedFromItemId, oldPart);
+  const plateBContributors =
+    demandContributors.get(makeKey(location, "p1", plateB)) ?? [];
+  assertEquals(plateBContributors[0]!.redirectedFromItemId, oldPart);
+});
+
+Deno.test("Consume First nets in whole assemblies per contributor and converts the shortfall by the factor", () => {
+  const top = "top", oldPart = "old", newPart = "new";
+  const location = "loc";
+  const periods = [{ id: "p1" }];
+
+  const bomByItem = new Map<string, BomChild[]>([
+    [top, [{ itemId: oldPart, quantity: 2, methodType: "Pull from Inventory" }]],
+  ]);
+
+  const { bomDerivedDemand, demandContributors } = explodeBom({
+    grossDemand: new Map([[makeKey(location, "p1", top), 5]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      [top, "Make"],
+      [oldPart, "Buy"],
+      [newPart, "Buy"],
+    ]),
+    leadTimeByItem: new Map([[oldPart, 0]]),
+    periods,
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey(location, oldPart), 3],
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map([
+      [
+        makeKey(location, "p1", top),
+        [
+          {
+            sourceType: "Job Material" as const,
+            jobId: "job-1",
+            parentItemId: top,
+            quantity: 5,
+          },
+        ],
+      ],
+    ]),
+    consumeFirstRedirect: new Map([[oldPart, { to: newPart, factor: 2 }]]),
+  });
+
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", oldPart)), 2);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", newPart)), 16);
+  const kept = demandContributors.get(makeKey(location, "p1", oldPart)) ?? [];
+  assertEquals(kept.map((c) => c.quantity), [2]);
+  const moved = demandContributors.get(makeKey(location, "p1", newPart)) ?? [];
+  assertEquals(moved.map((c) => c.quantity), [16]);
+});
+
+Deno.test("a Consume First successor that sits shallower in another BOM still receives the redirected demand", () => {
+  const top = "top", sub = "sub", other = "other";
+  const oldPart = "old", newPart = "new", plateB = "plate-b";
+  const location = "loc";
+  const periods = [{ id: "p1" }];
+
+  const bomByItem = new Map<string, BomChild[]>([
+    [top, [{ itemId: sub, quantity: 1, methodType: "Make to Order" }]],
+    [sub, [{ itemId: oldPart, quantity: 1, methodType: "Pull from Inventory" }]],
+    [other, [{ itemId: newPart, quantity: 1, methodType: "Pull from Inventory" }]],
+    [newPart, [{ itemId: plateB, quantity: 1, methodType: "Purchase to Order" }]],
+  ]);
+
+  const { bomDerivedDemand } = explodeBom({
+    grossDemand: new Map([[makeKey(location, "p1", top), 4]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      [top, "Make"],
+      [sub, "Make"],
+      [other, "Make"],
+      [oldPart, "Make"],
+      [newPart, "Make"],
+      [plateB, "Buy"],
+    ]),
+    leadTimeByItem: new Map([
+      [sub, 0],
+      [oldPart, 0],
+      [newPart, 0],
+      [plateB, 0],
+    ]),
+    periods,
+    onHandByLocationItem: new Map(),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+    consumeFirstRedirect: new Map([[oldPart, { to: newPart, factor: 1 }]]),
+  });
+
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", oldPart)), undefined);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", newPart)), 4);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", plateB)), 4);
+});
+
+Deno.test("Consume First: a bought successor of inline made demand is planned as forecast", () => {
+  const top = "top", oldPart = "old", newPart = "new";
+  const location = "loc";
+  const periods = [{ id: "p1" }];
+
+  const bomByItem = new Map<string, BomChild[]>([
+    [top, [{ itemId: oldPart, quantity: 1, methodType: "Make to Order" }]],
+  ]);
+
+  const { bomDerivedDemand } = explodeBom({
+    grossDemand: new Map([[makeKey(location, "p1", top), 6]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      [top, "Make"],
+      [oldPart, "Make"],
+      [newPart, "Buy"],
+    ]),
+    leadTimeByItem: new Map([[oldPart, 0]]),
+    periods,
+    onHandByLocationItem: new Map([[makeLocationItemKey(location, oldPart), 2]]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+    consumeFirstRedirect: new Map([[oldPart, { to: newPart, factor: 1 }]]),
+  });
+
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", oldPart)), undefined);
+  assertEquals(bomDerivedDemand.get(makeKey(location, "p1", newPart)), 4);
+});
+
+
+function trialBom() {
+  return new Map<string, BomChild[]>([
+    ["top", [{ itemId: "old", quantity: 1, methodType: "Pull from Inventory" }]],
+    ["old", [{ itemId: "plate-a", quantity: 1, methodType: "Purchase to Order" }]],
+    ["new", [{ itemId: "plate-b", quantity: 1, methodType: "Purchase to Order" }]],
+  ]);
+}
+const trialReplenishment = () =>
+  new Map<string, "Make" | "Buy">([
+    ["top", "Make"],
+    ["old", "Make"],
+    ["new", "Make"],
+    ["plate-a", "Buy"],
+    ["plate-b", "Buy"],
+  ]);
+const noLead = () =>
+  new Map([["old", 0], ["new", 0], ["plate-a", 0], ["plate-b", 0], ["sub", 0]]);
+
+function runTrial(args: {
+  demand: number;
+  oldOnHand?: number;
+  oldSupply?: number;
+  bomByItem?: Map<string, BomChild[]>;
+  replenishment?: Map<string, "Make" | "Buy">;
+}) {
+  const location = "loc";
+  const key = (item: string) => makeKey(location, "p1", item);
+  const out = explodeBom({
+    grossDemand: new Map([[key("top"), args.demand]]),
+    bomByItem: args.bomByItem ?? trialBom(),
+    replenishmentSystemByItem: args.replenishment ?? trialReplenishment(),
+    leadTimeByItem: noLead(),
+    periods: [{ id: "p1" }],
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey(location, "old"), args.oldOnHand ?? 0],
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(
+      args.oldSupply ? [[key("old"), args.oldSupply]] : []
+    ),
+    topLevelContributors: new Map([
+      [
+        key("top"),
+        [
+          {
+            sourceType: "Sales Order" as const,
+            salesOrderLineId: "so-1",
+            parentItemId: "top",
+            quantity: args.demand,
+          },
+        ],
+      ],
+    ]),
+    consumeFirstRedirect: new Map([["old", { to: "new", factor: 1 }]]),
+  });
+  const q = (item: string) => out.bomDerivedDemand.get(key(item));
+  return { q };
+}
+
+Deno.test("case 6: no old stock — everything is built as NEW", () => {
+  const { q } = runTrial({ demand: 10, oldOnHand: 0 });
+  assertEquals(q("old"), undefined);
+  assertEquals(q("new"), 10);
+  assertEquals(q("plate-b"), 10);
+  assertEquals(q("plate-a"), undefined);
+});
+
+Deno.test("case 7: old stock covers everything — nothing moves to NEW", () => {
+  const { q } = runTrial({ demand: 10, oldOnHand: 12 });
+  assertEquals(q("old"), 10);
+  assertEquals(q("new"), undefined);
+  assertEquals(q("plate-b"), undefined);
+  assertEquals(q("plate-a"), undefined);
+});
+
+Deno.test("case 16: an open job producing OLD counts as available before redirecting", () => {
+  const { q } = runTrial({ demand: 10, oldOnHand: 0, oldSupply: 4 });
+  assertEquals(q("old"), 4);
+  assertEquals(q("new"), 6);
+  assertEquals(q("plate-b"), 6);
+});
+
+Deno.test("case 11: bought predecessor and successor net the same way and never explode", () => {
+  const replenishment = trialReplenishment();
+  replenishment.set("old", "Buy");
+  replenishment.set("new", "Buy");
+  const { q } = runTrial({ demand: 10, oldOnHand: 3, replenishment });
+  assertEquals(q("old"), 3);
+  assertEquals(q("new"), 7);
+  assertEquals(q("plate-a"), undefined);
+  assertEquals(q("plate-b"), undefined);
+});
+
+Deno.test("nested: a Consume First sub-sub-assembly nets its stock two levels down", () => {
+  const bomByItem = new Map<string, BomChild[]>([
+    ["top", [{ itemId: "sub", quantity: 1, methodType: "Make to Order" }]],
+    ["sub", [{ itemId: "old", quantity: 2, methodType: "Pull from Inventory" }]],
+    ["old", [{ itemId: "plate-a", quantity: 1, methodType: "Purchase to Order" }]],
+    ["new", [{ itemId: "plate-b", quantity: 1, methodType: "Purchase to Order" }]],
+  ]);
+  const replenishment = trialReplenishment();
+  replenishment.set("sub", "Make");
+  const { q } = runTrial({ demand: 4, oldOnHand: 5, bomByItem, replenishment });
+  assertEquals(q("old"), 4);
+  assertEquals(q("new"), 4);
+  assertEquals(q("plate-b"), 4);
+  assertEquals(q("plate-a"), undefined);
+});
+
+Deno.test("fix 3: the successor's shortfall is pulled earlier by its own longer lead time, never later", () => {
+  const location = "loc";
+  const key = (item: string, p: string) => makeKey(location, p, item);
+  const run = (leads: Record<string, number>) =>
+    explodeBom({
+      grossDemand: new Map([[key("top", "p3"), 4]]),
+      bomByItem: trialBom(),
+      replenishmentSystemByItem: trialReplenishment(),
+      leadTimeByItem: new Map(Object.entries({ "plate-a": 0, "plate-b": 0, ...leads })),
+      periods: [{ id: "p0" }, { id: "p1" }, { id: "p2" }, { id: "p3" }],
+      onHandByLocationItem: new Map(),
+      jobSupplyByLocationPeriodItem: new Map(),
+      topLevelContributors: new Map(),
+      consumeFirstRedirect: new Map([["old", { to: "new", factor: 1 }]]),
+    }).bomDerivedDemand;
+
+  const slower = run({ old: 7, new: 14 });
+  assertEquals(slower.get(key("new", "p1")), 4);
+  assertEquals(slower.get(key("new", "p2")), undefined);
+
+  const faster = run({ old: 14, new: 7 });
+  assertEquals(faster.get(key("new", "p1")), 4);
+  assertEquals(faster.get(key("new", "p2")), undefined);
+});
+
+Deno.test("fix 2: a Consume First chain uses the middle part's stock before moving on", () => {
+  const location = "loc";
+  const key = (item: string) => makeKey(location, "p1", item);
+  const bomByItem = new Map<string, BomChild[]>([
+    ["top", [{ itemId: "old", quantity: 1, methodType: "Pull from Inventory" }]],
+    ["old", [{ itemId: "plate-a", quantity: 1, methodType: "Purchase to Order" }]],
+    ["mid", [{ itemId: "plate-m", quantity: 1, methodType: "Purchase to Order" }]],
+    ["new", [{ itemId: "plate-b", quantity: 1, methodType: "Purchase to Order" }]],
+  ]);
+  const { bomDerivedDemand } = explodeBom({
+    grossDemand: new Map([[key("top"), 10]]),
+    bomByItem,
+    replenishmentSystemByItem: new Map([
+      ["top", "Make"], ["old", "Make"], ["mid", "Make"], ["new", "Make"],
+      ["plate-a", "Buy"], ["plate-m", "Buy"], ["plate-b", "Buy"],
+    ]),
+    leadTimeByItem: new Map([["old", 0], ["mid", 0], ["new", 0], ["plate-a", 0], ["plate-m", 0], ["plate-b", 0]]),
+    periods: [{ id: "p1" }],
+    onHandByLocationItem: new Map([
+      [makeLocationItemKey(location, "old"), 2],
+      [makeLocationItemKey(location, "mid"), 3],
+    ]),
+    jobSupplyByLocationPeriodItem: new Map(),
+    topLevelContributors: new Map(),
+    consumeFirstRedirect: new Map([
+      ["old", { to: "mid", factor: 1 }],
+      ["mid", { to: "new", factor: 1 }],
+    ]),
+  });
+  assertEquals(bomDerivedDemand.get(key("old")), 2);
+  assertEquals(bomDerivedDemand.get(key("mid")), 3);
+  assertEquals(bomDerivedDemand.get(key("new")), 5);
+  assertEquals(bomDerivedDemand.get(key("plate-b")), 5);
+  assertEquals(bomDerivedDemand.get(key("plate-m")), undefined);
+  assertEquals(bomDerivedDemand.get(key("plate-a")), undefined);
+});
+
+Deno.test("netConsumeFirstContributors nets each job line in whole assemblies and the rest by the unit", () => {
+  const job = (jobId: string, quantity: number, perAssemblyQuantity?: number) => ({
+    sourceType: "Job Material" as const,
+    jobId,
+    parentItemId: "asm",
+    quantity,
+    perAssemblyQuantity,
+  });
+  const out = netConsumeFirstContributors({
+    itemId: "old",
+    contributors: [job("j1", 4, 2), job("j2", 3)],
+    grossQty: 7,
+    running: 3,
+    factor: 1,
+    perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0,
+  });
+  assertEquals(out.consumed, 3);
+  assertEquals(out.running, 0);
+  assertEquals(out.kept.map((c) => c.quantity), [2, 1]);
+  assertEquals(out.moved.map((c) => [c.quantity, c.redirectedFromItemId]), [
+    [2, "old"],
+    [2, "old"],
+  ]);
+});
+
+Deno.test("netConsumeFirstContributors nets demand no contributor accounts for by the unit, after the lines", () => {
+  const out = netConsumeFirstContributors({
+    itemId: "old",
+    contributors: [
+      { sourceType: "Sales Order", salesOrderLineId: "s1", parentItemId: "asm", quantity: 2, perAssemblyQuantity: 2 },
+    ],
+    grossQty: 5,
+    running: 3,
+    factor: 2,
+    perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0,
+  });
+  assertEquals(out.consumed, 3);
+  assertEquals(out.kept.map((c) => c.quantity), [2]);
+  assertEquals(out.moved, []);
+  assertEquals(out.running, 0);
+});
+
+Deno.test("netConsumeFirstContributors keeps the origin and converts the per-assembly quantity when moving", () => {
+  const out = netConsumeFirstContributors({
+    itemId: "mid",
+    contributors: [
+      {
+        sourceType: "Job Material",
+        jobId: "j1",
+        parentItemId: "asm",
+        quantity: 4,
+        perAssemblyQuantity: 2,
+        redirectedFromItemId: "old",
+      },
+    ],
+    grossQty: 4,
+    running: 0,
+    factor: 3,
+    perAssemblyOf: (c) => c.perAssemblyQuantity ?? 0,
+  });
+  assertEquals(out.moved, [
+    {
+      sourceType: "Job Material",
+      jobId: "j1",
+      parentItemId: "asm",
+      quantity: 12,
+      perAssemblyQuantity: 6,
+      redirectedFromItemId: "old",
+    },
+  ]);
 });
