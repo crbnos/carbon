@@ -10282,6 +10282,10 @@ msgstr "メモ日付"
 msgid "Memo ID"
 msgstr "メモID"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "出力ロットをマージ"
 
@@ -15813,6 +15817,10 @@ msgstr "ショートカット"
 
 msgid "Show"
 msgstr "表示"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "得意先リスト、得意先フォーム、ドロップダウンで読みやすい得意先IDカラムを表示します。得意先はどちらの方法でも内部的に識別されます。"

@@ -10282,6 +10282,10 @@ msgstr "备忘录日期"
 msgid "Memo ID"
 msgstr "备忘录 ID"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "合并输出批次"
 
@@ -15813,6 +15817,10 @@ msgstr "快捷键"
 
 msgid "Show"
 msgstr "显示"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"

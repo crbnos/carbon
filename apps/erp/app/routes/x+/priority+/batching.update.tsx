@@ -98,10 +98,16 @@ export async function action({ request }: ActionFunctionArgs) {
         message: "Only a completed batch's output lots can be merged"
       };
     }
+    // One item's lots per merge: a mixed batch (A, A, B) merges its As.
+    const itemId = formData.get("itemId");
     const outputs = await getBatchOutputLots(client, batchId, companyId);
-    const lots = outputs.data ?? [];
-    const items = new Set(lots.map((lot) => lot.itemId));
-    if (lots.length < 2 || items.size !== 1) {
+    if (outputs.error) {
+      return { success: false, message: "Failed to load the output lots" };
+    }
+    const lots = (outputs.data ?? []).filter(
+      (lot) => typeof itemId === "string" && lot.itemId === itemId
+    );
+    if (lots.length < 2) {
       return { success: false, message: "No mergeable output lots" };
     }
     const serviceRole = await getCarbonServiceRole();

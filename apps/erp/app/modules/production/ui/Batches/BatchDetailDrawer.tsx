@@ -29,7 +29,11 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { formatDurationMilliseconds } from "@carbon/utils";
+import {
+  formatDurationMilliseconds,
+  getItemReadableId,
+  groupBy
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -56,7 +60,7 @@ import {
   ItemThumbnail
 } from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
-import { useCustomers } from "~/stores";
+import { useCustomers, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
 import type {
@@ -112,14 +116,21 @@ export function BatchDetailDrawer({
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
 
-  // A Completed batch whose members produced >=2 Available lots of ONE item
-  // can merge them into a single lot (the MES completion prompt's ERP
-  // catch-up). After the merge the outputs are Consumed, so the button
-  // disappears on revalidation.
-  const mergeableOutputs = useMemo(() => {
+  // A Completed batch can merge each item's lots into one — every item with
+  // >=2 Available lots is its own merge (a mixed batch A, A, B merges the As).
+  // After a merge those lots are Consumed, so its button disappears on
+  // revalidation.
+  const [items] = useItems();
+  const mergeableItemIds = useMemo(() => {
     if (batch.status !== "Completed") return [];
-    const items = new Set(outputLots.map((lot) => lot.itemId));
-    return outputLots.length >= 2 && items.size === 1 ? outputLots : [];
+    return Object.entries(
+      groupBy(
+        outputLots.filter((lot) => lot.itemId),
+        (lot) => lot.itemId as string
+      )
+    )
+      .filter(([, lots]) => lots.length >= 2)
+      .map(([itemId]) => itemId);
   }, [batch.status, outputLots]);
 
   const mergeFetcher = useFetcher<{ success?: boolean; message?: string }>();
@@ -674,22 +685,28 @@ export function BatchDetailDrawer({
                 </Link>
               </Button>
             )}
-            {mergeableOutputs.length >= 2 && (
+            {mergeableItemIds.map((itemId) => (
               <Button
+                key={itemId}
                 variant="primary"
                 leftIcon={<LuCombine />}
-                isLoading={mergeFetcher.state !== "idle"}
+                isLoading={
+                  mergeFetcher.state !== "idle" &&
+                  mergeFetcher.formData?.get("itemId") === itemId
+                }
                 isDisabled={mergeFetcher.state !== "idle"}
                 onClick={() =>
                   mergeFetcher.submit(
-                    { intent: "mergeOutputs", batchId: batch.id },
+                    { intent: "mergeOutputs", batchId: batch.id, itemId },
                     { method: "post", action: path.to.priorityBatchingUpdate }
                   )
                 }
               >
-                {t`Merge output lots`}
+                {mergeableItemIds.length === 1
+                  ? t`Merge output lots`
+                  : t`Merge ${getItemReadableId(items, itemId) ?? itemId} lots`}
               </Button>
-            )}
+            ))}
             {batch.status === "Planned" && (
               // Never gated on a work center: the scheduler auto-selects one
               // (earliest finish among the process's work centers — the same

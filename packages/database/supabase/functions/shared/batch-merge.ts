@@ -140,10 +140,6 @@ export function buildBatchMergeRecords(input: {
   }
 
   const totalQuantity = parents.reduce((sum, p) => sum + p.quantity, 0);
-  const receivedTotal = parents.reduce(
-    (acc, p) => acc + p.receivedQuantity,
-    0
-  );
 
   // Earliest parent expiry wins — the conservative policy for a blended lot.
   let expirationDate: string | null = null;
@@ -242,25 +238,39 @@ export function buildBatchMergeRecords(input: {
           companyId
         })
       ),
-      ...(receivedTotal > 0
-        ? [
-      {
-        postingDate,
-        itemId: first.itemId ?? first.sourceDocumentId,
-        quantity: receivedTotal,
-        // The merged lot sits where the first parent sat; a later physical
-        // move is an ordinary stock transfer.
-        locationId: first.bin.locationId,
-        storageUnitId: first.bin.storageUnitId,
-        entryType: "Positive Adjmt.",
-        documentType: "Batch Merge",
-        documentId: mergeActivityId,
-        trackedEntityId: mergedId,
-        createdBy: userId,
-        companyId
-      } satisfies MergeLedgerRecord
-          ]
-        : [])
+      // One positive row per bin the parents occupied: the merge changes
+      // which lot the stock belongs to, never where it is.
+      ...receivedByBin(parents).map(
+        ({ bin, quantity }): MergeLedgerRecord => ({
+          postingDate,
+          itemId: first.itemId ?? first.sourceDocumentId,
+          quantity,
+          locationId: bin.locationId,
+          storageUnitId: bin.storageUnitId,
+          entryType: "Positive Adjmt.",
+          documentType: "Batch Merge",
+          documentId: mergeActivityId,
+          trackedEntityId: mergedId,
+          createdBy: userId,
+          companyId
+        })
+      )
     ]
   };
+}
+
+// Received quantity summed per bin, in the order the bins first appear.
+function receivedByBin(parents: BatchMergeParent[]) {
+  const byBin = new Map<
+    string,
+    { bin: BatchMergeParent["bin"]; quantity: number }
+  >();
+  for (const p of parents) {
+    if (p.receivedQuantity <= 0) continue;
+    const key = `${p.bin.locationId}|${p.bin.storageUnitId}`;
+    const entry = byBin.get(key) ?? { bin: p.bin, quantity: 0 };
+    entry.quantity += p.receivedQuantity;
+    byBin.set(key, entry);
+  }
+  return [...byBin.values()];
 }

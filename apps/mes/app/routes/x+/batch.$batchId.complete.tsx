@@ -21,7 +21,7 @@ async function getPlannedMergeLots(
   serviceRole: Awaited<ReturnType<typeof getCarbonServiceRole>>,
   batch: JobOperationBatch,
   companyId: string
-): Promise<string[]> {
+): Promise<string[] | null> {
   if (!batch.mergeOutput || batch.status !== "Completed") return [];
   const entityIds = (batch.operations ?? [])
     .map((operation) => operation.trackedEntityId)
@@ -34,6 +34,8 @@ async function getPlannedMergeLots(
     .eq("companyId", companyId)
     .eq("status", "Available")
     .gt("quantity", 0);
+  // null = could not tell, which the caller reports instead of skipping.
+  if (outputs.error) return null;
   const ids = (outputs.data ?? []).map((lot) => lot.id);
   return ids.length >= 2 ? ids : [];
 }
@@ -130,10 +132,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const completed = await getJobOperationBatch(serviceRole, batchId, companyId);
-  const mergeLots = completed.data
-    ? await getPlannedMergeLots(serviceRole, completed.data, companyId)
-    : [];
-  if (mergeLots.length >= 2) {
+  const mergeLots =
+    completed.data && !completed.error
+      ? await getPlannedMergeLots(serviceRole, completed.data, companyId)
+      : null;
+  // A planned merge whose lots could not be read is reported, never skipped.
+  if (mergeLots === null && planned.data.mergeOutput) {
+    return data(
+      { completed: true },
+      await flash(
+        request,
+        error(
+          completed.error,
+          `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
+        )
+      )
+    );
+  }
+  if (mergeLots && mergeLots.length >= 2) {
     const mergeResult = await serviceRole.functions.invoke<{ error?: string }>(
       "issue",
       {
@@ -169,7 +185,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     await flash(
       request,
       success(
-        mergeLots.length >= 2
+        mergeLots && mergeLots.length >= 2
           ? `Batch completed — ${mergeLots.length} lots combined into ${plannedLotNumber}`
           : "Batch completed"
       )

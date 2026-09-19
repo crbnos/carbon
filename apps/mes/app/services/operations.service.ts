@@ -156,7 +156,9 @@ export async function getJobOperationBatch(
         };
       })
     },
-    error: operations.error
+    // The entities carry the planned lot numbers — completion must not run
+    // on a batch whose lots could not be read.
+    error: operations.error ?? entities.error
   };
 }
 

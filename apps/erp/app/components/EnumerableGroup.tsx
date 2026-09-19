@@ -1,10 +1,11 @@
 import {
   Badge,
   cn,
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger
+  Popover,
+  PopoverContent,
+  PopoverTrigger
 } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { Enumerable } from "./Enumerable";
 
 type EnumerableGroupItem = {
@@ -22,7 +23,8 @@ type EnumerableGroupProps = {
 };
 
 // Single-line sibling of AvatarGroup for Enumerable chips: the first `limit`
-// render inline and the rest collapse behind a +N chip revealed on hover, so
+// render inline and the rest collapse behind a +N chip that opens them (click,
+// tap or keyboard — a hover card left touch and keyboard users out), so
 // a list cell never wraps and every table row keeps the same height.
 const EnumerableGroup = ({
   items,
@@ -30,6 +32,7 @@ const EnumerableGroup = ({
   chip = "enumerable",
   chipClassName
 }: EnumerableGroupProps) => {
+  const { t } = useLingui();
   if (items.length === 0) return null;
   const visible = items.slice(0, limit);
   const overflow = items.slice(limit);
@@ -58,18 +61,20 @@ const EnumerableGroup = ({
     <span className="flex items-center gap-2 whitespace-nowrap">
       {visible.map(renderChip)}
       {overflow.length > 0 && (
-        <HoverCard openDelay={150} closeDelay={150}>
-          <HoverCardTrigger asChild>
-            <Badge variant="secondary" className="cursor-default tabular-nums">
-              +{overflow.length}
-            </Badge>
-          </HoverCardTrigger>
-          <HoverCardContent className="w-auto max-w-[280px] p-2">
+        <Popover>
+          <PopoverTrigger
+            aria-label={t`Show ${overflow.length} more`}
+            onClick={(e) => e.stopPropagation()}
+            className="inline-flex min-h-[1.5rem] items-center rounded-md border bg-secondary px-2 text-[12px] font-bold tabular-nums text-secondary-foreground outline-none transition-colors hover:bg-secondary/80 focus-visible:ring-[3px] focus-visible:ring-ring/50"
+          >
+            +{overflow.length}
+          </PopoverTrigger>
+          <PopoverContent className="w-auto max-w-[280px] p-2">
             <div className="flex flex-wrap items-center gap-2">
               {overflow.map(renderChip)}
             </div>
-          </HoverCardContent>
-        </HoverCard>
+          </PopoverContent>
+        </Popover>
       )}
     </span>
   );

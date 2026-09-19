@@ -10282,6 +10282,10 @@ msgstr "Дата меморандума"
 msgid "Memo ID"
 msgstr "ID Памятки"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Объединить выходные партии"
 
@@ -15813,6 +15817,10 @@ msgstr "Сочетания клавиш"
 
 msgid "Show"
 msgstr "Показать"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Показывать столбец с читаемым ID Покупателя в списке покупателей, формах и выпадающих списках. Покупатели по-прежнему идентифицируются внутренне одинаково."

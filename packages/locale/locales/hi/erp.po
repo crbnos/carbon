@@ -10282,6 +10282,10 @@ msgstr "मेमो तारीख"
 msgid "Memo ID"
 msgstr "मेमो आईडी"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "आउटपुट लॉट्स को मर्ज करें"
 
@@ -15813,6 +15817,10 @@ msgstr "शॉर्टकट"
 
 msgid "Show"
 msgstr "दिखाएँ"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"

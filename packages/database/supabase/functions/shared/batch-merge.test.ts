@@ -59,7 +59,7 @@ Deno.test("merges two lots into one entity with the summed quantity", () => {
   assertEquals(records.activityOutputInsert.quantity, 89);
 });
 
-Deno.test("ledger rows are net-zero: −q per parent, +Σq for the merged lot", () => {
+Deno.test("ledger rows are net-zero and never move stock between bins", () => {
   const records = buildBatchMergeRecords({
     ...base,
     parents: [
@@ -68,14 +68,22 @@ Deno.test("ledger rows are net-zero: −q per parent, +Σq for the merged lot", 
     ]
   });
 
-  assertEquals(records.ledgerInserts.length, 3);
+  assertEquals(records.ledgerInserts.length, 4);
   const net = records.ledgerInserts.reduce((sum, l) => sum + l.quantity, 0);
   assertEquals(net, 0);
-  // Each parent's negative row books at ITS bin; the merged row at the first's.
-  assertEquals(records.ledgerInserts[0].storageUnitId, "bin-1");
-  assertEquals(records.ledgerInserts[1].storageUnitId, "bin-2");
-  assertEquals(records.ledgerInserts[2].storageUnitId, "bin-1");
-  assertEquals(records.ledgerInserts[2].quantity, 89);
+  // Every bin nets to zero: the merged lot gets each parent's stock where it
+  // already sits.
+  const byBin = new Map<string, number>();
+  for (const l of records.ledgerInserts) {
+    byBin.set(l.storageUnitId ?? "", (byBin.get(l.storageUnitId ?? "") ?? 0) + l.quantity);
+  }
+  assertEquals(byBin.get("bin-1"), 0);
+  assertEquals(byBin.get("bin-2"), 0);
+  const merged = records.ledgerInserts.filter((l) => l.quantity > 0);
+  assertEquals(
+    merged.map((l) => [l.storageUnitId, l.quantity]),
+    [["bin-1", 45], ["bin-2", 44]]
+  );
   for (const l of records.ledgerInserts) {
     assertEquals(l.documentType, "Batch Merge");
   }

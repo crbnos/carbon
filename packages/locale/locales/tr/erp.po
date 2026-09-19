@@ -10282,6 +10282,10 @@ msgstr "Muhasebe Tarihi"
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
 
@@ -15813,6 +15817,10 @@ msgstr "Kısayollar"
 
 msgid "Show"
 msgstr "Göster"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde okunabilir bir Müşteri Kimliği sütunu gösterir. Müşteriler her iki durumda da dahili olarak tanımlanmaya devam eder."

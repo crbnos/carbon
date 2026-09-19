@@ -10282,6 +10282,10 @@ msgstr "Fecha del Memorándum"
 msgid "Memo ID"
 msgstr "ID de Memorándum"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "Fusionar lotes de salida"
 
@@ -15813,6 +15817,10 @@ msgstr "Atajos"
 
 msgid "Show"
 msgstr "Mostrar"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostrar una columna de ID de cliente legible en la lista de clientes, formularios de clientes y listas desplegables. Los clientes se identifican internamente de cualquier forma."

@@ -18,6 +18,7 @@ import {
   CLOUDFLARE_TURNSTILE_SECRET_KEY,
   CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
+  IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
@@ -555,9 +556,19 @@ async function verifyTurnstileToken(
   }
 }
 
+// DEV_BYPASS_EMAIL signs a developer in with no magic link, so it is a local
+// stack's convenience and nothing else: refuse it anywhere the env says this
+// is a real deployment (production, preview, or self-hosted), whatever the
+// variable happens to be set to there.
 export async function signInWithBypassEmail(
   email: string
 ): Promise<AuthSession | null> {
+  if (!IS_LOCAL_DEV) {
+    log.error("DEV_BYPASS_EMAIL sign-in refused outside local development", {
+      actor: email
+    });
+    return null;
+  }
   const client = getCarbonServiceRole();
 
   const { data: linkData, error: linkError } =

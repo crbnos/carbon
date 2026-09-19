@@ -10282,6 +10282,10 @@ msgstr "메모 날짜"
 msgid "Memo ID"
 msgstr "메모 ID"
 
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
 msgid "Merge output lots"
 msgstr "생산 로트 병합"
 
@@ -15813,6 +15817,10 @@ msgstr "단축키"
 
 msgid "Show"
 msgstr "표시"
+
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID 열을 표시합니다. 어느 쪽이든 고객은 내부적으로 동일하게 식별됩니다."
