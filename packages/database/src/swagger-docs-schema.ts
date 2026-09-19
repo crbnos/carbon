@@ -17638,6 +17638,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -17736,6 +17742,12 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -17786,6 +17798,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationBatch.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.mergeOutput"
+          },
+          {
+            $ref: "#/parameters/rowFilter.jobOperationBatch.outputLotNumber"
           },
           {
             $ref: "#/parameters/body.jobOperationBatch"
@@ -90859,9 +90877,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -90869,6 +90884,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/select"
@@ -91065,9 +91083,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91075,6 +91090,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -91225,9 +91243,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91235,6 +91250,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -112976,7 +112994,8 @@ export default {
         "locationId",
         "status",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "mergeOutput"
       ],
       properties: {
         id: {
@@ -113039,6 +113058,15 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
+          type: "string"
+        },
+        mergeOutput: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        outputLotNumber: {
+          format: "text",
           type: "string"
         }
       },
@@ -115069,7 +115097,8 @@ export default {
             "Inbound Inspection",
             "Inventory Count",
             "Scrap",
-            "Sales Return Shipment"
+            "Sales Return Shipment",
+            "Batch Merge"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -120219,7 +120248,8 @@ export default {
             "Inbound Inspection",
             "Inventory Count",
             "Scrap",
-            "Sales Return Shipment"
+            "Sales Return Shipment",
+            "Batch Merge"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -120796,7 +120826,8 @@ export default {
             "Inventory Count",
             "Non-Conformance",
             "Inbound Inspection",
-            "Scrap"
+            "Scrap",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -133892,7 +133923,8 @@ export default {
             "Inbound Inspection",
             "Inventory Count",
             "Scrap",
-            "Sales Return Shipment"
+            "Sales Return Shipment",
+            "Batch Merge"
           ],
           format: 'public."itemLedgerDocumentType"',
           type: "string"
@@ -134101,7 +134133,8 @@ export default {
             "Inventory Count",
             "Non-Conformance",
             "Inbound Inspection",
-            "Scrap"
+            "Scrap",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -134285,7 +134318,8 @@ export default {
             "Inventory Count",
             "Non-Conformance",
             "Inbound Inspection",
-            "Scrap"
+            "Scrap",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -147900,10 +147934,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
-        "allowLowercaseItemIds"
+        "allowLowercaseItemIds",
+        "salesRuleNotificationGroup"
       ],
       properties: {
         id: {
@@ -148150,13 +148184,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -148171,6 +148198,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -158155,6 +158189,18 @@ export default {
     },
     "rowFilter.jobOperationBatch.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.mergeOutput": {
+      name: "mergeOutput",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.jobOperationBatch.outputLotNumber": {
+      name: "outputLotNumber",
       required: false,
       in: "query",
       type: "string"
@@ -197227,12 +197273,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -197247,6 +197287,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

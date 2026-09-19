@@ -78,7 +78,7 @@ type SlideAnnotation = {
 // JSON.stringify({}) === "{}" (and some legacy rows carry it as a tiptap doc
 // whose only text is literally "{}"). Treat an empty object, empty doc, or
 // "{}"-only text as "no description" so we render nothing instead of a bare "{}".
-function hasStepDescription(
+export function hasStepDescription(
   description: JobOperationStep["description"]
 ): boolean {
   if (!description) return false;
@@ -115,32 +115,9 @@ export function StepsListItem({
     step;
 
   const hasDescription = hasStepDescription(description);
-  const mentionIds = hasDescription
-    ? parseMentionsFromDocument(description as JSONContent)
-    : [];
   const disclosure = useDisclosure({
     defaultIsOpen: hasDescription
   });
-
-  // Reference images ("slides") attached to this step in the Bill of Process. A slide
-  // is image XOR model; only image slides (imagePath) render here — model slides need a
-  // modelUpload join the standard-view loader doesn't fetch, so they're skipped.
-  const imageSlides = (step.jobOperationStepSlide ?? [])
-    .filter((slide) => !!slide.imagePath)
-    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
-    .map((slide) => ({
-      id: slide.id,
-      url: getPrivateUrl(slide.imagePath as string),
-      caption: slide.caption,
-      // Slides copied from the method (get-method) can persist annotations as a
-      // non-array JSON value ({}), so normalize before the viewer calls .map().
-      annotations: Array.isArray(slide.annotations)
-        ? (slide.annotations as SlideAnnotation[])
-        : []
-    }));
-  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
-  const activeSlide =
-    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
 
   if (!operationId) return null;
   const record = step.jobOperationStepRecord.find(
@@ -282,6 +259,58 @@ export function StepsListItem({
           )}
         </div>
       </div>
+      <StepMedia
+        description={description}
+        slides={step.jobOperationStepSlide ?? []}
+        showDescription={disclosure.isOpen && hasDescription}
+      />
+    </div>
+  );
+}
+
+type StepSlide = {
+  id: string;
+  imagePath: string | null;
+  caption: string | null;
+  sortOrder: number | null;
+  annotations: unknown;
+};
+
+// A step's reference material: its image slides from the Bill of Process (a
+// slide is image XOR model; model slides need a modelUpload join these loaders
+// don't fetch, so only image slides render), the rich-text description, and
+// the parts it @-mentions. Shared by the job's step list and the batch view.
+export function StepMedia({
+  description,
+  slides,
+  showDescription
+}: {
+  description: JobOperationStep["description"];
+  slides: StepSlide[];
+  showDescription: boolean;
+}) {
+  const imageSlides = slides
+    .filter((slide) => !!slide.imagePath)
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0))
+    .map((slide) => ({
+      id: slide.id,
+      url: getPrivateUrl(slide.imagePath as string),
+      caption: slide.caption,
+      // Slides copied from the method (get-method) can persist annotations as a
+      // non-array JSON value ({}), so normalize before the viewer calls .map().
+      annotations: Array.isArray(slide.annotations)
+        ? (slide.annotations as SlideAnnotation[])
+        : []
+    }));
+  const [viewerIndex, setViewerIndex] = useState<number | null>(null);
+  const activeSlide =
+    viewerIndex !== null ? (imageSlides[viewerIndex] ?? null) : null;
+  const mentionIds = hasStepDescription(description)
+    ? parseMentionsFromDocument(description as JSONContent)
+    : [];
+
+  return (
+    <>
       {imageSlides.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-2">
           {imageSlides.map((slide, i) => (
@@ -306,7 +335,7 @@ export function StepsListItem({
           ))}
         </div>
       )}
-      {disclosure.isOpen && hasDescription && (
+      {showDescription && (
         <div
           className="my-4 text-sm prose prose-sm dark:prose-invert"
           dangerouslySetInnerHTML={{
@@ -322,7 +351,7 @@ export function StepsListItem({
         annotations={activeSlide?.annotations ?? []}
         onClose={() => setViewerIndex(null)}
       />
-    </div>
+    </>
   );
 }
 

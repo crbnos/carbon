@@ -1,59 +1,22 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
 import { validationError, validator } from "@carbon/form";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
+import { mergeTrackedEntities } from "~/modules/inventory";
 import {
   createJobOperationBatch,
   createJobOperationBatchValidator,
+  getBatchOutputLots,
   notifyScheduleInputsChanged,
-  recalculateJobRequirements,
   releaseJobOperationBatch,
   unreleaseJobOperationBatch,
   updateJobOperationBatch,
   updateJobOperationBatchValidator
 } from "~/modules/production";
+import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
-
-// Releasing a batch can pull a Draft/Planned job's operation onto the floor, so
-// refresh those jobs' requirements first — the same safety recalc job release
-// performs (no MRP; procurement stays a job-level decision). Returns an error
-// message, or null when every recalc succeeded.
-async function recalculateUnreleasedMemberJobs(
-  client: SupabaseClient<Database>,
-  jobIds: string[],
-  companyId: string,
-  userId: string
-): Promise<string | null> {
-  const uniqueJobIds = [...new Set(jobIds)];
-  if (uniqueJobIds.length === 0) return null;
-
-  const jobs = await client
-    .from("job")
-    .select("id, status")
-    .in("id", uniqueJobIds)
-    .eq("companyId", companyId);
-  if (jobs.error) {
-    return "Failed to load the batch's jobs";
-  }
-
-  const serviceRole = getCarbonServiceRole();
-  for (const job of jobs.data ?? []) {
-    if (job.status === "Draft" || job.status === "Planned") {
-      const recalc = await recalculateJobRequirements(serviceRole, {
-        id: job.id,
-        companyId,
-        userId
-      });
-      if (recalc.error) {
-        return `Failed to recalculate requirements for job ${job.id}`;
-      }
-    }
-  }
-  return null;
-}
 
 // Fetcher-driven board action (mirrors operations.update.tsx): return
 // { success, message } so BatchingBoard can toast the specific failure reason.
@@ -114,6 +77,54 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true };
   }
 
+  // Merge a Completed batch's same-item output lots into one lot. The batch
+  // completion prompt covers the common case in MES; this is the ERP catch-up
+  // for batches whose prompt was skipped. Outputs are re-derived server-side —
+  // client-supplied entity ids are never trusted.
+  if (intent === "mergeOutputs") {
+    const batchId = String(formData.get("batchId") ?? "");
+    if (!batchId) {
+      return { success: false, message: "Invalid merge request" };
+    }
+    const batch = await client
+      .from("jobOperationBatch")
+      .select("id, status")
+      .eq("id", batchId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (batch.error || batch.data?.status !== "Completed") {
+      return {
+        success: false,
+        message: "Only a completed batch's output lots can be merged"
+      };
+    }
+    const outputs = await getBatchOutputLots(client, batchId, companyId);
+    const lots = outputs.data ?? [];
+    const items = new Set(lots.map((lot) => lot.itemId));
+    if (lots.length < 2 || items.size !== 1) {
+      return { success: false, message: "No mergeable output lots" };
+    }
+    const serviceRole = await getCarbonServiceRole();
+    const merge = await mergeTrackedEntities(serviceRole, {
+      trackedEntityIds: lots.map((lot) => lot.id),
+      companyId,
+      userId
+    });
+    if (merge.error || merge.data?.error) {
+      return {
+        success: false,
+        message:
+          (merge.data?.error as string | undefined) ?? "Failed to merge lots"
+      };
+    }
+    return {
+      success: true,
+      message: merge.data?.readableId
+        ? `Lots merged into ${merge.data.readableId}`
+        : "Lots merged"
+    };
+  }
+
   if (intent === "create") {
     const validation = await validator(
       createJobOperationBatchValidator
@@ -131,14 +142,16 @@ export async function action({ request }: ActionFunctionArgs) {
       if (ops.error) {
         return { success: false, message: "Failed to load the operations" };
       }
-      const recalcError = await recalculateUnreleasedMemberJobs(
+      const releasedJobs = await releaseBatchMemberJobs({
         client,
-        (ops.data ?? []).map((op) => op.jobId),
+        db: getDatabaseClient(),
+        jobIds: (ops.data ?? []).map((op) => op.jobId),
         companyId,
-        userId
-      );
-      if (recalcError) {
-        return { success: false, message: recalcError };
+        userId,
+        purchaseOrdersBySupplierId: parsePurchaseOrderChoice(formData)
+      });
+      if (releasedJobs.error) {
+        return { success: false, message: releasedJobs.error };
       }
     }
 
@@ -211,16 +224,18 @@ export async function action({ request }: ActionFunctionArgs) {
       if (members.error) {
         return { success: false, message: "Failed to load the batch members" };
       }
-      // Requirements refresh BEFORE the flip (mirrors job release's ordering);
-      // a failure stops the release rather than dispatching stale BOMs.
-      const recalcError = await recalculateUnreleasedMemberJobs(
+      // Member jobs release BEFORE the batch flips, through the job page's
+      // release path; an invalid job refuses the whole batch untouched.
+      const releasedJobs = await releaseBatchMemberJobs({
         client,
-        (members.data ?? []).map((op) => op.jobId),
+        db: getDatabaseClient(),
+        jobIds: (members.data ?? []).map((op) => op.jobId),
         companyId,
-        userId
-      );
-      if (recalcError) {
-        return { success: false, message: recalcError };
+        userId,
+        purchaseOrdersBySupplierId: parsePurchaseOrderChoice(formData)
+      });
+      if (releasedJobs.error) {
+        return { success: false, message: releasedJobs.error };
       }
 
       const released = await releaseJobOperationBatch(client, {
@@ -284,4 +299,19 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
   return { success: true };
+}
+
+// The Release dialog's per-supplier PO choice ("new" or a Draft PO id), posted
+// as JSON. Absent when nothing needed choosing.
+function parsePurchaseOrderChoice(
+  formData: FormData
+): Record<string, string> | undefined {
+  const raw = formData.get("purchaseOrdersBySupplierId");
+  if (typeof raw !== "string" || !raw) return undefined;
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
 }

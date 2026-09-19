@@ -1723,6 +1723,36 @@ full-screen ERP route.
 
 **Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
 
+## Resolve the accounting period BEFORE a transaction that writes for N records
+
+**Context:** The batch material pick (`issue` case `trackedEntitiesToBatch`) runs one Kysely transaction and calls the per-member consumption writer once per batch member. Each member's write path reaches `createMaterialWipEntries` → `getCurrentAccountingPeriod`.
+
+**Problem:** `getCurrentAccountingPeriod` READS the period over HTTP (supabase-js) but CREATES a missing one through the transaction handle. Inside one transaction, member 2's read cannot see member 1's uncommitted insert, so both try to create the same month and the `accountingPeriod_company_fy_period_idx` unique index aborts the whole pick. It only fires on the first posting of a month into a fresh database, so it passes every test run but the first — and the rollback makes it look like the pick silently did nothing (HTTP 200, empty body; the real error is only in the edge-runtime log).
+
+**Rule:** Any lazily-created singleton that reads outside the transaction and writes inside it must be resolved BEFORE the transaction opens, once, when a flow writes for N records in one transaction. For the accounting period that is `await getCurrentAccountingPeriod(client, companyId, db, companyToday.toString())` ahead of `db.transaction()`, guarded on `accountingEnabled`.
+
+**Applies to:** `getCurrentAccountingPeriod` / `getAccountingPeriodForDate` in any multi-record edge-function transaction; the same shape applies to `getNextSequence` and any other get-or-create helper straddling the transaction boundary.
+
+## A post-success prompt must not live in the component the success unmounts
+
+**Context:** MES batch completion. `BatchCompleteModal` submitted the completion and was meant to swap itself for a "merge these lots?" prompt when the action returned one.
+
+**Problem:** The modal is rendered `{batch && batchCompleteModal.isOpen && …}`, and `batch` is only passed by the loader while the batch is `Active`/`Completing`. Completing it — the very thing that produces the prompt — revalidates the loader, `batch` becomes null, and the modal unmounts with its `useFetcher` still holding the response. The prompt could never render, and the symptom was indistinguishable from the server never sending it (the page just sat there, because a `data()` reply does not navigate).
+
+**Rule:** When an action's response drives UI that appears AFTER success, own the fetcher in a component that outlives the state change — here `JobOperation`, passing the fetcher down into the modal and rendering the prompt itself, ungated by `batch`. Before wiring a post-success view, ask which component the success unmounts.
+
+**Applies to:** MES `JobOperation` + `BatchCompleteModal`/`BatchMergePrompt`; any modal gated on loader data that its own submit invalidates.
+
+## Vite caches a module-resolution MISS for the whole dev session
+
+**Context:** Added a `BatchMergePrompt` component: edited the importing file first, created the new file a moment later.
+
+**Problem:** The SSR module graph cached the failed resolution, so every request 500'd with `Failed to load url ./components/BatchMergePrompt … Does the file exist?` even though it did. `docker exec … grep` and `ls` both confirmed the file, which sends you hunting a phantom bug in the import path.
+
+**Rule:** Create the new module BEFORE the code that imports it. If the overlay already says "Does the file exist?" and it does, `touch` the new file and its importer to force re-resolution — the file's presence alone will not invalidate the cached miss.
+
+**Applies to:** any new file under `apps/{erp,mes}/app` added after its importer during a running `crbn up`; the sibling failure mode for edge functions is the cached compiled isolate (`crbn reload edge-runtime`).
+
 ## An unchecked supabase-js insert turns a NOT NULL violation into silence
 
 **Context:** Inspection rejects were supposed to seed `nonConformanceItemTrackedEntity` links on the NCR's default Scrap row so the MRB could split or reassign specific entities. Nothing ever appeared. Both writers — `x+/inspection+/$id.reject.tsx` and `x+/issue+/new.tsx`'s job-operation auto-link — built their rows without `nonConformanceId`, which is `NOT NULL` on that table (`20260421130000_nc-item-tracked-entity.sql`).
@@ -1831,3 +1861,13 @@ full-screen ERP route.
 **Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
 **Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+
+## A fetcher's redirect is dropped when anything revalidates during the action
+
+**Context:** MES "Complete Batch" posts through a `useFetcher` to an action that runs for several seconds and ends in `redirect(path.to.operations)`. The operation page also subscribes to realtime changes on `jobOperation`/`job` and calls `revalidate()` on each.
+
+**Problem:** The completion's own writes fired the realtime `revalidate()` mid-action. React Router (`handleFetcherAction`) ignores a fetcher's redirect when `pendingNavigationLoadId > originatingLoadId` — any navigation or revalidation started after the submit wins. The redirect was silently discarded, the fetcher went idle, and the page sat on stale loader data from the mid-run revalidation (the batch still "Completing", button reading "Retry Completion") even though the work had landed.
+
+**Rule:** Realtime listeners must not revalidate while a fetcher on the page is submitting — use `useRealtimeRevalidator()` (`apps/mes/app/hooks/useRealtime.tsx`), never a bare `useRevalidator().revalidate()` in a realtime callback. Skipping loses nothing: the router revalidates after every action, which is why `revalidate()` already no-ops during a navigation submission. The same race also reached single-operation completion: finishing a job's last operation completes the job, the job UPDATE revalidated the operation loader mid-action, its floor gate redirected with "This operation's job has not been released to the floor", and the operator saw that error instead of "Operation finished successfully" (reproduced 2 of 10 runs before the guard, 0 of 8 after). Batch completion additionally returns `data({ completed: true })` and navigates client-side.
+
+**Applies to:** every realtime- or interval-driven `revalidate()` on a page that submits fetchers — MES `useOperation`, `AssemblyView`, `useRealtime`.

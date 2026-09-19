@@ -31,9 +31,10 @@ import {
 } from "@carbon/react";
 import { formatDurationMilliseconds } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCirclePlay,
+  LuCombine,
   LuCopy,
   LuEllipsisVertical,
   LuHammer,
@@ -44,6 +45,7 @@ import {
   LuStickyNote,
   LuTimer,
   LuTrash,
+  LuTriangleAlert,
   LuUndo2
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -61,7 +63,9 @@ import type {
   JobOperationBatchDetail,
   JobOperationBatchEvent
 } from "../../types";
+import JobStatus from "../Jobs/JobStatus";
 import { BatchStatus } from "./BatchesTable";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import { batchPlanBreakdown } from "./batch-builder-logic";
 
 const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
@@ -79,10 +83,18 @@ const EVENT_ICONS: Record<
 export function BatchDetailDrawer({
   batch,
   events,
+  outputLots = [],
   onClose
 }: {
   batch: JobOperationBatchDetail;
   events: JobOperationBatchEvent[];
+  // The members' MERGEABLE output lots (the service filters to Available with
+  // stock) — >=2 of one item make a Completed batch mergeable.
+  outputLots?: {
+    id: string;
+    readableId: string | null;
+    itemId: string | null;
+  }[];
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -99,6 +111,35 @@ export function BatchDetailDrawer({
   // Planned and Active batches stay composable/dissolvable; the edge fn's
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
+
+  // A Completed batch whose members produced >=2 Available lots of ONE item
+  // can merge them into a single lot (the MES completion prompt's ERP
+  // catch-up). After the merge the outputs are Consumed, so the button
+  // disappears on revalidation.
+  const mergeableOutputs = useMemo(() => {
+    if (batch.status !== "Completed") return [];
+    const items = new Set(outputLots.map((lot) => lot.itemId));
+    return outputLots.length >= 2 && items.size === 1 ? outputLots : [];
+  }, [batch.status, outputLots]);
+
+  const mergeFetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const wasMerging = useRef(false);
+  useEffect(() => {
+    if (mergeFetcher.state !== "idle") {
+      wasMerging.current = true;
+      return;
+    }
+    if (!wasMerging.current) return;
+    wasMerging.current = false;
+    const d = mergeFetcher.data;
+    if (d?.message) {
+      if (d.success === false) {
+        toast.error(d.message);
+      } else {
+        toast.success(d.message);
+      }
+    }
+  }, [mergeFetcher.state, mergeFetcher.data]);
 
   // Release (Planned → Active) / Unrelease (Active → Planned). The server's
   // refusal (no work center, production already recorded) comes back as
@@ -122,9 +163,19 @@ export function BatchDetailDrawer({
     }
   }, [releaseFetcher.state, releaseFetcher.data]);
 
-  const submitBatchIntent = (intent: "release" | "unrelease") => {
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const submitBatchIntent = (
+    intent: "release" | "unrelease",
+    purchaseOrdersBySupplierId?: Record<string, string>
+  ) => {
     releaseFetcher.submit(
-      { intent, batchId: batch.id },
+      {
+        intent,
+        batchId: batch.id,
+        ...(purchaseOrdersBySupplierId && {
+          purchaseOrdersBySupplierId: JSON.stringify(purchaseOrdersBySupplierId)
+        })
+      },
       { method: "post", action: path.to.priorityBatchingUpdate }
     );
   };
@@ -174,6 +225,9 @@ export function BatchDetailDrawer({
   );
 
   const memberCount = batch.members.length;
+  const pendingJobs = batch.members.filter(
+    (m) => m.job?.status && !["Completed", "Cancelled"].includes(m.job.status)
+  );
   const totalQuantity = batch.members.reduce(
     (sum, m) => sum + (m.operationQuantity ?? 0),
     0
@@ -276,6 +330,22 @@ export function BatchDetailDrawer({
           <div className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-3">
             {/* Operations — the batch's contents */}
             <section className="flex min-h-0 flex-col lg:col-span-2">
+              {/* Members whose batched operation was their LAST auto-complete
+                  and receive with the batch; this nudge covers the rest — a
+                  member with operations still remaining has made its lot but
+                  put nothing on hand until the job finishes. */}
+              {batch.status === "Completed" && pendingJobs.length > 0 && (
+                <div className="mx-6 mt-5 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <LuTriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                  <span>
+                    <Trans>
+                      {pendingJobs.length} of {memberCount} member jobs are not
+                      completed yet — their output stays out of stock until each
+                      job is completed.
+                    </Trans>
+                  </span>
+                </div>
+              )}
               <div className="flex items-center gap-2 px-6 pt-5 pb-3">
                 <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                   <Trans>Operations</Trans>
@@ -315,16 +385,23 @@ export function BatchDetailDrawer({
                       return (
                         <Tr key={member.id}>
                           <Td className="font-medium">
-                            {member.job?.id ? (
-                              <Link
-                                to={path.to.jobDetails(member.job.id)}
-                                className="hover:underline"
-                              >
-                                {member.job.jobId}
-                              </Link>
-                            ) : (
-                              member.job?.jobId
-                            )}
+                            <HStack spacing={2}>
+                              {member.job?.id ? (
+                                <Link
+                                  to={path.to.jobDetails(member.job.id)}
+                                  className="hover:underline"
+                                >
+                                  {member.job.jobId}
+                                </Link>
+                              ) : (
+                                member.job?.jobId
+                              )}
+                              {batch.status === "Completed" &&
+                                member.job?.status &&
+                                member.job.status !== "Completed" && (
+                                  <JobStatus status={member.job.status} />
+                                )}
+                            </HStack>
                           </Td>
                           <Td>
                             <HStack spacing={2}>
@@ -597,6 +674,22 @@ export function BatchDetailDrawer({
                 </Link>
               </Button>
             )}
+            {mergeableOutputs.length >= 2 && (
+              <Button
+                variant="primary"
+                leftIcon={<LuCombine />}
+                isLoading={mergeFetcher.state !== "idle"}
+                isDisabled={mergeFetcher.state !== "idle"}
+                onClick={() =>
+                  mergeFetcher.submit(
+                    { intent: "mergeOutputs", batchId: batch.id },
+                    { method: "post", action: path.to.priorityBatchingUpdate }
+                  )
+                }
+              >
+                {t`Merge output lots`}
+              </Button>
+            )}
             {batch.status === "Planned" && (
               // Never gated on a work center: the scheduler auto-selects one
               // (earliest finish among the process's work centers — the same
@@ -607,7 +700,7 @@ export function BatchDetailDrawer({
                 leftIcon={<LuCirclePlay />}
                 isLoading={releaseFetcher.state !== "idle"}
                 isDisabled={releaseFetcher.state !== "idle"}
-                onClick={() => submitBatchIntent("release")}
+                onClick={() => setReleaseOpen(true)}
               >
                 {t`Release`}
               </Button>
@@ -615,6 +708,18 @@ export function BatchDetailDrawer({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {releaseOpen && (
+        <BatchReleaseModal
+          target={{ batchId: batch.id }}
+          title={t`Release batch ${batch.readableId}`}
+          confirmLabel={t`Release Batch`}
+          onClose={() => setReleaseOpen(false)}
+          onConfirm={(purchaseOrders) => {
+            submitBatchIntent("release", purchaseOrders);
+            setReleaseOpen(false);
+          }}
+        />
+      )}
     </Drawer>
   );
 }

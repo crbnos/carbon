@@ -382,6 +382,8 @@
         "Lifecycle",
         "On the schedule",
         "On the shop floor",
+        "Picking materials",
+        "Completing the batch",
         "Related",
         "Internals, exact strings, and troubleshooting",
         "The batch card is missing from the operations board / MES",
@@ -389,6 +391,9 @@
         "An operator sees a job that was never released",
         "Retry Completion rejects my corrected quantities",
         "The builder hides some operations on the process",
+        "The pick modal says a batch number is not available",
+        "A shared pick left every member short",
+        "Completed the batch but the lots did not merge",
         "Suggested batches look wrong / too small"
       ]
     },

@@ -22,7 +22,8 @@ export function batchRuleInitialValues(raw: BatchRules | null | undefined) {
     batchRuleGrade: r.grade,
     batchRuleDimension: r.dimension,
     batchRuleForm: r.form,
-    batchRuleFinish: r.finish
+    batchRuleFinish: r.finish,
+    batchRuleProducedItem: r.producedItem
   };
 }
 
@@ -353,7 +354,8 @@ export const processValidator = z
     batchRuleGrade: z.enum(batchRuleLevels).optional(),
     batchRuleDimension: z.enum(batchRuleLevels).optional(),
     batchRuleForm: z.enum(batchRuleLevels).optional(),
-    batchRuleFinish: z.enum(batchRuleLevels).optional()
+    batchRuleFinish: z.enum(batchRuleLevels).optional(),
+    batchRuleProducedItem: z.enum(batchRuleLevels).optional()
   })
   .refine((data) => {
     if (data.processType !== "Outside Processing" && !data.workCenters) {

@@ -473,11 +473,19 @@ export const requiresTurnstile =
 // enforcement without a widget is not.
 export const turnstileSiteKey = CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
 
-export async function sendMagicLink(email: string, turnstileToken?: string) {
+export async function sendMagicLink(
+  email: string,
+  turnstileToken?: string,
+  // The app's own origin. VERCEL_URL is only correct for the app it was set
+  // for — in local dev crbn writes the ERP url (or a localhost fallback) into
+  // .env.local, so an MES started outside `crbn up` would send its first-login
+  // magic link back to the wrong origin. MES passes getMESUrl().
+  origin?: string
+) {
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${VERCEL_URL}/callback`,
+      emailRedirectTo: `${origin ?? VERCEL_URL}/callback`,
       // GoTrue verifies the token itself when Supabase Auth captcha is on
       ...(SUPABASE_AUTH_CAPTCHA_ENABLED && turnstileToken
         ? { captchaToken: turnstileToken }

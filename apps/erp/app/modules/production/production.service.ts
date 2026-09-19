@@ -8,7 +8,12 @@ import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { nameSimilarity, scrapAllowance, tiptapToText } from "@carbon/utils";
+import {
+  groupBy,
+  nameSimilarity,
+  scrapAllowance,
+  tiptapToText
+} from "@carbon/utils";
 import type {
   AssemblyGraph,
   AssemblyGraphIndex,
@@ -101,6 +106,11 @@ import type {
   JobMaterialPurchaseOrderLine,
   JobMaterialSupplyJobLine
 } from "./types";
+import {
+  makeMethodsMissingOperations,
+  outsideOperationsNeedingPurchaseOrders,
+  resolveOperationSupplier
+} from "./ui/Jobs/job-release-logic";
 
 export { mapBalloonIdsToFeatureIdsForDocument };
 
@@ -2781,6 +2791,218 @@ export async function updateJobBatchNumber(
     })
     .eq("id", trackedEntityId)
     .select("id, readableId");
+}
+
+export type JobReleaseReadiness = {
+  jobs: {
+    id: string;
+    jobId: string;
+    status: (typeof jobStatus)[number] | null;
+    manufacturingBlocked: boolean;
+    missingAssemblies: { makeMethodId: string; description: string }[];
+    // Outside operations release cannot put on a PO: the process has no
+    // supplier, or several and none chosen on the operation.
+    outsideOperationsWithoutSupplier: {
+      id: string;
+      description: string;
+      missing: "none" | "choose";
+    }[];
+  }[];
+  // Suppliers whose outside operations release will put on a purchase order,
+  // with the Draft POs the planner may add them to instead of a new one.
+  suppliers: {
+    supplierId: string;
+    draftPurchaseOrders: { id: string; purchaseOrderId: string }[];
+  }[];
+};
+
+// What stands between these jobs and release, read in one query per table for
+// any number of jobs. The job Release dialog and batch release both read it, so
+// a job released through a batch is held to the job page's rules.
+export async function getJobReleaseReadiness(
+  client: SupabaseClient<Database>,
+  jobIds: string[],
+  companyId: string
+): Promise<{ data: JobReleaseReadiness | null; error: PostgrestError | null }> {
+  if (jobIds.length === 0)
+    return { data: { jobs: [], suppliers: [] }, error: null };
+
+  const [jobs, roots, materials, operations] = await Promise.all([
+    client
+      .from("job")
+      .select(
+        "id, jobId, status, item(itemReplenishment(manufacturingBlocked))"
+      )
+      .in("id", jobIds)
+      .eq("companyId", companyId),
+    client
+      .from("jobMakeMethod")
+      .select("id, jobId")
+      .in("jobId", jobIds)
+      .eq("companyId", companyId)
+      .is("parentMaterialId", null),
+    client
+      .from("jobMaterialWithMakeMethodId")
+      .select(
+        "jobId, jobMaterialMakeMethodId, methodType, kit, description, itemReadableId"
+      )
+      .in("jobId", jobIds)
+      .eq("companyId", companyId),
+    client
+      .from("jobOperation")
+      .select(
+        "id, jobId, jobMakeMethodId, operationType, operationSupplierProcessId, processId, description"
+      )
+      .in("jobId", jobIds)
+      .eq("companyId", companyId)
+  ]);
+  const failed =
+    jobs.error ?? roots.error ?? materials.error ?? operations.error;
+  if (failed) return { data: null, error: failed };
+
+  const outsideOperationIds = (operations.data ?? [])
+    .filter((op) => op.operationType === "Outside Processing")
+    .map((op) => op.id);
+  const purchaseOrderLines = outsideOperationIds.length
+    ? await client
+        .from("purchaseOrderLine")
+        .select("jobOperationId")
+        .in("jobOperationId", outsideOperationIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (purchaseOrderLines.error)
+    return { data: null, error: purchaseOrderLines.error };
+
+  const needingPurchaseOrders = outsideOperationsNeedingPurchaseOrders(
+    operations.data ?? [],
+    new Set(
+      (purchaseOrderLines.data ?? [])
+        .map((line) => line.jobOperationId)
+        .filter((id): id is string => !!id)
+    )
+  );
+  const ownSupplierProcessIds = [
+    ...new Set(
+      needingPurchaseOrders
+        .map((op) => op.operationSupplierProcessId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const processIds = [
+    ...new Set(
+      needingPurchaseOrders
+        .map((op) => op.processId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+  const [ownSupplierProcesses, processSupplierProcesses] = await Promise.all([
+    ownSupplierProcessIds.length
+      ? client
+          .from("supplierProcess")
+          .select("id, supplierId, processId")
+          .in("id", ownSupplierProcessIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null },
+    processIds.length
+      ? client
+          .from("supplierProcess")
+          .select("id, supplierId, processId")
+          .in("processId", processIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null }
+  ]);
+  const supplierProcessError =
+    ownSupplierProcesses.error ?? processSupplierProcesses.error;
+  if (supplierProcessError) return { data: null, error: supplierProcessError };
+
+  const supplierProcessById = new Map(
+    [
+      ...(ownSupplierProcesses.data ?? []),
+      ...(processSupplierProcesses.data ?? [])
+    ].map((sp) => [sp.id, sp])
+  );
+  const supplierProcessesByProcessId = new Map(
+    Object.entries(
+      groupBy(processSupplierProcesses.data ?? [], (sp) => sp.processId)
+    )
+  );
+  const resolved = needingPurchaseOrders.map((op) => ({
+    op,
+    supplier: resolveOperationSupplier(
+      op,
+      supplierProcessById,
+      supplierProcessesByProcessId
+    )
+  }));
+  const supplierIds = [
+    ...new Set(
+      resolved.flatMap(({ supplier }) =>
+        "supplierProcess" in supplier
+          ? [supplier.supplierProcess.supplierId]
+          : []
+      )
+    )
+  ];
+  const withoutSupplierByJob = groupBy(
+    resolved.filter(({ supplier }) => "missing" in supplier),
+    ({ op }) => op.jobId
+  );
+  const drafts = supplierIds.length
+    ? await client
+        .from("purchaseOrder")
+        .select("id, purchaseOrderId, supplierId")
+        .eq("status", "Draft")
+        .in("supplierId", supplierIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (drafts.error) return { data: null, error: drafts.error };
+
+  const materialsByJob = groupBy(materials.data ?? [], (m) => m.jobId ?? "");
+  const operationsByJob = groupBy(operations.data ?? [], (op) => op.jobId);
+  const rootByJob = new Map((roots.data ?? []).map((r) => [r.jobId, r.id]));
+  const descriptionByMakeMethod = new Map(
+    (materials.data ?? []).map((m) => [
+      m.jobMaterialMakeMethodId,
+      m.description || m.itemReadableId || ""
+    ])
+  );
+
+  return {
+    data: {
+      jobs: (jobs.data ?? []).map((job) => ({
+        id: job.id,
+        jobId: job.jobId,
+        status: job.status,
+        manufacturingBlocked:
+          job.item?.itemReplenishment?.manufacturingBlocked === true,
+        missingAssemblies: makeMethodsMissingOperations(
+          rootByJob.get(job.id) ?? null,
+          materialsByJob[job.id] ?? [],
+          operationsByJob[job.id] ?? []
+        ).map((makeMethodId) => ({
+          makeMethodId,
+          description:
+            makeMethodId === rootByJob.get(job.id)
+              ? job.jobId
+              : (descriptionByMakeMethod.get(makeMethodId) ?? makeMethodId)
+        })),
+        outsideOperationsWithoutSupplier: (
+          withoutSupplierByJob[job.id] ?? []
+        ).map(({ op, supplier }) => ({
+          id: op.id,
+          description: op.description ?? op.id,
+          missing: "missing" in supplier ? supplier.missing : "none"
+        }))
+      })),
+      suppliers: supplierIds.map((supplierId) => ({
+        supplierId,
+        draftPurchaseOrders: (drafts.data ?? [])
+          .filter((po) => po.supplierId === supplierId)
+          .map((po) => ({ id: po.id, purchaseOrderId: po.purchaseOrderId }))
+      }))
+    },
+    error: null
+  };
 }
 
 export async function updateJobStatus(
@@ -6164,6 +6386,39 @@ export async function getJobOperationBatchMembers(
   return { data: members, error: null };
 }
 
+// The MERGEABLE output lots a completed batch's members produced: each member's
+// WIP tracked entity (tagged with its jobMakeMethod), narrowed to lots still
+// Available with stock. Drives the drawer's "Merge output lots" action — >=2 of
+// one item are mergeable, and a merged batch returns none (parents Consumed).
+export async function getBatchOutputLots(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const members = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId")
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId);
+  const makeMethodIds = [
+    ...new Set(
+      (members.data ?? [])
+        .map((m) => m.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  if (makeMethodIds.length === 0) {
+    return { data: [], error: members.error };
+  }
+  return client
+    .from("trackedEntity")
+    .select("id, readableId, itemId")
+    .in("attributes->>Job Make Method", makeMethodIds)
+    .eq("companyId", companyId)
+    .eq("status", "Available")
+    .gt("quantity", 0);
+}
+
 export async function getJobOperationBatchWithMembers(
   client: SupabaseClient<Database>,
   batchId: string,
@@ -6179,7 +6434,7 @@ export async function getJobOperationBatchWithMembers(
   const members = await client
     .from("jobOperation")
     .select(
-      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, status, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, workCenter(name), job(id, jobId, customerId, salesOrderId, status), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath))"
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
@@ -6255,6 +6510,9 @@ export async function createJobOperationBatch(
     // Create & Release: insert the batch already 'Active' (on the floor);
     // omitted/false creates it 'Planned'.
     release?: boolean;
+    mergeOutput?: boolean;
+    outputLotNumber?: string | null;
+    lotNumbers?: { jobOperationId: string; lotNumber: string }[];
     companyId: string;
     userId: string;
   }

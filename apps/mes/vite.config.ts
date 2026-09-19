@@ -25,6 +25,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
    */
   const ssrNoExternal = [
     "react-dropzone",
+    /**
+     * sonner's stylesheet is imported as `dist/styles.css?url` from root.tsx.
+     * Externalized, the dev SSR module runner hands the resolved path with
+     * its query straight to Node, which cannot load it ("Cannot find module
+     * ...styles.css?url"). Inlined, the ?url import goes through Vite's
+     * asset pipeline. The production build is unaffected either way.
+     */
+    "sonner",
     "react-icons",
     "react-phone-number-input",
     "tailwind-merge",

@@ -95,6 +95,7 @@ import {
   getReceivableSerialUnits,
   type JobReceiptSnapshot
 } from "./job-complete-logic";
+import { makeMethodsMissingOperations } from "./job-release-logic";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -816,27 +817,6 @@ export function JobStartModal({
       )
     );
 
-    const kittedMakeMethodIds = new Set(
-      materials.data
-        ?.filter((m) => m.jobMaterialMakeMethodId && m.kit)
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // make methods for materials
-    const uniqueMakeMethodIds = new Set(
-      materials.data
-        ?.filter(
-          (m) =>
-            m.jobMaterialMakeMethodId &&
-            m.methodType === "Make to Order" &&
-            !kittedMakeMethodIds.has(m.jobMaterialMakeMethodId)
-        )
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // top-level make method
-    uniqueMakeMethodIds.add(makeMethod.data?.id!);
-
     const flatMethod =
       methodTree.data && methodTree.data.length > 0
         ? flattenTree(methodTree.data[0])
@@ -852,21 +832,16 @@ export function JobStartModal({
       ])
     );
 
-    const missingAssemblies = Array.from(uniqueMakeMethodIds)
-      .filter(
-        (makeMethodId) =>
-          !(
-            operations.data?.some(
-              (op) => op.jobMakeMethodId === makeMethodId
-            ) ?? false
-          )
-      )
-      .map((makeMethodId) => {
-        const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
-        return info
-          ? { bomId: info.bomId, description: info.description }
-          : { bomId: "?", description: makeMethodId ?? "Unknown" };
-      });
+    const missingAssemblies = makeMethodsMissingOperations(
+      makeMethod.data?.id ?? null,
+      materials.data ?? [],
+      operations.data ?? []
+    ).map((makeMethodId) => {
+      const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
+      return info
+        ? { bomId: info.bomId, description: info.description }
+        : { bomId: "?", description: makeMethodId ?? "Unknown" };
+    });
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);

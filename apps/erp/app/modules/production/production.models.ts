@@ -1048,6 +1048,30 @@ export const createJobOperationBatchValidator = z.object({
     z
       .array(z.string().min(1))
       .min(1, { message: "Select at least one operation" })
+  ),
+  // Output lot identity is planned here, never typed on the floor. The
+  // batch-operations edge fn enforces the rules (one item to merge, unique
+  // numbers when split); these only carry the planner's choice through.
+  mergeOutput: zfd.checkbox(),
+  outputLotNumber: zfd.text(z.string().trim().optional()),
+  // JSON-encoded [{ jobOperationId, lotNumber }] — FormData has no nesting.
+  lotNumbers: z.preprocess(
+    (value) => {
+      if (typeof value !== "string" || value === "") return undefined;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    },
+    z
+      .array(
+        z.object({
+          jobOperationId: z.string().min(1),
+          lotNumber: z.string().trim().min(1)
+        })
+      )
+      .optional()
   )
 });
 

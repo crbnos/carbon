@@ -46,6 +46,7 @@ import {
   ScrollRestoration,
   useLoaderData
 } from "react-router";
+import SonnerStyle from "sonner/dist/styles.css?url";
 import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
@@ -65,6 +66,7 @@ export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
+  { rel: "stylesheet", href: SonnerStyle },
   { rel: "stylesheet", href: Background },
   { rel: "stylesheet", href: NProgress },
   ...faviconLinks

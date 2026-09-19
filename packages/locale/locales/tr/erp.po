@@ -111,6 +111,10 @@ msgstr "{0} başarıyla silindi"
 msgid "{0} draft journal entries"
 msgstr "{0} taslak muhasebe fişi"
 
+#. placeholder {0}: op.description
+msgid "{0} has no supplier"
+msgstr ""
+
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
 #. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
@@ -140,6 +144,10 @@ msgstr "{0}/{1} muhasebeleştirme hesabı eşleştirildi"
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0}/{maxSlots} sağlayıcı yuvası kullanıldı"
+
+#. placeholder {0}: pendingJobs.length
+msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
+msgstr "{0} / {memberCount} üye iş emirlerinin henüz tamamlanmadığı — bunların çıktısı her bir iş emri tamamlanana kadar stok dışında kalır."
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -1370,7 +1378,7 @@ msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
 
 msgid "Add from receipt"
-msgstr "Mal kabulünden ekle"
+msgstr "Mal kabul'dan ekle"
 
 msgid "Add from shipment"
 msgstr "Sevkiyattan ekle"
@@ -1651,6 +1659,10 @@ msgstr "Tüm Öğeler"
 
 msgid "All Locations"
 msgstr "Tüm Konumlar"
+
+#. placeholder {0}: tracked[0]?.itemReadableId ?? ""
+msgid "all make {0}"
+msgstr "tümü {0} üretim"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
@@ -3533,6 +3545,9 @@ msgstr "E-postanızı kontrol edin"
 msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Partinin iş emirleri kontrol ediliyor..."
+
 msgid "Checkpoint ·"
 msgstr "Kontrol Noktası ·"
 
@@ -3556,6 +3571,10 @@ msgstr "Stokun nereden gelebileceğini görmek için sol taraftaki bir satırı 
 
 msgid "Choose a serial number"
 msgstr "Bir seri numarası seçin"
+
+#. placeholder {0}: op.description
+msgid "choose a supplier for {0} on the job"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
@@ -3718,6 +3737,9 @@ msgstr "Sütunlar"
 
 msgid "Combine filters"
 msgstr "Filtreleri birleştir"
+
+msgid "Combine output into one lot"
+msgstr "Çıktıyı bir Lota birleştir"
 
 msgid "Coming soon"
 msgstr "Yakında"
@@ -4506,6 +4528,9 @@ msgstr "{0} değerleri oluştur"
 msgid "Create & Release"
 msgstr "Oluştur ve Serbest Bırak"
 
+msgid "Create & release batch"
+msgstr "Parti oluştur ve serbest bırak"
+
 msgid "Create & Snapshot"
 msgstr "Oluştur & Anlık Görüntü"
 
@@ -4577,6 +4602,9 @@ msgstr "İş emirleri oluştur"
 
 msgid "Create Kanban"
 msgstr "Kanban Oluştur"
+
+msgid "Create New"
+msgstr "Yeni oluştur"
 
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
@@ -6240,6 +6268,12 @@ msgstr "örneğin Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Her hücre, atanmış personeli ile günün işinin gerektirdiği personeli gösterir."
 
+msgid "Each job keeps its own lot. The shop floor can't change these."
+msgstr "Her İş emri kendi Lotunu tutar. Atölye bunları değiştiremez."
+
+msgid "Each job needs its own lot number — or combine them into one lot."
+msgstr "Her İş emri kendi Lot numarasına ihtiyaç duyar — veya bunları bir Lota birleştir."
+
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları içeren bir yedekleme asla geri yüklenemez."
 
@@ -6251,6 +6285,9 @@ msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Her fiziksel birim kendi izlenen varlığını ve benzersiz numarasını alır — bir varlık, bir birim."
+
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Her tedarikçinin her iş emrinden dış operasyonları yeni bir satın alma siparişine veya seçtiğiniz mevcut bir taslağa yazılır."
 
 msgid "Each, lb, ft…"
 msgstr "Her, lb, ft…"
@@ -6994,6 +7031,9 @@ msgstr "Her şey başka"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Geri kalan her şey personel, içe aktarmalar, entegrasyonlar ve API'yi kapsar — iş akışlarınızdan biri olmayan herhangi bir şey."
+
+msgid "Everything this run makes lands in one lot. The shop floor can't change it."
+msgstr "Bu çalışmanın ürettiği her şey bir Lota iniş yapar. Atölye bunu değiştiremez."
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Toplamda {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB'ı aşıyor — göndermek için bazı ekler kaldırın."
@@ -7764,6 +7804,9 @@ msgstr "Uygun görünümü"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Bu iş akışının problemlerini test etmeden önce düzeltiniz"
+
+msgid "Fix these jobs before releasing"
+msgstr "Serbest bırakmadan önce bu iş emirlerini düzeltin"
 
 msgid "Fixed"
 msgstr "Sabit"
@@ -9571,7 +9614,7 @@ msgid "Lines"
 msgstr "Satırlar"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "Satırlar bir satın alma siparişi mal kabulü muhasebeleştirildiğinde burada görünür ve yalnızca başka bir tedarikçi iadesinde henüz yetkilendirilmemiş miktarlar için. Kör iade için Satır Öğesi Ekle'yi kullanın."
+msgstr "Satın alma siparişi mal kabulu muhasebeleştirildiğinde satırlar burada görüntülenir ve yalnızca başka bir tedarikçi iadesi üzerinde henüz yetkilendirilmemiş miktarlar için. Kör iade için Satır Ekle'yi kullanın."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Satırlar, bir satış siparişi sevkiyatı muhasebeleştirildiğinde burada görünür ve yalnızca başka bir RMA üzerinde zaten yetkilendirilmemiş miktarlar için. Kör iade için satırı ekle kullanın."
@@ -9767,6 +9810,9 @@ msgstr "Kaybedildi"
 msgid "Lot"
 msgstr "Lot"
 
+msgid "Lot number"
+msgstr "Lot numarası"
+
 msgid "Lot size"
 msgstr "parti büyüklüğü"
 
@@ -9946,6 +9992,9 @@ msgstr "Üretici Parça Numarası"
 
 msgid "Manufacturing"
 msgstr "Üretim"
+
+msgid "manufacturing is blocked"
+msgstr "üretim engellendi"
 
 msgid "Map accounts"
 msgstr "Hesapları Eşle"
@@ -10232,6 +10281,9 @@ msgstr "Muhasebe Tarihi"
 
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
+
+msgid "Merge output lots"
+msgstr "Çıkış lotlarını birleştir"
 
 msgid "MES"
 msgstr "MES"
@@ -11218,6 +11270,10 @@ msgstr "Açık satış sipariş satırı yok"
 
 msgid "No operations found."
 msgstr "Operasyon bulunamadı."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "Operasyon yok {0} üzerinde"
 
 msgid "No operations require picking at this location"
 msgstr "Bu lokasyonda toplama gerektiren operasyon yok"
@@ -12963,6 +13019,12 @@ msgstr "Süreçler"
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "Tedarik durumu — sipariş gerekli, planlandı, siparişte veya teslim alındı. BoM ağacında gösterilen göstergeyle aynı."
 
+msgid "produced item"
+msgstr "üretilen stok kartı"
+
+msgid "Produced item"
+msgstr "Üretilen stok kartı"
+
 msgid "Product issues during hypercare"
 msgstr "Hypercare sırasında ürün sorunları"
 
@@ -13848,6 +13910,11 @@ msgstr "{0} partiyi serbest bırak"
 msgid "Release Batch"
 msgstr "Partiyi Serbest Bırak"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Parti {0} serbest bırak"
+
 msgid "Release change notice"
 msgstr "Değişiklik bildirimi serbest bırak"
 
@@ -13875,6 +13942,9 @@ msgstr "Yayınlanan revizyon"
 
 msgid "Released revision is locked"
 msgstr "Yayınlanan revizyon kilitlidir"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Partiyi serbest bırakmak iş emirlerini serbest bırakır ve her birinin atölye için hazır olması gerekir."
 
 msgid "Remaining"
 msgstr "Kalan"
@@ -15246,7 +15316,7 @@ msgid "Select operations"
 msgstr "Operasyon seç"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "Bu tedarikçiden muhasebeleştirilmiş mal kabul satırlarını iade için seçin."
+msgstr "Bu tedarikçiden muhasebeleştirilmiş mal kabul satırlarını iade etmek üzere seçin."
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "Bu müşteriye muhasebeleştirilmiş sevkiyat satırlarını iade etmek için seçin."
@@ -15445,7 +15515,7 @@ msgid "Session locked"
 msgstr "Oturum Kilitli"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "Sevkiyattan eklemek için bu iadede bir müşteri ayarlayın."
+msgstr "Sevkiyat'dan eklemek için bu iade'de bir müşteri ayarlayın."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Mal kabulünden eklemek için bu iade kaydında bir tedarikçi belirleyin."
@@ -16900,6 +16970,9 @@ msgstr "Yedekleme işi bu hatayı bildirdi."
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Bir operasyon'un iş emri'sini zamanında tutmak için bitirmesi gereken geriye doğru hesaplanan tarih, operasyon'un son tarih'e yazılır. İlerlemeyi ölçmek için kararlı bir hedef — yerleştirilme üzerinde hiçbir zaman bir kısıtlama değildir."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "Parti atölyeye gider. İş emirleri zaten serbest bırakıldı."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Parti en acil üyesinin zamanında çalışır — diğerleri öne çekilir"
 
@@ -17184,6 +17257,9 @@ msgstr "Bir Sevkiyat muhasebeleştirildiğinde tanınan ve Stok kartının Maliy
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Bu varlık için MACRS kapsamında IRS kurtarma süresi sınıfı (3, 5, 7, 10, 15, 20, 27.5, 39 yıl)."
+
+msgid "The item each job produces — require it to match to merge output lots"
+msgstr "Her iş emrinin ürettiği stok kartı — çıkış lotlarını birleştirmek için eşleşmesi gerekir"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "o gün vadesi olan iş saatleri (çalışmanın çalıştığı günü değil, vade tarihine göre), gecikmiş iş Gecikmede."
@@ -17712,6 +17788,11 @@ msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle 
 
 msgid "this ability"
 msgstr "bu yetkinlik"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "Bu aynı zamanda {0} iş emrini ({1}) serbest bırakır. Bunlar atölye için kullanılabilir hale gelir ve satın alma ve üretimi yönlendirir."
 
 msgid "This backup could not be completed."
 msgstr "Bu yedekleme tamamlanamadı."

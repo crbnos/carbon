@@ -266,6 +266,11 @@ function BatchCompatibilityRules() {
       name: "batchRuleItem",
       label: t`Material item`,
       description: t`The exact material part, not just its properties`
+    },
+    {
+      name: "batchRuleProducedItem",
+      label: t`Produced item`,
+      description: t`The item each job produces — require it to match to merge output lots`
     }
   ];
 

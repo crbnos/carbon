@@ -111,6 +111,10 @@ msgstr "{0} успешно удален"
 msgid "{0} draft journal entries"
 msgstr "{0} черновых операций"
 
+#. placeholder {0}: op.description
+msgid "{0} has no supplier"
+msgstr ""
+
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
 #. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
@@ -140,6 +144,10 @@ msgstr "{0} из {1} счетов проведения отображено"
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} из {maxSlots} слотов провайдера используется"
+
+#. placeholder {0}: pendingJobs.length
+msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
+msgstr "{0} из {memberCount} производственных заказов еще не завершены — их выпуск остается вне запаса до завершения каждого производственного заказа."
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -1651,6 +1659,10 @@ msgstr "Все элементы"
 
 msgid "All Locations"
 msgstr "Все местоположения"
+
+#. placeholder {0}: tracked[0]?.itemReadableId ?? ""
+msgid "all make {0}"
+msgstr "все производят {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
@@ -3533,6 +3545,9 @@ msgstr "Проверьте вашу почту"
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
 
+msgid "Checking the batch's jobs..."
+msgstr "Проверка производственных заказов серии..."
+
 msgid "Checkpoint ·"
 msgstr "Контрольная точка ·"
 
@@ -3556,6 +3571,10 @@ msgstr "Выберите строку слева, чтобы увидеть, о�
 
 msgid "Choose a serial number"
 msgstr "Выберите серийный номер"
+
+#. placeholder {0}: op.description
+msgid "choose a supplier for {0} on the job"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
@@ -3718,6 +3737,9 @@ msgstr "Столбцы"
 
 msgid "Combine filters"
 msgstr "Объединить фильтры"
+
+msgid "Combine output into one lot"
+msgstr "Объединить выход в одну партию"
 
 msgid "Coming soon"
 msgstr "Скоро"
@@ -4506,6 +4528,9 @@ msgstr "Создать {0} значений"
 msgid "Create & Release"
 msgstr "Создать и запустить в работу"
 
+msgid "Create & release batch"
+msgstr "Создать и запустить в работу серию"
+
 msgid "Create & Snapshot"
 msgstr "Создать и снимок"
 
@@ -4577,6 +4602,9 @@ msgstr "Создать производственные заказы"
 
 msgid "Create Kanban"
 msgstr "Создать канбан"
+
+msgid "Create New"
+msgstr "Создать"
 
 msgid "Create new rule"
 msgstr "Создать новое правило"
@@ -6240,6 +6268,12 @@ msgstr "например Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
 
+msgid "Each job keeps its own lot. The shop floor can't change these."
+msgstr "Каждый производственный заказ сохраняет свою партию. Цех не может их менять."
+
+msgid "Each job needs its own lot number — or combine them into one lot."
+msgstr "Каждый производственный заказ требует собственный номер партии — или объедините их в одну партию."
+
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Резервную копию с этими строками никогда не удастся восстановить."
 
@@ -6251,6 +6285,9 @@ msgstr "Неиспользованный материал каждой опер�
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "Каждая физическая единица получает свой отслеживаемый объект и уникальный номер — один объект, одна единица."
+
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "Внешние операции каждого поставщика из каждого производственного заказа размещаются на одном новом заказе поставщику или на существующем черновике на ваш выбор."
 
 msgid "Each, lb, ft…"
 msgstr "Каждый, фунт, фут…"
@@ -6994,6 +7031,9 @@ msgstr "Все остальное"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "Все остальное включает сотрудников, импорты, интеграции и API — все остальное, кроме ваших рабочих процессов."
+
+msgid "Everything this run makes lands in one lot. The shop floor can't change it."
+msgstr "Всё, что производится в этом цикле, попадает в одну партию. Цех не может это менять."
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "Превышает {PO_EMAIL_ATTACHMENT_LIMIT_MB} МБ всего — удалите некоторые вложения для отправки."
@@ -7764,6 +7804,9 @@ msgstr "Уместить в окно"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "Исправьте проблемы в этом рабочем процессе перед его тестированием"
+
+msgid "Fix these jobs before releasing"
+msgstr "Исправьте эти производственные заказы перед запуском"
 
 msgid "Fixed"
 msgstr "Фиксированный"
@@ -9571,7 +9614,7 @@ msgid "Lines"
 msgstr "Строки"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "Строки появляются здесь, когда поступление по заказу поставщику было проведено, и только для количеств, не уже запрошенных на другом возврате. Используйте «Добавить строку» для слепого возврата."
+msgstr "Строки появляются здесь, когда поступление проведено, и только для количеств, не авторизованных на другом возврате поставщику. Используйте добавление строки для слепого возврата."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Строки появляются здесь после проведения отгрузки, и только для количеств, не авторизованных на другой RMA. Используйте функцию «Добавить строку» для слепого возврата."
@@ -9767,6 +9810,9 @@ msgstr "Проиграно"
 msgid "Lot"
 msgstr "Партия"
 
+msgid "Lot number"
+msgstr "Номер партии"
+
 msgid "Lot size"
 msgstr "Размер партии"
 
@@ -9946,6 +9992,9 @@ msgstr "Номер детали производителя"
 
 msgid "Manufacturing"
 msgstr "Производство"
+
+msgid "manufacturing is blocked"
+msgstr "Производство заблокировано"
 
 msgid "Map accounts"
 msgstr "Сопоставить счета"
@@ -10232,6 +10281,9 @@ msgstr "Дата меморандума"
 
 msgid "Memo ID"
 msgstr "ID Памятки"
+
+msgid "Merge output lots"
+msgstr "Объединить выходные партии"
 
 msgid "MES"
 msgstr "MES"
@@ -11218,6 +11270,10 @@ msgstr "Нет открытых строк заказов покупателя"
 
 msgid "No operations found."
 msgstr "Операции не найдены."
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "нет операций на {0}"
 
 msgid "No operations require picking at this location"
 msgstr "Ни одна операция не требует отбора на этой площадке"
@@ -12963,6 +13019,12 @@ msgstr "Процессы"
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "Статус снабжения — требуется заказ, запланировано, заказано или получено. Тот же индикатор, что показан в дереве BoM."
 
+msgid "produced item"
+msgstr "произведенная номенклатура"
+
+msgid "Produced item"
+msgstr "Произведенная номенклатура"
+
 msgid "Product issues during hypercare"
 msgstr "Проблемы с продуктом во время гиперпомощи"
 
@@ -13848,6 +13910,11 @@ msgstr "Запустить в работу {0} серий"
 msgid "Release Batch"
 msgstr "Запустить серию в работу"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "Запустить в работу серию {0}"
+
 msgid "Release change notice"
 msgstr "Запустить в работу извещение об изменении"
 
@@ -13875,6 +13942,9 @@ msgstr "Выпущенная ревизия"
 
 msgid "Released revision is locked"
 msgstr "Выпущенная ревизия заблокирована"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
 
 msgid "Remaining"
 msgstr "Остаток"
@@ -15246,7 +15316,7 @@ msgid "Select operations"
 msgstr "Выберите операции"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "Выберите проведённые строки поступления от этого поставщика для возврата."
+msgstr "Выберите проведенные строки поступления от этого поставщика для возврата."
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "Выберите проведённые строки отгрузки этому покупателю для возврата."
@@ -15445,7 +15515,7 @@ msgid "Session locked"
 msgstr "Сеанс заблокирован"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "Установите покупателя для этого возврата чтобы добавить из отгрузки."
+msgstr "Укажите покупателя в этом возврате для добавления из отгрузки."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Установите поставщика для этого возврата, чтобы добавить из поступления."
@@ -16900,6 +16970,9 @@ msgstr "Задача резервного копирования сообщил�
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "Дата завершения операции, вычисленная в обратном порядке, чтобы производственный заказ был выполнен вовремя, записываемая в срок выполнения операции. Стабильная цель для измерения прогресса — никогда не является ограничением при размещении."
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "Серия поступает на цех. Её производственные заказы уже запущены."
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "Партия выполняется по самому срочному элементу — остальные сдвигаются раньше"
 
@@ -17184,6 +17257,9 @@ msgstr "Себестоимость Запасов, признаваемая пр
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "Класс периода восстановления IRS для этого основного средства в соответствии с MACRS (3, 5, 7, 10, 15, 20, 27,5, 39 лет)."
+
+msgid "The item each job produces — require it to match to merge output lots"
+msgstr "Номенклатура, которую производит каждый производственный заказ — требуется совпадение для объединения выходных партий"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "рабочие часы, подлежащие в этот день (на основе даты срока, не дня выполнения работы), с просроченной работой в разделе «Просроченные»."
@@ -17712,6 +17788,11 @@ msgstr "Эти строки ссылаются на данные вне этой
 
 msgid "this ability"
 msgstr "этот навык"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "Это также запускает {0} производственных заказов ({1}). Они становятся доступны цеху и управляют закупками и производством."
 
 msgid "This backup could not be completed."
 msgstr "Эта резервная копия не может быть завершена."

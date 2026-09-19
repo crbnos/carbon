@@ -4,6 +4,7 @@ import {
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
+  getMESUrl,
   isAuthProviderEnabled,
   magicLinkValidator,
   RATE_LIMIT
@@ -12,6 +13,7 @@ import {
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
+  signInWithBypassEmail,
   turnstileSiteKey,
   verifyAuthSession,
   verifyLoginCaptcha
@@ -20,7 +22,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   clearAuthCookies,
   flash,
-  getAuthSession
+  getAuthSession,
+  setAuthSession
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
@@ -155,6 +158,26 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const user = await getUserByEmail(email);
+
+  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
+  if (
+    devBypassEmail &&
+    email.toLowerCase() === devBypassEmail.toLowerCase() &&
+    user.data?.active
+  ) {
+    const authSession = await signInWithBypassEmail(email);
+    if (authSession) {
+      // Genuine completed login — clear any accumulated lockout state.
+      await lockout.reset(email);
+      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
+      const sessionCookie = await setAuthSession(request, { authSession });
+      return redirect(path.to.authenticatedRoot, {
+        headers: [["Set-Cookie", sessionCookie]]
+      });
+    }
+  }
+
   const attempt = await lockout.recordFailure(email);
   if (attempt.locked) {
     logAuthEvent("login_locked", {
@@ -185,10 +208,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const user = await getUserByEmail(email);
-
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, turnstileToken);
+    const magicLink = await sendMagicLink(email, turnstileToken, getMESUrl());
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {

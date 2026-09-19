@@ -111,6 +111,10 @@ msgstr "{0} सफलतापूर्वक हटाया गया"
 msgid "{0} draft journal entries"
 msgstr "{0} ड्राफ्ट जर्नल प्रविष्टियाँ"
 
+#. placeholder {0}: op.description
+msgid "{0} has no supplier"
+msgstr ""
+
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
 #. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
@@ -140,6 +144,10 @@ msgstr "{0} में से {1} पोस्टिंग खातों को
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} में से {maxSlots} प्रदाता स्लॉट उपयोग किए गए"
+
+#. placeholder {0}: pendingJobs.length
+msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
+msgstr "{0} का {memberCount} सदस्य जॉब अभी तक पूर्ण नहीं हैं — उनका आउटपुट तब तक स्टॉक से बाहर रहेगा जब तक प्रत्येक जॉब पूर्ण न हो जाए।"
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -1651,6 +1659,10 @@ msgstr "सभी आइटम"
 
 msgid "All Locations"
 msgstr "सभी स्थान"
+
+#. placeholder {0}: tracked[0]?.itemReadableId ?? ""
+msgid "all make {0}"
+msgstr "सभी निर्माण {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "चयनित समूहों के सभी सदस्य और चयनित व्यक्ति अनुरोधों को अनुमोदित करने में सक्षम होंगे"
@@ -3533,6 +3545,9 @@ msgstr "अपना ईमेल जांचें"
 msgid "Checking Stripe for this customer…"
 msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
 
+msgid "Checking the batch's jobs..."
+msgstr "बैच की जॉब्स को जाँच रहे हैं..."
+
 msgid "Checkpoint ·"
 msgstr "चेकपॉइंट ·"
 
@@ -3556,6 +3571,10 @@ msgstr "यह देखने के लिए बाईं ओर की प�
 
 msgid "Choose a serial number"
 msgstr "एक सीरियल नंबर चुनें"
+
+#. placeholder {0}: op.description
+msgid "choose a supplier for {0} on the job"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
@@ -3718,6 +3737,9 @@ msgstr "कॉलम"
 
 msgid "Combine filters"
 msgstr "फ़िल्टर को संयोजित करें"
+
+msgid "Combine output into one lot"
+msgstr "एक लॉट में आउटपुट को मिलाएं"
 
 msgid "Coming soon"
 msgstr "जल्द ही आ रहा है"
@@ -4506,6 +4528,9 @@ msgstr "{0} मान बनाएं"
 msgid "Create & Release"
 msgstr "बनाएँ और जारी करें"
 
+msgid "Create & release batch"
+msgstr "बैच बनाएँ और जारी करें"
+
 msgid "Create & Snapshot"
 msgstr "बनाएं और स्नैपशॉट लें"
 
@@ -4577,6 +4602,9 @@ msgstr "जॉब बनाएँ"
 
 msgid "Create Kanban"
 msgstr "कानबान बनाएँ"
+
+msgid "Create New"
+msgstr "नया बनाएँ"
 
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
@@ -6240,6 +6268,12 @@ msgstr "उदाहरण के लिए Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "प्रत्येक सेल उन लोगों को दर्शाता है जो दिन के काम के लिए आवश्यक लोगों के खिलाफ असाइन किए गए हैं।"
 
+msgid "Each job keeps its own lot. The shop floor can't change these."
+msgstr "प्रत्येक जॉब अपना स्वयं का लॉट रखता है। शॉप फ्लोर इन्हें नहीं बदल सकता।"
+
+msgid "Each job needs its own lot number — or combine them into one lot."
+msgstr "प्रत्येक जॉब को अपनी स्वयं की लॉट संख्या की आवश्यकता है — या उन्हें एक लॉट में मिलाएं।"
+
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। इन पंक्तियों के साथ एक बैकअप को कभी भी पुनः स्थापित नहीं किया जा सकता।"
 
@@ -6251,6 +6285,9 @@ msgstr "प्रत्येक ऑपरेशन की अप्रयुक
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "प्रत्येक भौतिक इकाई को अपनी खुद की ट्रैक की गई इकाई और अद्वितीय संख्या मिलती है — एक इकाई, एक इकाई।"
+
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "प्रत्येक आपूर्तिकर्ता की बाहरी ऑपरेशन हर जॉब से एक नया क्रय आदेश पर जाती है, या आप जो मौजूदा ड्राफ्ट चुनते हैं उस पर।"
 
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
@@ -6994,6 +7031,9 @@ msgstr "बाकी सब कुछ"
 
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "बाकी सब कुछ लोग, आयात, एकीकरण और API को कवर करता है — कुछ भी जो आपके वर्कफ़्लो में से एक नहीं है।"
+
+msgid "Everything this run makes lands in one lot. The shop floor can't change it."
+msgstr "इस रन में निर्माण होने वाली सभी चीजें एक लॉट में जाती हैं। शॉप फ्लोर इसे नहीं बदल सकता।"
 
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "{PO_EMAIL_ATTACHMENT_LIMIT_MB} MB कुल से अधिक है — भेजने के लिए कुछ अनुलग्नक निकालें।"
@@ -7764,6 +7804,9 @@ msgstr "व्यू फिट करें"
 
 msgid "Fix the problems with this workflow before testing it"
 msgstr "इसे परीक्षण करने से पहले इस वर्कफ़्लो की समस्याओं को ठीक करें"
+
+msgid "Fix these jobs before releasing"
+msgstr "जारी करने से पहले इन जॉब्स को ठीक करें"
 
 msgid "Fixed"
 msgstr "निश्चित"
@@ -9571,7 +9614,7 @@ msgid "Lines"
 msgstr "पंक्तियाँ"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "एक बार क्रय आदेश प्राप्ति पोस्ट किए जाने के बाद यहां पंक्तियां दिखाई देती हैं, और केवल उन मात्राओं के लिए जो पहले से ही किसी अन्य आपूर्तिकर्ता रिटर्न पर अधिकृत नहीं हैं। एक अंधे रिटर्न के लिए पंक्ति आइटम जोड़ें का उपयोग करें।"
+msgstr "एक बार क्रय आदेश की प्राप्ति पोस्ट किए जाने के बाद यहां पंक्तियां दिखाई देंगी, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य आपूर्तिकर्ता रिटर्न पर अधिकृत नहीं हैं। एक अंधी रिटर्न के लिए पंक्ति आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "पंक्तियाँ यहाँ दिखाई देती हैं जब विक्रय आदेश की शिपमेंट पोस्ट की जाती है, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य RMA पर अधिकृत नहीं हैं। एक अंधी रिटर्न के लिए पंक्ति मद जोड़ें का उपयोग करें।"
@@ -9767,6 +9810,9 @@ msgstr "खोया"
 msgid "Lot"
 msgstr "लॉट"
 
+msgid "Lot number"
+msgstr "लॉट संख्या"
+
 msgid "Lot size"
 msgstr "लॉट आकार"
 
@@ -9946,6 +9992,9 @@ msgstr "निर्माता भाग संख्या"
 
 msgid "Manufacturing"
 msgstr "विनिर्माण"
+
+msgid "manufacturing is blocked"
+msgstr "विनिर्माण अवरुद्ध है"
 
 msgid "Map accounts"
 msgstr "खातों को मैप करें"
@@ -10232,6 +10281,9 @@ msgstr "मेमो तारीख"
 
 msgid "Memo ID"
 msgstr "मेमो आईडी"
+
+msgid "Merge output lots"
+msgstr "आउटपुट लॉट्स को मर्ज करें"
 
 msgid "MES"
 msgstr "MES"
@@ -11219,6 +11271,10 @@ msgstr "कोई खुली विक्रय आदेश पंक्त�
 msgid "No operations found."
 msgstr "कोई ऑपरेशन नहीं मिला।"
 
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0} में कोई ऑपरेशन नहीं"
+
 msgid "No operations require picking at this location"
 msgstr "इस स्थान पर कोई भी ऑपरेशन पिकिंग की आवश्यकता नहीं है"
 
@@ -11340,7 +11396,7 @@ msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
 msgid "No returnable lines for this customer"
-msgstr "इस ग्राहक के लिए कोई लौटाने योग्य पंक्तियां नहीं"
+msgstr "इस ग्राहक के लिए कोई लौटाई जा सकने वाली पंक्तियां नहीं"
 
 msgid "No returnable lines for this supplier"
 msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
@@ -12963,6 +13019,12 @@ msgstr "प्रक्रियाएं"
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "खरीद स्थिति — ऑर्डर करने की आवश्यकता, नियोजित, ऑर्डर पर, या प्राप्त। वही संकेतक जो BoM ट्री में दिखाया जाता है।"
 
+msgid "produced item"
+msgstr "उत्पादित आइटम"
+
+msgid "Produced item"
+msgstr "उत्पादित आइटम"
+
 msgid "Product issues during hypercare"
 msgstr "हाइपरकेयर के दौरान उत्पाद समस्याएं"
 
@@ -13848,6 +13910,11 @@ msgstr "{0} बैच जारी करें"
 msgid "Release Batch"
 msgstr "बैच जारी करें"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "बैच {0} जारी करें"
+
 msgid "Release change notice"
 msgstr "परिवर्तन सूचना जारी करें"
 
@@ -13875,6 +13942,9 @@ msgstr "जारी रिवीजन"
 
 msgid "Released revision is locked"
 msgstr "जारी रिवीजन लॉक है"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
 
 msgid "Remaining"
 msgstr "शेष"
@@ -14996,7 +15066,7 @@ msgid "Search by linear issue title..."
 msgstr "Linear समस्या शीर्षक द्वारा खोजें..."
 
 msgid "Search by receipt, PO, or item"
-msgstr "प्राप्ति, क्रय आदेश, या आइटम द्वारा खोजें"
+msgstr "प्राप्ति, PO, या आइटम द्वारा खोजें"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "शिपमेंट, विक्रय आदेश, या आइटम के अनुसार खोजें"
@@ -15246,7 +15316,7 @@ msgid "Select operations"
 msgstr "ऑपरेशन चुनें"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "इस आपूर्तिकर्ता से लौटाने के लिए पोस्ट किए गए प्राप्ति पंक्तियों का चयन करें।"
+msgstr "इस आपूर्तिकर्ता से रिटर्न करने के लिए पोस्ट की गई प्राप्ति पंक्तियां चुनें।"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "इस ग्राहक को भेजी गई शिपमेंट पंक्तियों को रिटर्न के लिए चुनें।"
@@ -16900,6 +16970,9 @@ msgstr "बैकअप जॉब ने इस त्रुटि की रि
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "वह पिछड़ी हुई गणना की गई तारीख जिस तक एक ऑपरेशन को अपने जॉब को समय पर रखने के लिए समाप्त करना चाहिए, ऑपरेशन की नियत तिथि में लिखा गया है। प्रगति को मापने के लिए एक स्थिर लक्ष्य — कभी भी प्लेसमेंट पर बाधा नहीं।"
 
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "बैच शॉप फ्लोर पर जाता है। इसकी जॉब्स पहले से ही जारी हैं।"
+
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "बैच अपने सबसे जरूरी सदस्य के समय चलता है — बाकी पहले खींचे जाते हैं"
 
@@ -17184,6 +17257,9 @@ msgstr "शिपमेंट पोस्ट होने पर मान्�
 
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "MACRS के तहत इस संपत्ति के लिए IRS पुनर्प्राप्ति-अवधि वर्ग (3, 5, 7, 10, 15, 20, 27.5, 39-वर्ष)।"
+
+msgid "The item each job produces — require it to match to merge output lots"
+msgstr "प्रत्येक जॉब द्वारा उत्पादित आइटम — आउटपुट लॉट्स को मर्ज करने के लिए इसे मेल खाना आवश्यक है"
 
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "उस दिन देय नौकरी के घंटे (देय तारीख आधार पर, वह दिन नहीं जब काम चलता है), अतिदेय कार्य पिछली देय में।"
@@ -17712,6 +17788,11 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 
 msgid "this ability"
 msgstr "यह कौशल"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "यह {0} जॉब्स ({1}) भी जारी करता है। वे शॉप फ्लोर के लिए उपलब्ध हो जाती हैं और क्रय और उत्पादन को चलाती हैं।"
 
 msgid "This backup could not be completed."
 msgstr "यह बैकअप पूर्ण नहीं किया जा सका।"

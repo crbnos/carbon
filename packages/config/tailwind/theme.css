@@ -18,6 +18,126 @@
 }
 
 /*
+ * scroll-fade / scroll-fade-x — vendored from shadcn's tailwind.css
+ * (https://ui.shadcn.com/docs/utils/scroll-fade). Put it on the element that
+ * scrolls: the edge with more content fades, tracking scroll position via
+ * scroll-driven animation (static fade on both edges without support).
+ */
+@property --scroll-fade-t {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --scroll-fade-b {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --scroll-fade-s {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0px;
+}
+@property --scroll-fade-e {
+  syntax: "<length-percentage>";
+  inherits: false;
+  initial-value: 0px;
+}
+
+@theme inline {
+  @keyframes scroll-fade-reveal-t {
+    from {
+      --scroll-fade-t: 0px;
+    }
+    to {
+      --scroll-fade-t: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    }
+  }
+  @keyframes scroll-fade-reveal-b {
+    from {
+      --scroll-fade-b: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    }
+    to {
+      --scroll-fade-b: 0px;
+    }
+  }
+  @keyframes scroll-fade-reveal-s {
+    from {
+      --scroll-fade-s: 0px;
+    }
+    to {
+      --scroll-fade-s: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    }
+  }
+  @keyframes scroll-fade-reveal-e {
+    from {
+      --scroll-fade-e: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    }
+    to {
+      --scroll-fade-e: 0px;
+    }
+  }
+}
+
+@utility scroll-fade {
+  mask-image: linear-gradient(
+    to bottom,
+    transparent 0,
+    #000 var(--scroll-fade-t, 0px),
+    #000 calc(100% - var(--scroll-fade-b, 0px)),
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+
+  @supports (animation-timeline: scroll()) {
+    animation:
+      scroll-fade-reveal-t 1ms ease-in-out,
+      scroll-fade-reveal-b 1ms ease-in-out;
+    animation-timeline: scroll(self y), scroll(self y);
+    animation-range:
+      0 calc(var(--spacing) * 24),
+      calc(100% - calc(var(--spacing) * 24)) 100%;
+    animation-fill-mode: both;
+  }
+
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-t: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    --scroll-fade-b: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+  }
+}
+
+@utility scroll-fade-x {
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 var(--scroll-fade-s, 0px),
+    #000 calc(100% - var(--scroll-fade-e, 0px)),
+    transparent 100%
+  );
+  mask-repeat: no-repeat;
+
+  @supports (animation-timeline: scroll()) {
+    animation:
+      scroll-fade-reveal-s 1ms ease-in-out,
+      scroll-fade-reveal-e 1ms ease-in-out;
+    animation-timeline: scroll(self inline), scroll(self inline);
+    animation-range:
+      0 calc(var(--spacing) * 24),
+      calc(100% - calc(var(--spacing) * 24)) 100%;
+    animation-fill-mode: both;
+  }
+
+  @supports not (animation-timeline: scroll()) {
+    --scroll-fade-s: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+    --scroll-fade-e: var(--scroll-fade-size, min(12%, calc(var(--spacing) * 10)));
+  }
+}
+
+@utility scroll-fade-* {
+  --scroll-fade-size: calc(var(--spacing) * --value(integer));
+}
+
+/*
  * Restore v3 base defaults that changed in v4.
  * - border color: v4 uses currentColor, v3 used gray-200
  *   (we override with border-border in @layer base, so this is fine)

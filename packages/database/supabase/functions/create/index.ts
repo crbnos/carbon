@@ -440,6 +440,9 @@ serve(async (req: Request) => {
 
     case "purchaseOrderFromJob": {
       const { jobId, purchaseOrdersBySupplierId } = payload;
+      // The PO each supplier's lines landed on (created or chosen), so a caller
+      // releasing several jobs can put them on one PO per supplier.
+      const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
       logger.info({ type, jobId, companyId, userId });
       try {
@@ -488,7 +491,7 @@ serve(async (req: Request) => {
               .from("purchaseOrderLine")
               .select("*")
               .eq("jobId", jobId)
-              .eq(
+              .in(
                 "jobOperationId",
                 outsideOperations.map((d) => d.id)
               ),
@@ -736,6 +739,8 @@ serve(async (req: Request) => {
                 ]);
               }
 
+              purchaseOrderIdsBySupplierId[supplier] = purchaseOrderId;
+
               const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
                 [];
 
@@ -796,7 +801,7 @@ serve(async (req: Request) => {
         return errorResponse(err, 500);
       }
 
-      return jsonResponse({ success: true });
+      return jsonResponse({ success: true, purchaseOrderIdsBySupplierId });
     }
     case "receiptDefault": {
       const { locationId } = payload;
