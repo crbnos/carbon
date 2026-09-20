@@ -1256,10 +1256,10 @@ export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
   ability: {
-    // Name is not stored — it derives from the linked process. Only the
-    // recertification cadence is editable on an ability.
-    name?: string;
-    recertifyEveryDays?: number | null;
+    // Name is not stored — it derives from the linked process; the ability
+    // table has no name column. The recertification cadence is the only
+    // editable field, so it is the sole (required) member here.
+    recertifyEveryDays: number | null;
   }
 ) {
   return client.from("ability").update(ability).eq("id", id);
