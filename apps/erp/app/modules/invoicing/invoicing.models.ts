@@ -440,12 +440,6 @@ export const cardTransactionStatus = ["Draft", "Posted", "Voided"] as const;
 export type CardTransactionType = (typeof cardTransactionType)[number];
 export type CardTransactionStatusType = (typeof cardTransactionStatus)[number];
 
-export function isCardTransactionLocked(
-  status: string | null | undefined
-): boolean {
-  return status !== null && status !== undefined && status !== "Draft";
-}
-
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
 // the refined validator below with `.innerType()` is brittle (it breaks whenever

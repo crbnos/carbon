@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Czy na pewno chcesz usunąć drukarkę „{0}\"? Wszystkie przypisania odwołujące się do tej drukarki zostaną wyczyszczone. Tej operacji nie można cofnąć."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Czy na pewno chcesz usunąć projekt: {0}? Zostanie on dezaktywowany i ukryty z listy aktywnych."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "Czy na pewno chcesz unieważnić {0}? To zaksięguje odwracający zapis księgowy i nie będzie możliwe do cofnięcia."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Czy na pewno chcesz unieważnić to memo? Spowoduje to wycofanie jego wpisów księgowych i zastosowań. Nie można tego cofnąć."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Proces utworzony"
 
 msgid "Created project"
-msgstr ""
+msgstr "Projekt został utworzony"
 
 msgid "Created required action"
 msgstr "Utworzono wymaganą akcję"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "Usuń proces"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Usuń projekt"
 
 msgid "Delete Purchase Invoice"
 msgstr "Usuń Fakturę Zakupu"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Edytuj Ilość Produkcji"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Edytuj projekt"
 
 msgid "Edit purchase order line type"
 msgstr "Edytuj typ linii zamówienia zakupu"
@@ -7364,7 +7364,7 @@ msgstr "Nie udało się utworzyć procesu: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Nie udało się utworzyć projektu: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Nowy proces"
 
 msgid "New Project"
-msgstr ""
+msgstr "Nowy projekt"
 
 msgid "New Quality Document"
 msgstr "Nowy Dokument Jakości"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "Nie skonfigurowano"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "Nie skonfigurowane"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Projekt"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Nazwa projektu"
 
 msgid "Project owner"
 msgstr "Właściciel projektu"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Prognozy"
 
 msgid "Projects"
-msgstr ""
+msgstr "Projekty"
 
 msgid "Promised Date"
 msgstr "Data potwierdzona"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Unieważnij {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Unieważnij transakcję kartą"
 
 msgid "Void Invoice"
 msgstr "Unieważnij fakturę"

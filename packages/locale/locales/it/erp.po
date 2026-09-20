@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Sei sicuro di voler eliminare la stampante \"{0}\"? Tutti gli incarichi che fanno riferimento a questa stampante verranno cancellati. Questa azione non può essere annullata."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Sei sicuro di voler eliminare il progetto: {0}? Verrà disattivato e nascosto dagli elenchi attivi."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "Sei sicuro di voler inviare un invito a questo utente?"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "Sei sicuro di voler stornare {0}? Questo registra una riga di registrazione di storno e non può essere annullato."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Sei sicuro di voler stornare questa nota? Questo stornerà le registrazioni contabili e le applicazioni. Questa operazione non può essere annullata."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Processo creato"
 
 msgid "Created project"
-msgstr ""
+msgstr "Progetto creato"
 
 msgid "Created required action"
 msgstr "Azione richiesta creata"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "Elimina Processo"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Elimina Progetto"
 
 msgid "Delete Purchase Invoice"
 msgstr "Elimina Fattura di Acquisto"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Modifica Quantità Produzione"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Modifica Progetto"
 
 msgid "Edit purchase order line type"
 msgstr "Modifica tipo di riga ordine di acquisto"
@@ -7364,7 +7364,7 @@ msgstr "Impossibile creare il processo: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Impossibile creare il progetto: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Nuovo Processo"
 
 msgid "New Project"
-msgstr ""
+msgstr "Nuovo Progetto"
 
 msgid "New Quality Document"
 msgstr "Nuovo Documento di Qualità"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "Non configurato"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "Non Configurato"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza ordini di produzione per coprire la quantità"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Progetto"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Nome Progetto"
 
 msgid "Project owner"
 msgstr "Responsabile del progetto"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Proiezioni"
 
 msgid "Projects"
-msgstr ""
+msgstr "Progetti"
 
 msgid "Promised Date"
 msgstr "Data Promessa"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Storna {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Storna Transazione Carta"
 
 msgid "Void Invoice"
 msgstr "Storna fattura"

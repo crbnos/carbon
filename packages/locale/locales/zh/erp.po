@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "你确定要删除打印机\"{0}\"吗？任何引用此打印机的分配都将被清除。此操作无法撤销。"
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "确定要删除项目：{0}？项目将被停用并从活跃列表中隐藏。"
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "你确定要向此用户发送邀请吗？"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "确定要作废 {0}？这将过账一条反向分录，无法撤销。"
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "你确定要作废此备忘录吗？这将反转其会计分录和应用。此操作无法撤销。"
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "已创建流程"
 
 msgid "Created project"
-msgstr ""
+msgstr "项目已创建"
 
 msgid "Created required action"
 msgstr "已创建必需操作"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "删除流程"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "删除项目"
 
 msgid "Delete Purchase Invoice"
 msgstr "删除采购发票"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "编辑生产数量"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "编辑项目"
 
 msgid "Edit purchase order line type"
 msgstr "编辑采购订单行类型"
@@ -7364,7 +7364,7 @@ msgstr "创建流程失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "项目创建失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "新流程"
 
 msgid "New Project"
-msgstr ""
+msgstr "新项目"
 
 msgid "New Quality Document"
 msgstr "新质量文件"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "未配置"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "未配置"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "项目"
 
 msgid "Project Name"
-msgstr ""
+msgstr "项目名称"
 
 msgid "Project owner"
 msgstr "项目负责人"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "预测"
 
 msgid "Projects"
-msgstr ""
+msgstr "项目"
 
 msgid "Promised Date"
 msgstr "承诺日期"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "作废 {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "作废卡交易"
 
 msgid "Void Invoice"
 msgstr "作废发票"

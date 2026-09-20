@@ -2,7 +2,9 @@ import { createHash } from "node:crypto";
 import type { KyselyTx } from "@carbon/database/client";
 import {
   type CardChargeSource,
-  loadCardChargeSources
+  chargeLineDescription,
+  loadCardChargeSources,
+  validateChargeAccountMapping
 } from "../../../core/card-charge-source";
 import { ChargeSyncerBase } from "../../../core/charge-syncer";
 import {
@@ -21,8 +23,6 @@ import {
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
 import {
-  CHARGE_CREDIT_PROVIDERS,
-  JournalEntrySyncError,
   type PostingSyncSettings,
   resolvePostingSyncSettings
 } from "../../../core/posting";
@@ -127,44 +127,14 @@ export function mapCardTransactionToQboPurchase(args: {
 }): QboCreatePayload<Qbo.Purchase> {
   const { charge, costing } = args;
 
-  if (costing.lines.length === 0) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      message:
-        "Cannot sync card charge: no posted Card Transaction journal lines found. Post the card transaction with accounting enabled, then retry.",
-      metadata: { cardTransactionId: charge.id }
-    });
-  }
-
-  const unmapped = new Set<string>();
-  const lineIdsWithoutAccount: string[] = [];
-  for (const line of costing.lines) {
-    if (!line.accountId) {
-      lineIdsWithoutAccount.push(line.id);
-    } else if (!args.accountRefsById.has(line.accountId)) {
-      unmapped.add(line.accountId);
-    }
-  }
-  const cardAccountRef = args.accountRefsById.get(costing.cardAccountId);
-  if (!cardAccountRef) unmapped.add(costing.cardAccountId);
-  if (
-    unmapped.size > 0 ||
-    lineIdsWithoutAccount.length > 0 ||
-    !cardAccountRef
-  ) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      message:
-        "Cannot sync card charge: one or more accounts are not mapped to QuickBooks Online. Map the accounts under the integration's Accounts tab, then retry.",
-      metadata: {
-        cardTransactionId: charge.id,
-        unmappedAccountIds: [...unmapped],
-        lineIdsWithoutAccount
-      }
-    });
-  }
+  validateChargeAccountMapping({
+    charge,
+    costing,
+    accountsById: args.accountRefsById,
+    providerName: "QuickBooks Online"
+  });
+  // Presence asserted by the guard above.
+  const cardAccountRef = args.accountRefsById.get(costing.cardAccountId)!;
 
   const transactionLines = toTransactionCurrencyLines(costing.lines, {
     exchangeRate: costing.exchangeRate,
@@ -200,11 +170,7 @@ export function mapCardTransactionToQboPurchase(args: {
         }
       }
     }
-    // Merchant identity rides here on the charge line: card spend now shares one
-    // catch-all vendor, so without this the pushed charge would lose which
-    // merchant it was at (the vendor no longer carries it).
-    const description =
-      charge.merchantName ?? line.description ?? charge.memo ?? undefined;
+    const description = chargeLineDescription(charge, line);
     return {
       // Already rounded at the document boundary by toTransactionCurrencyLines;
       // a refund flips the credit-signed line to its positive magnitude
@@ -479,12 +445,6 @@ export class QboChargeSyncer extends ChargeSyncerBase<
     }
     if (local.type !== "Charge" && local.type !== "Credit") {
       return `Card transaction type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
-    }
-    if (
-      local.type === "Credit" &&
-      !CHARGE_CREDIT_PROVIDERS.has(this.provider.id)
-    ) {
-      return "QuickBooks Online card credits (merchant refunds) sync as journal entries until the Credit purchase is verified";
     }
     if (!local.supplierId) {
       return "Card charge has no merchant supplier — it syncs as a journal entry";

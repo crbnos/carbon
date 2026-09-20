@@ -17,6 +17,14 @@
 export const RAMP_COST_CENTER_FIELD_ID = "carbon-cost-center";
 
 /**
+ * Ramp caps a `POST /accounting/field-options` batch at 500 options. Distinct
+ * from `RAMP_ACCOUNTS_BATCH_SIZE` (the `POST /accounting/accounts` gl_accounts
+ * cap) even though both currently sit at 500 — the field-option chunkers
+ * (`cost-centers.ts`, `projects.ts`) must not be coupled to the accounts cap.
+ */
+export const RAMP_FIELD_OPTIONS_BATCH_SIZE = 500;
+
+/**
  * The remote id Carbon creates the custom PROJECT field with. A second custom
  * SINGLE_CHOICE field parallel to the cost-center one, so a card holder can pick
  * a Carbon project on a transaction independently of its cost center. Its

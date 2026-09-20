@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import { RAMP_SCOPES } from "../scopes";
 import type { RampCredentials } from "./models";
 import {
   RampBillSchema,
@@ -14,35 +15,10 @@ import {
 export const RAMP_PRODUCTION_HOST = "https://api.ramp.com";
 export const RAMP_SANDBOX_HOST = "https://demo-api.ramp.com";
 
-/**
- * OAuth scopes requested for the client-credentials token (spec §Auth). Kept as
- * an array so it reads cleanly; sent space-joined on the token request.
- */
-export const RAMP_SCOPES = [
-  "accounting:read",
-  "accounting:write",
-  "transactions:read",
-  "bills:read",
-  "bills:write",
-  "vendors:read",
-  "vendors:write",
-  "reimbursements:read",
-  "purchase_orders:read",
-  "purchase_orders:write",
-  "transfers:read",
-  "statements:read",
-  "cashbacks:read",
-  "receipts:read",
-  "entities:read",
-  "business:read"
-] as const;
-
-/**
- * Scopes requested in the OAuth authorization-code (Connect) flow. Same resource
- * scopes as client-credentials, plus `offline_access` so Ramp returns a refresh
- * token (the app must also have the Refresh Token grant enabled).
- */
-export const RAMP_OAUTH_SCOPES = [...RAMP_SCOPES, "offline_access"] as const;
+// The canonical scope lists live in the browser-safe `../scopes` module so the
+// client-bundled `config.tsx` can share them without importing this file (which
+// pulls `node:crypto`). Re-exported here to preserve the public contract.
+export { RAMP_OAUTH_SCOPES, RAMP_SCOPES } from "../scopes";
 
 /** Ramp OAuth authorize endpoints (production / sandbox). */
 export const RAMP_PRODUCTION_AUTHORIZE_URL = `${RAMP_PRODUCTION_HOST}/v1/authorize`;
@@ -580,12 +556,6 @@ export class RampClient {
     return this.request<T>("POST", "/developer/v1/accounting/syncs", { body });
   }
 
-  postReadyToSync<T = unknown>(body: unknown): Promise<T> {
-    return this.request<T>("POST", "/developer/v1/accounting/ready-to-sync", {
-      body
-    });
-  }
-
   // ---- Vendors (spend vendors — the id a PO/bill `vendor_id` references) ----
 
   /**
@@ -645,25 +615,6 @@ export class RampClient {
       body,
       idempotencyKey
     });
-  }
-
-  submitDraftBill<T = unknown>(
-    id: string,
-    idempotencyKey?: string
-  ): Promise<T> {
-    return this.request<T>("POST", `/developer/v1/bills/drafts/${id}/submit`, {
-      idempotencyKey
-    });
-  }
-
-  /**
-   * Retract a pushed bill on Carbon-side settlement. Ramp bills have NO
-   * `/archive` endpoint (only purchase orders do) — `POST /bills/{id}/archive`
-   * 404s. Bills are retracted with `DELETE /bills/{id}`. A bill already
-   * approved/paid in Ramp may refuse deletion; errors do not prove archival.
-   */
-  archiveBill<T = unknown>(id: string): Promise<T> {
-    return this.request<T>("DELETE", `/developer/v1/bills/${id}`);
   }
 
   // ---- Webhooks ----

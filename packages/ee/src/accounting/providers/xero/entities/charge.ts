@@ -3,7 +3,9 @@ import type { KyselyTx } from "@carbon/database/client";
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import {
   type CardChargeSource,
-  loadCardChargeSources
+  chargeLineDescription,
+  loadCardChargeSources,
+  validateChargeAccountMapping
 } from "../../../core/card-charge-source";
 import { ChargeSyncerBase } from "../../../core/charge-syncer";
 import {
@@ -155,44 +157,14 @@ export function mapCardTransactionToXeroBankTransaction(args: {
 }): XeroBankTransactionWrite {
   const { charge, costing } = args;
 
-  if (costing.lines.length === 0) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      message:
-        "Cannot sync card charge: no posted Card Transaction journal lines found. Post the card transaction with accounting enabled, then retry.",
-      metadata: { cardTransactionId: charge.id }
-    });
-  }
-
-  const unmapped = new Set<string>();
-  const lineIdsWithoutAccount: string[] = [];
-  for (const line of costing.lines) {
-    if (!line.accountId) {
-      lineIdsWithoutAccount.push(line.id);
-    } else if (!args.accountCodesById.has(line.accountId)) {
-      unmapped.add(line.accountId);
-    }
-  }
-  const cardAccountCode = args.accountCodesById.get(costing.cardAccountId);
-  if (!cardAccountCode) unmapped.add(costing.cardAccountId);
-  if (
-    unmapped.size > 0 ||
-    lineIdsWithoutAccount.length > 0 ||
-    !cardAccountCode
-  ) {
-    throw new JournalEntrySyncError({
-      errorCode: "UNMAPPED_ACCOUNTS",
-      warning: true,
-      message:
-        "Cannot sync card charge: one or more accounts are not mapped to Xero. Map the accounts under the integration's Accounts tab, then retry.",
-      metadata: {
-        cardTransactionId: charge.id,
-        unmappedAccountIds: [...unmapped],
-        lineIdsWithoutAccount
-      }
-    });
-  }
+  validateChargeAccountMapping({
+    charge,
+    costing,
+    accountsById: args.accountCodesById,
+    providerName: "Xero"
+  });
+  // Presence asserted by the guard above.
+  const cardAccountCode = args.accountCodesById.get(costing.cardAccountId)!;
 
   const transactionLines = toTransactionCurrencyLines(costing.lines, {
     exchangeRate: costing.exchangeRate,
@@ -209,11 +181,7 @@ export function mapCardTransactionToXeroBankTransaction(args: {
   const lineItems: Xero.BankTransactionLineItem[] = transactionLines.map(
     (line) => {
       const tracking = buildXeroLineTracking(line, args.dimensions);
-      // Merchant identity rides here on the charge line: card spend now shares
-      // one catch-all vendor, so without this the pushed charge would lose which
-      // merchant it was at (the vendor no longer carries it).
-      const description =
-        charge.merchantName ?? line.description ?? charge.memo ?? undefined;
+      const description = chargeLineDescription(charge, line);
       return {
         ...(description ? { Description: description } : {}),
         Quantity: 1,

@@ -163,9 +163,12 @@ export abstract class ChargeSyncerBase<
 
   async pushBatchToAccounting(entityIds: string[]): Promise<BatchSyncResult> {
     const results: SyncResult[] = [];
+    // Tally per UNIQUE entity: a caller passing duplicate ids must not
+    // double-count success/skipped/error. The no-duplicate case is unchanged.
+    const ids = [...new Set(entityIds)];
     if (!this.config.enabled) {
       results.push(
-        ...entityIds.map(
+        ...ids.map(
           (localId): SyncResult => ({
             status: "skipped",
             action: "none",
@@ -174,9 +177,8 @@ export abstract class ChargeSyncerBase<
           })
         )
       );
-    } else if (entityIds.length > 0) {
+    } else if (ids.length > 0) {
       try {
-        const ids = [...new Set(entityIds)];
         const [localEntities, mappings] = await Promise.all([
           this.fetchLocalBatch(ids),
           this.mappingService.getByEntities(
@@ -186,7 +188,7 @@ export abstract class ChargeSyncerBase<
           )
         ]);
         const completed = new Map<string, SyncResult>();
-        for (const id of entityIds) {
+        for (const id of ids) {
           const result =
             completed.get(id) ??
             (await this.pushLoadedToAccounting(
@@ -198,7 +200,7 @@ export abstract class ChargeSyncerBase<
           results.push(result);
         }
       } catch (error) {
-        results.push(...entityIds.map((id) => this.failedPush(id, error)));
+        results.push(...ids.map((id) => this.failedPush(id, error)));
       }
     }
     return {

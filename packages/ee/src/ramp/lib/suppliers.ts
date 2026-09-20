@@ -250,29 +250,11 @@ export async function resolveEmployeeSupplier(
   if (mapped) return mapped;
 
   // 2. Ensure the "Employee" supplier type exists (create once per company).
-  const existingType = await serviceRole
-    .from("supplierType")
-    .select("id")
-    .eq("companyId", companyId)
-    .eq("name", "Employee")
-    .maybeSingle();
-
-  let supplierTypeId = existingType.data?.id ?? null;
-  if (!supplierTypeId) {
-    const createdType = await serviceRole
-      .from("supplierType")
-      .insert([{ name: "Employee", companyId, createdBy: "system" }])
-      .select("id")
-      .single();
-    if (createdType.error || !createdType.data) {
-      throw new Error(
-        `Failed to create the Employee supplier type: ${
-          createdType.error?.message ?? "unknown error"
-        }`
-      );
-    }
-    supplierTypeId = createdType.data.id;
-  }
+  const supplierTypeId = await ensureSupplierTypeId(
+    serviceRole,
+    companyId,
+    "Employee"
+  );
 
   // 3. Build a human name: "<First> <Last> (<email>)", degrading gracefully.
   const fullName = [rampUser.first_name, rampUser.last_name]

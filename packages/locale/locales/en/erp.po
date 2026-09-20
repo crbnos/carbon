@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr "Are you sure you want to delete the project: {0}? This cannot be undone."
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""

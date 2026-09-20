@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "¿Estás seguro de que deseas eliminar la impresora \"{0}\"? Se borrarán todas las asignaciones que hagan referencia a esta impresora. Esta acción no se puede deshacer."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "¿Estás seguro de que deseas eliminar el proyecto: {0}? Se desactivará y se ocultará de las listas activas."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "¿Estás seguro de que deseas enviar una invitación a este usuario?"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "¿Estás seguro de que deseas anular {0}? Esto contabilizará un apunte de reversión y no se puede deshacer."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "¿Está seguro de que desea Anular este memorándum? Esto revertirá sus Contabilizaciones y aplicaciones de Contabilidad. Esto no se puede deshacer."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Proceso creado"
 
 msgid "Created project"
-msgstr ""
+msgstr "Proyecto creado"
 
 msgid "Created required action"
 msgstr "Acción requerida creada"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "Eliminar Proceso"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Eliminar Proyecto"
 
 msgid "Delete Purchase Invoice"
 msgstr "Eliminar Factura de Compra"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Editar Cantidad de Producción"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Editar Proyecto"
 
 msgid "Edit purchase order line type"
 msgstr "Editar tipo de línea de orden de compra"
@@ -7364,7 +7364,7 @@ msgstr "Error al crear proceso: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Error al crear proyecto: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Nuevo Proceso"
 
 msgid "New Project"
-msgstr ""
+msgstr "Nuevo Proyecto"
 
 msgid "New Quality Document"
 msgstr "Nuevo Documento de Calidad"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "No configurado"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "No configurado"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "No hay suficientes órdenes de trabajo para cubrir la cantidad"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Proyecto"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Nombre del Proyecto"
 
 msgid "Project owner"
 msgstr "Propietario del proyecto"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Proyecciones"
 
 msgid "Projects"
-msgstr ""
+msgstr "Proyectos"
 
 msgid "Promised Date"
 msgstr "Fecha Prometida"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Anular {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Anular Transacción de Tarjeta"
 
 msgid "Void Invoice"
 msgstr "Anular Factura"

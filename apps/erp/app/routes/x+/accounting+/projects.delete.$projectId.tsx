@@ -75,7 +75,7 @@ export default function DeleteProjectRoute() {
     <ConfirmDelete
       action={path.to.deleteProject(projectId)}
       name={project.name}
-      text={t`Are you sure you want to delete the project: ${project.name}? This cannot be undone.`}
+      text={t`Are you sure you want to delete the project: ${project.name}? It will be deactivated and hidden from active lists.`}
       onCancel={onCancel}
     />
   );

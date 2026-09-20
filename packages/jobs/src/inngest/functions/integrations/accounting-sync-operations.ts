@@ -392,10 +392,13 @@ export async function loadCardTransactionPolicyInputs(
   }
   for (const journalId of args.journalIds) {
     const linkedCardId = cardIdByJournalId.get(journalId);
+    const fallbackRow = linkedCardId
+      ? undefined
+      : rows.find((row) => row.journalId === journalId);
     const input = linkedCardId
       ? inputById.get(linkedCardId)
-      : rows.find((row) => row.journalId === journalId)
-        ? inputById.get(rows.find((row) => row.journalId === journalId)!.id)
+      : fallbackRow
+        ? inputById.get(fallbackRow.id)
         : undefined;
     if (input) result.set(journalId, input);
   }

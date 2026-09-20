@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "क्या आप प्रिंटर \"{0}\" को हटाना चाहते हैं? इस प्रिंटर की सभी असाइनमेंट हटा दी जाएंगी। इसे पूर्ववत नहीं किया जा सकता।"
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "क्या आप सुनिश्चित हैं कि आप परियोजना को हटाना चाहते हैं: {0}? इसे निष्क्रिय कर दिया जाएगा और सूचियों से छिपा दिया जाएगा।"
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "क्या आप सुनिश्चित हैं कि आप {0} को अमान्य करना चाहते हैं? यह एक उलट जर्नल प्रविष्टि पोस्ट करता है और इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "क्या आप निश्चित हैं कि आप इस मेमो को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और अनुप्रयोगों को उलट देगा। यह पूर्ववत नहीं किया जा सकता।"
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "प्रक्रिया बनाई गई"
 
 msgid "Created project"
-msgstr ""
+msgstr "परियोजना बना दी गई"
 
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "प्रक्रिया हटाएं"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "परियोजना हटाएँ"
 
 msgid "Delete Purchase Invoice"
 msgstr "क्रय चालान हटाएँ"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "उत्पादन मात्रा संपादित करें"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "परियोजना संपादित करें"
 
 msgid "Edit purchase order line type"
 msgstr "क्रय आदेश लाइन प्रकार संपादित करें"
@@ -7364,7 +7364,7 @@ msgstr "प्रक्रिया बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "परियोजना बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "नई प्रक्रिया"
 
 msgid "New Project"
-msgstr ""
+msgstr "नई परियोजना"
 
 msgid "New Quality Document"
 msgstr "नया गुणवत्ता दस्तावेज़"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "प्रोजेक्ट"
 
 msgid "Project Name"
-msgstr ""
+msgstr "परियोजना का नाम"
 
 msgid "Project owner"
 msgstr "परियोजना स्वामी"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "अनुमान"
 
 msgid "Projects"
-msgstr ""
+msgstr "परियोजनाएँ"
 
 msgid "Promised Date"
 msgstr "वादा की गई तिथि"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "अमान्य करें {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "कार्ड लेनदेन को अमान्य करें"
 
 msgid "Void Invoice"
 msgstr "चालान अमान्य करें"

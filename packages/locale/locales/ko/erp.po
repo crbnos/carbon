@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "프린터 \"{0}\"을(를) 삭제하시겠습니까? 이 프린터를 참조하는 모든 배정이 해제됩니다. 이 작업은 되돌릴 수 없습니다."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "{0} 프로젝트를 삭제하시겠습니까? 프로젝트가 비활성화되어 활성 목록에서 숨겨집니다."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "이 사용자에게 초대를 보내시겠습니까?"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "{0}을(를) 무효 처리하시겠습니까? 역기입 분개가 전기되며 취소할 수 없습니다."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "이 메모를 무효 처리하시겠습니까? 회계 항목 및 적용 내역이 역변환됩니다. 이 작업은 되돌릴 수 없습니다."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "공정 생성됨"
 
 msgid "Created project"
-msgstr ""
+msgstr "프로젝트 생성됨"
 
 msgid "Created required action"
 msgstr "필수 조치 생성됨"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "공정 삭제"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "프로젝트 삭제"
 
 msgid "Delete Purchase Invoice"
 msgstr "매입 송장 삭제"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "생산 수량 편집"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "프로젝트 편집"
 
 msgid "Edit purchase order line type"
 msgstr "발주서 라인 유형 편집"
@@ -7364,7 +7364,7 @@ msgstr "공정 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "프로젝트 생성 실패: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "새 공정"
 
 msgid "New Project"
-msgstr ""
+msgstr "새 프로젝트"
 
 msgid "New Quality Document"
 msgstr "새 품질 문서"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "구성되지 않음"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "미설정"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "프로젝트"
 
 msgid "Project Name"
-msgstr ""
+msgstr "프로젝트 이름"
 
 msgid "Project owner"
 msgstr "프로젝트 책임자"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "예측"
 
 msgid "Projects"
-msgstr ""
+msgstr "프로젝트"
 
 msgid "Promised Date"
 msgstr "약속일"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "{0} 무효 처리"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "카드 거래 무효 처리"
 
 msgid "Void Invoice"
 msgstr "송장 무효 처리"

@@ -15,6 +15,7 @@ import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
   isRampInboundFamilyEnabled,
+  type RampInboundFamily,
   rampEntityQuery
 } from "./ramp-sync-policy";
 import {
@@ -156,6 +157,11 @@ async function buildTransactionLines(
       });
     }
   } else {
+    // Fallback for a transaction Ramp returned with no `line_items[]`. Real Ramp
+    // data carries coding on `line_items[].accounting_field_selections[]`; the
+    // top-level `accounting_field_selections` is always `[]` (verified 2026-08-28),
+    // so this path fails closed as `uncoded` rather than silently posting a
+    // miscoded charge. Kept as a defensive read in case Ramp ever populates it.
     const { accountId, costCenterId, projectId } = codeSelections(
       tx.accounting_field_selections
     );
@@ -392,155 +398,92 @@ async function reconfirmMapped(
   return { successful, failed };
 }
 
-export async function syncRampCardTransactions(
+/** Fields every card-family list row shares — enough to scope and map it. */
+type RampCardListItem = { id: string; entity_id?: string | null };
+
+/**
+ * Whether a family may run, plus the two accounts every produced
+ * `cardTransaction` needs. `proceed: false` is a silent (or self-logged) skip.
+ */
+type CardFamilyGate =
+  | { proceed: false }
+  | { proceed: true; cardAccountId: string; offsetAccountId: string | null };
+
+/** The per-family differences the shared driver is parameterized by. */
+type CardFamilyConfig<TItem extends RampCardListItem> = {
+  /** Sync toggle key (`metadata.sync.pull*`). */
+  family: RampInboundFamily;
+  /** Human name used in the drain-failure log line. */
+  label: string;
+  /** Ramp confirm `sync_type` for this family. */
+  syncType: string;
+  /** Required-account gate; resolves the card + offset accounts. */
+  gate: (
+    ctx: RampSyncContext,
+    cardLiabilityAccountId: string | undefined
+  ) => CardFamilyGate;
+  /** The family's SYNC_READY listing. */
+  list: (
+    ramp: RampClient,
+    entityId: string | undefined
+  ) => AsyncIterable<unknown[]>;
+  /** Build (and post) one row into a `cardTransaction`. */
+  buildOutcome: (
+    ctx: RampSyncContext,
+    item: TItem,
+    ramp: RampClient,
+    accounts: { cardAccountId: string; offsetAccountId: string | null }
+  ) => Promise<{ ok: SyncItem } | { fail: FailItem }>;
+};
+
+/**
+ * The shared skeleton for every card family: page loop → mapping load → mapped
+ * short-circuit → per-item build/post → reconfirm-outside-drain → confirm →
+ * result tally. Per-family behavior comes entirely from `config`; failure
+ * isolation, cursor/mapping idempotency, and the confirm contract are identical
+ * across all three families and live here once.
+ */
+async function syncRampCardFamily<TItem extends RampCardListItem>(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined,
-  cardLiabilityAccountId: string | undefined
+  cardLiabilityAccountId: string | undefined,
+  config: CardFamilyConfig<TItem>
 ): Promise<FamilyResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("transactions", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled(config.family, metadata.sync)) {
     return result;
   }
-  if (!cardLiabilityAccountId) {
-    console.warn(
-      `[RAMP SYNC] ${companyId}: no cardLiabilityAccountId configured — skipping card transactions`
-    );
+  const gate = config.gate(ctx, cardLiabilityAccountId);
+  if (!gate.proceed) {
     return result;
   }
+  const accounts = {
+    cardAccountId: gate.cardAccountId,
+    offsetAccountId: gate.offsetAccountId
+  };
 
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
   const mapped: Array<{ rampId: string; entityId: string }> = [];
 
   try {
-    for await (const page of ramp.listTransactions({
-      sync_status: "SYNC_READY",
-      ...rampEntityQuery(entityId)
-    })) {
+    for await (const page of config.list(ramp, entityId)) {
+      const items = page as TItem[];
       const mappings = await loadCardMappings(
         ctx,
-        page.map((tx) => tx.id)
+        items.map((item) => item.id)
       );
-      for (const tx of page as RampTransaction[]) {
-        if (!isRampEntityInScope(entityId, tx.entity_id)) continue;
-        const existing = mappings.get(tx.id);
+      for (const item of items) {
+        if (!isRampEntityInScope(entityId, item.entity_id)) continue;
+        const existing = mappings.get(item.id);
         if (existing && existing.status !== "Draft") {
-          mapped.push({ rampId: tx.id, entityId: existing.entityId });
+          mapped.push({ rampId: item.id, entityId: existing.entityId });
           continue;
         }
 
-        const currencyCode =
-          tx.entity_amount?.currency ??
-          tx.currency_code ??
-          tx.currency ??
-          ctx.baseCurrency;
-        let decimals: number;
-        try {
-          decimals = await getRampCurrencyDecimals(ctx, currencyCode);
-        } catch (error) {
-          failed.push({
-            id: tx.id,
-            message: error instanceof Error ? error.message : String(error)
-          });
-          continue;
-        }
-        // Prefer `entity_amount.value` (signed integer minor units / cents)
-        // — the non-deprecated settlement amount per the Ramp OpenAPI spec.
-        // The top-level `amount` is DEPRECATED and a major-unit (dollar)
-        // float, so reading it as minor units understated every charge 100×.
-        // Fall back to it only when entity_amount is absent (rare: no valid
-        // settlement currency). Verified 2026-08-28 against the spec.
-        const normalizedAmount = normalizeRampCardTransactionAmount({
-          entityAmount: tx.entity_amount,
-          deprecatedMajorAmount: tx.amount,
-          currencyCode,
-          decimals
-        });
-        if (!normalizedAmount.ok) {
-          failed.push({ id: tx.id, message: normalizedAmount.error });
-          continue;
-        }
-        const signedAmount = normalizedAmount.value;
-        const isCredit =
-          signedAmount < 0 || Boolean(tx.original_transaction_id);
-        const headerAmount = Math.abs(signedAmount);
-
-        const built = await buildTransactionLines(
-          ctx,
-          tx,
-          currencyCode,
-          decimals,
-          headerAmount
-        );
-        if ("error" in built) {
-          failed.push({ id: tx.id, message: built.error });
-          continue;
-        }
-
-        const transactionDate = (
-          tx.user_transaction_time ??
-          tx.accounting_date ??
-          tx.settlement_date
-        )?.slice(0, 10);
-        if (!transactionDate) {
-          failed.push({
-            id: tx.id,
-            message: "Transaction has no usable date"
-          });
-          continue;
-        }
-
-        const holder = tx.card_holder
-          ? [tx.card_holder.first_name, tx.card_holder.last_name]
-              .filter(Boolean)
-              .join(" ") || null
-          : null;
-
-        // The merchant becomes a Carbon supplier so the charge can carry a
-        // vendor to the accounting provider. A transaction with no merchant
-        // name is still posted (supplierId null) — the charge syncer then
-        // leaves it as a journal entry with a visible reason.
-        let supplierId: string | null = null;
-        if (tx.merchant_name) {
-          try {
-            supplierId = await resolveMerchantSupplier(
-              ctx.client,
-              ctx.db,
-              ctx.companyId,
-              { id: tx.merchant_id ?? null, name: tx.merchant_name }
-            );
-          } catch (supplierError) {
-            failed.push({
-              id: tx.id,
-              message: `Could not resolve merchant "${tx.merchant_name}" to a supplier: ${
-                supplierError instanceof Error
-                  ? supplierError.message
-                  : String(supplierError)
-              }`
-            });
-            continue;
-          }
-        }
-
-        const outcome = await createAndPostTransaction(ctx, {
-          rampId: tx.id,
-          type: isCredit ? "Credit" : "Charge",
-          amount: headerAmount,
-          currencyCode,
-          transactionDate,
-          postingDate: tx.accounting_date?.slice(0, 10) ?? null,
-          cardAccountId: cardLiabilityAccountId,
-          offsetAccountId: null,
-          merchantName: tx.merchant_name ?? null,
-          supplierId,
-          cardHolderName: holder,
-          memo: tx.memo ?? null,
-          lines: built.lines,
-          receiptIds: tx.receipts ?? [],
-          getReceipt: (id) => ramp.getReceipt(id)
-        });
+        const outcome = await config.buildOutcome(ctx, item, ramp, accounts);
         if ("ok" in outcome) {
           successful.push(outcome.ok);
           if (existing) result.reconfirmed++;
@@ -549,7 +492,7 @@ export async function syncRampCardTransactions(
     }
   } catch (familyError) {
     console.error(
-      `[RAMP SYNC] ${companyId}: card transactions drain failed`,
+      `[RAMP SYNC] ${companyId}: ${config.label} drain failed`,
       familyError
     );
     recordRampFamilyError(result, familyError);
@@ -561,13 +504,13 @@ export async function syncRampCardTransactions(
 
   try {
     await confirmSyncs(client, companyId, {
-      syncType: "TRANSACTION_SYNC",
+      syncType: config.syncType,
       successful,
       failed
     });
   } catch (confirmError) {
     console.error(
-      `[RAMP SYNC] ${companyId}: TRANSACTION_SYNC confirm failed`,
+      `[RAMP SYNC] ${companyId}: ${config.syncType} confirm failed`,
       confirmError
     );
     result.confirmError =
@@ -580,6 +523,213 @@ export async function syncRampCardTransactions(
   result.created = successful.length - result.reconfirmed;
   result.failed += failed.length;
   return result;
+}
+
+/**
+ * Build one `cardTransaction` from a Ramp card transaction — the family with
+ * coded lines, a merchant supplier, and settlement-amount handling.
+ */
+async function buildTransactionOutcome(
+  ctx: RampSyncContext,
+  tx: RampTransaction,
+  ramp: RampClient,
+  accounts: { cardAccountId: string; offsetAccountId: string | null }
+): Promise<{ ok: SyncItem } | { fail: FailItem }> {
+  const currencyCode =
+    tx.entity_amount?.currency ??
+    tx.currency_code ??
+    tx.currency ??
+    ctx.baseCurrency;
+  let decimals: number;
+  try {
+    decimals = await getRampCurrencyDecimals(ctx, currencyCode);
+  } catch (error) {
+    return {
+      fail: {
+        id: tx.id,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+  // Prefer `entity_amount.value` (signed integer minor units / cents)
+  // — the non-deprecated settlement amount per the Ramp OpenAPI spec.
+  // The top-level `amount` is DEPRECATED and a major-unit (dollar)
+  // float, so reading it as minor units understated every charge 100×.
+  // Fall back to it only when entity_amount is absent (rare: no valid
+  // settlement currency). Verified 2026-08-28 against the spec.
+  const normalizedAmount = normalizeRampCardTransactionAmount({
+    entityAmount: tx.entity_amount,
+    deprecatedMajorAmount: tx.amount,
+    currencyCode,
+    decimals
+  });
+  if (!normalizedAmount.ok) {
+    return { fail: { id: tx.id, message: normalizedAmount.error } };
+  }
+  const signedAmount = normalizedAmount.value;
+  const isCredit = signedAmount < 0 || Boolean(tx.original_transaction_id);
+  const headerAmount = Math.abs(signedAmount);
+
+  const built = await buildTransactionLines(
+    ctx,
+    tx,
+    currencyCode,
+    decimals,
+    headerAmount
+  );
+  if ("error" in built) {
+    return { fail: { id: tx.id, message: built.error } };
+  }
+
+  const transactionDate = (
+    tx.user_transaction_time ??
+    tx.accounting_date ??
+    tx.settlement_date
+  )?.slice(0, 10);
+  if (!transactionDate) {
+    return { fail: { id: tx.id, message: "Transaction has no usable date" } };
+  }
+
+  const holder = tx.card_holder
+    ? [tx.card_holder.first_name, tx.card_holder.last_name]
+        .filter(Boolean)
+        .join(" ") || null
+    : null;
+
+  // The merchant becomes a Carbon supplier so the charge can carry a
+  // vendor to the accounting provider. A transaction with no merchant
+  // name is still posted (supplierId null) — the charge syncer then
+  // leaves it as a journal entry with a visible reason.
+  let supplierId: string | null = null;
+  if (tx.merchant_name) {
+    try {
+      supplierId = await resolveMerchantSupplier(
+        ctx.client,
+        ctx.db,
+        ctx.companyId,
+        { id: tx.merchant_id ?? null, name: tx.merchant_name }
+      );
+    } catch (supplierError) {
+      return {
+        fail: {
+          id: tx.id,
+          message: `Could not resolve merchant "${tx.merchant_name}" to a supplier: ${
+            supplierError instanceof Error
+              ? supplierError.message
+              : String(supplierError)
+          }`
+        }
+      };
+    }
+  }
+
+  return createAndPostTransaction(ctx, {
+    rampId: tx.id,
+    type: isCredit ? "Credit" : "Charge",
+    amount: headerAmount,
+    currencyCode,
+    transactionDate,
+    postingDate: tx.accounting_date?.slice(0, 10) ?? null,
+    cardAccountId: accounts.cardAccountId,
+    offsetAccountId: accounts.offsetAccountId,
+    merchantName: tx.merchant_name ?? null,
+    supplierId,
+    cardHolderName: holder,
+    memo: tx.memo ?? null,
+    lines: built.lines,
+    receiptIds: tx.receipts ?? [],
+    getReceipt: (id) => ramp.getReceipt(id)
+  });
+}
+
+/**
+ * The two line-less card families (transfers → Payment, cashbacks → Cashback)
+ * differ only by label and produced type; everything else is identical.
+ */
+function buildSimpleCardOutcome(family: {
+  label: string;
+  type: Database["public"]["Enums"]["cardTransactionType"];
+}) {
+  return async (
+    ctx: RampSyncContext,
+    item: RampTransfer | RampCashback,
+    ramp: RampClient,
+    accounts: { cardAccountId: string; offsetAccountId: string | null }
+  ): Promise<{ ok: SyncItem } | { fail: FailItem }> => {
+    const currencyCode = item.currency_code ?? ctx.baseCurrency;
+    const normalizedAmount = await normalizeVerifiedMinorAmount(
+      ctx,
+      item.amount,
+      currencyCode,
+      `${family.label} amount`
+    );
+    if (!normalizedAmount.ok) {
+      return { fail: { id: item.id, message: normalizedAmount.error } };
+    }
+    const amount = Math.abs(normalizedAmount.value);
+    const transactionDate = item.created_at?.slice(0, 10);
+    if (!transactionDate) {
+      return {
+        fail: { id: item.id, message: `${family.label} has no usable date` }
+      };
+    }
+
+    return createAndPostTransaction(ctx, {
+      rampId: item.id,
+      type: family.type,
+      amount,
+      currencyCode,
+      transactionDate,
+      postingDate: transactionDate,
+      cardAccountId: accounts.cardAccountId,
+      offsetAccountId: accounts.offsetAccountId,
+      merchantName: null,
+      supplierId: null,
+      cardHolderName: null,
+      memo: null,
+      lines: [],
+      receiptIds: [],
+      getReceipt: (id) => ramp.getReceipt(id)
+    });
+  };
+}
+
+export async function syncRampCardTransactions(
+  ctx: RampSyncContext,
+  ramp: RampClient,
+  entityId: string | undefined,
+  cardLiabilityAccountId: string | undefined
+): Promise<FamilyResult> {
+  return syncRampCardFamily<RampTransaction>(
+    ctx,
+    ramp,
+    entityId,
+    cardLiabilityAccountId,
+    {
+      family: "transactions",
+      label: "card transactions",
+      syncType: "TRANSACTION_SYNC",
+      gate: (ctx, cardLiabilityAccountId) => {
+        if (!cardLiabilityAccountId) {
+          console.warn(
+            `[RAMP SYNC] ${ctx.companyId}: no cardLiabilityAccountId configured — skipping card transactions`
+          );
+          return { proceed: false };
+        }
+        return {
+          proceed: true,
+          cardAccountId: cardLiabilityAccountId,
+          offsetAccountId: null
+        };
+      },
+      list: (ramp, entityId) =>
+        ramp.listTransactions({
+          sync_status: "SYNC_READY",
+          ...rampEntityQuery(entityId)
+        }),
+      buildOutcome: buildTransactionOutcome
+    }
+  );
 }
 
 export async function syncRampTransfers(
@@ -588,115 +738,32 @@ export async function syncRampTransfers(
   entityId: string | undefined,
   cardLiabilityAccountId: string | undefined
 ): Promise<FamilyResult> {
-  const { client, companyId, metadata } = ctx;
-  const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("transfers", metadata.sync)) {
-    return result;
-  }
-  if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {
-    return result;
-  }
-
-  const successful: SyncItem[] = [];
-  const failed: FailItem[] = [];
-  const mapped: Array<{ rampId: string; entityId: string }> = [];
-
-  try {
-    for await (const page of ramp.listTransfers({
-      sync_status: "SYNC_READY"
-    })) {
-      const mappings = await loadCardMappings(
-        ctx,
-        page.map((transfer) => transfer.id)
-      );
-      for (const transfer of page as RampTransfer[]) {
-        if (!isRampEntityInScope(entityId, transfer.entity_id)) continue;
-        const existing = mappings.get(transfer.id);
-        if (existing && existing.status !== "Draft") {
-          mapped.push({ rampId: transfer.id, entityId: existing.entityId });
-          continue;
-        }
-
-        const currencyCode = transfer.currency_code ?? ctx.baseCurrency;
-        const normalizedAmount = await normalizeVerifiedMinorAmount(
-          ctx,
-          transfer.amount,
-          currencyCode,
-          "Transfer amount"
-        );
-        if (!normalizedAmount.ok) {
-          failed.push({
-            id: transfer.id,
-            message: normalizedAmount.error
-          });
-          continue;
-        }
-        const amount = Math.abs(normalizedAmount.value);
-        const transactionDate = transfer.created_at?.slice(0, 10);
-        if (!transactionDate) {
-          failed.push({
-            id: transfer.id,
-            message: "Transfer has no usable date"
-          });
-          continue;
-        }
-
-        const outcome = await createAndPostTransaction(ctx, {
-          rampId: transfer.id,
-          type: "Payment",
-          amount,
-          currencyCode,
-          transactionDate,
-          postingDate: transactionDate,
-          cardAccountId: cardLiabilityAccountId,
-          offsetAccountId: metadata.statementBankAccountId,
-          merchantName: null,
-          supplierId: null,
-          cardHolderName: null,
-          memo: null,
-          lines: [],
-          receiptIds: [],
-          getReceipt: (id) => ramp.getReceipt(id)
-        });
-        if ("ok" in outcome) {
-          successful.push(outcome.ok);
-          if (existing) result.reconfirmed++;
-        } else failed.push(outcome.fail);
-      }
-    }
-  } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: transfers drain failed`,
-      familyError
-    );
-    recordRampFamilyError(result, familyError);
-  }
-
-  const reconfirmed = await reconfirmMapped(ctx, mapped);
-  successful.push(...reconfirmed.successful);
-  failed.push(...reconfirmed.failed);
-
-  try {
-    await confirmSyncs(client, companyId, {
+  return syncRampCardFamily<RampTransfer>(
+    ctx,
+    ramp,
+    entityId,
+    cardLiabilityAccountId,
+    {
+      family: "transfers",
+      label: "transfers",
       syncType: "TRANSFER_SYNC",
-      successful,
-      failed
-    });
-  } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: TRANSFER_SYNC confirm failed`,
-      confirmError
-    );
-    result.confirmError =
-      confirmError instanceof Error
-        ? confirmError.message
-        : String(confirmError);
-  }
-
-  result.reconfirmed += reconfirmed.successful.length;
-  result.created = successful.length - result.reconfirmed;
-  result.failed += failed.length;
-  return result;
+      gate: (ctx, cardLiabilityAccountId) => {
+        if (!cardLiabilityAccountId || !ctx.metadata.statementBankAccountId) {
+          return { proceed: false };
+        }
+        return {
+          proceed: true,
+          cardAccountId: cardLiabilityAccountId,
+          offsetAccountId: ctx.metadata.statementBankAccountId
+        };
+      },
+      list: (ramp) => ramp.listTransfers({ sync_status: "SYNC_READY" }),
+      buildOutcome: buildSimpleCardOutcome({
+        label: "Transfer",
+        type: "Payment"
+      })
+    }
+  );
 }
 
 export async function syncRampCashbacks(
@@ -705,114 +772,31 @@ export async function syncRampCashbacks(
   entityId: string | undefined,
   cardLiabilityAccountId: string | undefined
 ): Promise<FamilyResult> {
-  const { client, companyId, metadata } = ctx;
-  const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("cashbacks", metadata.sync)) {
-    return result;
-  }
-  // Skip the family silently when no cashback income account is configured.
-  if (!cardLiabilityAccountId || !metadata.cashbackIncomeAccountId) {
-    return result;
-  }
-
-  const successful: SyncItem[] = [];
-  const failed: FailItem[] = [];
-  const mapped: Array<{ rampId: string; entityId: string }> = [];
-
-  try {
-    for await (const page of ramp.listCashbacks({
-      sync_status: "SYNC_READY"
-    })) {
-      const mappings = await loadCardMappings(
-        ctx,
-        page.map((cashback) => cashback.id)
-      );
-      for (const cashback of page as RampCashback[]) {
-        if (!isRampEntityInScope(entityId, cashback.entity_id)) continue;
-        const existing = mappings.get(cashback.id);
-        if (existing && existing.status !== "Draft") {
-          mapped.push({ rampId: cashback.id, entityId: existing.entityId });
-          continue;
-        }
-
-        const currencyCode = cashback.currency_code ?? ctx.baseCurrency;
-        const normalizedAmount = await normalizeVerifiedMinorAmount(
-          ctx,
-          cashback.amount,
-          currencyCode,
-          "Cashback amount"
-        );
-        if (!normalizedAmount.ok) {
-          failed.push({
-            id: cashback.id,
-            message: normalizedAmount.error
-          });
-          continue;
-        }
-        const amount = Math.abs(normalizedAmount.value);
-        const transactionDate = cashback.created_at?.slice(0, 10);
-        if (!transactionDate) {
-          failed.push({
-            id: cashback.id,
-            message: "Cashback has no usable date"
-          });
-          continue;
-        }
-
-        const outcome = await createAndPostTransaction(ctx, {
-          rampId: cashback.id,
-          type: "Cashback",
-          amount,
-          currencyCode,
-          transactionDate,
-          postingDate: transactionDate,
-          cardAccountId: cardLiabilityAccountId,
-          offsetAccountId: metadata.cashbackIncomeAccountId,
-          merchantName: null,
-          supplierId: null,
-          cardHolderName: null,
-          memo: null,
-          lines: [],
-          receiptIds: [],
-          getReceipt: (id) => ramp.getReceipt(id)
-        });
-        if ("ok" in outcome) {
-          successful.push(outcome.ok);
-          if (existing) result.reconfirmed++;
-        } else failed.push(outcome.fail);
-      }
-    }
-  } catch (familyError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: cashbacks drain failed`,
-      familyError
-    );
-    recordRampFamilyError(result, familyError);
-  }
-
-  const reconfirmed = await reconfirmMapped(ctx, mapped);
-  successful.push(...reconfirmed.successful);
-  failed.push(...reconfirmed.failed);
-
-  try {
-    await confirmSyncs(client, companyId, {
+  return syncRampCardFamily<RampCashback>(
+    ctx,
+    ramp,
+    entityId,
+    cardLiabilityAccountId,
+    {
+      family: "cashbacks",
+      label: "cashbacks",
       syncType: "STATEMENT_CREDIT_SYNC",
-      successful,
-      failed
-    });
-  } catch (confirmError) {
-    console.error(
-      `[RAMP SYNC] ${companyId}: STATEMENT_CREDIT_SYNC confirm failed`,
-      confirmError
-    );
-    result.confirmError =
-      confirmError instanceof Error
-        ? confirmError.message
-        : String(confirmError);
-  }
-
-  result.reconfirmed += reconfirmed.successful.length;
-  result.created = successful.length - result.reconfirmed;
-  result.failed += failed.length;
-  return result;
+      // Skip the family silently when no cashback income account is configured.
+      gate: (ctx, cardLiabilityAccountId) => {
+        if (!cardLiabilityAccountId || !ctx.metadata.cashbackIncomeAccountId) {
+          return { proceed: false };
+        }
+        return {
+          proceed: true,
+          cardAccountId: cardLiabilityAccountId,
+          offsetAccountId: ctx.metadata.cashbackIncomeAccountId
+        };
+      },
+      list: (ramp) => ramp.listCashbacks({ sync_status: "SYNC_READY" }),
+      buildOutcome: buildSimpleCardOutcome({
+        label: "Cashback",
+        type: "Cashback"
+      })
+    }
+  );
 }

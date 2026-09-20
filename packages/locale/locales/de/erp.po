@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Sind Sie sicher, dass Sie den Drucker \"{0}\" löschen möchten? Alle Zuweisungen, die auf diesen Drucker verweisen, werden gelöscht. Dies kann nicht rückgängig gemacht werden."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Möchten Sie das Projekt wirklich löschen: {0}? Es wird deaktiviert und aus den aktiven Listen ausgeblendet."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "Sind Sie sicher, dass Sie eine Einladung an diesen Benutzer senden möch
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "Möchten Sie {0} wirklich stornieren? Dadurch wird eine Gegenbuchung gebucht und kann nicht rückgängig gemacht werden."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie diese Notiz stornieren möchten? Dies wird ihre Buchhaltungseinträge und Zuordnungen stornieren. Dies kann nicht rückgängig gemacht werden."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Prozess erstellt"
 
 msgid "Created project"
-msgstr ""
+msgstr "Projekt erstellt"
 
 msgid "Created required action"
 msgstr "Erforderliche Aktion erstellt"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "Prozess löschen"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Projekt löschen"
 
 msgid "Delete Purchase Invoice"
 msgstr "Eingangsrechnung löschen"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Produktionsmenge bearbeiten"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Projekt bearbeiten"
 
 msgid "Edit purchase order line type"
 msgstr "Bestellpositionstyp bearbeiten"
@@ -7364,7 +7364,7 @@ msgstr "Fehler beim Erstellen des Prozesses: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Fehler beim Erstellen des Projekts: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Neuer Prozess"
 
 msgid "New Project"
-msgstr ""
+msgstr "Neues Projekt"
 
 msgid "New Quality Document"
 msgstr "Neues Qualitätsdokument"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "Nicht konfiguriert"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "Nicht konfiguriert"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Nicht genug Fertigungsaufträge zur Abdeckung der Menge"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Projekt"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Projektname"
 
 msgid "Project owner"
 msgstr "Projektverantwortlicher"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Prognosen"
 
 msgid "Projects"
-msgstr ""
+msgstr "Projekte"
 
 msgid "Promised Date"
 msgstr "Zugesagter Termin"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Stornieren {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Kartentransaktion stornieren"
 
 msgid "Void Invoice"
 msgstr "Rechnung stornieren"

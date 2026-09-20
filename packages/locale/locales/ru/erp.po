@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Вы уверены, что хотите удалить принтер \"{0}\"? Все назначения, ссылающиеся на этот принтер, будут очищены. Это действие невозможно отменить."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Вы уверены, что хотите удалить проект: {0}? Он будет деактивирован и скрыт из активных списков."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "Вы уверены, что хотите отправить пригла
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "Вы уверены, что хотите аннулировать {0}? Это проведет обратную проводку и не может быть отменено."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Вы уверены, что хотите аннулировать эту служебную записку? Это развернет ее бухгалтерские записи и применения. Это невозможно отменить."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Процесс создан"
 
 msgid "Created project"
-msgstr ""
+msgstr "Проект создан"
 
 msgid "Created required action"
 msgstr "Требуемое действие создано"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "Удалить процесс"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Удалить проект"
 
 msgid "Delete Purchase Invoice"
 msgstr "Удалить счет-фактуру полученную"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Изменить Производственное количество"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Изменить проект"
 
 msgid "Edit purchase order line type"
 msgstr "Изменить тип строки заказа поставщику"
@@ -7364,7 +7364,7 @@ msgstr "Ошибка при создании процесса: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Не удалось создать проект: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Новый процесс"
 
 msgid "New Project"
-msgstr ""
+msgstr "Новый проект"
 
 msgid "New Quality Document"
 msgstr "Новый документ качества"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "Не настроено"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "Не настроено"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Проект"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Название проекта"
 
 msgid "Project owner"
 msgstr "Ответственный проекта"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Прогнозы"
 
 msgid "Projects"
-msgstr ""
+msgstr "Проекты"
 
 msgid "Promised Date"
 msgstr "Подтвержденная дата"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Аннулировать {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Аннулировать операцию по карте"
 
 msgid "Void Invoice"
 msgstr "Аннулировать счет-фактуру"

@@ -2321,8 +2321,8 @@ msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments refe
 msgstr "Yazıcı \"{0}\" cihazını silmek istediğinizden emin misiniz? Bu yazıcıya atıfta bulunan tüm görevlendirmeler temizlenecektir. Bu işlem geri alınamaz."
 
 #. placeholder {0}: project.name
-msgid "Are you sure you want to delete the project: {0}? This cannot be undone."
-msgstr ""
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Projeyi silmek istediğinize emin misiniz: {0}? Deaktif edilecek ve aktif listelerden gizlenecektir."
 
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
@@ -2504,7 +2504,7 @@ msgstr "Bu kullanıcıya daveti göndermek istediğinizden emin misiniz?"
 
 #. placeholder {0}: cardTransaction.cardTransactionId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
-msgstr ""
+msgstr "Hükümsüz kılmak istediğinize emin misiniz {0}? Bu, bir mahsup yevmiye kaydı muhasebeleştirir ve geri alınamaz."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Bu notu hükümsüz kılmak istediğinizden emin misiniz? Bu, muhasebe girişlerini ve uygulamalarını tersine çevirecektir. Bu geri alınamaz."
@@ -4735,7 +4735,7 @@ msgid "Created process"
 msgstr "Oluşturulan süreç"
 
 msgid "Created project"
-msgstr ""
+msgstr "Proje oluşturuldu"
 
 msgid "Created required action"
 msgstr "Gerekli eylem oluşturuldu"
@@ -5569,7 +5569,7 @@ msgid "Delete Process"
 msgstr "İşlemi Sil"
 
 msgid "Delete Project"
-msgstr ""
+msgstr "Projeyi Sil"
 
 msgid "Delete Purchase Invoice"
 msgstr "Alış Faturasını Sil"
@@ -6510,7 +6510,7 @@ msgid "Edit Production Quantity"
 msgstr "Üretim Miktarını Düzenle"
 
 msgid "Edit Project"
-msgstr ""
+msgstr "Projeyi Düzenle"
 
 msgid "Edit purchase order line type"
 msgstr "Satın alma siparişi satır türünü düzenle"
@@ -7364,7 +7364,7 @@ msgstr "İşlemi oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create project: {0}"
-msgstr ""
+msgstr "Proje oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10802,7 +10802,7 @@ msgid "New Process"
 msgstr "Yeni Süreç"
 
 msgid "New Project"
-msgstr ""
+msgstr "Yeni Proje"
 
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
@@ -11541,7 +11541,7 @@ msgid "Not configured"
 msgstr "Yapılandırılmadı"
 
 msgid "Not Configured"
-msgstr ""
+msgstr "Yapılandırılmadı"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
@@ -13070,7 +13070,7 @@ msgid "Project"
 msgstr "Proje"
 
 msgid "Project Name"
-msgstr ""
+msgstr "Proje Adı"
 
 msgid "Project owner"
 msgstr "Proje sahibi"
@@ -13124,7 +13124,7 @@ msgid "Projections"
 msgstr "Projeksiyonlar"
 
 msgid "Projects"
-msgstr ""
+msgstr "Projeler"
 
 msgid "Promised Date"
 msgstr "Taahhüt Tarihi"
@@ -19298,7 +19298,7 @@ msgid "Void {0}"
 msgstr "Hükümsüz Kıl {0}"
 
 msgid "Void Card Transaction"
-msgstr ""
+msgstr "Kart İşlemini Hükümsüz Kıl"
 
 msgid "Void Invoice"
 msgstr "Faturayı hükümsüz kıl"

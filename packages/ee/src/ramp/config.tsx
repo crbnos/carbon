@@ -4,6 +4,7 @@ import { isBrowser } from "@carbon/utils";
 import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { RAMP_OAUTH_SCOPES } from "./scopes";
 
 /**
  * OAuth "Connect to Ramp" authorization-code flow (production) — the ONLY way to
@@ -18,25 +19,6 @@ import { defineIntegration } from "../fns";
 // API host (api.ramp.com/developer/v1/token).
 const RAMP_AUTHORIZE_URL = "https://app.ramp.com/v1/authorize";
 const RAMP_TOKEN_URL = "https://api.ramp.com/developer/v1/token";
-const RAMP_OAUTH_SCOPES = [
-  "accounting:read",
-  "accounting:write",
-  "transactions:read",
-  "bills:read",
-  "bills:write",
-  "vendors:read",
-  "vendors:write",
-  "reimbursements:read",
-  "purchase_orders:read",
-  "purchase_orders:write",
-  "transfers:read",
-  "statements:read",
-  "cashbacks:read",
-  "receipts:read",
-  "entities:read",
-  "business:read",
-  "offline_access"
-];
 
 /**
  * Ramp settings form schema. Connection is exclusively via the "Connect to Ramp"
@@ -83,7 +65,7 @@ export const Ramp = defineIntegration({
     authUrl: RAMP_AUTHORIZE_URL,
     clientId: RAMP_CLIENT_ID ?? "",
     redirectUri: "/api/integrations/ramp/oauth",
-    scopes: RAMP_OAUTH_SCOPES,
+    scopes: [...RAMP_OAUTH_SCOPES],
     tokenUrl: RAMP_TOKEN_URL
   },
   settingGroups: [
