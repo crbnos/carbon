@@ -33,7 +33,8 @@
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
     "./stripe-connect.server": "./src/stripe-connect/payment.server.ts",
-    "./two-factor.server": "./src/two-factor.server.ts"
+    "./two-factor.server": "./src/two-factor.server.ts",
+    "./webhooks.server": "./src/webhooks.server.ts"
   },
   "private": true,
   "scripts": {

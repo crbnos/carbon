@@ -28,14 +28,12 @@ import { sanitize } from "~/utils/supabase";
 import type {
   accountsPayableBillingAddressValidator,
   accountsReceivableBillingAddressValidator,
-  apiKeyValidator,
   companyValidator,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
-  subsidiaryValidator,
-  webhookValidator
+  subsidiaryValidator
 } from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
@@ -85,28 +83,11 @@ export async function updateAccountsReceivableBillingAddress(
     .upsert(sanitize({ id: companyId, ...data, updatedBy }));
 }
 
-export async function deactivateWebhooks(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("webhook")
-    .update({ active: false })
-    .eq("companyId", companyId);
-}
-
 export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client.from("company").delete().eq("id", companyId);
-}
-
-export async function deleteWebhook(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("webhook").delete().eq("id", id);
 }
 
 export async function getApiKeys(
@@ -1382,21 +1363,4 @@ export async function updateReturnPickedMaterialTimingSetting(
     .from("companySettings")
     .update(sanitize({ returnPickedMaterialTiming }))
     .eq("id", companyId);
-}
-
-export async function upsertWebhook(
-  client: SupabaseClient<Database>,
-  webhook:
-    | (Omit<z.infer<typeof webhookValidator>, "id"> & {
-        createdBy: string;
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("createdBy" in webhook) {
-    return client.from("webhook").insert(webhook).select("id").single();
-  }
-  return client.from("webhook").update(sanitize(webhook)).eq("id", webhook.id);
 }

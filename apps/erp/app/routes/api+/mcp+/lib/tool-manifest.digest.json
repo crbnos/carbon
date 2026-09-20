@@ -1,5 +1,5 @@
 {
-  "totalTools": 1545,
+  "totalTools": 1542,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
@@ -1396,10 +1396,8 @@
     {"name":"sales_upsertSalesReturnOrderLine","classification":"WRITE","paramCount":12,"schema":"f4a19f25c389","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create+update","paginates":false},
     {"name":"sales_upsertSalesRFQ","classification":"WRITE","paramCount":15,"schema":"3875863b88c1","response":"2e56e1180d37","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create+update","paginates":false},
     {"name":"sales_upsertSalesRFQLine","classification":"WRITE","paramCount":11,"schema":"24400721553b","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"sales:create+update","paginates":false},
-    {"name":"settings_deactivateWebhooks","classification":"WRITE","paramCount":0,"schema":"efddc7bd8bbc","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_deleteDocumentSection","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:delete","paginates":false},
     {"name":"settings_deleteItemSerialSequence","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:delete","paginates":false},
-    {"name":"settings_deleteWebhook","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"settings:delete","paginates":false},
     {"name":"settings_getAccountsPayableBillingAddress","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"7c0b9dc6d441","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getAccountsReceivableBillingAddress","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"7c0b9dc6d441","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getApiKeys","classification":"READ","paramCount":3,"schema":"04eded31eebb","response":"eec810be5b96","injectAuth":"companyId","permission":"users:update","paginates":true},
@@ -1487,7 +1485,6 @@
     {"name":"settings_upsertDocumentSection","classification":"WRITE","paramCount":5,"schema":"b894407ce0d0","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"settings_upsertDocumentTemplate","classification":"WRITE","paramCount":6,"schema":"5d28da0e0ad6","response":"bcde375ebd4c","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"settings_upsertItemSerialSequence","classification":"WRITE","paramCount":7,"schema":"95750d9ab5ae","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
-    {"name":"settings_upsertWebhook","classification":"WRITE","paramCount":10,"schema":"79ad29732124","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"shared_deleteCustomerPortal","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_deleteSavedView","classification":"DESTRUCTIVE","paramCount":1,"schema":"1fbe3d41dab0","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_generateEmbedding","classification":"WRITE","paramCount":1,"schema":"e3dce8d1afb8","response":"569f4d6b0385","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
