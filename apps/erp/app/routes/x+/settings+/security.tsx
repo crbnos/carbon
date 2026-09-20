@@ -7,7 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -15,6 +15,7 @@ import {
   getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
+import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -50,11 +51,7 @@ import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import {
-  ssoConnectionValidator,
-  ssoDomainValidator,
-  updateRequireMfaSetting
-} from "~/modules/settings";
+import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -156,7 +153,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const requireMfa = formData.get("enabled") === "true";
 
   if (requireMfa) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,
