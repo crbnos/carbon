@@ -128,8 +128,8 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | APPROVAL_RULES | — | ✅ done | ba2787c2 | approvals/ in ee, embedded, page overlay |
 | BACKUPS | gate-only | ◑ gated | ba2787c2 | gated via canManageBackups; engine still in packages/jobs (LARGE relocation deferred — do last) |
 | A. SALES_RULES + STORAGE_RULES | MEDIUM | ✅ done | (this) | CRUD → packages/ee/src/rules/service.server.ts (`@carbon/ee/rules.server`), requireEntitlement by `family`; evaluators swapped companyHasPlan→companyHasFeature; 12 write routes → requireFeature; verified (ee+erp typecheck, biome, 1041 ee tests, mcp shared 31→29). `unassignStorageRule` gained companyId arg. |
-| B. EMAIL_NOTIFICATIONS | SMALL | ⬜ next | | notify.ts:537 + notifications.tsx:49 companyHasPlan→companyHasFeature |
-| C. INTEGRATIONS | SMALL-MED | ⬜ | | |
+| B. EMAIL_NOTIFICATIONS | SMALL | ✅ done | (this) | companyHasPlan→companyHasFeature at notify.ts:537 (jobs, runtime degrade — email channel off for community) + account/notifications.tsx:49. Body stays in jobs (can't move to ee — @carbon/notifications dep). Verified jobs+erp typecheck. |
+| C. INTEGRATIONS | SMALL-MED | ⬜ next | | |
 | D. TWO_FACTOR | SMALL-MED | ⬜ | | |
 | E. API_KEYS | MEDIUM | ⬜ | | |
 | F. WEBHOOKS | MEDIUM | ⬜ | | |
