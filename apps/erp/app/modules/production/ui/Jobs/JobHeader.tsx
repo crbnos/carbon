@@ -82,6 +82,7 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
@@ -594,6 +595,7 @@ export function JobStartModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const [suppliers] = useSuppliers();
   const [loading, setLoading] = useState(true);
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
@@ -611,8 +613,22 @@ export function JobStartModal({
     selectedPurchaseOrdersBySupplierId,
     setSelectedPurchaseOrdersBySupplierId
   ] = useState<Record<string, string>>({});
+  // Outside operations whose process offers MORE THAN ONE supplier — the user
+  // picks which one (defaulting to the first). Single-supplier and explicitly
+  // assigned operations never appear here; they resolve automatically.
+  const [outsideOperationChoices, setOutsideOperationChoices] = useState<
+    {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[]
+  >([]);
+  const [
+    selectedSupplierProcessByOperationId,
+    setSelectedSupplierProcessByOperationId
+  ] = useState<Record<string, string>>({});
 
-  const validate = async () => {
+  const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
     const [makeMethod, materials, operations, methodTree] = await Promise.all([
       carbon
@@ -649,27 +665,125 @@ export function JobStartModal({
       existingPurchaseOrderLines.data?.map((pol) => pol.jobOperationId) ?? []
     );
 
-    // Filter out operations that already have purchase order lines
-    const operationsNeedingPurchaseOrders = outsideOperations.filter(
-      (op) =>
-        !existingJobOperationIds.has(op.id) && op.operationSupplierProcessId
+    // Outside operations that still need handling (no existing purchase order line)
+    const outsideOperationsWithoutPurchaseOrders = outsideOperations.filter(
+      (op) => !existingJobOperationIds.has(op.id)
     );
 
-    const uniqueOutsideProcessIds = operationsNeedingPurchaseOrders.map(
-      (op) => op.operationSupplierProcessId!
+    // Resolve each operation's supplier: its own supplier process, or — when the
+    // operation has none — the sole supplier configured for its process. A process
+    // with exactly one supplier is unambiguous, so it counts as assigned; a process
+    // with zero or multiple suppliers still requires an explicit per-operation pick.
+    type SupplierProcessRef = {
+      id: string;
+      supplierId: string;
+      processId: string;
+    };
+
+    const outsideProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.processId)
+          .filter(Boolean) as string[]
+      )
+    );
+    const explicitSupplierProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.operationSupplierProcessId)
+          .filter(Boolean) as string[]
+      )
     );
 
-    const supplierProcesses =
-      uniqueOutsideProcessIds.length > 0
+    const supplierProcessesByProcess =
+      outsideProcessIds.length > 0
         ? await carbon
             .from("supplierProcess")
-            .select("supplierId")
-            .in("id", uniqueOutsideProcessIds)
-        : { data: [] };
+            .select("id, supplierId, processId")
+            .in("processId", outsideProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+    const supplierProcessesById =
+      explicitSupplierProcessIds.length > 0
+        ? await carbon
+            .from("supplierProcess")
+            .select("id, supplierId, processId")
+            .in("id", explicitSupplierProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+
+    const supplierProcessById = new Map<string, SupplierProcessRef>();
+    for (const sp of [
+      ...(supplierProcessesByProcess.data ?? []),
+      ...(supplierProcessesById.data ?? [])
+    ]) {
+      supplierProcessById.set(sp.id, sp);
+    }
+    const supplierProcessesByProcessId = new Map<
+      string,
+      SupplierProcessRef[]
+    >();
+    for (const sp of supplierProcessesByProcess.data ?? []) {
+      const list = supplierProcessesByProcessId.get(sp.processId) ?? [];
+      list.push(sp);
+      supplierProcessesByProcessId.set(sp.processId, list);
+    }
+
+    // Resolve each operation's supplier: its own supplier process, the process's
+    // sole supplier, or — when the process offers several — a user pick (defaulting
+    // to the first candidate). Only a process with NO supplier at all is a genuine
+    // "missing supplier". `choicesOverride` carries the picks on a re-run.
+    const supplierProcessChoice =
+      choicesOverride ?? selectedSupplierProcessByOperationId;
+    const resolvedSupplierChoice: Record<string, string> = {};
+    const operationChoices: {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[] = [];
+
+    const resolveSupplierProcess = (op: {
+      id: string;
+      description: string | null;
+      operationSupplierProcessId: string | null;
+      processId: string | null;
+    }): SupplierProcessRef | null => {
+      if (op.operationSupplierProcessId) {
+        return supplierProcessById.get(op.operationSupplierProcessId) ?? null;
+      }
+      const candidates = op.processId
+        ? (supplierProcessesByProcessId.get(op.processId) ?? [])
+        : [];
+      if (candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0];
+      // Multiple suppliers for the process — the user chooses which one.
+      operationChoices.push({
+        id: op.id,
+        description: op.description ?? op.id,
+        options: candidates.map((c) => ({
+          supplierProcessId: c.id,
+          supplierId: c.supplierId
+        }))
+      });
+      const chosenId =
+        supplierProcessChoice[op.id] &&
+        candidates.some((c) => c.id === supplierProcessChoice[op.id])
+          ? supplierProcessChoice[op.id]
+          : candidates[0].id;
+      resolvedSupplierChoice[op.id] = chosenId;
+      return supplierProcessById.get(chosenId) ?? null;
+    };
+
+    const operationsWithSupplier = outsideOperationsWithoutPurchaseOrders.map(
+      (op) => ({ op, supplierProcess: resolveSupplierProcess(op) })
+    );
 
     const uniqueSupplierIds = new Set(
-      supplierProcesses.data?.map((sp) => sp.supplierId) ?? []
+      operationsWithSupplier
+        .map((entry) => entry.supplierProcess?.supplierId)
+        .filter(Boolean) as string[]
     );
+
+    setOutsideOperationChoices(operationChoices);
+    setSelectedSupplierProcessByOperationId(resolvedSupplierChoice);
 
     if (uniqueSupplierIds.size) {
       const draftPurchaseOrders = await carbon
@@ -692,10 +806,10 @@ export function JobStartModal({
       );
     }
 
-    setSelectedPurchaseOrdersBySupplierId(
+    setSelectedPurchaseOrdersBySupplierId((prev) =>
       Array.from(uniqueSupplierIds).reduce<Record<string, string>>(
         (acc, supplierId) => {
-          acc[supplierId] = "new";
+          acc[supplierId] = prev[supplierId] ?? "new";
           return acc;
         },
         {}
@@ -757,14 +871,18 @@ export function JobStartModal({
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
 
-      // Only show purchase order UI if there are outside operations that need purchase orders
-      setHasOutsideOperations(operationsNeedingPurchaseOrders.length > 0);
+      // Show the release UI whenever there are outside operations still needing handling,
+      // whether or not they have a supplier yet
+      setHasOutsideOperations(
+        outsideOperationsWithoutPurchaseOrders.length > 0
+      );
 
-      // Check if all outside operations that need purchase orders have suppliers
+      // An outside operation "has a supplier" when it resolves to one — either its
+      // own supplier process or its process's sole supplier.
       setEachOutsideOperationHasASupplier(
-        operationsNeedingPurchaseOrders.length === 0 ||
-          operationsNeedingPurchaseOrders.every(
-            (op) => op.operationSupplierProcessId !== null
+        operationsWithSupplier.length === 0 ||
+          operationsWithSupplier.every(
+            (entry) => entry.supplierProcess !== null
           )
       );
     });
@@ -838,6 +956,49 @@ export function JobStartModal({
                         </Trans>
                       </AlertDescription>
                     </Alert>
+                    {outsideOperationChoices.length > 0 && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <p className="text-sm text-muted-foreground">
+                          <Trans>
+                            These operations use a process with multiple
+                            suppliers. Choose a supplier for each.
+                          </Trans>
+                        </p>
+                        {outsideOperationChoices.map((operation) => (
+                          <div
+                            key={operation.id}
+                            className="flex justify-between items-center gap-4 text-sm rounded-lg border p-4 w-full"
+                          >
+                            <span className="font-medium">
+                              {operation.description}
+                            </span>
+                            <Select
+                              size="sm"
+                              value={
+                                selectedSupplierProcessByOperationId[
+                                  operation.id
+                                ] ?? ""
+                              }
+                              options={operation.options.map((option) => ({
+                                value: option.supplierProcessId,
+                                label:
+                                  suppliers.find(
+                                    (s) => s.id === option.supplierId
+                                  )?.name ?? option.supplierId
+                              }))}
+                              onChange={(value) => {
+                                const next = {
+                                  ...selectedSupplierProcessByOperationId,
+                                  [operation.id]: value as string
+                                };
+                                setSelectedSupplierProcessByOperationId(next);
+                                validate(next);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {Object.entries(selectedPurchaseOrdersBySupplierId).map(
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
@@ -943,6 +1104,11 @@ export function JobStartModal({
                   type="hidden"
                   name="selectedPurchaseOrdersBySupplierId"
                   value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
+                />
+                <input
+                  type="hidden"
+                  name="selectedSupplierProcessByOperationId"
+                  value={JSON.stringify(selectedSupplierProcessByOperationId)}
                 />
                 <Button
                   isLoading={

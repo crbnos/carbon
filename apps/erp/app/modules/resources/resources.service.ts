@@ -1256,10 +1256,11 @@ export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
   ability: {
-    // Name is not stored — it derives from the linked process; the ability
-    // table has no name column. The recertification cadence is the only
-    // editable field, so it is the sole (required) member here.
-    recertifyEveryDays: number | null;
+    // Name is not stored — it derives from the linked process; it appears in
+    // the MCP schema for caller context only. The recertification cadence is
+    // the one editable field. Both are optional in the published schema.
+    name?: string;
+    recertifyEveryDays?: number | null;
   }
 ) {
   return client.from("ability").update(ability).eq("id", id);

@@ -17782,6 +17782,9 @@ msgstr "Questi ordini di produzione hanno operazioni assegnate a questo centro d
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "Queste voci di prima nota sono ancora Bozza, quindi i loro dare e avere non sono nel registro per questo periodo. Registra ognuno, o ri-datalo in un periodo aperto successivo."
 
+msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
+msgstr "Queste operazioni utilizzano un processo con più fornitori. Scegli un fornitore per ciascuna operazione."
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Questi componenti sono sostituiti da questo. Ogni regola è impostata sul vecchio componente; aprilo per modificare la regola."
 

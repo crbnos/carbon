@@ -3608,7 +3608,10 @@ function OperationPreview({
         </div>
       </div>
 
-      <div className="relative flex aspect-video items-center justify-center overflow-hidden rounded-md border bg-muted/40">
+      {/* Center content in a bounded frame. The image slide wraps the picture in
+          an inline-block sized to the RENDERED image so the pin overlay maps to the
+          image box, not a letterboxed aspect-video frame (which drifted the pins). */}
+      <div className="relative flex min-h-[240px] items-center justify-center rounded-md border bg-muted/40 p-2">
         {!slide ? (
           <span className="text-xs text-muted-foreground">
             <Trans>No reference image</Trans>
@@ -3619,7 +3622,7 @@ function OperationPreview({
               <img
                 src={slideModelThumb}
                 alt={slide.caption ?? slideModel?.name ?? "3D model"}
-                className="max-h-full max-w-full object-contain"
+                className="max-h-[520px] max-w-full object-contain"
               />
             ) : (
               <LuBox className="size-10 text-muted-foreground" />
@@ -3629,11 +3632,11 @@ function OperationPreview({
             </span>
           </>
         ) : slideImage ? (
-          <div className="relative h-full w-full">
+          <div className="relative inline-block">
             <img
               src={slideImage}
               alt={slide.caption ?? ""}
-              className="h-full w-full object-contain"
+              className="block max-h-[520px] w-auto max-w-full rounded-md"
             />
             <SlidePinOverlay pins={slide.annotations ?? []} />
           </div>

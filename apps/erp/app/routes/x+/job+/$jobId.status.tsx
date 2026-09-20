@@ -36,6 +36,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const selectedPurchaseOrdersBySupplierId = formData.get(
     "selectedPurchaseOrdersBySupplierId"
   ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
+  ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
     throw redirect(
@@ -138,6 +141,92 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
 
       const serviceRole = getCarbonServiceRole();
+
+      // Persist any supplier the user chose in the release modal for an outside
+      // operation whose process has multiple suppliers. Stamping it on the
+      // operation lets purchaseOrderFromJob resolve it (below) and keeps the
+      // choice on the operation. Must complete BEFORE the edge function reads.
+      const operationSupplierChoices = Object.entries(
+        JSON.parse(selectedSupplierProcessByOperationId ?? "{}") as Record<
+          string,
+          string
+        >
+      );
+      if (operationSupplierChoices.length > 0) {
+        // Both ids come from the form and drive a service-role (RLS-bypassing)
+        // write that purchaseOrderFromJob later consumes, so validate them before
+        // persisting: the operation must belong to THIS job, and the chosen
+        // supplier process must belong to that operation's own process. Otherwise
+        // a crafted submit could retarget another job or create a PO for an
+        // unrelated supplier.
+        const operationIds = operationSupplierChoices.map(
+          ([operationId]) => operationId
+        );
+        const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
+
+        const [
+          { data: jobOperations, error: jobOperationsError },
+          { data: supplierProcesses, error: supplierProcessesError }
+        ] = await Promise.all([
+          serviceRole
+            .from("jobOperation")
+            .select("id, processId")
+            .eq("jobId", id)
+            .eq("companyId", companyId)
+            .in("id", operationIds),
+          serviceRole
+            .from("supplierProcess")
+            .select("id, processId")
+            .eq("companyId", companyId)
+            .in("id", supplierProcessIds)
+        ]);
+        if (jobOperationsError) throw new Error(jobOperationsError.message);
+        if (supplierProcessesError)
+          throw new Error(supplierProcessesError.message);
+
+        const operationProcessById = new Map(
+          (jobOperations ?? []).map((op) => [op.id, op.processId])
+        );
+        const supplierProcessProcessById = new Map(
+          (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
+        );
+
+        for (const [
+          operationId,
+          supplierProcessId
+        ] of operationSupplierChoices) {
+          const operationProcessId = operationProcessById.get(operationId);
+          if (!operationProcessId) {
+            throw new Error(
+              `Operation ${operationId} does not belong to this job`
+            );
+          }
+          if (
+            supplierProcessProcessById.get(supplierProcessId) !==
+            operationProcessId
+          ) {
+            throw new Error(
+              "Selected supplier does not belong to the operation's process"
+            );
+          }
+        }
+
+        const updateResults = await Promise.all(
+          operationSupplierChoices.map(([operationId, supplierProcessId]) =>
+            serviceRole
+              .from("jobOperation")
+              .update({
+                operationSupplierProcessId: supplierProcessId,
+                updatedBy: userId
+              })
+              .eq("id", operationId)
+              .eq("companyId", companyId)
+          )
+        );
+        const failedUpdate = updateResults.find((result) => result.error);
+        if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
+      }
+
       // Forecast-first scheduling regenerates the whole location the job is in.
       const { data: jobLocation } = await serviceRole
         .from("job")

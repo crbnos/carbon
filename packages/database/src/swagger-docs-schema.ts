@@ -91597,6 +91597,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91604,9 +91607,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/select"
@@ -91803,6 +91803,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91810,9 +91813,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -91963,6 +91963,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
+          },
+          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91970,9 +91973,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
-          },
-          {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -138176,7 +138176,7 @@ export default {
       type: "object"
     },
     employeeJob: {
-      required: ["id", "companyId"],
+      required: ["id", "locationId", "companyId"],
       properties: {
         id: {
           description:
@@ -148942,10 +148942,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
+        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
-        "allowLowercaseItemIds",
-        "salesRuleNotificationGroup"
+        "allowLowercaseItemIds"
       ],
       properties: {
         id: {
@@ -149192,6 +149192,13 @@ export default {
           format: "text",
           type: "string"
         },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
+        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -149206,13 +149213,6 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
-        },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
         }
       },
       type: "object"
@@ -198608,6 +198608,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -198622,12 +198628,6 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

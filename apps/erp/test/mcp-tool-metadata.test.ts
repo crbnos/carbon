@@ -272,11 +272,13 @@ describe("mcp tool-metadata generator", () => {
       Object.keys(ruleBranches[0]?.properties ?? {}).length
     ).toBeGreaterThan(0);
 
+    // updateAbility takes an optional `name` and an optional cadence, so the
+    // published schema has both fields and no required list.
     const ability = props(get("resources_updateAbility")).ability;
-    expect(Object.keys(ability?.properties ?? {})).toContain(
-      "recertifyEveryDays"
+    expect(Object.keys(ability?.properties ?? {})).toEqual(
+      expect.arrayContaining(["name", "recertifyEveryDays"])
     );
-    expect(ability?.required).toEqual(["recertifyEveryDays"]);
+    expect(ability?.required).toBeUndefined();
   });
 
   // Insert-vs-update discriminator, BOTH directions, gets a required `_operation`.
