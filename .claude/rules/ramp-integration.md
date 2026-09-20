@@ -499,7 +499,7 @@ The forward reconciliation migration gives `cardTransaction` a tenant-composite
 family resolves the Ramp merchant to a Carbon supplier before posting —
 `resolveMerchantSupplier` (`lib/suppliers.ts`) is **match-or-default, never one
 supplier per merchant** (that polluted the vendor master with hundreds of one-off
-rows; see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`): mapping-first
+rows; see `.ai/specs/2026-09-19-ramp-integration.md`): mapping-first
 under entityType `"merchant"` keyed by Ramp `merchant_id`, then an exact-name match
 to an EXISTING supplier (a merchant that is already a real vendor — links it and
 writes the mapping), then the single `"Card Merchant"` house supplier per company

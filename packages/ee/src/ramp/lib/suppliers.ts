@@ -126,7 +126,7 @@ async function ensureSupplierTypeId(
  * then an exact-name match to an EXISTING supplier (a merchant that is already a
  * real vendor), then the single "Card Merchant" house supplier. It NEVER creates
  * a supplier per merchant — that polluted the vendor master with hundreds of
- * one-off rows (see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`).
+ * one-off rows (see `.ai/specs/2026-09-19-ramp-integration.md`).
  * Merchant identity is preserved on `cardTransaction.merchantName` and pushed
  * onto the provider charge line description.
  */

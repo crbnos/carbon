@@ -360,7 +360,7 @@ plus its six-minute idempotency key, and QBO's deterministic `requestid`. QBO re
 updates with `SyncToken` retry. Each successful item links immediately, so a later item failure
 cannot lose the earlier remote identity.
 
-**Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-10-ramp-project-coding-and-rillet-charge-sync.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
+**Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-19-ramp-integration.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
 The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-generic and
 `journalLine.documentId` already carries the `cardTransaction.id`.
 
@@ -368,7 +368,7 @@ The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-gener
 supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
 `merchant` by Ramp `merchant_id` → exact-name match to an existing supplier → the
 single `"Card Merchant"` **house supplier** per company — never one supplier per
-merchant; see `.ai/specs/2026-09-17-ramp-card-merchant-modeling.md`); the existing
+merchant; see `.ai/specs/2026-09-19-ramp-integration.md`); the existing
 vendor syncers carry it to the provider via `ensureDependencySynced("vendor")`. Since
 card spend collapses to that catch-all vendor, each charge adapter now sets the charge
 **line description** to `charge.merchantName ?? line.description ?? charge.memo` so the
