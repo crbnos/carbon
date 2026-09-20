@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "Los-Laufkarte"
 
 msgid "Batched jobs"
 msgstr "Gebündelte Fertigungsaufträge"

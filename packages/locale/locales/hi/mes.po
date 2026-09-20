@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "बैच ट्रैवलर"
 
 msgid "Batched jobs"
 msgstr "बैच जॉब"

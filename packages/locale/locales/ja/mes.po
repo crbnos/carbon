@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "バッチ現品票"
 
 msgid "Batched jobs"
 msgstr "バッチ製造指図"

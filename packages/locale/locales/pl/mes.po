@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "Numer partii jest wymagany"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "Przewodnik Partii Produkcyjnej"
 
 msgid "Batched jobs"
 msgstr "Zbiorcze zlecenia produkcyjne"

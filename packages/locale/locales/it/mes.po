@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "Il numero di lotto è obbligatorio"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "Cartellino di Lotto di Produzione"
 
 msgid "Batched jobs"
 msgstr "Ordini di produzione raggruppati"

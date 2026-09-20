@@ -180,7 +180,7 @@ msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
 msgid "Batch Traveler"
-msgstr ""
+msgstr "배치 작업 이동표"
 
 msgid "Batched jobs"
 msgstr "일괄 작업 지시"
