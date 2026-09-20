@@ -101,9 +101,11 @@ product/architecture decisions (J–L) — don't guess.
 - **H. CUSTOMER_PORTALS** — move portal authoring (`shared.service.ts:256-298` + the
   `upsertExternalLink` path) to ee + `requireEntitlement`; keep public share-page
   (`share+/customer.$id*`) as runtime `companyHasFeature` degrade.
-- **I. AUDIT_LOG** — wrap the audit read in an ee fn gated by `companyHasFeature`; remove
-  the loader `requirePlan` redirect (`audit-logs.tsx:92`) so the page stays visible behind
-  the overlay (read-only → no `requireEntitlement` throw).
+- **I. AUDIT_LOG** — ⚠ RE-SCOPED → FLAGGED (see STATUS row). This original framing was
+  wrong: the `audit-logs.tsx:92` `requirePlan` is in the ACTION (enable intent), not a
+  loader redirect, and the list route ALREADY renders visible+overlay. The real gate target
+  is `enableAuditLog` (the enable write), which has ITAR/compliance callers that make a hard
+  `requireEntitlement` unsafe without a licensing-policy decision. Flagged for Brad.
 
 ### FLAGGED — do NOT do autonomously (need Brad)
 - **J. AI_AGENT** ⚠ — LARGE; currently HIDDEN when gated (`useAgentAvailable.ts:12`).
@@ -135,8 +137,8 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | F. WEBHOOKS | MEDIUM | ✅ done | (this) | upsert/delete/deactivateWebhooks → packages/ee/src/webhooks.server.ts + requireEntitlement; delivery gated via companyHasFeature degrade in jobs events/webhook.ts:37; 3 routes→requireFeature; mcp −3. Verified. |
 | G. FORECAST (demandForecast fns) | MEDIUM | ✅ done | (this) | PREMISE MISMATCH found: upsert/deleteDemandForecasts had NO app callers (MCP-only) — moved to packages/ee/src/forecast.server.ts + requireEntitlement (closes ungated DESTRUCTIVE MCP write path); mcp 252→250. The REAL forecast UI uses demandProjection — see G2. |
 | G2. FORECAST (demandProjection = the real feature) | MEDIUM | ✅ done | 5446f132fa | upsert/deleteDemandProjections → packages/ee/src/forecast.server.ts + requireEntitlement("FORECAST"); 3 demand-forecasts.* routes → requireFeature; mcp 1540→1538. ALSO fixed a pre-existing red test: mcp-tool-metadata.test.ts "module-local type alias" case referenced shared_upsertApprovalRule (removed when approvals→ee, ba2787c2) — repointed to items_diffMethod (`input: DiffMethodInput`, same named-alias path). Verified ee+erp typecheck, biome, full mcp test 19/19. |
-| H. CUSTOMER_PORTALS | MEDIUM | ⬜ next | | |
-| I. AUDIT_LOG | MEDIUM | ⬜ | | |
+| H. CUSTOMER_PORTALS | MEDIUM | ✅ done | 0716bea88e | New packages/ee/src/customer-portals.server.ts: upsertCustomerPortal(client, companyId, portal) + deleteCustomerPortal(client, id, companyId), each requireEntitlement("CUSTOMER_PORTALS"). Did NOT gate the shared upsertExternalLink (also used by quote/RFQ/supplier-quote finalize) — added portal-specific ee writers instead. deleteCustomerPortal removed from shared.service.ts (now companyId-scoped); reads + upsertExternalLink stay. 3 routes → ee + requireFeature; list route already visible+overlay. Public share pages companyHasPlan→companyHasFeature (degrade). UI Form/Table → .ee.tsx. mcp 1538→1537 (shared_deleteCustomerPortal drops). Verified: ee+erp typecheck, biome, client-graph grep clean. |
+| I. AUDIT_LOG | MEDIUM | ⚠ FLAGGED — needs Brad | | NOT a clean surgical gate. (1) ITAR CONFLICT: enableAuditLog (the enable "write") has non-route compliance callers — company.new.tsx/companies.new.tsx call it at company creation under CONTROLLED_ENVIRONMENT, and audit-logs.tsx loader force-enables for controlled companies (audit is MANDATORY + non-disableable under ITAR). A hard requireEntitlement("AUDIT_LOG") inside enableAuditLog would BREAK audit enablement on a self-hosted Community ITAR install — UNLESS the invariant "CONTROLLED_ENVIRONMENT ⇒ Enterprise edition" is guaranteed (then companyHasFeature returns true and the gate is safe). That is a licensing/compliance policy call. (2) Body lives in @carbon/database/audit + @carbon/jobs (write path + archiving are Inngest), like K/L — a large relocation, not an app-service move. (3) No broken state today: list route already visible+overlay (AuditLogUpgradeOverlay + usePlanGate), settings action already has requirePlan UX gate. Same "incomplete moat" status as BACKUPS. **Decision for Brad:** is CONTROLLED_ENVIRONMENT always Enterprise-licensed? If yes → gate enableAuditLog in ee (safe). If a Community ITAR install is supported → the gate needs a CONTROLLED_ENVIRONMENT bypass. |
 | J. AI_AGENT | LARGE | ⚠ FLAGGED | | hidden→overlay decision + big relocation; needs Brad |
 | K. WORKFLOWS | LARGE | ⚠ FLAGGED | | engine in jobs; needs Brad |
 | L. BACKUPS engine | LARGE | ⚠ FLAGGED | | relocate engine from jobs; do last; needs Brad |
