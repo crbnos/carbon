@@ -140,7 +140,7 @@ Deno.test("authenticated callers cannot borrow another user's permissions", asyn
     );
 
     assertEquals(await response.json(), {
-      message: "Authenticated user does not match requested user",
+      message: "userId does not match the authenticated user",
     });
     assertEquals(response.status, 500);
     assertEquals(posts, 0);

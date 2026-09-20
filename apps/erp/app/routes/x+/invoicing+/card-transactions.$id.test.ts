@@ -8,7 +8,10 @@ const flash = vi.hoisted(() => vi.fn(async () => ({})));
 const EmptyComponent = vi.hoisted(() => () => null);
 
 vi.mock("@carbon/auth", () => ({
-  error: (cause: unknown, message: string) => ({ cause, message })
+  error: (cause: unknown, message: string) => ({ cause, message }),
+  // Transitively imported (~/modules/settings reads it at module load to build
+  // PUBLIC_STORAGE_URL_PREFIX); the mock must export it or the module errors.
+  SUPABASE_URL: "https://example.supabase.co"
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
 vi.mock("@carbon/auth/session.server", () => ({ flash }));
@@ -37,6 +40,10 @@ vi.mock("@lingui/react/macro", () => ({
 vi.mock("@react-aria/i18n", () => ({ useLocale: vi.fn() }));
 vi.mock("~/components/Enumerable", () => ({ Enumerable: EmptyComponent }));
 vi.mock("~/components/Modals", () => ({ Confirm: EmptyComponent }));
+// The route imports only Hyperlink from the ~/components barrel; mock the barrel
+// so its unrelated exports (which pull in msg`` from @lingui/core/macro, etc.)
+// don't have to be satisfied one transitive dep at a time.
+vi.mock("~/components", () => ({ Hyperlink: EmptyComponent }));
 vi.mock("~/hooks", () => ({
   useCurrencyFormatter: vi.fn(),
   usePermissions: vi.fn()
