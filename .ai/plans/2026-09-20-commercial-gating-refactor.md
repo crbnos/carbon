@@ -134,8 +134,8 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | E. API_KEYS | MEDIUM | ✅ done | (this) | upsert/deleteApiKey → packages/ee/src/api-keys.server.ts + requireEntitlement (companyId from payload/row); 3 routes→requireFeature; key-gen/hash stays in route; mcp 1547→1545. Runtime verify (@carbon/auth) untouched. Verified. Doc-sync TODO: settings/AGENTS.md lists upsert/deleteApiKey (stale). |
 | F. WEBHOOKS | MEDIUM | ✅ done | (this) | upsert/delete/deactivateWebhooks → packages/ee/src/webhooks.server.ts + requireEntitlement; delivery gated via companyHasFeature degrade in jobs events/webhook.ts:37; 3 routes→requireFeature; mcp −3. Verified. |
 | G. FORECAST (demandForecast fns) | MEDIUM | ✅ done | (this) | PREMISE MISMATCH found: upsert/deleteDemandForecasts had NO app callers (MCP-only) — moved to packages/ee/src/forecast.server.ts + requireEntitlement (closes ungated DESTRUCTIVE MCP write path); mcp 252→250. The REAL forecast UI uses demandProjection — see G2. |
-| G2. FORECAST (demandProjection = the real feature) | MEDIUM | ⬜ next | | the demand-forecasts.* routes call upsert/deleteDemandProjections (production.service.ts:4728,498), gated only by requirePlan. Move those to forecast.server.ts + requireEntitlement + routes→requireFeature. |
-| H. CUSTOMER_PORTALS | MEDIUM | ⬜ | | |
+| G2. FORECAST (demandProjection = the real feature) | MEDIUM | ✅ done | 5446f132fa | upsert/deleteDemandProjections → packages/ee/src/forecast.server.ts + requireEntitlement("FORECAST"); 3 demand-forecasts.* routes → requireFeature; mcp 1540→1538. ALSO fixed a pre-existing red test: mcp-tool-metadata.test.ts "module-local type alias" case referenced shared_upsertApprovalRule (removed when approvals→ee, ba2787c2) — repointed to items_diffMethod (`input: DiffMethodInput`, same named-alias path). Verified ee+erp typecheck, biome, full mcp test 19/19. |
+| H. CUSTOMER_PORTALS | MEDIUM | ⬜ next | | |
 | I. AUDIT_LOG | MEDIUM | ⬜ | | |
 | J. AI_AGENT | LARGE | ⚠ FLAGGED | | hidden→overlay decision + big relocation; needs Brad |
 | K. WORKFLOWS | LARGE | ⚠ FLAGGED | | engine in jobs; needs Brad |
