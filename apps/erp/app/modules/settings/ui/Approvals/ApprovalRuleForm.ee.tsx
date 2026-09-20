@@ -1,3 +1,9 @@
+import type { ApprovalRule } from "@carbon/ee/approvals";
+import {
+  type ApprovalDocumentType,
+  approvalDocumentTypesWithAmounts,
+  approvalRuleValidator
+} from "@carbon/ee/approvals";
 import {
   Boolean as FormBoolean,
   Number as FormNumber,
@@ -20,12 +26,6 @@ import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Employee, Users } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import type { ApprovalRule } from "~/modules/shared";
-import {
-  type ApprovalDocumentType,
-  approvalDocumentTypesWithAmounts,
-  approvalRuleValidator
-} from "~/modules/shared";
 import { path } from "~/utils/path";
 
 type ApprovalRuleFormProps = {

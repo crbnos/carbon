@@ -4,7 +4,7 @@ import {
   type CompanyIntegration,
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import type { Events } from "@carbon/lib/events";
@@ -534,7 +534,7 @@ export const notifyFunction = inngest.createFunction(
     const emailAllowed =
       wantsEmail &&
       (await step.run("check-email-plan", () =>
-        companyHasPlan(client, payload.companyId, {
+        companyHasFeature(client, payload.companyId, {
           feature: "EMAIL_NOTIFICATIONS"
         })
       ));

@@ -174,7 +174,8 @@ const ENTITY_LABELS: Record<string, string> = {
   invoice: "Invoice",
   payment: "Payment",
   inventoryAdjustment: "Inventory Adjustment",
-  journalEntry: "Journal Entry"
+  journalEntry: "Journal Entry",
+  charge: "Card Charge"
 };
 
 /**
@@ -189,7 +190,8 @@ const ENTITY_PATHS: Record<string, (id: string) => string> = {
   purchaseOrder: path.to.purchaseOrder,
   bill: path.to.purchaseInvoice,
   salesOrder: path.to.salesOrder,
-  invoice: path.to.salesInvoice
+  invoice: path.to.salesInvoice,
+  charge: path.to.cardTransaction
 };
 
 function getEntityLabel(entityType: string): string {

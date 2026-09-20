@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -42,9 +42,13 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
-  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
-    feature: "CUSTOMER_PORTALS"
-  });
+  const hasPlan = await companyHasFeature(
+    serviceRole,
+    customer.data.companyId,
+    {
+      feature: "CUSTOMER_PORTALS"
+    }
+  );
   if (!hasPlan) {
     return new Response(null, { status: 403 });
   }

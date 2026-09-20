@@ -1,4 +1,10 @@
 import {
+  type ApprovalDocumentType,
+  type ApprovalRule,
+  approvalDocumentTypeLabel,
+  approvalDocumentTypesWithAmounts
+} from "@carbon/ee/approvals";
+import {
   Accordion,
   AccordionContent,
   AccordionItem,
@@ -21,14 +27,8 @@ import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { useCurrencyFormatter, usePermissions, useUrlParams } from "~/hooks";
-import {
-  type ApprovalDocumentType,
-  type ApprovalRule,
-  approvalDocumentTypeLabel,
-  approvalDocumentTypesWithAmounts
-} from "~/modules/shared";
 import { path } from "~/utils/path";
-import ApprovalRuleDetails from "./ApprovalRuleDetails";
+import ApprovalRuleDetails from "./ApprovalRuleDetails.ee";
 
 type ApprovalRuleCardProps = {
   rule: ApprovalRule & { approverGroupNames?: string[] };

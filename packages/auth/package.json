@@ -16,6 +16,7 @@
     "./auth-events.server": "./src/services/auth-events.server.ts",
     "./client.server": "./src/lib/supabase/client.server.ts",
     "./download-token.server": "./src/lib/download-token.server.ts",
+    "./oauth-state.server": "./src/lib/oauth-state.server.ts",
     "./company.server": "./src/services/company.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",

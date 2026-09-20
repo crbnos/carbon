@@ -1,6 +1,8 @@
 import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { deleteEmployeeType } from "@carbon/ee/permissions.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { useLingui } from "@lingui/react/macro";
 import type {
   ActionFunctionArgs,
@@ -9,15 +11,24 @@ import type {
 } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteEmployeeType, getEmployeeType } from "~/modules/users";
+import { getEmployeeType } from "~/modules/users";
 import { path } from "~/utils/path";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "users",
     role: "employee"
   });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
+  });
+
   const { employeeTypeId } = params;
   if (!employeeTypeId) throw notFound("EmployeeTypeId not found");
 
@@ -38,8 +49,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     delete: "users"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const { employeeTypeId } = params;
@@ -52,7 +71,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { error: deleteTypeError } = await deleteEmployeeType(
     client,
-    employeeTypeId
+    employeeTypeId,
+    companyId
   );
   if (deleteTypeError) {
     throw redirect(

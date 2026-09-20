@@ -1,3 +1,4 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -54,7 +55,6 @@ import {
 } from "~/hooks";
 import type { SupplierDetail } from "~/modules/purchasing";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
 import SupplierApprovalModal from "./SupplierApprovalModal";

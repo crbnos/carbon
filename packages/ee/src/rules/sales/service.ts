@@ -289,47 +289,7 @@ export async function getSalesRulesList(
   );
 }
 
-export async function assignSalesRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string; companyId: string; createdBy: string }
-) {
-  // Preflight: rule must exist in this company. Without this, callers could
-  // insert a foreign rule id; the evaluator filters defensively but the
-  // orphan row still inflates assignment counts.
-  const ruleRes = await client
-    .from("enforcementRule")
-    .select("id")
-    .eq("id", args.ruleId)
-    .eq("companyId", args.companyId)
-    .eq("family", "sales")
-    .single();
-  if (ruleRes.error || !ruleRes.data) {
-    return {
-      data: null,
-      error: ruleRes.error ?? new Error("Rule not found")
-    };
-  }
-
-  return client
-    .from("enforcementRuleItemAssignment")
-    .insert({
-      itemId: args.itemId,
-      ruleId: args.ruleId,
-      companyId: args.companyId,
-      createdBy: args.createdBy
-    })
-    .select("itemId, ruleId")
-    .single();
-}
-
-export async function unassignSalesRule(
-  client: SupabaseClient<Database>,
-  args: { itemId: string; ruleId: string; companyId: string }
-) {
-  return client
-    .from("enforcementRuleItemAssignment")
-    .delete()
-    .eq("itemId", args.itemId)
-    .eq("ruleId", args.ruleId)
-    .eq("companyId", args.companyId);
-}
+// `assignSalesRule` / `unassignSalesRule` (authoring writes) moved to
+// `../service.server.ts` (`@carbon/ee/rules.server`) — they embed
+// `requireEntitlement("SALES_RULES")` and so are server-only, which must not
+// reach the client-safe `@carbon/ee/rules` barrel this file feeds.

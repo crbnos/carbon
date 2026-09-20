@@ -2332,6 +2332,10 @@ msgstr "Fiyatlandırma kuralını silmek istediğinizden emin misiniz: {0}? Bu g
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Yazıcı \"{0}\" cihazını silmek istediğinizden emin misiniz? Bu yazıcıya atıfta bulunan tüm görevlendirmeler temizlenecektir. Bu işlem geri alınamaz."
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Projeyi silmek istediğinize emin misiniz: {0}? Deaktif edilecek ve aktif listelerden gizlenecektir."
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2509,6 +2513,10 @@ msgstr "Bu kullanıcılara daveti göndermek istediğinizden emin misiniz?"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Bu kullanıcıya daveti göndermek istediğinizden emin misiniz?"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr "Hükümsüz kılmak istediğinize emin misiniz {0}? Bu, bir mahsup yevmiye kaydı muhasebeleştirir ve geri alınamaz."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Bu notu hükümsüz kılmak istediğinizden emin misiniz? Bu, muhasebe girişlerini ve uygulamalarını tersine çevirecektir. Bu geri alınamaz."
@@ -2801,6 +2809,9 @@ msgstr "{0}'den sonra kullanılabilir"
 
 msgid "Available hours"
 msgstr "Kullanılabilir saatler"
+
+msgid "Available on the Business plan"
+msgstr "Business planında kullanılabilir"
 
 msgid "Avatar url"
 msgstr "Avatar URL'si"
@@ -3409,6 +3420,12 @@ msgstr "Carbon'ın operatörlerin operasyonları çalıştırdığı, miktarlar�
 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon'ın bir parça numarası olan her şey için — Parça, Malzeme, Takım, Hizmet, Sarf malzemesi veya Bağlama aparatı — iş emirleri, yöntemler, siparişler ve envanterin işaret ettiği tek stok kartı."
+
+msgid "Card Holder"
+msgstr "Kart Sahibi"
+
+msgid "Card Transactions"
+msgstr "Kart İşlemleri"
 
 msgid "Cards"
 msgstr "Kartlar"
@@ -4483,6 +4500,9 @@ msgstr "İş yeniden planlanamadı. Lütfen tekrar deneyin."
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape bağlantısı kaydedilemedi"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp bağlantısı kaydedilemedi"
+
 msgid "Count"
 msgstr "Adet"
 
@@ -4744,6 +4764,9 @@ msgstr "Ödeme koşulu oluşturuldu"
 
 msgid "Created process"
 msgstr "Oluşturulan süreç"
+
+msgid "Created project"
+msgstr "Proje oluşturuldu"
 
 msgid "Created required action"
 msgstr "Gerekli eylem oluşturuldu"
@@ -5392,6 +5415,9 @@ msgstr "Ertelenen Vergi Yükümlülüğü (varsayılan)"
 msgid "Define a manufacturing operation first."
 msgstr "Önce bir üretim işlemini tanımlayın."
 
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr "Özel roller tanımlayın ve bunları modüle özel, ayrıntılı izinlerle takımınıza atayın."
+
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Çok seviyeli BOM'lar ve Operasyon listesi (üretim yöntemleri) tanımlayın"
 
@@ -5575,6 +5601,9 @@ msgstr "Prosedürü Sil"
 
 msgid "Delete Process"
 msgstr "İşlemi Sil"
+
+msgid "Delete Project"
+msgstr "Projeyi Sil"
 
 msgid "Delete Purchase Invoice"
 msgstr "Alış Faturasını Sil"
@@ -6523,6 +6552,9 @@ msgstr "Üretim Olayı Düzenle"
 msgid "Edit Production Quantity"
 msgstr "Üretim Miktarını Düzenle"
 
+msgid "Edit Project"
+msgstr "Projeyi Düzenle"
+
 msgid "Edit purchase order line type"
 msgstr "Satın alma siparişi satır türünü düzenle"
 
@@ -7050,6 +7082,9 @@ msgstr "Döviz kuru güncelleme tarihi"
 msgid "Exchange Rates"
 msgstr "Döviz kurları"
 
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Yetkilendirme kodunun erişim için değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
+
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Yetkilendirme kodunun erişim belirteciyle değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
 
@@ -7372,6 +7407,10 @@ msgstr "Ödeme koşulu oluşturulamadı: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "İşlemi oluşturulamadı: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr "Proje oluşturulamadı: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -8234,6 +8273,9 @@ msgstr "sınıflar"
 
 msgid "Grades"
 msgstr "Dereceler"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr "Her kullanıcıya modüle özel, ayrıntılı izinler verin, herkes için tam erişim vermek yerine."
 
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
@@ -9510,9 +9552,6 @@ msgstr "Tam eşleşme için boş bırakın"
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
-msgid "Ledger"
-msgstr "Büyük Defter"
-
 msgid "Left item"
 msgstr "Sol öğe"
 
@@ -10288,6 +10327,8 @@ msgstr ""
 
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
+msgid "Merchant"
+msgstr "Satıcı"
 
 msgid "MES"
 msgstr "MES"
@@ -10327,9 +10368,6 @@ msgstr "Metrik birimleri devre dışı"
 
 msgid "Metric units are enabled"
 msgstr "Metrik birimler etkinleştirilmiş"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
@@ -10821,6 +10859,9 @@ msgstr "Yeni Prosedür"
 msgid "New Process"
 msgstr "Yeni Süreç"
 
+msgid "New Project"
+msgstr "Yeni Proje"
+
 msgid "New Quality Document"
 msgstr "Yeni Kalite Belgesi"
 
@@ -11215,6 +11256,9 @@ msgstr "İş emri oluşturulmadı"
 msgid "No journal lines in scope for this period"
 msgstr "Bu dönem için kapsam içinde muhasebe fişi satırı yok"
 
+msgid "No lines"
+msgstr "Satır yok"
+
 msgid "No lines to map"
 msgstr "Eşlenecek satır yok"
 
@@ -11556,6 +11600,9 @@ msgid "Not certified"
 msgstr "Sertifikalı değil"
 
 msgid "Not configured"
+msgstr "Yapılandırılmadı"
+
+msgid "Not Configured"
 msgstr "Yapılandırılmadı"
 
 msgid "Not enough jobs to cover quantity"
@@ -11939,6 +11986,9 @@ msgstr "Planlanmış Açık"
 
 msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanmayı deneyin."
 
 msgid "Open the Setup Map"
 msgstr "Kurulum Haritasını Aç"
@@ -13087,6 +13137,9 @@ msgstr "Proj. {0}"
 msgid "Project"
 msgstr "Proje"
 
+msgid "Project Name"
+msgstr "Proje Adı"
+
 msgid "Project owner"
 msgstr "Proje sahibi"
 
@@ -13137,6 +13190,9 @@ msgstr "Projeksiyon"
 
 msgid "Projections"
 msgstr "Projeksiyonlar"
+
+msgid "Projects"
+msgstr "Projeler"
 
 msgid "Promised Date"
 msgstr "Taahhüt Tarihi"
@@ -13584,6 +13640,24 @@ msgstr "Bunu haftalık durum çağrısında gündeme getir"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "bunu erken ve açık bir şekilde dile getir. 2. haftada adı konulan bir sorun küçük bir düzeltmedir; go-live'da aynı sorun bir gecikmedir."
+
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp bağlandı ancak kurulum tamamlanmadı"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp bağlantıyı reddetti"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp bir yetkilendirme kodu döndürmedi"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp yetkilendirmeyi reddetti"
 
 msgid "Rate"
 msgstr "Kur"
@@ -14157,9 +14231,6 @@ msgstr "Talep Edilen Tarih"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
-msgid "Require a second factor when members sign in to this company."
-msgstr "Bu şirkete giriş yaparken üyelerin ikinci bir faktör kullanmasını zorunlu tutun."
-
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."
 
@@ -14180,6 +14251,9 @@ msgstr "Eşleştirme Gerekli"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
+
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr "Satın alma siparişleri, kalite belgeler ve tedarikçiler için tutar eşikleri ve onaylayan gruplarına göre katmanlı imzayı talep edin."
 
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
@@ -14386,6 +14460,9 @@ msgstr "İade Nedeni"
 
 msgid "Return Reasons"
 msgstr "İade Nedenleri"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Entegrasyonlara geri dönün ve Ramp'i yeniden bağlayın."
 
 msgid "returnable"
 msgstr "iadesine uygun"
@@ -16972,6 +17049,9 @@ msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı gird
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Yetkilendirme Ramp'te reddedildi. Yeniden bağlanmayı deneyin."
+
 msgid "The backup job reported this error."
 msgstr "Yedekleme işi bu hatayı bildirdi."
 
@@ -17496,6 +17576,9 @@ msgstr "Teklif oluşturuldu"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Teklif revizyon ekiyle kopyalanacaktır"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp bağlantısının süresi doldu"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Satın aldığınız ve tükettiğiniz ham stok ve malzeme ana kaydı"
 
@@ -17535,6 +17618,9 @@ msgstr "Bir iş emrinin kapatıldığında bıraktığı artık yarı mamul, Ür
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."
 
 msgid "The restore job reported this error."
 msgstr "Geri yükleme işi bu hatayı bildirdi."
@@ -18419,6 +18505,12 @@ msgstr "Ekibinizi Academy ve uygulama içi kılavuzlar aracılığıyla eğitin"
 msgid "Trainings"
 msgstr "Eğitimler"
 
+msgid "Transaction Date"
+msgstr "İşlem Tarihi"
+
+msgid "Transaction ID"
+msgstr "İşlem Kimliği"
+
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "İşlemler muhasebe fişileri oluşturacak ve Büyük defteri güncelleyecektir."
 
@@ -18831,6 +18923,9 @@ msgstr "Yükselt"
 msgid "Upgrade to Business"
 msgstr "İşletmeye Yükselt"
 
+msgid "Upgrade to Enterprise"
+msgstr "Enterprise'a yükselt"
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Üniforma kurallarını açmak için yükseltin"
@@ -18947,6 +19042,9 @@ msgstr "Faydalı Ömür (Aylar)"
 
 msgid "User"
 msgstr "Kullanıcı"
+
+msgid "User Permissions"
+msgstr "Kullanıcı İzinleri"
 
 msgid "User roles"
 msgstr "Kullanıcı rolleri"
@@ -19298,6 +19396,9 @@ msgstr "Hükümsüz kıl"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "Hükümsüz Kıl {0}"
+
+msgid "Void Card Transaction"
+msgstr "Kart İşlemini Hükümsüz Kıl"
 
 msgid "Void Invoice"
 msgstr "Faturayı hükümsüz kıl"

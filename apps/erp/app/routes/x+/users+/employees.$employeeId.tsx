@@ -3,13 +3,32 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
+import {
+  makeCompanyPermissionsFromClaims,
+  makeCompanyPermissionsFromEmployeeType,
+  updateEmployee
+} from "@carbon/ee/permissions.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
+import {
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalHeader,
+  ModalOverlay,
+  ModalTitle,
+  VStack
+} from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
+import { LuShield } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs,
   LoaderFunctionArgs
 } from "react-router";
-import { data, redirect, useLoaderData } from "react-router";
+import { data, redirect, useLoaderData, useNavigate } from "react-router";
+import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { CompanyPermission } from "~/modules/users";
 import {
   EmployeePermissionsForm,
@@ -19,14 +38,48 @@ import {
   getPermissionsByEmployeeType,
   userPermissionsValidator
 } from "~/modules/users";
-import {
-  getClaims,
-  makeCompanyPermissionsFromClaims,
-  makeCompanyPermissionsFromEmployeeType,
-  updateEmployee
-} from "~/modules/users/users.server";
+import { getClaims } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
+
+// The per-user permissions editor is a modal over the accounts list; when the
+// company isn't entitled we show the upgrade prompt IN that modal (not a
+// full-page overlay), so closing it returns to the accounts list — which stays
+// fully usable (inviting people is a Community feature).
+function PermissionsUpgradeModal() {
+  const navigate = useNavigate();
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) navigate(-1);
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <ModalHeader>
+          <ModalTitle>
+            <Trans>User Permissions</Trans>
+          </ModalTitle>
+        </ModalHeader>
+        <ModalBody>
+          <VStack spacing={4} className="items-center text-center py-6">
+            <div className="flex items-center justify-center rounded-full bg-muted size-12">
+              <LuShield className="size-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              <Trans>
+                Grant each user fine-grained, per-module permissions instead of
+                giving everyone full access.
+              </Trans>
+            </p>
+            <UpgradeOverlayUpgradeButton />
+          </VStack>
+        </ModalBody>
+      </ModalContent>
+    </Modal>
+  );
+}
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {
@@ -38,6 +91,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!employeeId) throw notFound("employeeId not found");
 
   const client = getCarbonServiceRole();
+
   const [rawClaims, employee, employeeTypes] = await Promise.all([
     getClaims(client, employeeId, companyId),
     getEmployee(client, employeeId, companyId),
@@ -103,6 +157,14 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "users"
   });
 
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
+  });
+
   const validation = await validator(employeeValidator).validate(
     await request.formData()
   );
@@ -150,6 +212,11 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 export default function UsersEmployeeRoute() {
   const { permissions, employee, employeeTypes, employeeTypePermissions } =
     useLoaderData<typeof loader>();
+  const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
+
+  if (isGated) {
+    return <PermissionsUpgradeModal />;
+  }
 
   const initialValues = {
     id: employee?.id || "",

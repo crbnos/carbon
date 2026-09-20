@@ -79,12 +79,24 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   nextUrl,
   formMethod,
+  formAction,
   defaultShouldRevalidate
 }) => {
   if (
     currentUrl.pathname.startsWith("/refresh-session") ||
     currentUrl.pathname.startsWith("/switch-company") ||
     currentUrl.pathname.startsWith("/x/acknowledge")
+  ) {
+    return true;
+  }
+
+  // Console mode + pin-in/out live in this shell loader (via userMiddleware).
+  // Those actions set cookies, so the shell MUST re-run for the change to show —
+  // without this, the overlay/console state only updated on a full page refresh.
+  if (
+    formAction === path.to.consolePinIn ||
+    formAction === path.to.consolePinOut ||
+    formAction === path.to.consoleToggle
   ) {
     return true;
   }

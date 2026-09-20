@@ -424,7 +424,8 @@ const DIMENSION_LABEL_SOURCES: Record<string, LabelSource> = {
   Supplier: { table: "supplier", labelColumn: "name" },
   Item: { table: "item", labelColumn: "readableIdWithRevision" },
   WorkCenter: { table: "workCenter", labelColumn: "name" },
-  Process: { table: "process", labelColumn: "name" }
+  Process: { table: "process", labelColumn: "name" },
+  Project: { table: "project", labelColumn: "name" }
 };
 
 /**

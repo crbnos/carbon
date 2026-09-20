@@ -2332,6 +2332,10 @@ msgstr "क्या आप मूल्य नियम {0} को हटान
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "क्या आप प्रिंटर \"{0}\" को हटाना चाहते हैं? इस प्रिंटर की सभी असाइनमेंट हटा दी जाएंगी। इसे पूर्ववत नहीं किया जा सकता।"
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "क्या आप सुनिश्चित हैं कि आप परियोजना को हटाना चाहते हैं: {0}? इसे निष्क्रिय कर दिया जाएगा और सूचियों से छिपा दिया जाएगा।"
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2509,6 +2513,10 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उपयोगकर्ता को आमंत्रण भेजना चाहते हैं?"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr "क्या आप सुनिश्चित हैं कि आप {0} को अमान्य करना चाहते हैं? यह एक उलट जर्नल प्रविष्टि पोस्ट करता है और इसे पूर्ववत नहीं किया जा सकता।"
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "क्या आप निश्चित हैं कि आप इस मेमो को अमान्य करना चाहते हैं? यह इसकी लेखांकन प्रविष्टियों और अनुप्रयोगों को उलट देगा। यह पूर्ववत नहीं किया जा सकता।"
@@ -2801,6 +2809,9 @@ msgstr "{0} के बाद उपलब्ध"
 
 msgid "Available hours"
 msgstr "उपलब्ध घंटे"
+
+msgid "Available on the Business plan"
+msgstr "बिज़नेस प्लान पर उपलब्ध"
 
 msgid "Avatar url"
 msgstr "अवतार url"
@@ -3409,6 +3420,12 @@ msgstr "Carbon का शॉप फ्लोर ऐप जहां ऑपरे
 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon का एकल रिकॉर्ड किसी भी चीज़ के लिए जिसका पार्ट नंबर है — पार्ट, सामग्री, टूल, सेवा, उपभोग्य सामग्री, या फिक्स्चर — जिस पर जॉब, विधि, आदेश और इन्वेंटरी सभी इंगित करते हैं।"
+
+msgid "Card Holder"
+msgstr "कार्ड धारक"
+
+msgid "Card Transactions"
+msgstr "कार्ड लेनदेन"
 
 msgid "Cards"
 msgstr "कार्ड"
@@ -4483,6 +4500,9 @@ msgstr "कार्य पुनर्निर्धारित नहीं 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
+
 msgid "Count"
 msgstr "गिनती"
 
@@ -4744,6 +4764,9 @@ msgstr "भुगतान शर्तें बनाई गई।"
 
 msgid "Created process"
 msgstr "प्रक्रिया बनाई गई"
+
+msgid "Created project"
+msgstr "परियोजना बना दी गई"
 
 msgid "Created required action"
 msgstr "आवश्यक कार्रवाई बनाई गई"
@@ -5392,6 +5415,9 @@ msgstr "आस्थगित कर देयता (डिफ़ॉल्ट)"
 msgid "Define a manufacturing operation first."
 msgstr "पहले एक विनिर्माण ऑपरेशन को परिभाषित करें।"
 
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr "अपनी टीम को असाइन करने के लिए बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियों के साथ कस्टम भूमिकाएं परिभाषित करें।"
+
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "बहु-स्तरीय BOMs और प्रक्रिया सूची (निर्माण विधि) को परिभाषित करें"
 
@@ -5575,6 +5601,9 @@ msgstr "कार्यविधि हटाएँ"
 
 msgid "Delete Process"
 msgstr "प्रक्रिया हटाएं"
+
+msgid "Delete Project"
+msgstr "परियोजना हटाएँ"
 
 msgid "Delete Purchase Invoice"
 msgstr "क्रय चालान हटाएँ"
@@ -6523,6 +6552,9 @@ msgstr "उत्पादन इवेंट संपादित करें
 msgid "Edit Production Quantity"
 msgstr "उत्पादन मात्रा संपादित करें"
 
+msgid "Edit Project"
+msgstr "परियोजना संपादित करें"
+
 msgid "Edit purchase order line type"
 msgstr "क्रय आदेश लाइन प्रकार संपादित करें"
 
@@ -7050,6 +7082,9 @@ msgstr "विनिमय दर अपडेट किया गया"
 msgid "Exchange Rates"
 msgstr "विनिमय दरें"
 
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "पहुँच के लिए प्राधिकरण कोड का विनिमय विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "प्राधिकरण कोड को एक्सेस टोकन से बदलना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
 
@@ -7372,6 +7407,10 @@ msgstr "भुगतान शर्तें बनाने में वि�
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "प्रक्रिया बनाने में विफल: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr "परियोजना बनाने में विफल: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -8234,6 +8273,9 @@ msgstr "ग्रेड"
 
 msgid "Grades"
 msgstr "ग्रेड"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
 
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
@@ -9510,9 +9552,6 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
-msgid "Ledger"
-msgstr "बहीखाता"
-
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -10288,6 +10327,8 @@ msgstr ""
 
 msgid "Merge output lots"
 msgstr "आउटपुट लॉट्स को मर्ज करें"
+msgid "Merchant"
+msgstr "व्यापारी"
 
 msgid "MES"
 msgstr "MES"
@@ -10327,9 +10368,6 @@ msgstr "मीट्रिक इकाइयाँ अक्षम हैं"
 
 msgid "Metric units are enabled"
 msgstr "मीट्रिक इकाइयाँ सक्षम हैं"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "मध्य-महीना / मध्य-त्रैमासिक / आधा-वर्ष सम्मेलन जो पहले वर्ष की कटौती निर्धारित करता है।"
@@ -10821,6 +10859,9 @@ msgstr "नई कार्यविधि"
 msgid "New Process"
 msgstr "नई प्रक्रिया"
 
+msgid "New Project"
+msgstr "नई परियोजना"
+
 msgid "New Quality Document"
 msgstr "नया गुणवत्ता दस्तावेज़"
 
@@ -11215,6 +11256,9 @@ msgstr "कोई जॉब नहीं बनाया गया"
 msgid "No journal lines in scope for this period"
 msgstr "इस अवधि के लिए दायरे में कोई जर्नल लाइन नहीं"
 
+msgid "No lines"
+msgstr "कोई पंक्तियाँ नहीं"
+
 msgid "No lines to map"
 msgstr "मैप करने के लिए कोई लाइनें नहीं"
 
@@ -11556,6 +11600,9 @@ msgid "Not certified"
 msgstr "प्रमाणित नहीं"
 
 msgid "Not configured"
+msgstr "कॉन्फ़िगर नहीं किया गया"
+
+msgid "Not Configured"
 msgstr "कॉन्फ़िगर नहीं किया गया"
 
 msgid "Not enough jobs to cover quantity"
@@ -11939,6 +11986,9 @@ msgstr "खुली अनुसूचित"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Ramp एकीकरण खोलें और कॉन्फ़िगरेशन पूरा करने के लिए दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "Open the Setup Map"
 msgstr "सेटअप मैप खोलें"
@@ -13087,6 +13137,9 @@ msgstr "प्रोज. {0}"
 msgid "Project"
 msgstr "प्रोजेक्ट"
 
+msgid "Project Name"
+msgstr "परियोजना का नाम"
+
 msgid "Project owner"
 msgstr "परियोजना स्वामी"
 
@@ -13137,6 +13190,9 @@ msgstr "प्रक्षेपण"
 
 msgid "Projections"
 msgstr "अनुमान"
+
+msgid "Projects"
+msgstr "परियोजनाएँ"
 
 msgid "Promised Date"
 msgstr "वादा की गई तिथि"
@@ -13584,6 +13640,24 @@ msgstr "इसे साप्ताहिक स्थिति कॉल म�
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "इसे जल्दी उठाएं और स्पष्ट रूप से उठाएं। सप्ताह 2 में नामित समस्या एक छोटी सी मरम्मत है; go-live पर वही समस्या एक देरी है।"
+
+msgid "Ramp"
+msgstr "रैम्प"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजा नहीं जा सका। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp कनेक्ट हो गया, लेकिन कॉन्फ़िगरेशन पूरा नहीं हुआ"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp ने कनेक्शन अस्वीकार कर दिया"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp ने प्राधिकरण कोड नहीं लौटाया"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp ने प्राधिकरण अस्वीकार कर दिया"
 
 msgid "Rate"
 msgstr "दर"
@@ -14157,9 +14231,6 @@ msgstr "अनुरोधित तिथि"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
-msgid "Require a second factor when members sign in to this company."
-msgstr "जब सदस्य इस कंपनी में साइन इन करते हैं तो एक दूसरे कारक की आवश्यकता है।"
-
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
 
@@ -14180,6 +14251,9 @@ msgstr "मिलान आवश्यक है"
 
 msgid "Require SAML SSO"
 msgstr "SAML SSO आवश्यक करें"
+
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr "राशि की सीमा और अनुमोदनकर्ता समूहों के आधार पर क्रय आदेशों, गुणवत्ता दस्तावेज़ों और आपूर्तिकर्ताओं पर स्तरीय अनुमोदन की आवश्यकता है।"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -14386,6 +14460,9 @@ msgstr "रिटर्न कारण"
 
 msgid "Return Reasons"
 msgstr "रिटर्न कारण"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "एकीकरण पर वापस जाएँ और Ramp को फिर से कनेक्ट करें।"
 
 msgid "returnable"
 msgstr "रिटर्न योग्य"
@@ -16972,6 +17049,9 @@ msgstr "प्रत्येक स्टॉक आंदोलन का क�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Ramp में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
+
 msgid "The backup job reported this error."
 msgstr "बैकअप जॉब ने इस त्रुटि की रिपोर्ट की।"
 
@@ -17496,6 +17576,9 @@ msgstr "उद्धरण बनाया जा चुका है"
 msgid "The quote will be copied with a revision suffix"
 msgstr "कोटेशन को एक रिवीजन प्रत्यय के साथ कॉपी किया जाएगा"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp कनेक्शन समाप्त हो गया"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "कच्चा स्टॉक और सामग्री मास्टर जो आप खरीदते और उपभोग करते हैं"
 
@@ -17535,6 +17618,9 @@ msgstr "अवशिष्ट WIP जो एक जॉब के पास ब�
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp से मिले उत्तर में आवश्यक पैरामीटर मौजूद नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"
 
 msgid "The restore job reported this error."
 msgstr "पुनर्स्थापन जॉब ने इस त्रुटि की रिपोर्ट की।"
@@ -18419,6 +18505,12 @@ msgstr "Academy और इन-ऐप गाइड के माध्यम स�
 msgid "Trainings"
 msgstr "प्रशिक्षण"
 
+msgid "Transaction Date"
+msgstr "लेनदेन की तारीख"
+
+msgid "Transaction ID"
+msgstr "लेनदेन आईडी"
+
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "लेनदेन जर्नल प्रविष्टियां बनाएंगे और सामान्य खाता बही को अपडेट करेंगे।"
 
@@ -18831,6 +18923,9 @@ msgstr "अपग्रेड करें"
 msgid "Upgrade to Business"
 msgstr "बिजनेस में अपग्रेड करें"
 
+msgid "Upgrade to Enterprise"
+msgstr "एंटरप्राइज़ में अपग्रेड करें"
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "{0} नियमों को अनलॉक करने के लिए अपग्रेड करें"
@@ -18947,6 +19042,9 @@ msgstr "उपयोगी जीवन (महीने)"
 
 msgid "User"
 msgstr "उपयोगकर्ता"
+
+msgid "User Permissions"
+msgstr "उपयोगकर्ता अनुमतियां"
 
 msgid "User roles"
 msgstr "उपयोगकर्ता भूमिकाएं"
@@ -19298,6 +19396,9 @@ msgstr "अमान्य करें"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "अमान्य करें {0}"
+
+msgid "Void Card Transaction"
+msgstr "कार्ड लेनदेन को अमान्य करें"
 
 msgid "Void Invoice"
 msgstr "चालान अमान्य करें"

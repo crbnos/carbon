@@ -1,3 +1,4 @@
+import type { ApprovalDocumentType, ApprovalRule } from "@carbon/ee/approvals";
 import { cn, HStack, VStack } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { memo } from "react";
@@ -10,7 +11,6 @@ import {
 } from "react-icons/lu";
 import { DateTime, EmployeeAvatar } from "~/components";
 import { UserSelect } from "~/components/Selectors";
-import type { ApprovalDocumentType, ApprovalRule } from "~/modules/shared";
 
 type ApprovalRuleDetailsProps = {
   rule: ApprovalRule & { approverGroupNames?: string[] };

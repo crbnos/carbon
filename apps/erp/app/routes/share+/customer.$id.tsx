@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import { Avatar } from "@carbon/react";
 import { SCALE_FORMAT } from "@carbon/utils";
@@ -65,9 +65,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     throw new Error("Customer not found");
   }
 
-  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
-    feature: "CUSTOMER_PORTALS"
-  });
+  const hasPlan = await companyHasFeature(
+    serviceRole,
+    customer.data.companyId,
+    {
+      feature: "CUSTOMER_PORTALS"
+    }
+  );
   if (!hasPlan) {
     throw new Response("Not found", { status: 404 });
   }

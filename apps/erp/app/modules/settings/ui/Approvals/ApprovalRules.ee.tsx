@@ -1,4 +1,8 @@
 import {
+  type ApprovalRule,
+  approvalDocumentTypesWithAmounts
+} from "@carbon/ee/approvals";
+import {
   Button,
   Card,
   CardContent,
@@ -15,12 +19,8 @@ import { LuPlus } from "react-icons/lu";
 import { Link } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
-import {
-  type ApprovalRule,
-  approvalDocumentTypesWithAmounts
-} from "~/modules/shared";
 import { path } from "~/utils/path";
-import ApprovalRuleCard from "./ApprovalRuleCard";
+import ApprovalRuleCard from "./ApprovalRuleCard.ee";
 
 type ApprovalRulesProps = {
   poRules: ApprovalRule[];

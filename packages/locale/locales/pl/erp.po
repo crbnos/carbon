@@ -2332,6 +2332,10 @@ msgstr "Czy na pewno chcesz usunąć regułę cenową: {0}? Tej czynności nie m
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Czy na pewno chcesz usunąć drukarkę „{0}\"? Wszystkie przypisania odwołujące się do tej drukarki zostaną wyczyszczone. Tej operacji nie można cofnąć."
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Czy na pewno chcesz usunąć projekt: {0}? Zostanie on dezaktywowany i ukryty z listy aktywnych."
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2509,6 +2513,10 @@ msgstr "Czy na pewno chcesz wysłać zaproszenie do tych użytkowników?"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr "Czy na pewno chcesz unieważnić {0}? To zaksięguje odwracający zapis księgowy i nie będzie możliwe do cofnięcia."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Czy na pewno chcesz unieważnić to memo? Spowoduje to wycofanie jego wpisów księgowych i zastosowań. Nie można tego cofnąć."
@@ -2801,6 +2809,9 @@ msgstr "Dostępne po {0}"
 
 msgid "Available hours"
 msgstr "Dostępne godziny"
+
+msgid "Available on the Business plan"
+msgstr "Dostępne w planie Business"
 
 msgid "Avatar url"
 msgstr "URL avatara"
@@ -3409,6 +3420,12 @@ msgstr "Aplikacja Carbon do pracy na hali, gdzie operatorzy uruchamiają operacj
 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Pojedynczy rekord Carbon dla wszystkiego z numerem części — Część, Materiał, Narzędzie, Usługa, Materiał eksploatacyjny lub Przyrząd obróbkowy — na które wskazują Zlecenia produkcyjne, Metody, zamówienia i Zapasy."
+
+msgid "Card Holder"
+msgstr "Posiadacz Karty"
+
+msgid "Card Transactions"
+msgstr "Transakcje Kartą"
 
 msgid "Cards"
 msgstr "Karty"
@@ -4483,6 +4500,9 @@ msgstr "Nie można przeplanować zadania. Spróbuj ponownie."
 msgid "Couldn't save the Onshape connection"
 msgstr "Nie udało się zapisać połączenia z Onshape"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Nie udało się zapisać połączenia z Ramp"
+
 msgid "Count"
 msgstr "Liczba"
 
@@ -4744,6 +4764,9 @@ msgstr "Utworzono warunki płatności"
 
 msgid "Created process"
 msgstr "Proces utworzony"
+
+msgid "Created project"
+msgstr "Projekt został utworzony"
 
 msgid "Created required action"
 msgstr "Utworzono wymaganą akcję"
@@ -5392,6 +5415,9 @@ msgstr "Odroczone Zobowiązania Podatkowe (domyślne)"
 msgid "Define a manufacturing operation first."
 msgstr "Najpierw zdefiniuj operację produkcyjną."
 
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr "Utwórz niestandardowe role z precyzyjnymi uprawnieniami dla każdego modułu i przypisz je swoim pracownikom."
+
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Zdefiniuj wielopoziomowe BOM i listy operacji (metody produkcji)"
 
@@ -5575,6 +5601,9 @@ msgstr "Usuń procedurę"
 
 msgid "Delete Process"
 msgstr "Usuń proces"
+
+msgid "Delete Project"
+msgstr "Usuń projekt"
 
 msgid "Delete Purchase Invoice"
 msgstr "Usuń Fakturę Zakupu"
@@ -6523,6 +6552,9 @@ msgstr "Edytuj Zdarzenie Produkcji"
 msgid "Edit Production Quantity"
 msgstr "Edytuj Ilość Produkcji"
 
+msgid "Edit Project"
+msgstr "Edytuj projekt"
+
 msgid "Edit purchase order line type"
 msgstr "Edytuj typ linii zamówienia zakupu"
 
@@ -7050,6 +7082,9 @@ msgstr "Kurs wymiany zaktualizowany"
 msgid "Exchange Rates"
 msgstr "Kursy wymiany"
 
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "Wymiana kodu autoryzacyjnego na dostęp nie powiodła się. Spróbuj połączyć się ponownie."
+
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "Wymiana kodu autoryzacji na token dostępu nie udała się. Spróbuj połączyć się ponownie."
 
@@ -7372,6 +7407,10 @@ msgstr "Nie udało się utworzyć warunku płatności: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Nie udało się utworzyć procesu: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr "Nie udało się utworzyć projektu: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -8234,6 +8273,9 @@ msgstr "stopnie"
 
 msgid "Grades"
 msgstr "Gatunki"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr "Przydzielaj każdemu użytkownikowi szczegółowe uprawnienia dla każdego modułu zamiast udzielać wszystkim pełnego dostępu."
 
 msgid "Grants Ability"
 msgstr "Przyznaje Umiejętność"
@@ -9510,9 +9552,6 @@ msgstr "Pozostaw puste dla dokładnego dopasowania"
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
 
-msgid "Ledger"
-msgstr "Księga główna"
-
 msgid "Left item"
 msgstr "Element po lewej stronie"
 
@@ -10288,6 +10327,8 @@ msgstr ""
 
 msgid "Merge output lots"
 msgstr "Połącz partie wyjściowe"
+msgid "Merchant"
+msgstr "Handlowiec"
 
 msgid "MES"
 msgstr "MES"
@@ -10327,9 +10368,6 @@ msgstr "Jednostki metryczne są wyłączone"
 
 msgid "Metric units are enabled"
 msgstr "Jednostki metryczne są włączone"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Konwencja połowy miesiąca / połowy kwartału / połowy roku, która określa potrącenie w pierwszym roku."
@@ -10821,6 +10859,9 @@ msgstr "Nowa Procedura"
 msgid "New Process"
 msgstr "Nowy proces"
 
+msgid "New Project"
+msgstr "Nowy projekt"
+
 msgid "New Quality Document"
 msgstr "Nowy Dokument Jakości"
 
@@ -11215,6 +11256,9 @@ msgstr "Nie utworzono zleceń produkcyjnych"
 msgid "No journal lines in scope for this period"
 msgstr "Brak pozycji dowodu księgowego dla tego okresu"
 
+msgid "No lines"
+msgstr "Brak wierszy"
+
 msgid "No lines to map"
 msgstr "Brak linii do mapowania"
 
@@ -11557,6 +11601,9 @@ msgstr "Nie certyfikowany"
 
 msgid "Not configured"
 msgstr "Nie skonfigurowano"
+
+msgid "Not Configured"
+msgstr "Nie skonfigurowane"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
@@ -11939,6 +11986,9 @@ msgstr "Otwarte zaplanowane"
 
 msgid "Open task details"
 msgstr "Otwórz szczegóły zadania"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Otwórz integrację Ramp i spróbuj połączyć się ponownie, aby dokończyć konfigurację."
 
 msgid "Open the Setup Map"
 msgstr "Otwórz mapę konfiguracji"
@@ -13087,6 +13137,9 @@ msgstr "Proj. {0}"
 msgid "Project"
 msgstr "Projekt"
 
+msgid "Project Name"
+msgstr "Nazwa projektu"
+
 msgid "Project owner"
 msgstr "Właściciel projektu"
 
@@ -13137,6 +13190,9 @@ msgstr "Projekcja"
 
 msgid "Projections"
 msgstr "Prognozy"
+
+msgid "Projects"
+msgstr "Projekty"
 
 msgid "Promised Date"
 msgstr "Data potwierdzona"
@@ -13584,6 +13640,24 @@ msgstr "Zgłoś to na cotygodniowym spotkaniu statusu"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "zgłoś to wcześnie i zgłoś to jasno. Problem zidentyfikowany w tygodniu 2 to mała naprawa; ten sam problem w momencie uruchomienia to opóźnienie."
+
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp autoryzował połączenie, ale nie udało się go zapisać. Spróbuj połączyć się ponownie."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Połączono z Ramp, ale konfiguracja nie została ukończona"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp odrzucił połączenie"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp nie zwrócił kodu autoryzacyjnego"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp odrzucił autoryzację"
 
 msgid "Rate"
 msgstr "Kurs"
@@ -14157,9 +14231,6 @@ msgstr "Data żądana"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Wymagaj 6-cyfrowego kodu z aplikacji Authenticator przy logowaniu."
 
-msgid "Require a second factor when members sign in to this company."
-msgstr "Wymagaj drugiego czynnika podczas logowania członków do tej firmy."
-
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Wymagaj przypisanego operatora, zanim harmonogram umieści pracę w lokalizacji. Gdy włączone, stanowiska robocze bez obsady nie otrzymują pracy, a operacja bez pokrycia obsługą personelu wyświetla się jako nieplanowalna. Stanowiska robocze bez oświetlenia (24×7) są zwolnione."
 
@@ -14180,6 +14251,9 @@ msgstr "Wymaga dopasowania"
 
 msgid "Require SAML SSO"
 msgstr "Wymagaj SAML SSO"
+
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr "Wymagaj wielopoziomowego zatwierdzenia zamówień zakupu, dokumentów jakości i dostawców na podstawie limitów kwot i grup zatwierdzających."
 
 msgid "Require two-factor authentication"
 msgstr "Wymagaj uwierzytelniania dwuskładnikowego"
@@ -14386,6 +14460,9 @@ msgstr "Powód zwrotu"
 
 msgid "Return Reasons"
 msgstr "Powody zwrotu"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Wróć do sekcji Integracje i ponownie połącz się z Ramp."
 
 msgid "returnable"
 msgstr "zwrotne"
@@ -16972,6 +17049,9 @@ msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna iloś�
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "Autoryzacja została odrzucona w Ramp. Spróbuj połączyć się ponownie."
+
 msgid "The backup job reported this error."
 msgstr "Zadanie kopii zapasowej zgłosiło ten błąd."
 
@@ -17496,6 +17576,9 @@ msgstr "Oferta została utworzona"
 msgid "The quote will be copied with a revision suffix"
 msgstr "Oferta zostanie skopiowana z przyrostkiem rewizji"
 
+msgid "The Ramp connection expired"
+msgstr "Połączenie z Ramp wygasło"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "Surowy materiał i główny katalog materiałów, które kupujesz i zużywasz"
 
@@ -17535,6 +17618,9 @@ msgstr "Rezydualna produkcja w toku, którą zlecenie ma przy zamknięciu, przen
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "W odpowiedzi z Onshape brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "W odpowiedzi z Ramp brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."
 
 msgid "The restore job reported this error."
 msgstr "Zadanie przywrócenia zgłosiło ten błąd."
@@ -18419,6 +18505,12 @@ msgstr "Szkolenie zespołu za pośrednictwem Academy i przewodników w aplikacji
 msgid "Trainings"
 msgstr "Szkolenia"
 
+msgid "Transaction Date"
+msgstr "Data Transakcji"
+
+msgid "Transaction ID"
+msgstr "ID Transakcji"
+
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transakcje będą tworzyć dowody księgowe i aktualizować księgę główną."
 
@@ -18831,6 +18923,9 @@ msgstr "Uaktualnij"
 msgid "Upgrade to Business"
 msgstr "Uaktualnij do Business"
 
+msgid "Upgrade to Enterprise"
+msgstr "Uaktualnij do Enterprise"
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Uaktualnij, aby odblokować reguły {0}"
@@ -18947,6 +19042,9 @@ msgstr "Okres użytkowania (Miesiące)"
 
 msgid "User"
 msgstr "Użytkownik"
+
+msgid "User Permissions"
+msgstr "Uprawnienia użytkownika"
 
 msgid "User roles"
 msgstr "Role użytkownika"
@@ -19298,6 +19396,9 @@ msgstr "Unieważnij"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "Unieważnij {0}"
+
+msgid "Void Card Transaction"
+msgstr "Unieważnij transakcję kartą"
 
 msgid "Void Invoice"
 msgstr "Unieważnij fakturę"

@@ -432,68 +432,7 @@ export async function getStorageRulesList(
   );
 }
 
-export async function assignStorageRule(
-  client: SupabaseClient<Database>,
-  args: {
-    targetType: TargetType;
-    targetId: string;
-    ruleId: string;
-    companyId: string;
-    userId: string;
-  }
-) {
-  const table = assignmentTableFor(args.targetType);
-  const idCol = targetIdColumnFor(args.targetType);
-
-  // Preflight: rule must exist in this company, belong to the storage family,
-  // and its targetType must match the assignment table. Without this, callers
-  // could pin a sales rule (or a work-center rule) through the item-assignment
-  // table; the evaluator filters defensively but the orphan row still inflates
-  // getRuleAssignmentCounts.
-  const ruleRes = await client
-    .from("enforcementRule")
-    .select("id, targetType")
-    .eq("id", args.ruleId)
-    .eq("companyId", args.companyId)
-    .eq("family", "storage")
-    .single();
-  if (ruleRes.error || !ruleRes.data) {
-    return {
-      data: null,
-      error: ruleRes.error ?? new Error("Rule not found")
-    };
-  }
-  if (ruleRes.data.targetType !== args.targetType) {
-    return {
-      data: null,
-      error: new Error(
-        `Rule targetType "${ruleRes.data.targetType}" does not match "${args.targetType}"`
-      )
-    };
-  }
-
-  return (client as SupabaseClient<Database>)
-    .from(table)
-    .insert({
-      [idCol]: args.targetId,
-      ruleId: args.ruleId,
-      companyId: args.companyId,
-      createdBy: args.userId
-    } as never)
-    .select(`${idCol}, ruleId`)
-    .single();
-}
-
-export async function unassignStorageRule(
-  client: SupabaseClient<Database>,
-  args: { targetType: TargetType; targetId: string; ruleId: string }
-) {
-  const table = assignmentTableFor(args.targetType);
-  const idCol = targetIdColumnFor(args.targetType);
-
-  return (client as SupabaseClient<Database>)
-    .from(table)
-    .delete()
-    .eq(idCol, args.targetId)
-    .eq("ruleId", args.ruleId);
-}
+// `assignStorageRule` / `unassignStorageRule` (authoring writes) moved to
+// `../service.server.ts` (`@carbon/ee/rules.server`) — they embed
+// `requireEntitlement("STORAGE_RULES")` and so are server-only, which must not
+// reach the client-safe `@carbon/ee/rules` barrel this file feeds.

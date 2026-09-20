@@ -3,6 +3,7 @@ import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { withLogContext } from "@carbon/logger/middleware.server";
@@ -79,6 +80,23 @@ function make429Response(reset: number, remaining: number): Response {
       ...corsHeaders
     }
   });
+}
+
+// The MCP server is a commercial (Business+) feature. companyHasFeature returns
+// false on the Community edition and, on Cloud, for Starter-plan companies — so
+// this one gate makes the server unavailable to community/starter across BOTH
+// the OAuth-connector and carbon-key auth paths.
+function makeMcpDisabledResponse(): Response {
+  return new Response(
+    JSON.stringify({
+      error:
+        "The MCP server is available on the Business plan. Upgrade to connect an agent to Carbon."
+    }),
+    {
+      status: 402,
+      headers: corsHeaders
+    }
+  );
 }
 
 function make401Response(request: Request): Response {
@@ -158,6 +176,14 @@ async function resolveAuth(request: Request): Promise<{
 
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
+
+  // Gate the whole server behind the MCP feature (Business+). One check here
+  // covers every auth path, since both resolve to an McpContext first.
+  if (
+    !(await companyHasFeature(ctx.client, ctx.companyId, { feature: "MCP" }))
+  ) {
+    return addCorsHeaders(makeMcpDisabledResponse());
+  }
 
   // Stamp the authenticated identity into the logging context so every log
   // line in this request carries it alongside the middleware's requestId.

@@ -1,12 +1,13 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { deleteWebhook } from "@carbon/ee/webhooks.server";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteWebhook, getWebhook } from "~/modules/settings";
+import { getWebhook } from "~/modules/settings";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -35,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "users"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
