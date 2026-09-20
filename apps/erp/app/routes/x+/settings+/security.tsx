@@ -431,16 +431,6 @@ export default function Security() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
-            <Trans>MFA</Trans>
-          </Heading>
-          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
-            <Trans>
-              Require a second factor when members sign in to this company.
-            </Trans>
-          </p>
-        </div>
         {mfaGated ? (
           <UpgradeOverlaySection
             icon={<LuShieldCheck className="size-6 text-muted-foreground" />}
