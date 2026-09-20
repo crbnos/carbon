@@ -1,5 +1,6 @@
 import useInvoicingSubmodules from "./useInvoicingSubmodules";
 
+export * from "./CardTransaction";
 export * from "./Dashboard";
 export * from "./Memo";
 export * from "./Payment";

@@ -621,6 +621,12 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
+export const projectValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().trim().optional())
+});
+
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
@@ -749,7 +755,8 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Card Transaction"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
@@ -852,6 +859,7 @@ export const dimensionEntityTypes = [
   "ItemPostingGroup",
   "Location",
   "Process",
+  "Project",
   "ScrapReason",
   "Supplier",
   "SupplierType",

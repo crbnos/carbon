@@ -2320,6 +2320,10 @@ msgstr "Tem certeza de que deseja excluir a regra de precificação: {0}? Isto n
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "Tem certeza de que deseja excluir a impressora \"{0}\"? Todas as atribuições que fazem referência a esta impressora serão limpas. Isto não pode ser desfeito."
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "Tem certeza de que deseja excluir o projeto: {0}? Ele será desativado e oculto das listas ativas."
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2497,6 +2501,10 @@ msgstr "Tem certeza de que deseja enviar um convite para estes usuários?"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Tem certeza de que deseja enviar um convite para este usuário?"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr "Tem certeza de que deseja anular {0}? Isso contabilizará um lançamento de reversão e não pode ser desfeito."
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "Tem certeza de que deseja anular este memorando? Isto irá reverter suas entradas contábeis e aplicações. Isto não pode ser desfeito."
@@ -3400,6 +3408,12 @@ msgstr "O aplicativo de chão de fábrica do Carbon onde operadores executam ope
 
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "O registro único do Carbon para qualquer coisa com um número de peça — Peça, Material, Ferramenta, Serviço, Consumível ou Dispositivo de fixação — ao qual ordens de produção, métodos, pedidos e inventário apontam."
+
+msgid "Card Holder"
+msgstr "Titular do Cartão"
+
+msgid "Card Transactions"
+msgstr "Transações de Cartão"
 
 msgid "Cards"
 msgstr "Cartões"
@@ -4464,6 +4478,9 @@ msgstr "Não foi possível reagendar o trabalho. Por favor, tente novamente."
 msgid "Couldn't save the Onshape connection"
 msgstr "Não foi possível salvar a conexão com o Onshape"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "Não foi possível salvar a conexão com o Ramp"
+
 msgid "Count"
 msgstr "Contagem"
 
@@ -4719,6 +4736,9 @@ msgstr "Condição de pagamento criada"
 
 msgid "Created process"
 msgstr "Processo criado"
+
+msgid "Created project"
+msgstr "Projeto criado"
 
 msgid "Created required action"
 msgstr "Ação obrigatória criada"
@@ -5553,6 +5573,9 @@ msgstr "Excluir Procedimento"
 
 msgid "Delete Process"
 msgstr "Excluir Processo"
+
+msgid "Delete Project"
+msgstr "Excluir Projeto"
 
 msgid "Delete Purchase Invoice"
 msgstr "Excluir Fatura de compra"
@@ -6492,6 +6515,9 @@ msgstr "Editar Evento de Produção"
 msgid "Edit Production Quantity"
 msgstr "Editar Quantidade de Produção"
 
+msgid "Edit Project"
+msgstr "Editar Projeto"
+
 msgid "Edit purchase order line type"
 msgstr "Editar tipo de linha de pedido de compra"
 
@@ -7016,6 +7042,9 @@ msgstr "Taxa de câmbio atualizada em"
 msgid "Exchange Rates"
 msgstr "Taxas de Câmbio"
 
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "A troca do código de autorização para obter acesso falhou. Tente conectar novamente."
+
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "A troca do código de autorização por um token de acesso falhou. Tente conectar novamente."
 
@@ -7338,6 +7367,10 @@ msgstr "Falha ao criar condição de pagamento: {0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "Falha ao criar processo: {0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr "Falha ao criar projeto: {0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -10242,6 +10275,9 @@ msgstr "Data do Memorando"
 msgid "Memo ID"
 msgstr "ID do Memorando"
 
+msgid "Merchant"
+msgstr "Comerciante"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10774,6 +10810,9 @@ msgstr "Novo Procedimento"
 msgid "New Process"
 msgstr "Novo Processo"
 
+msgid "New Project"
+msgstr "Novo Projeto"
+
 msgid "New Quality Document"
 msgstr "Novo Documento de Qualidade"
 
@@ -11168,6 +11207,9 @@ msgstr "Nenhuma ordem de produção foi criada"
 msgid "No journal lines in scope for this period"
 msgstr "Nenhuma linha de diário no escopo para este período"
 
+msgid "No lines"
+msgstr "Sem linhas"
+
 msgid "No lines to map"
 msgstr "Nenhuma linha para mapear"
 
@@ -11506,6 +11548,9 @@ msgstr "Não certificado"
 
 msgid "Not configured"
 msgstr "Não configurado"
+
+msgid "Not Configured"
+msgstr "Não Configurado"
 
 msgid "Not enough jobs to cover quantity"
 msgstr "Não há ordens de produção suficientes para cobrir a quantidade"
@@ -11888,6 +11933,9 @@ msgstr "Agendado Aberto"
 
 msgid "Open task details"
 msgstr "Abrir detalhes da tarefa"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "Abra a integração do Ramp e tente conectar novamente para concluir a configuração."
 
 msgid "Open the Setup Map"
 msgstr "Abrir o Mapa de Configuração"
@@ -13030,6 +13078,9 @@ msgstr "Proj. {0}"
 msgid "Project"
 msgstr "Projeto"
 
+msgid "Project Name"
+msgstr "Nome do Projeto"
+
 msgid "Project owner"
 msgstr "Responsável do projeto"
 
@@ -13080,6 +13131,9 @@ msgstr "Projeção"
 
 msgid "Projections"
 msgstr "Projeções"
+
+msgid "Projects"
+msgstr "Projetos"
 
 msgid "Promised Date"
 msgstr "Data Prometida"
@@ -13527,6 +13581,24 @@ msgstr "Levante na reunião de status semanal"
 
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "levante cedo e levante claramente. Um problema identificado na semana 2 é uma correção pequena; o mesmo problema no lançamento é um atraso."
+
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "O Ramp autorizou a conexão, mas não foi possível salvá-la. Tente conectar novamente."
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "O Ramp foi conectado, mas a configuração não foi concluída"
+
+msgid "Ramp denied the connection"
+msgstr "O Ramp recusou a conexão"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "O Ramp não retornou um código de autorização"
+
+msgid "Ramp rejected the authorization"
+msgstr "O Ramp rejeitou a autorização"
 
 msgid "Rate"
 msgstr "Taxa"
@@ -14324,6 +14396,9 @@ msgstr "Motivo da Devolução"
 
 msgid "Return Reasons"
 msgstr "Motivos da Devolução"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "Volte para Integrações e conecte o Ramp novamente."
 
 msgid "returnable"
 msgstr "devolvível"
@@ -16906,6 +16981,9 @@ msgstr "O registro de adição ao final de cada movimento de estoque; a quantida
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "A autorização foi recusada no Onshape. Tente conectar novamente."
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "A autorização foi recusada no Ramp. Tente conectar novamente."
+
 msgid "The backup job reported this error."
 msgstr "O trabalho de backup informou este erro."
 
@@ -17424,6 +17502,9 @@ msgstr "A cotação foi criada"
 msgid "The quote will be copied with a revision suffix"
 msgstr "A cotação será copiada com um sufixo de revisão"
 
+msgid "The Ramp connection expired"
+msgstr "A conexão com o Ramp está vencida"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "O estoque bruto e mestre de material que você compra e consome"
 
@@ -17463,6 +17544,9 @@ msgstr "O produto em processo residual que uma ordem de produção deixa ao fech
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "A resposta do Onshape não incluía os parâmetros necessários. Tente conectar novamente."
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "A resposta do Ramp não incluía os parâmetros necessários. Tente conectar novamente."
 
 msgid "The restore job reported this error."
 msgstr "O trabalho de restauração informou este erro."
@@ -18341,6 +18425,12 @@ msgstr "Treinamento da sua equipe via Academy e guias integrados"
 
 msgid "Trainings"
 msgstr "Treinamentos"
+
+msgid "Transaction Date"
+msgstr "Data da Transação"
+
+msgid "Transaction ID"
+msgstr "ID da Transação"
 
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "Transações criarão entradas de diário e atualizarão o livro razão."
@@ -19227,6 +19317,9 @@ msgstr "Anular"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "Anular {0}"
+
+msgid "Void Card Transaction"
+msgstr "Anular Transação de Cartão"
 
 msgid "Void Invoice"
 msgstr "Anular Fatura"

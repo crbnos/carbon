@@ -410,6 +410,20 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  batchIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+}
+
 export async function getActiveJobCount(
   client: SupabaseClient<Database>,
   args: {

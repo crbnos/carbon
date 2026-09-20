@@ -86,7 +86,14 @@ const PurchaseInvoiceHeader = () => {
     purchaseInvoice: PurchaseInvoice;
     purchaseInvoiceLines: PurchaseInvoiceLine[];
     orgHasCredits: boolean;
+    rampMapping: {
+      id: string;
+      externalId: string | null;
+      metadata: { deepLink?: string } | null;
+    } | null;
   }>(path.to.purchaseInvoice(invoiceId));
+  const rampMapping = routeData?.rampMapping ?? null;
+  const rampDeepLink = rampMapping?.metadata?.deepLink ?? null;
 
   const isSupplierApproved = useMemo(
     () =>
@@ -324,6 +331,18 @@ const PurchaseInvoiceHeader = () => {
                 <Trans>Unapproved Supplier</Trans>
               </Status>
             )}
+            {rampMapping &&
+              (rampDeepLink ? (
+                <a href={rampDeepLink} target="_blank" rel="noreferrer">
+                  <Status color="blue">
+                    <Trans>Ramp</Trans>
+                  </Status>
+                </a>
+              ) : (
+                <Status color="blue">
+                  <Trans>Ramp</Trans>
+                </Status>
+              ))}
           </HStack>
           <HStack>
             {relatedDocs.purchaseOrders.length === 1 && (
