@@ -40765,6 +40765,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.id"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
           },
           {
@@ -40781,6 +40784,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
@@ -40825,9 +40831,6 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
             $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
           },
           {
@@ -40841,9 +40844,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/select"
@@ -40908,6 +40908,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.id"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
           },
           {
@@ -40924,6 +40927,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
@@ -40968,9 +40974,6 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
             $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
           },
           {
@@ -40984,9 +40987,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -41005,6 +41005,9 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.id"
           },
           {
+            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
+          },
+          {
             $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
           },
           {
@@ -41021,6 +41024,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
@@ -41065,9 +41071,6 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
             $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
           },
           {
@@ -41081,9 +41084,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
           },
           {
             $ref: "#/parameters/body.cardTransaction"
@@ -48253,10 +48253,10 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransactionLine.id"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
@@ -48354,10 +48354,10 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransactionLine.id"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
@@ -48409,10 +48409,10 @@ export default {
             $ref: "#/parameters/rowFilter.cardTransactionLine.id"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
           },
           {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
+            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
           },
           {
             $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
@@ -109678,11 +109678,11 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction",
             "Opening Balance",
             "Sales Return Receipt",
             "Sales Return Shipment",
-            "Purchase Return Shipment"
+            "Purchase Return Shipment",
+            "Card Transaction"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -122159,11 +122159,11 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction",
             "Opening Balance",
             "Sales Return Receipt",
             "Sales Return Shipment",
-            "Purchase Return Shipment"
+            "Purchase Return Shipment",
+            "Card Transaction"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -124865,6 +124865,7 @@ export default {
     cardTransaction: {
       required: [
         "id",
+        "companyId",
         "cardTransactionId",
         "type",
         "status",
@@ -124874,7 +124875,6 @@ export default {
         "currencyCode",
         "exchangeRate",
         "amount",
-        "companyId",
         "createdBy",
         "createdAt"
       ],
@@ -124882,6 +124882,12 @@ export default {
         id: {
           default: "public.id()",
           description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
           format: "text",
           type: "string"
         },
@@ -124915,6 +124921,10 @@ export default {
         offsetAccountId: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
           format: "text",
           type: "string"
         },
@@ -124983,12 +124993,6 @@ export default {
           format: "text",
           type: "string"
         },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
         createdBy: {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
@@ -125012,10 +125016,6 @@ export default {
         },
         customFields: {
           format: "jsonb"
-        },
-        supplierId: {
-          format: "text",
-          type: "string"
         }
       },
       type: "object"
@@ -128301,8 +128301,8 @@ export default {
     cardTransactionLine: {
       required: [
         "id",
-        "cardTransactionId",
         "companyId",
+        "cardTransactionId",
         "accountId",
         "amount",
         "sequence",
@@ -128316,13 +128316,13 @@ export default {
           format: "text",
           type: "string"
         },
-        cardTransactionId: {
-          format: "text",
-          type: "string"
-        },
         companyId: {
           description:
             "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        cardTransactionId: {
           format: "text",
           type: "string"
         },
@@ -135197,11 +135197,11 @@ export default {
             "Debit Memo",
             "Non-Conformance",
             "Inbound Inspection",
-            "Card Transaction",
             "Opening Balance",
             "Sales Return Receipt",
             "Sales Return Shipment",
-            "Purchase Return Shipment"
+            "Purchase Return Shipment",
+            "Card Transaction"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -171581,6 +171581,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.cardTransaction.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.cardTransaction.cardTransactionId": {
       name: "cardTransactionId",
       required: false,
@@ -171613,6 +171619,12 @@ export default {
     },
     "rowFilter.cardTransaction.offsetAccountId": {
       name: "offsetAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.cardTransaction.supplierId": {
+      name: "supplierId",
       required: false,
       in: "query",
       type: "string"
@@ -171701,12 +171713,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.cardTransaction.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.cardTransaction.createdBy": {
       name: "createdBy",
       required: false,
@@ -171733,12 +171739,6 @@ export default {
     },
     "rowFilter.cardTransaction.customFields": {
       name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.supplierId": {
-      name: "supplierId",
       required: false,
       in: "query",
       type: "string"
@@ -175316,14 +175316,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.cardTransactionLine.cardTransactionId": {
-      name: "cardTransactionId",
+    "rowFilter.cardTransactionLine.companyId": {
+      name: "companyId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.cardTransactionLine.companyId": {
-      name: "companyId",
+    "rowFilter.cardTransactionLine.cardTransactionId": {
+      name: "cardTransactionId",
       required: false,
       in: "query",
       type: "string"

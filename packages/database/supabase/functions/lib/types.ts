@@ -85113,11 +85113,11 @@ export type Database = {
         | "Debit Memo"
         | "Non-Conformance"
         | "Inbound Inspection"
-        | "Card Transaction"
         | "Opening Balance"
         | "Sales Return Receipt"
         | "Sales Return Shipment"
         | "Purchase Return Shipment"
+        | "Card Transaction"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -86546,11 +86546,11 @@ export const Constants = {
         "Debit Memo",
         "Non-Conformance",
         "Inbound Inspection",
-        "Card Transaction",
         "Opening Balance",
         "Sales Return Receipt",
         "Sales Return Shipment",
         "Purchase Return Shipment",
+        "Card Transaction",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
