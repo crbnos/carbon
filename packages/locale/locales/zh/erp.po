@@ -2799,7 +2799,7 @@ msgid "Available hours"
 msgstr "可用小时数"
 
 msgid "Available on the Business plan"
-msgstr ""
+msgstr "在商业计划中可用"
 
 msgid "Avatar url"
 msgstr "头像网址"
@@ -5388,7 +5388,7 @@ msgid "Define a manufacturing operation first."
 msgstr "首先定义制造操作。"
 
 msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
-msgstr ""
+msgstr "定义具有细粒度、按模块权限的自定义角色，并将其分配给您的团队。"
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "定义多级BOM和工序清单（制造方法）"
@@ -8232,7 +8232,7 @@ msgid "Grades"
 msgstr "等级"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
-msgstr ""
+msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
 
 msgid "Grants Ability"
 msgstr "授予能力"
@@ -14189,7 +14189,7 @@ msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr ""
+msgstr "根据金额阈值和批准人组，对采购订单、质量文档和供应商要求分级批准。"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -18845,7 +18845,7 @@ msgid "Upgrade to Business"
 msgstr "升级到商业版"
 
 msgid "Upgrade to Enterprise"
-msgstr ""
+msgstr "升级到 Enterprise"
 
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
@@ -18965,7 +18965,7 @@ msgid "User"
 msgstr "用户"
 
 msgid "User Permissions"
-msgstr ""
+msgstr "用户权限"
 
 msgid "User roles"
 msgstr "用户角色"

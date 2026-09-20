@@ -2799,7 +2799,7 @@ msgid "Available hours"
 msgstr "가용 시간"
 
 msgid "Available on the Business plan"
-msgstr ""
+msgstr "Business 플랜에서 사용 가능"
 
 msgid "Avatar url"
 msgstr "아바타 URL"
@@ -5388,7 +5388,7 @@ msgid "Define a manufacturing operation first."
 msgstr "먼저 제조 공정작업을 정의하세요."
 
 msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
-msgstr ""
+msgstr "모듈별 세밀한 권한으로 사용자 정의 역할을 정의하고 팀에 할당합니다."
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "다단계 BOM 및 공정 목록(생산 방법) 정의"
@@ -8232,7 +8232,7 @@ msgid "Grades"
 msgstr "등급"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
-msgstr ""
+msgstr "모든 사용자에게 전체 접근 권한을 부여하는 대신 각 사용자에게 모듈별 세밀한 권한을 부여합니다."
 
 msgid "Grants Ability"
 msgstr "역량 부여"
@@ -14189,7 +14189,7 @@ msgid "Require SAML SSO"
 msgstr "SAML SSO 필수"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr ""
+msgstr "금액 한계 및 승인자 그룹을 기준으로 발주서, 품질 문서, 공급업체에 대한 단계별 승인을 요구합니다."
 
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
@@ -18845,7 +18845,7 @@ msgid "Upgrade to Business"
 msgstr "비즈니스로 업그레이드"
 
 msgid "Upgrade to Enterprise"
-msgstr ""
+msgstr "Enterprise로 업그레이드"
 
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
@@ -18965,7 +18965,7 @@ msgid "User"
 msgstr "사용자"
 
 msgid "User Permissions"
-msgstr ""
+msgstr "사용자 권한"
 
 msgid "User roles"
 msgstr "사용자 역할"

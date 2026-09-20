@@ -121,7 +121,14 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Submit isLoading={formFetcher.state !== "idle"}>
+              <Submit
+                isLoading={formFetcher.state !== "idle"}
+                // When gated, employeeType is a hidden field populated from the
+                // async-loaded Admin type. Block submit until it resolves, else
+                // an empty employeeType fails validation before the route's
+                // server-side Admin fallback can apply.
+                isDisabled={permissionsGated && !adminType}
+              >
                 <Trans>Invite</Trans>
               </Submit>
             </HStack>

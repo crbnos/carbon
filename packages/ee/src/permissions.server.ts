@@ -317,7 +317,12 @@ export async function updatePermissions(
   }
 ): Promise<Result> {
   await requireEntitlement(client, companyId, "PERMISSIONS");
-  if (await client.rpc("is_claims_admin", { company: companyId })) {
+  const claimsAdmin = await client.rpc("is_claims_admin", {
+    company: companyId
+  });
+  if (claimsAdmin.error)
+    return error(claimsAdmin.error, "Failed to check claims admin");
+  if (claimsAdmin.data === true) {
     const claims = await getClaims(client, id);
 
     if (claims.error) return error(claims.error, "Failed to get claims");

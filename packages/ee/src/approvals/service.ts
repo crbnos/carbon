@@ -736,17 +736,26 @@ export async function getPendingApprovalsForApprover(
     })
   );
 
-  // Use canApproveRequestInWindow to only show requests within user's specific approval window
+  // Use canApproveRequestInWindow to only show requests within user's specific
+  // approval window. That check relies on the amount-matched rule, which
+  // getApprovalRuleByAmount suppresses when APPROVAL_RULES is not entitled — so
+  // a company that configured rules and then downgraded would lose every
+  // in-flight pending request from this queue even though the document detail
+  // route (canApproveRequest, which does not degrade) can still approve them.
+  // Fall back to canApproveRequest when the feature is unavailable so existing
+  // approvals stay discoverable; entitled companies keep the exact window check.
+  const approvalRulesEnabled = await companyHasFeature(client, companyId, {
+    feature: "APPROVAL_RULES"
+  });
   const canApprovePromises = pendingWithReadableFields.map(async (approval) => {
-    const canApprove = await canApproveRequestInWindow(
-      client,
-      {
-        amount: approval.amount,
-        documentType: approval.documentType,
-        companyId: approval.companyId
-      },
-      userId
-    );
+    const approvalCheck = {
+      amount: approval.amount,
+      documentType: approval.documentType,
+      companyId: approval.companyId
+    };
+    const canApprove = approvalRulesEnabled
+      ? await canApproveRequestInWindow(client, approvalCheck, userId)
+      : await canApproveRequest(client, approvalCheck, userId);
     return canApprove ? approval : null;
   });
 

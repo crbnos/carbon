@@ -2799,7 +2799,7 @@ msgid "Available hours"
 msgstr "उपलब्ध घंटे"
 
 msgid "Available on the Business plan"
-msgstr ""
+msgstr "बिज़नेस प्लान पर उपलब्ध"
 
 msgid "Avatar url"
 msgstr "अवतार url"
@@ -5388,7 +5388,7 @@ msgid "Define a manufacturing operation first."
 msgstr "पहले एक विनिर्माण ऑपरेशन को परिभाषित करें।"
 
 msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
-msgstr ""
+msgstr "अपनी टीम को असाइन करने के लिए बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियों के साथ कस्टम भूमिकाएं परिभाषित करें।"
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "बहु-स्तरीय BOMs और प्रक्रिया सूची (निर्माण विधि) को परिभाषित करें"
@@ -8232,7 +8232,7 @@ msgid "Grades"
 msgstr "ग्रेड"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
-msgstr ""
+msgstr "सभी को पूर्ण पहुंच देने के बजाय प्रत्येक उपयोगकर्ता को बारीक-दानेदार, प्रति-मॉड्यूल अनुमतियां प्रदान करें।"
 
 msgid "Grants Ability"
 msgstr "कौशल प्रदान करता है"
@@ -14189,7 +14189,7 @@ msgid "Require SAML SSO"
 msgstr "SAML SSO आवश्यक करें"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr ""
+msgstr "राशि की सीमा और अनुमोदनकर्ता समूहों के आधार पर क्रय आदेशों, गुणवत्ता दस्तावेज़ों और आपूर्तिकर्ताओं पर स्तरीय अनुमोदन की आवश्यकता है।"
 
 msgid "Require two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण की आवश्यकता"
@@ -18845,7 +18845,7 @@ msgid "Upgrade to Business"
 msgstr "बिजनेस में अपग्रेड करें"
 
 msgid "Upgrade to Enterprise"
-msgstr ""
+msgstr "एंटरप्राइज़ में अपग्रेड करें"
 
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
@@ -18965,7 +18965,7 @@ msgid "User"
 msgstr "उपयोगकर्ता"
 
 msgid "User Permissions"
-msgstr ""
+msgstr "उपयोगकर्ता अनुमतियां"
 
 msgid "User roles"
 msgstr "उपयोगकर्ता भूमिकाएं"

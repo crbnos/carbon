@@ -2799,7 +2799,7 @@ msgid "Available hours"
 msgstr "利用可能時間"
 
 msgid "Available on the Business plan"
-msgstr ""
+msgstr "ビジネスプランで利用可能"
 
 msgid "Avatar url"
 msgstr "アバターURL"
@@ -5388,7 +5388,7 @@ msgid "Define a manufacturing operation first."
 msgstr "最初に製造作業を定義します。"
 
 msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
-msgstr ""
+msgstr "細粒度で、モジュール単位の権限を持つカスタムロールを定義して、チームに割り当てます。"
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "多階層BOMおよび工程表（製造方法）を定義"
@@ -8232,7 +8232,7 @@ msgid "Grades"
 msgstr "等級"
 
 msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
-msgstr ""
+msgstr "全員にフルアクセスを付与するのではなく、各ユーザーに細粒度で、モジュール単位の権限を付与します。"
 
 msgid "Grants Ability"
 msgstr "スキルを付与"
@@ -14189,7 +14189,7 @@ msgid "Require SAML SSO"
 msgstr "SAML SSOを必須にする"
 
 msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
-msgstr ""
+msgstr "金額閾値と承認者グループに基づいて、発注書、品質ドキュメント、および仕入先に対する段階的な承認を要求します。"
 
 msgid "Require two-factor authentication"
 msgstr "二要素認証が必要です"
@@ -18845,7 +18845,7 @@ msgid "Upgrade to Business"
 msgstr "ビジネスプランにアップグレード"
 
 msgid "Upgrade to Enterprise"
-msgstr ""
+msgstr "エンタープライズにアップグレード"
 
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
@@ -18965,7 +18965,7 @@ msgid "User"
 msgstr "ユーザー"
 
 msgid "User Permissions"
-msgstr ""
+msgstr "ユーザー権限"
 
 msgid "User roles"
 msgstr "ユーザーロール"

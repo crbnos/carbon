@@ -1,3 +1,4 @@
+import { randomInt } from "node:crypto";
 import type { Database } from "@carbon/database";
 import { sanitize } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -117,7 +118,7 @@ export async function updateConsoleSetting(
         .maybeSingle();
 
       if (userEmployee.data && !(userEmployee.data as any).pin) {
-        generatedPin = Math.floor(1000 + Math.random() * 9000).toString();
+        generatedPin = randomInt(1000, 10000).toString();
         await client
           .from("employee")
           .update({ pin: generatedPin } as any)

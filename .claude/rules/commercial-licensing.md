@@ -127,12 +127,23 @@ Refactor one at a time; each PR should leave the tree green.
   degrade via `companyHasFeature`; write routes gate with `requireFeature`. The
   entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
   client components reach via `useRuleViolations`) — the query getters stay there.
+- ✅ **API keys** — `upsertApiKey`/`deleteApiKey` in `packages/ee/src/api-keys.server.ts`,
+  `requireEntitlement("API_KEYS")`; routes gate with `requireFeature`.
+- ✅ **Webhooks** — authoring in `packages/ee/src/webhooks.server.ts`
+  (`requireEntitlement("WEBHOOKS")`); delivery degrades at runtime via `companyHasFeature`.
+- ✅ **Two-factor** — the `requireMfa` company policy in `packages/ee/src/two-factor.server.ts`,
+  `requireEntitlement("TWO_FACTOR")` scoped to ENABLING only (a downgrade can still disable).
+- ✅ **Forecast** — `upsert/deleteDemandForecasts` + `upsert/deleteDemandProjections` in
+  `packages/ee/src/forecast.server.ts`, `requireEntitlement("FORECAST")`.
+- ✅ **Customer portals** — `upsertCustomerPortal`/`deleteCustomerPortal` in
+  `packages/ee/src/customer-portals.server.ts`, `requireEntitlement("CUSTOMER_PORTALS")`;
+  the shared `upsertExternalLink` stays ungated (used by quote/RFQ finalize); public share
+  pages degrade via `companyHasFeature`.
 - ⬜ **Backups** — engine still in `packages/jobs`; gated via `canManageBackups` only
   (route-level). Biggest lift — relocate the engine last.
-- ⬜ The Cloud-paywall features still on `requirePlan`/`companyHasPlan` (workflows, api keys,
-  webhooks, audit log, forecast, customer portals, AI agent, 2FA,
-  integrations) — migrate to `companyHasFeature`/`requireEntitlement` + move bodies into
-  `packages/ee` feature-by-feature.
+- ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision
+  (integrations, audit log, AI agent, workflows engine) — migrate to
+  `companyHasFeature`/`requireEntitlement` + move bodies into `packages/ee` when unblocked.
 
 ## Bundling gotcha — the `.server` client-graph boundary
 

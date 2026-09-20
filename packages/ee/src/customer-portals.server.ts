@@ -36,6 +36,7 @@ export async function upsertCustomerPortal(
       .from("externalLink")
       .update({ ...portal, documentType: "Customer" })
       .eq("id", portal.id)
+      .eq("companyId", companyId)
       .select("id")
       .single();
   }

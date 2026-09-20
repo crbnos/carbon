@@ -27,7 +27,7 @@ export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
 
 export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
   "purchaseOrder"
-] as const;
+];
 
 export const approvalFiltersValidator = z.object({
   documentType: z.enum(approvalDocumentType, {
