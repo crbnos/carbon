@@ -67,11 +67,58 @@ A per-feature browser checklist is maintained in the STATUS table's Notes.
   decision (is X a Business feature? destructive surface? engine too woven into jobs).
 - Do NOT open a PR or merge — commits on the branch are the deliverable for review.
 
-## TODO (ranked; filled from the inventory agent — abfcc035)
-> Filled once the inventory returns. Order: SMALL (body already in `packages/ee`) first,
-> then MEDIUM, then LARGE (engine relocation), backups + anything destructive last.
+## TODO (ranked — from inventory abfcc035)
+Default decision (matches permissions/approvals precedent): convert `requirePlan`/
+`companyHasPlan` → `requireFeature`/`companyHasFeature` (community-blocked) for every
+gated feature; move authoring bodies into `packages/ee` + embed `requireEntitlement`;
+runtime engines that live in `packages/jobs`/`@carbon/notifications` (can't move to ee)
+just swap to `companyHasFeature` (degrade). Do these autonomously (A–I). FLAG the LARGE
+product/architecture decisions (J–L) — don't guess.
 
-_(pending inventory)_
+- **A. SALES_RULES + STORAGE_RULES** (together — shared `upsertEnforcementRule`/
+  `deleteEnforcementRule` in `shared.service.ts:619,651`). Evaluators already in
+  `packages/ee/src/rules/{sales,storage}/server.ts` → swap `companyHasPlan`→
+  `companyHasFeature` (`sales/server.ts:48`, `storage/server.ts:50`); move the shared
+  enforcement-rule CRUD + `assign/unassign*` into ee, embed `requireEntitlement`; routes
+  `requirePlan`→`requireFeature`. Watch `shared.service.ts` barrel client-graph.
+- **B. EMAIL_NOTIFICATIONS** — body in `packages/jobs` `notify.ts:537` (can't move). Just
+  `companyHasPlan`→`companyHasFeature` there + `account+/notifications.tsx:49`. Tiny.
+- **C. INTEGRATIONS** — bodies already in ee. Embed `requireEntitlement("INTEGRATIONS")`
+  in `integrations/hooks.server.ts`/`secrets.ts` install/save (honor
+  `isIntegrationWhitelisted`); routes `integrations.$id.tsx:1476`,
+  `integrations.deactivate.$id.tsx:26` → `requireFeature`.
+- **D. TWO_FACTOR** — move only the `requireMfa` company-policy writer into ee +
+  `requireEntitlement` (mirror `updateConsoleSetting`); `security.tsx:159`→`requireFeature`.
+  Leave GoTrue MFA.
+- **E. API_KEYS** — move `upsertApiKey`/`deleteApiKey` (`settings.service.ts:1317,98`) to
+  ee + `requireEntitlement`; routes→`requireFeature`. Leave `@carbon/auth` runtime verify.
+  Barrel client-graph risk.
+- **F. WEBHOOKS** — move `upsertWebhook`/`deleteWebhook` (`settings.service.ts:1478,112`)
+  to ee + `requireEntitlement`; routes→`requireFeature`; gate delivery via runtime
+  `companyHasFeature` in jobs. Barrel risk.
+- **G. FORECAST** — extract `upsertDemandForecasts`/`deleteDemandForecasts`
+  (`production.service.ts:4753,498`) to ee + `requireEntitlement`; routes→`requireFeature`.
+- **H. CUSTOMER_PORTALS** — move portal authoring (`shared.service.ts:256-298` + the
+  `upsertExternalLink` path) to ee + `requireEntitlement`; keep public share-page
+  (`share+/customer.$id*`) as runtime `companyHasFeature` degrade.
+- **I. AUDIT_LOG** — wrap the audit read in an ee fn gated by `companyHasFeature`; remove
+  the loader `requirePlan` redirect (`audit-logs.tsx:92`) so the page stays visible behind
+  the overlay (read-only → no `requireEntitlement` throw).
+
+### FLAGGED — do NOT do autonomously (need Brad)
+- **J. AI_AGENT** ⚠ — LARGE; currently HIDDEN when gated (`useAgentAvailable.ts:12`).
+  Decision needed: hidden→visible+overlay? Core in `modules/agent` deeply `~/`-coupled
+  (AI SDK, cross-module tools) — big relocation.
+- **K. WORKFLOWS** ⚠ — authoring movable to ee, but the runtime ENGINE is a full inngest
+  system in `packages/jobs` (gate via `companyHasFeature`). LARGE; confirmed
+  `workflows.service.ts` `ReturnType`/`~/utils/query` client-graph gotcha to fix.
+- **L. BACKUPS** ⚠ — engine deeply in `packages/jobs`; rule says relocate LAST. Already
+  gated via `canManageBackups` (route-level). Big lift; keep the `canAccessBackups`
+  internal/local-dev escape hatch.
+
+**Every move:** no `*.service.ts` may import `@carbon/ee/<f>.server` (barrel→client graph —
+move the caller to `*.server.ts`); derive client types from `@carbon/database`, not
+`ReturnType<service>`; run `generate:mcp` when fns leave a `*.service.ts`.
 
 ## STATUS
 | Feature | Size | State | Commit | Notes |
