@@ -129,8 +129,8 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | BACKUPS | gate-only | ◑ gated | ba2787c2 | gated via canManageBackups; engine still in packages/jobs (LARGE relocation deferred — do last) |
 | A. SALES_RULES + STORAGE_RULES | MEDIUM | ✅ done | (this) | CRUD → packages/ee/src/rules/service.server.ts (`@carbon/ee/rules.server`), requireEntitlement by `family`; evaluators swapped companyHasPlan→companyHasFeature; 12 write routes → requireFeature; verified (ee+erp typecheck, biome, 1041 ee tests, mcp shared 31→29). `unassignStorageRule` gained companyId arg. |
 | B. EMAIL_NOTIFICATIONS | SMALL | ✅ done | (this) | companyHasPlan→companyHasFeature at notify.ts:537 (jobs, runtime degrade — email channel off for community) + account/notifications.tsx:49. Body stays in jobs (can't move to ee — @carbon/notifications dep). Verified jobs+erp typecheck. |
-| C. INTEGRATIONS | SMALL-MED | ⬜ next | | |
-| D. TWO_FACTOR | SMALL-MED | ⬜ | | |
+| C. INTEGRATIONS | MED (arch) | ⚠ FLAGGED — needs Brad | | No single ee choke point for the install/save WRITE: it goes through community `upsertCompanyIntegration` (settings.server.ts:330, inline vault write), NOT ee `persistIntegrationSecrets`. Shared install/update dispatcher (`hooks.server.ts:84`) also serves uninstall+read (can't gate). Per-provider hooks have HOLES (jira/linear/onshape/paperless-parts/slack have no onInstall/onUpdate). **Decision:** (A) relocate the universal integration secret/metadata write into ee `persistIntegrationSecrets` + embed requireEntitlement (complete, covers OAuth callbacks; bigger) — RECOMMENDED; or (B) embed in the 4 existing provider hooks + accept documented holes. Route swap requirePlan→requireFeature held pending this (else it's a UX-only mislabeled moat). |
+| D. TWO_FACTOR | SMALL-MED | ⬜ next | | move requireMfa policy writer to ee + requireEntitlement (mirror console) |
 | E. API_KEYS | MEDIUM | ⬜ | | |
 | F. WEBHOOKS | MEDIUM | ⬜ | | |
 | G. FORECAST | MEDIUM | ⬜ | | |
