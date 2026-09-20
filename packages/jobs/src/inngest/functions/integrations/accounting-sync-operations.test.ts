@@ -1620,7 +1620,12 @@ describe("loadCardTransactionPolicyInputs", () => {
       type: "Charge",
       hasSupplier: true
     });
-    expect(ranges).toEqual([
+    // The tail row lives on the second page, so pagination must reach past the
+    // 1000-row cap. `fetchAllRecords` fetches pages speculatively in concurrent
+    // waves (PAGE_CONCURRENCY) and returns on the first short page, so it may
+    // issue extra out-of-range reads after [1000, 1999]; assert only the two
+    // data-bearing pages rather than coupling to the concurrency window.
+    expect(ranges.slice(0, 2)).toEqual([
       [0, 999],
       [1000, 1999]
     ]);

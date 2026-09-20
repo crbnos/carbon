@@ -46,7 +46,12 @@ describe("Ramp outbound line pagination", () => {
 
     expect(result).toHaveLength(1001);
     expect(result.at(-1)?.id).toBe("pol_1000");
-    expect(ranges).toEqual([
+    // The 1001st row lives on the second page, so pagination must reach past the
+    // 1000-row cap. `fetchAllRecords` fetches pages speculatively in concurrent
+    // waves (PAGE_CONCURRENCY) and returns on the first short page, so it may
+    // issue extra out-of-range reads after [1000, 1999]; assert only the two
+    // data-bearing pages rather than coupling to the concurrency window.
+    expect(ranges.slice(0, 2)).toEqual([
       { table: "purchaseOrderLine", from: 0, to: 999 },
       { table: "purchaseOrderLine", from: 1000, to: 1999 }
     ]);
