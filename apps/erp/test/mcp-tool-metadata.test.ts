@@ -258,18 +258,21 @@ describe("mcp tool-metadata generator", () => {
 
   // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
   it("resolves Array<T> generic params to typed arrays", () => {
-    const forecasts = props(get("production_upsertDemandProjections")).forecasts;
-    expect(forecasts?.type).toBe("array");
-    expect(Object.keys(forecasts?.items?.properties ?? {})).toContain("itemId");
+    const sourceTools = props(get("production_maxToolQuantityByItem")).sourceTools;
+    expect(sourceTools?.type).toBe("array");
+    expect(Object.keys(sourceTools?.items?.properties ?? {})).toContain("itemId");
   });
 
   // A bare type alias declared in the module's own sources (service file,
   // types.ts, models, or shared) resolves; Partial<{...}> drops required.
+  // `diffMethod(input: DiffMethodInput)` — DiffMethodInput is a named type
+  // alias declared in items.service.ts, so it must resolve to real properties
+  // rather than an opaque {}.
   it("resolves module-local type aliases and Partial wrappers", () => {
-    const rule = props(get("shared_upsertApprovalRule")).rule;
-    const ruleBranches = rule?.anyOf ?? [rule];
+    const input = props(get("items_diffMethod")).input;
+    const inputBranches = input?.anyOf ?? [input];
     expect(
-      Object.keys(ruleBranches[0]?.properties ?? {}).length
+      Object.keys(inputBranches[0]?.properties ?? {}).length
     ).toBeGreaterThan(0);
 
     // updateAbility takes an optional `name` and an optional cadence, so the

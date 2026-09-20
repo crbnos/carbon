@@ -495,31 +495,6 @@ export async function calculateJobPriority(
   return newPriority;
 }
 
-export async function deleteDemandProjections(
-  client: SupabaseClient<Database>,
-  params: {
-    itemId: string;
-    locationId: string;
-    companyId: string;
-    futurePeriodIds: string[];
-  }
-) {
-  const { itemId, locationId, companyId, futurePeriodIds } = params;
-
-  const result = await client
-    .from("demandProjection")
-    .delete()
-    .eq("itemId", itemId)
-    .eq("locationId", locationId)
-    .eq("companyId", companyId)
-    .in("periodId", futurePeriodIds);
-
-  return {
-    data: result.data,
-    error: result.error
-  };
-}
-
 export async function deleteJob(
   client: SupabaseClient<Database>,
   jobId: string
@@ -4723,62 +4698,6 @@ export async function upsertMaintenanceScheduleItem(
       .update(sanitize(item))
       .eq("id", item.id);
   }
-}
-
-export async function upsertDemandProjections(
-  client: SupabaseClient<Database>,
-  forecasts: Array<{
-    itemId: string;
-    locationId: string;
-    periodId: string;
-    forecastQuantity: number;
-    companyId: string;
-    createdBy: string;
-    updatedBy?: string;
-  }>
-) {
-  // Delete existing forecasts with 0 quantity, upsert others
-  const toDelete = forecasts.filter((f) => f.forecastQuantity === 0);
-  const toUpsert = forecasts.filter((f) => f.forecastQuantity > 0);
-
-  const promises = [];
-
-  if (toDelete.length > 0) {
-    for (const forecast of toDelete) {
-      promises.push(
-        client
-          .from("demandProjection")
-          .delete()
-          .eq("itemId", forecast.itemId)
-          .eq("locationId", forecast.locationId)
-          .eq("periodId", forecast.periodId)
-          .eq("companyId", forecast.companyId)
-      );
-    }
-  }
-
-  if (toUpsert.length > 0) {
-    promises.push(
-      client.from("demandProjection").upsert(
-        toUpsert.map((f) => ({
-          ...f,
-          updatedBy: f.updatedBy ?? f.createdBy ?? "system",
-          updatedAt: new Date().toISOString()
-        })),
-        {
-          onConflict: "itemId,locationId,periodId,companyId"
-        }
-      )
-    );
-  }
-
-  const results = await Promise.all(promises);
-  const hasError = results.some((r) => r.error);
-
-  return {
-    data: hasError ? null : toUpsert,
-    error: hasError ? results.find((r) => r.error)?.error : null
-  };
 }
 
 export async function getPeopleAssignments(
