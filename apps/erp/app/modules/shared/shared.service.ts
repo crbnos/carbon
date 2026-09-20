@@ -1,7 +1,5 @@
-import type { Database, Json, Tables } from "@carbon/database";
+import type { Database, Tables } from "@carbon/database";
 import { getContentType, getFileExtension } from "@carbon/files";
-import type { ConditionAst, Severity } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -9,7 +7,6 @@ import type {
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
 import type { PriceBreak, SupplierPriceMap } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
@@ -515,51 +512,11 @@ export type EnforcementRuleFamily =
 export type EnforcementRuleRow =
   Database["public"]["Tables"]["enforcementRule"]["Row"];
 
-/** Item-scoping columns shared by both families (empty arrays = every item). */
-type RuleItemFilterFields = {
-  filteredItemTypes?: string[];
-  filteredItemGroupIds?: string[];
-  filteredItemMatchAll?: boolean;
-};
-
-/**
- * Storage-family-only shape. The DB pins sales rows to `targetType: 'item'` /
- * `appliesToAll: false` via the `enforcementRule_sales_shape` CHECK, so these
- * stay optional here and simply go unset for sales.
- */
-type RuleTargetFields = {
-  targetType?: Database["public"]["Enums"]["enforcementRuleTargetType"];
-  appliesToAll?: boolean;
-};
-
-type RuleSurfaces = Database["public"]["Enums"]["enforcementRuleSurface"][];
-
-export type EnforcementRuleInsert = RuleItemFilterFields &
-  RuleTargetFields & {
-    name: string;
-    description?: string | null;
-    message: string;
-    severity: Severity;
-    conditionAst: ConditionAst;
-    surfaces: RuleSurfaces;
-    active: boolean;
-    createdBy: string;
-    customFields?: Json;
-  };
-
-export type EnforcementRuleUpdate = RuleItemFilterFields &
-  RuleTargetFields & {
-    id: string;
-    name: string;
-    description?: string | null;
-    message: string;
-    severity: Severity;
-    conditionAst: ConditionAst;
-    surfaces: RuleSurfaces;
-    active: boolean;
-    updatedBy: string;
-    customFields?: Json;
-  };
+// Authoring writes (`upsertEnforcementRule` / `deleteEnforcementRule`) and their
+// `EnforcementRuleInsert` / `EnforcementRuleUpdate` input types moved to
+// `@carbon/ee/rules.server` (`packages/ee/src/rules/service.server.ts`), where
+// they embed the commercial `requireEntitlement` gate. The read helpers below
+// stay here (ERP admin surface, client-safe).
 
 export async function getEnforcementRules(
   client: SupabaseClient<Database>,
@@ -614,52 +571,6 @@ export async function getEnforcementRule(
       PostgrestSingleResponse<EnforcementRuleRow>
     >
   );
-}
-
-export async function upsertEnforcementRule(
-  client: SupabaseClient<Database>,
-  family: EnforcementRuleFamily,
-  companyId: string,
-  rule: EnforcementRuleInsert | EnforcementRuleUpdate
-) {
-  if ("createdBy" in rule) {
-    return client
-      .from("enforcementRule")
-      .insert({
-        ...rule,
-        companyId,
-        family,
-        conditionAst: rule.conditionAst as unknown as Json
-      })
-      .select("id")
-      .single();
-  }
-  return client
-    .from("enforcementRule")
-    .update({
-      ...sanitize(rule),
-      conditionAst: rule.conditionAst as unknown as Json,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", rule.id)
-    .eq("family", family)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-}
-
-export async function deleteEnforcementRule(
-  client: SupabaseClient<Database>,
-  family: EnforcementRuleFamily,
-  id: string,
-  companyId: string
-) {
-  return client
-    .from("enforcementRule")
-    .delete()
-    .eq("id", id)
-    .eq("family", family)
-    .eq("companyId", companyId);
 }
 
 /**

@@ -1,7 +1,8 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { SalesRuleSurface } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -9,7 +10,7 @@ import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import type { z } from "zod";
 import { type salesRuleSeverities, salesRuleValidator } from "~/modules/sales";
 import { SalesRuleForm } from "~/modules/sales/ui/SalesRules";
-import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -29,7 +30,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "sales"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

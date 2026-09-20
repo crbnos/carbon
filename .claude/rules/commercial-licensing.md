@@ -118,10 +118,19 @@ Refactor one at a time; each PR should leave the tree green.
 - ✅ **Approvals** — reference implementation (`packages/ee/src/approvals/`);
   `requireEntitlement` in `upsertApprovalRule`/`deleteApprovalRule`, graceful degrade in
   `getApprovalRuleByAmount`.
+- ✅ **Sales rules / Storage rules** — both families' authoring writes live in
+  `packages/ee/src/rules/service.server.ts` (`@carbon/ee/rules.server`):
+  `requireEntitlement` embedded in `upsertEnforcementRule`/`deleteEnforcementRule`
+  (feature chosen by the `family` discriminator), `assignSalesRule`/`unassignSalesRule`
+  (`SALES_RULES`), and `assignStorageRule`/`unassignStorageRule` (`STORAGE_RULES`). The
+  runtime evaluators (`isSalesRulesEnabledForCompany`/`isStorageRulesEnabledForCompany`)
+  degrade via `companyHasFeature`; write routes gate with `requireFeature`. The
+  entitled writes are kept OUT of the client-safe `@carbon/ee/rules` barrel (which
+  client components reach via `useRuleViolations`) — the query getters stay there.
 - ⬜ **Backups** — engine still in `packages/jobs`; gated via `canManageBackups` only
   (route-level). Biggest lift — relocate the engine last.
 - ⬜ The Cloud-paywall features still on `requirePlan`/`companyHasPlan` (workflows, api keys,
-  webhooks, sales/storage rules, audit log, forecast, customer portals, AI agent, 2FA,
+  webhooks, audit log, forecast, customer portals, AI agent, 2FA,
   integrations) — migrate to `companyHasFeature`/`requireEntitlement` + move bodies into
   `packages/ee` feature-by-feature.
 

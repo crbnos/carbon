@@ -1,5 +1,5 @@
 {
-  "totalTools": 1550,
+  "totalTools": 1548,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
@@ -1492,7 +1492,6 @@
     {"name":"settings_upsertItemSerialSequence","classification":"WRITE","paramCount":7,"schema":"95750d9ab5ae","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"settings_upsertWebhook","classification":"WRITE","paramCount":10,"schema":"79ad29732124","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"shared_deleteCustomerPortal","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"shared_deleteEnforcementRule","classification":"DESTRUCTIVE","paramCount":2,"schema":"fa9ceafd871f","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_deleteSavedView","classification":"DESTRUCTIVE","paramCount":1,"schema":"1fbe3d41dab0","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_generateEmbedding","classification":"WRITE","paramCount":1,"schema":"e3dce8d1afb8","response":"569f4d6b0385","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_getBase64ImageFromSupabase","classification":"READ","paramCount":1,"schema":"923b083c9bca","response":"174e29b899b9","injectAuth":"companyId","permission":"none","paginates":false},
@@ -1518,7 +1517,6 @@
     {"name":"shared_resolveSupplierPrice","classification":"WRITE","paramCount":4,"schema":"c92834c91ef5","response":"cddf8275afa1","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_updateModelThumbnail","classification":"WRITE","paramCount":2,"schema":"7d1e1e5f7144","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"none","paginates":false},
     {"name":"shared_updateSavedViewOrder","classification":"WRITE","paramCount":1,"schema":"d19d08f2d129","response":"ce209a810cd2","injectAuth":"companyId+updatedBy","permission":"none","paginates":false},
-    {"name":"shared_upsertEnforcementRule","classification":"WRITE","paramCount":2,"schema":"ec92de61cff6","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_upsertExternalLink","classification":"WRITE","paramCount":1,"schema":"33e54e07795a","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_upsertModelUpload","classification":"WRITE","paramCount":1,"schema":"b024a13e3afd","response":"bcde375ebd4c","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_upsertSavedView","classification":"WRITE","paramCount":10,"schema":"88a0b7dfec62","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},

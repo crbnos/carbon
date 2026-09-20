@@ -127,4 +127,15 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | console (PERMISSIONS) | — | ✅ done | ba2787c2 | console.server in ee, embedded; card gated-state |
 | APPROVAL_RULES | — | ✅ done | ba2787c2 | approvals/ in ee, embedded, page overlay |
 | BACKUPS | gate-only | ◑ gated | ba2787c2 | gated via canManageBackups; engine still in packages/jobs (LARGE relocation deferred — do last) |
-| _rest_ | | ⬜ pending inventory | | |
+| A. SALES_RULES + STORAGE_RULES | MEDIUM | ✅ done | (this) | CRUD → packages/ee/src/rules/service.server.ts (`@carbon/ee/rules.server`), requireEntitlement by `family`; evaluators swapped companyHasPlan→companyHasFeature; 12 write routes → requireFeature; verified (ee+erp typecheck, biome, 1041 ee tests, mcp shared 31→29). `unassignStorageRule` gained companyId arg. |
+| B. EMAIL_NOTIFICATIONS | SMALL | ⬜ next | | notify.ts:537 + notifications.tsx:49 companyHasPlan→companyHasFeature |
+| C. INTEGRATIONS | SMALL-MED | ⬜ | | |
+| D. TWO_FACTOR | SMALL-MED | ⬜ | | |
+| E. API_KEYS | MEDIUM | ⬜ | | |
+| F. WEBHOOKS | MEDIUM | ⬜ | | |
+| G. FORECAST | MEDIUM | ⬜ | | |
+| H. CUSTOMER_PORTALS | MEDIUM | ⬜ | | |
+| I. AUDIT_LOG | MEDIUM | ⬜ | | |
+| J. AI_AGENT | LARGE | ⚠ FLAGGED | | hidden→overlay decision + big relocation; needs Brad |
+| K. WORKFLOWS | LARGE | ⚠ FLAGGED | | engine in jobs; needs Brad |
+| L. BACKUPS engine | LARGE | ⚠ FLAGGED | | relocate engine from jobs; do last; needs Brad |
