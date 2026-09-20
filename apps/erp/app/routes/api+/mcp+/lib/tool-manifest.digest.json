@@ -1,5 +1,5 @@
 {
-  "totalTools": 1542,
+  "totalTools": 1540,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
@@ -637,7 +637,6 @@
     {"name":"production_deleteAssemblyInstructionStepSlide","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
     {"name":"production_deleteAssemblyInstructionStepTool","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
     {"name":"production_deleteAssemblyUnit","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
-    {"name":"production_deleteDemandForecasts","classification":"DESTRUCTIVE","paramCount":3,"schema":"078059f848ea","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
     {"name":"production_deleteDemandProjections","classification":"DESTRUCTIVE","paramCount":3,"schema":"078059f848ea","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
     {"name":"production_deleteFailureMode","classification":"DESTRUCTIVE","paramCount":1,"schema":"4a3e0384d72f","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:delete","paginates":false},
     {"name":"production_deleteInspectionDocument","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"e92dda062549","injectAuth":"companyId","permission":"production:delete","paginates":false},
@@ -838,7 +837,6 @@
     {"name":"production_upsertAssemblyInstructionStepSlide","classification":"WRITE","paramCount":9,"schema":"c6bc69cc2080","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertAssemblyInstructionStepTool","classification":"WRITE","paramCount":5,"schema":"d64500fd5c94","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertAssemblyUnit","classification":"WRITE","paramCount":5,"schema":"74497d782594","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
-    {"name":"production_upsertDemandForecasts","classification":"DESTRUCTIVE","paramCount":1,"schema":"52be92b5f4a5","response":"57a0b3d217fb","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertDemandProjections","classification":"DESTRUCTIVE","paramCount":1,"schema":"52be92b5f4a5","response":"57a0b3d217fb","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertFailureMode","classification":"WRITE","paramCount":3,"schema":"f47f137a8607","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertInspectionDocument","classification":"WRITE","paramCount":10,"schema":"68e08a92df7a","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},

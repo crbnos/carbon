@@ -258,7 +258,7 @@ describe("mcp tool-metadata generator", () => {
 
   // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
   it("resolves Array<T> generic params to typed arrays", () => {
-    const forecasts = props(get("production_upsertDemandForecasts")).forecasts;
+    const forecasts = props(get("production_upsertDemandProjections")).forecasts;
     expect(forecasts?.type).toBe("array");
     expect(Object.keys(forecasts?.items?.properties ?? {})).toContain("itemId");
   });

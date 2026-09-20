@@ -133,7 +133,8 @@ move the caller to `*.server.ts`); derive client types from `@carbon/database`, 
 | D. TWO_FACTOR | SMALL-MED | ✅ done | (this) | updateRequireMfaSetting → packages/ee/src/two-factor.server.ts; requireEntitlement scoped to ENABLING only (downgrade can still disable); security.tsx route→requireFeature; mcp 1548→1547. Verified. |
 | E. API_KEYS | MEDIUM | ✅ done | (this) | upsert/deleteApiKey → packages/ee/src/api-keys.server.ts + requireEntitlement (companyId from payload/row); 3 routes→requireFeature; key-gen/hash stays in route; mcp 1547→1545. Runtime verify (@carbon/auth) untouched. Verified. Doc-sync TODO: settings/AGENTS.md lists upsert/deleteApiKey (stale). |
 | F. WEBHOOKS | MEDIUM | ✅ done | (this) | upsert/delete/deactivateWebhooks → packages/ee/src/webhooks.server.ts + requireEntitlement; delivery gated via companyHasFeature degrade in jobs events/webhook.ts:37; 3 routes→requireFeature; mcp −3. Verified. |
-| G. FORECAST | MEDIUM | ⬜ next | | extract upsert/deleteDemandForecasts from production.service.ts → ee + requireEntitlement; routes→requireFeature; watch production.service.ts barrel |
+| G. FORECAST (demandForecast fns) | MEDIUM | ✅ done | (this) | PREMISE MISMATCH found: upsert/deleteDemandForecasts had NO app callers (MCP-only) — moved to packages/ee/src/forecast.server.ts + requireEntitlement (closes ungated DESTRUCTIVE MCP write path); mcp 252→250. The REAL forecast UI uses demandProjection — see G2. |
+| G2. FORECAST (demandProjection = the real feature) | MEDIUM | ⬜ next | | the demand-forecasts.* routes call upsert/deleteDemandProjections (production.service.ts:4728,498), gated only by requirePlan. Move those to forecast.server.ts + requireEntitlement + routes→requireFeature. |
 | H. CUSTOMER_PORTALS | MEDIUM | ⬜ | | |
 | I. AUDIT_LOG | MEDIUM | ⬜ | | |
 | J. AI_AGENT | LARGE | ⚠ FLAGGED | | hidden→overlay decision + big relocation; needs Brad |

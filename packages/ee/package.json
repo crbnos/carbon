@@ -10,6 +10,7 @@
     "./approvals.server": "./src/approvals/service.ts",
     "./console.server": "./src/console.server.ts",
     "./entitlements.server": "./src/entitlements.server.ts",
+    "./forecast.server": "./src/forecast.server.ts",
     "./planning": "./src/planning/index.ts",
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
