@@ -179,6 +179,9 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
+msgid "Batch Traveler"
+msgstr "生产批次流转卡"
+
 msgid "Batched jobs"
 msgstr "批量工作"
 

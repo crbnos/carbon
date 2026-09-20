@@ -179,6 +179,9 @@ msgstr "Lot Numarası {0}"
 msgid "Batch number is required"
 msgstr "Lot numarası zorunludur"
 
+msgid "Batch Traveler"
+msgstr "Parti İş takip kartı"
+
 msgid "Batched jobs"
 msgstr "Toplu iş emirleri"
 

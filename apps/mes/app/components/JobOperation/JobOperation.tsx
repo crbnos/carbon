@@ -692,14 +692,25 @@ export const JobOperation = ({
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
                 <DropdownMenuItem asChild>
-                  <a
-                    href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuQrCode />} />
-                    <Trans>Job Traveler</Trans>
-                  </a>
+                  {batch ? (
+                    <a
+                      href={path.to.file.batchList(batch.id as string)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuQrCode />} />
+                      <Trans>Batch Traveler</Trans>
+                    </a>
+                  ) : (
+                    <a
+                      href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuQrCode />} />
+                      <Trans>Job Traveler</Trans>
+                    </a>
+                  )}
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
                   <Link to={path.to.jobDetail(operation.jobId)}>

@@ -179,6 +179,9 @@ msgstr "Chargennummer {0}"
 msgid "Batch number is required"
 msgstr "Chargennummer ist erforderlich"
 
+msgid "Batch Traveler"
+msgstr "Los-Laufkarte"
+
 msgid "Batched jobs"
 msgstr "Gebündelte Fertigungsaufträge"
 

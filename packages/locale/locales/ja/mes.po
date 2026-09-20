@@ -179,6 +179,9 @@ msgstr "バッチ番号 {0}"
 msgid "Batch number is required"
 msgstr "バッチ番号は必須です"
 
+msgid "Batch Traveler"
+msgstr "バッチ現品票"
+
 msgid "Batched jobs"
 msgstr "バッチ製造指図"
 
