@@ -464,7 +464,7 @@ company with an ACTIVE `ramp` integration and fires one `carbon/ramp-sync`
 disabled webhook delivery becomes ≤1h of staleness, never permanent loss. `ramp-sync` is
 idempotent, so re-firing is safe.
 
-## cardTransaction schema (migration `20260911150050_reconcile-ramp-card-transactions-forward.sql`)
+## cardTransaction schema (migration `20260919152233_ramp-integration.sql`)
 
 The forward, retry-safe reconciliation migration supersedes the three branch-only Ramp
 schema migrations. Both `cardTransaction` and `cardTransactionLine` use composite
@@ -485,7 +485,7 @@ enum values, document enums, indexes, RLS, event trigger, and the per-company
   Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided audit fields. The line
   trigger locks the same parent row as posting and refuses mutation unless it is Draft, so
   line edits and post/void serialize rather than race. Migration
-  `20260911150058_enforce-card-transaction-lifecycle-audit-forward.sql` adds the stored state
+  `20260919152233_ramp-integration.sql` adds the stored state
   invariant: Draft requires the journal and all posting/void audit fields to be null;
   Posted requires `postingDate`, `postedAt`, and `postedBy` with void audit fields null;
   Voided requires both posting and void audit fields. `journalId` remains optional for

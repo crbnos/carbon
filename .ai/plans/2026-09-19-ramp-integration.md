@@ -185,6 +185,12 @@ the branch went from "works in a demo" to production-safe.* Grouped:
   with `id()` (superseding Phase 1's single-column plan), tenant-composite FKs, Draft-only RLS,
   parent-locking line trigger, company-group account validation, offending-id failure on any
   branch-local cross-tenant row. Plus the lifecycle-audit CHECK (`20260911150058`).
+  - **Final consolidation (pre-merge):** the timestamps above describe the tombstone+forward
+    sequence as it was built. Because none of that set reached `main`, it was later squashed into
+    a single clean `20260919152233_ramp-integration.sql` (card subsystem + `upsert_company_integration_patch`
+    RPC + lifecycle CHECK), plus `…_accounting-project-dimension-enum.sql` and `…_accounting-projects.sql`.
+    Adopting the squash requires a fresh `crbn reset` + `pnpm db:migrate` on any DB that recorded the
+    old timestamps.
 - Task 6 — tenant-safe ERP card reads (`(companyId, id)`, group-scoped account labels, fail-closed
   loaders).
 - Task 7 — transactional, idempotent post/void: lock the header first, one Kysely transaction,

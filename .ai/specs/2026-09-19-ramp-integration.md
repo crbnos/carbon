@@ -367,11 +367,13 @@ failures, not missing suppliers, and cannot advance a cursor.
 
 ## cardTransaction schema
 
-Base migration `20260820143726_ramp-integration.sql`; authoritative forward reconciliation
-`20260911150050_reconcile-ramp-card-transactions-forward.sql` (retry-safe; supersedes the three
-branch-only Ramp schema migrations and converges the registry row, enums, indexes, sequence,
-event trigger, RLS, constraints, and lifecycle guards); lifecycle audit invariant
-`20260911150058_enforce-card-transaction-lifecycle-audit-forward.sql`.
+Schema migration `20260919152233_ramp-integration.sql` — one clean migration creating the
+registry row, the `cardTransactionType`/`cardTransactionStatus` enums and the `'Card Transaction'`
+journal enum values, the `cardTransaction` + `cardTransactionLine` tables, indexes, per-company
+sequence, event trigger, RLS, account-integrity + lifecycle triggers, the lifecycle audit CHECK,
+and the `upsert_company_integration_patch` RPC. (This consolidates the earlier tombstone+forward
+migration set into one file — safe because none of that set had reached `main`; adopting it
+requires a fresh `crbn reset` + `pnpm db:migrate` on any DB that recorded the old timestamps.)
 
 Both `cardTransaction` and `cardTransactionLine` use composite `(id, companyId)` primary keys
 with `id()` defaults. Header-to-company, line-to-header, supplier, and cost-center/project
