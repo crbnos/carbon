@@ -2790,6 +2790,9 @@ msgstr "Disponible después de {0}"
 msgid "Available hours"
 msgstr "Horas disponibles"
 
+msgid "Available on the Business plan"
+msgstr ""
+
 msgid "Avatar url"
 msgstr "URL del avatar"
 
@@ -5363,6 +5366,9 @@ msgstr "Pasivo por impuesto diferido (predeterminado)"
 
 msgid "Define a manufacturing operation first."
 msgstr "Primero define una operación de manufactura."
+
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr ""
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Define BOM multinivel y lista de operaciones (métodos de fabricación)"
@@ -8191,6 +8197,9 @@ msgstr "grados"
 
 msgid "Grades"
 msgstr "Grados"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "Otorga Habilidad"
@@ -14107,6 +14116,9 @@ msgstr "Requiere Coincidencia"
 msgid "Require SAML SSO"
 msgstr "Requerir SAML SSO"
 
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "Requerir autenticación de dos factores"
 
@@ -18742,6 +18754,9 @@ msgstr "Actualizar"
 msgid "Upgrade to Business"
 msgstr "Actualizar a Business"
 
+msgid "Upgrade to Enterprise"
+msgstr ""
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Actualizar para desbloquear reglas de {0}"
@@ -18858,6 +18873,9 @@ msgstr "Vida Útil (Meses)"
 
 msgid "User"
 msgstr "Usuario"
+
+msgid "User Permissions"
+msgstr ""
 
 msgid "User roles"
 msgstr "Roles de usuario"

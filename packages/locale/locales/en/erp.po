@@ -2790,6 +2790,9 @@ msgstr "Available after {0}"
 msgid "Available hours"
 msgstr "Available hours"
 
+msgid "Available on the Business plan"
+msgstr "Available on the Business plan"
+
 msgid "Avatar url"
 msgstr "Avatar url"
 
@@ -5363,6 +5366,9 @@ msgstr "Deferred Tax Liability (default)"
 
 msgid "Define a manufacturing operation first."
 msgstr "Define a manufacturing operation first."
+
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr "Define custom roles with fine-grained, per-module permissions and assign them to your team."
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Define multi-level BOMs and Bill of Process (make methods)"
@@ -8191,6 +8197,9 @@ msgstr "grades"
 
 msgid "Grades"
 msgstr "Grades"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
 
 msgid "Grants Ability"
 msgstr "Grants Ability"
@@ -14107,6 +14116,9 @@ msgstr "Require Match"
 msgid "Require SAML SSO"
 msgstr "Require SAML SSO"
 
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+
 msgid "Require two-factor authentication"
 msgstr "Require two-factor authentication"
 
@@ -18742,6 +18754,9 @@ msgstr "Upgrade"
 msgid "Upgrade to Business"
 msgstr "Upgrade to Business"
 
+msgid "Upgrade to Enterprise"
+msgstr "Upgrade to Enterprise"
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Upgrade to unlock {0} rules"
@@ -18858,6 +18873,9 @@ msgstr "Useful Life (Months)"
 
 msgid "User"
 msgstr "User"
+
+msgid "User Permissions"
+msgstr "User Permissions"
 
 msgid "User roles"
 msgstr "User roles"

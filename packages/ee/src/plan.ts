@@ -17,7 +17,16 @@ export const FEATURE_PLANS = {
   AI_AGENT: [Plan.Business, Plan.Partner],
   WORKFLOWS: [Plan.Business, Plan.Partner],
   FORECAST: [Plan.Business, Plan.Partner],
-  TWO_FACTOR: [Plan.Business, Plan.Partner]
+  TWO_FACTOR: [Plan.Business, Plan.Partner],
+  // Authoring RBAC — creating/editing employee types, editing an individual
+  // user's permissions, and console (kiosk) mode. Community ships an
+  // "everyone is an admin" experience: you can add users but not author roles
+  // or modify permissions.
+  PERMISSIONS: [Plan.Business, Plan.Partner],
+  // Tiered document-approval rules (POs by amount, quality docs, suppliers).
+  APPROVAL_RULES: [Plan.Business, Plan.Partner],
+  // Company backup / restore (self-service export + restore of company data).
+  BACKUPS: [Plan.Business, Plan.Partner]
 } as const satisfies Record<string, Plan[]>;
 
 export type Feature = keyof typeof FEATURE_PLANS;

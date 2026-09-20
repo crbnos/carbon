@@ -2790,6 +2790,9 @@ msgstr "{0}'den sonra kullanılabilir"
 msgid "Available hours"
 msgstr "Kullanılabilir saatler"
 
+msgid "Available on the Business plan"
+msgstr ""
+
 msgid "Avatar url"
 msgstr "Avatar URL'si"
 
@@ -5363,6 +5366,9 @@ msgstr "Ertelenen Vergi Yükümlülüğü (varsayılan)"
 
 msgid "Define a manufacturing operation first."
 msgstr "Önce bir üretim işlemini tanımlayın."
+
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr ""
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Çok seviyeli BOM'lar ve Operasyon listesi (üretim yöntemleri) tanımlayın"
@@ -8191,6 +8197,9 @@ msgstr "sınıflar"
 
 msgid "Grades"
 msgstr "Dereceler"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "Yetkinlik Verir"
@@ -14107,6 +14116,9 @@ msgstr "Eşleştirme Gerekli"
 msgid "Require SAML SSO"
 msgstr "SAML SSO Gerekli"
 
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "İki faktörlü kimlik doğrulamayı gerektir"
 
@@ -18742,6 +18754,9 @@ msgstr "Yükselt"
 msgid "Upgrade to Business"
 msgstr "İşletmeye Yükselt"
 
+msgid "Upgrade to Enterprise"
+msgstr ""
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Üniforma kurallarını açmak için yükseltin"
@@ -18858,6 +18873,9 @@ msgstr "Faydalı Ömür (Aylar)"
 
 msgid "User"
 msgstr "Kullanıcı"
+
+msgid "User Permissions"
+msgstr ""
 
 msgid "User roles"
 msgstr "Kullanıcı rolleri"

@@ -1,4 +1,5 @@
 "use client";
+import type { ApprovalDocumentType } from "@carbon/ee/approvals";
 import { NotificationEvent, renderInlineLinks } from "@carbon/notifications";
 import {
   Badge,
@@ -49,7 +50,6 @@ import {
 import { Link, useFetcher, useNavigate } from "react-router";
 import { DateTime } from "~/components";
 import { useNotifications, useUser } from "~/hooks";
-import type { ApprovalDocumentType } from "~/modules/shared";
 import { usePeople } from "~/stores";
 import type { Notification as NotificationRecord } from "~/types";
 import { getRecordPath } from "~/utils/entity";

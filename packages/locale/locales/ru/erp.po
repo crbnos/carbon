@@ -2790,6 +2790,9 @@ msgstr "Доступно после {0}"
 msgid "Available hours"
 msgstr "Доступные часы"
 
+msgid "Available on the Business plan"
+msgstr ""
+
 msgid "Avatar url"
 msgstr "URL аватара"
 
@@ -5363,6 +5366,9 @@ msgstr "Отложенное налоговое обязательство (по
 
 msgid "Define a manufacturing operation first."
 msgstr "Сначала определите производственную операцию."
+
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr ""
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "Определите многоуровневые BOM и перечни операций (методы производства)"
@@ -8191,6 +8197,9 @@ msgstr "сорта"
 
 msgid "Grades"
 msgstr "Сорта"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "Предоставляет Навык"
@@ -14107,6 +14116,9 @@ msgstr "Требовать совпадение"
 msgid "Require SAML SSO"
 msgstr "Требовать SAML SSO"
 
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "Требовать двухфакторную аутентификацию"
 
@@ -18742,6 +18754,9 @@ msgstr "Обновить"
 msgid "Upgrade to Business"
 msgstr "Перейти на Business"
 
+msgid "Upgrade to Enterprise"
+msgstr ""
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "Обновитесь, чтобы разблокировать правила {0}"
@@ -18858,6 +18873,9 @@ msgstr "Срок полезного использования (месяцы)"
 
 msgid "User"
 msgstr "Пользователь"
+
+msgid "User Permissions"
+msgstr ""
 
 msgid "User roles"
 msgstr "Роли пользователей"

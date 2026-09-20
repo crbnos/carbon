@@ -13,8 +13,16 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useFetcher, useNavigate } from "react-router";
-import { Boolean, Input, Location, Select, Submit } from "~/components/Form";
+import {
+  Boolean,
+  Hidden,
+  Input,
+  Location,
+  Select,
+  Submit
+} from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { getEmployeeTypes, getInvitable } from "~/modules/users";
 import { createEmployeeValidator } from "~/modules/users";
 import type { Result } from "~/types";
@@ -28,6 +36,10 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
   const { t } = useLingui();
   const { defaults } = useUser();
   const { isControlledEnvironment } = useFlags();
+  // Enterprise: choosing an employee type on invite is gated to the Business
+  // plan. When gated (Community / Starter), every invite defaults to the seeded
+  // Admin type — "everyone is an admin".
+  const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
   const navigate = useNavigate();
   const formFetcher = useFetcher<Result>();
   const employeeTypeFetcher =
@@ -37,11 +49,18 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
     employeeTypeFetcher.load(path.to.api.employeeTypes);
   });
 
-  const employeeTypeOptions =
-    employeeTypeFetcher.data?.data?.map((et) => ({
-      value: et.id,
-      label: et.name
-    })) ?? [];
+  const employeeTypes = employeeTypeFetcher.data?.data ?? [];
+  const employeeTypeOptions = employeeTypes.map((et) => ({
+    value: et.id,
+    label: et.name
+  }));
+
+  // The seeded Admin type is the only type a gated company has; fall back
+  // gracefully if the shape ever changes.
+  const adminType =
+    employeeTypes.find((et) => et.systemType === "Admin") ??
+    employeeTypes.find((et) => et.protected) ??
+    employeeTypes[0];
 
   return (
     <Modal
@@ -75,13 +94,17 @@ const CreateEmployeeModal = ({ invitable }: CreateEmployeeModalProps) => {
                 <Input name="firstName" label={t`First Name`} />
                 <Input name="lastName" label={t`Last Name`} />
               </div>
-              <Select
-                name="employeeType"
-                label={t`Employee Type`}
-                termId="create-employee-employee-type"
-                options={employeeTypeOptions}
-                placeholder={t`Select Employee Type`}
-              />
+              {permissionsGated ? (
+                <Hidden name="employeeType" value={adminType?.id ?? ""} />
+              ) : (
+                <Select
+                  name="employeeType"
+                  label={t`Employee Type`}
+                  termId="create-employee-employee-type"
+                  options={employeeTypeOptions}
+                  placeholder={t`Select Employee Type`}
+                />
+              )}
               <Location
                 name="locationId"
                 label={t`Location`}

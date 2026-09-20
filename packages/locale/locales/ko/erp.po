@@ -2790,6 +2790,9 @@ msgstr "{0} 이후 가용"
 msgid "Available hours"
 msgstr "가용 시간"
 
+msgid "Available on the Business plan"
+msgstr ""
+
 msgid "Avatar url"
 msgstr "아바타 URL"
 
@@ -5363,6 +5366,9 @@ msgstr "이연법인세부채(기본값)"
 
 msgid "Define a manufacturing operation first."
 msgstr "먼저 제조 공정작업을 정의하세요."
+
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr ""
 
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "다단계 BOM 및 공정 목록(생산 방법) 정의"
@@ -8191,6 +8197,9 @@ msgstr "등급"
 
 msgid "Grades"
 msgstr "등급"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr ""
 
 msgid "Grants Ability"
 msgstr "역량 부여"
@@ -14107,6 +14116,9 @@ msgstr "필수 일치"
 msgid "Require SAML SSO"
 msgstr "SAML SSO 필수"
 
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr ""
+
 msgid "Require two-factor authentication"
 msgstr "2단계 인증 필수"
 
@@ -18742,6 +18754,9 @@ msgstr "업그레이드"
 msgid "Upgrade to Business"
 msgstr "비즈니스로 업그레이드"
 
+msgid "Upgrade to Enterprise"
+msgstr ""
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "{0}개의 규칙을 사용하려면 업그레이드하세요"
@@ -18858,6 +18873,9 @@ msgstr "내용연수(개월)"
 
 msgid "User"
 msgstr "사용자"
+
+msgid "User Permissions"
+msgstr ""
 
 msgid "User roles"
 msgstr "사용자 역할"

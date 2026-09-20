@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/utils";
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import {
   Badge,
   Button,
@@ -59,7 +60,6 @@ import { ReceiptStatus } from "~/modules/inventory/ui/Receipts";
 import { ShipmentStatus } from "~/modules/inventory/ui/Shipments";
 import PurchaseInvoicingStatus from "~/modules/invoicing/ui/PurchaseInvoice/PurchaseInvoicingStatus";
 import { PurchaseReturnOrderStatus } from "~/modules/purchasing/ui/PurchaseReturnOrders";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { useSuppliers } from "~/stores/suppliers";
 import { path } from "~/utils/path";
 import {

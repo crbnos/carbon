@@ -1,6 +1,8 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { updateConsoleSetting } from "@carbon/ee/console.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   Badge,
   Button,
@@ -27,14 +29,11 @@ import {
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
-
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData } from "react-router";
-import {
-  getCompanySettings,
-  updateConsoleSetting,
-  updateTimeCardSetting
-} from "~/modules/settings";
+import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import { getCompanySettings, updateTimeCardSetting } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -77,6 +76,18 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (intent === "console") {
+    // Enterprise: console (kiosk) mode is gated. `companyHasFeature` blocks the
+    // Community edition outright and applies the plan check on Cloud.
+    const hasConsole = await companyHasFeature(client, companyId, {
+      feature: "PERMISSIONS"
+    });
+    if (!hasConsole) {
+      return {
+        success: false,
+        message: "Console mode requires the Business plan"
+      };
+    }
+
     const update = await updateConsoleSetting(
       client,
       companyId,
@@ -114,6 +125,8 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function PeopleSettingsRoute() {
   const { companySettings } = useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
+  // Enterprise: console (kiosk) mode is gated to the Business plan.
+  const { isGated: consoleGated } = usePlanGate({ feature: "PERMISSIONS" });
   const [showPinModal, setShowPinModal] = useState(false);
   const [generatedPin, setGeneratedPin] = useState<string | null>(null);
 
@@ -193,7 +206,9 @@ export default function PeopleSettingsRoute() {
                 </HStack>
 
                 <span className="text-sm text-muted-foreground">
-                  {(companySettings as any).consoleEnabled ? (
+                  {consoleGated ? (
+                    <Trans>Available on the Business plan</Trans>
+                  ) : (companySettings as any).consoleEnabled ? (
                     <Trans>
                       Operators can use shared workstations with PIN
                       authentication.
@@ -203,11 +218,15 @@ export default function PeopleSettingsRoute() {
                   )}
                 </span>
               </VStack>
-              <Switch
-                checked={(companySettings as any).consoleEnabled ?? false}
-                onCheckedChange={handleConsoleToggle}
-                disabled={isToggling}
-              />
+              {consoleGated ? (
+                <UpgradeOverlayUpgradeButton />
+              ) : (
+                <Switch
+                  checked={(companySettings as any).consoleEnabled ?? false}
+                  onCheckedChange={handleConsoleToggle}
+                  disabled={isToggling}
+                />
+              )}
             </HStack>
           </CardContent>
         </Card>

@@ -129,3 +129,46 @@ export async function requirePlan({
     );
   }
 }
+
+/**
+ * Like `companyHasPlan`, but the **Community** edition is ALWAYS gated: it has no
+ * license, so a plan-gated feature is off regardless of the (absent) plan row.
+ * Enterprise/Test self-hosted PASS; Cloud is plan-based; bypass/carbon-owned as
+ * in `companyHasPlan`.
+ *
+ * Use this (not `companyHasPlan`/`requirePlan`) for features that must be BLOCKED
+ * on Community — RBAC authoring, console/kiosk mode — rather than merely paywalled
+ * on Cloud. `companyHasPlan` deliberately returns true for every non-Cloud edition
+ * (a self-hosted feature toggle), which is wrong for these.
+ */
+export async function companyHasFeature(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  spec: GateSpec
+): Promise<boolean> {
+  if (CarbonEdition === Edition.Community) return false;
+  return companyHasPlan(client, companyId, spec);
+}
+
+/** Throws a redirect with flash when `companyHasFeature` is false. */
+export async function requireFeature({
+  request,
+  client,
+  companyId,
+  redirectTo,
+  message,
+  ...spec
+}: RequirePlanArgs): Promise<void> {
+  if (await companyHasFeature(client, companyId, spec as GateSpec)) return;
+
+  throw redirect(
+    redirectTo,
+    await flash(
+      request,
+      error(
+        null,
+        message ?? defaultUpgradeMessage(resolveRequirement(spec as GateSpec))
+      )
+    )
+  );
+}

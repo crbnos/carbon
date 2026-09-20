@@ -62,7 +62,7 @@ pnpm run lint
 | `apiKey` | Hashed API keys with per-module scopes |
 | `webhook` / `webhookTable` | Outbound webhooks and the tables they may subscribe to |
 | `companyAccountsPayableBillingAddress` / `companyAccountsReceivableBillingAddress` | Remit-to / bill-to addresses printed on documents |
-| `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting`, which provisions a "Console Operator" type |
+| `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting` (now in the commercial `@carbon/ee/console.server`, gated to Business via the `PERMISSIONS` feature), which provisions a "Console Operator" type |
 
 ## Key Service Functions
 
