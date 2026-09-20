@@ -95,13 +95,6 @@ export async function deactivateWebhooks(
     .eq("companyId", companyId);
 }
 
-export async function deleteApiKey(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("apiKey").delete().eq("id", id);
-}
-
 export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
@@ -1312,79 +1305,6 @@ export async function updateSupplierQuoteNotificationSetting(
     .from("companySettings")
     .update(sanitize({ supplierQuoteNotificationGroup }))
     .eq("id", companyId);
-}
-
-export async function upsertApiKey(
-  client: SupabaseClient<Database>,
-  apiKey:
-    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
-        createdBy: string;
-        companyId: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-        rawKey: string;
-        keyHash: string;
-        keyPreview: string;
-      })
-    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
-        id: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-      })
-) {
-  if ("createdBy" in apiKey) {
-    // Create: store the hash, return the raw key (caller generates both)
-    // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
-    const {
-      scopes,
-      expiresAt,
-      rawKey,
-      keyHash,
-      rateLimit: _rl,
-      rateLimitWindow: _rlw,
-      ...rest
-    } = apiKey as any;
-
-    const result = await client
-      .from("apiKey")
-      .insert(
-        sanitize({
-          ...rest,
-          keyHash,
-          scopes: scopes as any,
-          expiresAt: expiresAt || null
-        }) as any
-      )
-      .select("id")
-      .single();
-
-    if (result.error) {
-      return { data: null, error: result.error };
-    }
-
-    // Return the raw key (shown to user once, never stored)
-    return { data: { key: rawKey, id: result.data.id }, error: null };
-  }
-
-  // Update: update name, scopes, expiration (never the key itself)
-  // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
-  const {
-    scopes,
-    expiresAt,
-    rateLimit: _rl,
-    rateLimitWindow: _rlw,
-    ...rest
-  } = apiKey as any;
-  return client
-    .from("apiKey")
-    .update(
-      sanitize({
-        ...rest,
-        scopes: scopes as any,
-        expiresAt: expiresAt || null
-      }) as any
-    )
-    .eq("id", apiKey.id);
 }
 
 export async function updateDefaultSupplierCc(
