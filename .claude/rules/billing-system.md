@@ -82,10 +82,12 @@ several `invoice.*` events are forwarded to GTM.
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
-`API_KEYS, WEBHOOKS, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
+`API_KEYS, WEBHOOKS, MCP, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
 CUSTOMER_PORTALS, AI_AGENT, WORKFLOWS, FORECAST, TWO_FACTOR, PERMISSIONS, APPROVAL_RULES,
 BACKUPS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST` (`email`) bypasses
-the `INTEGRATIONS` gate.
+the `INTEGRATIONS` gate. `MCP` gates the MCP server (`POST /api/mcp`) via
+`companyHasFeature` at the route choke point — off on Community/Starter across both the
+OAuth-connector and `carbon-key` auth paths (`api+/mcp+/_index.ts`).
 
 `APPROVAL_RULES` gates the `x+/settings+/approval-rules.*` routes (via `requireFeature`
 + hidden nav); the runtime approval engine (`$supplierId.approval`, request/approve/reject)

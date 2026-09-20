@@ -8,6 +8,10 @@ import type { IntegrationID } from "./index";
 export const FEATURE_PLANS = {
   API_KEYS: [Plan.Business, Plan.Partner],
   WEBHOOKS: [Plan.Business, Plan.Partner],
+  // The MCP server (POST /api/mcp) — machine/agent access to the ERP tools.
+  // Off on Community/Starter; enforced at the single route choke point via
+  // companyHasFeature, covering both the OAuth-connector and carbon-key paths.
+  MCP: [Plan.Business, Plan.Partner],
   INTEGRATIONS: [Plan.Business, Plan.Partner],
   SALES_RULES: [Plan.Business, Plan.Partner],
   AUDIT_LOG: [Plan.Business, Plan.Partner],

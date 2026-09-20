@@ -77,6 +77,16 @@ Auth always yields an `McpContext` = `{ client, companyId, companyGroupId, userI
 (`lib/types.ts`). `companyId`/`userId` come from the auth context and are injected
 server-side — never trusted from tool arguments.
 
+**Edition/plan gate.** The MCP server is a Business+ feature. Immediately after
+`resolveAuth`, `action` calls `companyHasFeature(ctx.client, ctx.companyId, { feature: "MCP" })`
+and returns 402 when false — one check that covers BOTH auth paths and blocks the
+**Community** edition (self-hosted) as well as Cloud **Starter** companies. This is the
+edge enforcement (the MCP server code lives in `apps/erp`, community-licensed, so there is
+no `packages/ee` body to relocate); `companyHasFeature` is the same entitlement helper the
+rest of the gated features use. The unauthenticated discovery endpoints
+(`/.well-known/mcp.json`, `/agent-setup/prompt.md`) are NOT gated — they have no company
+context and only advertise the endpoint; enforcement is at `POST /api/mcp`.
+
 ## The 3 meta-tools (the ONLY tools actually registered)
 
 To avoid context exhaustion, `server.registerTool` registers just three discovery
