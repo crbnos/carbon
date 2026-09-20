@@ -1607,6 +1607,9 @@ msgstr "Etiket"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr ""
 

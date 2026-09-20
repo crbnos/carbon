@@ -455,133 +455,128 @@ export function BatchOverview({
         </div>
       </div>
 
-      {/* Only when parts must be kept apart. A same-item batch into one
-          combined lot has nothing per job to act on — its total is already in
-          the stat cards and the status bar. */}
-      {(mixedItems || showLots) && (
-        <Section
-          title={t`Load list`}
-          description={
-            mixedItems
-              ? t`The jobs make different items — keep each job's parts apart.`
-              : t`Each job's output is its own lot — keep each job's parts apart.`
-          }
-        >
-          <Panel>
-            <Table>
-              <Thead className="bg-muted/40">
-                <Tr>
-                  <Th className={th}>
-                    <Trans>Job</Trans>
-                  </Th>
-                  {mixedItems && (
-                    <Th className={cn(th, "hidden md:table-cell")}>
-                      <Trans>Item</Trans>
-                    </Th>
-                  )}
+      {/* Always shown in batch mode so the operator can see the jobs, parts
+          and quantities that belong in the run — a laser nest or an oven load
+          is the same item across many jobs, and needs the per-job list even
+          when the parts don't have to be kept apart afterwards. */}
+      <Section
+        title={t`Load list`}
+        description={
+          mixedItems
+            ? t`The jobs make different items — keep each job's parts apart.`
+            : showLots
+              ? t`Each job's output is its own lot — keep each job's parts apart.`
+              : t`The jobs and parts that make up this run.`
+        }
+      >
+        <Panel>
+          <Table>
+            <Thead className="bg-muted/40">
+              <Tr>
+                <Th className={th}>
+                  <Trans>Job</Trans>
+                </Th>
+                <Th className={cn(th, "hidden md:table-cell")}>
+                  <Trans>Item</Trans>
+                </Th>
+                <Th className={cn(th, "hidden md:table-cell")}>
+                  <Trans>Due</Trans>
+                </Th>
+                {showLots && (
                   <Th className={cn(th, "hidden md:table-cell")}>
-                    <Trans>Due</Trans>
+                    <Trans>Lot</Trans>
                   </Th>
-                  {showLots && (
-                    <Th className={cn(th, "hidden md:table-cell")}>
-                      <Trans>Lot</Trans>
-                    </Th>
-                  )}
-                  <Th className={cn(th, "whitespace-nowrap text-right")}>
-                    <Trans>To run</Trans>
-                  </Th>
-                </Tr>
-              </Thead>
-              <Tbody className={rows}>
-                {members.map((m) => {
-                  const job = m.job as {
-                    deadlineType?: string | null;
-                    customer?: { name?: string | null } | null;
-                  } | null;
-                  const toRun = remaining(m);
-                  return (
-                    <Tr key={m.id}>
-                      <Td className={cn(td, "w-full max-w-0")}>
-                        <Link
-                          to={`${path.to.operation(m.id)}?scope=job`}
-                          className="font-medium hover:underline"
-                        >
-                          {jobIdOf(m)}
-                        </Link>
-                        {job?.customer?.name && (
-                          <p className="truncate text-sm text-muted-foreground">
-                            {job.customer.name}
-                          </p>
-                        )}
-                      </Td>
-                      {mixedItems && (
-                        <Td
-                          className={cn(
-                            td,
-                            "hidden whitespace-nowrap text-sm md:table-cell"
-                          )}
-                        >
-                          {m.jobMakeMethod?.item?.readableIdWithRevision}
-                        </Td>
+                )}
+                <Th className={cn(th, "whitespace-nowrap text-right")}>
+                  <Trans>To run</Trans>
+                </Th>
+              </Tr>
+            </Thead>
+            <Tbody className={rows}>
+              {members.map((m) => {
+                const job = m.job as {
+                  deadlineType?: string | null;
+                  customer?: { name?: string | null } | null;
+                } | null;
+                const toRun = remaining(m);
+                return (
+                  <Tr key={m.id}>
+                    <Td className={cn(td, "w-full max-w-0")}>
+                      <Link
+                        to={`${path.to.operation(m.id)}?scope=job`}
+                        className="font-medium hover:underline"
+                      >
+                        {jobIdOf(m)}
+                      </Link>
+                      {job?.customer?.name && (
+                        <p className="truncate text-sm text-muted-foreground">
+                          {job.customer.name}
+                        </p>
                       )}
+                    </Td>
+                    <Td
+                      className={cn(
+                        td,
+                        "hidden whitespace-nowrap text-sm md:table-cell"
+                      )}
+                    >
+                      {m.jobMakeMethod?.item?.readableIdWithRevision}
+                    </Td>
+                    <Td
+                      className={cn(
+                        td,
+                        "hidden whitespace-nowrap text-sm text-muted-foreground md:table-cell"
+                      )}
+                    >
+                      {["ASAP", "No Deadline"].includes(
+                        job?.deadlineType ?? ""
+                      ) || !m.dueDate
+                        ? (job?.deadlineType ?? "—")
+                        : formatDate(m.dueDate)}
+                    </Td>
+                    {showLots && (
                       <Td
                         className={cn(
                           td,
-                          "hidden whitespace-nowrap text-sm text-muted-foreground md:table-cell"
+                          "hidden whitespace-nowrap font-mono text-sm md:table-cell"
                         )}
                       >
-                        {["ASAP", "No Deadline"].includes(
-                          job?.deadlineType ?? ""
-                        ) || !m.dueDate
-                          ? (job?.deadlineType ?? "—")
-                          : formatDate(m.dueDate)}
+                        {m.requiresBatchTracking ? m.batchNumber || "—" : "—"}
                       </Td>
-                      {showLots && (
-                        <Td
-                          className={cn(
-                            td,
-                            "hidden whitespace-nowrap font-mono text-sm md:table-cell"
-                          )}
-                        >
-                          {m.requiresBatchTracking ? m.batchNumber || "—" : "—"}
-                        </Td>
-                      )}
-                      <Td className={cn(td, "whitespace-nowrap text-right")}>
-                        <span className="font-medium tabular-nums">
-                          {toRun}
-                        </span>
-                        {toRun !== (m.operationQuantity ?? 0) && (
-                          <span className="ml-1 text-xs tabular-nums text-muted-foreground">
-                            {t`of ${m.operationQuantity ?? 0}`}
-                          </span>
-                        )}
-                      </Td>
-                    </Tr>
-                  );
-                })}
-              </Tbody>
-              <Tfoot className="border-t bg-muted/40">
-                <Tr>
-                  <Td
-                    colSpan={1 + (mixedItems ? 1 : 0) + 1 + (showLots ? 1 : 0)}
-                    className={cn(td, "text-sm text-muted-foreground")}
-                  >
-                    <Trans>Total</Trans>
-                  </Td>
-                  <Td
-                    className={cn(
-                      td,
-                      "whitespace-nowrap text-right font-medium tabular-nums"
                     )}
-                  >
-                    {members.reduce((sum, m) => sum + remaining(m), 0)}
-                  </Td>
-                </Tr>
-              </Tfoot>
-            </Table>
-          </Panel>
-        </Section>
-      )}
+                    <Td className={cn(td, "whitespace-nowrap text-right")}>
+                      <span className="font-medium tabular-nums">{toRun}</span>
+                      {toRun !== (m.operationQuantity ?? 0) && (
+                        <span className="ml-1 text-xs tabular-nums text-muted-foreground">
+                          {t`of ${m.operationQuantity ?? 0}`}
+                        </span>
+                      )}
+                    </Td>
+                  </Tr>
+                );
+              })}
+            </Tbody>
+            <Tfoot className="border-t bg-muted/40">
+              <Tr>
+                <Td
+                  colSpan={1 + 1 + 1 + (showLots ? 1 : 0)}
+                  className={cn(td, "text-sm text-muted-foreground")}
+                >
+                  <Trans>Total</Trans>
+                </Td>
+                <Td
+                  className={cn(
+                    td,
+                    "whitespace-nowrap text-right font-medium tabular-nums"
+                  )}
+                >
+                  {members.reduce((sum, m) => sum + remaining(m), 0)}
+                </Td>
+              </Tr>
+            </Tfoot>
+          </Table>
+        </Panel>
+      </Section>
 
       <Section
         title={t`Materials`}

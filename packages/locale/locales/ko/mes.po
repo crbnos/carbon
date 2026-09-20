@@ -1607,6 +1607,9 @@ msgstr "태그"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr ""
 

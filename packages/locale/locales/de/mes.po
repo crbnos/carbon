@@ -1607,6 +1607,9 @@ msgstr "Tag"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Die abgeschlossene Menge für diesen Arbeitsgang ist geringer als die erforderliche Menge von {targetQuantity}."
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr ""
 

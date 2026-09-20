@@ -100,7 +100,8 @@ export async function getJobOperationBatch(
       "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, dueDate, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, customer(name))"
     )
     .eq("jobOperationBatchId", batchId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .order("jobId", { referencedTable: "job", ascending: true });
 
   // Batch-tracked outputs: each member's WIP entity (finalized as the produced
   // lot at completion) and its current batch number, for the completion form's

@@ -1607,6 +1607,9 @@ msgstr "टैग"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
 msgid "The jobs make different items — keep each job's parts apart."
 msgstr ""
 
