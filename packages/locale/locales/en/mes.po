@@ -179,6 +179,9 @@ msgstr "Batch Number {0}"
 msgid "Batch number is required"
 msgstr "Batch number is required"
 
+msgid "Batch Traveler"
+msgstr "Batch Traveler"
+
 msgid "Batched jobs"
 msgstr "Batched jobs"
 

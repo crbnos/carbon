@@ -179,6 +179,9 @@ msgstr "배치 번호 {0}"
 msgid "Batch number is required"
 msgstr "배치 번호가 필요합니다"
 
+msgid "Batch Traveler"
+msgstr ""
+
 msgid "Batched jobs"
 msgstr "일괄 작업 지시"
 

@@ -179,6 +179,9 @@ msgstr "Numero Lotto {0}"
 msgid "Batch number is required"
 msgstr "Il numero di lotto è obbligatorio"
 
+msgid "Batch Traveler"
+msgstr ""
+
 msgid "Batched jobs"
 msgstr "Ordini di produzione raggruppati"
 

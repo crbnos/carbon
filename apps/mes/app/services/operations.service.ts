@@ -99,10 +99,17 @@ export async function getJobOperationBatch(
     )
     .eq("jobOperationBatchId", batchId)
     .eq("companyId", companyId);
+  // Order members by job id so the batch chip and completion grid list jobs
+  // sequentially (J000704, J000705, …) rather than in PostgREST's row order.
+  const sortedOperations = [...(operations.data ?? [])].sort((a, b) =>
+    ((a.job as { jobId?: string | null } | null)?.jobId ?? "").localeCompare(
+      (b.job as { jobId?: string | null } | null)?.jobId ?? ""
+    )
+  );
   return {
     data: {
       ...batch.data,
-      operations: operations.data ?? []
+      operations: sortedOperations
     },
     error: operations.error
   };
