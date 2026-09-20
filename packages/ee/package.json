@@ -9,6 +9,7 @@
     "./approvals": "./src/approvals/index.ts",
     "./approvals.server": "./src/approvals/service.ts",
     "./console.server": "./src/console.server.ts",
+    "./customer-portals.server": "./src/customer-portals.server.ts",
     "./entitlements.server": "./src/entitlements.server.ts",
     "./forecast.server": "./src/forecast.server.ts",
     "./planning": "./src/planning/index.ts",

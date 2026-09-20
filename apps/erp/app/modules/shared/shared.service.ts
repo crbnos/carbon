@@ -292,13 +292,6 @@ export async function getCustomerPortal(
     .single();
 }
 
-export async function deleteCustomerPortal(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("externalLink").delete().eq("id", id);
-}
-
 export async function updateModelThumbnail(
   client: SupabaseClient<Database>,
   modelId: string,

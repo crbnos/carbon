@@ -1,5 +1,5 @@
 {
-  "totalTools": 1538,
+  "totalTools": 1537,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
@@ -1481,7 +1481,6 @@
     {"name":"settings_upsertDocumentSection","classification":"WRITE","paramCount":5,"schema":"b894407ce0d0","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"settings_upsertDocumentTemplate","classification":"WRITE","paramCount":6,"schema":"5d28da0e0ad6","response":"bcde375ebd4c","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
     {"name":"settings_upsertItemSerialSequence","classification":"WRITE","paramCount":7,"schema":"95750d9ab5ae","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create+update","paginates":false},
-    {"name":"shared_deleteCustomerPortal","classification":"DESTRUCTIVE","paramCount":1,"schema":"3797626bd17e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_deleteSavedView","classification":"DESTRUCTIVE","paramCount":1,"schema":"1fbe3d41dab0","response":"bcde375ebd4c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_generateEmbedding","classification":"WRITE","paramCount":1,"schema":"e3dce8d1afb8","response":"569f4d6b0385","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_getBase64ImageFromSupabase","classification":"READ","paramCount":1,"schema":"923b083c9bca","response":"174e29b899b9","injectAuth":"companyId","permission":"none","paginates":false},

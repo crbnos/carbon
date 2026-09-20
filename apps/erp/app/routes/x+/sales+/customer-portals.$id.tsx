@@ -1,13 +1,14 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { customerPortalValidator } from "~/modules/sales";
-import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm";
-import { getCustomerPortal, upsertExternalLink } from "~/modules/shared";
+import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
+import { getCustomerPortal } from "~/modules/shared";
 
 import { path } from "~/utils/path";
 
@@ -43,7 +44,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "sales"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -63,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, customerId } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const updateCustomerPortal = await upsertExternalLink(client, {
+  const updateCustomerPortal = await upsertCustomerPortal(client, companyId, {
     id,
     documentType: "Customer",
     documentId: customerId,
