@@ -9509,9 +9509,6 @@ msgstr "Leave empty for exact match"
 msgid "Leave this page"
 msgstr "Leave this page"
 
-msgid "Ledger"
-msgstr "Ledger"
-
 msgid "Left item"
 msgstr "Left item"
 
@@ -10316,9 +10313,6 @@ msgstr "Metric units are disabled"
 
 msgid "Metric units are enabled"
 msgstr "Metric units are enabled"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
@@ -14163,9 +14157,6 @@ msgstr "Requested Date"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Require a 6-digit code from an authenticator app when signing in."
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "Require a second factor when members sign in to this company."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."

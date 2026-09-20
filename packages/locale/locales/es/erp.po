@@ -9509,9 +9509,6 @@ msgstr "Dejar vacío para coincidencia exacta"
 msgid "Leave this page"
 msgstr "Salir de esta página"
 
-msgid "Ledger"
-msgstr "Libro mayor"
-
 msgid "Left item"
 msgstr "Elemento izquierdo"
 
@@ -10316,9 +10313,6 @@ msgstr "Las unidades métricas están deshabilitadas"
 
 msgid "Metric units are enabled"
 msgstr "Las unidades métricas están habilitadas"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Convención de mitad de mes / mitad de trimestre / mitad de año que determina la deducción del primer año."
@@ -14163,9 +14157,6 @@ msgstr "Fecha Solicitada"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Requerir un código de 6 dígitos de una aplicación de autenticación al iniciar sesión."
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "Requerir un segundo factor cuando los miembros inician sesión en esta empresa."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Requerir un operario asignado antes de que el programador coloque trabajo en una ubicación. Cuando está activado, los centros de trabajo sin personal no reciben trabajo y una operación sin cobertura de personal se muestra como no programable. Los centros de trabajo automáticos (24×7) están exentos."

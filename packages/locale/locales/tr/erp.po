@@ -9509,9 +9509,6 @@ msgstr "Tam eşleşme için boş bırakın"
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
 
-msgid "Ledger"
-msgstr "Büyük Defter"
-
 msgid "Left item"
 msgstr "Sol öğe"
 
@@ -10316,9 +10313,6 @@ msgstr "Metrik birimleri devre dışı"
 
 msgid "Metric units are enabled"
 msgstr "Metrik birimler etkinleştirilmiş"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Ay ortası / çeyrek ortası / yarı yıl kuralı, ilk yıl kesintisini belirler."
@@ -14163,9 +14157,6 @@ msgstr "Talep Edilen Tarih"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "Bu şirkete giriş yaparken üyelerin ikinci bir faktör kullanmasını zorunlu tutun."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."

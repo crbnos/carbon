@@ -9509,9 +9509,6 @@ msgstr "留空以精确匹配"
 msgid "Leave this page"
 msgstr "离开此页面"
 
-msgid "Ledger"
-msgstr "总账"
-
 msgid "Left item"
 msgstr "左项"
 
@@ -10316,9 +10313,6 @@ msgstr "公制单位已禁用"
 
 msgid "Metric units are enabled"
 msgstr "公制单位已启用"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "决定首年扣除的月中/季中/半年约定俗成的方法。"
@@ -14163,9 +14157,6 @@ msgstr "要求日期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "成员登录此公司时需要第二因素验证"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"

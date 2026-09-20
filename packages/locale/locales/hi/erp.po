@@ -9509,9 +9509,6 @@ msgstr "सटीक मिलान के लिए खाली छोड़�
 msgid "Leave this page"
 msgstr "इस पृष्ठ को छोड़ें"
 
-msgid "Ledger"
-msgstr "बहीखाता"
-
 msgid "Left item"
 msgstr "बाईं ओर की वस्तु"
 
@@ -10316,9 +10313,6 @@ msgstr "मीट्रिक इकाइयाँ अक्षम हैं"
 
 msgid "Metric units are enabled"
 msgstr "मीट्रिक इकाइयाँ सक्षम हैं"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "मध्य-महीना / मध्य-त्रैमासिक / आधा-वर्ष सम्मेलन जो पहले वर्ष की कटौती निर्धारित करता है।"
@@ -14163,9 +14157,6 @@ msgstr "अनुरोधित तिथि"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "जब सदस्य इस कंपनी में साइन इन करते हैं तो एक दूसरे कारक की आवश्यकता है।"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"

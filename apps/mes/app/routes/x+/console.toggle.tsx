@@ -2,9 +2,8 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { updateSessionConsole } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { data } from "react-router";
 import { clearConsolePinIn } from "~/services/console.server";
-import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -37,5 +36,9 @@ export async function action({ request }: ActionFunctionArgs) {
     headers.append("Set-Cookie", clearConsolePinIn(companyId));
   }
 
-  throw redirect(path.to.authenticatedRoot, { headers });
+  // Return data (not a redirect) so the caller's fetcher auto-revalidates the
+  // layout loader and `consoleMode` flips — mirroring the dark-mode toggle in
+  // root.tsx. A fetcher redirect to the current route did not reliably refresh
+  // the loader, so toggling console mode appeared to do nothing.
+  return data({ success: true }, { headers });
 }

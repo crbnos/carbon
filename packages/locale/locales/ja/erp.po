@@ -9509,9 +9509,6 @@ msgstr "正確な一致のために空のままにしてください"
 msgid "Leave this page"
 msgstr "このページを離れる"
 
-msgid "Ledger"
-msgstr "元帳"
-
 msgid "Left item"
 msgstr "左側の項目"
 
@@ -10316,9 +10313,6 @@ msgstr "メートル法の単位は無効です"
 
 msgid "Metric units are enabled"
 msgstr "メートル法単位が有効です"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "初年度控除を決定する中月/四半期中/半年の慣例。"
@@ -14163,9 +14157,6 @@ msgstr "希望納期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "メンバーがこの会社にサインインする際に、セカンドファクタを必須にする。"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"

@@ -2,9 +2,8 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
-import { data, redirect } from "react-router";
+import { data } from "react-router";
 import { setConsolePinIn } from "~/services/console.server";
-import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -62,14 +61,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Incorrect PIN" }, { status: 400 });
   }
 
-  throw redirect(path.to.authenticatedRoot, {
-    headers: {
-      "Set-Cookie": setConsolePinIn(companyId, {
-        userId,
-        name,
-        avatarUrl,
-        pinnedAt: Date.now()
-      })
+  // Return data (not a redirect) so the caller's fetcher revalidates the shell
+  // loader — the `_layout` shouldRevalidate has an explicit case for this
+  // action, and a redirect would drop the form context it matches on.
+  return data(
+    { success: true },
+    {
+      headers: {
+        "Set-Cookie": setConsolePinIn(companyId, {
+          userId,
+          name,
+          avatarUrl,
+          pinnedAt: Date.now()
+        })
+      }
     }
-  });
+  );
 }

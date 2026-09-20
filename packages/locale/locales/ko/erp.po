@@ -9509,9 +9509,6 @@ msgstr "정확히 일치시키려면 비워두세요"
 msgid "Leave this page"
 msgstr "이 페이지 나가기"
 
-msgid "Ledger"
-msgstr "원장"
-
 msgid "Left item"
 msgstr "왼쪽 품목"
 
@@ -10316,9 +10313,6 @@ msgstr "미터법 단위가 비활성화됨"
 
 msgid "Metric units are enabled"
 msgstr "미터법 단위가 활성화됨"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "1차년도 공제액을 결정하는 월중/분기중/반기 컨벤션입니다."
@@ -14163,9 +14157,6 @@ msgstr "요청일"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "회사에 로그인할 때 구성원들이 두 번째 인증 요소를 사용하도록 요구"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작업자를 요구하세요. 활성화되면 인력이 부족한 작업장은 작업을 받지 않으며 배치된 작업자가 없는 공정은 일정을 잡을 수 없는 것으로 표시됩니다. 조명 없는(24×7) 작업장은 제외됩니다."

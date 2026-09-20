@@ -9509,9 +9509,6 @@ msgstr "Оставьте пустым для точного совпадения
 msgid "Leave this page"
 msgstr "Покинуть эту страницу"
 
-msgid "Ledger"
-msgstr "Главная книга"
-
 msgid "Left item"
 msgstr "Левый элемент"
 
@@ -10316,9 +10313,6 @@ msgstr "Метрические единицы отключены"
 
 msgid "Metric units are enabled"
 msgstr "Метрические единицы включены"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "Условие середины месяца / середины квартала / половины года, определяющее вычет первого года."
@@ -14163,9 +14157,6 @@ msgstr "Запрошенная дата"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
-
-msgid "Require a second factor when members sign in to this company."
-msgstr "Требовать второй фактор при входе сотрудников в эту организацию."
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Требовать назначенного оператора перед размещением планировщиком работ на площадке. Когда включено, рабочие центры без персонала не получают работу, а операция без назначенного оператора отображается как невозможная для планирования. Круглосуточные (24×7) рабочие центры освобождены от этого требования."
