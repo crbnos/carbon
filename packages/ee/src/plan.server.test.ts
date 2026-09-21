@@ -1,10 +1,10 @@
 import { Plan } from "@carbon/utils";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-const serviceRoleSingle = vi.hoisted(() => vi.fn());
+const serviceRoleMaybeSingle = vi.hoisted(() => vi.fn());
 const serviceRoleFrom = vi.hoisted(() =>
   vi.fn(() => ({
-    select: () => ({ eq: () => ({ single: serviceRoleSingle }) })
+    select: () => ({ eq: () => ({ maybeSingle: serviceRoleMaybeSingle }) })
   }))
 );
 const isCarbonOwnedCompany = vi.hoisted(() => vi.fn());
@@ -35,11 +35,13 @@ import { companyHasFeature } from "./plan.server";
 // this client sees no row. If the gate ever reads the plan through the caller's
 // client again, `from` is called and the assertion fails.
 function rlsBlockedClient() {
-  const single = vi.fn(async () => ({
-    data: null,
-    error: { code: "PGRST116" }
+  // Under `maybeSingle()` a zero-row read is `data: null` with NO error — the
+  // "never subscribed"/RLS-invisible case. The gate must never reach this client
+  // anyway (it reads via service role), so `from` is asserted uncalled below.
+  const maybeSingle = vi.fn(async () => ({ data: null, error: null }));
+  const from = vi.fn(() => ({
+    select: () => ({ eq: () => ({ maybeSingle }) })
   }));
-  const from = vi.fn(() => ({ select: () => ({ eq: () => ({ single }) }) }));
   return { from };
 }
 
@@ -53,7 +55,7 @@ describe("plan gate reads companyPlan via service role", () => {
     // Regression: a paying Partner (planId "PARTNER-33") was 402'd from MCP
     // because companyHasFeature read companyPlan through the RLS-scoped api-key
     // client, which returns no row -> Plan.Unknown -> blocked.
-    serviceRoleSingle.mockResolvedValue({
+    serviceRoleMaybeSingle.mockResolvedValue({
       data: { planId: "PARTNER-33" },
       error: null
     });
@@ -69,7 +71,7 @@ describe("plan gate reads companyPlan via service role", () => {
   });
 
   it("still blocks a Starter company", async () => {
-    serviceRoleSingle.mockResolvedValue({
+    serviceRoleMaybeSingle.mockResolvedValue({
       data: { planId: Plan.Starter },
       error: null
     });

@@ -29,28 +29,35 @@ function isBypassCompany(companyId: string): boolean {
 // MCP/API paths carry (`auth.uid()` is NULL there). Reading through such a client
 // returns zero rows, normalizes to `Plan.Unknown`, and wrongly gates a paying
 // Partner out of MCP. So read via service role, matching the pre-existing
-// API-access plan gate in `@carbon/auth`'s `requirePermissions`. The `client`
-// param is kept for call-site compatibility.
-async function getCompanyPlan(
-  _client: SupabaseClient<Database>,
-  companyId: string
-): Promise<Plan> {
+// API-access plan gate in `@carbon/auth`'s `requirePermissions`.
+//
+// `maybeSingle()` (not `single()`) so the legitimate "never subscribed" zero-row
+// case is `data: null` with no error — only a real read failure logs. A failure
+// normalizes to the lowest plan, which turns plan-gated ENFORCEMENT (storage/sales
+// rules) off — fail-open. Callers are UI gates and evaluators that should not 500
+// on a transient blip, so log rather than throw; the signal is what was missing
+// when this silently disabled rules.
+async function readCompanyPlan(companyId: string): Promise<string | null> {
   const { data, error: planError } = await getCarbonServiceRole()
     .from("companyPlan")
     .select("planId")
     .eq("id", companyId)
-    .single();
+    .maybeSingle();
 
-  // A read error normalizes to the lowest plan, which turns plan-gated
-  // ENFORCEMENT (storage/sales rules) off — fail-open. Callers are UI gates
-  // and evaluators that should not 500 on a transient blip, so log rather
-  // than throw; the signal is what was missing when this silently disabled
-  // rules.
   if (planError) {
     logger.error("getCompanyPlan failed", { companyId, error: planError });
   }
 
-  return normalizePlanId(data?.planId);
+  return data?.planId ?? null;
+}
+
+// The `_client` param is kept for call-site compatibility; the read goes through
+// the service role regardless (see `readCompanyPlan`).
+async function getCompanyPlan(
+  _client: SupabaseClient<Database>,
+  companyId: string
+): Promise<Plan> {
+  return normalizePlanId(await readCompanyPlan(companyId));
 }
 
 /**
@@ -74,15 +81,10 @@ export async function getPlan(
   if (CarbonEdition !== Edition.Cloud) return null;
   if (isBypassCompany(companyId)) return Plan.Partner;
 
-  // Service role for the same reason as `getCompanyPlan` — the read must not
-  // depend on the caller's RLS scope.
-  const { data } = await getCarbonServiceRole()
-    .from("companyPlan")
-    .select("planId")
-    .eq("id", companyId)
-    .single();
-
-  if (data?.planId) return data.planId;
+  // Reads via service role for the same reason as `getCompanyPlan` — the read
+  // must not depend on the caller's RLS scope.
+  const planId = await readCompanyPlan(companyId);
+  if (planId) return planId;
 
   // No durable plan row (never subscribed). Carbon-owned companies still get
   // Business-tier access; everyone else resolves to Unknown → gated.
