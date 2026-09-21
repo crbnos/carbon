@@ -1,4 +1,5 @@
 import { CarbonEdition, error, STRIPE_BYPASS_COMPANY_IDS } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
@@ -22,11 +23,19 @@ function isBypassCompany(companyId: string): boolean {
     .includes(companyId);
 }
 
+// The plan read MUST bypass RLS. `companyPlan`'s SELECT policy requires
+// `auth.role() = 'authenticated'` AND an `auth.uid()` membership row — true for a
+// web session's user client, but NOT for the anon `carbon-key` API-key client the
+// MCP/API paths carry (`auth.uid()` is NULL there). Reading through such a client
+// returns zero rows, normalizes to `Plan.Unknown`, and wrongly gates a paying
+// Partner out of MCP. So read via service role, matching the pre-existing
+// API-access plan gate in `@carbon/auth`'s `requirePermissions`. The `client`
+// param is kept for call-site compatibility.
 async function getCompanyPlan(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string
 ): Promise<Plan> {
-  const { data, error: planError } = await client
+  const { data, error: planError } = await getCarbonServiceRole()
     .from("companyPlan")
     .select("planId")
     .eq("id", companyId)
@@ -59,13 +68,15 @@ async function getCompanyPlan(
  * Returns `null` off Cloud (the client neutralizes gating there anyway).
  */
 export async function getPlan(
-  client: SupabaseClient<Database>,
+  _client: SupabaseClient<Database>,
   companyId: string
 ): Promise<string | null> {
   if (CarbonEdition !== Edition.Cloud) return null;
   if (isBypassCompany(companyId)) return Plan.Partner;
 
-  const { data } = await client
+  // Service role for the same reason as `getCompanyPlan` — the read must not
+  // depend on the caller's RLS scope.
+  const { data } = await getCarbonServiceRole()
     .from("companyPlan")
     .select("planId")
     .eq("id", companyId)
