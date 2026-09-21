@@ -39,7 +39,7 @@ import {
   generateTypeDefinitions,
   getDefaultValue
 } from "../utils";
-import ParameterPanel from "./ParameterPanel.ee";
+import ParameterPanel from "./ParameterPanel";
 
 interface ConfiguratorProps {
   configuration: Configuration;

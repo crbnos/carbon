@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import {
   Alert,
   AlertDescription,
@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "workflows",
     role: "employee"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

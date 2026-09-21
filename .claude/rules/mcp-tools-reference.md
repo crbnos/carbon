@@ -412,8 +412,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
 `people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
-`apps/erp/app/modules/<module>/<module>.service.ts` namespace (accounting is the
-`.ee`-licensed `accounting.ee.service.ts`; the registry key stays `accounting`).
+`apps/erp/app/modules/<module>/<module>.service.ts` namespace.
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 

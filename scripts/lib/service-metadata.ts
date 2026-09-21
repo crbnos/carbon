@@ -1581,7 +1581,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     if (!fs.existsSync(serviceFile)) {
       // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
       // module keeps its single service file under that name (e.g.
-      // accounting.ee.service.ts).
+      // accounting.service.ts).
       const eeServiceFile = path.join(MODULES_DIR, mod, `${mod}.ee.service.ts`);
       if (!fs.existsSync(eeServiceFile)) {
         console.warn(`  ⚠ Service file not found: ${serviceFile}`);

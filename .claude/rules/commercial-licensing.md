@@ -13,7 +13,7 @@ unlocked by editing open-licensed code. Grounded against `packages/ee/src/plan.t
 ## The license boundary
 
 Carbon is open-core. The commercial license (root `LICENSE`) covers **`packages/ee`
-and every file whose name contains `.ee`** (e.g. `accounting.ee.service.ts`). Everything
+and every file whose name contains `.ee`** (e.g. `ApprovalRuleForm.ee.tsx`). Everything
 else is community-licensed. This is the same model as Twenty CRM (their marker is a
 `/* @license Enterprise */` header; ours is the `packages/ee` package + the `.ee` infix).
 

@@ -1,7 +1,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { deleteWorkflow } from "~/modules/workflows";
@@ -12,7 +12,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     delete: "workflows"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
