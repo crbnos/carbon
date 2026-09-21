@@ -1338,6 +1338,9 @@ msgstr "Etkilenen Öğe Ekle"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
 
@@ -12079,6 +12082,12 @@ msgstr "Operasyonlar"
 msgid "Operations / steps"
 msgstr "Operasyonlar / Adımlar"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "Operasyon Türü"
 
@@ -17772,6 +17781,9 @@ msgstr "Kalibrasyon değerlerinin karşılaştırıldığı izlenebilir referans
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "İş takip kartı ürün ağacındaki her stok kartını miktarıyla birlikte listeler."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Tür, yeni çalışanın aldığı varsayılan izinleri kontrol eder; buradan seçmek, tür şablonundan izin matrisini önceden doldurur."

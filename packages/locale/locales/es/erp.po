@@ -1338,6 +1338,9 @@ msgstr "Agregar artículo afectado"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "Agregar una capa adicional de seguridad requiriendo un código de una aplicación autenticadora al iniciar sesión."
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "Agregue notas sobre su decisión..."
 
@@ -12079,6 +12082,12 @@ msgstr "Operaciones"
 msgid "Operations / steps"
 msgstr "Operaciones / pasos"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "Tipo de Operaciones"
 
@@ -17772,6 +17781,9 @@ msgstr "La referencia rastreable (por ejemplo, estándar NIST, número de serie 
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "La hoja viajera lista cada artículo en la lista de materiales con su cantidad."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "El tipo controla qué permisos predeterminados recibe el nuevo empleado; seleccionarlo aquí completa previamente la matriz de permisos de la plantilla del tipo."

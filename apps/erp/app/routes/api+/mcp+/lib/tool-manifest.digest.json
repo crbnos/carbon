@@ -1,5 +1,5 @@
 {
-  "totalTools": 1546,
+  "totalTools": 1547,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1460,6 +1460,7 @@
     {"name":"settings_updateDefaultSupplierCc","classification":"WRITE","paramCount":1,"schema":"862b3d182ce1","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateDigitalQuoteSetting","classification":"WRITE","paramCount":3,"schema":"01dcd07bf6d9","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateIncludeMaterialsOnTravelerSetting","classification":"WRITE","paramCount":1,"schema":"c44d043f2507","response":"none","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
+    {"name":"settings_updateIncludeOperationsOnTravelerSetting","classification":"WRITE","paramCount":1,"schema":"dcfff3bec454","response":"none","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateIncompletePickingListPolicySetting","classification":"WRITE","paramCount":1,"schema":"0f134dc7536d","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateKanbanOutputSetting","classification":"WRITE","paramCount":1,"schema":"ca53dc098fc8","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateLeadTimesOnReceiptSetting","classification":"WRITE","paramCount":1,"schema":"95c137844a39","response":"none","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},

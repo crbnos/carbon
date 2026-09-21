@@ -1338,6 +1338,9 @@ msgstr "Dodaj element dotknięty zmianą"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "Dodaj dodatkową warstwę bezpieczeństwa, wymagając kodu z aplikacji uwierzytelniającej podczas logowania."
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "Dodaj dowolne notatki dotyczące Twojej decyzji..."
 
@@ -12079,6 +12082,12 @@ msgstr "Operacje"
 msgid "Operations / steps"
 msgstr "Operacje / kroki"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "Typ operacyjny"
 
@@ -17772,6 +17781,9 @@ msgstr "Identyfikowalne odniesienie (np. standard NIST, numer seryjny przyrządu
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "Przewodnik zawiera listę każdego artykułu z listy materiałowej wraz z jego ilością."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Typ kontroluje jakie domyślne uprawnienia otrzymuje nowy pracownik; wybranie go tutaj wstępnie wypełnia macierz uprawnień z szablonu typu."

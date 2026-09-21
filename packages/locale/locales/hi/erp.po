@@ -1338,6 +1338,9 @@ msgstr "प्रभावित आइटम जोड़ें"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
 
@@ -12079,6 +12082,12 @@ msgstr "ऑपरेशन"
 msgid "Operations / steps"
 msgstr "ऑपरेशन / चरण"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "ऑपरेशन प्रकार"
 
@@ -17772,6 +17781,9 @@ msgstr "पता लगाने योग्य संदर्भ (उदा�
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "ट्रैवलर सामग्री सूची पर प्रत्येक आइटम को इसकी मात्रा के साथ सूचीबद्ध करता है।"
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "प्रकार नियंत्रित करता है कि नया कर्मचारी कौन सी डिफ़ॉल्ट अनुमतियां प्राप्त करता है; यहाँ इसे चुनने से प्रकार के टेम्पलेट से अनुमति मैट्रिक्स पूर्व-भर जाता है।"

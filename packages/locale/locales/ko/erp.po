@@ -1338,6 +1338,9 @@ msgstr "영향받는 항목 추가"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "로그인할 때 인증 앱의 코드를 입력하도록 요구하여 추가 보안 계층을 추가합니다."
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "결정에 대한 메모를 추가하세요..."
 
@@ -12079,6 +12082,12 @@ msgstr "공정작업"
 msgid "Operations / steps"
 msgstr "공정작업/단계"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "공정작업 유형"
 
@@ -17772,6 +17781,9 @@ msgstr "교정 값이 비교된 추적 가능한 기준 (예: NIST 표준, 표�
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "작업 이동표는 자재 명세서의 각 품목을 수량과 함께 나열합니다."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "이 유형은 신규 직원이 받는 기본 권한을 결정합니다. 여기서 선택하면 해당 유형의 템플릿으로 권한 매트릭스가 미리 채워집니다."

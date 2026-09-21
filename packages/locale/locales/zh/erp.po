@@ -1338,6 +1338,9 @@ msgstr "添加受影响项目"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "通过在登录时要求身份验证器应用的代码来添加额外的安全层级。"
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr ""
+
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
 
@@ -12079,6 +12082,12 @@ msgstr "工序"
 msgid "Operations / steps"
 msgstr "工序/步骤"
 
+msgid "Operations are included"
+msgstr ""
+
+msgid "Operations are not included"
+msgstr ""
+
 msgid "Operations Type"
 msgstr "工序类型"
 
@@ -17772,6 +17781,9 @@ msgstr "校准值进行比对的可追溯参考(例如NIST标准、标准器序�
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "流转卡列出物料清单上的每个物料及其数量。"
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr ""
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "类型控制新员工接收的默认权限；在此处选择它会从类型的模板预填充权限矩阵。"
