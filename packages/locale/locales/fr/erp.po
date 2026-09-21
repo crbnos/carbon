@@ -10321,14 +10321,15 @@ msgstr "Date du mémo"
 msgid "Memo ID"
 msgstr "ID du mémo"
 
+msgid "Merchant"
+msgstr "Commerçant"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "Fusionner les lots de sortie"
-msgid "Merchant"
-msgstr "Commerçant"
 
 msgid "MES"
 msgstr "MES"

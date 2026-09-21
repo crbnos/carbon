@@ -10321,14 +10321,15 @@ msgstr "मेमो तारीख"
 msgid "Memo ID"
 msgstr "मेमो आईडी"
 
+msgid "Merchant"
+msgstr "व्यापारी"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "आउटपुट लॉट्स को मर्ज करें"
-msgid "Merchant"
-msgstr "व्यापारी"
 
 msgid "MES"
 msgstr "MES"

@@ -10321,14 +10321,15 @@ msgstr "Дата меморандума"
 msgid "Memo ID"
 msgstr "ID Памятки"
 
+msgid "Merchant"
+msgstr "Продавец"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "Объединить выходные партии"
-msgid "Merchant"
-msgstr "Продавец"
 
 msgid "MES"
 msgstr "MES"

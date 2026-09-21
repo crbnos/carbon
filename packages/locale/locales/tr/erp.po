@@ -10321,14 +10321,15 @@ msgstr "Muhasebe Tarihi"
 msgid "Memo ID"
 msgstr "Muhasebe Belgesi Kimliği"
 
+msgid "Merchant"
+msgstr "Satıcı"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
-msgid "Merchant"
-msgstr "Satıcı"
 
 msgid "MES"
 msgstr "MES"

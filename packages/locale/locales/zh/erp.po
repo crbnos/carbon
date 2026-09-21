@@ -10321,14 +10321,15 @@ msgstr "备忘录日期"
 msgid "Memo ID"
 msgstr "备忘录 ID"
 
+msgid "Merchant"
+msgstr "商家"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "合并输出批次"
-msgid "Merchant"
-msgstr "商家"
 
 msgid "MES"
 msgstr "MES"

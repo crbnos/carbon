@@ -10321,14 +10321,15 @@ msgstr "メモ日付"
 msgid "Memo ID"
 msgstr "メモID"
 
+msgid "Merchant"
+msgstr "マーチャント"
+
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
 msgstr ""
 
 msgid "Merge output lots"
 msgstr "出力ロットをマージ"
-msgid "Merchant"
-msgstr "マーチャント"
 
 msgid "MES"
 msgstr "MES"
