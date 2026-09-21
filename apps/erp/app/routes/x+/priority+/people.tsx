@@ -440,7 +440,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     for (const row of employeeAbilities.data ?? []) {
       if (row.expiresAt && row.expiresAt.slice(0, 10) < date) continue;
       const ability = Array.isArray(row.ability) ? row.ability[0] : row.ability;
-      const name = ability?.name;
+      // The ability's name IS the linked process's name.
+      const process = Array.isArray(ability?.process)
+        ? ability?.process[0]
+        : ability?.process;
+      const name = process?.name;
       if (!name) continue;
       const set = byEmployee.get(row.employeeId) ?? new Set<string>();
       set.add(name);

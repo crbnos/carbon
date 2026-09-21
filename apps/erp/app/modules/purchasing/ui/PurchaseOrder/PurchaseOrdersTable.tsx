@@ -124,7 +124,10 @@ const PurchaseOrdersTable = memo(
                 label: supplier.name
               }))
             },
-            icon: <LuContainer />
+            icon: <LuContainer />,
+            exportValue: (row: PurchaseOrderListItem) =>
+              suppliers?.find((supplier) => supplier.id === row.supplierId)
+                ?.name ?? row.supplierId
           }
         },
         {
@@ -276,7 +279,10 @@ const PurchaseOrdersTable = memo(
             />
           ),
           meta: {
-            icon: <LuTruck />
+            icon: <LuTruck />,
+            exportValue: (row) =>
+              shippingMethods.find((sm) => sm.value === row.shippingMethodId)
+                ?.label ?? null
           }
         },
         {
@@ -291,7 +297,10 @@ const PurchaseOrdersTable = memo(
             />
           ),
           meta: {
-            icon: <LuCreditCard />
+            icon: <LuCreditCard />,
+            exportValue: (row) =>
+              paymentTerms.find((pt) => pt.value === row.paymentTermId)
+                ?.label ?? null
           }
         },
         {
@@ -352,7 +361,10 @@ const PurchaseOrdersTable = memo(
                 label: employee.name
               }))
             },
-            icon: <LuUser />
+            icon: <LuUser />,
+            exportValue: (row: PurchaseOrderListItem) =>
+              people.find((employee) => employee.id === row.updatedBy)?.name ??
+              row.updatedBy
           }
         },
         {

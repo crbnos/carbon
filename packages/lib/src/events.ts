@@ -582,6 +582,18 @@ export type Events = {
     };
   };
 
+  // Rillet contact import (the integration's "Import customers & vendors"
+  // action): pull Rillet Customers and Vendors into Carbon and link them
+  "carbon/rillet-import-contacts": {
+    data: {
+      companyId: string;
+      entityTypes?: {
+        customers?: boolean;
+        vendors?: boolean;
+      };
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {
@@ -622,6 +634,17 @@ export type Events = {
         operation?: "create" | "update" | "delete" | "sync";
       }>;
       metadata?: Record<string, unknown>;
+    };
+  };
+
+  // Ramp inbound sync — drain every ready-to-sync Ramp accounting family for
+  // one company into Carbon card transactions (+ bills/reimbursements/etc. in
+  // later tasks). Fired per company by the hourly ramp-sweep, the install hook,
+  // and the Ramp webhook route.
+  "carbon/ramp-sync": {
+    data: {
+      companyId: string;
+      reason?: string;
     };
   };
 

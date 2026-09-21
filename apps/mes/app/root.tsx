@@ -19,7 +19,12 @@ import {
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
-import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import {
+  getPreferenceHeaders,
+  isSearchParamOnlyNavigation,
+  modeValidator,
+  themes
+} from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -29,7 +34,8 @@ import { useState } from "react";
 import type {
   ActionFunctionArgs,
   LoaderFunctionArgs,
-  MetaFunction
+  MetaFunction,
+  ShouldRevalidateFunction
 } from "react-router";
 import {
   data,
@@ -40,7 +46,8 @@ import {
   ScrollRestoration,
   useLoaderData
 } from "react-router";
-import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
+import SonnerStyle from "sonner/dist/styles.css?url";
+import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -59,6 +66,7 @@ export const clientMiddleware = [flashClientMiddleware];
 
 export const links: Route.LinksFunction = () => [
   { rel: "stylesheet", href: Tailwind },
+  { rel: "stylesheet", href: SonnerStyle },
   { rel: "stylesheet", href: Background },
   { rel: "stylesheet", href: NProgress },
   ...faviconLinks
@@ -71,6 +79,12 @@ export const meta: MetaFunction = () => {
     }
   ];
 };
+
+// Root data is cookies + env + the flash result. A same-pathname GET (table
+// filter, sort, page, useRevalidator from realtime hooks) can change none of
+// it; actions still revalidate so the flash toast is surfaced.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
@@ -93,7 +107,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   const preferences = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(preferences.locale);
-  const linguiCatalog = await loadLinguiCatalogForRequest(request, appLanguage);
+  await preloadCatalog(appLanguage);
 
   return data(
     {
@@ -117,7 +131,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       mode: getMode(request),
       theme: getTheme(request),
       preferences,
-      linguiCatalog,
       result: context.get(flashResultContext)
     },
     {
@@ -239,8 +252,8 @@ export default function App() {
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
   const prefs = loaderData?.preferences;
-  const linguiCatalog = loaderData?.linguiCatalog;
   const appLanguage = resolveLanguage(prefs.locale);
+  const catalog = useCatalog(appLanguage);
 
   /* Dark/Light Mode */
   const mode = useMode();
@@ -259,7 +272,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
+        <LocaleProvider locale={appLanguage} catalog={catalog}>
           <I18nProvider locale={prefs.locale}>
             <TooltipProvider delayDuration={200}>
               <Document mode={mode} theme={theme} lang={appLanguage} env={env}>

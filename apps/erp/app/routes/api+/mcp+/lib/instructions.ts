@@ -32,10 +32,11 @@ search_tools({ query: "customer" })
 describe_tool({ name: "sales_getCustomers" })
 describe_tool({ names: ["sales_getCustomers", "sales_upsertCustomer"] })
 
-// Step 3: Call the tool (arguments must be a JSON object, not a string)
+// Step 3: Call the tool. The parameters go straight in "arguments" — the ones
+// describe_tool lists, nothing wrapped around them.
 call_tool({
   name: "sales_getCustomers",
-  arguments: { args: { limit: 10 } }
+  arguments: { limit: 10 }
 })
 
 SEARCH EXAMPLES:
@@ -46,6 +47,8 @@ search_tools({ classification: "READ" }) // Find read-only tools
 KEY PATTERNS:
 - companyId/userId are auto-filled
 - call_tool.arguments is always a JSON object (never a stringified JSON blob)
+- Pass parameters flat in "arguments"; a legacy { args: {…} } envelope is still
+  accepted, but describe_tool shows the shape to send
 - Responses: { data, error?, count? }
 - Results omit null fields — an absent field means null
 - List reads default to ${MCP_DEFAULT_LIMIT} rows; pass limit/offset to page

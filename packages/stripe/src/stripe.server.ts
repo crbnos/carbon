@@ -709,8 +709,14 @@ export async function updateSubscriptionQuantityForCompany(companyId: string) {
     // Update the quantity on the first subscription item
     const subscriptionItemId = subscription?.items.data[0]?.id ?? "";
 
+    // A paused subscription (pause_collection set) rejects any update that would
+    // create prorated invoice items. Keep the seat count in sync for when it
+    // resumes by skipping proration in that case; unpaused subs keep the default.
+    const isPaused = !!subscription.pause_collection;
+
     await stripe.subscriptionItems.update(subscriptionItemId, {
-      quantity: activeUserCount
+      quantity: activeUserCount,
+      ...(isPaused ? { proration_behavior: "none" as const } : {})
     });
 
     log.debug("Updated Stripe subscription quantity", {

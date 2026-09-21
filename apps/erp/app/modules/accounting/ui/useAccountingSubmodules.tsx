@@ -12,6 +12,7 @@ import {
   LuCoins,
   LuEuro,
   LuFileSpreadsheet,
+  LuFolderKanban,
   LuHandCoins,
   LuLayers,
   LuScale,
@@ -139,6 +140,12 @@ export default function useAccountingSubmodules() {
             to: path.to.paymentTerms,
             role: "employee",
             icon: <LuHandCoins />
+          },
+          {
+            name: t`Projects`,
+            to: path.to.projects,
+            role: "employee",
+            icon: <LuFolderKanban />
           }
         ]
       }

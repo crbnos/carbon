@@ -1,13 +1,15 @@
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { SUPABASE_INTERNAL_URL } from "@carbon/env";
+import { storage } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
+import { processImage } from "@carbon/files/media";
+import { initNodeImageCodecs } from "@carbon/files/media/node";
 import { getLogger } from "@carbon/logger";
 import {
   getMaterialDescription,
   getMaterialId,
   openAiCategorizationModel,
-  supportedModelTypes,
   textToTiptap
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -839,8 +841,8 @@ async function uploadModelFile(
     logger.info(`Uploading CAD model ${file.name} to ${modelPath}`);
 
     // Upload model to storage
-    const modelUpload = await carbon.storage
-      .from("private")
+    const modelUpload = await storage(carbon)
+      .company(companyId)
       .upload(modelPath, file, {
         upsert: true
       });
@@ -928,8 +930,8 @@ async function uploadFileToItem(
 
     logger.info(`Uploading ${file.name} to ${storagePath}`);
 
-    const fileUpload = await carbon.storage
-      .from("private")
+    const fileUpload = await storage(carbon)
+      .company(companyId)
       .upload(storagePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true
@@ -1956,54 +1958,30 @@ async function downloadAndUploadThumbnail(
     }
 
     const imageBuffer = await response.arrayBuffer();
-    const blob = new Blob([imageBuffer]);
+    const sourceType = response.headers.get("Content-Type") ?? "image/png";
+    const sourceExtension = sourceType.includes("jpeg")
+      ? "jpg"
+      : sourceType.includes("webp")
+        ? "webp"
+        : "png";
 
-    // Create FormData to send to image resizer
-    const formData = new FormData();
-    formData.append("file", blob);
-    formData.append("contained", "true");
-
-    // Process the image through the resizer
-    const supabaseUrl = SUPABASE_INTERNAL_URL;
-    if (!supabaseUrl) {
-      logger.error("SUPABASE_INTERNAL_URL environment variable not found");
-      return null;
-    }
-
-    const resizerResponse = await fetch(
-      `${supabaseUrl}/functions/v1/image-resizer`,
-      {
-        method: "POST",
-        body: formData
-      }
+    await initNodeImageCodecs();
+    const processed = await processImage(
+      new Uint8Array(imageBuffer),
+      sourceExtension,
+      { contained: true }
     );
 
-    if (!resizerResponse.ok) {
-      logger.error(`Image resizer failed: ${resizerResponse.statusText}`);
-      return null;
-    }
-
-    // Get content type from response to determine file extension
-    const contentType =
-      resizerResponse.headers.get("Content-Type") || "image/png";
-    const isJpg = contentType.includes("image/jpeg");
-    const fileExtension = isJpg ? "jpg" : "png";
-
-    const processedImageBuffer = await resizerResponse.arrayBuffer();
-    const processedBlob = new Blob([processedImageBuffer], {
-      type: contentType
-    });
-
     // Generate filename and create File object
-    const fileName = `${nanoid()}.${fileExtension}`;
-    const thumbnailFile = new File([processedBlob], fileName, {
-      type: contentType
+    const fileName = `${nanoid()}.${processed.extension}`;
+    const thumbnailFile = new File([processed.data as BufferSource], fileName, {
+      type: processed.contentType
     });
 
-    // Upload to private bucket
+    // Upload to the company's private bucket
     const storagePath = `${companyId}/thumbnails/${itemId}/${fileName}`;
-    const { data, error } = await carbon.storage
-      .from("private")
+    const { data, error } = await storage(carbon)
+      .company(companyId)
       .upload(storagePath, thumbnailFile, {
         upsert: true
       });

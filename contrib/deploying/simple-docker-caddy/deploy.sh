@@ -127,11 +127,15 @@ cmd_init() {
     fi
     
     # Operator-supplied secrets — placeholders so the stack deploys; replace later.
-    # ERP crashes on boot with an empty RESEND_API_KEY, so seed a non-empty value.
+    # resend_api_key is optional (marketing contacts / legacy fallback); app email
+    # sends over SMTP using the shared GOTRUE_SMTP_* config + smtp_password.
     for s in $SUPPLIED_SECRETS; do
         secret_exists "$s" && continue
         case "$s" in
-            resend_api_key) create_secret "$s" "re_placeholder_change_me" ;;
+            # Seeded EMPTY on purpose: a truthy placeholder would engage the
+            # legacy Resend SMTP fallback with junk credentials instead of
+            # letting email no-op.
+            resend_api_key) create_secret "$s" "" ;;
             smtp_password)  create_secret "$s" "change_me" ;;
             # Ignored while SAML_ENABLED=false; replace before enabling SAML.
             saml_private_key) create_secret "$s" "change_me" ;;
@@ -141,7 +145,7 @@ cmd_init() {
     log "Secrets ready."
     warn "Next:"
     warn "  1. Edit $ENV_FILE — set CARBON_REPO, the *_HOST/*_URL, ACME_EMAIL, SMTP."
-    warn "  2. Set real secrets:  $SCRIPT_NAME secret resend_api_key re_xxx   (then smtp_password)"
+    warn "  2. Set real secrets:  $SCRIPT_NAME secret smtp_password xxx   (resend_api_key is optional)"
     warn "  3. $SCRIPT_NAME up"
 }
 

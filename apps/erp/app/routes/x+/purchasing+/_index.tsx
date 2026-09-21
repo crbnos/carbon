@@ -1,5 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { ApprovalRequest } from "@carbon/ee/approvals";
+import { getPendingApprovalsForApprover } from "@carbon/ee/approvals.server";
 import {
   Badge,
   Button,
@@ -75,10 +77,6 @@ import { KPIs } from "~/modules/purchasing/purchasing.models";
 import { PurchasingStatus } from "~/modules/purchasing/ui/PurchaseOrder";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { SupplierQuoteStatus } from "~/modules/purchasing/ui/SupplierQuote";
-import {
-  type ApprovalRequest,
-  getPendingApprovalsForApprover
-} from "~/modules/shared";
 
 import type { loader as kpiLoader } from "~/routes/api+/purchasing.kpi.$key";
 import { useSuppliers } from "~/stores/suppliers";

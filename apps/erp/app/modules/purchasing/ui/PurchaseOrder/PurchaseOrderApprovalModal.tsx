@@ -1,3 +1,4 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { Hidden, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -19,7 +20,6 @@ import {
   SupplierContact
 } from "~/components/Form";
 import { useIntegrations } from "~/hooks/useIntegrations";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { purchaseOrderApprovalValidator } from "../../purchasing.models";
 import type { PurchaseOrder } from "../../types";

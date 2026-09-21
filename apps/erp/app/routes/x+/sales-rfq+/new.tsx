@@ -1,6 +1,7 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
@@ -122,8 +123,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const safeFilename = stripSpecialCharacters(originalFilename);
           const newStoragePath = `${companyId}/opportunity/${opportunityId}/${safeFilename}`;
 
-          const copyResult = await client.storage
-            .from("private")
+          const copyResult = await storage(client)
+            .company(companyId)
             .copy(extractedStoragePath, newStoragePath);
 
           if (!copyResult.error) {

@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -240,12 +241,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     for (const doc of rfqDocs) {
       const storagePath = `${companyId}/supplier-interaction/${rfqId}/${doc.name}`;
-      const { data: signedUrlData } = await client.storage
-        .from("private")
+      const { data, error } = await storage(client)
+        .company(companyId)
         .createSignedUrl(storagePath, 3600);
 
-      if (signedUrlData?.signedUrl) {
-        attachments.push({ filename: doc.name, path: signedUrlData.signedUrl });
+      if (data) {
+        attachments.push({ filename: doc.name, path: data.signedUrl });
+      } else {
+        logger.error("Failed to create signed URL for attachment", {
+          storagePath,
+          error
+        });
       }
     }
 
@@ -261,14 +267,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       for (const doc of lineDocs) {
         const storagePath = `${companyId}/supplier-interaction-line/${line.id}/${doc.name}`;
-        const { data: signedUrlData } = await client.storage
-          .from("private")
+        const { data, error } = await storage(client)
+          .company(companyId)
           .createSignedUrl(storagePath, 3600);
 
-        if (signedUrlData?.signedUrl) {
+        if (data) {
           attachments.push({
             filename: doc.name,
-            path: signedUrlData.signedUrl
+            path: data.signedUrl
+          });
+        } else {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath,
+            error
           });
         }
       }

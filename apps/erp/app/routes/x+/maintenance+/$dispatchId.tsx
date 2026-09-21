@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -38,10 +39,10 @@ async function getMaintenanceDispatchFiles(
   companyId: string,
   dispatchId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/maintenance/${dispatchId}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

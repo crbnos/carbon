@@ -1,6 +1,13 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  dedupeViolations,
+  evaluateSalesRuleLines,
+  isBlocked,
+  resolveSalesOrderShipTo
+} from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import { getItemReadableId } from "@carbon/utils";
@@ -18,6 +25,7 @@ import {
 } from "~/modules/invoicing";
 import SalesInvoiceLineForm from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceLineForm";
 import { getOpportunityLineDocuments } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   OpportunityLineDocuments,
   OpportunityLineNotes
@@ -73,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
   });
 
@@ -97,6 +105,72 @@ export async function action({ request, params }: ActionFunctionArgs) {
     d.assetId = undefined;
   }
 
+  // Sales-rule enforcement — only for lines that reference an item. A line
+  // converted from a sales order resolves its ship-to through that order
+  // (drop-ship included); a standalone line has no ship-to and none may be
+  // invented — the bill-to is a different address, so a null location flows
+  // into the engine's required-field semantics and a destination rule blocks
+  // rather than passes.
+  let acknowledgedViolations: ReturnType<typeof dedupeViolations> = [];
+  let acknowledgedRuleNames: Record<string, string> = {};
+  if (d.itemId) {
+    const serviceRole = getCarbonServiceRole();
+    const acknowledged = formData.get("acknowledged") === "true";
+
+    const existingLine = await serviceRole
+      .from("salesInvoiceLine")
+      .select("salesOrderId")
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (existingLine.error) {
+      // A failed read must not evaluate the wrong destination.
+      throw new Error(
+        `Sales rule evaluation could not load sales invoice line ${lineId}: ${existingLine.error.message}`
+      );
+    }
+
+    const shipTo = existingLine.data?.salesOrderId
+      ? await resolveSalesOrderShipTo(
+          serviceRole,
+          existingLine.data.salesOrderId,
+          companyId
+        )
+      : {
+          customerId: invoice.data?.customerId ?? null,
+          customerLocationId: null
+        };
+
+    const { violations, ruleNames } = await evaluateSalesRuleLines({
+      client: serviceRole,
+      companyId,
+      userId,
+      surface: "salesInvoiceLine",
+      lines: [{ lineId, itemId: d.itemId, quantity: d.quantity ?? 1 }],
+      customerId: shipTo.customerId,
+      customerLocationId: shipTo.customerLocationId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0) {
+      if (isBlocked(deduped, acknowledged)) {
+        await recordSalesRuleOutcome(serviceRole, {
+          companyId,
+          userId,
+          documentType: "salesInvoice",
+          documentId: invoiceId,
+          documentLineId: lineId,
+          itemId: d.itemId ?? null,
+          outcome: "blocked",
+          violations: deduped,
+          ruleNames
+        });
+        return { error: null, data: null, violations: deduped, ruleNames };
+      }
+      acknowledgedViolations = deduped;
+      acknowledgedRuleNames = ruleNames;
+    }
+  }
+
   const updateSalesInvoiceLine = await upsertSalesInvoiceLine(client, {
     id: lineId,
     ...d,
@@ -115,6 +189,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       )
     );
+  }
+
+  // Acknowledged proceed: record only after the write committed — evidence
+  // (and its notification) must describe a change that actually landed.
+  if (acknowledgedViolations.length > 0) {
+    await recordSalesRuleOutcome(getCarbonServiceRole(), {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      documentLineId: lineId,
+      itemId: d.itemId ?? null,
+      outcome: "acknowledged",
+      violations: acknowledgedViolations,
+      ruleNames: acknowledgedRuleNames
+    });
   }
 
   throw redirect(path.to.salesInvoiceLine(invoiceId, lineId));

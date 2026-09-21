@@ -12,6 +12,7 @@ import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
 import { functionRegistry } from "./registry.server";
+import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
 export interface DispatchResult {
   data: unknown;
@@ -85,6 +86,9 @@ export function enrichWithAuthContext(
   }
   if (fields.includes("companyGroupId")) {
     enriched.companyGroupId = context.companyGroupId;
+  }
+  if (fields.includes("userId")) {
+    enriched.userId = context.userId;
   }
 
   return enriched;
@@ -330,6 +334,19 @@ export async function dispatchOperation(
     // else: optional param with nothing to fill — skip.
   }
 
+  // Sales-rule gate — evaluates the RESOLVED payload for the gated sales
+  // operations (line writes + finalize/convert transitions) and refuses on
+  // error-severity violations, mirroring the route actions. Covers every
+  // dispatch caller: HTTP v1, MCP, the in-app agent, and workflows.
+  const salesRuleBlock = await checkSalesRulesForOperation(
+    meta,
+    context,
+    functionArgs
+  );
+  if (salesRuleBlock) {
+    throw new ORPCError("FORBIDDEN", { message: salesRuleBlock });
+  }
+
   let result = await (func as (...args: any[]) => any)(...functionArgs);
   // Supabase query builders are thenable but not yet executed.
   if (
@@ -344,9 +361,6 @@ export async function dispatchOperation(
   if (result && typeof result === "object" && "data" in result) {
     const r = result as { data: unknown; error?: unknown; count?: number };
     if (r.error) {
-      // The raw error rides along so callOperation can reconstruct MCP's
-      // byte-identical `Database error: ${JSON.stringify(error)}` text, and HTTP
-      // callers get the Postgres code/details/hint the way Supabase REST does.
       throw new ORPCError("BAD_REQUEST", {
         message: supabaseErrorMessage(r.error),
         data: { supabase: r.error }

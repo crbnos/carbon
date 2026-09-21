@@ -1,6 +1,7 @@
 import { ProviderID } from "../../core/models";
 import { type SyncerRegistry, SyncFactory } from "../../core/sync";
 import { RilletBillSyncer } from "./entities/bill";
+import { RilletChargeSyncer } from "./entities/charge";
 import { RilletCustomerSyncer } from "./entities/customer";
 import { RilletSalesInvoiceSyncer } from "./entities/invoice";
 import { RilletItemSyncer } from "./entities/item";
@@ -9,6 +10,7 @@ import { RilletPaymentSyncer } from "./entities/payment";
 import { RilletVendorSyncer } from "./entities/vendor";
 
 export * from "./entities/bill";
+export * from "./entities/charge";
 export * from "./entities/customer";
 export * from "./entities/invoice";
 export * from "./entities/item";
@@ -41,6 +43,9 @@ export const rilletSyncerRegistry: SyncerRegistry = {
   // Transaction Data (push-only, create-only in v1)
   bill: RilletBillSyncer,
   invoice: RilletSalesInvoiceSyncer,
+  // Card charges (Ramp card spend) as Rillet charges; their journals are
+  // DOC_BACKED-excluded per row while this is enabled
+  charge: RilletChargeSyncer,
 
   // Posting sync (push-only journal entries -> Rillet journal entries)
   journalEntry: RilletJournalEntrySyncer,

@@ -2,8 +2,8 @@ import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { GetStartedEmail, WelcomeEmail } from "@carbon/documents/email";
-import { RESEND_DOMAIN } from "@carbon/env";
-import { getResend, sendEmail } from "@carbon/lib/resend.server";
+import { EMAIL_DOMAIN, sendEmail } from "@carbon/lib/email.server";
+import { getResend } from "@carbon/lib/resend.server";
 import { getSlackClient } from "@carbon/lib/slack.server";
 import { getTwentyClient } from "@carbon/lib/twenty.server";
 import { render } from "@react-email/components";
@@ -277,9 +277,9 @@ export const onboardFunction = inngest.createFunction(
 
         if (sendOnboardingEmail) {
           const from = `Chase from Carbon <${
-            RESEND_DOMAIN === "carbon.ms"
+            EMAIL_DOMAIN === "carbon.ms"
               ? "chase@carbon.ms"
-              : `no-reply@${RESEND_DOMAIN}`
+              : `no-reply@${EMAIL_DOMAIN}`
           }>`;
           await step.run("send-welcome-email", async () => {
             await sendEmail({
@@ -295,9 +295,9 @@ export const onboardFunction = inngest.createFunction(
 
         if (sendOnboardingEmail) {
           const from = `Info from Carbon <${
-            RESEND_DOMAIN === "carbon.ms"
+            EMAIL_DOMAIN === "carbon.ms"
               ? "info@carbon.ms"
-              : `no-reply@${RESEND_DOMAIN}`
+              : `no-reply@${EMAIL_DOMAIN}`
           }>`;
           await step.run("send-get-started-email", async () => {
             await sendEmail({

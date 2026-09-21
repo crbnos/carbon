@@ -14,6 +14,7 @@ import type {
   getJournalEntry,
   getPaymentTerms,
   getPeriodCloseReadiness,
+  getProjects,
   getPurchaseLinePivotLines,
   getReportViews
 } from "./accounting.ee.service";
@@ -398,6 +399,10 @@ export type PaymentTermCalculationMethod =
 
 export type PaymentTerm = NonNullable<
   Awaited<ReturnType<typeof getPaymentTerms>>["data"]
+>[number];
+
+export type Project = NonNullable<
+  Awaited<ReturnType<typeof getProjects>>["data"]
 >[number];
 
 export type Transaction = {

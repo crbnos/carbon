@@ -4,9 +4,17 @@
 // server-side call(), and folds the outcome back into the { success, … } envelope
 // the legacy executeFunction callers expect.
 
+import { getLogger } from "@carbon/logger";
 import { call, ORPCError } from "@orpc/server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
+import { unwrapArgsEnvelope } from "./args-envelope";
 import type { AuthedContext } from "./base.server";
+import {
+  classifyDatabaseFailure,
+  publicDatabaseError,
+  type SupabaseFailure
+} from "./database-errors";
 import {
   operationId,
   operationsByName,
@@ -19,9 +27,24 @@ import {
   type StandardIssue
 } from "./validation-issues";
 
+const logger = getLogger("erp", "api", "call-operation");
+
 export type CallResult =
   | { success: true; data: unknown; count?: number }
   | { success: false; error: string; errorKind: "database" | "execution" };
+
+async function edgeFunctionMessage(
+  error: SupabaseFailure
+): Promise<string | null> {
+  if (
+    error.name !== "FunctionsHttpError" ||
+    !("context" in error) ||
+    !error.context
+  )
+    return null;
+  const message = await getEdgeFunctionErrorMessage(error, "");
+  return message === "" ? null : message;
+}
 
 export async function callOperation(
   name: string,
@@ -59,15 +82,16 @@ export async function callOperation(
     };
   }
 
+  const callArgs = unwrapArgsEnvelope(
+    meta,
+    args as Record<string, unknown> | undefined
+  );
+
   try {
     // The handler shapes the HTTP body (bare single results, `{ results, count }`
     // lists); unshapeHttpBody reverses it so MCP/agent/workflow callers keep
     // DispatchResult semantics.
-    const body = await call(
-      procedure,
-      (args as Record<string, unknown> | undefined) ?? {},
-      { context }
-    );
+    const body = await call(procedure, callArgs ?? {}, { context });
     const result = unshapeHttpBody(meta, body);
     return {
       success: true,
@@ -77,14 +101,19 @@ export async function callOperation(
   } catch (err) {
     const supabase =
       err instanceof ORPCError
-        ? (err.data as { supabase?: unknown } | undefined)?.supabase
+        ? (err.data as { supabase?: SupabaseFailure } | undefined)?.supabase
         : undefined;
     if (supabase) {
-      // A Supabase failure keeps MCP's exact `Database error:` text, raw error
-      // JSON included — the errorKind lets the formatter skip its `Error: ` prefix.
+      const edgeMessage = await edgeFunctionMessage(supabase);
+      logger.error("Operation failed", {
+        name,
+        kind: classifyDatabaseFailure(supabase),
+        supabase,
+        ...(edgeMessage ? { edgeMessage } : {})
+      });
       return {
         success: false,
-        error: `Database error: ${JSON.stringify(supabase)}`,
+        error: publicDatabaseError(supabase),
         errorKind: "database"
       };
     }

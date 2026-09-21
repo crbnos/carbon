@@ -4,7 +4,7 @@ import {
   type CompanyIntegration,
   notifyTaskAssigned
 } from "@carbon/ee/notifications";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getSlackUserIdByCarbonId } from "@carbon/ee/slack.server";
 import { ERP_URL } from "@carbon/env";
 import type { Events } from "@carbon/lib/events";
@@ -76,6 +76,9 @@ const defaultDestinations: Partial<
     NotificationDestination.Email,
     NotificationDestination.Slack
   ],
+  // Deliberately email-only (no Slack): a compliance heads-up for the sales
+  // group, not an actionable assignment.
+  [NotificationEvent.SalesRuleViolation]: [NotificationDestination.Email],
   [NotificationEvent.JobAssignment]: [
     NotificationDestination.Email,
     NotificationDestination.Slack
@@ -531,7 +534,7 @@ export const notifyFunction = inngest.createFunction(
     const emailAllowed =
       wantsEmail &&
       (await step.run("check-email-plan", () =>
-        companyHasPlan(client, payload.companyId, {
+        companyHasFeature(client, payload.companyId, {
           feature: "EMAIL_NOTIFICATIONS"
         })
       ));

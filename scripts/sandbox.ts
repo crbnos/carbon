@@ -1,22 +1,22 @@
-import { createClient } from "@supabase/supabase-js";
-import { config } from "dotenv";
+import {
+  createScriptClient,
+  readLocalScriptConfig
+} from "./lib/local-script-config";
 
-config();
+const { SUPABASE_URL, SUPABASE_ANON_KEY, CARBON_API_KEY } =
+  readLocalScriptConfig(
+    ["SUPABASE_URL", "SUPABASE_ANON_KEY", "CARBON_API_KEY"],
+    process.env
+  );
 
-const carbon = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_ANON_KEY!,
-  {
-    global: {
-      headers: {
-        "carbon-key": "crbn_yPkz1hszqh6mVLDf4jiDv",
-      },
-    },
-  }
+const carbon = createScriptClient(
+  SUPABASE_URL,
+  SUPABASE_ANON_KEY,
+  CARBON_API_KEY
 );
 
 (async () => {
   const employees = await carbon.from("salesOrder").select("*").limit(1000);
 
-  console.log(employees);
+  process.stdout.write(`${JSON.stringify(employees, null, 2)}\n`);
 })();

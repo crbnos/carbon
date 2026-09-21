@@ -1,3 +1,4 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import {
   Badge,
   Button,
@@ -32,7 +33,6 @@ import { VersionMenu } from "~/components";
 import { usePanels } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData } from "~/hooks";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { useDocumentStore } from "~/stores";
 import { path } from "~/utils/path";
 import type { QualityDocument } from "../../types";

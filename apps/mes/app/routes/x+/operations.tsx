@@ -47,6 +47,7 @@ import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
+  getJobOperationBatchMembers,
   getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
@@ -58,9 +59,43 @@ import { path } from "~/utils/path";
 
 const log = getLogger("mes");
 
+type BatchTotals = {
+  size: number;
+  quantity: number;
+  targetQuantity: number;
+  jobReadableIds: string[];
+};
+
+function getBatchTotals(
+  members: NonNullable<
+    Awaited<ReturnType<typeof getJobOperationBatchMembers>>["data"]
+  >
+): Map<string, BatchTotals> {
+  const totals = new Map<string, BatchTotals>();
+  for (const member of members) {
+    if (!member.jobOperationBatchId) continue;
+    const total = totals.get(member.jobOperationBatchId) ?? {
+      size: 0,
+      quantity: 0,
+      targetQuantity: 0,
+      jobReadableIds: []
+    };
+    total.size += 1;
+    total.quantity += member.operationQuantity ?? 0;
+    total.targetQuantity +=
+      member.targetQuantity ?? member.operationQuantity ?? 0;
+    if (member.job?.jobId) total.jobReadableIds.push(member.job.jobId);
+    totals.set(member.jobOperationBatchId, total);
+  }
+  return totals;
+}
+
 // Collapse operations sharing a jobOperationBatchId into one card: keep the first
 // as the card, tag it with the member count and summed quantities.
-function collapseBatches(items: Item[]): Item[] {
+function collapseBatches(
+  items: Item[],
+  batchTotals: Map<string, BatchTotals>
+): Item[] {
   const byBatch = new Map<string, Item[]>();
   const result: Item[] = [];
   for (const item of items) {
@@ -75,16 +110,19 @@ function collapseBatches(items: Item[]): Item[] {
       result.push(item);
     }
   }
-  for (const members of byBatch.values()) {
+  for (const [batchId, members] of byBatch) {
+    const total = batchTotals.get(batchId);
     result.push({
       ...members[0],
-      batchSize: members.length,
-      batchJobReadableIds: members.map((m) => m.title).filter(Boolean),
-      quantity: members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
-      targetQuantity: members.reduce(
-        (sum, m) => sum + (m.targetQuantity ?? 0),
-        0
-      )
+      batchSize: total?.size ?? members.length,
+      batchJobReadableIds:
+        total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
+      quantity:
+        total?.quantity ??
+        members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
+      targetQuantity:
+        total?.targetQuantity ??
+        members.reduce((sum, m) => sum + (m.targetQuantity ?? 0), 0)
     });
   }
   return result;
@@ -255,14 +293,31 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   }
 
   if (search) {
+    const term = search.toLowerCase();
     filteredOperations = filteredOperations.filter(
       (op) =>
-        op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.itemDescription?.toLowerCase().includes(search.toLowerCase()) ||
-        op.description?.toLowerCase().includes(search.toLowerCase())
+        op.jobReadableId?.toLowerCase().includes(term) ||
+        op.itemReadableId?.toLowerCase().includes(term) ||
+        op.itemDescription?.toLowerCase().includes(term) ||
+        op.description?.toLowerCase().includes(term) ||
+        op.batchReadableId?.toLowerCase().includes(term)
     );
   }
+
+  const batchIds = Array.from(
+    new Set(
+      filteredOperations
+        .map((op) => op.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+  const batchMembers = batchIds.length
+    ? await getJobOperationBatchMembers(serviceRole, batchIds, companyId)
+    : null;
+  if (batchMembers?.error) {
+    log.error("Failed to load batch members", { error: batchMembers.error });
+  }
+  const batchTotals = getBatchTotals(batchMembers?.data ?? []);
 
   const filteredWorkCenters =
     workCenters.data?.filter((wc: any) => {
@@ -352,7 +407,8 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
             hasConflict: op.hasConflict ?? undefined,
             conflictReason: op.conflictReason ?? undefined
           };
-        }) ?? []) satisfies Item[]
+        }) ?? []) satisfies Item[],
+        batchTotals
       ),
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],

@@ -1,49 +1,17 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import type { CompanyBucket } from "@carbon/files";
+import {
+  effectiveExtension,
+  getCompanyPrivateBucket,
+  getContentType,
+  LEGACY_PRIVATE_BUCKET,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
 const log = getLogger("mes");
-
-const supportedFileTypes: Record<string, string> = {
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  avif: "image/avif",
-  webp: "image/webp",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  wmv: "video/x-ms-wmv",
-  mp3: "audio/mpeg",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-  flac: "audio/flac",
-  dxf: "application/dxf",
-  dwg: "application/dxf",
-  stl: "application/stl",
-  obj: "application/obj",
-  glb: "application/glb",
-  gltf: "application/gltf",
-  fbx: "application/fbx",
-  ply: "application/ply",
-  off: "application/off",
-  step: "application/step",
-  stp: "application/step",
-  iges: "application/iges",
-  igs: "application/iges",
-  brep: "application/octet-stream",
-  "3dm": "application/octet-stream",
-  "3ds": "application/octet-stream",
-  "3mf": "model/3mf",
-  amf: "application/octet-stream",
-  bim: "application/octet-stream",
-  dae: "model/vnd.collada+xml"
-};
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {});
@@ -66,14 +34,12 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // download yields the original, openable file. The content-type + extension
   // come from the underlying format, not the `.zst` wrapper.
   const isZst = fileType === "zst";
-  const effectiveType = isZst
-    ? path.slice(0, -4).split(".").pop()?.toLowerCase()
-    : fileType;
-  // Unknown extensions still get a Content-Type — a bare octet-stream beats
-  // omitting the header (browsers may otherwise sniff or mangle the download).
-  const contentType = effectiveType
-    ? (supportedFileTypes[effectiveType] ?? "application/octet-stream")
-    : undefined;
+  const effectiveType = effectiveExtension(path);
+  // HEIC is converted at upload, so this only serves legacy files and paths
+  // that bypass the app (API uploads): browsers outside Safari can't render
+  // HEIC, so ask storage for the imgproxy JPEG rendition instead.
+  const isHeicFile = effectiveType === "heic" || effectiveType === "heif";
+  let contentType = effectiveType ? getContentType(effectiveType) : undefined;
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
@@ -86,12 +52,42 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     return new Response(null, { status: 403 });
   }
 
+  // `public` and `temp-staging` are shared buckets legitimately served through
+  // this route (file previews, staged CAD raw downloads); any other bucket id
+  // that isn't the caller's own company bucket (or legacy `private`) would be
+  // another tenant's private bucket — refuse it. The ownsPath check alone is
+  // not enough: a slash-bounded match allows `<otherCo>/x/<yourCo>/file`.
+  const isPrivateBucket =
+    bucket === getCompanyPrivateBucket(companyId) ||
+    bucket === LEGACY_PRIVATE_BUCKET;
+  if (!isPrivateBucket && bucket !== "public" && bucket !== "temp-staging") {
+    return new Response(null, { status: 403 });
+  }
+
   const serviceRole = await getCarbonServiceRole();
+  // A company-private request reads the company bucket with legacy fallback;
+  // any other bucket is read as-is.
+  const source: Pick<CompanyBucket, "download"> = isPrivateBucket
+    ? storage(serviceRole).company(companyId)
+    : storage(serviceRole).from(bucket);
 
   async function downloadFile() {
     if (!path) throw new Error("Path not found");
+    if (isHeicFile) {
+      const transformed = await source.download(path, {
+        transform: { quality: 85 }
+      });
+      if (!transformed.error) {
+        // imgproxy may negotiate webp via Accept — trust the blob, not the path
+        contentType = transformed.data.type || "image/jpeg";
+        return transformed.data;
+      }
+      // No imgproxy (stale self-host stack) — fall through to the raw bytes;
+      // Safari can still render them.
+      log.error("Failed to transform HEIC file", { error: transformed.error });
+    }
     // Use the original encoded path for the storage API call
-    const result = await serviceRole.storage.from(bucket!).download(path);
+    const result = await source.download(path);
     if (result.error) {
       log.error("Failed to download file", { error: result.error });
       return null;

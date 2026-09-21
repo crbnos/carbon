@@ -363,7 +363,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     abilityIds.size > 0
       ? client
-          .from("ability")
+          .from("abilities")
           .select("id, name")
           .in("id", Array.from(abilityIds))
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -408,7 +408,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     (workCenters.data ?? []).map((w) => [w.id, w.name])
   );
   const abilityNames = new Map(
-    (abilities.data ?? []).map((a) => [a.id, a.name])
+    (abilities.data ?? []).map((a) => [a.id ?? "", a.name ?? ""])
   );
   const operatorNames = new Map(
     (operators.data ?? []).map((u) => [u.id, u.fullName])

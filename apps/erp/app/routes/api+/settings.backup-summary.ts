@@ -2,7 +2,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { BACKUP_SUMMARY_GROUPS } from "~/modules/settings/backups.areas";
-import { canAccessBackups } from "~/utils/backups";
+import { canManageBackups } from "~/modules/settings/backups.server";
 
 async function countEntity(
   client: SupabaseClient,
@@ -29,7 +29,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     request,
     { view: "settings" }
   );
-  if (!canAccessBackups(email))
+  if (!(await canManageBackups(client, companyId, email)))
     throw new Response("Not found", { status: 404 });
 
   // Keys and counts only — the popover owns the labels (msg descriptors it

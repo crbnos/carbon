@@ -45,6 +45,7 @@ import type {
   periodCloseTaskSeverities,
   periodCloseTaskStatuses,
   periodCloseTaskTypes,
+  projectValidator,
   taxDepreciationMethods
 } from "./accounting.models";
 import type {
@@ -4149,6 +4150,93 @@ export async function upsertCostCenter(
     .single();
 }
 
+export async function deleteProject(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  projectId: string,
+  updatedBy: string
+) {
+  return client
+    .from("project")
+    .update({
+      active: false,
+      updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function getProject(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  projectId: string
+) {
+  return client
+    .from("project")
+    .select("*")
+    .eq("id", projectId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getProjects(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("project")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId)
+    .eq("active", true);
+
+  if (args.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
+    );
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "name", ascending: true }
+  ]);
+
+  return query;
+}
+
+export async function upsertProject(
+  client: SupabaseClient<Database>,
+  project:
+    | (Omit<z.infer<typeof projectValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof projectValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in project) {
+    return client
+      .from("project")
+      .insert([{ ...project, active: true }])
+      .select("id")
+      .single();
+  }
+
+  const { companyId, id, ...update } = project;
+  return client
+    .from("project")
+    .update({ ...sanitize(update), updatedAt: datetime.timestamp() })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
 export async function getDimensions(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -4408,6 +4496,16 @@ function getEntityDimensionValues(
         .select("id, name")
         .eq("companyId", companyId)
         .order("name");
+    case "Project":
+      // Only ACTIVE projects are selectable for new dimension assignments;
+      // soft-deleted (active = false) projects stay resolvable for history via
+      // getEntityValuesByIds but must not appear as new options.
+      return client
+        .from("project")
+        .select("id, name")
+        .eq("companyId", companyId)
+        .eq("active", true)
+        .order("name");
     // Customer / Supplier / Item are high-cardinality: intentionally NOT
     // eager-loaded here. The DimensionSelector sources their options lazily
     // from the client stores (useCustomers / useSuppliers / useItems).
@@ -4534,6 +4632,8 @@ function getEntityValuesByIds(
       return client.from("costCenter").select("id, name").in("id", ids);
     case "ScrapReason":
       return client.from("scrapReason").select("id, name").in("id", ids);
+    case "Project":
+      return client.from("project").select("id, name").in("id", ids);
     case "FixedAssetClass":
       return client.from("fixedAssetClass").select("id, name").in("id", ids);
     case "Customer":

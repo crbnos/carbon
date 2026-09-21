@@ -382,6 +382,8 @@
         "Lifecycle",
         "On the schedule",
         "On the shop floor",
+        "Picking materials",
+        "Completing the batch",
         "Related",
         "Internals, exact strings, and troubleshooting",
         "The batch card is missing from the operations board / MES",
@@ -389,6 +391,9 @@
         "An operator sees a job that was never released",
         "Retry Completion rejects my corrected quantities",
         "The builder hides some operations on the process",
+        "The pick modal says a batch number is not available",
+        "A shared pick left every member short",
+        "Completed the batch but the lots did not merge",
         "Suggested batches look wrong / too small"
       ]
     },
@@ -960,6 +965,7 @@
         "Focused lists",
         "Open Jobs",
         "Running an operation",
+        "The guided assembly view",
         "Reporting quantities",
         "Issuing material",
         "Clocking in and out",
@@ -1391,6 +1397,22 @@
       ]
     },
     {
+      "slug": "docs/reference/sales-rules",
+      "title": "Sales rules",
+      "description": "Predicate guards on sales documents: block a restricted item with an error, or warn and let the user acknowledge and continue.",
+      "keywords": ["sales", "rules", "docs", "reference"],
+      "headings": [
+        "What a rule checks",
+        "Where rules fire",
+        "Block or warn",
+        "Scope and assignment",
+        "Rule fields",
+        "Where to manage them",
+        "Related",
+        "Troubleshooting"
+      ]
+    },
+    {
       "slug": "docs/reference/scheduling",
       "title": "Scheduling",
       "description": "Finite-capacity scheduling — how jobs are placed onto real work-center and operator calendars, and the boards that show and steer the result.",
@@ -1585,6 +1607,8 @@
         "Suppliers",
         "Customers",
         "What they share",
+        "Bank accounts",
+        "Documents",
         "Related",
         "Troubleshooting",
         "\"Cannot edit a protected customer type\" / \"Cannot edit a protected supplier type\"",
