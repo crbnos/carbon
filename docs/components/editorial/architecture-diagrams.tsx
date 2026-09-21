@@ -458,18 +458,19 @@ function BuyHosted() {
 }
 
 /* The mirror image: when the customer runs it. Community is free under the AGPL; the
- * commercial license is what lifts the copyleft and unlocks Enterprise, and it splits
- * into a path for a company running Carbon and a path for a partner selling it. */
+ * commercial license is what unlocks the Business features and lets you keep your changes
+ * private, and it splits into a path for a company running Carbon and a path for a partner
+ * selling it. */
 function BuySelfHosted() {
   return (
     <svg viewBox="0 0 740 428" className="w-full h-auto" role="img" aria-label="How to buy a self-hosted Carbon license">
       <ArrowDefs />
 
       <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="AGPLv3 · free" tone="svc" />
-      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="unlocks Enterprise" tone="svc" />
+      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="unlocks Business features" tone="svc" />
 
       <Edge pts={[[185, 70], [185, 100]]} />
-      <Node x={45} y={100} w={280} h={48} label="Unmodified, your own use" sub="no license needed" />
+      <Node x={45} y={100} w={280} h={48} label="Your own use, modified or not" sub="no license needed" />
 
       <Edge pts={[[555, 70], [555, 180]]} />
 

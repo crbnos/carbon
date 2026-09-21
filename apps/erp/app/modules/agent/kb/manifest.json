@@ -198,7 +198,7 @@
     {
       "slug": "docs/platform/licensing",
       "title": "Licensing",
-      "description": "Carbon is dual-licensed: AGPLv3 for the open core, a commercial license for Enterprise features and for production or hosted use.",
+      "description": "Carbon is dual-licensed: AGPLv3 for the Community edition, and a commercial license for Business features or for keeping your changes private.",
       "keywords": ["licensing", "docs", "platform"],
       "headings": [
         "Editions",
@@ -206,7 +206,6 @@
         "Carbon Cloud — we run it",
         "Self-hosted — you run it",
         "The AGPL obligation",
-        "You can't resell Carbon as a service",
         "How the agreements fit together",
         "When you need a commercial license"
       ]
