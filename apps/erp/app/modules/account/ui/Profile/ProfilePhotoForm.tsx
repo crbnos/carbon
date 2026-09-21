@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import {
   Badge,
   Button,

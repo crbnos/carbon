@@ -1,9 +1,8 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import { getContentType, MEDIA_CONTENT_TYPES, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
-import { downloadCompanyPrivateObject } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "public");
@@ -34,13 +33,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const companyId = path.split("/")[0];
 
   async function downloadFile() {
-    const result = await downloadCompanyPrivateObject({
-      storage: client.storage,
-      companyId,
-      objectPath: `${path}`
-    });
+    const result = await storage(client).company(companyId).download(`${path}`);
     if (!result.data) {
-      logger.error("Failed to download file", { errors: result.errors });
+      logger.error("Failed to download file", { error: result.error });
       return null;
     }
     return result.data;

@@ -3,17 +3,15 @@ import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { storage } from "@carbon/files";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
-  downloadCompanyPrivateObject,
   groupBy,
-  listCompanyPrivateObjects,
   nameSimilarity,
-  removeCompanyPrivateObjects,
   scrapAllowance,
   tiptapToText
 } from "@carbon/utils";
@@ -31,7 +29,6 @@ import {
   indexAssemblyGraph
 } from "@carbon/viewer";
 import { parseDate } from "@internationalized/date";
-import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
 import { sql } from "kysely";
@@ -848,33 +845,25 @@ export async function getJobDocuments(
   }
 ): Promise<StorageItem[]> {
   const promises = [
-    listCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      prefix: `${companyId}/job/${job.id}`
-    })
+    storage(client).company(companyId).list(`${companyId}/job/${job.id}`)
   ];
 
   // Add opportunity line files if available
   if (job.salesOrderLineId || job.quoteLineId) {
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
     promises.push(
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/opportunity-line/${opportunityLine}`
-      })
+      storage(client)
+        .company(companyId)
+        .list(`${companyId}/opportunity-line/${opportunityLine}`)
     );
   }
 
   // Add parts files if itemId is available
   if (job.itemId) {
     promises.push(
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/parts/${job.itemId}`
-      })
+      storage(client)
+        .company(companyId)
+        .list(`${companyId}/parts/${job.itemId}`)
     );
   }
 
@@ -883,18 +872,18 @@ export async function getJobDocuments(
 
   // Combine and return all sets of files with their respective buckets
   return [
-    ...((jobFiles.data as FileObject[]) ?? []).map((f) => ({
+    ...(jobFiles.data ?? []).map((f) => ({
       ...f,
       bucket: "job"
     })),
-    ...(((opportunityLineFiles?.data as FileObject[]) ?? []).map((f) => ({
+    ...(opportunityLineFiles?.data ?? []).map((f) => ({
       ...f,
       bucket: "opportunity-line"
-    })) || []),
-    ...(((partsFiles?.data as FileObject[]) ?? []).map((f) => ({
+    })),
+    ...(partsFiles?.data ?? []).map((f) => ({
       ...f,
       bucket: "parts"
-    })) || [])
+    }))
   ];
 }
 
@@ -904,16 +893,13 @@ export const getPartDocuments = async (
   ...items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await listCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      prefix: `${companyId}/parts/${id}`
-    });
+    const res = await storage(client)
+      .company(companyId)
+      .list(`${companyId}/parts/${id}`);
 
-    // A single-bucket miss is expected during the legacy fallback window.
-    if (res.errors.length >= 2) return null;
+    if (res.error) return null;
 
-    return (res.data as FileObject[]).map((f) => ({
+    return res.data.map((f) => ({
       ...f,
       bucket: "parts",
       itemId: id
@@ -939,36 +925,28 @@ export async function getJobDocumentsWithItemId(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles] = await Promise.all([
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/opportunity-line/${opportunityLine}`
-      }),
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/job/${job.id}`
-      })
+      storage(client)
+        .company(companyId)
+        .list(`${companyId}/opportunity-line/${opportunityLine}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data as FileObject[]).map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
       })),
-      ...(jobFiles.data as FileObject[]).map((f) => ({ ...f, bucket: "job" })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
-    const jobFiles = await listCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      prefix: `${companyId}/job/${job.id}`
-    });
+    const jobFiles = await storage(client)
+      .company(companyId)
+      .list(`${companyId}/job/${job.id}`);
 
     return [
-      ...(jobFiles.data as FileObject[]).map((f) => ({ ...f, bucket: "job" })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -7036,11 +7014,7 @@ async function invalidateAssemblyPlanCache(
     // (getLatestAssemblyPlan then finds nothing).
     // Private object paths are prefixed with the owning company's id.
     const companyId = planPaths[0].split("/")[0];
-    await removeCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      objectPaths: planPaths
-    });
+    await storage(client).company(companyId).remove(planPaths);
   }
 
   await client
@@ -7103,11 +7077,7 @@ export async function invalidateAssemblyModelCache(
     // Private object paths are prefixed with the owning company's id.
     const objectPaths = [...paths];
     const companyId = objectPaths[0].split("/")[0];
-    await removeCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      objectPaths
-    });
+    await storage(client).company(companyId).remove(objectPaths);
   }
 
   await client
@@ -7855,11 +7825,9 @@ export async function syncAssemblyStepMaterialsFromMappings(
   const steps = await stepsQuery;
   if (!steps.data?.length) return { created: 0 };
 
-  const graphFile = await downloadCompanyPrivateObject({
-    storage: client.storage,
-    companyId: args.companyId,
-    objectPath: graphPath
-  });
+  const graphFile = await storage(client)
+    .company(args.companyId)
+    .download(graphPath);
   if (!graphFile.data) return { created: 0 };
   let graphIndex: AssemblyGraphIndex;
   try {
@@ -8048,11 +8016,9 @@ export async function getAssemblyPlanJson(
 
   // Private object paths are prefixed with the owning company's id.
   const planCompanyId = job.data.planPath.split("/")[0];
-  const file = await downloadCompanyPrivateObject({
-    storage: client.storage,
-    companyId: planCompanyId,
-    objectPath: job.data.planPath
-  });
+  const file = await storage(client)
+    .company(planCompanyId)
+    .download(job.data.planPath);
   if (!file.data) return null;
 
   try {
@@ -8219,11 +8185,9 @@ export async function autoMatchAssemblyComponents(
     return { error: "The model has not been processed" };
   }
 
-  const graphFile = await downloadCompanyPrivateObject({
-    storage: client.storage,
-    companyId: args.companyId,
-    objectPath: graphPath
-  });
+  const graphFile = await storage(client)
+    .company(args.companyId)
+    .download(graphPath);
   if (!graphFile.data) {
     return { error: "Failed to load the model graph" };
   }
@@ -9063,11 +9027,9 @@ export async function generateAssemblyStepsFromPlan(
   let graphIndex: AssemblyGraphIndex | null = null;
   const graphPath = instruction.data.modelUpload?.graphPath;
   if (graphPath) {
-    const graphFile = await downloadCompanyPrivateObject({
-      storage: client.storage,
-      companyId: args.companyId,
-      objectPath: graphPath
-    });
+    const graphFile = await storage(client)
+      .company(args.companyId)
+      .download(graphPath);
     if (graphFile.data) {
       try {
         const graph = JSON.parse(await graphFile.data.text()) as AssemblyGraph;

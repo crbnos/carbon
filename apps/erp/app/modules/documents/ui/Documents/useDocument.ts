@@ -1,8 +1,7 @@
 import { useCarbon } from "@carbon/auth";
-import { downloadBlob } from "@carbon/files";
+import { downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { toast } from "@carbon/react";
-import { downloadCompanyPrivateObject } from "@carbon/utils";
 import { useCallback } from "react";
 import { useNavigate } from "react-router";
 import { usePermissions, useUrlParams, useUser } from "~/hooks";
@@ -164,14 +163,12 @@ export const useDocument = () => {
         toast.error("Error previewing file");
         return null;
       }
-      const { data, errors } = await downloadCompanyPrivateObject({
-        storage: carbon.storage,
-        companyId: user.company.id,
-        objectPath: doc.path
-      });
+      const { data, error } = await storage(carbon)
+        .company(user.company.id)
+        .download(doc.path);
 
       if (!data) {
-        toast.error(errors[0]?.error?.message || "Error previewing file");
+        toast.error(error?.message || "Error previewing file");
         return null;
       }
 

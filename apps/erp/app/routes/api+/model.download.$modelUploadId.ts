@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { isModelRawDownloadable } from "@carbon/files/cad";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";

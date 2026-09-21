@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString } from "@carbon/files";
+import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -28,12 +28,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import {
-  downloadCompanyPrivateObject,
-  getCompanyPrivateBucket,
-  MODEL_RAW_KEEP_MAX_BYTES,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -100,25 +95,23 @@ const useOpportunityLineDocuments = ({
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "opportunity-line";
-      if (!carbon?.storage) {
+      if (!carbon) {
         toast.error("Error deleting file");
         return;
       }
-      const { errors } = await removeCompanyPrivateObjects({
-        storage: carbon.storage,
-        companyId: company.id,
-        objectPaths: [getPath(file, bucket as "opportunity-line" | "parts")]
-      });
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([getPath(file, bucket as "opportunity-line" | "parts")]);
 
-      if (errors.length > 0) {
-        toast.error(errors[0]?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t, company.id]
+    [getPath, carbon, revalidator, t, company.id]
   );
 
   const deleteModel = useCallback(
@@ -303,11 +296,9 @@ const useOpportunityLineDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const { data: downloadData } = await downloadCompanyPrivateObject({
-          storage: carbon.storage,
-          companyId: company.id,
-          objectPath: sourcePath
-        });
+        const { data: downloadData } = await storage(carbon)
+          .company(company.id)
+          .download(sourcePath);
 
         if (!downloadData) {
           toast.error(t`Failed to download file for moving`);
@@ -316,8 +307,8 @@ const useOpportunityLineDocuments = ({
 
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
-        const { error: uploadError } = await carbon.storage
-          .from(getCompanyPrivateBucket(company.id))
+        const { error: uploadError } = await storage(carbon)
+          .company(company.id)
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -329,13 +320,11 @@ const useOpportunityLineDocuments = ({
         }
 
         // Delete from old location
-        const { errors: deleteErrors } = await removeCompanyPrivateObjects({
-          storage: carbon.storage,
-          companyId: company.id,
-          objectPaths: [sourcePath]
-        });
+        const { error: deleteError } = await storage(carbon)
+          .company(company.id)
+          .remove([sourcePath]);
 
-        if (deleteErrors.length > 0) {
+        if (deleteError) {
           toast.error(t`Failed to delete file from old location`);
           return;
         }

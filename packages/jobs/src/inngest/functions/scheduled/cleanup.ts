@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { LEGACY_PRIVATE_BUCKET, storage } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
-import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/utils";
 import { inngest } from "../../client";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
@@ -425,22 +425,18 @@ export const cleanupFunction = inngest.createFunction(
       const relocated = new Set<string>();
       const CHUNK = 20;
       // A durable copy may live in the company's own bucket (current pipeline)
-      // or the legacy shared `private` bucket (pre-migration relocations), so
-      // probe both. Object keys start with the companyId segment.
+      // or the legacy shared `private` bucket (pre-migration relocations);
+      // `info` probes both. Object keys start with the companyId segment, and
+      // a key without one can't have a durable copy anywhere.
       const probeDurableCopy = async (name: string) => {
-        const companyId = name.split("/")[0] ?? "";
-        for (const bucket of [
-          getCompanyPrivateBucket(companyId),
-          LEGACY_PRIVATE_BUCKET
-        ]) {
-          const found = await serviceRole.storage
-            .from(bucket)
-            .info(name)
-            .then((r) => Boolean(!r.error && r.data))
-            .catch(() => false);
-          if (found) return name;
-        }
-        return null;
+        const companyId = name.split("/")[0];
+        if (!companyId) return null;
+        const found = await storage(serviceRole)
+          .company(companyId)
+          .info(name)
+          .then((r) => !r.error)
+          .catch(() => false);
+        return found ? name : null;
       };
       for (let i = 0; i < staleNames.length; i += CHUNK) {
         const chunk = staleNames.slice(i, i + CHUNK);
@@ -542,7 +538,10 @@ export const cleanupFunction = inngest.createFunction(
         // A company bucket is named for its company, and its object keys keep
         // the `{companyId}/` prefix — so a key whose first segment is not this
         // bucket belongs to neither this company nor the legacy bucket layout.
-        if (bucketId !== LEGACY_PRIVATE_BUCKET && name.split("/")[0] !== bucketId)
+        if (
+          bucketId !== LEGACY_PRIVATE_BUCKET &&
+          name.split("/")[0] !== bucketId
+        )
           continue;
         const existing = byBucket.get(bucketId);
         if (existing) existing.push(name);

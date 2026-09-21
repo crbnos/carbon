@@ -12,15 +12,12 @@ import {
   getLowerTierApproverUserIds,
   rejectRequest
 } from "@carbon/ee/approvals.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
 import { VStack } from "@carbon/react";
-import {
-  createCompanyPrivateSignedUrl,
-  getCompanyPrivateBucket
-} from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -225,8 +222,8 @@ export async function action(args: ActionFunctionArgs) {
 
           documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
 
-          const documentFileUpload = await serviceRole.storage
-            .from(getCompanyPrivateBucket(companyId))
+          const documentFileUpload = await storage(serviceRole)
+            .company(companyId)
             .upload(documentFilePath, file, {
               cacheControl: `${12 * 60 * 60}`,
               contentType: "application/pdf",
@@ -322,17 +319,13 @@ export async function action(args: ActionFunctionArgs) {
             const html = await renderAsync(emailTemplate);
             const text = await renderAsync(emailTemplate, { plainText: true });
 
-            const { signedUrl, errors: signedUrlErrors } =
-              await createCompanyPrivateSignedUrl({
-                storage: serviceRole.storage,
-                companyId,
-                objectPath: documentFilePath!,
-                expiresIn: 3600
-              });
-            if (!signedUrl) {
+            const signed = await storage(serviceRole)
+              .company(companyId)
+              .createSignedUrl(documentFilePath!, 3600);
+            if (signed.error) {
               logger.error("Failed to create signed URL for attachment", {
                 storagePath: documentFilePath,
-                errors: signedUrlErrors
+                error: signed.error
               });
             }
 
@@ -343,10 +336,10 @@ export async function action(args: ActionFunctionArgs) {
               subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
               html,
               text,
-              attachments: signedUrl
+              attachments: signed.data
                 ? [
                     {
-                      path: signedUrl,
+                      path: signed.data.signedUrl,
                       filename: fileName!
                     }
                   ]

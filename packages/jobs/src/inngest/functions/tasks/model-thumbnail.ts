@@ -5,10 +5,7 @@ import {
   SUPABASE_INTERNAL_URL,
   VERCEL_URL
 } from "@carbon/env";
-import {
-  getCompanyPrivateBucket,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
+import { storage } from "@carbon/files";
 import { nanoid } from "nanoid";
 import { inngest } from "../../client";
 
@@ -96,8 +93,8 @@ export const modelThumbnailFunction = inngest.createFunction(
 
       logger.info("Uploading thumbnail", { fileName });
 
-      const { data, error } = await client.storage
-        .from(getCompanyPrivateBucket(companyId))
+      const { data, error } = await storage(client)
+        .company(companyId)
         .upload(
           `${companyId}/thumbnails/${modelId}/${fileName}`,
           thumbnailFile,
@@ -129,11 +126,10 @@ export const modelThumbnailFunction = inngest.createFunction(
 
       // Drop the superseded thumbnail (best-effort — never fail the run over it).
       if (previousPath && previousPath !== data?.path) {
-        await removeCompanyPrivateObjects({
-          storage: client.storage,
-          companyId,
-          objectPaths: [previousPath]
-        }).catch(() => undefined);
+        await storage(client)
+          .company(companyId)
+          .remove([previousPath])
+          .catch(() => undefined);
       }
     });
   }

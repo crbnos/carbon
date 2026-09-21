@@ -1,11 +1,7 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import {
-  getCompanyPrivateBucket,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
 import {
   Card,
   CardContent,
@@ -79,8 +75,8 @@ export default function DefaultAttachmentsPanel({
       for (const file of acceptedFiles) {
         const safeName = stripSpecialCharacters(file.name);
         if (wasConvertedFromHeic(file)) {
-          const existing = await carbon.storage
-            .from(getCompanyPrivateBucket(company.id))
+          const existing = await storage(carbon)
+            .company(company.id)
             .info(fullPath(safeName));
           if (!existing.error && existing.data) {
             toast.error(
@@ -89,8 +85,8 @@ export default function DefaultAttachmentsPanel({
             continue;
           }
         }
-        const upload = await carbon.storage
-          .from(getCompanyPrivateBucket(company.id))
+        const upload = await storage(carbon)
+          .company(company.id)
           .upload(fullPath(safeName), file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -125,13 +121,11 @@ export default function DefaultAttachmentsPanel({
       const storagePath = fullPath(name);
       setDeletingPath(storagePath);
       try {
-        const { errors } = await removeCompanyPrivateObjects({
-          storage: carbon.storage,
-          companyId: company.id,
-          objectPaths: [storagePath]
-        });
-        if (errors.length > 0) {
-          toast.error(errors[0]?.error?.message || t`Error deleting file`);
+        const { error } = await storage(carbon)
+          .company(company.id)
+          .remove([storagePath]);
+        if (error) {
+          toast.error(error.message || t`Error deleting file`);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();

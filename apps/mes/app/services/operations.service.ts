@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -10,7 +11,6 @@ import {
   type FlatTree,
   flattenTree,
   generateBomIds,
-  listCompanyPrivateObjects,
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -682,21 +682,19 @@ const getItemFiles = async (
   items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await listCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      prefix: `${companyId}/parts/${id}`
-    });
+    const res = await storage(client)
+      .company(companyId)
+      .list(`${companyId}/parts/${id}`);
 
-    if (res.data.length === 0) return null;
+    if (!res.data?.length) return null;
 
-    // The union helper types entries as StorageFileLike; at runtime they are
-    // the supabase FileObjects StorageItem expects.
-    return res.data.map((f) => ({
-      ...f,
-      bucket: "parts",
-      itemId: id
-    })) as unknown as StorageItem[];
+    return res.data.map(
+      (f): StorageItem => ({
+        ...f,
+        bucket: "parts",
+        itemId: id
+      })
+    );
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -716,46 +714,30 @@ export async function getJobFiles(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/opportunity-line/${opportunityLine}`
-      }),
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/job/${job.id}`
-      }),
+      storage(client)
+        .company(companyId)
+        .list(`${companyId}/opportunity-line/${opportunityLine}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data.map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) as unknown as StorageItem[]),
-      ...(jobFiles.data.map((f) => ({
-        ...f,
-        bucket: "job"
-      })) as unknown as StorageItem[]),
+      })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/job/${job.id}`
-      }),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     return [
-      ...(jobFiles.data.map((f) => ({
-        ...f,
-        bucket: "job"
-      })) as unknown as StorageItem[]),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -1016,36 +998,34 @@ export async function getBatchWorkInstructions(
     Promise.all(
       jobs.map(async (job) => {
         const folder = `${args.companyId}/job/${job.id}`;
-        const listed = await listCompanyPrivateObjects({
-          storage: client.storage,
-          companyId: args.companyId,
-          prefix: folder
-        });
-        // The union helper types entries as StorageFileLike; at runtime they
-        // are the supabase FileObjects BatchFile expects.
-        return listed.data.map((file) => ({
-          ...file,
-          bucket: "job",
-          storagePath: `${folder}/${file.name}`,
-          jobReadableId: job.readableId
-        })) as unknown as BatchFile[];
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "job",
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: job.readableId
+          })
+        );
       })
     ),
     Promise.all(
       itemIds.map(async (itemId) => {
         const folder = `${args.companyId}/parts/${itemId}`;
-        const listed = await listCompanyPrivateObjects({
-          storage: client.storage,
-          companyId: args.companyId,
-          prefix: folder
-        });
-        return listed.data.map((file) => ({
-          ...file,
-          bucket: "parts",
-          itemId,
-          storagePath: `${folder}/${file.name}`,
-          jobReadableId: null
-        })) as unknown as BatchFile[];
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "parts",
+            itemId,
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: null
+          })
+        );
       })
     )
   ]);

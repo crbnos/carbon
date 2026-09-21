@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import {
   Button,
   Checkbox,
@@ -13,11 +14,7 @@ import {
   Switch,
   toast
 } from "@carbon/react";
-import {
-  datetime,
-  getCompanyPrivateBucket,
-  stripSpecialCharacters
-} from "@carbon/utils";
+import { datetime, stripSpecialCharacters } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
@@ -134,8 +131,8 @@ export function BatchRecordModal({
       const safeName = stripSpecialCharacters(file.name) || "file";
       const uploads = await Promise.all(
         changed.map((m) =>
-          carbon.storage
-            .from(getCompanyPrivateBucket(company.id))
+          storage(carbon)
+            .company(company.id)
             .upload(
               `${company.id}/job/${m.jobOperationId}/${m.stepId}/${nanoid()}/${safeName}`,
               file,

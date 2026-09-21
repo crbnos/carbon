@@ -3,7 +3,7 @@ import {
   getUserScopedClient
 } from "@carbon/auth/client.server";
 import { verifyDownloadToken } from "@carbon/auth/download-token.server";
-import { downloadCompanyPrivateObject } from "@carbon/utils";
+import { storage } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -47,11 +47,9 @@ export async function loader({ params }: LoaderFunctionArgs) {
     // Access already proven above; fetch the bytes with the service role.
     // Documents live in the company's private bucket (legacy `private`
     // fallback), keyed directly by `document.path` (mirrors useDocument.ts).
-    const file = await downloadCompanyPrivateObject({
-      storage: getCarbonServiceRole().storage,
-      companyId,
-      objectPath: doc.data.path
-    });
+    const file = await storage(getCarbonServiceRole())
+      .company(companyId)
+      .download(doc.data.path);
 
     if (!file.data) return fail("unavailable");
 

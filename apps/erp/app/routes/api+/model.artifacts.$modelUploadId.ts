@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { getCompanyPrivateBucket } from "@carbon/utils";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 
 // Resolves a model's optimised / preview artifact storage paths for the

@@ -1,5 +1,6 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -38,11 +39,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
-import {
-  getCompanyPrivateBucket,
-  getItemById,
-  INPUT_FORMAT
-} from "@carbon/utils";
+import { getItemById, INPUT_FORMAT } from "@carbon/utils";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
@@ -2023,8 +2020,8 @@ function AttributesForm({
         : file;
       const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from(getCompanyPrivateBucket(companyId))
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
@@ -3094,8 +3091,8 @@ function StepSlides({
         : file;
       const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from(getCompanyPrivateBucket(companyId))
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);

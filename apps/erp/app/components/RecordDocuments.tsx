@@ -1,7 +1,6 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString } from "@carbon/files";
+import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { removeCompanyPrivateObjects } from "@carbon/utils";
 import {
   Card,
   CardAction,
@@ -275,25 +274,23 @@ export const useRecordDocuments = ({
 
   const deleteAttachment = useCallback(
     async (file: FileObject) => {
-      if (!carbon?.storage) {
+      if (!carbon) {
         toast.error(t`Error deleting file`);
         return;
       }
-      const { errors } = await removeCompanyPrivateObjects({
-        storage: carbon.storage,
-        companyId: company.id,
-        objectPaths: [getPath(file)]
-      });
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([getPath(file)]);
 
-      if (errors.length > 0) {
-        toast.error(errors[0]?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, company.id, getPath, revalidator, t]
+    [carbon, company.id, getPath, revalidator, t]
   );
 
   const view = useCallback(

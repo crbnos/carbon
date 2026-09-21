@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { getCompanyPrivateBucket } from "@carbon/utils";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import {
   DuplicateFileNameError,
   MediaUploader,
@@ -86,8 +86,8 @@ export function useFileUpload(options: FileUploadOptions = {}) {
           // the user never mentioned. Plain same-name re-uploads keep the
           // replace-by-name behavior; only the masked case is refused.
           if (wasConvertedFromHeic(file)) {
-            const existing = await carbon.storage
-              .from(getCompanyPrivateBucket(company.id))
+            const existing = await storage(carbon)
+              .company(company.id)
               .info(targetPath);
             if (!existing.error && existing.data) {
               toast.error(
@@ -98,8 +98,8 @@ export function useFileUpload(options: FileUploadOptions = {}) {
             }
           }
           toast.info(t`Uploading ${file.name}`);
-          const result = await carbon.storage
-            .from(getCompanyPrivateBucket(company.id))
+          const result = await storage(carbon)
+            .company(company.id)
             .upload(targetPath, file, {
               cacheControl: `${12 * 60 * 60}`,
               upsert: true

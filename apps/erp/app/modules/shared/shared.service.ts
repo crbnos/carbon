@@ -1,6 +1,5 @@
 import type { Database, Tables } from "@carbon/database";
-import { getContentType, getFileExtension } from "@carbon/files";
-import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/utils";
+import { getContentType, getFileExtension, storage } from "@carbon/files";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -57,23 +56,11 @@ export async function getBase64ImageFromSupabase(
   const extension = getFileExtension(path);
   const heic = extension === "heic" || extension === "heif";
 
-  // Private object paths are prefixed with the owning company's id, which is
-  // that company's bucket; the legacy shared bucket is the fallback. Done
-  // inline rather than via downloadCompanyPrivateObject because the HEIC
-  // transform option has to reach the download call.
+  // Private object paths are prefixed with the owning company's id.
   const companyId = path.split("/")[0];
-  const options = heic ? { transform: { quality: 90 } } : undefined;
-  let data: Blob | null = null;
-  for (const bucket of [
-    getCompanyPrivateBucket(companyId),
-    LEGACY_PRIVATE_BUCKET
-  ]) {
-    const result = await client.storage.from(bucket).download(path, options);
-    if (!result.error && result.data) {
-      data = result.data;
-      break;
-    }
-  }
+  const { data } = await storage(client)
+    .company(companyId)
+    .download(path, heic ? { transform: { quality: 90 } } : undefined);
   if (!data) {
     return null;
   }

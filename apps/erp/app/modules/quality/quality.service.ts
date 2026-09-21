@@ -1,10 +1,10 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime, listCompanyPrivateObjects } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import type { FileObject } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -1145,12 +1145,10 @@ export async function getQualityFiles(
   id: string,
   companyId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/quality/${id}`
-  });
-  return result.data as FileObject[];
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/quality/${id}`);
+  return result.data ?? [];
 }
 
 export async function getRequiredActionsList(

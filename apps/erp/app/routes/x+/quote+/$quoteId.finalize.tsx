@@ -9,15 +9,12 @@ import {
   evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { Violation } from "@carbon/utils";
-import {
-  createCompanyPrivateSignedUrl,
-  datetime,
-  getCompanyPrivateBucket
-} from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -146,8 +143,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await client.storage
-      .from(getCompanyPrivateBucket(companyId))
+    const documentFileUpload = await storage(client)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -271,17 +268,13 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { signedUrl, errors: signedUrlErrors } =
-          await createCompanyPrivateSignedUrl({
-            storage: client.storage,
-            companyId,
-            objectPath: documentFilePath,
-            expiresIn: 3600
-          });
-        if (!signedUrl) {
+        const signed = await storage(client)
+          .company(companyId)
+          .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
           logger.error("Failed to create signed URL for attachment", {
             storagePath: documentFilePath,
-            errors: signedUrlErrors
+            error: signed.error
           });
         }
 
@@ -292,10 +285,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Quote ${getQuoteDisplayId(quote.data)}`,
           html,
           text,
-          attachments: signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

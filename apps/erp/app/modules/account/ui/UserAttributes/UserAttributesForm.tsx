@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -8,7 +9,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
@@ -769,10 +769,9 @@ function FileAttributeForm({
     toast.info(t`Uploading ${fileUpload.name}`);
 
     const fileName = `${company.id}/person/${userId}/${fileUpload.name}`;
-    const bucket = getCompanyPrivateBucket(company.id);
 
-    const upload = await carbon?.storage
-      .from(bucket)
+    const upload = await storage(carbon)
+      .company(company.id)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true

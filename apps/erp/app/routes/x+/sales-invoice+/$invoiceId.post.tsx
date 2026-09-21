@@ -9,6 +9,7 @@ import {
   evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -21,11 +22,7 @@ import {
   retrieveConnectCustomer,
   upsertConnectCustomer
 } from "@carbon/stripe/connect.server";
-import {
-  createCompanyPrivateSignedUrl,
-  datetime,
-  getCompanyPrivateBucket
-} from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -96,8 +93,8 @@ async function storeStripeInvoicePdf({
   );
   const filePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const upload = await serviceRole.storage
-    .from(getCompanyPrivateBucket(companyId))
+  const upload = await storage(serviceRole)
+    .company(companyId)
     .upload(filePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -753,8 +750,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${salesInvoice.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await serviceRole.storage
-      .from(getCompanyPrivateBucket(companyId))
+    const documentFileUpload = await storage(serviceRole)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -901,17 +898,13 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { signedUrl, errors: signedUrlErrors } =
-          await createCompanyPrivateSignedUrl({
-            storage: serviceRole.storage,
-            companyId,
-            objectPath: documentFilePath,
-            expiresIn: 3600
-          });
-        if (!signedUrl) {
+        const signed = await storage(serviceRole)
+          .company(companyId)
+          .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
           logger.error("Failed to create signed URL for attachment", {
             storagePath: documentFilePath,
-            errors: signedUrlErrors
+            error: signed.error
           });
         }
 
@@ -922,10 +915,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Invoice ${salesInvoice.data.invoiceId} from ${company.data.name}`,
           html,
           text,
-          attachments: signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

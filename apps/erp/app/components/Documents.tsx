@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -22,10 +22,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import {
-  MODEL_RAW_KEEP_MAX_BYTES,
-  removeCompanyPrivateObjects
-} from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -112,25 +109,23 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      if (!carbon?.storage) {
+      if (!carbon) {
         toast.error(t`Error deleting file`);
         return;
       }
-      const { errors } = await removeCompanyPrivateObjects({
-        storage: carbon.storage,
-        companyId: company.id,
-        objectPaths: [getReadPath(file)]
-      });
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([getReadPath(file)]);
 
-      if (errors.length > 0) {
-        toast.error(errors[0]?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t, company.id]
+    [carbon, getReadPath, revalidator, t, company.id]
   );
 
   const downloadModel = useCallback(

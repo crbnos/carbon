@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
 import { toast } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useMemo } from "react";
@@ -47,8 +47,8 @@ export function useImageUpload(directory: string) {
       const fileType = upload.name.split(".").pop();
       const fileName = `${company.id}/${directory}/${nanoid()}.${fileType}`;
 
-      const result = await carbon.storage
-        .from(getCompanyPrivateBucket(company.id))
+      const result = await storage(carbon)
+        .company(company.id)
         .upload(fileName, upload);
 
       if (result.error) {

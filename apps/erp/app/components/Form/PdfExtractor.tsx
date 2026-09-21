@@ -1,6 +1,6 @@
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuCircleCheck } from "react-icons/lu";
@@ -88,10 +88,9 @@ export function PdfExtractor({
     setUploadedFileName(file.name);
     setUploading(true);
     const storagePath = `${company.id}/extractions/${Date.now()}_${file.name}`;
-    const bucket = getCompanyPrivateBucket(company.id);
 
-    const { error } = await supabase.storage
-      .from(bucket)
+    const { error } = await storage(supabase)
+      .company(company.id)
       .upload(storagePath, file);
 
     if (error) {

@@ -1,16 +1,15 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
-  listCompanyPrivateObjects,
   round
 } from "@carbon/utils";
-import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestResponse,
@@ -652,21 +651,18 @@ export async function getSupplierInteractionDocuments(
   companyId: string,
   interactionId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/supplier-interaction/${interactionId}`
-  });
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/supplier-interaction/${interactionId}`);
 
-  // A single-bucket miss is expected during the legacy fallback window.
-  if (result.errors.length >= 2) {
+  if (result.error) {
     logger.error("Failed to list supplier interaction documents", {
-      errors: result.errors
+      error: result.error
     });
     return [];
   }
 
-  return (result.data as FileObject[]).map((f) => ({
+  return result.data.map((f) => ({
     ...f,
     bucket: "supplier-interaction"
   }));
@@ -677,21 +673,18 @@ export async function getSupplierInteractionLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/supplier-interaction-line/${lineId}`
-  });
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/supplier-interaction-line/${lineId}`);
 
-  // A single-bucket miss is expected during the legacy fallback window.
-  if (result.errors.length >= 2) {
+  if (result.error) {
     logger.error("Failed to list supplier interaction line documents", {
-      errors: result.errors
+      error: result.error
     });
     return [];
   }
 
-  return (result.data as FileObject[]).map((f) => ({
+  return result.data.map((f) => ({
     ...f,
     bucket: "supplier-interaction-line"
   }));
@@ -3084,19 +3077,13 @@ export async function getDefaultAttachmentsForPO(
   }
 
   const results = await Promise.all(
-    prefixes.map(({ path }) =>
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: path
-      })
-    )
+    prefixes.map(({ path }) => storage(client).company(companyId).list(path))
   );
 
   return results.flatMap((result, idx) => {
     const { source, path: prefix } = prefixes[idx];
     // the union helper's structural type omits supabase's metadata field
-    return (result.data as FileObject[]).map((f) => ({
+    return (result.data ?? []).map((f) => ({
       source,
       name: f.name,
       size:

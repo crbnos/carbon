@@ -1,10 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { modelPathOptimizeFormat } from "@carbon/files/cad";
-import {
-  getCompanyPrivateBucket,
-  listCompanyPrivateObjects
-} from "@carbon/utils";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
@@ -192,8 +189,8 @@ export const modelOptimizeFunction = inngest.createFunction(
       },
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
-        const upload = await client.storage
-          .from(getCompanyPrivateBucket(companyId))
+        const upload = await storage(client)
+          .company(companyId)
           .createSignedUploadUrl(optimizedPath, { upsert: true });
         const urls: Record<string, string> = {};
         if (upload.data)
@@ -209,16 +206,10 @@ export const modelOptimizeFunction = inngest.createFunction(
       // it via the late-mint URL, so the job never holds the bytes) to surface
       // the reduction against the untouched source `size`.
       const dir = `${companyId}/models/${modelUploadId}`;
-      const listed = await listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: dir,
-        options: { search: "optimized.glb" }
-      });
-      // the union helper's structural type omits supabase's metadata field
-      const optimized = listed.data.find((o) => o.name === "optimized.glb") as
-        | { metadata?: { size?: number } }
-        | undefined;
+      const listed = await storage(client)
+        .company(companyId)
+        .list(dir, { search: "optimized.glb" });
+      const optimized = listed.data?.find((o) => o.name === "optimized.glb");
       const optimizedSize = optimized?.metadata?.size ?? null;
 
       await client

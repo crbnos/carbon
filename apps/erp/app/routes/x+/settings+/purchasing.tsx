@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import {
   Input,
   PhoneInput,
@@ -25,7 +26,6 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { listCompanyPrivateObjects } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
@@ -70,11 +70,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await Promise.all([
       getCompanySettings(client, companyId),
       getAccountsPayableBillingAddress(client, companyId),
-      listCompanyPrivateObjects({
-        storage: client.storage,
-        companyId,
-        prefix: `${companyId}/default-attachments/company`
-      })
+      storage(client)
+        .company(companyId)
+        .list(`${companyId}/default-attachments/company`)
     ]);
 
   if (companySettings.error) {

@@ -11,16 +11,13 @@ import {
   hasPendingApproval,
   isApprovalRequired
 } from "@carbon/ee/approvals.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import {
-  createCompanyPrivateSignedUrl,
-  getCompanyPrivateBucket,
-  PO_EMAIL_ATTACHMENT_LIMIT_MB
-} from "@carbon/utils";
+import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
@@ -249,8 +246,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
 
-    const documentFileUpload = await serviceRole.storage
-      .from(getCompanyPrivateBucket(companyId))
+    const documentFileUpload = await storage(serviceRole)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -383,21 +380,18 @@ export async function action(args: ActionFunctionArgs) {
           );
           for (const doc of docs) {
             const storagePath = `${companyId}/supplier-interaction/${interactionId}/${doc.name}`;
-            const { signedUrl, errors } = await createCompanyPrivateSignedUrl({
-              storage: serviceRole.storage,
-              companyId,
-              objectPath: storagePath,
-              expiresIn: 3600
-            });
-            if (signedUrl) {
+            const { data, error } = await storage(serviceRole)
+              .company(companyId)
+              .createSignedUrl(storagePath, 3600);
+            if (data) {
               attachments.push({
                 filename: doc.name,
-                path: signedUrl
+                path: data.signedUrl
               });
             } else {
               logger.error("Failed to create signed URL for attachment", {
                 storagePath,
-                errors
+                error
               });
             }
           }
@@ -417,21 +411,18 @@ export async function action(args: ActionFunctionArgs) {
         });
 
         for (const r of defaults) {
-          const { signedUrl, errors } = await createCompanyPrivateSignedUrl({
-            storage: serviceRole.storage,
-            companyId,
-            objectPath: r.path,
-            expiresIn: 3600
-          });
-          if (signedUrl) {
+          const { data, error } = await storage(serviceRole)
+            .company(companyId)
+            .createSignedUrl(r.path, 3600);
+          if (data) {
             attachments.push({
               filename: r.name,
-              path: signedUrl
+              path: data.signedUrl
             });
           } else {
             logger.error("Failed to create signed URL for attachment", {
               storagePath: r.path,
-              errors
+              error
             });
           }
         }

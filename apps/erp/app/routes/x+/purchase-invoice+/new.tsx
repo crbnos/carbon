@@ -2,12 +2,9 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
-import {
-  deriveRate,
-  getCompanyPrivateBucket,
-  taxableBase
-} from "@carbon/utils";
+import { deriveRate, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -207,8 +204,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const safeFilename = stripSpecialCharacters(originalFilename);
           const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
 
-          const copyResult = await client.storage
-            .from(getCompanyPrivateBucket(companyId))
+          const copyResult = await storage(client)
+            .company(companyId)
             .copy(extractedStoragePath, newStoragePath);
 
           if (!copyResult.error) {

@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";

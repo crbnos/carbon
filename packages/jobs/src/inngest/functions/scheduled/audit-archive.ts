@@ -3,8 +3,9 @@ import { CONTROLLED_ENVIRONMENT } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { auditConfig } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { datetime, getCompanyPrivateBucket } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { inngest } from "../../client";
 
 const log = getLogger("jobs", "audit-archive");

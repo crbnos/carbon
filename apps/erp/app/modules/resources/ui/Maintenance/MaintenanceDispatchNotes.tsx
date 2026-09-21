@@ -1,9 +1,9 @@
 import { useCarbon } from "@carbon/auth";
-import { removeCompanyPrivateObjects } from "@carbon/utils";
 import {
   convertKbToString,
   downloadBlob,
-  isPreviewableDocumentType
+  isPreviewableDocumentType,
+  storage
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -230,14 +230,12 @@ function MaintenanceFilesContent({
       }
 
       const filePath = getFilePath(file.name);
-      const { errors } = await removeCompanyPrivateObjects({
-        storage: carbon.storage,
-        companyId: company.id,
-        objectPaths: [filePath]
-      });
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([filePath]);
 
-      if (errors.length > 0) {
-        toast.error(errors[0]?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 

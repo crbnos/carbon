@@ -1,4 +1,5 @@
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import {
   Hidden,
@@ -21,7 +22,6 @@ import {
   useMode,
   VStack
 } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import data from "@emoji-mart/data";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
@@ -123,9 +123,8 @@ const Suggestion = () => {
 
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const storagePath = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
-      const bucket = getCompanyPrivateBucket(companyId);
-      const imageUpload = await carbon.storage
-        .from(bucket)
+      const imageUpload = await storage(carbon)
+        .company(companyId)
         .upload(storagePath, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true

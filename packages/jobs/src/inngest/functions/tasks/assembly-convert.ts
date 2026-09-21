@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { getCompanyPrivateBucket } from "@carbon/utils";
+import { storage } from "@carbon/files";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
@@ -173,11 +173,11 @@ export const assemblyConvertFunction = inngest.createFunction(
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
         const [glbUpload, graphUpload] = await Promise.all([
-          client.storage
-            .from(getCompanyPrivateBucket(companyId))
+          storage(client)
+            .company(companyId)
             .createSignedUploadUrl(glbPath, { upsert: true }),
-          client.storage
-            .from(getCompanyPrivateBucket(companyId))
+          storage(client)
+            .company(companyId)
             .createSignedUploadUrl(graphPath, { upsert: true })
         ]);
         const urls: Record<string, string> = {};

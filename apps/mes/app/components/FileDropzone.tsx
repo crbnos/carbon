@@ -1,7 +1,7 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
 import { cn, toast } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { useState } from "react";

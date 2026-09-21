@@ -10,7 +10,7 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
-import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/utils";
+import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 

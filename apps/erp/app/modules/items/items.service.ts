@@ -6,12 +6,9 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import {
-  datetime,
-  listCompanyPrivateObjects
-} from "@carbon/utils";
-import type { FileObject } from "@supabase/storage-js";
+import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -792,12 +789,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/parts/${itemId}`
-  });
-  return result.data as FileObject[];
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/parts/${itemId}`);
+  return result.data ?? [];
 }
 
 export async function getItemPostingGroup(

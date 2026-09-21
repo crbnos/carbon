@@ -38,7 +38,6 @@ export * from "./sales-posting-amounts";
 export * from "./ssr";
 export * from "./status";
 export * from "./status-colors";
-export * from "./storage";
 export * from "./string";
 export * from "./supabase";
 export * from "./tax";

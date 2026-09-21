@@ -2484,6 +2484,9 @@ importers:
       '@jsquash/webp':
         specifier: 1.5.0
         version: 1.5.0
+      '@supabase/storage-js':
+        specifier: 'catalog:'
+        version: 2.80.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -2858,6 +2861,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/kv':
         specifier: workspace:*
         version: link:../kv

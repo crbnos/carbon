@@ -10,3 +10,4 @@ export {
   isPreviewableDocumentType,
   MEDIA_CONTENT_TYPES
 } from "./media/media";
+export * from "./storage";

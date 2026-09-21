@@ -24,6 +24,7 @@
     "@jsquash/png": "3.1.1",
     "@jsquash/resize": "2.1.1",
     "@jsquash/webp": "1.5.0",
+    "@supabase/storage-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "libheif-js": "1.23.2",
     "nanoid": "catalog:",

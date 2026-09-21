@@ -1,9 +1,9 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
-import { listCompanyPrivateObjects } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
@@ -23,7 +23,6 @@ import {
   MaintenanceDispatchNotes
 } from "~/modules/resources/ui/Maintenance/MaintenanceDispatchNotes";
 import MaintenanceDispatchProperties from "~/modules/resources/ui/Maintenance/MaintenanceDispatchProperties";
-import type { StorageItem } from "~/types";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -40,13 +39,10 @@ async function getMaintenanceDispatchFiles(
   companyId: string,
   dispatchId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/maintenance/${dispatchId}`
-  });
-  // the union helper's structural type omits supabase's FileObject fields
-  return (result.data || []) as StorageItem[];
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/maintenance/${dispatchId}`);
+  return result.data ?? [];
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

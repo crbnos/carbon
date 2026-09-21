@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -9,7 +10,6 @@ import {
   datetime,
   EPSILON,
   getSalesReturnOrderStatus,
-  listCompanyPrivateObjects,
   round
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
@@ -1148,21 +1148,18 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/opportunity/${opportunityId}`
-  });
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/opportunity/${opportunityId}`);
 
-  // A single-bucket miss is expected during the legacy fallback window.
-  if (result.errors.length >= 2) {
+  if (result.error) {
     logger.error("Failed to list opportunity documents", {
-      error: result.errors[0]?.error
+      error: result.error
     });
     return [];
   }
 
-  return (result.data as FileObject[]).map((f) => ({
+  return result.data.map((f) => ({
     ...f,
     bucket: "opportunity"
   }));
@@ -1175,39 +1172,30 @@ export async function getOpportunityLineDocuments(
   itemId?: string | null
 ) {
   const [opportunityLineResult, itemResult] = await Promise.all([
-    listCompanyPrivateObjects({
-      storage: client.storage,
-      companyId,
-      prefix: `${companyId}/opportunity-line/${lineId}`
-    }),
+    storage(client)
+      .company(companyId)
+      .list(`${companyId}/opportunity-line/${lineId}`),
     itemId
-      ? listCompanyPrivateObjects({
-          storage: client.storage,
-          companyId,
-          prefix: `${companyId}/parts/${itemId}`
-        })
-      : Promise.resolve({ data: [] as any[], errors: [] })
+      ? storage(client).company(companyId).list(`${companyId}/parts/${itemId}`)
+      : Promise.resolve({ data: [] as FileObject[], error: null })
   ]);
 
-  // A single-bucket miss is expected during the legacy fallback window.
-  if (opportunityLineResult.errors.length >= 2) {
+  if (opportunityLineResult.error) {
     logger.error("Failed to list opportunity line documents", {
-      error: opportunityLineResult.errors[0]?.error
+      error: opportunityLineResult.error
     });
   }
-  if (itemResult.errors.length >= 2) {
+  if (itemResult.error) {
     logger.error("Failed to list item documents", {
-      error: itemResult.errors[0]?.error
+      error: itemResult.error
     });
   }
 
-  const opportunityLineDocs = (opportunityLineResult.data as FileObject[]).map(
-    (f) => ({
-      ...f,
-      bucket: "opportunity-line"
-    })
-  );
-  const itemDocs = (itemResult.data as FileObject[]).map((f) => ({
+  const opportunityLineDocs = (opportunityLineResult.data ?? []).map((f) => ({
+    ...f,
+    bucket: "opportunity-line"
+  }));
+  const itemDocs = (itemResult.data ?? []).map((f) => ({
     ...f,
     bucket: "parts"
   }));

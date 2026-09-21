@@ -51,7 +51,6 @@ pnpm --filter @carbon/utils typecheck
 | `rules` | Rule engine: condition AST, the shared `Operator` vocabulary, JIT-compiled evaluator + surfaces for storage rules and sales rules |
 | `rule-filters` | Item scoping for broadcast rules (`ItemFilter`, `ruleAppliesToItem`, `toItemFilter`) — family-neutral, split out of `rules.ts` |
 | `rules-schema` | Zod mirror of the rule AST (`conditionAstSchema`, `conditionAstFormField`, `RULE_OPERATORS`/`RULE_MATCH_KINDS`/`RULE_SEVERITIES`). Shared by both ERP rule form validators so neither module imports the other |
-| `storage` | Company-private file-storage contract: `getCompanyPrivateBucket` (bucket id = companyId; THROWS on an empty id — never resolves bucket `""`), `buildCompanyPrivateStorageTarget` (object keys keep the `companyId/` prefix), `LEGACY_PRIVATE_BUCKET`, and the fallback-aware helpers (`downloadCompanyPrivateObject` / `createCompanyPrivateSignedUrl` — both REFUSE an `objectPath` outside `${companyId}/`, since under a service-role client that prefix is the only tenant boundary on the shared legacy bucket; `listCompanyPrivateObjects` — unions both buckets; `removeCompanyPrivateObjects` — deletes from both). All legacy-bucket fallback lives here so removing it later is a one-file change |
 | `supabase` | Typed Supabase query helpers |
 | `types` | Shared TypeScript types (`Edition`, generic utility types) |
 | `field-registry` | Fields a rule may test, which operators each one allows, and which fields the builder/evaluator may reference |

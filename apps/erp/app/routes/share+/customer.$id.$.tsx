@@ -1,13 +1,14 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import {
+  getContentType,
+  hasCompanyPrivateObjectPathPrefix,
+  MEDIA_CONTENT_TYPES,
+  storage
+} from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import {
-  downloadCompanyPrivateObject,
-  hasCompanyPrivateObjectPathPrefix
-} from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
@@ -102,13 +103,11 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const contentType = getContentType(fileType);
 
   async function downloadFile() {
-    const result = await downloadCompanyPrivateObject({
-      storage: serviceRole.storage,
-      companyId: shareCompanyId,
-      objectPath: `${path}`
-    });
+    const result = await storage(serviceRole)
+      .company(shareCompanyId)
+      .download(`${path}`);
     if (!result.data) {
-      logger.error("Failed to download file", { errors: result.errors });
+      logger.error("Failed to download file", { error: result.error });
       return null;
     }
     return result.data;

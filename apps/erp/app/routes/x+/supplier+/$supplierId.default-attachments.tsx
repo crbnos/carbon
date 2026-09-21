@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { listCompanyPrivateObjects } from "@carbon/utils";
+import { storage } from "@carbon/files";
 import { Trans } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "react-router";
@@ -13,11 +13,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw new Error("Missing supplierId");
 
-  const result = await listCompanyPrivateObjects({
-    storage: client.storage,
-    companyId,
-    prefix: `${companyId}/default-attachments/supplier/${supplierId}`
-  });
+  const result = await storage(client)
+    .company(companyId)
+    .list(`${companyId}/default-attachments/supplier/${supplierId}`);
 
   return {
     supplierId,

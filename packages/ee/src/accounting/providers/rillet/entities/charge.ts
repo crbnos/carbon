@@ -1,4 +1,4 @@
-import { downloadCompanyPrivateObject } from "@carbon/utils";
+import { storage } from "@carbon/files";
 import {
   type CardChargeSource,
   chargeLineDescription,
@@ -350,19 +350,15 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
       const { getCarbonServiceRole } = await import(
         "@carbon/auth/client.server"
       );
-      const storage = getCarbonServiceRole().storage;
+      const bucket = storage(getCarbonServiceRole()).company(this.companyId);
       for (const document of documents) {
         // Falls back to the legacy shared bucket, so a receipt stored before
         // the per-company copy ran still reaches Rillet.
-        const downloaded = await downloadCompanyPrivateObject({
-          storage,
-          companyId: this.companyId,
-          objectPath: document.path
-        });
+        const downloaded = await bucket.download(document.path);
         if (!downloaded.data) {
           console.warn(
             `[rillet] charge ${localId}: could not download receipt ${document.path}`,
-            downloaded.errors
+            downloaded.error
           );
           continue;
         }

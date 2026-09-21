@@ -1,13 +1,14 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { effectiveExtension, getContentType } from "@carbon/files";
-import { getLogger } from "@carbon/logger";
-import type { StorageClientLike } from "@carbon/utils";
+import type { CompanyBucket } from "@carbon/files";
 import {
-  downloadCompanyPrivateObject,
+  effectiveExtension,
   getCompanyPrivateBucket,
-  LEGACY_PRIVATE_BUCKET
-} from "@carbon/utils";
+  getContentType,
+  LEGACY_PRIVATE_BUCKET,
+  storage
+} from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
 const logger = getLogger("erp", "bucket");
@@ -64,47 +65,31 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   }
 
   const serviceRole = await getCarbonServiceRole();
+  // A company-private request reads the company bucket with legacy fallback;
+  // any other bucket is read as-is.
+  const source: Pick<CompanyBucket, "download"> = isPrivateBucket
+    ? storage(serviceRole).company(companyId)
+    : storage(serviceRole).from(bucket);
 
   async function downloadFile() {
-    if (!path || !bucket) throw new Error("Path not found");
+    if (!path) throw new Error("Path not found");
     if (isHeicFile) {
-      // Transform needs a concrete bucket, so resolve the company bucket the
-      // same way downloadCompanyPrivateObject does (company first, then the
-      // legacy shared bucket) instead of assuming the requested id.
-      const candidates = isPrivateBucket
-        ? [getCompanyPrivateBucket(companyId), LEGACY_PRIVATE_BUCKET]
-        : [bucket];
-      for (const candidate of candidates) {
-        const transformed = await serviceRole.storage
-          .from(candidate)
-          .download(path, { transform: { quality: 85 } });
-        if (!transformed.error) {
-          // imgproxy may negotiate webp via Accept — trust the blob, not the path
-          contentType = transformed.data.type || "image/jpeg";
-          return transformed.data;
-        }
-        // No imgproxy (stale self-host stack) — fall through to the raw bytes;
-        // Safari can still render them.
-        logger.error(transformed.error);
+      const transformed = await source.download(path, {
+        transform: { quality: 85 }
+      });
+      if (!transformed.error) {
+        // imgproxy may negotiate webp via Accept — trust the blob, not the path
+        contentType = transformed.data.type || "image/jpeg";
+        return transformed.data;
       }
+      // No imgproxy (stale self-host stack) — fall through to the raw bytes;
+      // Safari can still render them.
+      logger.error(transformed.error);
     }
     // Use the original encoded path for the storage API call
-    if (!isPrivateBucket) {
-      const direct = await serviceRole.storage.from(bucket).download(path);
-      if (direct.error || !direct.data) {
-        logger.error("Failed to download file", { error: direct.error });
-        return null;
-      }
-      return direct.data;
-    }
-    const result = await downloadCompanyPrivateObject({
-      // supabase-js storage option params don't structurally match StorageClientLike
-      storage: serviceRole.storage as StorageClientLike,
-      companyId,
-      objectPath: path
-    });
-    if (!result.data) {
-      logger.error("Failed to download file", { errors: result.errors });
+    const result = await source.download(path);
+    if (result.error) {
+      logger.error("Failed to download file", { error: result.error });
       return null;
     }
     return result.data;

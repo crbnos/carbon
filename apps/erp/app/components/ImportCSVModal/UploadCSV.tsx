@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { downloadText } from "@carbon/files";
+import { downloadText, storage } from "@carbon/files";
 import {
   CSV_CONTENT_TYPE,
   encodeCsvTable,
@@ -15,7 +15,6 @@ import {
   Spinner,
   toast
 } from "@carbon/react";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { useCallback, useState } from "react";
@@ -132,10 +131,8 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
       setLoading(false);
       return;
     }
-
-    const bucket = getCompanyPrivateBucket(company.id);
-    const { data, error } = await carbon.storage
-      .from(bucket)
+    const { data, error } = await storage(carbon)
+      .company(company.id)
       .upload(fileName, file);
 
     if (error) {

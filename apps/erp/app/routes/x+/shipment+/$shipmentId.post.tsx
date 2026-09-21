@@ -9,12 +9,13 @@ import {
   isBlocked,
   resolveSalesOrderShipTo
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { datetime, getCompanyPrivateBucket } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -307,8 +308,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
             const documentFilePath = `${companyId}/opportunity/${salesOrder.opportunityId}/${fileName}`;
 
             // Upload the PDF to storage
-            const documentFileUpload = await serviceRole.storage
-              .from(getCompanyPrivateBucket(companyId))
+            const documentFileUpload = await storage(serviceRole)
+              .company(companyId)
               .upload(documentFilePath, file, {
                 cacheControl: `${12 * 60 * 60}`,
                 contentType: "application/pdf",

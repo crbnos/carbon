@@ -1,11 +1,11 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   isHeic,
   prepareImageUpload
 } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
-import { getCompanyPrivateBucket } from "@carbon/utils";
 import {
   Avatar,
   Button,

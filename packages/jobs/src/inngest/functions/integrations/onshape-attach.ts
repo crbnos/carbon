@@ -1,6 +1,6 @@
 import { openAsBlob } from "node:fs";
 import type { Database } from "@carbon/database";
-import { getCompanyPrivateBucket } from "@carbon/utils";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
@@ -247,8 +247,8 @@ export async function attachModelThumbnail(
   input: { companyId: string; modelUploadId: string; pngBytes: Uint8Array }
 ): Promise<void> {
   const thumbnailPath = `${input.companyId}/thumbnails/${input.modelUploadId}/${input.modelUploadId}.png`;
-  const uploaded = await carbon.storage
-    .from(getCompanyPrivateBucket(input.companyId))
+  const uploaded = await storage(carbon)
+    .company(input.companyId)
     .upload(thumbnailPath, input.pngBytes, {
       upsert: true,
       contentType: "image/png"
@@ -509,8 +509,8 @@ export async function attachOnshapeAssetsToItem(
     const safeName = stripSpecialCharacters(document.fileName);
     const documentPath = `${companyId}/parts/${itemId}/${safeName}`;
 
-    const documentUpload = await carbon.storage
-      .from(getCompanyPrivateBucket(companyId))
+    const documentUpload = await storage(carbon)
+      .company(companyId)
       .upload(documentPath, document.bytes, { upsert: true });
     if (documentUpload.error) {
       throw new Error(
