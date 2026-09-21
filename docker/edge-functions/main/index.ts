@@ -6,6 +6,11 @@ console.log('main function started')
 const JWT_SECRET = Deno.env.get('JWT_SECRET')
 const VERIFY_JWT = Deno.env.get('VERIFY_JWT') === 'true'
 
+// An empty key would accept any token signed with an empty key.
+if (VERIFY_JWT && !JWT_SECRET) {
+  throw new Error('VERIFY_JWT is on but JWT_SECRET is empty')
+}
+
 function getAuthToken(req: Request) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader) {
@@ -60,6 +65,15 @@ serve(async (req: Request) => {
     const error = { msg: 'missing function name in request' }
     return new Response(JSON.stringify(error), {
       status: 400,
+      headers: { 'Content-Type': 'application/json' },
+    })
+  }
+
+  // main is this dispatcher. Served as a function, it would start itself,
+  // and that copy would start another, until the runtime gave out.
+  if (service_name === 'main') {
+    return new Response(JSON.stringify({ msg: 'function not found' }), {
+      status: 404,
       headers: { 'Content-Type': 'application/json' },
     })
   }

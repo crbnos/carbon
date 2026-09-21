@@ -41,12 +41,12 @@ jobs:
       matrix:
         image: [erp, mes, ops, edge-functions, assembler]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
         with:
           fetch-depth: 2
 
       - if: vars.IMAGE_AWS_REGION != ''
-        uses: aws-actions/configure-aws-credentials@v4
+        uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4.3.1
         with:
           aws-region: ${{ vars.IMAGE_AWS_REGION }}
           role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
@@ -57,14 +57,14 @@ jobs:
         run: echo "host=${REGISTRY%%/*}" >> "$GITHUB_OUTPUT"
 
       # ECR logs in from the AWS credentials above when no password is given.
-      - uses: docker/login-action@v3
+      - uses: docker/login-action@c94ce9fb468520275223c153574b00df6fe4bcc9 # v3.7.0
         with:
           registry: ${{ steps.host.outputs.host }}
-          username: ${{ secrets.IMAGE_REGISTRY_USERNAME || (startsWith(vars.IMAGE_REGISTRY, 'ghcr.io/') && github.actor) || '' }}
-          password: ${{ secrets.IMAGE_REGISTRY_PASSWORD || (startsWith(vars.IMAGE_REGISTRY, 'ghcr.io/') && secrets.GITHUB_TOKEN) || '' }}
+          username: ${{ secrets.IMAGE_REGISTRY_USERNAME || (steps.host.outputs.host == 'ghcr.io' && github.actor) || '' }}
+          password: ${{ secrets.IMAGE_REGISTRY_PASSWORD || (steps.host.outputs.host == 'ghcr.io' && secrets.GITHUB_TOKEN) || '' }}
 
       - id: buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - id: plan
         run: .github/scripts/build-images.sh ${{ matrix.image }}
@@ -82,7 +82,7 @@ jobs:
       # The assembler links a prebuilt OCCT base; built here only when this
       # registry does not have the one its sources describe.
       - if: steps.plan.outputs.occt_build == 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
           context: apps/assembler
           file: apps/assembler/occt.Dockerfile
@@ -95,21 +95,21 @@ jobs:
       # start empty on every runner; carry them between runs. Keyed by
       # commit and restored from the newest, so each run saves what it adds.
       - if: steps.plan.outputs.action == 'build'
-        uses: actions/cache@v4
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0
         with:
           path: cache-mounts
           key: cache-mounts-${{ matrix.image }}-${{ github.sha }}
           restore-keys: cache-mounts-${{ matrix.image }}-
 
       - if: steps.plan.outputs.action == 'build'
-        uses: reproducible-containers/buildkit-cache-dance@v3
+        uses: reproducible-containers/buildkit-cache-dance@5422eac04292c961a382e0f584ea0f03ad9da723 # v3.4.0
         with:
           builder: ${{ steps.buildx.outputs.name }}
           cache-dir: cache-mounts
           dockerfile: ${{ steps.plan.outputs.file }}
 
       - if: steps.plan.outputs.action == 'build'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@ca052bb54ab0790a636c9b5f226502c73d547a25 # v5.4.0
         with:
           context: .
           file: ${{ steps.plan.outputs.file }}
