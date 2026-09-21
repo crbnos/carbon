@@ -1,11 +1,12 @@
-name: BYOC images
+name: Build images
 
-# Makes every commit on main releasable to BYOC customers.
+# Gives every commit on main a complete set of images, tagged with the
+# commit's full SHA: erp, mes, ops, edge-functions, assembler.
 #
-# A BYOC release pins five images from ONE commit, found in the commercial
-# ECR by that commit's full SHA: erp, mes, ops, edge-functions, assembler.
-# The other workflows each build only when their own files change, so on
-# their own almost no commit has all five. This gives every commit the set:
+# A BYOC release pins all five from ONE commit, so a commit is releasable
+# only once every image has its tag. The deploy workflows each build only
+# when their own files change, so on their own almost no commit has all
+# five. This gives every commit the set:
 #
 #   - an image whose files changed is built and pushed as :<sha>
 #   - an image whose files did not is tagged :<sha> from the previous
@@ -26,7 +27,7 @@ on:
 # written. A superseded pending run is dropped; the next one sees a missing
 # previous tag and builds, which is slower but still right.
 concurrency:
-  group: byoc-images
+  group: build-images
   cancel-in-progress: false
 
 permissions:
@@ -158,5 +159,5 @@ jobs:
           tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
           platforms: linux/amd64
           provenance: false
-          cache-from: type=gha,scope=byoc-${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=byoc-${{ matrix.name }}
+          cache-from: type=gha,scope=image-${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=image-${{ matrix.name }}
