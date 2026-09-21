@@ -3,11 +3,14 @@
 # commit's image (its files did not change), or skip (already tagged).
 # Writes action, image, from, file, target and args to $GITHUB_OUTPUT.
 #
-#   REGISTRY=… SHA=… [BEFORE=…] build-images.sh <image>
+#   REGISTRY=… SHA=… [BEFORE=…] [OCCT_IMAGE=…] build-images.sh <image>
+#
+# REGISTRY is any OCI registry the runner is logged into, with an optional
+# namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.….
 set -euo pipefail
 
 name=${1:?usage: build-images.sh <image>}
-repo="carbon/$name"
+image="$REGISTRY/carbon/$name"
 target=""
 args=""
 
@@ -32,7 +35,7 @@ case "$name" in
     ;;
   assembler)
     file=apps/assembler/Dockerfile
-    args="OCCT_IMAGE=$REGISTRY/carbon/occt:8.0.0-p1"
+    args="OCCT_IMAGE=${OCCT_IMAGE:-$REGISTRY/carbon/occt:8.0.0-p1}"
     paths=(.dockerignore apps/assembler crates Cargo.toml Cargo.lock)
     ;;
   *)
@@ -42,19 +45,23 @@ case "$name" in
 esac
 
 out() { echo "$1=$2" >>"$GITHUB_OUTPUT"; }
-has_tag() { aws ecr describe-images --repository-name "$repo" --image-ids imageTag="$1" >/dev/null 2>&1; }
+has_tag() { docker buildx imagetools inspect "$image:$1" >/dev/null 2>&1; }
 
-aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 ||
-  aws ecr create-repository --repository-name "$repo" \
-    --image-scanning-configuration scanOnPush=true >/dev/null
+# ECR is the one registry that will not create a repository on first push.
+if [[ $REGISTRY =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com ]]; then
+  repo=${image#*/}
+  aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 ||
+    aws ecr create-repository --repository-name "$repo" \
+      --image-scanning-configuration scanOnPush=true >/dev/null
+fi
 
-out image "$REGISTRY/$repo"
+out image "$image"
 out file "$file"
 out target "$target"
 printf 'args<<EOF\n%s\nEOF\n' "$args" >>"$GITHUB_OUTPUT"
 
 if has_tag "$SHA"; then
-  echo "$repo:$SHA exists"
+  echo "$image:$SHA exists"
   out action skip
   exit 0
 fi

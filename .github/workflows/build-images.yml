@@ -5,9 +5,15 @@ name: Build images
 # re-tagged from the previous commit instead of rebuilt. Forks run this
 # into their own registry.
 #
-# Configure vars.IMAGE_AWS_REGION (unset: nothing runs), plus either
-# vars.IMAGE_AWS_ROLE_ARN (OIDC) or secrets.IMAGE_AWS_ACCESS_KEY_ID and
-# secrets.IMAGE_AWS_SECRET_ACCESS_KEY.
+# Configure vars.IMAGE_REGISTRY — any OCI registry, with an optional
+# namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.<region>.
+# amazonaws.com. Unset, nothing runs. Then credentials for it:
+#   GHCR  none; the workflow token pushes to this repository's packages
+#   ECR   vars.IMAGE_AWS_REGION, and vars.IMAGE_AWS_ROLE_ARN (OIDC) or
+#         secrets.IMAGE_AWS_ACCESS_KEY_ID + IMAGE_AWS_SECRET_ACCESS_KEY
+#   other secrets.IMAGE_REGISTRY_USERNAME + IMAGE_REGISTRY_PASSWORD
+# vars.IMAGE_OCCT overrides where the assembler's OCCT base image is pulled
+# from (default <IMAGE_REGISTRY>/carbon/occt:8.0.0-p1).
 
 on:
   push:
@@ -22,11 +28,15 @@ concurrency:
 permissions:
   contents: read
   id-token: write
+  packages: write
+
+env:
+  REGISTRY: ${{ vars.IMAGE_REGISTRY }}
 
 jobs:
   image:
     name: carbon/${{ matrix.image }}
-    if: vars.IMAGE_AWS_REGION != ''
+    if: vars.IMAGE_REGISTRY != ''
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -37,24 +47,32 @@ jobs:
         with:
           fetch-depth: 2
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.IMAGE_AWS_REGION }}
           role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
           aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
 
-      - id: ecr
-        uses: aws-actions/amazon-ecr-login@v2
+      - id: host
+        run: echo "host=${REGISTRY%%/*}" >> "$GITHUB_OUTPUT"
+
+      # ECR logs in from the AWS credentials above when no password is given.
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ steps.host.outputs.host }}
+          username: ${{ secrets.IMAGE_REGISTRY_USERNAME || (startsWith(vars.IMAGE_REGISTRY, 'ghcr.io/') && github.actor) || '' }}
+          password: ${{ secrets.IMAGE_REGISTRY_PASSWORD || (startsWith(vars.IMAGE_REGISTRY, 'ghcr.io/') && secrets.GITHUB_TOKEN) || '' }}
 
       - uses: docker/setup-buildx-action@v3
 
       - id: plan
         run: .github/scripts/build-images.sh ${{ matrix.image }}
         env:
-          REGISTRY: ${{ steps.ecr.outputs.registry }}
           SHA: ${{ github.sha }}
           BEFORE: ${{ github.event.before }}
+          OCCT_IMAGE: ${{ vars.IMAGE_OCCT }}
 
       - if: steps.plan.outputs.action == 'retag'
         run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"
@@ -70,6 +88,11 @@ jobs:
           file: ${{ steps.plan.outputs.file }}
           target: ${{ steps.plan.outputs.target }}
           build-args: ${{ steps.plan.outputs.args }}
+          # source links a GHCR package to this repository, which is what
+          # lets the workflow token keep pushing to it.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
           push: true
           tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
           platforms: linux/amd64
