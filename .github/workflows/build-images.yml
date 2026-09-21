@@ -15,8 +15,21 @@ name: Build images
 #
 # Only :<sha> tags are written. :latest belongs to the hosted deploys.
 #
-# Secrets (the commercial account — the one assembler.yml calls prod):
-#   ASSEMBLER_AWS_ACCESS_KEY_ID, ASSEMBLER_AWS_SECRET_ACCESS_KEY, ASSEMBLER_AWS_REGION
+# A fork runs this too, into its own registry: the images a Carbon
+# environment runs come from whichever registry its source points at.
+#
+# Configuration — repository variables, plus one way to authenticate:
+#   vars.IMAGE_AWS_REGION       the ECR's region. Unset, the workflow does
+#                               nothing: a fork that has not opted in is
+#                               not failing on every push.
+#   vars.IMAGE_AWS_ROLE_ARN     preferred: a role GitHub assumes by OIDC,
+#                               so no long-lived key is stored anywhere
+#   secrets.IMAGE_AWS_ACCESS_KEY_ID / IMAGE_AWS_SECRET_ACCESS_KEY
+#                               otherwise
+# The identity needs ecr:GetAuthorizationToken, and on carbon/*:
+# CreateRepository, DescribeRepositories, DescribeImages, BatchGetImage,
+# BatchCheckLayerAvailability, InitiateLayerUpload, UploadLayerPart,
+# CompleteLayerUpload, PutImage.
 
 on:
   push:
@@ -32,10 +45,13 @@ concurrency:
 
 permissions:
   contents: read
+  # The OIDC token GitHub exchanges for the role, when one is configured.
+  id-token: write
 
 jobs:
   image:
     name: carbon/${{ matrix.name }}
+    if: vars.IMAGE_AWS_REGION != ''
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -68,12 +84,15 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Configure AWS credentials (commercial)
+      # With a role and no keys this is OIDC; with keys and no role, the
+      # keys themselves. Whichever is unset is simply not passed.
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.ASSEMBLER_AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.ASSEMBLER_AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.ASSEMBLER_AWS_REGION }}
+          aws-region: ${{ vars.IMAGE_AWS_REGION }}
+          role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
 
       - name: Login to ECR
         id: ecr
