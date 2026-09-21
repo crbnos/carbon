@@ -2,7 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import {
   NotificationTopic,
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       .eq("companyId", companyId)
       .eq("id", "slack")
       .maybeSingle(),
-    companyHasPlan(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
+    companyHasFeature(client, companyId, { feature: "EMAIL_NOTIFICATIONS" })
   ]);
 
   return {

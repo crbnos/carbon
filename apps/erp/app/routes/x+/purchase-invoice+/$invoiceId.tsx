@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [supplier, interaction, files, orgHasCredits, currency] =
+  const [supplier, interaction, files, orgHasCredits, currency, rampMapping] =
     await Promise.all([
       purchaseInvoice.data?.supplierId
         ? getSupplier(client, purchaseInvoice.data.supplierId)
@@ -81,7 +81,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             companyGroupId,
             purchaseInvoice.data.currencyCode
           )
-        : null
+        : null,
+      // Ramp origin/sync badge. Read via the user-scoped client — if RLS denies
+      // (or there is no mapping), fall back to null silently.
+      client
+        .from("externalIntegrationMapping")
+        .select("id, externalId, metadata")
+        .eq("companyId", companyId)
+        .eq("integration", "ramp")
+        .eq("entityType", "bill")
+        .eq("entityId", invoiceId)
+        .maybeSingle()
     ]);
 
   return {
@@ -92,7 +102,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files,
     interaction: interaction.data,
     supplier: supplier?.data ?? null,
-    orgHasCredits
+    orgHasCredits,
+    rampMapping: rampMapping?.data ?? null
   };
 }
 

@@ -112,6 +112,25 @@ export const stepRecordValidator = z.object({
   userValue: zfd.text(z.string().optional())
 });
 
+// One step recorded for several batch members at once (the batch view's
+// Record). Rows are the members the operator filled in; unchanged ones are
+// never sent, so a re-open can't re-trigger a step's backflush.
+export const batchStepRecordsValidator = z.object({
+  records: z
+    .array(
+      z.object({
+        jobOperationStepId: z.string().min(1),
+        value: zfd.text(z.string().optional()),
+        numericValue: zfd.numeric(z.number().optional()),
+        booleanValue: zfd
+          .text(z.enum(["true", "false"]).transform((val) => val === "true"))
+          .optional(),
+        userValue: zfd.text(z.string().optional())
+      })
+    )
+    .min(1, { message: "Record at least one job" })
+});
+
 export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),
@@ -177,7 +196,11 @@ export const issueTrackedEntityValidator = z.object({
   materialId: z.string().optional(),
   jobOperationId: z.string().optional(),
   itemId: z.string().optional(),
-  parentTrackedEntityId: z.string(),
+  // Batch mode: the pick covers every member of this operation batch — the
+  // edge fn splits it pro-rata and resolves each member's own parent entity,
+  // so parentTrackedEntityId is not sent.
+  batchId: z.string().optional(),
+  parentTrackedEntityId: z.string().optional(),
   children: z.array(
     z.object({
       trackedEntityId: z.string(),
@@ -235,6 +258,10 @@ export const completeJobOperationBatchValidator = z.object({
         // included quantity to 0, so `undefined` never reaches the edge fn.
         quantity: zfd.numeric(z.number().int().min(0).optional()),
         scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // Batch-tracked output: the member's WIP entity finalized as the
+        // produced lot. Its lot number was planned at batch creation and is
+        // resolved server-side — never an operator input.
+        trackedEntityId: zfd.text(z.string().optional()),
         // "Not in this run": the operation was not physically part of the
         // batch run — it detaches back to the schedule instead of being
         // marked Done. String flag (same idiom as productionEventValidator's

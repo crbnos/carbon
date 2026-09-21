@@ -21,7 +21,7 @@ import {
   type Violation
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { companyHasPlan } from "../../plan.server";
+import { companyHasFeature } from "../../plan.server";
 import { dedupeViolations, isBlocked } from "../violations";
 import {
   buildLineContext,
@@ -47,7 +47,7 @@ export const isStorageRulesEnabledForCompany = (
   client: Client,
   companyId: string
 ): Promise<boolean> =>
-  companyHasPlan(client, companyId, { feature: "STORAGE_RULES" });
+  companyHasFeature(client, companyId, { feature: "STORAGE_RULES" });
 
 // ---------------------------------------------------------------------------
 // Block decision

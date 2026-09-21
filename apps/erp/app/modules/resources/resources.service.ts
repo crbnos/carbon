@@ -1256,9 +1256,11 @@ export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
   ability: {
-    // Name is not stored — it derives from the linked process. Only the
-    // recertification cadence is editable on an ability.
-    recertifyEveryDays: number | null;
+    // Name is not stored — it derives from the linked process; it appears in
+    // the MCP schema for caller context only. The recertification cadence is
+    // the one editable field. Both are optional in the published schema.
+    name?: string;
+    recertifyEveryDays?: number | null;
   }
 ) {
   return client.from("ability").update(ability).eq("id", id);
@@ -1847,6 +1849,7 @@ function extractBatchRules<
     batchRuleDimension?: BatchRules["dimension"];
     batchRuleForm?: BatchRules["form"];
     batchRuleFinish?: BatchRules["finish"];
+    batchRuleProducedItem?: BatchRules["producedItem"];
   }
 >(source: T) {
   const {
@@ -1856,6 +1859,7 @@ function extractBatchRules<
     batchRuleDimension,
     batchRuleForm,
     batchRuleFinish,
+    batchRuleProducedItem,
     ...rest
   } = source;
   const batchRules = compactBatchRules(
@@ -1865,7 +1869,8 @@ function extractBatchRules<
       grade: batchRuleGrade,
       dimension: batchRuleDimension,
       form: batchRuleForm,
-      finish: batchRuleFinish
+      finish: batchRuleFinish,
+      producedItem: batchRuleProducedItem
     })
   ) as Json;
   return { batchRules, rest };

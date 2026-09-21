@@ -1,11 +1,12 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { deleteEnforcementRule } from "@carbon/ee/rules.server";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
-import { deleteEnforcementRule, getEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -30,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "inventory"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

@@ -18,12 +18,10 @@ const allTools = metadata.tools as Tool[];
 
 // PERMISSION_OVERRIDES in scripts/lib/service-metadata.ts — route-verified
 // exceptions that win over the derivation rules. Pinned exactly below and
-// excluded from the rule-based assertions.
-const OVERRIDDEN = new Set([
-  "settings_getApiKeys",
-  "settings_upsertApiKey",
-  "settings_deleteApiKey"
-]);
+// excluded from the rule-based assertions. The API-key WRITES (upsert/delete)
+// moved to @carbon/ee/api-keys.server behind requireEntitlement, so they are no
+// longer MCP tools — only the read (getApiKeys) remains and keeps the override.
+const OVERRIDDEN = new Set(["settings_getApiKeys"]);
 
 const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
 

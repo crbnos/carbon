@@ -536,7 +536,7 @@ export async function insertEmployeeJob(
   job: {
     id: string;
     companyId: string;
-    locationId?: string;
+    locationId: string;
   }
 ) {
   return client.from("employeeJob").insert(job).select("*").single();
@@ -611,10 +611,19 @@ export async function updateEmployeeJob(
   // sync no longer silently no-ops for users without people_create/
   // people_delete — the route's people_update check is the auth gate.
   try {
+    // sanitize() turns any absent field into null, and locationId is NOT NULL,
+    // so a caller that omits it (the API/MCP tool leaves it optional) would
+    // otherwise wipe a set location. Never write a falsy locationId — drop it
+    // from the payload so the existing value is preserved.
+    const updatePayload = sanitize(employeeJob);
+    if (!updatePayload.locationId) {
+      delete (updatePayload as { locationId?: unknown }).locationId;
+    }
+
     await db.transaction().execute(async (trx) => {
       await trx
         .updateTable("employeeJob")
-        .set(sanitize(employeeJob))
+        .set(updatePayload)
         .where("id", "=", employeeId)
         .where("companyId", "=", employeeJob.companyId)
         .execute();

@@ -25,14 +25,28 @@ msgstr "{0} 启用"
 msgid "{0} ago"
 msgstr "{0} 前"
 
+#. placeholder {0}: batchFacts.customers.length
+msgid "{0} customers"
+msgstr ""
+
+#. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
+msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
+msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然后完成。"
+
+#. placeholder {0}: batchFacts.items.length
+msgid "{0} items"
+msgstr ""
+
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} 个工作"
 
+#. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
+#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} / {1}"
 
@@ -54,15 +68,27 @@ msgstr "{0} 排队中"
 msgid "{0} running"
 msgstr "运行中 {0} 个"
 
+#. placeholder {0}: operation.jobReadableId
+#. placeholder {1}: batch.readableId
+msgid "{0} runs in batch {1}"
+msgstr ""
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} 已报废"
+
+msgid "{completed} of {quantity}"
+msgstr "{completed} 的 {quantity}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} 个已通过的件将被完成。"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操作菜单解决它们。"
+
+#. placeholder {0}: step.perMember.length
+msgid "{recorded}/{0} jobs"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -87,6 +113,10 @@ msgstr "账户设置"
 
 msgid "Acknowledge & finish"
 msgstr "确认并完成"
+
+#. placeholder {0}: members.length
+msgid "across {0} jobs"
+msgstr "跨越 {0} 工单"
 
 msgid "Active"
 msgstr "启用"
@@ -117,6 +147,13 @@ msgstr "全部"
 
 msgid "All clear"
 msgstr "一切正常"
+
+msgid "All jobs"
+msgstr "所有工单"
+
+#. placeholder {0}: batch.outputLotNumber
+msgid "All output goes to lot <0>{0}</0>"
+msgstr "所有输出都进入批次 <0>{0}</0>"
 
 msgid "All rework"
 msgstr "全部返工"
@@ -166,6 +203,9 @@ msgstr "可用"
 msgid "Available"
 msgstr "可用"
 
+msgid "Back to batch"
+msgstr ""
+
 msgid "Batch"
 msgstr "批次"
 
@@ -179,11 +219,20 @@ msgstr "批次号 {0}"
 msgid "Batch number is required"
 msgstr "批次号为必填项"
 
-msgid "Batched jobs"
-msgstr "批量工作"
+msgid "Batch quantity"
+msgstr "批次数量"
+
+msgid "batch total"
+msgstr "生产批次总计"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "落后于目标 {daysBehindTarget} 天"
+
+#. placeholder {0}: step.minValue
+#. placeholder {1}: step.maxValue
+#. placeholder {2}: step.unitOfMeasureCode ?? ""
+msgid "Between {0} and {1} {2}"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -222,6 +271,9 @@ msgstr "聊天"
 msgid "Check your email"
 msgstr "请查收邮件"
 
+msgid "Choose a job"
+msgstr ""
+
 msgid "Clear"
 msgstr "清除"
 
@@ -248,6 +300,9 @@ msgstr "关闭"
 
 msgid "Collapse features table"
 msgstr "折叠功能表"
+
+msgid "Collapse panel"
+msgstr "折叠面板"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -277,6 +332,9 @@ msgstr "完成"
 
 msgid "Complete All"
 msgstr "全部完成"
+
+msgid "Complete batch"
+msgstr ""
 
 msgid "Complete Batch"
 msgstr "完成批次"
@@ -377,6 +435,9 @@ msgstr "显示"
 msgid "Displays"
 msgstr "显示屏"
 
+msgid "Done"
+msgstr ""
+
 msgid "Down"
 msgstr "停机"
 
@@ -409,9 +470,12 @@ msgstr "拖动以调整绘图和功能的大小"
 msgid "Dragging {0} cancelled."
 msgstr "拖拽 {0} 已取消。"
 
+msgid "Due"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "截止 {0}"
 
@@ -434,6 +498,9 @@ msgstr "序列号重复"
 msgid "Duration"
 msgstr "时长"
 
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
+
 msgid "Edit"
 msgstr "编辑"
 
@@ -448,6 +515,9 @@ msgstr "空的工作中心"
 
 msgid "End Operations"
 msgstr "结束工序"
+
+msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -465,11 +535,17 @@ msgstr "错误"
 msgid "Estimated"
 msgstr "估计"
 
+msgid "Every job in the batch follows these steps. Record a step for all of them at once."
+msgstr ""
+
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
 
 msgid "Expand features table"
 msgstr "展开功能表"
+
+msgid "Expand panel"
+msgstr "展开面板"
 
 msgid "Expired"
 msgstr "已过期"
@@ -510,6 +586,10 @@ msgstr "无法保存测量"
 
 msgid "Failed to save result"
 msgstr "无法保存结果"
+
+#. placeholder {0}: file.name
+msgid "Failed to upload {0}"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -555,6 +635,10 @@ msgstr "完成账户设置"
 msgid "Finish with material unpicked?"
 msgstr "物料未拣货的情况下要完成吗？"
 
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
+msgid "First due {0}"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 
@@ -566,6 +650,9 @@ msgstr "返回操作"
 
 msgid "Go to onboarding"
 msgstr "前往入门"
+
+msgid "Hide description"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
@@ -631,6 +718,9 @@ msgstr "领料"
 msgid "Issue Type"
 msgstr "问题类型"
 
+msgid "Issued"
+msgstr "已发出"
+
 msgid "Issued {issuedQuantity} of {lotLabel}"
 msgstr "已发放 {issuedQuantity} 个 {lotLabel}"
 
@@ -688,6 +778,9 @@ msgstr "行"
 msgid "List view"
 msgstr "列表视图"
 
+msgid "Load list"
+msgstr ""
+
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
 
@@ -699,6 +792,9 @@ msgstr "本地"
 
 msgid "Location"
 msgstr "位置"
+
+msgid "Log completed"
+msgstr ""
 
 msgid "Log Completed"
 msgstr "记录完成数量"
@@ -726,6 +822,12 @@ msgstr "登录"
 
 msgid "Lot"
 msgstr "批次"
+
+msgid "Lot numbers missing"
+msgstr "缺少批次号"
+
+msgid "Lot tracked"
+msgstr ""
 
 msgid "Machine"
 msgstr "机器"
@@ -762,6 +864,9 @@ msgstr "匹配"
 
 msgid "Materials"
 msgstr "原材料"
+
+msgid "Materials issued"
+msgstr "已发出原材料"
 
 msgid "Maximum number of records reached"
 msgstr "已达到最大记录数"
@@ -866,6 +971,9 @@ msgstr "没有匹配项。输入以创建一个。"
 msgid "No materials"
 msgstr "没有原材料"
 
+msgid "No materials on this batch."
+msgstr "此生产批次上没有物料。"
+
 msgid "No open jobs"
 msgstr "没有未结的工单"
 
@@ -959,8 +1067,21 @@ msgstr "OEE 影响"
 msgid "OEM Required"
 msgstr "需要 OEM"
 
+#. placeholder {0}: m.operationQuantity ?? 0
+msgid "of {0}"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "最早优先"
+
+msgid "one combined lot · planned"
+msgstr "一个组合批次 · 已计划"
+
+msgid "one per job · planned"
+msgstr "每个工单一个 · 已计划"
+
+msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
+msgstr ""
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -974,6 +1095,9 @@ msgstr "未结"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "在安装于工作中心的屏幕上打开显示屏并保持其运行。每个看板自动刷新。"
+
+msgid "Open a job in this batch"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
@@ -999,6 +1123,9 @@ msgstr "可选"
 msgid "or"
 msgstr "或"
 
+msgid "Output lot"
+msgstr "输出批次"
+
 msgid "Overall result"
 msgstr "总体结果"
 
@@ -1017,6 +1144,9 @@ msgstr "部分"
 msgid "Partial Disposition"
 msgstr "部分处置"
 
+msgid "Passed inspection"
+msgstr ""
+
 msgid "Passed Inspection"
 msgstr "已通过检验"
 
@@ -1028,6 +1158,10 @@ msgstr "暂停"
 
 msgid "Pick"
 msgstr "拣货"
+
+#. placeholder {0}: m.required - m.issued
+msgid "Pick {0}"
+msgstr "拣货 {0}"
 
 msgid "Pick tracked item"
 msgstr "拣货追踪物料"
@@ -1098,6 +1232,9 @@ msgstr "程序文件"
 msgid "Process"
 msgstr "工艺"
 
+msgid "Process parameters"
+msgstr "工艺参数"
+
 msgid "Process Parameters"
 msgstr "工艺参数"
 
@@ -1140,17 +1277,27 @@ msgstr "记录"
 msgid "Record {0}"
 msgstr "记录 {0}"
 
+#. placeholder {0}: changed.length
+msgid "Record {0} jobs"
+msgstr ""
+
 msgid "Record only"
 msgstr "仅记录"
 
 msgid "Record Partial"
 msgstr "记录部分"
 
+msgid "Recorded"
+msgstr ""
+
 msgid "Reject"
 msgstr "拒绝"
 
 msgid "Reject Lot"
 msgstr "拒绝批次"
+
+msgid "Released"
+msgstr ""
 
 msgid "Remove"
 msgstr "移除"
@@ -1166,6 +1313,9 @@ msgstr "移除零件"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "重新打开子装配件并创建替代件"
+
+msgid "Required"
+msgstr "必填"
 
 msgid "Result"
 msgstr "结果"
@@ -1187,6 +1337,9 @@ msgstr "运行中"
 
 msgid "Sales Order"
 msgstr "销售订单"
+
+msgid "Same for every job"
+msgstr ""
 
 msgid "Save"
 msgstr "保存"
@@ -1307,6 +1460,9 @@ msgstr "发送"
 msgid "Send to Carbon"
 msgstr "发送至 Carbon"
 
+msgid "Separate lots"
+msgstr "单独批次"
+
 msgid "Serial"
 msgstr "序列号"
 
@@ -1326,6 +1482,9 @@ msgstr "序列号"
 msgid "Serial Numbers"
 msgstr "序列号"
 
+msgid "Serialized"
+msgstr ""
+
 msgid "Session locked"
 msgstr "会话已锁定"
 
@@ -1338,6 +1497,9 @@ msgstr "设置下班打卡时间"
 msgid "Set up in Carbon"
 msgstr "在 Carbon 中设置"
 
+msgid "Set when the batch was planned."
+msgstr "在规划生产批次时设置。"
+
 msgid "Setup"
 msgstr "换型"
 
@@ -1349,6 +1511,9 @@ msgstr "缺货"
 
 msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
+
+msgid "Show description"
+msgstr ""
 
 msgid "Show this overlay"
 msgstr "显示此覆盖层"
@@ -1388,6 +1553,10 @@ msgstr "已使用备件"
 
 msgid "Start"
 msgstr "开始"
+
+#. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+msgid "Start {0}"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
@@ -1438,11 +1607,21 @@ msgstr "标签"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前，无法创建NCR。"
+
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+msgstr ""
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "此原材料没有可用或已消耗的受追踪零件。"
@@ -1452,6 +1631,9 @@ msgstr "物料清单中有序列号或生产批次追踪的物料尚未完全领
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
+
+msgid "This batch has no work instructions."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
@@ -1468,6 +1650,9 @@ msgstr "此单元将被永久报废，并将创建替换序列号。"
 msgid "Thumbnail"
 msgstr "缩略图"
 
+msgid "Tick the jobs this was done for."
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"
 
@@ -1478,6 +1663,12 @@ msgstr "工时记录"
 msgid "Time Worked: {0}"
 msgstr "工作时间：{0}"
 
+msgid "To pick"
+msgstr ""
+
+msgid "To run"
+msgstr ""
+
 msgid "Today"
 msgstr "今天"
 
@@ -1486,6 +1677,9 @@ msgstr "切换侧栏"
 
 msgid "Tools"
 msgstr "工具"
+
+msgid "Total"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "总数量"
@@ -1500,6 +1694,9 @@ msgstr "总计：{0}"
 
 msgid "Tracked Entity"
 msgstr "追踪实体"
+
+msgid "tracked lines"
+msgstr "已跟踪行"
 
 msgid "Tracking"
 msgstr "追踪"
@@ -1572,6 +1769,12 @@ msgstr "正在上传 {0}"
 msgid "Use a different account"
 msgstr "使用不同的帐户"
 
+msgid "Used automatically at completion"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
 msgid "Verify"
 msgstr "验证"
 
@@ -1584,6 +1787,9 @@ msgstr "我们已向您发送了登录链接，请查收。"
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm}是什么?"
 
+msgid "Whole batch"
+msgstr "整个生产批次"
+
 msgid "WIP"
 msgstr "在制品"
 
@@ -1592,6 +1798,9 @@ msgstr "工作中心"
 
 msgid "Work Center Displays"
 msgstr "工作中心显示屏"
+
+msgid "Work instructions"
+msgstr "作业指导书"
 
 msgid "Yes"
 msgstr "是"

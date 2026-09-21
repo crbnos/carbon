@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
@@ -9,7 +10,13 @@ import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useSearchParams } from "react-router";
+import {
+  data,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useSearchParams
+} from "react-router";
 import { IntegrationsList } from "~/modules/settings";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";
@@ -20,7 +27,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     view: "settings"
   });
 
@@ -41,10 +48,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     health: i.health
   }));
 
-  return {
-    integrations: items,
-    state: crypto.randomUUID()
-  };
+  const rampOAuthState = await issueOAuthState({
+    integrationId: "ramp",
+    userId,
+    companyId
+  });
+
+  return data(
+    {
+      integrations: items,
+      // Existing OAuth callbacks still receive a server-generated correlation
+      // value. Ramp uses the browser-bound, single-use value below.
+      state: crypto.randomUUID(),
+      oauthStates: { ramp: rampOAuthState.state }
+    },
+    { headers: { "Set-Cookie": rampOAuthState.cookie } }
+  );
 }
 
 export default function IntegrationsRoute() {

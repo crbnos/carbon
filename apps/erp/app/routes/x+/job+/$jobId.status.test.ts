@@ -50,14 +50,34 @@ vi.mock("~/modules/production", () => ({
     "Closed",
     "Cancelled"
   ],
+  getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
+// The Release dialog goes through the shared releaseJobs path; delegate its
+// status flip to the mocked updateJobStatus so the ordering guard still sees it.
+vi.mock("~/modules/production/production.server", async () => {
+  const production = await import("~/modules/production");
+  return {
+    releaseJobs: vi.fn(async ({ jobIds, companyId, userId }) => {
+      for (const id of jobIds) {
+        await production.updateJobStatus({} as any, {
+          id,
+          companyId,
+          status: "Ready",
+          updatedBy: userId
+        });
+      }
+      return { error: null };
+    })
+  };
+});
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
+  getJobReleaseReadiness,
   returnPickedRemaindersForJob,
   updateJobStatus
 } from "~/modules/production";
@@ -116,6 +136,22 @@ function setup() {
   vi.mocked(updateJobStatus).mockImplementation(async () => {
     events.push("updateJobStatus");
     return { data: { id: "job-1" }, error: null } as any;
+  });
+  vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+    data: {
+      jobs: [
+        {
+          id: "job-1",
+          jobId: "J000001",
+          status: "Draft",
+          manufacturingBlocked: false,
+          missingAssemblies: [],
+          outsideOperationsWithoutSupplier: []
+        }
+      ],
+      suppliers: []
+    },
+    error: null
   });
   vi.mocked(runLocationSchedule).mockImplementation(async () => {
     events.push("runLocationSchedule");
@@ -186,6 +222,33 @@ describe("Job release status action", () => {
     expect(events.indexOf("updateJobStatus")).toBeLessThan(
       events.indexOf("runLocationSchedule")
     );
+  });
+
+  it("refuses release when an assembly has no operations", async () => {
+    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+      data: {
+        jobs: [
+          {
+            id: "job-1",
+            jobId: "J000001",
+            status: "Draft",
+            manufacturingBlocked: false,
+            missingAssemblies: [
+              { makeMethodId: "mm-2", description: "Bracket" }
+            ],
+            outsideOperationsWithoutSupplier: []
+          }
+        ],
+        suppliers: []
+      },
+      error: null
+    });
+
+    await expect(runRelease()).rejects.toBeInstanceOf(Response);
+
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runLocationSchedule).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
   });
 });
 

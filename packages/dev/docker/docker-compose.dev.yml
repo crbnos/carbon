@@ -12,8 +12,12 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_POSTGRES:-384m}
-          cpus: ${CPU_POSTGRES:-1.0}
+          # Defaults are sized so one stack runs smoothly while a machine can
+          # host several worktree stacks at once (limits are ceilings, not
+          # reservations — idle usage is far below them). Override any of these
+          # per worktree via MEM_*/CPU_* in that worktree's .env.
+          memory: ${MEM_POSTGRES:-1g}
+          cpus: ${CPU_POSTGRES:-2}
     networks:
       default:
         aliases:
@@ -73,7 +77,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_GOTRUE:-48m}
+          memory: ${MEM_GOTRUE:-96m}
           cpus: ${CPU_GOTRUE:-0.25}
     environment:
       GOTRUE_API_HOST: 0.0.0.0
@@ -129,8 +133,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_POSTGREST:-160m}
-          cpus: ${CPU_POSTGREST:-0.25}
+          memory: ${MEM_POSTGREST:-256m}
+          cpus: ${CPU_POSTGREST:-1}
     depends_on:
       postgres:
         condition: service_healthy
@@ -155,8 +159,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_REALTIME:-256m}
-          cpus: ${CPU_REALTIME:-0.25}
+          memory: ${MEM_REALTIME:-384m}
+          cpus: ${CPU_REALTIME:-0.5}
     depends_on:
       postgres:
         condition: service_healthy
@@ -253,7 +257,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_META:-96m}
+          memory: ${MEM_META:-128m}
           cpus: ${CPU_META:-0.25}
     profiles: ["full"]
     depends_on:
@@ -273,8 +277,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_STUDIO:-256m}
-          cpus: ${CPU_STUDIO:-0.25}
+          memory: ${MEM_STUDIO:-384m}
+          cpus: ${CPU_STUDIO:-0.5}
     profiles: ["full"]
     depends_on:
       meta:
@@ -302,7 +306,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_INBUCKET:-32m}
+          memory: ${MEM_INBUCKET:-64m}
           cpus: ${CPU_INBUCKET:-0.25}
     profiles: ["full"]
     ports:
@@ -319,7 +323,7 @@ services:
           # business function. Starved of CPU, worker boot outlives the isolate
           # CPU budget and requests hang mid-kill — give it app-tier resources.
           memory: ${MEM_EDGE:-1g}
-          cpus: ${CPU_EDGE:-2}
+          cpus: ${CPU_EDGE:-3}
     depends_on:
       postgres:
         condition: service_healthy
@@ -358,7 +362,7 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_KONG:-192m}
+          memory: ${MEM_KONG:-256m}
           cpus: ${CPU_KONG:-0.5}
     depends_on:
       gotrue:
@@ -400,8 +404,8 @@ services:
     deploy:
       resources:
         limits:
-          memory: ${MEM_INNGEST:-128m}
-          cpus: ${CPU_INNGEST:-0.25}
+          memory: ${MEM_INNGEST:-256m}
+          cpus: ${CPU_INNGEST:-0.5}
     ports:
       - "${PORT_INNGEST}:8288"
     command:

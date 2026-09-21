@@ -4,6 +4,7 @@ import type { AccountingProvider } from "../providers";
 // the same side effect every runtime consumer gets via @carbon/ee/accounting.
 import { qboSyncerRegistry } from "../providers/quickbooks-online";
 import { QboBillSyncer } from "../providers/quickbooks-online/entities/bill";
+import { QboChargeSyncer } from "../providers/quickbooks-online/entities/charge";
 import { QboCustomerSyncer } from "../providers/quickbooks-online/entities/customer";
 import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
 import { QboItemSyncer } from "../providers/quickbooks-online/entities/item";
@@ -21,6 +22,7 @@ import { RilletPaymentSyncer } from "../providers/rillet/entities/payment";
 import { RilletVendorSyncer } from "../providers/rillet/entities/vendor";
 import { xeroSyncerRegistry } from "../providers/xero";
 import { BillSyncer } from "../providers/xero/entities/bill";
+import { XeroChargeSyncer } from "../providers/xero/entities/charge";
 import { ContactSyncer } from "../providers/xero/entities/contact";
 import { InventoryAdjustmentSyncer } from "../providers/xero/entities/inventory-adjustment";
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
@@ -115,6 +117,7 @@ describe("SyncFactory", () => {
       vendor: ContactSyncer,
       item: ItemSyncer,
       bill: BillSyncer,
+      charge: XeroChargeSyncer,
       invoice: SalesInvoiceSyncer,
       purchaseOrder: PurchaseOrderSyncer,
       salesOrder: SalesOrderSyncer,
@@ -158,6 +161,7 @@ describe("SyncFactory", () => {
       vendor: QboVendorSyncer,
       item: QboItemSyncer,
       bill: QboBillSyncer,
+      charge: QboChargeSyncer,
       invoice: QboSalesInvoiceSyncer,
       purchaseOrder: QboPurchaseOrderSyncer,
       journalEntry: QboJournalEntrySyncer,
@@ -191,6 +195,7 @@ describe("SyncFactory", () => {
     expect(Object.keys(rilletSyncerRegistry).sort()).toEqual(
       [
         "bill",
+        "charge",
         "customer",
         "invoice",
         "item",

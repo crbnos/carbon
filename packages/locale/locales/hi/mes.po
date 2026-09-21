@@ -25,14 +25,28 @@ msgstr "{0} सक्रिय"
 msgid "{0} ago"
 msgstr "{0} पहले"
 
+#. placeholder {0}: batchFacts.customers.length
+msgid "{0} customers"
+msgstr ""
+
+#. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
+msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
+msgstr "{0} के पास लॉट संख्या नहीं है। इसे Carbon में बैच या जॉब पर सेट करें, फिर पूर्ण करें।"
+
+#. placeholder {0}: batchFacts.items.length
+msgid "{0} items"
+msgstr ""
+
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
 msgstr "{0} जॉब"
 
+#. placeholder {0}: issuedLines.length
 #. placeholder {0}: operation.quantityComplete
 #. placeholder {0}: serialIndex + 1
 #. placeholder {1}: operation.operationQuantity
 #. placeholder {1}: operation.targetQuantity
+#. placeholder {1}: trackedLines.length
 msgid "{0} of {1}"
 msgstr "{0} में से {1}"
 
@@ -54,15 +68,27 @@ msgstr "{0} कतार में"
 msgid "{0} running"
 msgstr "{0} चल रहा है"
 
+#. placeholder {0}: operation.jobReadableId
+#. placeholder {1}: batch.readableId
+msgid "{0} runs in batch {1}"
+msgstr ""
+
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
 msgstr "{0} स्क्रैप किया गया"
+
+msgid "{completed} of {quantity}"
+msgstr "{quantity} में से {completed}"
 
 msgid "{completions} passed unit(s) will be completed."
 msgstr "{completions} उत्तीर्ण इकाई(यों) को पूर्ण किया जाएगा।"
 
 msgid "{fails} sampled failure(s) are recorded and will NOT be completed — resolve them from the actions menu."
 msgstr "{fails} नमूना विफलता(एं) दर्ज की गई है और पूर्ण नहीं की जाएगी — उन्हें क्रियाएं मेनू से हल करें।"
+
+#. placeholder {0}: step.perMember.length
+msgid "{recorded}/{0} jobs"
+msgstr ""
 
 msgid "+{overflow} more"
 msgstr "+{overflow} अधिक"
@@ -87,6 +113,10 @@ msgstr "खाता सेटिंग्स"
 
 msgid "Acknowledge & finish"
 msgstr "स्वीकार करें और समाप्त करें"
+
+#. placeholder {0}: members.length
+msgid "across {0} jobs"
+msgstr "{0} जॉब में"
 
 msgid "Active"
 msgstr "सक्रिय"
@@ -117,6 +147,13 @@ msgstr "सभी"
 
 msgid "All clear"
 msgstr "सब कुछ स्पष्ट"
+
+msgid "All jobs"
+msgstr "सभी जॉब"
+
+#. placeholder {0}: batch.outputLotNumber
+msgid "All output goes to lot <0>{0}</0>"
+msgstr "सभी आउटपुट लॉट <0>{0}</0> में जाता है"
 
 msgid "All rework"
 msgstr "सभी पुनः कार्य"
@@ -166,6 +203,9 @@ msgstr "उपलब्ध"
 msgid "Available"
 msgstr "उपलब्ध"
 
+msgid "Back to batch"
+msgstr ""
+
 msgid "Batch"
 msgstr "बैच"
 
@@ -179,11 +219,20 @@ msgstr "बैच नंबर {0}"
 msgid "Batch number is required"
 msgstr "बैच नंबर आवश्यक है"
 
-msgid "Batched jobs"
-msgstr "बैच जॉब"
+msgid "Batch quantity"
+msgstr "बैच की मात्रा"
+
+msgid "batch total"
+msgstr "बैच कुल"
 
 msgid "Behind target by {daysBehindTarget} day(s)"
 msgstr "लक्ष्य से {daysBehindTarget} दिन(दिन) पीछे"
+
+#. placeholder {0}: step.minValue
+#. placeholder {1}: step.maxValue
+#. placeholder {2}: step.unitOfMeasureCode ?? ""
+msgid "Between {0} and {1} {2}"
+msgstr ""
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -222,6 +271,9 @@ msgstr "चैट"
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
 
+msgid "Choose a job"
+msgstr ""
+
 msgid "Clear"
 msgstr "साफ़ करें"
 
@@ -248,6 +300,9 @@ msgstr "बंद करें"
 
 msgid "Collapse features table"
 msgstr "फीचर्स टेबल को संक्षिप्त करें"
+
+msgid "Collapse panel"
+msgstr "पैनल संक्षिप्त करें"
 
 #. placeholder {0}: active.data.current.column.title
 #. placeholder {1}: overColumnPosition + 1
@@ -277,6 +332,9 @@ msgstr "पूर्ण करें"
 
 msgid "Complete All"
 msgstr "सभी को पूर्ण करें"
+
+msgid "Complete batch"
+msgstr ""
 
 msgid "Complete Batch"
 msgstr "बैच पूरा करें"
@@ -377,6 +435,9 @@ msgstr "प्रदर्शन"
 msgid "Displays"
 msgstr "डिस्प्ले"
 
+msgid "Done"
+msgstr ""
+
 msgid "Down"
 msgstr "डाउन"
 
@@ -409,9 +470,12 @@ msgstr "ड्राइंग और फीचर्स को रिसाइ�
 msgid "Dragging {0} cancelled."
 msgstr "\"{0}\" को ड्रैग करना रद्द किया गया।"
 
+msgid "Due"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
-#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(item.dueDate) )
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 msgid "Due {0}"
 msgstr "Due {0} के लिए"
 
@@ -434,6 +498,9 @@ msgstr "डुप्लिकेट सीरियल नंबर"
 msgid "Duration"
 msgstr "अवधि"
 
+msgid "Each job's output is its own lot — keep each job's parts apart."
+msgstr ""
+
 msgid "Edit"
 msgstr "संपादित करें"
 
@@ -448,6 +515,9 @@ msgstr "खाली वर्क सेंटर"
 
 msgid "End Operations"
 msgstr "ऑपरेशन समाप्त करें"
+
+msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
+msgstr ""
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -465,11 +535,17 @@ msgstr "त्रुटि"
 msgid "Estimated"
 msgstr "अनुमानित"
 
+msgid "Every job in the batch follows these steps. Record a step for all of them at once."
+msgstr ""
+
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "प्रत्येक इकाई का निर्णय है: {passes} उत्तीर्ण और {fails} असफल। लॉट बंद हो जाता है जब प्रत्येक इकाई को अपने परिणाम के अनुसार भेजा जाता है।"
 
 msgid "Expand features table"
 msgstr "फीचर्स टेबल को विस्तृत करें"
+
+msgid "Expand panel"
+msgstr "पैनल विस्तार करें"
 
 msgid "Expired"
 msgstr "समाप्त"
@@ -510,6 +586,10 @@ msgstr "माप को सहेजने में विफल"
 
 msgid "Failed to save result"
 msgstr "परिणाम को सहेजने में विफल"
+
+#. placeholder {0}: file.name
+msgid "Failed to upload {0}"
+msgstr ""
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -555,6 +635,10 @@ msgstr "अपना खाता सेट अप करना पूर्ण 
 msgid "Finish with material unpicked?"
 msgstr "सामग्री बिना चुने समाप्त करें?"
 
+#. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
+msgid "First due {0}"
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
@@ -566,6 +650,9 @@ msgstr "ऑपरेशन पर वापस जाएं"
 
 msgid "Go to onboarding"
 msgstr "ऑनबोर्डिंग पर जाएं"
+
+msgid "Hide description"
+msgstr ""
 
 msgid "How many were actually picked?"
 msgstr "वास्तव में कितने चुने गए?"
@@ -631,6 +718,9 @@ msgstr "सामग्री जारी करें"
 msgid "Issue Type"
 msgstr "समस्या प्रकार"
 
+msgid "Issued"
+msgstr "जारी किया गया"
+
 msgid "Issued {issuedQuantity} of {lotLabel}"
 msgstr "{issuedQuantity} का {lotLabel} जारी किया"
 
@@ -688,6 +778,9 @@ msgstr "लाइनें"
 msgid "List view"
 msgstr "सूची दृश्य"
 
+msgid "Load list"
+msgstr ""
+
 msgid "Loading item details..."
 msgstr "आइटम विवरण लोड हो रहे हैं..."
 
@@ -699,6 +792,9 @@ msgstr "स्थानीय"
 
 msgid "Location"
 msgstr "स्थान"
+
+msgid "Log completed"
+msgstr ""
 
 msgid "Log Completed"
 msgstr "पूर्ण लॉग करें"
@@ -726,6 +822,12 @@ msgstr "लॉगिन"
 
 msgid "Lot"
 msgstr "लॉट"
+
+msgid "Lot numbers missing"
+msgstr "लॉट संख्या गायब है"
+
+msgid "Lot tracked"
+msgstr ""
 
 msgid "Machine"
 msgstr "मशीन"
@@ -762,6 +864,9 @@ msgstr "मेल खाता है"
 
 msgid "Materials"
 msgstr "सामग्री"
+
+msgid "Materials issued"
+msgstr "सामग्री जारी की गई"
 
 msgid "Maximum number of records reached"
 msgstr "रिकॉर्ड की अधिकतम संख्या तक पहुंच गई"
@@ -866,6 +971,9 @@ msgstr "कोई मेल नहीं। एक बनाने के लि
 msgid "No materials"
 msgstr "कोई सामग्री नहीं"
 
+msgid "No materials on this batch."
+msgstr "इस बैच पर कोई सामग्री नहीं है।"
+
 msgid "No open jobs"
 msgstr "कोई खुली जॉब नहीं"
 
@@ -959,8 +1067,21 @@ msgstr "OEE प्रभाव"
 msgid "OEM Required"
 msgstr "OEM आवश्यक"
 
+#. placeholder {0}: m.operationQuantity ?? 0
+msgid "of {0}"
+msgstr ""
+
 msgid "Oldest first"
 msgstr "सबसे पुराना पहले"
+
+msgid "one combined lot · planned"
+msgstr "एक संयुक्त लॉट · योजनाबद्ध"
+
+msgid "one per job · planned"
+msgstr "प्रति जॉब एक · योजनाबद्ध"
+
+msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
+msgstr ""
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -974,6 +1095,9 @@ msgstr "खुला"
 
 msgid "Open a display on the screen mounted at the work center and leave it running. Each board refreshes on its own."
 msgstr "वर्क सेंटर पर लगी स्क्रीन पर एक डिस्प्ले खोलें और इसे चलाते रहें। प्रत्येक बोर्ड स्वयं रीफ्रेश होता है।"
+
+msgid "Open a job in this batch"
+msgstr ""
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB निपटान के लिए एक NCR खोलें"
@@ -999,6 +1123,9 @@ msgstr "वैकल्पिक"
 msgid "or"
 msgstr "या"
 
+msgid "Output lot"
+msgstr "आउटपुट लॉट"
+
 msgid "Overall result"
 msgstr "समग्र परिणाम"
 
@@ -1017,6 +1144,9 @@ msgstr "आंशिक"
 msgid "Partial Disposition"
 msgstr "आंशिक निपटान"
 
+msgid "Passed inspection"
+msgstr ""
+
 msgid "Passed Inspection"
 msgstr "निरीक्षण उत्तीर्ण"
 
@@ -1028,6 +1158,10 @@ msgstr "रोकें"
 
 msgid "Pick"
 msgstr "चुनें"
+
+#. placeholder {0}: m.required - m.issued
+msgid "Pick {0}"
+msgstr "पिकिंग {0}"
 
 msgid "Pick tracked item"
 msgstr "ट्रैक किए गए आइटम को चुनें"
@@ -1098,6 +1232,9 @@ msgstr "कार्यविधि"
 msgid "Process"
 msgstr "प्रक्रिया"
 
+msgid "Process parameters"
+msgstr "प्रक्रिया पैरामीटर"
+
 msgid "Process Parameters"
 msgstr "प्रक्रिया पैरामीटर"
 
@@ -1140,17 +1277,27 @@ msgstr "रिकॉर्ड"
 msgid "Record {0}"
 msgstr "रिकॉर्ड {0}"
 
+#. placeholder {0}: changed.length
+msgid "Record {0} jobs"
+msgstr ""
+
 msgid "Record only"
 msgstr "केवल रिकॉर्ड करें"
 
 msgid "Record Partial"
 msgstr "आंशिक रिकॉर्ड करें"
 
+msgid "Recorded"
+msgstr ""
+
 msgid "Reject"
 msgstr "अस्वीकार करें"
 
 msgid "Reject Lot"
 msgstr "लॉट अस्वीकार करें"
+
+msgid "Released"
+msgstr ""
 
 msgid "Remove"
 msgstr "निकालें"
@@ -1166,6 +1313,9 @@ msgstr "पार्ट निकालें"
 
 msgid "Reopen the subassembly and create a replacement unit"
 msgstr "सब-असेंबली को फिर से खोलें और एक रिप्लेसमेंट इकाई बनाएँ"
+
+msgid "Required"
+msgstr "आवश्यक"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -1187,6 +1337,9 @@ msgstr "चल रहा है"
 
 msgid "Sales Order"
 msgstr "विक्रय आदेश"
+
+msgid "Same for every job"
+msgstr ""
 
 msgid "Save"
 msgstr "सहेजें"
@@ -1307,6 +1460,9 @@ msgstr "भेजें"
 msgid "Send to Carbon"
 msgstr "Carbon को भेजें"
 
+msgid "Separate lots"
+msgstr "अलग-अलग लॉट"
+
 msgid "Serial"
 msgstr "सीरीज़"
 
@@ -1326,6 +1482,9 @@ msgstr "सीरियल नंबर"
 msgid "Serial Numbers"
 msgstr "सीरियल नंबर"
 
+msgid "Serialized"
+msgstr ""
+
 msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
@@ -1338,6 +1497,9 @@ msgstr "घड़ी बंद करने का समय सेट करे
 msgid "Set up in Carbon"
 msgstr "Carbon में सेट अप करें"
 
+msgid "Set when the batch was planned."
+msgstr "जब बैच की योजना बनाई गई थी तब सेट करें।"
+
 msgid "Setup"
 msgstr "सेटअप"
 
@@ -1349,6 +1511,9 @@ msgstr "कम"
 
 msgid "Short pick {itemName}"
 msgstr "Short pick {itemName}"
+
+msgid "Show description"
+msgstr ""
 
 msgid "Show this overlay"
 msgstr "यह ओवरले दिखाएं"
@@ -1388,6 +1553,10 @@ msgstr "उपयोग किए गए स्पेयर पार्ट्�
 
 msgid "Start"
 msgstr "शुरू करें"
+
+#. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
+msgid "Start {0}"
+msgstr ""
 
 msgid "Start or pause the operation"
 msgstr "ऑपरेशन को शुरू करें या रोकें"
@@ -1438,11 +1607,21 @@ msgstr "टैग"
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
 
+msgid "The jobs and parts that make up this run."
+msgstr ""
+
+msgid "The jobs make different items — keep each job's parts apart."
+msgstr ""
+
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "लॉट को उत्तीर्ण के रूप में चिह्नित किया जाएगा और {remaining} शेष इकाई(यों) को इस ऑपरेशन पर पूर्ण किया जाएगा।"
 
 msgid "The lot will still be dispositioned, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट को अभी भी डिस्पोज़ किया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
+
+#. placeholder {0}: (batch.operations ?? []).length
+msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+msgstr ""
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"
@@ -1452,6 +1631,9 @@ msgstr "बिल ऑफ मेटेरियल पर सीरियल य�
 
 msgid "These items still have material to pick. Finishing now marks the list Partial."
 msgstr "इन आइटम के पास अभी भी चुनने के लिए सामग्री है। अभी समाप्त करने से सूची को आंशिक के रूप में चिह्नित किया जाता है।"
+
+msgid "This batch has no work instructions."
+msgstr ""
 
 msgid "This lot is expired and can't be picked."
 msgstr "यह लॉट समाप्त हो गया है और इसे चुना नहीं जा सकता।"
@@ -1468,6 +1650,9 @@ msgstr "इस इकाई को स्थायी रूप से स्क
 msgid "Thumbnail"
 msgstr "थंबनेल"
 
+msgid "Tick the jobs this was done for."
+msgstr ""
+
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "समय और लागत मात्रा के अनुपात में जॉब में विभाजित है।"
 
@@ -1478,6 +1663,12 @@ msgstr "समय प्रविष्टियाँ"
 msgid "Time Worked: {0}"
 msgstr "समय काम किया: {0}"
 
+msgid "To pick"
+msgstr ""
+
+msgid "To run"
+msgstr ""
+
 msgid "Today"
 msgstr "आज"
 
@@ -1486,6 +1677,9 @@ msgstr "साइडबार को टॉगल करें"
 
 msgid "Tools"
 msgstr "उपकरण"
+
+msgid "Total"
+msgstr ""
 
 msgid "Total Quantity"
 msgstr "कुल मात्रा"
@@ -1500,6 +1694,9 @@ msgstr "कुल: {0}"
 
 msgid "Tracked Entity"
 msgstr "ट्रैक की गई इकाई"
+
+msgid "tracked lines"
+msgstr "ट्रैक की गई पंक्तियां"
 
 msgid "Tracking"
 msgstr "ट्रैकिंग"
@@ -1572,6 +1769,12 @@ msgstr "अपलोड किया जा रहा है {0}"
 msgid "Use a different account"
 msgstr "एक अलग खाता उपयोग करें"
 
+msgid "Used automatically at completion"
+msgstr ""
+
+msgid "Value"
+msgstr ""
+
 msgid "Verify"
 msgstr "सत्यापित करें"
 
@@ -1584,6 +1787,9 @@ msgstr "हमने आपके खाते में साइन इन क
 msgid "What is {translatedTerm}?"
 msgstr "{translatedTerm} क्या है?"
 
+msgid "Whole batch"
+msgstr "पूरा बैच"
+
 msgid "WIP"
 msgstr "WIP"
 
@@ -1592,6 +1798,9 @@ msgstr "वर्क सेंटर"
 
 msgid "Work Center Displays"
 msgstr "वर्क सेंटर डिस्प्ले"
+
+msgid "Work instructions"
+msgstr "कार्य निर्देश"
 
 msgid "Yes"
 msgstr "हां"

@@ -81,6 +81,7 @@
     "react-resizable-panels": "catalog:",
     "react-router": "catalog:",
     "remix-flat-routes": "catalog:",
+    "sonner": "2.0.7",
     "sst": "catalog:",
     "supabase": "catalog:",
     "tailwind-merge": "catalog:",

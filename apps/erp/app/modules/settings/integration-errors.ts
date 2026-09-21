@@ -18,6 +18,32 @@ type IntegrationErrorMessage = {
 };
 
 export const integrationErrors = {
+  ramp: {
+    denied: {
+      title: msg`Ramp denied the connection`,
+      description: msg`The authorization was refused in Ramp. Try connecting again.`
+    },
+    "invalid-response": {
+      title: msg`Ramp didn't return an authorization code`,
+      description: msg`The response from Ramp was missing required parameters. Try connecting again.`
+    },
+    "invalid-state": {
+      title: msg`The Ramp connection expired`,
+      description: msg`Return to Integrations and connect Ramp again.`
+    },
+    "token-exchange": {
+      title: msg`Ramp rejected the authorization`,
+      description: msg`Exchanging the authorization code for access failed. Try connecting again.`
+    },
+    "save-failed": {
+      title: msg`Couldn't save the Ramp connection`,
+      description: msg`Ramp authorized the connection but saving it failed. Try connecting again.`
+    },
+    "install-failed": {
+      title: msg`Ramp connected but setup didn't finish`,
+      description: msg`Open the Ramp integration and try connecting again to finish setup.`
+    }
+  },
   onshape: {
     // `invalid_scope` means the OAuth application isn't granted a scope we asked
     // for. In practice that's `OAuth2Write`, so name the exact dev-portal

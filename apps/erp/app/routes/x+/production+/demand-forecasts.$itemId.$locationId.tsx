@@ -1,16 +1,14 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertDemandProjections } from "@carbon/ee/forecast.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { demandProjectionValidator } from "~/modules/production/production.models";
-import {
-  getDemandProjections,
-  upsertDemandProjections
-} from "~/modules/production/production.service";
+import { getDemandProjections } from "~/modules/production/production.service";
 import DemandProjectionsForm from "~/modules/production/ui/DemandProjection/DemandProjectionForm";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
@@ -71,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "production"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

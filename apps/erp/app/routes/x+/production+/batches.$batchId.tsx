@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
+  getBatchOutputLots,
   getJobOperationBatchEvents,
   getJobOperationBatchWithMembers
 } from "~/modules/production";
@@ -19,9 +20,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");
 
-  const [batch, events] = await Promise.all([
+  const [batch, events, outputLots] = await Promise.all([
     getJobOperationBatchWithMembers(client, batchId, companyId),
-    getJobOperationBatchEvents(client, batchId, companyId)
+    getJobOperationBatchEvents(client, batchId, companyId),
+    getBatchOutputLots(client, batchId, companyId)
   ]);
   if (batch.error || !batch.data) {
     throw redirect(
@@ -30,17 +32,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { batch: batch.data, events: events.data ?? [] };
+  return {
+    batch: batch.data,
+    events: events.data ?? [],
+    outputLots: outputLots.data ?? []
+  };
 }
 
 export default function BatchRoute() {
-  const { batch, events } = useLoaderData<typeof loader>();
+  const { batch, events, outputLots } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
   return (
     <BatchDetailDrawer
       batch={batch}
       events={events}
+      outputLots={outputLots}
       onClose={() => navigate(-1)}
     />
   );

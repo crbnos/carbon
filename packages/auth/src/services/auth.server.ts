@@ -18,6 +18,7 @@ import {
   CLOUDFLARE_TURNSTILE_SECRET_KEY,
   CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
+  IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
@@ -473,11 +474,19 @@ export const requiresTurnstile =
 // enforcement without a widget is not.
 export const turnstileSiteKey = CLOUDFLARE_TURNSTILE_SITE_KEY ?? null;
 
-export async function sendMagicLink(email: string, turnstileToken?: string) {
+export async function sendMagicLink(
+  email: string,
+  turnstileToken?: string,
+  // The app's own origin. VERCEL_URL is only correct for the app it was set
+  // for — in local dev crbn writes the ERP url (or a localhost fallback) into
+  // .env.local, so an MES started outside `crbn up` would send its first-login
+  // magic link back to the wrong origin. MES passes getMESUrl().
+  origin?: string
+) {
   return getCarbonServiceRole().auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: `${VERCEL_URL}/callback`,
+      emailRedirectTo: `${origin ?? VERCEL_URL}/callback`,
       // GoTrue verifies the token itself when Supabase Auth captcha is on
       ...(SUPABASE_AUTH_CAPTCHA_ENABLED && turnstileToken
         ? { captchaToken: turnstileToken }
@@ -547,9 +556,19 @@ async function verifyTurnstileToken(
   }
 }
 
+// DEV_BYPASS_EMAIL signs a developer in with no magic link, so it is a local
+// stack's convenience and nothing else: refuse it anywhere the env says this
+// is a real deployment (production, preview, or self-hosted), whatever the
+// variable happens to be set to there.
 export async function signInWithBypassEmail(
   email: string
 ): Promise<AuthSession | null> {
+  if (!IS_LOCAL_DEV) {
+    log.error("DEV_BYPASS_EMAIL sign-in refused outside local development", {
+      actor: email
+    });
+    return null;
+  }
   const client = getCarbonServiceRole();
 
   const { data: linkData, error: linkError } =

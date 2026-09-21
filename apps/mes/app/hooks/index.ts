@@ -9,7 +9,7 @@ import { useCompanyTimeZone, useLocationTimeZone } from "./useCompanyTimeZone";
 import { useDateFormatter } from "./useDateFormatter";
 import { useIdle } from "./useIdle";
 import { useImageUpload } from "./useImageUpload";
-import { useRealtime } from "./useRealtime";
+import { useRealtime, useRealtimeRevalidator } from "./useRealtime";
 import { useUser } from "./useUser";
 
 export {
@@ -22,6 +22,7 @@ export {
   useOptimisticLocation,
   usePrinting,
   useRealtime,
+  useRealtimeRevalidator,
   useRouteData,
   useUrlParams,
   useUser

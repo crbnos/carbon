@@ -5,6 +5,13 @@
   "exports": {
     ".": "./src/index.ts",
     "./accounting": "./src/accounting/index.ts",
+    "./api-keys.server": "./src/api-keys.server.ts",
+    "./approvals": "./src/approvals/index.ts",
+    "./approvals.server": "./src/approvals/service.ts",
+    "./console.server": "./src/console.server.ts",
+    "./customer-portals.server": "./src/customer-portals.server.ts",
+    "./entitlements.server": "./src/entitlements.server.ts",
+    "./forecast.server": "./src/forecast.server.ts",
     "./planning": "./src/planning/index.ts",
     "./integrations/secrets": "./src/integrations/secrets.ts",
     "./action-task-entity": "./src/lib/actionTaskEntity.ts",
@@ -17,6 +24,7 @@
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
+    "./permissions.server": "./src/permissions.server.ts",
     "./plan": "./src/plan.ts",
     "./plan.server": "./src/plan.server.ts",
     "./slack.server": "./src/slack.server.ts",
@@ -24,9 +32,13 @@
     "./sso.server": "./src/sso/index.server.ts",
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
+    "./ramp.server": "./src/ramp/lib/index.ts",
+    "./ramp/hooks.server": "./src/ramp/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
-    "./stripe-connect.server": "./src/stripe-connect/payment.server.ts"
+    "./stripe-connect.server": "./src/stripe-connect/payment.server.ts",
+    "./two-factor.server": "./src/two-factor.server.ts",
+    "./webhooks.server": "./src/webhooks.server.ts"
   },
   "private": true,
   "scripts": {

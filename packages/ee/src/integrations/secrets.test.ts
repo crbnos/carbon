@@ -3,6 +3,7 @@ import {
   deletePath,
   getPath,
   IntegrationSecretUnavailableError,
+  patchIntegrationState,
   persistIntegrationSecrets,
   resolveIntegrationSecrets,
   setPath,
@@ -217,5 +218,37 @@ describe("persistIntegrationSecrets", () => {
       })
     );
     expect(config).toEqual({ teamId: "team" });
+  });
+});
+
+describe("patchIntegrationState", () => {
+  it("sends metadata and secret path patches through one atomic RPC", async () => {
+    const rpc = vi.fn(() =>
+      Promise.resolve({
+        data: { id: "ramp", metadata: { connectionId: "connection-1" } },
+        error: null
+      })
+    );
+    const client = { rpc } as never;
+
+    await patchIntegrationState(client, "company-1", "ramp", {
+      metadata: { connectionId: "connection-1" },
+      secrets: { webhookSecret: "secret-1" },
+      removeMetadata: ["cursors.legacy"],
+      removeSecrets: ["credentials.clientSecret"],
+      active: true,
+      updatedBy: "user-1"
+    });
+
+    expect(rpc).toHaveBeenCalledWith("upsert_company_integration_patch", {
+      p_company_id: "company-1",
+      p_integration_id: "ramp",
+      p_metadata_patch: { connectionId: "connection-1" },
+      p_secret_patch: { webhookSecret: "secret-1" },
+      p_metadata_remove: ["cursors.legacy"],
+      p_secret_remove: ["credentials.clientSecret"],
+      p_active: true,
+      p_updated_by: "user-1"
+    });
   });
 });

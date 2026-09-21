@@ -4,6 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  createApprovalRequest,
+  getApprovalRuleByAmount,
+  getApproverUserIdsForRule,
+  hasPendingApproval,
+  isApprovalRequired
+} from "@carbon/ee/approvals.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -33,13 +40,6 @@ import {
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
 import { getCompany, getCompanySettings } from "~/modules/settings";
-import {
-  createApprovalRequest,
-  getApprovalRuleByAmount,
-  getApproverUserIdsForRule,
-  hasPendingApproval,
-  isApprovalRequired
-} from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { path, requestReferrer } from "~/utils/path";

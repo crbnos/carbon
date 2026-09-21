@@ -8,12 +8,14 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
+  getJobReleaseReadiness,
   jobStatus,
   recalculateJobRequirements,
   returnPickedRemaindersForJob,
   runMRP,
   updateJobStatus
 } from "~/modules/production";
+import { releaseJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -36,6 +38,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const selectedPurchaseOrdersBySupplierId = formData.get(
     "selectedPurchaseOrdersBySupplierId"
   ) as string | null;
+  const selectedSupplierProcessByOperationId = formData.get(
+    "selectedSupplierProcessByOperationId"
+  ) as string | null;
 
   if (!status || !jobStatus.includes(status)) {
     throw redirect(
@@ -57,6 +62,75 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await flash(request, error(null, "Manufacturing is blocked"))
       );
     }
+  }
+
+  // The Release dialog: the shared release path (also run by batch release),
+  // re-checking what the dialog checked, then one schedule run for the location.
+  if (status === "Ready" && shouldSchedule) {
+    const readiness = await getJobReleaseReadiness(client, [id], companyId);
+    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
+    if (readiness.error || missing.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            readiness.error,
+            readiness.error
+              ? "Failed to validate job"
+              : `Assign an operation to each assembly before releasing: ${missing
+                  .map((m) => m.description)
+                  .join(", ")}`
+          )
+        )
+      );
+    }
+
+    try {
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
+    } catch (err) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to save the supplier choice"))
+      );
+    }
+
+    const released = await releaseJobs({
+      client,
+      db: getDatabaseClient(),
+      jobIds: [id],
+      companyId,
+      userId,
+      purchaseOrdersBySupplierId: JSON.parse(
+        selectedPurchaseOrdersBySupplierId ?? "{}"
+      )
+    });
+    if (released.error) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(null, released.error))
+      );
+    }
+
+    try {
+      await scheduleJobLocation({ id, companyId, userId });
+    } catch (err) {
+      logger.error("Error", { error: err });
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(request, error(err, "Failed to schedule job"))
+      );
+    }
+
+    throw redirect(
+      requestReferrer(request) ?? path.to.job(id),
+      await flash(request, success("Updated job status"))
+    );
   }
 
   if (["Planned", "Ready"].includes(status)) {
@@ -131,33 +205,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (["Ready", "Planned"].includes(status) && shouldSchedule) {
+  if (status === "Planned" && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
         selectedPurchaseOrdersBySupplierId ?? "{}"
       );
-
-      const serviceRole = getCarbonServiceRole();
-      // Forecast-first scheduling regenerates the whole location the job is in.
-      const { data: jobLocation } = await serviceRole
-        .from("job")
-        .select("locationId")
-        .eq("id", id)
-        .single();
-      if (!jobLocation?.locationId) {
-        throw new Error("Job has no location to schedule");
-      }
-      // Regenerate the whole location IN-PROCESS (Node) — no edge cold-start or
-      // HTTP hop. Throws on failure (caught below), in parallel with PO creation.
+      await stampSupplierChoices({
+        jobId: id,
+        companyId,
+        userId,
+        choices: JSON.parse(selectedSupplierProcessByOperationId ?? "{}")
+      });
+      // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
-        runLocationSchedule({
-          db: getDatabaseClient(),
-          client: serviceRole,
-          locationId: jobLocation.locationId,
-          companyId,
-          userId
-        }),
-        serviceRole.functions.invoke("create", {
+        scheduleJobLocation({ id, companyId, userId }),
+        getCarbonServiceRole().functions.invoke("create", {
           body: {
             type: "purchaseOrderFromJob",
             jobId: id,
@@ -167,15 +229,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
           }
         })
       ]);
-
-      if (status === "Ready") {
-        await client
-          .from("job")
-          .update({
-            releasedDate: new Date().toISOString()
-          })
-          .eq("id", id);
-      }
     } catch (err) {
       logger.error("Error", { error: err });
       throw redirect(
@@ -203,4 +256,118 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
+}
+
+// Forecast-first scheduling regenerates the whole location the job is in,
+// in-process (Node) — no edge cold-start or HTTP hop. Throws on failure.
+async function scheduleJobLocation({
+  id,
+  companyId,
+  userId
+}: {
+  id: string;
+  companyId: string;
+  userId: string;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const { data: jobLocation } = await serviceRole
+    .from("job")
+    .select("locationId")
+    .eq("id", id)
+    .single();
+  if (!jobLocation?.locationId) {
+    throw new Error("Job has no location to schedule");
+  }
+  await runLocationSchedule({
+    db: getDatabaseClient(),
+    client: serviceRole,
+    locationId: jobLocation.locationId,
+    companyId,
+    userId
+  });
+}
+
+// The release dialog's supplier pick for an outside operation whose process has
+// several suppliers, stamped on the operation so purchaseOrderFromJob resolves
+// it. Must land BEFORE the purchase orders are created.
+async function stampSupplierChoices({
+  jobId,
+  companyId,
+  userId,
+  choices
+}: {
+  jobId: string;
+  companyId: string;
+  userId: string;
+  choices: Record<string, string>;
+}) {
+  const serviceRole = getCarbonServiceRole();
+  const operationSupplierChoices = Object.entries(choices);
+  if (operationSupplierChoices.length > 0) {
+    // Both ids come from the form and drive a service-role (RLS-bypassing)
+    // write that purchaseOrderFromJob later consumes, so validate them before
+    // persisting: the operation must belong to THIS job, and the chosen
+    // supplier process must belong to that operation's own process. Otherwise
+    // a crafted submit could retarget another job or create a PO for an
+    // unrelated supplier.
+    const operationIds = operationSupplierChoices.map(
+      ([operationId]) => operationId
+    );
+    const supplierProcessIds = operationSupplierChoices.map(([, sp]) => sp);
+
+    const [
+      { data: jobOperations, error: jobOperationsError },
+      { data: supplierProcesses, error: supplierProcessesError }
+    ] = await Promise.all([
+      serviceRole
+        .from("jobOperation")
+        .select("id, processId")
+        .eq("jobId", jobId)
+        .eq("companyId", companyId)
+        .in("id", operationIds),
+      serviceRole
+        .from("supplierProcess")
+        .select("id, processId")
+        .eq("companyId", companyId)
+        .in("id", supplierProcessIds)
+    ]);
+    if (jobOperationsError) throw new Error(jobOperationsError.message);
+    if (supplierProcessesError) throw new Error(supplierProcessesError.message);
+
+    const operationProcessById = new Map(
+      (jobOperations ?? []).map((op) => [op.id, op.processId])
+    );
+    const supplierProcessProcessById = new Map(
+      (supplierProcesses ?? []).map((sp) => [sp.id, sp.processId])
+    );
+
+    for (const [operationId, supplierProcessId] of operationSupplierChoices) {
+      const operationProcessId = operationProcessById.get(operationId);
+      if (!operationProcessId) {
+        throw new Error(`Operation ${operationId} does not belong to this job`);
+      }
+      if (
+        supplierProcessProcessById.get(supplierProcessId) !== operationProcessId
+      ) {
+        throw new Error(
+          "Selected supplier does not belong to the operation's process"
+        );
+      }
+    }
+
+    const updateResults = await Promise.all(
+      operationSupplierChoices.map(([operationId, supplierProcessId]) =>
+        serviceRole
+          .from("jobOperation")
+          .update({
+            operationSupplierProcessId: supplierProcessId,
+            updatedBy: userId
+          })
+          .eq("id", operationId)
+          .eq("companyId", companyId)
+      )
+    );
+    const failedUpdate = updateResults.find((result) => result.error);
+    if (failedUpdate?.error) throw new Error(failedUpdate.error.message);
+  }
 }

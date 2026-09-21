@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -49,7 +49,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   // hoisted so the narrowing survives into downloadFile's closure
   const shareCompanyId = customer.data.companyId;
 
-  const hasPlan = await companyHasPlan(serviceRole, shareCompanyId, {
+  const hasPlan = await companyHasFeature(serviceRole, shareCompanyId, {
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {

@@ -111,6 +111,10 @@ msgstr "{0} 已成功删除"
 msgid "{0} draft journal entries"
 msgstr "{0}个草稿凭证"
 
+#. placeholder {0}: op.description
+msgid "{0} has no supplier"
+msgstr ""
+
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
 #. placeholder {2}: formatter.format( shortfall * consumeFirst.conversionFactor )
@@ -140,6 +144,10 @@ msgstr "{0} / {1} 个过账科目已映射"
 #. placeholder {0}: rows.length
 msgid "{0} of {maxSlots} provider slots used"
 msgstr "{0} / {maxSlots} 个提供商插槽已使用"
+
+#. placeholder {0}: pendingJobs.length
+msgid "{0} of {memberCount} member jobs are not completed yet — their output stays out of stock until each job is completed."
+msgstr "{memberCount}个工单中{0}个尚未完成——其产出将一直缺货，直到每个工单都完成。"
 
 #. placeholder {0}: selected.length
 msgid "{0} operations · {totalQuantity} parts"
@@ -1652,6 +1660,10 @@ msgstr "所有物料"
 msgid "All Locations"
 msgstr "所有位置"
 
+#. placeholder {0}: tracked[0]?.itemReadableId ?? ""
+msgid "all make {0}"
+msgstr "全部自制 {0}"
+
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
@@ -2320,6 +2332,10 @@ msgstr "您确定要删除定价规则：{0}？此操作无法撤销。"
 msgid "Are you sure you want to delete the printer \"{0}\"? Any assignments referencing this printer will be cleared. This cannot be undone."
 msgstr "你确定要删除打印机\"{0}\"吗？任何引用此打印机的分配都将被清除。此操作无法撤销。"
 
+#. placeholder {0}: project.name
+msgid "Are you sure you want to delete the project: {0}? It will be deactivated and hidden from active lists."
+msgstr "确定要删除项目：{0}？项目将被停用并从活跃列表中隐藏。"
+
 #. placeholder {0}: purchaseInvoiceLine.quantity ?? 0
 #. placeholder {1}: purchaseInvoiceLine.description ?? ""
 msgid "Are you sure you want to delete the purchase invoice line for {0} {1}? This cannot be undone."
@@ -2497,6 +2513,10 @@ msgstr "你确定要向这些用户发送邀请吗？"
 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
+
+#. placeholder {0}: cardTransaction.cardTransactionId
+msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
+msgstr "确定要作废 {0}？这将过账一条反向分录，无法撤销。"
 
 msgid "Are you sure you want to void this memo? This will reverse its accounting entries and applications. This cannot be undone."
 msgstr "你确定要作废此备忘录吗？这将反转其会计分录和应用。此操作无法撤销。"
@@ -2789,6 +2809,9 @@ msgstr "在{0}之后可用"
 
 msgid "Available hours"
 msgstr "可用小时数"
+
+msgid "Available on the Business plan"
+msgstr "在商业计划中可用"
 
 msgid "Avatar url"
 msgstr "头像网址"
@@ -3398,6 +3421,12 @@ msgstr "Carbon的车间应用程序，操作员可在其中执行工序、报告
 msgid "Carbon's single record for anything with a part number — Part, Material, Tool, Service, Consumable, or Fixture — that jobs, methods, orders, and inventory all point at."
 msgstr "Carbon对任何具有零件号的事物的单一记录 — 零件、原材料、刀具、服务、耗材或工装夹具 — 工单、方法、订单和库存管理都指向。"
 
+msgid "Card Holder"
+msgstr "持卡人"
+
+msgid "Card Transactions"
+msgstr "卡交易"
+
 msgid "Cards"
 msgstr "卡片"
 
@@ -3533,6 +3562,9 @@ msgstr "检查您的电子邮件"
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
 
+msgid "Checking the batch's jobs..."
+msgstr "正在检查生产批次的工单..."
+
 msgid "Checkpoint ·"
 msgstr "检查点 ·"
 
@@ -3556,6 +3588,10 @@ msgstr "选择左侧的行以查看其库存可能来自何处。"
 
 msgid "Choose a serial number"
 msgstr "选择序列号"
+
+#. placeholder {0}: op.description
+msgid "choose a supplier for {0} on the job"
+msgstr ""
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
@@ -3718,6 +3754,9 @@ msgstr "列"
 
 msgid "Combine filters"
 msgstr "合并筛选"
+
+msgid "Combine output into one lot"
+msgstr "将输出合并为一个批次"
 
 msgid "Coming soon"
 msgstr "即将推出"
@@ -4461,6 +4500,9 @@ msgstr "无法重新安排作业。请重试。"
 msgid "Couldn't save the Onshape connection"
 msgstr "无法保存 Onshape 连接"
 
+msgid "Couldn't save the Ramp connection"
+msgstr "无法保存 Ramp 连接"
+
 msgid "Count"
 msgstr "数量"
 
@@ -4505,6 +4547,9 @@ msgstr "创建 {0} 个值"
 
 msgid "Create & Release"
 msgstr "创建并下达"
+
+msgid "Create & release batch"
+msgstr "创建并下达生产批次"
 
 msgid "Create & Snapshot"
 msgstr "创建并快照"
@@ -4577,6 +4622,9 @@ msgstr "创建工单"
 
 msgid "Create Kanban"
 msgstr "创建看板"
+
+msgid "Create New"
+msgstr "新建"
 
 msgid "Create new rule"
 msgstr "创建新规则"
@@ -4716,6 +4764,9 @@ msgstr "已创建付款条件"
 
 msgid "Created process"
 msgstr "已创建流程"
+
+msgid "Created project"
+msgstr "项目已创建"
 
 msgid "Created required action"
 msgstr "已创建必需操作"
@@ -5364,6 +5415,9 @@ msgstr "递延所得税负债（默认）"
 msgid "Define a manufacturing operation first."
 msgstr "首先定义制造操作。"
 
+msgid "Define custom roles with fine-grained, per-module permissions and assign them to your team."
+msgstr "定义具有细粒度、按模块权限的自定义角色，并将其分配给您的团队。"
+
 msgid "Define multi-level BOMs and Bill of Process (make methods)"
 msgstr "定义多级BOM和工序清单（制造方法）"
 
@@ -5547,6 +5601,9 @@ msgstr "删除程序文件"
 
 msgid "Delete Process"
 msgstr "删除流程"
+
+msgid "Delete Project"
+msgstr "删除项目"
 
 msgid "Delete Purchase Invoice"
 msgstr "删除采购发票"
@@ -6240,6 +6297,12 @@ msgstr "例如 Zebra 2x1"
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "每个单元格显示分配的人员与该天工作所需的人员对比。"
 
+msgid "Each job keeps its own lot. The shop floor can't change these."
+msgstr "每个工单保留自己的批次。车间无法更改这些。"
+
+msgid "Each job needs its own lot number — or combine them into one lot."
+msgstr "每个工单需要自己的批次号 — 或将它们合并为一个批次。"
+
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。包含这些行的备份永远无法恢复。"
 
@@ -6251,6 +6314,9 @@ msgstr "每个工序的未使用原材料在工序完成后立即退回。"
 
 msgid "Each physical unit gets its own tracked entity and unique number — one entity, one unit."
 msgstr "每个物理件获得其自己的追踪实体和唯一编号——一个实体，一个件。"
+
+msgid "Each supplier's outside operations from every job go on one new purchase order, or on an existing draft you choose."
+msgstr "每个供应商的外协工序从每个工单转至一份新采购订单，或转至您选择的现有草稿。"
 
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
@@ -6485,6 +6551,9 @@ msgstr "编辑生产事件"
 
 msgid "Edit Production Quantity"
 msgstr "编辑生产数量"
+
+msgid "Edit Project"
+msgstr "编辑项目"
 
 msgid "Edit purchase order line type"
 msgstr "编辑采购订单行类型"
@@ -6995,6 +7064,9 @@ msgstr "其他所有内容"
 msgid "Everything else covers people, imports, integrations and the API — anything that is not one of your workflows."
 msgstr "其他所有内容涵盖人员、导入、集成和 API — 任何不属于您的工作流的内容。"
 
+msgid "Everything this run makes lands in one lot. The shop floor can't change it."
+msgstr "这次运行生产的所有产品都进入一个批次。车间无法更改它。"
+
 msgid "Exceeds {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB total — remove some attachments to send."
 msgstr "超过 {PO_EMAIL_ATTACHMENT_LIMIT_MB} MB 总限制 — 删除一些附件进行发送。"
 
@@ -7009,6 +7081,9 @@ msgstr "汇率更新于"
 
 msgid "Exchange Rates"
 msgstr "汇率"
+
+msgid "Exchanging the authorization code for access failed. Try connecting again."
+msgstr "用授权代码交换访问权限失败。请重新连接。"
 
 msgid "Exchanging the authorization code for an access token failed. Try connecting again."
 msgstr "用授权代码交换访问令牌失败。请重新连接。"
@@ -7332,6 +7407,10 @@ msgstr "创建付款条件失败：{0}"
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create process: {0}"
 msgstr "创建流程失败：{0}"
+
+#. placeholder {0}: fetcher.data.error.message
+msgid "Failed to create project: {0}"
+msgstr "项目创建失败：{0}"
 
 #. placeholder {0}: fetcher.data.error.message
 msgid "Failed to create return reason: {0}"
@@ -7765,6 +7844,9 @@ msgstr "缩放到适应"
 msgid "Fix the problems with this workflow before testing it"
 msgstr "在测试之前修复此工作流的问题"
 
+msgid "Fix these jobs before releasing"
+msgstr "在下达前修复这些工单"
+
 msgid "Fixed"
 msgstr "固定"
 
@@ -8191,6 +8273,9 @@ msgstr "等级"
 
 msgid "Grades"
 msgstr "等级"
+
+msgid "Grant each user fine-grained, per-module permissions instead of giving everyone full access."
+msgstr "向每个用户授予细粒度、按模块权限，而不是给予所有人完全访问权。"
 
 msgid "Grants Ability"
 msgstr "授予能力"
@@ -9467,9 +9552,6 @@ msgstr "留空以精确匹配"
 msgid "Leave this page"
 msgstr "离开此页面"
 
-msgid "Ledger"
-msgstr "总账"
-
 msgid "Left item"
 msgstr "左项"
 
@@ -9571,7 +9653,7 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "采购订单收货已过账后，此处显示行项目（仅限尚未在其他供应商退货上授权的数量）。如需盲目退货，请使用\"添加行项目\"。"
+msgstr "采购订单收货已过账后，行将显示在此处，并且仅限于尚未在另一个供应商退货中授权的数量。使用添加行项目进行盲退货。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "销售订单发货已过账后，行将显示在此处，仅适用于尚未在另一个RMA中授权的数量。对于盲目退货，请使用添加行项目。"
@@ -9767,6 +9849,9 @@ msgstr "丢单"
 msgid "Lot"
 msgstr "批次"
 
+msgid "Lot number"
+msgstr "批次号"
+
 msgid "Lot size"
 msgstr "批量大小"
 
@@ -9946,6 +10031,9 @@ msgstr "制造商零件号"
 
 msgid "Manufacturing"
 msgstr "制造"
+
+msgid "manufacturing is blocked"
+msgstr "生产受阻"
 
 msgid "Map accounts"
 msgstr "映射科目"
@@ -10233,6 +10321,16 @@ msgstr "备忘录日期"
 msgid "Memo ID"
 msgstr "备忘录 ID"
 
+msgid "Merchant"
+msgstr "商家"
+
+#. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
+msgid "Merge {0} lots"
+msgstr ""
+
+msgid "Merge output lots"
+msgstr "合并输出批次"
+
 msgid "MES"
 msgstr "MES"
 
@@ -10271,9 +10369,6 @@ msgstr "公制单位已禁用"
 
 msgid "Metric units are enabled"
 msgstr "公制单位已启用"
-
-msgid "MFA"
-msgstr "MFA"
 
 msgid "Mid-month / mid-quarter / half-year convention that determines the first-year deduction."
 msgstr "决定首年扣除的月中/季中/半年约定俗成的方法。"
@@ -10765,6 +10860,9 @@ msgstr "新建程序文件"
 msgid "New Process"
 msgstr "新流程"
 
+msgid "New Project"
+msgstr "新项目"
+
 msgid "New Quality Document"
 msgstr "新质量文件"
 
@@ -11159,6 +11257,9 @@ msgstr "没有创建工单"
 msgid "No journal lines in scope for this period"
 msgstr "此期间范围内没有凭证行"
 
+msgid "No lines"
+msgstr "无行项"
+
 msgid "No lines to map"
 msgstr "没有行需要映射"
 
@@ -11218,6 +11319,10 @@ msgstr "没有未结销售订单行"
 
 msgid "No operations found."
 msgstr "未找到工序。"
+
+#. placeholder {0}: job.missingAssemblies .map((m) => m.description) .join(", ")
+msgid "no operations on {0}"
+msgstr "{0}上没有工序"
 
 msgid "No operations require picking at this location"
 msgstr "此地点没有工序需要拣货"
@@ -11496,6 +11601,9 @@ msgid "Not certified"
 msgstr "未认证"
 
 msgid "Not configured"
+msgstr "未配置"
+
+msgid "Not Configured"
 msgstr "未配置"
 
 msgid "Not enough jobs to cover quantity"
@@ -11879,6 +11987,9 @@ msgstr "打开 Scheduled"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Open the Ramp integration and try connecting again to finish setup."
+msgstr "打开 Ramp 集成，然后重新连接以完成配置。"
 
 msgid "Open the Setup Map"
 msgstr "打开设置地图"
@@ -12963,6 +13074,12 @@ msgstr "流程"
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "采购状态——需要订购、已计划、已订购或已收货。与 BoM 树中显示的指示器相同。"
 
+msgid "produced item"
+msgstr "生产物料"
+
+msgid "Produced item"
+msgstr "生产物料"
+
 msgid "Product issues during hypercare"
 msgstr "超级护理期间的产品问题"
 
@@ -13021,6 +13138,9 @@ msgstr "预计 {0}"
 msgid "Project"
 msgstr "项目"
 
+msgid "Project Name"
+msgstr "项目名称"
+
 msgid "Project owner"
 msgstr "项目负责人"
 
@@ -13071,6 +13191,9 @@ msgstr "预测"
 
 msgid "Projections"
 msgstr "预测"
+
+msgid "Projects"
+msgstr "项目"
 
 msgid "Promised Date"
 msgstr "承诺日期"
@@ -13519,6 +13642,24 @@ msgstr "在每周状态会议上提出"
 msgid "raise it early and raise it plainly. A problem named in week 2 is a small fix; the same problem at go-live is a delay."
 msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很容易修复；同样的问题在上线时就会导致延期。"
 
+msgid "Ramp"
+msgstr "Ramp"
+
+msgid "Ramp authorized the connection but saving it failed. Try connecting again."
+msgstr "Ramp 已授权此连接，但保存失败。请重新连接。"
+
+msgid "Ramp connected but setup didn't finish"
+msgstr "Ramp 已连接，但未完成配置"
+
+msgid "Ramp denied the connection"
+msgstr "Ramp 拒绝了连接"
+
+msgid "Ramp didn't return an authorization code"
+msgstr "Ramp 未返回授权代码"
+
+msgid "Ramp rejected the authorization"
+msgstr "Ramp 拒绝了授权"
+
 msgid "Rate"
 msgstr "汇率"
 
@@ -13848,6 +13989,11 @@ msgstr "下达{0}个生产批次"
 msgid "Release Batch"
 msgstr "下达生产批次"
 
+#. placeholder {0}: batch.readableId
+#. placeholder {0}: releaseTarget.readableId
+msgid "Release batch {0}"
+msgstr "下达生产批次{0}"
+
 msgid "Release change notice"
 msgstr "下达变更通知"
 
@@ -13875,6 +14021,9 @@ msgstr "已下达修订版"
 
 msgid "Released revision is locked"
 msgstr "已下达修订版已锁定"
+
+msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
+msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
 
 msgid "Remaining"
 msgstr "剩余"
@@ -14083,9 +14232,6 @@ msgstr "要求日期"
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "登录时需要来自身份验证器应用的 6 位数字代码。"
 
-msgid "Require a second factor when members sign in to this company."
-msgstr "成员登录此公司时需要第二因素验证"
-
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "排程前需要已分配的操作员才能在地点安排工作。启用时，无人工作中心不会分配工作，且无人工覆盖的工序显示为无法排程。熄灯（24×7）工作中心豁免。"
 
@@ -14106,6 +14252,9 @@ msgstr "必需匹配"
 
 msgid "Require SAML SSO"
 msgstr "需要 SAML SSO"
+
+msgid "Require tiered sign-off on purchase orders, quality documents, and suppliers based on amount thresholds and approver groups."
+msgstr "根据金额阈值和批准人组，对采购订单、质量文档和供应商要求分级批准。"
 
 msgid "Require two-factor authentication"
 msgstr "需要双因素认证"
@@ -14312,6 +14461,9 @@ msgstr "退货原因"
 
 msgid "Return Reasons"
 msgstr "退货原因"
+
+msgid "Return to Integrations and connect Ramp again."
+msgstr "返回集成页面并重新连接 Ramp。"
 
 msgid "returnable"
 msgstr "可退货的"
@@ -15246,7 +15398,7 @@ msgid "Select operations"
 msgstr "选择工序"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "选择来自此供应商的已过账收货行以退货。"
+msgstr "选择从此供应商的已过账收货行以退货。"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "从该客户的已过账发货行中选择要退货的"
@@ -15445,7 +15597,7 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "在此退货上设置客户以从发货添加。"
+msgstr "在此退货中设置客户以从发货添加。"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "为此退货指定供应商以从其收货中添加"
@@ -15744,6 +15896,10 @@ msgstr "快捷键"
 msgid "Show"
 msgstr "显示"
 
+#. placeholder {0}: overflow.length
+msgid "Show {0} more"
+msgstr ""
+
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"
 
@@ -15751,7 +15907,7 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
 msgid "Show available batch numbers"
-msgstr "显示可用批次号"
+msgstr "显示可用的生产批次号"
 
 msgid "Show available tracking numbers"
 msgstr "显示可用的跟踪号码"
@@ -15913,6 +16069,10 @@ msgstr "按地点、成本中心或任何维度分割费用"
 
 msgid "Slice revenue by customer, customer type, or any dimension"
 msgstr "按客户、客户类型或任何维度划分收入"
+
+#. placeholder {0}: i + 1
+msgid "Slide {0}"
+msgstr "幻灯片 {0}"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "最小分批数量。留空表示无。"
@@ -16890,11 +17050,17 @@ msgstr "每个库存变动的追加专用记录；在手数量是其带符号条
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
+msgid "The authorization was refused in Ramp. Try connecting again."
+msgstr "授权在 Ramp 中被拒绝。请重新连接。"
+
 msgid "The backup job reported this error."
 msgstr "备份工作报告了此错误。"
 
 msgid "The backward-computed date an operation must finish by to keep its job on time, written to the operation's due date. A stable target for measuring progress — never a constraint on placement."
 msgstr "为保持其工单按时完成，工序必须完成的反向计算日期，写入工序的到期日。测量进度的稳定目标 — 永远不是放置约束。"
+
+msgid "The batch goes to the shop floor. Its jobs are already released."
+msgstr "生产批次送往车间。其工单已下达。"
 
 msgid "The batch runs at its most urgent member's time — the others are pulled early"
 msgstr "批次按最紧急成员的时间运行——其余成员将被提前"
@@ -17181,6 +17347,9 @@ msgstr "发货过账时确认的库存管理成本，按物料的成本核算方
 msgid "The IRS recovery-period class for this asset under MACRS (3, 5, 7, 10, 15, 20, 27.5, 39-year)."
 msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15、20、27.5、39年）。"
 
+msgid "The item each job produces — require it to match to merge output lots"
+msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
 
@@ -17408,6 +17577,9 @@ msgstr "报价已创建"
 msgid "The quote will be copied with a revision suffix"
 msgstr "报价单将使用修订版后缀进行复制"
 
+msgid "The Ramp connection expired"
+msgstr "Ramp 连接已过期"
+
 msgid "The raw stock and material master you buy and consume"
 msgstr "您购买和消耗的原材料库存及物料主档"
 
@@ -17447,6 +17619,9 @@ msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - 
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
+
+msgid "The response from Ramp was missing required parameters. Try connecting again."
+msgstr "Ramp 的响应缺少必需的参数。请重新连接。"
 
 msgid "The restore job reported this error."
 msgstr "恢复工作报告了此错误。"
@@ -17694,6 +17869,9 @@ msgstr "这些工单在此工作中心分配了工序:"
 msgid "These journal entries are still Draft, so their debits and credits aren't in the ledger for this period. Post each one, or re-date it into a later open period."
 msgstr "这些凭证仍是草稿，所以其借方和贷方不在此期间的账簿中。过账每一个，或将其重新标注日期到更后的未结期间。"
 
+msgid "These operations use a process with multiple suppliers. Choose a supplier for each."
+msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选择一个供应商。"
+
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
@@ -17705,6 +17883,11 @@ msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他
 
 msgid "this ability"
 msgstr "此能力"
+
+#. placeholder {0}: jobIds.length
+#. placeholder {1}: jobIds.join(", ")
+msgid "This also releases {0} jobs ({1}). They become available to the shop floor and drive purchasing and production."
+msgstr "这也下达了{0}个工单({1})。它们对车间可用，并驱动采购和生产。"
 
 msgid "This backup could not be completed."
 msgstr "无法完成此备份。"
@@ -18323,6 +18506,12 @@ msgstr "通过 Academy 和应用内指南培训班组"
 msgid "Trainings"
 msgstr "培训"
 
+msgid "Transaction Date"
+msgstr "交易日期"
+
+msgid "Transaction ID"
+msgstr "交易ID"
+
 msgid "Transactions will create journal entries and update the general ledger."
 msgstr "交易将创建凭证并更新总账。"
 
@@ -18735,6 +18924,9 @@ msgstr "升级"
 msgid "Upgrade to Business"
 msgstr "升级到商业版"
 
+msgid "Upgrade to Enterprise"
+msgstr "升级到 Enterprise"
+
 #. placeholder {0}: targetCopy.noun
 msgid "Upgrade to unlock {0} rules"
 msgstr "升级以解锁 {0} 规则"
@@ -18851,6 +19043,9 @@ msgstr "使用年限（月）"
 
 msgid "User"
 msgstr "用户"
+
+msgid "User Permissions"
+msgstr "用户权限"
 
 msgid "User roles"
 msgstr "用户角色"
@@ -19202,6 +19397,9 @@ msgstr "作废"
 #. placeholder {0}: initialValues.paymentId
 msgid "Void {0}"
 msgstr "作废 {0}"
+
+msgid "Void Card Transaction"
+msgstr "作废卡交易"
 
 msgid "Void Invoice"
 msgstr "作废发票"

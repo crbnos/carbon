@@ -1351,6 +1351,30 @@ export async function getShippingTermsList(
     .order("name", { ascending: true });
 }
 
+// Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
+// quantity, earliest expiry) with genealogy back to every parent. The issue
+// edge fn owns the writes; see shared/batch-merge.ts.
+export async function mergeTrackedEntities(
+  client: SupabaseClient<Database>,
+  args: {
+    trackedEntityIds: string[];
+    readableId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{
+    trackedEntityId?: string;
+    readableId?: string | null;
+    error?: string;
+  }>("issue", {
+    body: {
+      type: "mergeTrackedEntities",
+      ...args
+    }
+  });
+}
+
 export async function getTrackedEntities(
   client: SupabaseClient<Database>,
   companyId: string,

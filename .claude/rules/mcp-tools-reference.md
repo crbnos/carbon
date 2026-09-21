@@ -77,6 +77,16 @@ Auth always yields an `McpContext` = `{ client, companyId, companyGroupId, userI
 (`lib/types.ts`). `companyId`/`userId` come from the auth context and are injected
 server-side — never trusted from tool arguments.
 
+**Edition/plan gate.** The MCP server is a Business+ feature. Immediately after
+`resolveAuth`, `action` calls `companyHasFeature(ctx.client, ctx.companyId, { feature: "MCP" })`
+and returns 402 when false — one check that covers BOTH auth paths and blocks the
+**Community** edition (self-hosted) as well as Cloud **Starter** companies. This is the
+edge enforcement (the MCP server code lives in `apps/erp`, community-licensed, so there is
+no `packages/ee` body to relocate); `companyHasFeature` is the same entitlement helper the
+rest of the gated features use. The unauthenticated discovery endpoints
+(`/.well-known/mcp.json`, `/agent-setup/prompt.md`) are NOT gated — they have no company
+context and only advertise the endpoint; enforcement is at `POST /api/mcp`.
+
 ## The 3 meta-tools (the ONLY tools actually registered)
 
 To avoid context exhaustion, `server.registerTool` registers just three discovery
@@ -225,14 +235,27 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
   service whose param is `db` is handed `getDatabaseClient()`; payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
-  `dispatch.server.ts`). A param literally named `args` is stamped too, and
-  which wire shape it takes is read off the operation's schema: a declared `args`
-  object means the body wraps it (`{ args: {...} }`) and the inner object is
-  unwrapped; a flat schema means the body already IS the args object. A flat body
-  is still accepted either way. A param the schema declares as a **scalar** is
-  passed `undefined` when no key matches rather than being handed the whole
-  payload object — that fallback made `deleteApiKey` run `.eq("id", {...})` and
-  return `200 null`. Reading a key by the param's own name is likewise gated
+  `dispatch.server.ts`) — including `userId` when the payload itself declares one
+  (the edge-function wrappers), which the manifest marks via `injectAuth` and the
+  generator derives from the signature. Without it the service runs with no acting
+  user; `apps/erp/test/mcp-tool-auth-injection.test.ts` guards the pairing.
+  A param literally named `args` is stamped too, and which wire shape it takes
+  is read off the operation's schema: a declared `args` object means the body
+  wraps it (`{ args: {...} }`) and the inner object is unwrapped; a flat schema
+  means the body already IS the args object. Both directions have a compatibility
+  path, and they are NOT symmetric:
+  - A wrapped schema also accepts the wrapper's contents sent flat, but only when
+    the wrapper is the schema's **sole required property** (`compileSoleWrapper`
+    in `packages/api/src/schema.ts`). An operation that requires `args` alongside
+    another property rejects a flat body at validation, before dispatch.
+  - A flat schema also accepts a lone `{ args: {...} }` envelope, unwrapped in
+    `callOperation` before validation because the published instructions taught
+    that shape.
+
+  A param the schema declares as a **scalar** is passed `undefined` when no key
+  matches rather than being handed the whole payload object — that fallback made
+  `deleteApiKey` run `.eq("id", {...})` and return `200 null`. Reading a key by
+  the param's own name is likewise gated
   (`addressesWholeParam`): a service whose sole payload param is a destructured
   object can share its name with one of that object's FIELDS —
   `insertNote(client, note: { note, documentId, … })` — and reading `body.note`
@@ -287,10 +310,34 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or
-  `{ success: false, error, errorKind: "database" | "execution" }`. A Supabase
-  failure keeps MCP's exact `Database error: ${JSON.stringify(error)}` text
-  (the raw error rides on `ORPCError.data.supabase`), and HTTP callers get the
-  Postgres `code`/`details`/`hint` in the 400 body.
+  `{ success: false, error, errorKind: "database" | "execution" }`. The raw error
+  rides on `ORPCError.data.supabase`, and the two surfaces treat it differently:
+  - `CallResult.error` (MCP, the in-app agent, workflows) carries a **fixed
+    message from the closed set** in `api+/v1+/lib/database-errors.ts` —
+    `conflict`, `reference`, `required`, `permission`, `notFound`, `rule`,
+    `unknown`. `classifyDatabaseFailure` picks one from STRUCTURED fields only
+    (a Postgres SQLSTATE, or the `FunctionsHttpError` name); message text is never
+    parsed, since parsing it would make the public string a function of the private
+    one. It used to interpolate `JSON.stringify(error)`, which handed a caller the
+    column, constraint and value out of the PostgREST body, and later an edge
+    function's own text — CWE-209 either way.
+  - The **full detail is logged** instead (`logger.error("Operation failed", …)` in
+    `call.server.ts`) with the operation name, the classification, the raw Supabase
+    error, and — for an edge function — the message read off the unread `Response`
+    on `error.context` by `edgeFunctionMessage`. Without that read the log would
+    hold an empty `{"name":"FunctionsHttpError","context":{}}` rather than the rule
+    that fired ("The process is not batchable"), so a business-rule rejection and a
+    malformed payload would be indistinguishable in the log too.
+  - **HTTP is a separate path and is unchanged**: a 400 body is serialized from the
+    `ORPCError` by the oRPC handler, never from `CallResult`, so HTTP callers still
+    receive the Postgres `code`/`details`/`hint`. Narrowing that is a separate
+    decision about the public API.
+
+  The consequence is deliberate and worth knowing when debugging an agent: a
+  business rule an agent could act on ("already in a batch") now reads as the
+  generic `rule` message, and the specific cause is in the server log. An
+  enumerated code returned by the edge functions themselves, mapped to public
+  strings here, is the way to give that back without echoing server text.
 - The dispatch behavior is pinned by
   `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
   deleted `executeFunction`) — a change there is a behavior change for MCP,

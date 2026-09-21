@@ -1,14 +1,15 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { upsertEnforcementRule } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import type { ConditionAst } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import { storageRuleValidator } from "~/modules/inventory";
 import StorageRuleForm from "~/modules/inventory/ui/StorageRules/StorageRuleForm";
-import { getEnforcementRule, upsertEnforcementRule } from "~/modules/shared";
+import { getEnforcementRule } from "~/modules/shared";
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -28,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "inventory"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

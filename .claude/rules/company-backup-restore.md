@@ -33,16 +33,28 @@ User-facing rules of the feature: backups require `settings` update permission
 route and the `export-company` edge function), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
-**Internal-only in real deployments, open to everyone on a local dev stack**,
-while the multi-tenant caveats below are unhardened. One gate:
+**Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
+an internal-staff / local-dev escape hatch. The authoritative gate is
+`canManageBackups(client, companyId, email)`
+(`apps/erp/app/modules/settings/backups.server.ts`) =
+`canAccessBackups(email) || companyHasFeature(client, companyId, { feature: "BACKUPS" })`.
 `canAccessBackups(email)` (`apps/erp/app/utils/backups.ts`) = `IS_LOCAL_DEV ||
-isInternalEmail(email)`. `IS_LOCAL_DEV` (`packages/env`) is true only when neither
-`NODE_ENV` nor `VERCEL_ENV` is `production`/`preview` — so prod, preview, and
-self-hosted (all `NODE_ENV=production`) stay internal-only. Used by
-`requireBackupAccess` (route loader/action), every `api+/settings.backup-*`
-loader/action (404), and the nav (`localOrInternalRoutes` in
-`useSettingsSubmodules.tsx`, via `useFlags().isLocalDev`). Internal =
-`@carbon.ms` / `@carbon.us.org`. Drop `canAccessBackups` entirely to ship publicly.
+isInternalEmail(email)` stays a pure browser-safe predicate — the escape hatch, and the
+whole gate for **Demo Data** (`x+/settings+/demo-data`), which stays internal-only. Used
+by the `backups.tsx` loader/action and every `api+/settings.backup-*` loader/action (404
+on deny); the nav gates it in `useSettingsSubmodules.tsx` via `usePlanGate({ feature:
+"BACKUPS" })` OR `isInternal`/`isLocalDev` (Demo Data still uses `localOrInternalRoutes`).
+Internal = `@carbon.ms` / `@carbon.us.org`.
+
+The multi-tenant caveats below are real but are NOT a cross-tenant leak in the backup
+feature — every entry point is scoped to the caller's `companyId`. They were the reason
+this stayed internal-only, and exposing it to customers is a deliberate product decision:
+(1) restore is a full in-company wipe-and-reload (large destructive surface, snapshot-
+reversible); (2) the export HARD-REFUSES when a company's live data already holds
+cross-tenant references left by an upstream bug (tables like `jobOperationDependency`
+still lacking `companyId` in their PK — see `.ai/specs/2026-08-25-backup-durability.md`),
+offering a destructive "remove corrupted data" path. Closing that upstream schema hole
+is the remaining hardening.
 
 ## Shared engine — `company-backup.ts`
 

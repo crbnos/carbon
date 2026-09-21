@@ -1369,6 +1369,9 @@ importers:
       remix-flat-routes:
         specifier: 'catalog:'
         version: 0.8.5
+      sonner:
+        specifier: 2.0.7
+        version: 2.0.7(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
       sst:
         specifier: 'catalog:'
         version: 4.6.9

@@ -1,13 +1,13 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertCustomerPortal } from "@carbon/ee/customer-portals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useNavigate } from "react-router";
 import { customerPortalValidator } from "~/modules/sales";
-import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm";
-import { upsertExternalLink } from "~/modules/shared";
+import CustomerPortalForm from "~/modules/sales/ui/CustomerPortals/CustomerPortalForm.ee";
 
 import { getParams, path, requestReferrer } from "~/utils/path";
 
@@ -25,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
     create: "sales"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -46,11 +46,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { customerId } = validation.data;
 
-  const insertCustomerPortal = await upsertExternalLink(client, {
+  const insertCustomerPortal = await upsertCustomerPortal(client, companyId, {
     documentType: "Customer",
     documentId: customerId,
-    customerId,
-    companyId
+    customerId
   });
 
   if (insertCustomerPortal.error) {

@@ -1,8 +1,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import { unassignStorageRule } from "@carbon/ee/rules";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { unassignStorageRule } from "@carbon/ee/rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { path } from "~/utils/path";
@@ -13,7 +13,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "resources"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -28,7 +28,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await unassignStorageRule(client, {
     targetType: "workCenter",
     targetId: workCenterId,
-    ruleId
+    ruleId,
+    companyId
   });
   if (result.error) {
     throw redirect(
