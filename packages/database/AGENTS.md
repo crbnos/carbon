@@ -8,6 +8,13 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
 - RLS: four policies named exactly `SELECT`/`INSERT`/`UPDATE`/`DELETE`. SELECT uses `get_companies_with_employee_role()`, writes use `get_companies_with_employee_permission('<module>_<action>')`. Schema-qualify tables, cast `::text[]`.
 - Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
+- `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
+  composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
+  `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
+  It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
+  select it and a company restore cannot erase it. A migration landing in this package is
+  also what triggers those scripts to deploy (`.github/workflows/supabase.yml` only fires on
+  `packages/database/supabase/**`).
 - Use `fetchAllFromTable` for paginated reads that exceed the 1000-row Supabase limit. It pages
   without `count: "exact"` (a `COUNT(*) OVER ()` per page is not free) and fetches the pages past
   the first concurrently. `fetchAllRecords` is the same pager over a query FACTORY (`() => builder`)

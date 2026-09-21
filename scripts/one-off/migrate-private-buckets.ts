@@ -1,5 +1,5 @@
 import { createRequire } from "node:module";
-import { readLocalScriptConfig } from "./lib/local-script-config";
+import { readLocalScriptConfig } from "../lib/local-script-config";
 
 // One-off, idempotent migration: copy the legacy shared `private` bucket's
 // objects into each company's own bucket (bucket id = companyId). Object keys
@@ -13,8 +13,8 @@ import { readLocalScriptConfig } from "./lib/local-script-config";
 // Do not decommission the legacy bucket until those are handled explicitly.
 //
 // Usage:
-//   pnpm exec tsx scripts/migrate-private-buckets.ts            # migrate
-//   pnpm exec tsx scripts/migrate-private-buckets.ts --dry-run  # read-only
+//   pnpm exec tsx scripts/one-off/migrate-private-buckets.ts            # migrate
+//   pnpm exec tsx scripts/one-off/migrate-private-buckets.ts --dry-run  # read-only
 
 const LEGACY_BUCKET = "private";
 const BUCKET_FILE_SIZE_LIMIT = 52428800; // 50 MB
@@ -31,7 +31,7 @@ const { SUPABASE_URL: supabaseUrl, SUPABASE_SERVICE_ROLE_KEY: serviceRoleKey } =
 function createServiceRoleClient(url: string, serviceRole: string) {
   // The database workspace declares and pins this dependency; root scripts do not.
   const fromDatabase = createRequire(
-    new URL("../packages/database/package.json", import.meta.url)
+    new URL("../../packages/database/package.json", import.meta.url)
   );
   const { createClient } = fromDatabase("@supabase/supabase-js");
   return createClient(url, serviceRole, {
