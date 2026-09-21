@@ -523,6 +523,9 @@ msgstr "90 dni"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Reguła \"muszą się zgadzać\" w tym procesie blokuje wspólne tworzenie partii produkcyjnej"
 
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Migracja danych prowadzona przez Carbon — ty ładujesz swoje dane"
 
@@ -1111,6 +1114,9 @@ msgstr "Kierownik Konta"
 
 msgid "Account Mapping"
 msgstr "Mapowanie Kont"
+
+msgid "Account Name"
+msgstr ""
 
 msgid "Account Number"
 msgstr "Numer konta"
@@ -5291,6 +5297,9 @@ msgstr "Głębokie noce, {name}."
 
 msgid "Default"
 msgstr "Domyślnie"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Domyślne konto do księgowania przychodów ze sprzedaży z faktur"
@@ -14041,9 +14050,18 @@ msgstr "Usuń z listy"
 msgid "Remove {0}"
 msgstr "Usuń z listy {0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Usunąć {0} z tej partii produkcyjnej? Jej operacja wraca do harmonogramu, aby uruchamiać się niezależnie."
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Usuń z listy {label}"

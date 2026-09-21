@@ -523,6 +523,9 @@ msgstr "90일"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "이 공정의 \"일치해야 함\" 규칙이 이들을 배치 공유에서 차단합니다"
 
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
 
@@ -1111,6 +1114,9 @@ msgstr "계정 관리자"
 
 msgid "Account Mapping"
 msgstr "계정 매핑"
+
+msgid "Account Name"
+msgstr ""
 
 msgid "Account Number"
 msgstr "계좌번호"
@@ -5291,6 +5297,9 @@ msgstr "{name}님, 한밤중이군요."
 
 msgid "Default"
 msgstr "기본값"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "송장에서 매출을 전기하기 위한 기본 계정"
@@ -14041,9 +14050,18 @@ msgstr "제거"
 msgid "Remove {0}"
 msgstr "{0} 제거"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일정으로 돌아가 자체적으로 실행됩니다."
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "제거 {label}"

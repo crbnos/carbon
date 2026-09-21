@@ -1,6 +1,7 @@
 import {
   BarProgress,
   Button,
+  Checkbox,
   Combobox,
   cn,
   Drawer,
@@ -50,7 +51,8 @@ import {
   LuTimer,
   LuTrash,
   LuTriangleAlert,
-  LuUndo2
+  LuUndo2,
+  LuX
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import {
@@ -60,6 +62,8 @@ import {
   ItemThumbnail
 } from "~/components";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
+import { ConfirmDelete } from "~/components/Modals";
+import { usePermissions } from "~/hooks";
 import { useCustomers, useItems } from "~/stores";
 import { path } from "~/utils/path";
 import { copyToClipboard } from "~/utils/string";
@@ -115,6 +119,32 @@ export function BatchDetailDrawer({
   // Planned and Active batches stay composable/dissolvable; the edge fn's
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
+
+  // Removing operations posts the edge fn's "remove" intent, which refuses once
+  // production is recorded — hide the selection then rather than let the
+  // confirm fail. The last operation can't be removed (that is Dissolve).
+  const permissions = usePermissions();
+  const canRemoveOperations =
+    isPreStart &&
+    events.length === 0 &&
+    permissions.can("update", "production");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [removeOpen, setRemoveOpen] = useState(false);
+  // Drop ids that left the batch on revalidation (removed here or elsewhere).
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const memberIds = new Set(batch.members.map((m) => m.id));
+      const next = new Set([...prev].filter((id) => memberIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [batch.members]);
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
 
   // A Completed batch can merge each item's lots into one — every item with
   // >=2 Available lots is its own merge (a mixed batch A, A, B merges the As).
@@ -372,6 +402,27 @@ export function BatchDetailDrawer({
                 <Table className="[&_td]:px-4 [&_th]:px-4">
                   <Thead>
                     <Tr>
+                      {canRemoveOperations && (
+                        <Th className="w-px">
+                          <Checkbox
+                            checked={
+                              selectedIds.size === memberCount
+                                ? true
+                                : selectedIds.size > 0
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={() =>
+                              setSelectedIds(
+                                selectedIds.size === memberCount
+                                  ? new Set()
+                                  : new Set(batch.members.map((m) => m.id))
+                              )
+                            }
+                            aria-label={t`Select all`}
+                          />
+                        </Th>
+                      )}
                       <Th>
                         <Trans>Job</Trans>
                       </Th>
@@ -395,6 +446,17 @@ export function BatchDetailDrawer({
                           : null;
                       return (
                         <Tr key={member.id}>
+                          {canRemoveOperations && (
+                            <Td className="w-px">
+                              <Checkbox
+                                checked={selectedIds.has(member.id)}
+                                onCheckedChange={() =>
+                                  toggleSelected(member.id)
+                                }
+                                aria-label={t`Select operation`}
+                              />
+                            </Td>
+                          )}
                           <Td className="font-medium">
                             <HStack spacing={2}>
                               {member.job?.id ? (
@@ -678,6 +740,15 @@ export function BatchDetailDrawer({
                 {t`Unrelease`}
               </Button>
             )}
+            {canRemoveOperations && selectedIds.size > 0 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuX />}
+                onClick={() => setRemoveOpen(true)}
+              >
+                {t`Remove ${selectedIds.size} from batch`}
+              </Button>
+            )}
             {isPreStart && (
               <Button variant="secondary" leftIcon={<LuPlus />} asChild>
                 <Link to={`${path.to.newOperationBatch}?batchId=${batch.id}`}>
@@ -725,6 +796,30 @@ export function BatchDetailDrawer({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {removeOpen && (
+        <ConfirmDelete
+          action={path.to.priorityBatchingUpdate}
+          title={t`Remove from batch`}
+          name={batch.readableId}
+          text={
+            selectedIds.size === memberCount
+              ? t`A batch needs at least one operation. To break up the whole batch, use Dissolve instead.`
+              : t`Remove ${selectedIds.size} of ${memberCount} operations from ${batch.readableId}?`
+          }
+          deleteText={t`Remove`}
+          isDisabled={selectedIds.size === memberCount}
+          fields={{
+            intent: "remove",
+            batchId: batch.id,
+            jobOperationIds: [...selectedIds]
+          }}
+          onCancel={() => setRemoveOpen(false)}
+          onSubmit={() => {
+            setRemoveOpen(false);
+            setSelectedIds(new Set());
+          }}
+        />
+      )}
       {releaseOpen && (
         <BatchReleaseModal
           target={{ batchId: batch.id }}

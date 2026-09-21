@@ -523,6 +523,9 @@ msgstr "90天"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
 
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
 
@@ -1111,6 +1114,9 @@ msgstr "账户经理"
 
 msgid "Account Mapping"
 msgstr "账户映射"
+
+msgid "Account Name"
+msgstr ""
 
 msgid "Account Number"
 msgstr "账户编号"
@@ -5291,6 +5297,9 @@ msgstr "深夜时分，{name}。"
 
 msgid "Default"
 msgstr "默认"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "用于从发票过账销售收入的默认科目"
@@ -14041,9 +14050,18 @@ msgstr "移除"
 msgid "Remove {0}"
 msgstr "移除{0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "移除 {label}"

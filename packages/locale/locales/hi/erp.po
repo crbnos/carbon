@@ -523,6 +523,9 @@ msgstr "90 दिन"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "इस प्रक्रिया पर एक \"मेल खाना चाहिए\" नियम इन्हें एक बैच साझा करने से रोकता है"
 
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
+
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
 
@@ -1111,6 +1114,9 @@ msgstr "खाता प्रबंधक"
 
 msgid "Account Mapping"
 msgstr "खाता मानचित्रण"
+
+msgid "Account Name"
+msgstr ""
 
 msgid "Account Number"
 msgstr "खाता संख्या"
@@ -5291,6 +5297,9 @@ msgstr "गहरी रात में, {name}।"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "चालान से बिक्री राजस्व की पोस्टिंग के लिए डिफॉल्ट खाता"
@@ -14041,9 +14050,18 @@ msgstr "निकालें"
 msgid "Remove {0}"
 msgstr "निकालें {0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "इस बैच से {0} को निकालें? इसका ऑपरेशन अपने आप चलने के लिए शेड्यूल में वापस जाता है।"
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"
