@@ -1,182 +1,78 @@
 name: Build images
 
-# Gives every commit on main a complete set of images, tagged with the
-# commit's full SHA: erp, mes, ops, edge-functions, assembler.
+# Gives every commit on main the complete image set, tagged :<full sha>, so
+# any commit can become a release. Images whose files did not change are
+# re-tagged from the previous commit instead of rebuilt. Forks run this
+# into their own registry.
 #
-# A BYOC release pins all five from ONE commit, so a commit is releasable
-# only once every image has its tag. The deploy workflows each build only
-# when their own files change, so on their own almost no commit has all
-# five. This gives every commit the set:
-#
-#   - an image whose files changed is built and pushed as :<sha>
-#   - an image whose files did not is tagged :<sha> from the previous
-#     commit's tag — a manifest copy inside ECR, no rebuild, no layers moved
-#   - no previous tag (first run, or the last run failed) means build
-#
-# Only :<sha> tags are written. :latest belongs to the hosted deploys.
-#
-# A fork runs this too, into its own registry: the images a Carbon
-# environment runs come from whichever registry its source points at.
-#
-# Configuration — repository variables, plus one way to authenticate:
-#   vars.IMAGE_AWS_REGION       the ECR's region. Unset, the workflow does
-#                               nothing: a fork that has not opted in is
-#                               not failing on every push.
-#   vars.IMAGE_AWS_ROLE_ARN     preferred: a role GitHub assumes by OIDC,
-#                               so no long-lived key is stored anywhere
-#   secrets.IMAGE_AWS_ACCESS_KEY_ID / IMAGE_AWS_SECRET_ACCESS_KEY
-#                               otherwise
-# The identity needs ecr:GetAuthorizationToken, and on carbon/*:
-# CreateRepository, DescribeRepositories, DescribeImages, BatchGetImage,
-# BatchCheckLayerAvailability, InitiateLayerUpload, UploadLayerPart,
-# CompleteLayerUpload, PutImage.
+# Configure vars.IMAGE_AWS_REGION (unset: nothing runs), plus either
+# vars.IMAGE_AWS_ROLE_ARN (OIDC) or secrets.IMAGE_AWS_ACCESS_KEY_ID and
+# secrets.IMAGE_AWS_SECRET_ACCESS_KEY.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
 
-# One run at a time, so a run finds the previous commit's tags already
-# written. A superseded pending run is dropped; the next one sees a missing
-# previous tag and builds, which is slower but still right.
+# Serial, so each run finds the previous commit's tags already written.
 concurrency:
   group: build-images
   cancel-in-progress: false
 
 permissions:
   contents: read
-  # The OIDC token GitHub exchanges for the role, when one is configured.
   id-token: write
 
 jobs:
   image:
-    name: carbon/${{ matrix.name }}
+    name: carbon/${{ matrix.image }}
     if: vars.IMAGE_AWS_REGION != ''
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # erp, mes and ops share the Dockerfile's deps stage, so a change
-          # to anything it copies can change all three.
-          - name: erp
-            file: Dockerfile
-            args: APP=erp
-            paths: Dockerfile .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json lingui.config.js apps/erp apps/mes packages patches scripts
-          - name: mes
-            file: Dockerfile
-            args: APP=mes
-            paths: Dockerfile .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json lingui.config.js apps/erp apps/mes packages patches scripts
-          - name: ops
-            file: Dockerfile
-            target: ops
-            paths: Dockerfile .dockerignore package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc turbo.json lingui.config.js apps/erp apps/mes packages patches scripts
-          - name: edge-functions
-            file: docker/edge-functions/Dockerfile
-            paths: docker/edge-functions packages/database/supabase/functions
-          - name: assembler
-            file: apps/assembler/Dockerfile
-            occt: true
-            paths: .dockerignore apps/assembler crates Cargo.toml Cargo.lock
-
+        image: [erp, mes, ops, edge-functions, assembler]
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
 
-      # With a role and no keys this is OIDC; with keys and no role, the
-      # keys themselves. Whichever is unset is simply not passed.
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v4
+      - uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.IMAGE_AWS_REGION }}
           role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
           aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
 
-      - name: Login to ECR
-        id: ecr
+      - id: ecr
         uses: aws-actions/amazon-ecr-login@v2
 
       - uses: docker/setup-buildx-action@v3
 
-      - name: Decide
-        id: plan
+      - id: plan
+        run: .github/scripts/build-images.sh ${{ matrix.image }}
         env:
-          REPO: carbon/${{ matrix.name }}
+          REGISTRY: ${{ steps.ecr.outputs.registry }}
           SHA: ${{ github.sha }}
-          # Empty on a manual run; the parent commit is used instead.
           BEFORE: ${{ github.event.before }}
-          PATHS: ${{ matrix.paths }}
-        run: |
-          set -euo pipefail
-          image="${{ steps.ecr.outputs.registry }}/$REPO"
-          echo "image=$image" >> "$GITHUB_OUTPUT"
 
-          has_tag() { aws ecr describe-images --repository-name "$REPO" --image-ids imageTag="$1" >/dev/null 2>&1; }
+      - if: steps.plan.outputs.action == 'retag'
+        run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"
+        env:
+          IMAGE: ${{ steps.plan.outputs.image }}
+          FROM: ${{ steps.plan.outputs.from }}
+          SHA: ${{ github.sha }}
 
-          # The repository has to exist before anything is pushed to it.
-          aws ecr describe-repositories --repository-names "$REPO" >/dev/null 2>&1 \
-            || aws ecr create-repository --repository-name "$REPO" \
-                 --image-scanning-configuration scanOnPush=true >/dev/null
-
-          # A re-run of a commit that already has its tag has nothing to do.
-          if has_tag "$SHA"; then
-            echo "$REPO:$SHA already exists"
-            echo "action=skip" >> "$GITHUB_OUTPUT"; exit 0
-          fi
-
-          if [ -z "$BEFORE" ] || [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
-            BEFORE="$(git rev-parse HEAD^ 2>/dev/null || true)"
-          fi
-          # Both ends must be present to diff them; a push of several commits
-          # puts the previous head outside the depth-2 checkout.
-          [ -n "$BEFORE" ] && git fetch --quiet --depth=1 origin "$BEFORE" 2>/dev/null || true
-
-          # shellcheck disable=SC2086 # PATHS is a list of pathspecs.
-          if [ -n "$BEFORE" ] && git cat-file -e "$BEFORE^{commit}" 2>/dev/null \
-             && git diff --quiet "$BEFORE" "$SHA" -- $PATHS \
-             && has_tag "$BEFORE"; then
-            echo "unchanged since $BEFORE — retagging"
-            echo "action=retag" >> "$GITHUB_OUTPUT"
-            echo "from=$BEFORE" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed, or no image for $BEFORE — building"
-            echo "action=build" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Retag
-        if: steps.plan.outputs.action == 'retag'
-        run: |
-          docker buildx imagetools create \
-            --tag "${{ steps.plan.outputs.image }}:${{ github.sha }}" \
-            "${{ steps.plan.outputs.image }}:${{ steps.plan.outputs.from }}"
-
-      # assembler links a prebuilt OCCT base from this same registry, built
-      # on demand by assembler.yml.
-      - name: Build arguments
-        if: steps.plan.outputs.action == 'build'
-        id: args
-        run: |
-          {
-            echo "value<<EOF"
-            [ -n "${{ matrix.args }}" ] && echo "${{ matrix.args }}"
-            [ -n "${{ matrix.args }}" ] && echo "NODE_OPTIONS=--max-old-space-size=4096"
-            [ "${{ matrix.occt }}" = "true" ] && echo "OCCT_IMAGE=${{ steps.ecr.outputs.registry }}/carbon/occt:8.0.0-p1"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Build and push
-        if: steps.plan.outputs.action == 'build'
+      - if: steps.plan.outputs.action == 'build'
         uses: docker/build-push-action@v5
         with:
           context: .
-          file: ${{ matrix.file }}
-          target: ${{ matrix.target }}
-          build-args: ${{ steps.args.outputs.value }}
+          file: ${{ steps.plan.outputs.file }}
+          target: ${{ steps.plan.outputs.target }}
+          build-args: ${{ steps.plan.outputs.args }}
           push: true
           tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
           platforms: linux/amd64
           provenance: false
-          cache-from: type=gha,scope=image-${{ matrix.name }}
-          cache-to: type=gha,mode=max,scope=image-${{ matrix.name }}
+          cache-from: type=gha,scope=image-${{ matrix.image }}
+          cache-to: type=gha,mode=max,scope=image-${{ matrix.image }}
