@@ -2391,12 +2391,25 @@ export const getStoragePath = (bucket: string, path: string) => {
  * request bounce the user to an attacker origin (CWE-601 open redirect), so a
  * cross-origin or unparsable referer yields null and callers fall back to
  * their fixed route.
+ *
+ * Behind a TLS-terminating load balancer `request.url` is `http://` (the
+ * server does not trust proxy headers) while the browser's Referer is
+ * `https://`, so the scheme comes from `X-Forwarded-Proto` when it names one.
+ * Only the scheme is taken from it; the host still has to match.
  */
 export const requestReferrer = (request: Request, withParams = true) => {
   const referer = request.headers.get("referer");
   if (!referer) return null;
   try {
     const requestUrl = new URL(request.url);
+    const forwardedProto = request.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim()
+      .toLowerCase();
+    if (forwardedProto === "http" || forwardedProto === "https") {
+      requestUrl.protocol = `${forwardedProto}:`;
+    }
     const url = new URL(referer, requestUrl.origin);
     if (url.origin !== requestUrl.origin) return null;
     return url.pathname + url.search + url.hash;
