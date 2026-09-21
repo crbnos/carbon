@@ -12,8 +12,6 @@ name: Build images
 #   ECR   vars.IMAGE_AWS_REGION, and vars.IMAGE_AWS_ROLE_ARN (OIDC) or
 #         secrets.IMAGE_AWS_ACCESS_KEY_ID + IMAGE_AWS_SECRET_ACCESS_KEY
 #   other secrets.IMAGE_REGISTRY_USERNAME + IMAGE_REGISTRY_PASSWORD
-# vars.IMAGE_OCCT overrides where the assembler's OCCT base image is pulled
-# from (default <IMAGE_REGISTRY>/carbon/occt:8.0.0-p1).
 
 on:
   push:
@@ -72,7 +70,6 @@ jobs:
         env:
           SHA: ${{ github.sha }}
           BEFORE: ${{ github.event.before }}
-          OCCT_IMAGE: ${{ vars.IMAGE_OCCT }}
 
       - if: steps.plan.outputs.action == 'retag'
         run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"
@@ -80,6 +77,20 @@ jobs:
           IMAGE: ${{ steps.plan.outputs.image }}
           FROM: ${{ steps.plan.outputs.from }}
           SHA: ${{ github.sha }}
+
+      # The assembler links a prebuilt OCCT base; built here only when this
+      # registry does not have the one its sources describe.
+      - if: steps.plan.outputs.occt_build == 'true'
+        uses: docker/build-push-action@v5
+        with:
+          context: apps/assembler
+          file: apps/assembler/occt.Dockerfile
+          push: true
+          tags: ${{ steps.plan.outputs.occt }}
+          platforms: linux/amd64
+          provenance: false
+          cache-from: type=gha,scope=image-occt
+          cache-to: type=gha,mode=max,scope=image-occt
 
       - if: steps.plan.outputs.action == 'build'
         uses: docker/build-push-action@v5

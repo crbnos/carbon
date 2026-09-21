@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # Plans one image for build-images.yml: build it, re-tag the previous
 # commit's image (its files did not change), or skip (already tagged).
-# Writes action, image, from, file, target and args to $GITHUB_OUTPUT.
+# Writes action, image, from, file, target and args to $GITHUB_OUTPUT, and
+# for an assembler build, occt and occt_build: the OCCT base it links, and
+# whether that base has to be built first.
 #
-#   REGISTRY=… SHA=… [BEFORE=…] [OCCT_IMAGE=…] build-images.sh <image>
+#   REGISTRY=… SHA=… [BEFORE=…] build-images.sh <image>
 #
 # REGISTRY is any OCI registry the runner is logged into, with an optional
 # namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.….
@@ -35,7 +37,13 @@ case "$name" in
     ;;
   assembler)
     file=apps/assembler/Dockerfile
-    args="OCCT_IMAGE=${OCCT_IMAGE:-$REGISTRY/carbon/occt:8.0.0-p1}"
+    # Tagged by what it is built from, so an unchanged base is never rebuilt
+    # and a changed one never reused.
+    occt_tree=$(git ls-tree -r "$SHA" -- apps/assembler/occt.Dockerfile apps/assembler/occt-patches)
+    [[ -n $occt_tree ]] || { echo "no OCCT sources at $SHA" >&2; exit 1; }
+    occt_src=$(git hash-object --stdin <<<"$occt_tree")
+    occt="$REGISTRY/carbon/occt:${occt_src:0:12}"
+    args="OCCT_IMAGE=$occt"
     paths=(.dockerignore apps/assembler crates Cargo.toml Cargo.lock)
     ;;
   *)
@@ -45,15 +53,19 @@ case "$name" in
 esac
 
 out() { echo "$1=$2" >>"$GITHUB_OUTPUT"; }
-has_tag() { docker buildx imagetools inspect "$image:$1" >/dev/null 2>&1; }
+exists() { docker buildx imagetools inspect "$1" >/dev/null 2>&1; }
+has_tag() { exists "$image:$1"; }
 
 # ECR is the one registry that will not create a repository on first push.
-if [[ $REGISTRY =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com ]]; then
-  repo=${image#*/}
+ensure_repo() {
+  [[ $REGISTRY =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com ]] || return 0
+  local repo=${1#*/}
   aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 ||
     aws ecr create-repository --repository-name "$repo" \
       --image-scanning-configuration scanOnPush=true >/dev/null
-fi
+}
+
+ensure_repo "$image"
 
 out image "$image"
 out file "$file"
@@ -84,4 +96,14 @@ if [[ -n $before ]] && git cat-file -e "$before^{commit}" 2>/dev/null &&
 else
   echo "building"
   out action build
+  if [[ -n ${occt:-} ]]; then
+    out occt "$occt"
+    if exists "$occt"; then
+      out occt_build false
+    else
+      echo "no $occt: building it first"
+      ensure_repo "${occt%:*}"
+      out occt_build true
+    fi
+  fi
 fi
