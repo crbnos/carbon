@@ -1112,6 +1112,9 @@ msgstr "Responsabile dell'Account"
 msgid "Account Mapping"
 msgstr "Mappatura conto"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "Numero di Conto"
 
@@ -5291,6 +5294,9 @@ msgstr "Nel bel mezzo della notte, {name}."
 
 msgid "Default"
 msgstr "Predefinito"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Conto predefinito per la registrazione dei ricavi dalle fatture"

@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "배치"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "배치는 가용하지 않습니다"
 

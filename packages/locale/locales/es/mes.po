@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "Lote"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "El lote no está disponible"
 

@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "Parti"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "Parti kullanılabilir değil"
 

@@ -6221,6 +6221,17 @@ export async function getJobOperationBatchMembers(
       quantityScrapped: op.quantityScrapped ?? 0
     });
   }
+  // Sort each batch's members by job, then by item readable id, matching the
+  // detail drawer and the printable batch list.
+  for (const group of Object.values(members)) {
+    group.sort((a, b) => {
+      const byJob = (a.jobReadableId ?? "").localeCompare(
+        b.jobReadableId ?? ""
+      );
+      if (byJob !== 0) return byJob;
+      return (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "");
+    });
+  }
   return { data: members, error: null };
 }
 
@@ -6284,8 +6295,17 @@ export async function getJobOperationBatchWithMembers(
     deriveSharedWorkCenterName(
       (members.data ?? []).map((m) => m.workCenter?.name)
     );
+  // Sort by job, then by the member item's readable id, so the drawer's member
+  // table matches the printable batch list's ordering.
+  const sortedMembers = [...(members.data ?? [])].sort((a, b) => {
+    const byJob = (a.job?.jobId ?? "").localeCompare(b.job?.jobId ?? "");
+    if (byJob !== 0) return byJob;
+    return (a.jobMakeMethod?.item?.readableIdWithRevision ?? "").localeCompare(
+      b.jobMakeMethod?.item?.readableIdWithRevision ?? ""
+    );
+  });
   return {
-    data: { ...batch.data, workCenterName, members: members.data ?? [] },
+    data: { ...batch.data, workCenterName, members: sortedMembers },
     error: members.error
   };
 }

@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "Charge"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "Charge ist nicht verfügbar"
 

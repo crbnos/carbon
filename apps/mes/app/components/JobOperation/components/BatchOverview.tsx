@@ -476,7 +476,7 @@ export function BatchOverview({
                 <Th className={th}>
                   <Trans>Job</Trans>
                 </Th>
-                <Th className={cn(th, "hidden md:table-cell")}>
+                <Th className={th}>
                   <Trans>Item</Trans>
                 </Th>
                 <Th className={cn(th, "hidden md:table-cell")}>
@@ -501,7 +501,7 @@ export function BatchOverview({
                 const toRun = remaining(m);
                 return (
                   <Tr key={m.id}>
-                    <Td className={cn(td, "w-full max-w-0")}>
+                    <Td className={cn(td, "whitespace-nowrap text-sm")}>
                       <Link
                         to={`${path.to.operation(m.id)}?scope=job`}
                         className="font-medium hover:underline"
@@ -514,13 +514,25 @@ export function BatchOverview({
                         </p>
                       )}
                     </Td>
-                    <Td
-                      className={cn(
-                        td,
-                        "hidden whitespace-nowrap text-sm md:table-cell"
-                      )}
-                    >
-                      {m.jobMakeMethod?.item?.readableIdWithRevision}
+                    <Td className={cn(td, "w-full max-w-0")}>
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="hidden shrink-0 sm:block">
+                          <ItemThumbnail
+                            thumbnailPath={m.jobMakeMethod?.item?.thumbnailPath}
+                            type={m.jobMakeMethod?.item?.type as ItemType}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <span className="block truncate font-medium">
+                            {m.jobMakeMethod?.item?.readableIdWithRevision}
+                          </span>
+                          {m.jobMakeMethod?.item?.name && (
+                            <p className="truncate text-sm text-muted-foreground">
+                              {m.jobMakeMethod.item.name}
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </Td>
                     <Td
                       className={cn(

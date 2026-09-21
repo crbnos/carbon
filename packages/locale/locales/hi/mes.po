@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "बैच"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "बैच उपलब्ध नहीं है"
 

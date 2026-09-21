@@ -1112,6 +1112,9 @@ msgstr "Hesap Yöneticisi"
 msgid "Account Mapping"
 msgstr "Hesap Haritalama"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "Hesap Numarası"
 
@@ -5291,6 +5294,9 @@ msgstr "Gece derin saatlerinde, {name}."
 
 msgid "Default"
 msgstr "Varsayılan"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Faturalardan satış hasılatını muhasebeleştirmek için varsayılan hesap"

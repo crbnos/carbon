@@ -1112,6 +1112,9 @@ msgstr "Gerente de Cuenta"
 msgid "Account Mapping"
 msgstr "Asignación de Cuentas"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "Número de Cuenta"
 
@@ -5291,6 +5294,9 @@ msgstr "Horas profundas de la madrugada, {name}."
 
 msgid "Default"
 msgstr "Predeterminado"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Cuenta predeterminada para contabilizar ingresos por ventas de facturas"

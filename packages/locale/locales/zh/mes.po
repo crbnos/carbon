@@ -209,6 +209,9 @@ msgstr ""
 msgid "Batch"
 msgstr "批次"
 
+msgid "Batch Details"
+msgstr ""
+
 msgid "Batch is not available"
 msgstr "批次不可用"
 

@@ -1112,6 +1112,9 @@ msgstr "계정 관리자"
 msgid "Account Mapping"
 msgstr "계정 매핑"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "계좌번호"
 
@@ -5291,6 +5294,9 @@ msgstr "{name}님, 한밤중이군요."
 
 msgid "Default"
 msgstr "기본값"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "송장에서 매출을 전기하기 위한 기본 계정"

@@ -1112,6 +1112,9 @@ msgstr "アカウントマネージャー"
 msgid "Account Mapping"
 msgstr "勘定科目マッピング"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "勘定番号"
 
@@ -5291,6 +5294,9 @@ msgstr "真夜中ですね、{name}さん。"
 
 msgid "Default"
 msgstr "デフォルト"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "請求書からの販売売上高を転記するデフォルト勘定"

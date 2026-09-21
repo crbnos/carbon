@@ -1112,6 +1112,9 @@ msgstr "Kierownik Konta"
 msgid "Account Mapping"
 msgstr "Mapowanie Kont"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "Numer konta"
 
@@ -5291,6 +5294,9 @@ msgstr "Głębokie noce, {name}."
 
 msgid "Default"
 msgstr "Domyślnie"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Domyślne konto do księgowania przychodów ze sprzedaży z faktur"

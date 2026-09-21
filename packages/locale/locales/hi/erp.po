@@ -1112,6 +1112,9 @@ msgstr "खाता प्रबंधक"
 msgid "Account Mapping"
 msgstr "खाता मानचित्रण"
 
+msgid "Account Name"
+msgstr ""
+
 msgid "Account Number"
 msgstr "खाता संख्या"
 
@@ -5291,6 +5294,9 @@ msgstr "गहरी रात में, {name}।"
 
 msgid "Default"
 msgstr "डिफ़ॉल्ट"
+
+msgid "Default Account"
+msgstr ""
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "चालान से बिक्री राजस्व की पोस्टिंग के लिए डिफॉल्ट खाता"

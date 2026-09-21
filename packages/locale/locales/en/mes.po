@@ -209,6 +209,9 @@ msgstr "Back to batch"
 msgid "Batch"
 msgstr "Batch"
 
+msgid "Batch Details"
+msgstr "Batch Details"
+
 msgid "Batch is not available"
 msgstr "Batch is not available"
 

@@ -1112,6 +1112,9 @@ msgstr "Account Manager"
 msgid "Account Mapping"
 msgstr "Account Mapping"
 
+msgid "Account Name"
+msgstr "Account Name"
+
 msgid "Account Number"
 msgstr "Account Number"
 
@@ -5291,6 +5294,9 @@ msgstr "Deep in the small hours, {name}."
 
 msgid "Default"
 msgstr "Default"
+
+msgid "Default Account"
+msgstr "Default Account"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Default account for posting sales revenue from invoices"
