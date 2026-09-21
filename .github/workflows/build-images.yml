@@ -12,6 +12,10 @@ name: Build images
 #   ECR   vars.IMAGE_AWS_REGION, and vars.IMAGE_AWS_ROLE_ARN (OIDC) or
 #         secrets.IMAGE_AWS_ACCESS_KEY_ID + IMAGE_AWS_SECRET_ACCESS_KEY
 #   other secrets.IMAGE_REGISTRY_USERNAME + IMAGE_REGISTRY_PASSWORD
+# On ECR, vars.IMAGE_KEEP is how many images each repository keeps (100).
+# Keep it above what any environment could still be running: an expired
+# image cannot be pulled again, so a cluster left on an old release could
+# not replace its pods.
 
 on:
   push:
@@ -71,6 +75,7 @@ jobs:
         env:
           SHA: ${{ github.sha }}
           BEFORE: ${{ github.event.before }}
+          IMAGE_KEEP: ${{ vars.IMAGE_KEEP }}
 
       - if: steps.plan.outputs.action == 'retag'
         run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"

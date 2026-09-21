@@ -12,6 +12,7 @@
 set -euo pipefail
 
 name=${1:?usage: build-images.sh <image>}
+[[ ${IMAGE_KEEP:-100} =~ ^[1-9][0-9]*$ ]] || { echo "IMAGE_KEEP must be a positive number" >&2; exit 1; }
 image="$REGISTRY/carbon/$name"
 target=""
 args=""
@@ -57,12 +58,38 @@ exists() { docker buildx imagetools inspect "$1" >/dev/null 2>&1; }
 has_tag() { exists "$image:$1"; }
 
 # ECR is the one registry that will not create a repository on first push.
+# Each repository also gets a cleanup policy, unless it already has one:
+# latest and buildcache are kept, untagged images (old caches) expire after
+# a week, and the newest IMAGE_KEEP images (default 100) are kept. ECR counts
+# images, not tags, so an image re-tagged across many commits is one image.
 ensure_repo() {
   [[ $REGISTRY =~ \.dkr\.ecr\.[a-z0-9-]+\.amazonaws\.com ]] || return 0
   local repo=${1#*/}
   aws ecr describe-repositories --repository-names "$repo" >/dev/null 2>&1 ||
     aws ecr create-repository --repository-name "$repo" \
       --image-scanning-configuration scanOnPush=true >/dev/null
+  aws ecr get-lifecycle-policy --repository-name "$repo" >/dev/null 2>&1 ||
+    aws ecr put-lifecycle-policy --repository-name "$repo" \
+      --lifecycle-policy-text "$(lifecycle_policy)" >/dev/null
+}
+
+lifecycle_policy() {
+  cat <<EOF
+{"rules": [
+  {"rulePriority": 1, "description": "keep latest and buildcache",
+   "selection": {"tagStatus": "tagged", "tagPatternList": ["latest", "buildcache"],
+                 "countType": "imageCountMoreThan", "countNumber": 9999},
+   "action": {"type": "expire"}},
+  {"rulePriority": 2, "description": "expire untagged after 7 days",
+   "selection": {"tagStatus": "untagged", "countType": "sinceImagePushed",
+                 "countUnit": "days", "countNumber": 7},
+   "action": {"type": "expire"}},
+  {"rulePriority": 3, "description": "keep the newest ${IMAGE_KEEP:-100} images",
+   "selection": {"tagStatus": "any", "countType": "imageCountMoreThan",
+                 "countNumber": ${IMAGE_KEEP:-100}},
+   "action": {"type": "expire"}}
+]}
+EOF
 }
 
 ensure_repo "$image"
