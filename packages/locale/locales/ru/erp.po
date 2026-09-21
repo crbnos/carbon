@@ -113,7 +113,7 @@ msgstr "{0} черновых операций"
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0} не имеет поставщика"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1113,7 +1113,7 @@ msgid "Account Mapping"
 msgstr "Сопоставление счетов"
 
 msgid "Account Name"
-msgstr ""
+msgstr "Название счета"
 
 msgid "Account Number"
 msgstr "Номер счета"
@@ -1339,7 +1339,7 @@ msgid "Add an extra layer of security by requiring a code from an authenticator 
 msgstr "Добавьте дополнительный уровень безопасности, требуя код из приложения аутентификатора при входе."
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "Добавить раздел операций, перечисляющий каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
 
 msgid "Add any notes about your decision..."
 msgstr "Добавьте примечания о вашем решении..."
@@ -3597,7 +3597,7 @@ msgstr "Выберите серийный номер"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "выберите поставщика для {0} в производственном заказе"
 
 msgid "Choose another file"
 msgstr "Выбрать другой файл"
@@ -5299,7 +5299,7 @@ msgid "Default"
 msgstr "По умолчанию"
 
 msgid "Default Account"
-msgstr ""
+msgstr "Счет по умолчанию"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Счет учета по умолчанию для проведения выручки от продаж по счетам-фактурам"
@@ -10335,7 +10335,7 @@ msgstr "Продавец"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "Объединить {0} партий"
 
 msgid "Merge output lots"
 msgstr "Объединить выходные партии"
@@ -12083,10 +12083,10 @@ msgid "Operations / steps"
 msgstr "Операции / шаги"
 
 msgid "Operations are included"
-msgstr ""
+msgstr "Операции включены"
 
 msgid "Operations are not included"
-msgstr ""
+msgstr "Операции не включены"
 
 msgid "Operations Type"
 msgstr "Тип операций"
@@ -15913,7 +15913,7 @@ msgstr "Показать"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "Показать еще {0}"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Показывать столбец с читаемым ID Покупателя в списке покупателей, формах и выпадающих списках. Покупатели по-прежнему идентифицируются внутренне одинаково."
@@ -17783,7 +17783,7 @@ msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "Маршрутный лист содержит каждый элемент спецификации материалов с его количеством."
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "Маршрутный лист перечисляет каждую операцию маршрута с ожидаемыми временами и сканируемыми штрих-кодами."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Тип управляет тем, какие права доступа по умолчанию получает новый сотрудник; выбор его здесь предварительно заполняет матрицу разрешений из шаблона типа."

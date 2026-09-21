@@ -91627,6 +91627,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -91833,6 +91836,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -91991,6 +91997,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -148979,7 +148988,8 @@ export default {
         "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
-        "allowLowercaseItemIds"
+        "allowLowercaseItemIds",
+        "includeOperationsOnTraveler"
       ],
       properties: {
         id: {
@@ -149245,6 +149255,11 @@ export default {
         },
         allowLowercaseItemIds: {
           default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        includeOperationsOnTraveler: {
+          default: true,
           format: "boolean",
           type: "boolean"
         }
@@ -198674,6 +198689,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.includeOperationsOnTraveler": {
+      name: "includeOperationsOnTraveler",
       required: false,
       in: "query",
       type: "string"

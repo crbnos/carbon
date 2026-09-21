@@ -113,7 +113,7 @@ msgstr "{0} ड्राफ्ट जर्नल प्रविष्टिय
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0} के पास कोई आपूर्तिकर्ता नहीं है"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1113,7 +1113,7 @@ msgid "Account Mapping"
 msgstr "खाता मानचित्रण"
 
 msgid "Account Name"
-msgstr ""
+msgstr "खाता नाम"
 
 msgid "Account Number"
 msgstr "खाता संख्या"
@@ -1339,7 +1339,7 @@ msgid "Add an extra layer of security by requiring a code from an authenticator 
 msgstr "साइन इन करते समय एक प्रमाणक ऐप से कोड मांगकर सुरक्षा की एक अतिरिक्त परत जोड़ें।"
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "एक ऑपरेशन सेक्शन जोड़ें जो प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
 
 msgid "Add any notes about your decision..."
 msgstr "अपने निर्णय के बारे में कोई भी नोट्स जोड़ें..."
@@ -3597,7 +3597,7 @@ msgstr "एक सीरियल नंबर चुनें"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "जॉब पर {0} के लिए एक आपूर्तिकर्ता चुनें"
 
 msgid "Choose another file"
 msgstr "दूसरी फ़ाइल चुनें"
@@ -5299,7 +5299,7 @@ msgid "Default"
 msgstr "डिफ़ॉल्ट"
 
 msgid "Default Account"
-msgstr ""
+msgstr "डिफ़ॉल्ट खाता"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "चालान से बिक्री राजस्व की पोस्टिंग के लिए डिफॉल्ट खाता"
@@ -10335,7 +10335,7 @@ msgstr "व्यापारी"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "{0} लॉट मर्ज करें"
 
 msgid "Merge output lots"
 msgstr "आउटपुट लॉट्स को मर्ज करें"
@@ -12083,10 +12083,10 @@ msgid "Operations / steps"
 msgstr "ऑपरेशन / चरण"
 
 msgid "Operations are included"
-msgstr ""
+msgstr "ऑपरेशन शामिल हैं"
 
 msgid "Operations are not included"
-msgstr ""
+msgstr "ऑपरेशन शामिल नहीं हैं"
 
 msgid "Operations Type"
 msgstr "ऑपरेशन प्रकार"
@@ -15913,7 +15913,7 @@ msgstr "दिखाएँ"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "{0} और दिखाएं"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"
@@ -17783,7 +17783,7 @@ msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "ट्रैवलर सामग्री सूची पर प्रत्येक आइटम को इसकी मात्रा के साथ सूचीबद्ध करता है।"
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "ट्रैवलर प्रत्येक रूटिंग ऑपरेशन को उसके अपेक्षित समय और स्कैन बारकोड के साथ सूचीबद्ध करता है।"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "प्रकार नियंत्रित करता है कि नया कर्मचारी कौन सी डिफ़ॉल्ट अनुमतियां प्राप्त करता है; यहाँ इसे चुनने से प्रकार के टेम्पलेट से अनुमति मैट्रिक्स पूर्व-भर जाता है।"

@@ -1177,10 +1177,8 @@ export async function updateIncludeOperationsOnTravelerSetting(
   companyId: string,
   includeOperationsOnTraveler: boolean
 ) {
-  // Cast: the includeOperationsOnTraveler column is added by migration
-  // 20260921152218 but isn't in the generated types until they're regenerated
-  // against the migrated DB (mirrors updateIncludeMaterialsOnTravelerSetting).
-  return (client.from("companySettings") as any)
+  return client
+    .from("companySettings")
     .update(sanitize({ includeOperationsOnTraveler }))
     .eq("id", companyId);
 }

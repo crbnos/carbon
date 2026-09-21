@@ -113,7 +113,7 @@ msgstr "{0} asientos de diario en borrador"
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0} no tiene proveedor"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1113,7 +1113,7 @@ msgid "Account Mapping"
 msgstr "Asignación de Cuentas"
 
 msgid "Account Name"
-msgstr ""
+msgstr "Nombre de cuenta"
 
 msgid "Account Number"
 msgstr "Número de Cuenta"
@@ -1339,7 +1339,7 @@ msgid "Add an extra layer of security by requiring a code from an authenticator 
 msgstr "Agregar una capa adicional de seguridad requiriendo un código de una aplicación autenticadora al iniciar sesión."
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "Agregar una sección de operaciones que enumere cada operación de la ruta de fabricación con sus tiempos esperados y códigos de barras para escanear."
 
 msgid "Add any notes about your decision..."
 msgstr "Agregue notas sobre su decisión..."
@@ -3597,7 +3597,7 @@ msgstr "Elige un número de serie"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "elegir un proveedor para {0} en la orden de trabajo"
 
 msgid "Choose another file"
 msgstr "Elegir otro archivo"
@@ -5299,7 +5299,7 @@ msgid "Default"
 msgstr "Predeterminado"
 
 msgid "Default Account"
-msgstr ""
+msgstr "Cuenta predeterminada"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Cuenta predeterminada para contabilizar ingresos por ventas de facturas"
@@ -10335,7 +10335,7 @@ msgstr "Comerciante"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "Fusionar {0} lotes"
 
 msgid "Merge output lots"
 msgstr "Fusionar lotes de salida"
@@ -12083,10 +12083,10 @@ msgid "Operations / steps"
 msgstr "Operaciones / pasos"
 
 msgid "Operations are included"
-msgstr ""
+msgstr "Las operaciones están incluidas"
 
 msgid "Operations are not included"
-msgstr ""
+msgstr "Las operaciones no están incluidas"
 
 msgid "Operations Type"
 msgstr "Tipo de Operaciones"
@@ -15913,7 +15913,7 @@ msgstr "Mostrar"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "Mostrar {0} más"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Mostrar una columna de ID de cliente legible en la lista de clientes, formularios de clientes y listas desplegables. Los clientes se identifican internamente de cualquier forma."
@@ -17783,7 +17783,7 @@ msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "La hoja viajera lista cada artículo en la lista de materiales con su cantidad."
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "La hoja viajera enumera cada operación de la ruta de fabricación con sus tiempos esperados y códigos de barras para escanear."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "El tipo controla qué permisos predeterminados recibe el nuevo empleado; seleccionarlo aquí completa previamente la matriz de permisos de la plantilla del tipo."

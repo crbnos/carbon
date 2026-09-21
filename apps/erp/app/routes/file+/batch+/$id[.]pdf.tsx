@@ -118,9 +118,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
               : null
           };
         })
-        .sort((a, b) =>
-          (a.jobReadableId ?? "").localeCompare(b.jobReadableId ?? "")
-        )}
+        .sort((a, b) => {
+          const byJob = (a.jobReadableId ?? "").localeCompare(
+            b.jobReadableId ?? ""
+          );
+          if (byJob !== 0) return byJob;
+          return (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "");
+        })}
       locale={locale}
     />
   );

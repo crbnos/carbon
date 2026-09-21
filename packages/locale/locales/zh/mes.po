@@ -27,7 +27,7 @@ msgstr "{0} 前"
 
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
-msgstr ""
+msgstr "{0} 个客户"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -35,7 +35,7 @@ msgstr "{0}没有批次号。在Carbon中的生产批次或工单上设置，然
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
-msgstr ""
+msgstr "{0} 个物料"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
@@ -71,7 +71,7 @@ msgstr "运行中 {0} 个"
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
-msgstr ""
+msgstr "工单 {0} 在生产批次 {1}"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -88,7 +88,7 @@ msgstr "{fails} 个抽样不合格已被记录，将不会被完成 — 从操�
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
-msgstr ""
+msgstr "{recorded}/{0} 个工单"
 
 msgid "+{overflow} more"
 msgstr "还有 +{overflow} 个"
@@ -204,13 +204,13 @@ msgid "Available"
 msgstr "可用"
 
 msgid "Back to batch"
-msgstr ""
+msgstr "返回生产批次"
 
 msgid "Batch"
 msgstr "批次"
 
 msgid "Batch Details"
-msgstr ""
+msgstr "生产批次详情"
 
 msgid "Batch is not available"
 msgstr "批次不可用"
@@ -235,7 +235,7 @@ msgstr "落后于目标 {daysBehindTarget} 天"
 #. placeholder {1}: step.maxValue
 #. placeholder {2}: step.unitOfMeasureCode ?? ""
 msgid "Between {0} and {1} {2}"
-msgstr ""
+msgstr "{0} 至 {1} {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -275,7 +275,7 @@ msgid "Check your email"
 msgstr "请查收邮件"
 
 msgid "Choose a job"
-msgstr ""
+msgstr "选择工单"
 
 msgid "Clear"
 msgstr "清除"
@@ -337,7 +337,7 @@ msgid "Complete All"
 msgstr "全部完成"
 
 msgid "Complete batch"
-msgstr ""
+msgstr "完成生产批次"
 
 msgid "Complete Batch"
 msgstr "完成批次"
@@ -439,7 +439,7 @@ msgid "Displays"
 msgstr "显示屏"
 
 msgid "Done"
-msgstr ""
+msgstr "完成"
 
 msgid "Down"
 msgstr "停机"
@@ -474,7 +474,7 @@ msgid "Dragging {0} cancelled."
 msgstr "拖拽 {0} 已取消。"
 
 msgid "Due"
-msgstr ""
+msgstr "应交期"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
@@ -502,7 +502,7 @@ msgid "Duration"
 msgstr "时长"
 
 msgid "Each job's output is its own lot — keep each job's parts apart."
-msgstr ""
+msgstr "每个工单的产出是其自己的批次 — 保持每个工单的零件分开。"
 
 msgid "Edit"
 msgstr "编辑"
@@ -520,7 +520,7 @@ msgid "End Operations"
 msgstr "结束工序"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
-msgstr ""
+msgstr "为每个工单输入值，或从第一行同时填充所有工单。空行将被跳过。"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -539,7 +539,7 @@ msgid "Estimated"
 msgstr "估计"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
-msgstr ""
+msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工单记录一个步骤。"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
@@ -592,7 +592,7 @@ msgstr "无法保存结果"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
-msgstr ""
+msgstr "上传 {0} 失败"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -640,7 +640,7 @@ msgstr "物料未拣货的情况下要完成吗？"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
-msgstr ""
+msgstr "最早应交期 {0}"
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
@@ -655,7 +655,7 @@ msgid "Go to onboarding"
 msgstr "前往入门"
 
 msgid "Hide description"
-msgstr ""
+msgstr "隐藏描述"
 
 msgid "How many were actually picked?"
 msgstr "实际拣了多少？"
@@ -782,7 +782,7 @@ msgid "List view"
 msgstr "列表视图"
 
 msgid "Load list"
-msgstr ""
+msgstr "加载列表"
 
 msgid "Loading item details..."
 msgstr "正在加载物料详情..."
@@ -797,7 +797,7 @@ msgid "Location"
 msgstr "位置"
 
 msgid "Log completed"
-msgstr ""
+msgstr "记录完成"
 
 msgid "Log Completed"
 msgstr "记录完成数量"
@@ -830,7 +830,7 @@ msgid "Lot numbers missing"
 msgstr "缺少批次号"
 
 msgid "Lot tracked"
-msgstr ""
+msgstr "批次已追踪"
 
 msgid "Machine"
 msgstr "机器"
@@ -1072,7 +1072,7 @@ msgstr "需要 OEM"
 
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
-msgstr ""
+msgstr "/"
 
 msgid "Oldest first"
 msgstr "最早优先"
@@ -1084,7 +1084,7 @@ msgid "one per job · planned"
 msgstr "每个工单一个 · 已计划"
 
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
-msgstr ""
+msgstr "一次拣货覆盖整个生产批次 — 自动分配给各工单。"
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -1100,7 +1100,7 @@ msgid "Open a display on the screen mounted at the work center and leave it runn
 msgstr "在安装于工作中心的屏幕上打开显示屏并保持其运行。每个看板自动刷新。"
 
 msgid "Open a job in this batch"
-msgstr ""
+msgstr "打开此生产批次中的工单"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "为MRB处置打开NCR"
@@ -1148,7 +1148,7 @@ msgid "Partial Disposition"
 msgstr "部分处置"
 
 msgid "Passed inspection"
-msgstr ""
+msgstr "已通过检验"
 
 msgid "Passed Inspection"
 msgstr "已通过检验"
@@ -1282,7 +1282,7 @@ msgstr "记录 {0}"
 
 #. placeholder {0}: changed.length
 msgid "Record {0} jobs"
-msgstr ""
+msgstr "记录 {0} 个工单"
 
 msgid "Record only"
 msgstr "仅记录"
@@ -1291,7 +1291,7 @@ msgid "Record Partial"
 msgstr "记录部分"
 
 msgid "Recorded"
-msgstr ""
+msgstr "已记录"
 
 msgid "Reject"
 msgstr "拒绝"
@@ -1300,7 +1300,7 @@ msgid "Reject Lot"
 msgstr "拒绝批次"
 
 msgid "Released"
-msgstr ""
+msgstr "已下达"
 
 msgid "Remove"
 msgstr "移除"
@@ -1342,7 +1342,7 @@ msgid "Sales Order"
 msgstr "销售订单"
 
 msgid "Same for every job"
-msgstr ""
+msgstr "对所有工单相同"
 
 msgid "Save"
 msgstr "保存"
@@ -1486,7 +1486,7 @@ msgid "Serial Numbers"
 msgstr "序列号"
 
 msgid "Serialized"
-msgstr ""
+msgstr "已序列号化"
 
 msgid "Session locked"
 msgstr "会话已锁定"
@@ -1516,7 +1516,7 @@ msgid "Short pick {itemName}"
 msgstr "短缺拣货 {itemName}"
 
 msgid "Show description"
-msgstr ""
+msgstr "显示描述"
 
 msgid "Show this overlay"
 msgstr "显示此覆盖层"
@@ -1559,7 +1559,7 @@ msgstr "开始"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
-msgstr ""
+msgstr "开始 {0}"
 
 msgid "Start or pause the operation"
 msgstr "开始或暂停工序"
@@ -1611,10 +1611,10 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
 
 msgid "The jobs and parts that make up this run."
-msgstr ""
+msgstr "组成此次运行的工单和零件。"
 
 msgid "The jobs make different items — keep each job's parts apart."
-msgstr ""
+msgstr "各工单生产不同的物料 — 保持每个工单的零件分开。"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "批次将标记为已通过，{remaining} 个剩余件将在此工序完成。"
@@ -1624,7 +1624,7 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
-msgstr ""
+msgstr "计时器和完成状态由所有 {0} 个工单共享。此处的步骤、物料和文件属于此工单。"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "此原材料没有可用或已消耗的受追踪零件。"
@@ -1636,7 +1636,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "这些物料仍有原材料需要拣货。现在完成将标记列表为部分。"
 
 msgid "This batch has no work instructions."
-msgstr ""
+msgstr "此生产批次没有作业指导书。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "此批次已过期，无法拣货。"
@@ -1654,7 +1654,7 @@ msgid "Thumbnail"
 msgstr "缩略图"
 
 msgid "Tick the jobs this was done for."
-msgstr ""
+msgstr "标记完成此项工作的工单。"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "时间和成本按数量比例分配到各个工作中。"
@@ -1667,10 +1667,10 @@ msgid "Time Worked: {0}"
 msgstr "工作时间：{0}"
 
 msgid "To pick"
-msgstr ""
+msgstr "待拣货"
 
 msgid "To run"
-msgstr ""
+msgstr "待启动"
 
 msgid "Today"
 msgstr "今天"
@@ -1682,7 +1682,7 @@ msgid "Tools"
 msgstr "工具"
 
 msgid "Total"
-msgstr ""
+msgstr "总计"
 
 msgid "Total Quantity"
 msgstr "总数量"
@@ -1773,10 +1773,10 @@ msgid "Use a different account"
 msgstr "使用不同的帐户"
 
 msgid "Used automatically at completion"
-msgstr ""
+msgstr "在完成时自动使用"
 
 msgid "Value"
-msgstr ""
+msgstr "值"
 
 msgid "Verify"
 msgstr "验证"

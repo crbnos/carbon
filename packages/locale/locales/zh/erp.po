@@ -113,7 +113,7 @@ msgstr "{0}个草稿凭证"
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0}没有供应商"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1113,7 +1113,7 @@ msgid "Account Mapping"
 msgstr "账户映射"
 
 msgid "Account Name"
-msgstr ""
+msgstr "账户名称"
 
 msgid "Account Number"
 msgstr "账户编号"
@@ -1339,7 +1339,7 @@ msgid "Add an extra layer of security by requiring a code from an authenticator 
 msgstr "通过在登录时要求身份验证器应用的代码来添加额外的安全层级。"
 
 msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "添加工序部分，列出每个工艺路线工序及其预期时间和扫码条码。"
 
 msgid "Add any notes about your decision..."
 msgstr "添加关于您的决定的任何备注..."
@@ -3597,7 +3597,7 @@ msgstr "选择序列号"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "为工单上的{0}选择供应商"
 
 msgid "Choose another file"
 msgstr "选择另一个文件"
@@ -5299,7 +5299,7 @@ msgid "Default"
 msgstr "默认"
 
 msgid "Default Account"
-msgstr ""
+msgstr "默认账户"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "用于从发票过账销售收入的默认科目"
@@ -10335,7 +10335,7 @@ msgstr "商家"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "合并{0}批次"
 
 msgid "Merge output lots"
 msgstr "合并输出批次"
@@ -12083,10 +12083,10 @@ msgid "Operations / steps"
 msgstr "工序/步骤"
 
 msgid "Operations are included"
-msgstr ""
+msgstr "工序已包含"
 
 msgid "Operations are not included"
-msgstr ""
+msgstr "工序未包含"
 
 msgid "Operations Type"
 msgstr "工序类型"
@@ -15913,7 +15913,7 @@ msgstr "显示"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "显示{0}个更多"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "在客户列表、客户表单和下拉菜单上显示可读的客户ID列。无论哪种方式，客户在内部仍然可以被识别。"
@@ -17783,7 +17783,7 @@ msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "流转卡列出物料清单上的每个物料及其数量。"
 
 msgid "The traveler lists each routing operation with its expected times and scan barcodes."
-msgstr ""
+msgstr "流转卡列出每个工艺路线工序及其预期时间和扫码条码。"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "类型控制新员工接收的默认权限；在此处选择它会从类型的模板预填充权限矩阵。"

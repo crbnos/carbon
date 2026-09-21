@@ -27,7 +27,7 @@ msgstr "{0} 전"
 
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
-msgstr ""
+msgstr "{0} 고객"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -35,7 +35,7 @@ msgstr "{0}에 로트 번호가 없습니다. Carbon에서 배치 또는 작업 
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
-msgstr ""
+msgstr "{0} 품목"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
@@ -71,7 +71,7 @@ msgstr "{0} 실행 중"
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
-msgstr ""
+msgstr "{0}이 배치 {1}에서 실행"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -88,7 +88,7 @@ msgstr "{fails}개의 샘플 불량이 기록되었으며 완료되지 않습니
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
-msgstr ""
+msgstr "{recorded}/{0} 작업 지시"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} 더 보기"
@@ -204,13 +204,13 @@ msgid "Available"
 msgstr "가용"
 
 msgid "Back to batch"
-msgstr ""
+msgstr "배치로 돌아가기"
 
 msgid "Batch"
 msgstr "배치"
 
 msgid "Batch Details"
-msgstr ""
+msgstr "배치 상세정보"
 
 msgid "Batch is not available"
 msgstr "배치는 가용하지 않습니다"
@@ -235,7 +235,7 @@ msgstr "목표에서 {daysBehindTarget}일 뒤짐"
 #. placeholder {1}: step.maxValue
 #. placeholder {2}: step.unitOfMeasureCode ?? ""
 msgid "Between {0} and {1} {2}"
-msgstr ""
+msgstr "{0}과 {1} 사이의 {2}"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -275,7 +275,7 @@ msgid "Check your email"
 msgstr "이메일을 확인하세요"
 
 msgid "Choose a job"
-msgstr ""
+msgstr "작업 지시 선택"
 
 msgid "Clear"
 msgstr "지우기"
@@ -337,7 +337,7 @@ msgid "Complete All"
 msgstr "모두 완료"
 
 msgid "Complete batch"
-msgstr ""
+msgstr "배치 완료 처리"
 
 msgid "Complete Batch"
 msgstr "배치 완료"
@@ -439,7 +439,7 @@ msgid "Displays"
 msgstr "디스플레이"
 
 msgid "Done"
-msgstr ""
+msgstr "완료"
 
 msgid "Down"
 msgstr "가동중단"
@@ -474,7 +474,7 @@ msgid "Dragging {0} cancelled."
 msgstr "{0} 드래그 취소됨."
 
 msgid "Due"
-msgstr ""
+msgstr "기한"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
@@ -502,7 +502,7 @@ msgid "Duration"
 msgstr "기간"
 
 msgid "Each job's output is its own lot — keep each job's parts apart."
-msgstr ""
+msgstr "각 작업 지시의 산출물은 각자의 로트입니다 — 각 작업 지시의 부품을 분리하여 보관하세요."
 
 msgid "Edit"
 msgstr "편집"
@@ -520,7 +520,7 @@ msgid "End Operations"
 msgstr "공정작업 종료"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
-msgstr ""
+msgstr "각 작업 지시의 값을 입력하거나, 첫 번째 행에서 모든 작업 지시를 한 번에 채우세요. 빈 행은 건너뜁니다."
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -539,7 +539,7 @@ msgid "Estimated"
 msgstr "예상"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
-msgstr ""
+msgstr "배치의 모든 작업 지시는 이러한 단계를 따릅니다. 모두에 대해 한 번에 단계를 기록하세요."
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "각 개는 판정을 가집니다: {passes}개 통과하고 {fails}개 불합격합니다. 로트는 각 개가 자신의 결과로 배정되면서 마감됩니다."
@@ -592,7 +592,7 @@ msgstr "결과 저장 실패"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
-msgstr ""
+msgstr "{0} 업로드 실패"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -640,7 +640,7 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
-msgstr ""
+msgstr "첫 번째 기한 {0}"
 
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
@@ -655,7 +655,7 @@ msgid "Go to onboarding"
 msgstr "온보딩으로 이동"
 
 msgid "Hide description"
-msgstr ""
+msgstr "설명 숨기기"
 
 msgid "How many were actually picked?"
 msgstr "실제로 몇 개를 피킹했습니까?"
@@ -782,7 +782,7 @@ msgid "List view"
 msgstr "목록 보기"
 
 msgid "Load list"
-msgstr ""
+msgstr "목록 불러오기"
 
 msgid "Loading item details..."
 msgstr "품목 세부정보를 불러오는 중..."
@@ -797,7 +797,7 @@ msgid "Location"
 msgstr "위치"
 
 msgid "Log completed"
-msgstr ""
+msgstr "완료 기록"
 
 msgid "Log Completed"
 msgstr "완료 기록"
@@ -830,7 +830,7 @@ msgid "Lot numbers missing"
 msgstr "로트 번호 누락"
 
 msgid "Lot tracked"
-msgstr ""
+msgstr "로트 추적됨"
 
 msgid "Machine"
 msgstr "기계"
@@ -1072,7 +1072,7 @@ msgstr "OEM 필요"
 
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
-msgstr ""
+msgstr "/{0}"
 
 msgid "Oldest first"
 msgstr "오래된순"
@@ -1084,7 +1084,7 @@ msgid "one per job · planned"
 msgstr "작업 지시당 하나 · 계획됨"
 
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
-msgstr ""
+msgstr "하나의 피킹이 전체 배치를 커버합니다 — 자동으로 작업 지시에 공유됩니다."
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -1100,7 +1100,7 @@ msgid "Open a display on the screen mounted at the work center and leave it runn
 msgstr "작업장에 설치된 화면에 디스플레이를 열고 계속 실행 상태로 두세요. 각 보드는 자동으로 새로고침됩니다."
 
 msgid "Open a job in this batch"
-msgstr ""
+msgstr "이 배치에서 작업 지시 열기"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB 처분 결정을 위해 NCR을 여세요"
@@ -1148,7 +1148,7 @@ msgid "Partial Disposition"
 msgstr "부분 처분 결정"
 
 msgid "Passed inspection"
-msgstr ""
+msgstr "검사 통과"
 
 msgid "Passed Inspection"
 msgstr "검사 통과"
@@ -1282,7 +1282,7 @@ msgstr "{0} 기록"
 
 #. placeholder {0}: changed.length
 msgid "Record {0} jobs"
-msgstr ""
+msgstr "{0} 작업 지시 기록"
 
 msgid "Record only"
 msgstr "기록만"
@@ -1291,7 +1291,7 @@ msgid "Record Partial"
 msgstr "부분 기록"
 
 msgid "Recorded"
-msgstr ""
+msgstr "기록됨"
 
 msgid "Reject"
 msgstr "거부"
@@ -1300,7 +1300,7 @@ msgid "Reject Lot"
 msgstr "로트 거부"
 
 msgid "Released"
-msgstr ""
+msgstr "릴리스됨"
 
 msgid "Remove"
 msgstr "제거"
@@ -1342,7 +1342,7 @@ msgid "Sales Order"
 msgstr "수주"
 
 msgid "Same for every job"
-msgstr ""
+msgstr "모든 작업 지시에 동일"
 
 msgid "Save"
 msgstr "저장"
@@ -1486,7 +1486,7 @@ msgid "Serial Numbers"
 msgstr "시리얼 번호"
 
 msgid "Serialized"
-msgstr ""
+msgstr "일련화됨"
 
 msgid "Session locked"
 msgstr "세션 잠김"
@@ -1516,7 +1516,7 @@ msgid "Short pick {itemName}"
 msgstr "{itemName} 부족 피킹"
 
 msgid "Show description"
-msgstr ""
+msgstr "설명 표시"
 
 msgid "Show this overlay"
 msgstr "이 오버레이 표시"
@@ -1559,7 +1559,7 @@ msgstr "시작"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
-msgstr ""
+msgstr "{0} 시작"
 
 msgid "Start or pause the operation"
 msgstr "공정을 시작하거나 일시 중지"
@@ -1611,10 +1611,10 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
 
 msgid "The jobs and parts that make up this run."
-msgstr ""
+msgstr "이 실행을 구성하는 작업 지시와 부품입니다."
 
 msgid "The jobs make different items — keep each job's parts apart."
-msgstr ""
+msgstr "작업 지시가 서로 다른 품목을 생성합니다 — 각 작업 지시의 부품을 분리하여 보관하세요."
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "로트는 통과로 표시되고 이 공정에서 남은 {remaining}개가 완료됩니다."
@@ -1624,7 +1624,7 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
-msgstr ""
+msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."
@@ -1636,7 +1636,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "이 항목들은 아직 선택할 재료가 있습니다. 지금 완료하면 목록이 부분으로 표시됩니다."
 
 msgid "This batch has no work instructions."
-msgstr ""
+msgstr "이 배치는 작업 표준서가 없습니다."
 
 msgid "This lot is expired and can't be picked."
 msgstr "로트가 만료되었으며 피킹할 수 없습니다."
@@ -1654,7 +1654,7 @@ msgid "Thumbnail"
 msgstr "썸네일"
 
 msgid "Tick the jobs this was done for."
-msgstr ""
+msgstr "이것이 수행된 작업 지시를 체크하세요."
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "시간과 원가는 수량에 비례하여 작업 지시 간에 배분됩니다."
@@ -1667,10 +1667,10 @@ msgid "Time Worked: {0}"
 msgstr "작업 시간: {0}"
 
 msgid "To pick"
-msgstr ""
+msgstr "피킹할"
 
 msgid "To run"
-msgstr ""
+msgstr "실행할"
 
 msgid "Today"
 msgstr "오늘"
@@ -1682,7 +1682,7 @@ msgid "Tools"
 msgstr "공구"
 
 msgid "Total"
-msgstr ""
+msgstr "총계"
 
 msgid "Total Quantity"
 msgstr "총 수량"
@@ -1773,10 +1773,10 @@ msgid "Use a different account"
 msgstr "다른 계정 사용"
 
 msgid "Used automatically at completion"
-msgstr ""
+msgstr "완료 시 자동으로 사용됨"
 
 msgid "Value"
-msgstr ""
+msgstr "값"
 
 msgid "Verify"
 msgstr "확인"
