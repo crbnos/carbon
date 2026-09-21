@@ -844,31 +844,24 @@ export async function getJobDocuments(
     itemId?: string | null;
   }
 ): Promise<StorageItem[]> {
-  const promises = [
-    storage(client).company(companyId).list(`${companyId}/job/${job.id}`)
-  ];
-
-  // Add opportunity line files if available
-  if (job.salesOrderLineId || job.quoteLineId) {
-    const opportunityLine = job.salesOrderLineId || job.quoteLineId;
-    promises.push(
-      storage(client)
-        .company(companyId)
-        .list(`${companyId}/opportunity-line/${opportunityLine}`)
-    );
-  }
-
-  // Add parts files if itemId is available
-  if (job.itemId) {
-    promises.push(
-      storage(client)
-        .company(companyId)
-        .list(`${companyId}/parts/${job.itemId}`)
-    );
-  }
-
-  const results = await Promise.all(promises);
-  const [jobFiles, opportunityLineFiles, partsFiles] = results;
+  // Fixed positions, not a conditionally-grown array: the destructuring below
+  // is positional, so a job with an itemId but no sales/quote line would
+  // otherwise land its PARTS listing in `opportunityLineFiles` and label those
+  // files `bucket: "opportunity-line"`, which resolves the wrong storage path.
+  const opportunityLine = job.salesOrderLineId || job.quoteLineId;
+  const [jobFiles, opportunityLineFiles, partsFiles] = await Promise.all([
+    storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
+    opportunityLine
+      ? storage(client)
+          .company(companyId)
+          .list(`${companyId}/opportunity-line/${opportunityLine}`)
+      : null,
+    job.itemId
+      ? storage(client)
+          .company(companyId)
+          .list(`${companyId}/parts/${job.itemId}`)
+      : null
+  ]);
 
   // Combine and return all sets of files with their respective buckets
   return [
