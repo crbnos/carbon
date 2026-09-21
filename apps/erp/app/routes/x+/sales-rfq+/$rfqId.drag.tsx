@@ -148,31 +148,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   } else {
     newPath = `${companyId}/opportunity-line/${targetLineId}/${fileName}`;
-    // Download/upload/remove rather than `move`: a file uploaded before the
-    // per-company copy ran still lives only in the legacy shared bucket, which
-    // is read-only, so `move` on the company bucket would fail to find it.
-    // `download` and `remove` both span the two buckets; `move` does not.
-    const source = await storage(client)
+    // Move the file to the new path
+    const move = await storage(client)
       .company(companyId)
-      .download(documentPath);
-    if (!source.data) {
+      .move(documentPath, newPath);
+
+    if (move.error) {
       throw redirect(
         path.to.salesRfqDetails(rfqId),
-        await flash(request, error(source.error, "Failed to read file"))
+        await flash(request, error(move.error, "Failed to move file"))
       );
     }
-
-    const moved = await storage(client)
-      .company(companyId)
-      .upload(newPath, source.data, { upsert: true });
-    if (moved.error) {
-      throw redirect(
-        path.to.salesRfqDetails(rfqId),
-        await flash(request, error(moved.error, "Failed to move file"))
-      );
-    }
-
-    await storage(client).company(companyId).remove([documentPath]);
   }
 
   return { success: true };

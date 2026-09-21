@@ -133,8 +133,21 @@ function companyBucket(
       owns(path) ? own.update(path, ...rest) : refuse(path),
     uploadToSignedUrl: (path, ...rest) =>
       owns(path) ? own.uploadToSignedUrl(path, ...rest) : refuse(path),
-    move: (from, to, options) =>
-      owns(from, to) ? own.move(from, to, options) : refuse(from, to),
+    // A file uploaded before the per-company copy ran still lives only in the
+    // legacy bucket, so a move within the company bucket finds nothing. Retry
+    // it as a cross-bucket move OUT of legacy: `/object/move` takes a
+    // `destinationBucket`, so this stays one server-side operation rather than
+    // a download/upload/remove dance. Honours an explicit destinationBucket.
+    move: async (from, to, options) => {
+      if (!owns(from, to)) return refuse(from, to);
+      const primary = await own.move(from, to, options);
+      if (!primary.error) return primary;
+      const fallback = await legacy.move(from, to, {
+        ...options,
+        destinationBucket: options?.destinationBucket ?? id
+      });
+      return fallback.error ? primary : fallback;
+    },
     copy: (from, to, options) =>
       owns(from, to) ? own.copy(from, to, options) : refuse(from, to),
     createSignedUploadUrl: (path, options) =>

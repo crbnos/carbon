@@ -324,3 +324,65 @@ describe("storage(client).company", () => {
     });
   });
 });
+
+describe("move falls back to a cross-bucket move out of the legacy bucket", () => {
+  it("moves within the company bucket when the file is already there", async () => {
+    const legacyMove = vi.fn(() => ok({ message: "legacy" }));
+    const client = makeClient({
+      co1: { move: vi.fn(() => ok({ message: "company" })) },
+      [LEGACY_PRIVATE_BUCKET]: { move: legacyMove }
+    });
+
+    const result = await storage(client)
+      .company("co1")
+      .move("co1/a.pdf", "co1/b.pdf");
+
+    expect(result.data).toEqual({ message: "company" });
+    expect(legacyMove).not.toHaveBeenCalled();
+  });
+
+  // A file uploaded before the per-company copy ran is only in the legacy
+  // bucket, so the company-bucket move misses and the retry must carry it
+  // across in one operation rather than leaving the drag broken.
+  it("retries out of the legacy bucket into the company bucket on a miss", async () => {
+    const legacyMove = vi.fn(() => ok({ message: "legacy" }));
+    const client = makeClient({
+      co1: { move: vi.fn(() => fail("not found")) },
+      [LEGACY_PRIVATE_BUCKET]: { move: legacyMove }
+    });
+
+    const result = await storage(client)
+      .company("co1")
+      .move("co1/a.pdf", "co1/b.pdf");
+
+    expect(result.data).toEqual({ message: "legacy" });
+    expect(legacyMove).toHaveBeenCalledWith("co1/a.pdf", "co1/b.pdf", {
+      destinationBucket: "co1"
+    });
+  });
+
+  it("reports the company bucket's error when both buckets miss", async () => {
+    const client = makeClient({
+      co1: { move: vi.fn(() => fail("company miss")) },
+      [LEGACY_PRIVATE_BUCKET]: { move: vi.fn(() => fail("legacy miss")) }
+    });
+
+    const result = await storage(client)
+      .company("co1")
+      .move("co1/a.pdf", "co1/b.pdf");
+
+    expect(result.error).toEqual({ message: "company miss" });
+  });
+
+  it("refuses a key outside the company prefix without touching storage", async () => {
+    const companyMove = vi.fn(() => ok({ message: "company" }));
+    const client = makeClient({ co1: { move: companyMove } });
+
+    const result = await storage(client)
+      .company("co1")
+      .move("co1/a.pdf", "co2/b.pdf");
+
+    expect(result.error).toBeTruthy();
+    expect(companyMove).not.toHaveBeenCalled();
+  });
+});
