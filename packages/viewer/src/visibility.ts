@@ -7,26 +7,20 @@ export type InstalledComponentsMode = "ghost" | "hidden" | "solid";
 export type ComponentVisual = "solid" | "active" | "hidden" | "ghost";
 
 /**
- * The named views the toolbar offers, in the order they are presented.
+ * The named views the toolbar offers, in presentation order.
  *
- * The two modes above are independent axes, which is the right model for the
- * renderer and the wrong one for the person looking at the screen: nine
- * combinations, most of them meaningless, asked through two icon triplets.
- * A view is a named point in that space — the ways people actually want to
- * look at an assembly — so the UI exposes one control with one concept while
- * the renderer keeps both axes.
+ * The two modes are independent axes: the right model for the renderer, the
+ * wrong one for the screen (nine combinations, most meaningless). A view is a
+ * named point in that space, so the UI keeps one concept and the renderer both.
  */
 export const ASSEMBLY_VIEWS = ["build", "focus", "isolate", "full"] as const;
 
 export type AssemblyView = (typeof ASSEMBLY_VIEWS)[number];
 
 /**
- * The axis pair each named view stands for.
- *
- * Ordered by how much context they strip away: Build keeps everything already
- * there, Focus fades it, Isolate removes it, and Full is the other extreme.
- * Note the future side is hidden in the first three — an operator working a
- * step is never helped by parts that are not on the bench yet.
+ * Ordered by how much context they strip: Build keeps what is already there,
+ * Focus fades it, Isolate removes it, Full is the other extreme. The future
+ * side is hidden in all but Full: parts not yet on the bench only add clutter.
  */
 export const VIEW_MODES: Record<
   AssemblyView,
@@ -43,12 +37,9 @@ export const VIEW_MODES: Record<
 };
 
 /**
- * The view standing for an axis pair, or "build" when the pair names no view.
- *
- * Only used to seat the initial view from the `default*Mode` props, which are
- * still axis-shaped: they predate the views and ERP passes them. An unnamed
- * pair falls back rather than widening `AssemblyView` with a "custom" member
- * no button could select.
+ * The view for an axis pair, or "build" when the pair names none. Seats the
+ * initial view from the still-axis-shaped `default*Mode` props; an unnamed pair
+ * falls back rather than adding a "custom" member no button could select.
  */
 export function viewForModes(
   installedMode: InstalledComponentsMode,
@@ -70,11 +61,7 @@ export function viewForModes(
  * canvas only once its step has run. A component no step installs is treated
  * exactly like a future-step component — it is never "already there".
  *
- * The two modes are independent axes over the same timeline: `futureMode`
- * governs what has not been built yet, `installedMode` what already has. Deep
- * into a build the installed parts can bury the ones the active step is
- * naming, so the operator can ghost or hide them. `installedMode` defaults to
- * "solid" — the historical behaviour — so three-argument callers are
+ * `installedMode` defaults to "solid", so three-argument callers are
  * unaffected. Neither mode ever touches the active step.
  */
 export function visualForComponent(

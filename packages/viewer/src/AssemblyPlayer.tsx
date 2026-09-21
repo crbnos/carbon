@@ -120,10 +120,6 @@ export type AssemblyPlayerProps = {
   /** Initial render mode for future-step components. Shared by step selection
    * AND playback, so a ghosted default ghosts the animation too. */
   defaultFutureMode?: FutureComponentsMode;
-  /** Initial render mode for already-installed (earlier-step) components.
-   * Defaults to "solid" — the historical behaviour, where everything already
-   * built renders opaque. Ghost/hidden let an operator see past the assembly
-   * to the parts the active step is naming. */
   defaultInstalledMode?: InstalledComponentsMode;
   /** Picking components to add to a step: ghost every not-yet-installed part so
    * un-animated parts are visible and clickable (x-ray). */
@@ -232,11 +228,8 @@ export const AssemblyPlayer = forwardRef<
   const [cameraMode, setCameraMode] = useState<"auto" | "free">("auto");
   // Stable identity — the scene re-subscribes its controls listener otherwise.
   const handleFreeCamera = useCallback(() => setCameraMode("free"), []);
-  // The two visibility axes are exposed as NAMED views rather than as the axes
-  // themselves. Six icon buttons made the reader learn a two-axis model to ask
-  // one question ("what am I fitting right now?"); a named view answers it
-  // directly, reads the same in ERP and MES, and needs no icon to be decoded.
-  // The axes are untouched underneath — a view is purely a derived pair.
+  // Exposed as named views, not raw axes: six icon buttons made the reader
+  // learn a two-axis model to ask one question. A view is a derived pair.
   const [view, setView] = useState<AssemblyView>(() =>
     viewForModes(defaultInstalledMode, defaultFutureMode)
   );
@@ -622,8 +615,7 @@ export const AssemblyPlayer = forwardRef<
         )}
       </div>
 
-      {/* Wraps rather than overflowing — a clipped control is worse than a
-          taller toolbar on a narrow panel (the MES centre column). */}
+      {/* Wraps rather than clipping on the narrow MES panel. */}
       <div className="flex flex-wrap items-center gap-2 border-t border-border bg-background px-3 py-2">
         <ControlButton
           aria-label="Previous step"
@@ -685,20 +677,17 @@ export const AssemblyPlayer = forwardRef<
         />
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
           {stepCount > 0
-            ? `${formatTime(Math.min(displayTime, totalSeconds))} / ${formatTime(totalSeconds)}`
+            ? `${formatTime(
+                Math.min(displayTime, totalSeconds)
+              )} / ${formatTime(totalSeconds)}`
             : "–"}
         </span>
         <span className="whitespace-nowrap text-xs tabular-nums text-muted-foreground">
           {stepCount > 0 ? `${clampedIndex + 1} / ${stepCount}` : ""}
         </span>
-        {/* Visibility, as four named views rather than two icon triplets.
-            Identical in ERP and MES — deliberately NOT gated on `readOnly`: an
-            author and an operator ask the same question of the model, so
-            splitting the control by audience only made the two screens
-            disagree about what the buttons mean. Words beat glyphs here —
-            nothing about a dashed box says "ghost the parts you already
-            fitted" — and a labelled segment is a bigger target for a gloved
-            hand on the shop floor. */}
+        {/* Deliberately NOT gated on `readOnly`: an author and an operator ask
+            the same question of the model, so the control reads the same in
+            ERP and MES. Words over glyphs, and a bigger target for a glove. */}
         <div
           role="group"
           aria-label="Component visibility"
@@ -1135,9 +1124,7 @@ function AssemblyScene({
     const effectiveFutureMode: FutureComponentsMode = componentPickerActive
       ? "ghost"
       : futureMode;
-    // A hidden component cannot be clicked, so component-picker mode forces the
-    // installed side back to solid — the mirror of the future side's ghost
-    // override above. Both stay pickable, and the two remain distinguishable.
+    // A hidden component cannot be clicked, so picking forces installed solid.
     const effectiveInstalledMode: InstalledComponentsMode =
       componentPickerActive ? "solid" : installedMode;
 
@@ -1804,9 +1791,7 @@ function AssemblyScene({
         if (stepComponents.has(leaf.nodeId)) continue;
         if (hiddenSet.has(leaf.nodeId)) continue;
         const leafStep = stepIndexByNode.get(leaf.nodeId);
-        // Geometry the operator can't see must not push the camera around, or
-        // "hide installed" would clear the pixels while the framing still
-        // dodged parts that are no longer drawn.
+        // Invisible geometry must not push the camera around.
         const weight = occluderWeight(
           leafStep,
           activeStepIndex,
@@ -2645,13 +2630,10 @@ function PauseIcon() {
 }
 
 /**
- * The button text and its spoken form, for each named view.
- *
- * The visible label is one word so they all fit the narrow MES centre column;
- * `description` is what a screen reader announces, since "Build" alone
- * does not say what changes. English lives here rather than going through
- * Lingui because `@carbon/viewer` is deliberately i18n-free — see
- * `packages/viewer/AGENTS.md`; the apps translate around it.
+ * One-word labels so they fit the narrow MES column; `description` is the
+ * screen-reader text, since "Build" alone does not say what changes.
+ * English lives here because `@carbon/viewer` is deliberately i18n-free
+ * (see `packages/viewer/AGENTS.md`); the apps translate around it.
  */
 const VIEW_LABELS: Record<
   AssemblyView,

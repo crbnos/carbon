@@ -1,6 +1,6 @@
 # Installed-component visibility in the assembly viewer
 
-> Status: draft
+> Status: approved / implemented (branch `feat/hide-installed-parts`, PR #1660; move to implemented/ after merge)
 > Author: Aashu
 > Date: 2026-09-17
 
