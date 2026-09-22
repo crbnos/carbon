@@ -324,7 +324,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       baseCurrency: fixture.baseCurrency,
       companyGroupId: fixture.companyGroupId,
       decimalsCache: new Map([[fixture.baseCurrency, 2]]),
-      exchangeRateCache: new Map()
+      exchangeRateCache: new Map(),
+      createdBy: "system",
+      trigger: "event"
     };
     let transaction: RampTransaction = {
       id: rampId,
@@ -449,7 +451,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       baseCurrency: fixture.baseCurrency,
       companyGroupId: fixture.companyGroupId,
       decimalsCache: new Map(),
-      exchangeRateCache: new Map()
+      exchangeRateCache: new Map(),
+      createdBy: "system",
+      trigger: "event"
     };
 
     const args: Parameters<typeof createAndPostTransaction>[1] = {

@@ -18,6 +18,8 @@ import {
   invoiceDeepLinkUrl,
   normalizeVerifiedMinorAmount,
   type RampSyncContext,
+  recordRampSyncFailures,
+  resolveRampSyncOperations,
   type SyncItem
 } from "./ramp-sync-shared";
 
@@ -96,5 +98,16 @@ export async function syncRampReimbursements(
 
   result.created = successful.length;
   result.failed += failed.length;
+
+  await recordRampSyncFailures(ctx, {
+    entityType: "reimbursement",
+    direction: "pull-from-accounting",
+    failures: failed
+  });
+  await resolveRampSyncOperations(ctx, {
+    entityType: "reimbursement",
+    direction: "pull-from-accounting",
+    entityIds: successful.map((item) => item.id)
+  });
   return result;
 }
