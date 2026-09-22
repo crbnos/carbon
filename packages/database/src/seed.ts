@@ -70,7 +70,6 @@ async function seedInstanceAdmin() {
   if (error && error.code !== "email_exists") {
     throw new Error(`seed: creating instance admin: ${error.message}`);
   }
-  console.log(`instance admin ${email} ${error ? "already exists" : "created"}`);
 }
 
 // Postgres triggers + edge functions call back to the API from inside the
