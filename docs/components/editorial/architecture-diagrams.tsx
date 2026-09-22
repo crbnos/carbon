@@ -492,30 +492,38 @@ function BuySelfHosted() {
  * each plan down into the code rows; arrows read as "becomes", so three of them landing on
  * Community Edition said every plan turns into CE, and the EE row had nothing pointing at
  * it at all. There is no flow here to draw. The relationship is inclusion, so the columns
- * ARE the code boundaries and a plan's row simply extends across the ones it includes.
- * Business and Enterprise deliberately have identical code bars: Enterprise is not more
- * software, it is the same software with services attached, which the amber segment (the
- * one tone here that is not code) is there to say. Prices stay on the pricing page; a
- * second copy here would drift the day one changes. */
+ * ARE the boundaries and a plan's row simply extends across the ones it includes.
+ *
+ * The third column is NOT a services column, and naming it one was the second thing to go
+ * wrong here: read at a glance, "Services" says Enterprise is Business plus implementation
+ * help, when it is really Business plus capabilities that exist nowhere else (SSO is
+ * packages/ee code but gates on CarbonEdition rather than the plan, so Business never
+ * reaches it; BYOC, GovCloud/ITAR and self-hosting are deployment options, not code at
+ * all) AND the people to stand them up. Hence "Additional Features and Services", with the
+ * detail line naming enough of both halves to make the glance land correctly. The amber
+ * tone marks it as the one column that is not a code boundary.
+ *
+ * Prices stay on the pricing page; a second copy here would drift the day one changes. */
 function Plans() {
   /* Column x/width drive both the header text and every bar, so a bar can never drift
    * out of line with the header naming it. */
-  const CE = { x: 108, w: 236 };
-  const EE = { x: 352, w: 188 };
-  const SVCS = { x: 548, w: 188 };
+  const CE = { x: 108, w: 196 };
+  const EE = { x: 312, w: 196 };
+  const EXTRA = { x: 516, w: 218 };
   const ROWS = [
     { label: "Starter", y: 72, segments: [CE] },
     { label: "Business", y: 126, segments: [CE, EE] },
-    { label: "Enterprise", y: 180, segments: [CE, EE, SVCS] },
+    { label: "Enterprise", y: 180, segments: [CE, EE, EXTRA] },
   ];
   const TONES = ["svc", "app", "async"] as const;
+  const BARS = ["CE", "EE", "Features and services"];
   const HEADERS = [
     { col: CE, name: "Community Edition (CE)", detail: "everything outside packages/ee · AGPLv3" },
-    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee, .ee. files · Commercial" },
-    { col: SVCS, name: "Services", detail: "implementation and compliance" },
+    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee and .ee. files · Commercial" },
+    { col: EXTRA, name: "Additional Features and Services", detail: "SSO, BYOC, ITAR, CMMC, and an FDE" },
   ];
   return (
-    <svg viewBox="0 0 740 240" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds services">
+    <svg viewBox="0 0 740 240" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds features and services available nowhere else">
       <Eyebrow x={0} y={14} label="Carbon Cloud, pick one" />
 
       {HEADERS.map(({ col, name, detail }) => (
@@ -535,7 +543,7 @@ function Plans() {
             {label}
           </text>
           {segments.map((col, i) => (
-            <Node key={col.x} x={col.x} y={y} w={col.w} h={44} label={["CE", "EE", "Services"][i]} tone={TONES[i]} />
+            <Node key={col.x} x={col.x} y={y} w={col.w} h={44} label={BARS[i]} tone={TONES[i]} />
           ))}
         </g>
       ))}

@@ -18,13 +18,13 @@ Self-hosting (the `docs/platform/self-hosting/docker-caddy` or the `docs/platfor
 
 Carbon Cloud comes in three plans, and the line between them is the line the repository already draws. The **Starter** plan runs the open core: every feature whose code sits outside `packages/ee`, under AGPLv3. That is the same code **Community Edition (CE)** runs when you host Carbon yourself.
 
-The **Business** and **Enterprise** plans add the Business features, the code in `packages/ee` and in any `.ee.` file, which is what **Enterprise Edition (EE)** unlocks on your own hardware. The Enterprise plan layers implementation and compliance work on top of that same software.
+The **Business** and **Enterprise** plans add the Business features, the code in `packages/ee` and in any `.ee.` file, which is what **Enterprise Edition (EE)** unlocks on your own hardware. The Enterprise plan goes further again, adding capabilities no other plan can reach, like SSO and controlled or self-hosted deployments, together with the people to implement them.
 
 | Cloud plan | What it adds | Code it runs | How you get it |
 | --- | --- | --- | --- |
 | **Starter** | The open core, hosted and kept up to date for you | CE only: everything outside `packages/ee` | Self-signup, month to month |
 | **Business** | The Business features, plus technical support | CE + EE: adds `packages/ee` and `.ee.` files | Self-signup, month to month |
-| **Enterprise** | Implementation, compliance, and a service level, on the same feature set as Business | CE + EE: adds `packages/ee` and `.ee.` files | A signed [Enterprise Subscription](#carbon-cloud--we-run-it) |
+| **Enterprise** | Everything in Business, plus deployment options, compliance, and services | CE + EE, plus capabilities gated to the Enterprise edition | A signed [Enterprise Subscription](#carbon-cloud--we-run-it) |
 
 The **Starter** plan covers ERP, MES, MRP, and QMS, accounting with general ledger, financial reports, fixed assets, and multi-currency, the product configurator with rules-based BOMs and routings, unlimited records, self-onboarding, and community support.
 
