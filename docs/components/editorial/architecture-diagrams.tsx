@@ -488,32 +488,57 @@ function BuySelfHosted() {
   );
 }
 
-/* The Cloud plans against the repository's own dividing line. No edges into the second
- * row: the rows are cut to the plan columns above them, so the Business features box
- * starting under "Business" IS the statement, and an arrow would only restate it. The
- * three that do exist stop ON the boundary edge (y=128) rather than reaching the node
- * inside: Boundary paints a knockout rect behind its label from x+22 for label.length*6.6+18,
- * which for this x would paint over a line continuing down x=130. That is also why the
- * label is one word. Prices are deliberately absent: they live on the pricing page, and a
+/* The Cloud plans as cumulative bars, not a flow. An earlier version drew an arrow from
+ * each plan down into the code rows; arrows read as "becomes", so three of them landing on
+ * Community Edition said every plan turns into CE, and the EE row had nothing pointing at
+ * it at all. There is no flow here to draw. The relationship is inclusion, so the columns
+ * ARE the code boundaries and a plan's row simply extends across the ones it includes.
+ * Business and Enterprise deliberately have identical code bars: Enterprise is not more
+ * software, it is the same software with services attached, which the amber segment (the
+ * one tone here that is not code) is there to say. Prices stay on the pricing page; a
  * second copy here would drift the day one changes. */
 function Plans() {
+  /* Column x/width drive both the header text and every bar, so a bar can never drift
+   * out of line with the header naming it. */
+  const CE = { x: 108, w: 236 };
+  const EE = { x: 352, w: 188 };
+  const SVCS = { x: 548, w: 188 };
+  const ROWS = [
+    { label: "Starter", y: 72, segments: [CE] },
+    { label: "Business", y: 126, segments: [CE, EE] },
+    { label: "Enterprise", y: 180, segments: [CE, EE, SVCS] },
+  ];
+  const TONES = ["svc", "app", "async"] as const;
+  const HEADERS = [
+    { col: CE, name: "Community Edition (CE)", detail: "everything outside packages/ee · AGPLv3" },
+    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee, .ee. files · Commercial" },
+    { col: SVCS, name: "Services", detail: "implementation and compliance" },
+  ];
   return (
-    <svg viewBox="0 0 740 306" className="w-full h-auto" role="img" aria-label="How the Carbon Cloud plans map to the code in the repository">
-      <ArrowDefs />
+    <svg viewBox="0 0 740 240" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds services">
+      <Eyebrow x={0} y={14} label="Carbon Cloud, pick one" />
 
-      <Eyebrow x={16} y={14} label="Carbon Cloud, pick one" />
-      <Node x={16} y={24} w={228} h={56} label="Starter" sub="the open core, hosted" />
-      <Node x={256} y={24} w={228} h={56} label="Business" sub="adds the Business features" tone="app" />
-      <Node x={496} y={24} w={228} h={56} label="Enterprise" sub="adds services and support" tone="app" />
+      {HEADERS.map(({ col, name, detail }) => (
+        <g key={name}>
+          <text x={col.x + col.w / 2} y={44} textAnchor="middle" fontSize="11.5" fontWeight={600} fill={INK}>
+            {name}
+          </text>
+          <text x={col.x + col.w / 2} y={58} textAnchor="middle" fontSize="9.5" fill={INK_45}>
+            {detail}
+          </text>
+        </g>
+      ))}
 
-      <Edge pts={[[130, 80], [130, 128]]} soft />
-      <Edge pts={[[370, 80], [370, 128]]} soft />
-      <Edge pts={[[610, 80], [610, 128]]} soft />
-
-      <Boundary x={8} y={128} w={724} h={156} label="Repository">
-        <Node x={16} y={152} w={708} h={54} label="Community Edition (CE)" sub="everything outside packages/ee · AGPLv3" tone="svc" />
-        <Node x={256} y={218} w={468} h={54} label="Enterprise Edition (EE)" sub="packages/ee and any .ee. file · the Business features" tone="app" />
-      </Boundary>
+      {ROWS.map(({ label, y, segments }) => (
+        <g key={label}>
+          <text x={92} y={y + 28} textAnchor="end" fontSize="14" fontWeight={545} fill={INK}>
+            {label}
+          </text>
+          {segments.map((col, i) => (
+            <Node key={col.x} x={col.x} y={y} w={col.w} h={44} label={["CE", "EE", "Services"][i]} tone={TONES[i]} />
+          ))}
+        </g>
+      ))}
     </svg>
   );
 }
