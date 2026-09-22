@@ -1,6 +1,9 @@
-// Pure record builders for the batch split/merge convention. No imports — this
-// module is consumed from Deno edge functions AND node-side app code (ERP
-// quality-disposition), so it must not touch lib/database.ts or any Deno API.
+// Pure record builders for the batch split/merge convention. Consumed from Deno
+// edge functions AND node-side app code (ERP quality-disposition), so it must
+// not touch lib/database.ts or any Deno API — its only dependency is the
+// sibling precision module (itself dependency-free, re-exported through
+// @carbon/utils for the node side), so quantities round at THIS persist
+// boundary and every caller inherits it.
 //
 // Convention (spec .ai/specs/2026-08-04-batch-split-identity-flip.md): on a
 // partial draw of quantity q from a parent batch, the PARENT KEEPS its id and
@@ -9,6 +12,8 @@
 // parent@q → output child@q (never a survivor self-loop), and the ledger gets
 // exactly two net-zero Batch Split rows (−q parent, +q child) at the parent's
 // resolved bin. Returns MERGE quantity back into the parent (Merge activity).
+
+import { round } from "./precision.ts";
 
 export type BatchSplitInput = {
   parent: {
@@ -110,14 +115,22 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
     extraChildAttributes
   } = input;
 
-  // The callers' split gates (full draws take the no-split fast path) should
-  // make these unreachable — loud beats silent.
-  if (drawQuantity <= 0) {
+  // Round at the persist boundary so a float-residue draw (0.98 from 1.0 leaves
+  // 0.020000000000000018, not 0.02) never reaches storage. The child departs
+  // with `draw`, the parent keeps `remaining`, and both ledger rows book `draw`
+  // — all derived from the same rounded values so the two stay net-zero.
+  const draw = round(drawQuantity);
+  const parentQty = round(parent.quantity);
+  const remaining = round(parentQty - draw);
+
+  // The callers' split gates (full draws take the no-split fast path, compared
+  // with equals() at scale) should make these unreachable — loud beats silent.
+  if (draw <= 0) {
     throw new Error(
       `buildBatchSplitRecords: drawQuantity must be > 0, got ${drawQuantity}`
     );
   }
-  if (drawQuantity >= parent.quantity) {
+  if (draw >= parentQty) {
     throw new Error(
       `buildBatchSplitRecords: drawQuantity (${drawQuantity}) must be < parent quantity (${parent.quantity}) — a full draw is not a split`
     );
@@ -138,7 +151,7 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
       sourceDocument: parent.sourceDocument,
       sourceDocumentId: parent.sourceDocumentId,
       sourceDocumentReadableId: parent.sourceDocumentReadableId,
-      quantity: drawQuantity,
+      quantity: draw,
       status: childStatus,
       attributes: {
         ...inheritedAttributes,
@@ -150,16 +163,16 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
       companyId,
       createdBy: userId
     },
-    parentUpdate: { quantity: parent.quantity - drawQuantity },
+    parentUpdate: { quantity: remaining },
     activityInsert: {
       id: splitActivityId,
       type: "Split",
       sourceDocument: activitySourceDocument,
       sourceDocumentId: activitySourceDocumentId,
       attributes: {
-        "Original Quantity": parent.quantity,
-        "Drawn Quantity": drawQuantity,
-        "Remaining Quantity": parent.quantity - drawQuantity,
+        "Original Quantity": parentQty,
+        "Drawn Quantity": draw,
+        "Remaining Quantity": remaining,
         "Split Entity ID": childId
       },
       companyId,
@@ -168,14 +181,14 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
     activityInputInsert: {
       trackedActivityId: splitActivityId,
       trackedEntityId: parent.id,
-      quantity: drawQuantity,
+      quantity: draw,
       companyId,
       createdBy: userId
     },
     activityOutputInsert: {
       trackedActivityId: splitActivityId,
       trackedEntityId: childId,
-      quantity: drawQuantity,
+      quantity: draw,
       companyId,
       createdBy: userId
     },
@@ -183,7 +196,7 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
       {
         postingDate,
         itemId: itemLedgerItemId,
-        quantity: -drawQuantity,
+        quantity: -draw,
         locationId: bin.locationId,
         storageUnitId: bin.storageUnitId,
         entryType: "Negative Adjmt.",
@@ -196,7 +209,7 @@ export function buildBatchSplitRecords(input: BatchSplitInput): {
       {
         postingDate,
         itemId: itemLedgerItemId,
-        quantity: drawQuantity,
+        quantity: draw,
         locationId: bin.locationId,
         storageUnitId: bin.storageUnitId,
         entryType: "Positive Adjmt.",
@@ -233,25 +246,31 @@ export function buildMergeRecords(input: {
   const { child, parent, mergeQuantity, mergeActivityId, companyId, userId } =
     input;
 
-  if (mergeQuantity <= 0) {
+  // Round at the persist boundary: a merge of a 0.30000000000000004 float
+  // child settles the parent back to a clean quantity and lets the drain-to-
+  // zero short-circuit compare exactly.
+  const merge = round(mergeQuantity);
+  const childQty = round(child.quantity);
+
+  if (merge <= 0) {
     throw new Error(
       `buildMergeRecords: mergeQuantity must be > 0, got ${mergeQuantity}`
     );
   }
-  if (mergeQuantity > child.quantity) {
+  if (merge > childQty) {
     throw new Error(
       `buildMergeRecords: mergeQuantity (${mergeQuantity}) exceeds child quantity (${child.quantity})`
     );
   }
 
-  const childRemaining = child.quantity - mergeQuantity;
+  const childRemaining = round(childQty - merge);
 
   return {
     activityInsert: {
       id: mergeActivityId,
       type: "Merge",
       attributes: {
-        "Merged Quantity": mergeQuantity,
+        "Merged Quantity": merge,
         "Merged From Entity ID": child.id
       },
       companyId,
@@ -260,18 +279,18 @@ export function buildMergeRecords(input: {
     activityInputInsert: {
       trackedActivityId: mergeActivityId,
       trackedEntityId: child.id,
-      quantity: mergeQuantity,
+      quantity: merge,
       companyId,
       createdBy: userId
     },
     activityOutputInsert: {
       trackedActivityId: mergeActivityId,
       trackedEntityId: parent.id,
-      quantity: mergeQuantity,
+      quantity: merge,
       companyId,
       createdBy: userId
     },
-    parentUpdate: { quantity: parent.quantity + mergeQuantity },
+    parentUpdate: { quantity: round(round(parent.quantity) + merge) },
     childUpdate:
       childRemaining === 0
         ? { quantity: 0, status: "Consumed" }

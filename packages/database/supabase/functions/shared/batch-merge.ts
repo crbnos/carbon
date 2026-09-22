@@ -6,9 +6,13 @@
 // quantity and output = the merged entity, and the ledger gets net-zero Batch
 // Merge rows (−q at each parent's bin, +Σq at the merged entity's bin).
 //
-// No imports — consumed from Deno edge functions AND node-side app code, so it
-// must not touch lib/database.ts or any Deno API.
+// Consumed from Deno edge functions AND node-side app code, so it must not
+// touch lib/database.ts or any Deno API — its only dependency is the sibling
+// precision module (dependency-free, re-exported through @carbon/utils), so
+// the merged quantity rounds once at this persist boundary.
 // See .ai/specs/2026-09-16-batch-materials-and-output-lots.md.
+
+import { round } from "./precision.ts";
 
 export type BatchMergeParent = {
   id: string;
@@ -139,7 +143,10 @@ export function buildBatchMergeRecords(input: {
     throw new Error("Only lots of the same item can be merged");
   }
 
-  const totalQuantity = parents.reduce((sum, p) => sum + p.quantity, 0);
+  // Sum first, round once — the three-boundary rule. Summing N raw quantities
+  // then rounding the total keeps the merged lot a clean 5dp value even when
+  // the parents carry float residue (0.1 + 0.2 → 0.3, not 0.30000000000000004).
+  const totalQuantity = round(parents.reduce((sum, p) => sum + p.quantity, 0));
 
   // Earliest parent expiry wins — the conservative policy for a blended lot.
   let expirationDate: string | null = null;
@@ -227,7 +234,7 @@ export function buildBatchMergeRecords(input: {
         (p): MergeLedgerRecord => ({
           postingDate,
           itemId: p.itemId ?? p.sourceDocumentId,
-          quantity: -p.receivedQuantity,
+          quantity: -round(p.receivedQuantity),
           locationId: p.bin.locationId,
           storageUnitId: p.bin.storageUnitId,
           entryType: "Negative Adjmt.",
@@ -272,5 +279,10 @@ function receivedByBin(parents: BatchMergeParent[]) {
     entry.quantity += p.receivedQuantity;
     byBin.set(key, entry);
   }
-  return [...byBin.values()];
+  // Round each bin's accumulated total once so the positive rows stay at scale
+  // and net exactly against the rounded negatives.
+  return [...byBin.values()].map((entry) => ({
+    bin: entry.bin,
+    quantity: round(entry.quantity)
+  }));
 }

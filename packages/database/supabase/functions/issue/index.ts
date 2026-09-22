@@ -20,6 +20,7 @@ import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib
 
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { buildBatchMergeRecords } from "../shared/batch-merge.ts";
+import { equals } from "../shared/precision.ts";
 import { splitPickAcrossMembers } from "../shared/batch-pick-split.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
@@ -1460,7 +1461,7 @@ async function consumeTrackedEntitiesIntoOperation(
             // Consumption ledger) books against the child — flipping the
             // entity half without the ledger half would double-count on-hand.
             let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
+            if (!equals(Number(trackedEntity.quantity), quantity)) {
               const consumedChildId = nanoid();
               consumedEntityId = consumedChildId;
 
@@ -4670,7 +4671,7 @@ serve(async (req: Request) => {
             // Maintenance Consumption ledger, junction row) books against
             // the child.
             let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
+            if (!equals(Number(trackedEntity.quantity), quantity)) {
               const consumedChildId = nanoid();
               consumedEntityId = consumedChildId;
 

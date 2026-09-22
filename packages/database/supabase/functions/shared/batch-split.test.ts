@@ -191,3 +191,43 @@ Deno.test("merge: throws when mergeQuantity exceeds child quantity or is <= 0", 
   assertThrows(() => buildMergeRecords({ ...base, mergeQuantity: 2 }));
   assertThrows(() => buildMergeRecords({ ...base, mergeQuantity: 0 }));
 });
+
+// --- persist-boundary rounding (PR C) --------------------------------------
+
+Deno.test("split: a float-residue draw persists clean 5dp quantities", () => {
+  // Drawing 0.98 from 1 leaves 0.020000000000000018 in raw float; the parent,
+  // child, ledger, edges and Split blob must all read the rounded values.
+  const r = buildBatchSplitRecords(
+    splitInput({ parent: { id: "parent-1", quantity: 1 }, drawQuantity: 0.98 })
+  );
+  assertEquals(r.parentUpdate, { quantity: 0.02 });
+  assertEquals(r.childEntityInsert.quantity, 0.98);
+  assertEquals(r.activityInsert.attributes, {
+    "Original Quantity": 1,
+    "Drawn Quantity": 0.98,
+    "Remaining Quantity": 0.02,
+    "Split Entity ID": "child-1"
+  });
+  assertEquals(r.activityInputInsert.quantity, 0.98);
+  assertEquals(r.activityOutputInsert.quantity, 0.98);
+  const [minus, plus] = r.ledgerInserts;
+  assertEquals(minus.quantity, -0.98);
+  assertEquals(plus.quantity, 0.98);
+  assertEquals(minus.quantity + plus.quantity, 0);
+});
+
+Deno.test("merge: a 0.30000000000000004 child settles the parent to a clean quantity", () => {
+  const r = buildMergeRecords({
+    child: { id: "child-1", quantity: 0.1 + 0.2 },
+    parent: { id: "parent-1", quantity: 0.1 },
+    mergeQuantity: 0.1 + 0.2,
+    mergeActivityId: "merge-1",
+    companyId: "co-1",
+    userId: "user-1"
+  });
+  assertEquals(r.activityInputInsert.quantity, 0.3);
+  assertEquals(r.activityOutputInsert.quantity, 0.3);
+  assertEquals(r.parentUpdate, { quantity: 0.4 });
+  // Draining the whole (rounded) child flips it Consumed via an exact === 0.
+  assertEquals(r.childUpdate, { quantity: 0, status: "Consumed" });
+});

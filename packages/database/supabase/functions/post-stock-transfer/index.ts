@@ -8,7 +8,7 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
-import { round } from "../shared/precision.ts";
+import { equals, round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -460,7 +460,7 @@ serve(async (req: Request) => {
           // source entity keeps its id and is decremented; a NEW child entity
           // departs to the destination bin with the transfer quantity.
           let transferredEntityId = trackedEntityId;
-          if (entityQuantity !== transferQuantity) {
+          if (!equals(entityQuantity, transferQuantity)) {
             const childId = nanoid();
             splitEntityId = childId;
             transferredEntityId = childId;
