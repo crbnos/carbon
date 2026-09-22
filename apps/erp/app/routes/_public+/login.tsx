@@ -321,6 +321,28 @@ export default function LoginRoute() {
     }
   }, [logoutReason]);
 
+  // A magic-link token that lands HERE instead of /callback is silently lost:
+  // the Supabase client parses it out of the hash, and this page has no
+  // onAuthStateChange listener to trade it for a session. It means the link was
+  // built without redirect_to=<origin>/callback — a link generated outside the
+  // app (the Supabase dashboard's "Invite user" sets no redirect at all, so
+  // GoTrue falls back to the Site URL) or a wrong VERCEL_URL. Nothing reaches
+  // the server, so this warning is the only evidence it happened.
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (!hash.includes("access_token") && !hash.includes("error")) return;
+
+    const params = new URLSearchParams(hash.slice(1));
+    // biome-ignore lint/suspicious/noConsole: this never reaches the server
+    console.warn(
+      "[carbon:auth] An auth token arrived on /login, which cannot consume it. " +
+        "The magic link should point at /callback. " +
+        `type=${params.get("type") ?? "unknown"} ` +
+        `error=${params.get("error") ?? "none"} ` +
+        `error_description=${params.get("error_description") ?? "none"}`
+    );
+  }, []);
+
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
 
   useEffect(() => {

@@ -33,6 +33,7 @@ import {
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
@@ -54,6 +55,8 @@ import {
 import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const log = getLogger("erp", "auth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -94,6 +97,17 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyId = match?.companyId ?? undefined;
   const companyGroupId = match?.companyGroupId ?? "";
 
+  // An empty `pickable` mints a session with no company, which /x then refuses
+  // — the user lands back on /login having "successfully" authenticated. Record
+  // it here, where we still know it happened.
+  if (!companyId) {
+    log.warn("Callback resolved no company for user", {
+      userId,
+      employeeCompanies: employeeCompanies.length,
+      pickable: pickable.length
+    });
+  }
+
   const authSession = await refreshAccessToken(
     refreshToken,
     companyId,
@@ -101,6 +115,10 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   if (!authSession) {
+    log.warn("Callback could not exchange refresh token", {
+      userId,
+      companyId
+    });
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
@@ -429,10 +447,21 @@ export async function action({ request }: ActionFunctionArgs) {
       headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);
     }
 
+    log.info("Callback minted a session", {
+      userId,
+      companyId: authSession.companyId,
+      employeeCompanies: employeeCompanies.length
+    });
+
     return redirect(safeRedirect(redirectTo, path.to.authenticatedRoot), {
       headers
     });
   } else {
+    log.warn("Callback found no public user row", {
+      userId,
+      email: authSession.email,
+      error: user.error?.message ?? null
+    });
     return redirect(
       path.to.root,
       await flash(request, error(user.error, "User not found"))
@@ -470,7 +499,19 @@ export default function AuthCallback() {
         const refreshToken = session?.refresh_token;
         const userId = session?.user.id;
 
-        if (!refreshToken || !userId) return;
+        if (!refreshToken || !userId) {
+          // The listener fired without a usable session, so nothing is posted
+          // and the page sits on its spinner forever. INITIAL_SESSION with no
+          // session is the ordinary "no token in the URL" case; SIGNED_IN
+          // without one means the token was rejected or already consumed.
+          // biome-ignore lint/suspicious/noConsole: nothing reaches the server on this path
+          console.warn(
+            `[carbon:auth] /callback got ${event} with no usable session ` +
+              `(refreshToken=${Boolean(refreshToken)} userId=${Boolean(userId)}). ` +
+              "The link may be expired, already used, or missing its token."
+          );
+          return;
+        }
 
         const formData = new FormData();
         formData.append("refreshToken", refreshToken);
