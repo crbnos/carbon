@@ -32,7 +32,7 @@ import {
   getLocalTimeZone,
   today
 } from "@internationalized/date";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuTriangleAlert } from "react-icons/lu";
 import { useFetcher } from "react-router";
@@ -40,6 +40,12 @@ import type { action } from "~/routes/x+/quote+/$quoteId.$lineId.lead-time";
 import { path } from "~/utils/path";
 
 type Constraint = "queued" | "bestCase" | "target";
+
+// Plural via <Plural> so "day"/"days" is translated, not interpolated as a
+// runtime English literal.
+const Days = ({ value }: { value: number }) => (
+  <Plural value={value} one="# day" other="# days" />
+);
 
 type QuoteLeadTimeModalProps = {
   quoteId: string;
@@ -124,8 +130,6 @@ const QuoteLeadTimeModal = ({
       setApplying(false);
     }
   };
-
-  const daysLabel = (days: number) => t`${days} ${days === 1 ? "day" : "days"}`;
 
   return (
     <Modal
@@ -240,9 +244,11 @@ const QuoteLeadTimeModal = ({
                 <Tbody>
                   {rows.map((row) => {
                     const materials =
-                      row.materialReadyDays > 0
-                        ? daysLabel(row.materialReadyDays)
-                        : "—";
+                      row.materialReadyDays > 0 ? (
+                        <Days value={row.materialReadyDays} />
+                      ) : (
+                        "—"
+                      );
                     if (constraint === "target") {
                       const target = row.target;
                       return (
@@ -276,9 +282,19 @@ const QuoteLeadTimeModal = ({
                                   </Badge>
                                 )}
                                 <span className="text-xs text-muted-foreground">
-                                  {target.slackDays >= 0
-                                    ? t`${target.slackDays} ${target.slackDays === 1 ? "day" : "days"} of slack`
-                                    : t`${-target.slackDays} ${-target.slackDays === 1 ? "day" : "days"} short`}
+                                  {target.slackDays >= 0 ? (
+                                    <Plural
+                                      value={target.slackDays}
+                                      one="# day of slack"
+                                      other="# days of slack"
+                                    />
+                                  ) : (
+                                    <Plural
+                                      value={-target.slackDays}
+                                      one="# day short"
+                                      other="# days short"
+                                    />
+                                  )}
                                 </span>
                               </div>
                             ) : (
@@ -286,9 +302,11 @@ const QuoteLeadTimeModal = ({
                             )}
                           </Td>
                           <Td>
-                            {targetLeadTime !== null
-                              ? daysLabel(targetLeadTime)
-                              : "—"}
+                            {targetLeadTime !== null ? (
+                              <Days value={targetLeadTime} />
+                            ) : (
+                              "—"
+                            )}
                           </Td>
                         </Tr>
                       );
@@ -304,9 +322,11 @@ const QuoteLeadTimeModal = ({
                             : "—"}
                         </Td>
                         <Td>
-                          {scenario.leadTimeDays !== null
-                            ? daysLabel(scenario.leadTimeDays)
-                            : "—"}
+                          {scenario.leadTimeDays !== null ? (
+                            <Days value={scenario.leadTimeDays} />
+                          ) : (
+                            "—"
+                          )}
                         </Td>
                         <Td className="text-muted-foreground">
                           {scenario.cause ?? "—"}
@@ -322,7 +342,11 @@ const QuoteLeadTimeModal = ({
                 ))}
                 {forecast.zeroStandardOperationCount > 0 && (
                   <li>
-                    {t`${forecast.zeroStandardOperationCount} ${forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"} no time standards`}
+                    <Plural
+                      value={forecast.zeroStandardOperationCount}
+                      one="# operation has no time standards"
+                      other="# operations have no time standards"
+                    />
                   </li>
                 )}
               </ul>

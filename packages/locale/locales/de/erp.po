@@ -48,6 +48,18 @@ msgstr "„{taskName}\" ist erledigt – alle {0} seiner Setup-Map-Elemente sind
 msgid "(excluded for this customer)"
 msgstr "(für diesen Kunden ausgeschlossen)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# Tag Puffer} other {# Tage Puffer}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {# Tag zu kurz} other {# Tage zu kurz}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# Arbeitsgang hat keine Zeitstandards} other {# Arbeitsgänge haben keine Zeitstandards}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden.}}"
@@ -59,21 +71,6 @@ msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehme
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Dieser Artikel ist auf 1 offener Änderungsmitteilung} other {Dieser Artikel ist auf # offenen Änderungsmitteilungen}}"
-
-#. placeholder {0}: forecast.zeroStandardOperationCount
-#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
-msgid "{0} {1} no time standards"
-msgstr "{0} {1} keine Zeitnormen"
-
-#. placeholder {0}: target.slackDays
-#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} of slack"
-msgstr "{0} {1} Puffer"
-
-#. placeholder {0}: -target.slackDays
-#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} short"
-msgstr "{0} {1} zu kurz"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -300,10 +297,6 @@ msgstr "{count, plural, one {# Konto mit einem Saldo} other {# Konten mit Salden
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
-#. placeholder {0}: days === 1 ? "day" : "days"
-msgid "{days} {0}"
-msgstr "{days} {0}"
-
 msgid "{days}d"
 msgstr "{days}T"
 
@@ -417,6 +410,9 @@ msgstr "{updatedJobCount} Fertigungsaufträge aktualisiert"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} hochgeladen — Felder wurden aus dem Dokument ausgefüllt."
+
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# Tag} other {# Tage}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# Position unterscheidet sich von der erwarteten Menge} other {# Positionen unterscheiden sich von der erwarteten Menge}}"

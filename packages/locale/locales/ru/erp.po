@@ -48,6 +48,18 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# день страхового запаса} few {# дня страхового запаса} many {# дней страхового запаса} other {# дней страхового запаса}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {# день недостатка} few {# дня недостатка} many {# дней недостатка} other {# дней недостатка}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -59,21 +71,6 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
-
-#. placeholder {0}: forecast.zeroStandardOperationCount
-#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
-msgid "{0} {1} no time standards"
-msgstr "{0} {1} без норм времени"
-
-#. placeholder {0}: target.slackDays
-#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} of slack"
-msgstr "{0} {1} резервного времени"
-
-#. placeholder {0}: -target.slackDays
-#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} short"
-msgstr "{0} {1} не хватает"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -300,10 +297,6 @@ msgstr "{count, plural, one {# счет с остатком} other {# счето
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# курс} other {# курсов}}"
 
-#. placeholder {0}: days === 1 ? "day" : "days"
-msgid "{days} {0}"
-msgstr "{days} {0}"
-
 msgid "{days}d"
 msgstr "{days}д"
 
@@ -417,6 +410,9 @@ msgstr "{updatedJobCount} производственных заказов обн
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
+
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# день} few {# дня} many {# дней} other {# дней}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"

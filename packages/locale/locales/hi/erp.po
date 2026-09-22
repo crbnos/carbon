@@ -48,6 +48,18 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# दिन की शिथिलता} other {# दिन की शिथिलता}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {# दिन की कमी} other {# दिन की कमी}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।}}"
@@ -59,21 +71,6 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
-
-#. placeholder {0}: forecast.zeroStandardOperationCount
-#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
-msgid "{0} {1} no time standards"
-msgstr "{0} {1} समय मानक नहीं हैं"
-
-#. placeholder {0}: target.slackDays
-#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} of slack"
-msgstr "{0} {1} की स्लैक"
-
-#. placeholder {0}: -target.slackDays
-#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} short"
-msgstr "{0} {1} कम"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -300,10 +297,6 @@ msgstr "{count, plural, one {# शेष राशि वाला खाता}
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
-#. placeholder {0}: days === 1 ? "day" : "days"
-msgid "{days} {0}"
-msgstr "{days} {0}"
-
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -417,6 +410,9 @@ msgstr "{updatedJobCount} जॉब अपडेट किए गए"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
+
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# दिन} other {# दिन}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# पंक्ति अपेक्षित मात्रा से भिन्न है} other {# पंक्तियां अपेक्षित मात्रा से भिन्न हैं}}"

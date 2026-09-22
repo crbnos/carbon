@@ -48,6 +48,18 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -59,21 +71,6 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。�
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
-
-#. placeholder {0}: forecast.zeroStandardOperationCount
-#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
-msgid "{0} {1} no time standards"
-msgstr "{0} {1} 没有时间标准"
-
-#. placeholder {0}: target.slackDays
-#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} of slack"
-msgstr "{0} {1} 的余量"
-
-#. placeholder {0}: -target.slackDays
-#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
-msgid "{0} {1} short"
-msgstr "{0} {1} 不足"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -300,10 +297,6 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
-#. placeholder {0}: days === 1 ? "day" : "days"
-msgid "{days} {0}"
-msgstr "{days} {0}"
-
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -417,6 +410,9 @@ msgstr "已更新{updatedJobCount}个工单"
 
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
+
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# 天} other {# 天}}"
 
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
