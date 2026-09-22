@@ -238,6 +238,62 @@ BEGIN
   ASSERT v_row.status = 'Completed' AND v_row."quantityComplete" = 3,
     'Serial job did not complete after MES reported every unit';
 
+  -- REGRESSION: a RELEASED job must receive exactly once.
+  --
+  -- Every case above runs on a Draft job (the column default), and
+  -- sync_finish_job_operation ignores Draft jobs outside a batch — so none of
+  -- them exercise the interceptor at all. On a Ready/In Progress/Paused job,
+  -- closing the operations re-enters complete_job_to_inventory through that
+  -- BEFORE trigger; closing them before the status flip received the goods a
+  -- second time (2 receipts / 4 units on this case).
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'RELJ', 2);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 2, 1);
+  UPDATE job SET status = 'Ready' WHERE id = v_job;
+
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error IS NULL, 'Completing a released job failed: ' || COALESCE(v_error, '');
+  SELECT status, "quantityComplete", "quantityReceivedToInventory" INTO v_row FROM job WHERE id = v_job;
+  ASSERT v_row.status = 'Completed' AND v_row."quantityComplete" = 2,
+    'Released job header wrong: ' || v_row.status || ' @ ' || v_row."quantityComplete";
+  ASSERT v_row."quantityReceivedToInventory" = 2,
+    'Released job received quantity wrong: ' || v_row."quantityReceivedToInventory";
+  ASSERT pg_temp.ops(v_job) = 'Done:2',
+    'Released job operations did not close: ' || pg_temp.ops(v_job);
+  ASSERT pg_temp.receipts(v_job) = '1:2',
+    'A released desk completion must receive exactly once: ' || pg_temp.receipts(v_job);
+
+  -- Same job, completed SHORT: one receipt of 1, not 1 + a planned-quantity
+  -- fallback receipt of 2. The interceptor reads the operation's pre-update
+  -- quantity, so a re-entry here would fall back to the job's planned quantity.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'RELSJ', 2);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 2, 1);
+  UPDATE job SET status = 'Ready' WHERE id = v_job;
+
+  v_error := pg_temp.try_complete(v_job, 1);
+  ASSERT v_error IS NULL, 'Completing a released job short failed: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.receipts(v_job) = '1:1',
+    'A short released completion must receive exactly its quantity: ' || pg_temp.receipts(v_job);
+  ASSERT pg_temp.ops(v_job) = 'Done:1',
+    'A short released completion left the routing open: ' || pg_temp.ops(v_job);
+
+  -- An In Progress job whose floor already reported part of the run: the desk
+  -- completes the remainder, and the goods are received once for the whole
+  -- cumulative quantity.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'IPJ', 2);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 2, 1);
+  v_op2 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 2, 2);
+  UPDATE "jobOperation" SET "quantityComplete" = 1 WHERE id = v_op2;
+  UPDATE job SET status = 'In Progress' WHERE id = v_job;
+
+  v_error := pg_temp.try_complete(v_job, 2);
+  ASSERT v_error IS NULL, 'Completing an in-progress job failed: ' || COALESCE(v_error, '');
+  ASSERT pg_temp.receipts(v_job) = '1:2',
+    'An in-progress desk completion must receive exactly once: ' || pg_temp.receipts(v_job);
+  ASSERT pg_temp.ops(v_job) = 'Done:2,Done:2',
+    'An in-progress desk completion left the routing open: ' || pg_temp.ops(v_job);
+  ASSERT pg_temp.production_rows(v_job) = 0,
+    'A desk completion on a released job must not fabricate production history';
+
   -- MES path: finishing the last operation completes the job through the
   -- sync_finish_job_operation interceptor. The backfill must stay out of it —
   -- writing a sibling jobOperation row from that BEFORE trigger is impossible.
@@ -256,7 +312,7 @@ BEGIN
   ASSERT pg_temp.receipts(v_job) = '1:2',
     'MES completion did not receive exactly once: ' || pg_temp.receipts(v_job);
 
-  RAISE NOTICE 'ALL OPERATION-QUANTITY CASES PASSED (backfill, idempotent re-completion, no lowering, sub-assemblies untouched, serial refusal and release, no fabricated production history, MES trigger path)';
+  RAISE NOTICE 'ALL OPERATION-QUANTITY CASES PASSED (backfill, idempotent re-completion, no lowering, sub-assemblies untouched, serial refusal and release, no fabricated production history, released/in-progress single receipt, MES trigger path)';
 END;
 $cases$;
 

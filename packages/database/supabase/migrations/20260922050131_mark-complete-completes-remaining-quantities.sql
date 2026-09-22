@@ -17,10 +17,13 @@
 -- No synthetic productionQuantity row is inserted. A desk completion is not
 -- shop-floor production and must not fabricate operator-attributed history.
 --
--- Closing an operation fires sync_finish_job_operation, which may complete the
--- job through the same path MES uses. That is harmless: the rest of this
--- function is then an idempotent re-completion, which it already supports — the
--- receipt delta is zero, so nothing is received or consumed twice.
+-- Closing an operation fires sync_finish_job_operation, which completes the job
+-- through the same path MES uses. That re-entry is NOT free: it is a BEFORE row
+-- trigger, so it reads the operation's OLD quantityComplete (0 on a desk
+-- completion), falls back to the job's planned quantity and receives a SECOND
+-- time, while this call's receipt delta was already computed. The close-out
+-- therefore runs AFTER the status flip, where the interceptor's Ready/In
+-- Progress/Paused gate returns early and no second receipt is posted.
 --
 -- Serial-tracked jobs are the exception. A serial unit is an individually
 -- numbered trackedEntity and cannot be conjured here without bypassing
@@ -31,8 +34,9 @@
 --
 -- complete_job_to_inventory is recreated VERBATIM from its newest committed
 -- definition (20260916131445_merge-aware-job-receipt.sql); the ONLY change is
--- the PERFORM below, placed after the validation guards and before the status
--- UPDATE (the interceptor's roll-up skips an already-Completed job).
+-- the PERFORM below, placed immediately AFTER the status UPDATE so the
+-- interceptor's roll-up skips the now-Completed job instead of receiving it
+-- twice.
 
 -- The 3-argument form below replaces an unreleased 4-argument version that took
 -- p_company_id. CREATE OR REPLACE cannot replace a different signature, so drop
@@ -126,10 +130,11 @@ BEGIN
   -- operations, and a quantity-only write would leave the routing open behind a
   -- Completed job: the very symptom this function exists to remove.
   --
-  -- Setting status here fires sync_finish_job_operation on each row. That is
-  -- harmless: the job is still open at this point, so the interceptor may
-  -- complete it through its own path, and the remainder of this function is
-  -- then an idempotent re-completion (zero receipt delta, nothing re-consumed).
+  -- Setting status here fires sync_finish_job_operation on each row. The caller
+  -- must therefore have marked the job Completed already: the interceptor's
+  -- status gate then returns early. Called while the job is still open it would
+  -- instead re-enter complete_job_to_inventory and, being a BEFORE row trigger
+  -- reading the pre-update quantityComplete, receive the goods a second time.
   --
   -- Every open terminal operation is closed, not only the short ones: an
   -- operation whose quantity already meets the target is Done by the same
@@ -298,11 +303,6 @@ BEGIN
       COALESCE(v_prior_quantity_received, 0), v_job_id_readable;
   END IF;
 
-  -- Complete the quantities behind the status (see the header note): raises the
-  -- terminal operations so the routing agrees with a Completed job, and refuses
-  -- a serial job whose units still need serial numbers.
-  PERFORM complete_job_remaining_quantities(p_job_id, p_quantity_complete, p_user_id);
-
   -- Update job status. quantityReceivedToInventory is CUMULATIVE (not the
   -- delta): re-completions previously overwrote it with the delta, corrupting
   -- get_inventory_quantities' on-production supply math. Non-Inventory items
@@ -318,6 +318,20 @@ BEGIN
       "updatedAt" = NOW(),
       "updatedBy" = p_user_id
   WHERE id = p_job_id;
+
+  -- Complete the quantities behind the status: raise the terminal operations so
+  -- the routing agrees with a Completed job, and refuse a serial job whose units
+  -- still need serial numbers.
+  --
+  -- AFTER the status flip, never before. Closing an operation fires
+  -- sync_finish_job_operation, which re-enters this function for a job in
+  -- Ready/In Progress/Paused. Being a BEFORE row trigger it runs mid-statement,
+  -- so it reads the operation's OLD quantityComplete (still 0 on a desk
+  -- completion), falls back to the job's planned quantity and receives a second
+  -- time — while this call's own receipt delta was computed further up, before
+  -- any of it happened. With the job already Completed the interceptor's status
+  -- gate returns early, so the operations close without a second receipt.
+  PERFORM complete_job_remaining_quantities(p_job_id, p_quantity_complete, p_user_id);
 
   -- Services never ship, so job completion is the fulfillment event: advance
   -- the linked sales-order line the way post-shipment does for physical lines.
