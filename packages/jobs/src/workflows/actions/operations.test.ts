@@ -3,7 +3,7 @@ import {
   entityValue,
   type RuntimeValue,
   WORKFLOW_OPERATIONS
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { runOperation } from "./operations";

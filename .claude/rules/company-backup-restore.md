@@ -46,6 +46,18 @@ on deny); the nav gates it in `useSettingsSubmodules.tsx` via `usePlanGate({ fea
 "BACKUPS" })` OR `isInternal`/`isLocalDev` (Demo Data still uses `localOrInternalRoutes`).
 Internal = `@carbon.ms` / `@carbon.us.org`.
 
+`canManageBackups` is the route-level UX gate (a deletable open-code `if`). The
+un-strippable commercial LOCK is `requireBackupsEntitlement(companyId)`
+(`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`), embedded at the
+top of every durable function — `companyExportFunction`,
+`companyRestore{,Finalize,Revert}Function`, `companyImportFunction`. It is
+`IS_LOCAL_DEV`-exempt (the service-role job path carries no `email`, so the
+`isInternalEmail` half of the hatch cannot apply there) and otherwise
+`requireEntitlement("BACKUPS")` — Community/Starter throw. Onboarding demo-template
+apply/revert call `buildCompanyBackup`/`wipeAndLoad` DIRECTLY, and the import fn
+exempts `referencedTemplate`, so templating stays free on every edition. Do NOT push
+the check into `buildCompanyBackup`/`wipeAndLoad` — that breaks onboarding.
+
 The multi-tenant caveats below are real but are NOT a cross-tenant leak in the backup
 feature — every entry point is scoped to the caller's `companyId`. They were the reason
 this stayed internal-only, and exposing it to customers is a deliberate product decision:

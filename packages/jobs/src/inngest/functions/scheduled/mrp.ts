@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable } from "@carbon/database";
-import { runMrp } from "@carbon/ee/planning";
+import { runMrp } from "@carbon/planning";
 import { Edition } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";

@@ -16,8 +16,8 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { isAuditLogEnabled } from "@carbon/database/audit";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
+import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,

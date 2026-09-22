@@ -1,20 +1,30 @@
 // The MCP server's connect-time instructions, in their own module so they are
-// testable without server.ts's import chain (callOperation → auth → env).
+// testable without server.ts's import chain (callOperation → auth → env). The
+// tool catalog is passed in (the generated `tool-metadata.json` lives in the app,
+// derived from its `~/modules/*`), never imported here.
+import type { ManifestEntry } from "@carbon/api";
 import { MCP_DEFAULT_LIMIT } from "./format-result";
-import toolMetadata from "./tool-metadata.json";
 
-const MODULE_NAMES = [
-  ...new Set(toolMetadata.tools.map((tool) => tool.module))
-].sort();
+export type ToolCatalogSummary = {
+  tools: Pick<ManifestEntry, "module">[];
+  totalTools: number;
+  modules: number;
+};
 
-export function getServerInstructions(today: string): string {
+export function getServerInstructions(
+  today: string,
+  toolMetadata: ToolCatalogSummary
+): string {
+  const moduleNames = [
+    ...new Set(toolMetadata.tools.map((tool) => tool.module))
+  ].sort();
   return `Carbon ERP Manufacturing System
 ==========================================
 Date: ${today}
 
 IMPORTANT: Tool Discovery System
 This server has ${toolMetadata.totalTools} tools available across ${toolMetadata.modules} modules:
-${MODULE_NAMES.join(", ")}
+${moduleNames.join(", ")}
 
 To prevent context exhaustion, tools are loaded on-demand using call_tool.
 

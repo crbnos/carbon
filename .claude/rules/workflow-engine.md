@@ -2,7 +2,7 @@
 description: The workflow engine — how a queued run walks its graph, one durable step per node, acting as the workflow's owner. Read before touching the engine, the runtime evaluation layer, or anything that reads records on a running workflow's behalf.
 paths:
   - "packages/jobs/src/workflows/engine/**"
-  - "packages/workflows/src/runtime/**"
+  - "packages/ee/src/workflows/runtime/**"
 ---
 
 # Workflow Engine
@@ -17,7 +17,7 @@ Catalog: `workflow-event-catalog.md`. What the nodes actually do:
 ## The two halves
 
 ```
-packages/workflows/src/runtime/     pure. no I/O, no client, no database.
+packages/ee/src/workflows/runtime/  pure. no I/O, no client, no database.
   values.ts    RuntimeValue + fromColumn coercion
   resolve.ts   {kind:"ref"|"item"|"literal"|"template"} -> a value, or a reason
   compare.ts   operator semantics + evaluateClauses
@@ -102,7 +102,9 @@ A workflow must never be able to do something its owner could not do by hand.
 
 ## `RunTrigger` — three variants
 
-`runTriggerSchema` / `RunTrigger` in `packages/workflows/src/run-trigger.ts` is a three-member
+`runTriggerSchema` / `RunTrigger` lives in the CE-safe leaf `@carbon/workflows-core`
+(`packages/workflows-core/`) and is re-exported by the engine
+(`packages/ee/src/workflows/run-trigger.ts`). It is a three-member
 discriminated union: `kind: "record"` (a DB row change), `kind: "moment"` (a business event),
 and `kind: "schedule"` (a scheduler wake, carrying only `dueAt: string`). `triggerOutputs` in
 `engine/loader.ts` returns `{}` for `"schedule"` — a scheduled run starts with no record
@@ -125,7 +127,7 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
 - Missing data is a **skip with a reason**, not an error. A condition whose
   operand cannot be resolved stops there and does **not** fall through to its
   `else`.
-- `packages/workflows` is compiled by `apps/erp`, which targets **ES2019** — no
+- `packages/ee/src/workflows` is compiled by `apps/erp`, which targets **ES2019** — no
   BigInt literals, and no `node:crypto` (the phase-7 builder compiles it for the
   browser too). `itemKeyFor` uses `fnv1a64` from `@carbon/utils`, which is two
   32-bit passes for that reason, and is shared with the storage-rules cache key.
@@ -162,7 +164,7 @@ later read. This is what makes `before.orderTotal <= 10000` mean what it says.
 Nothing is stored on a node saying "repeat". An action node works through a list
 when a list is wired into an input the catalog declares as taking a **single**
 value. `batchCandidates` + `batchPlan` in
-`packages/workflows/src/definition/batch.ts` are the only place that rule lives,
+`packages/ee/src/workflows/definition/batch.ts` are the only place that rule lives,
 so `execute.ts` and the validator cannot pick different lists. Candidates are the
 action's supplied, declared-scalar inputs in **declaration order**; an input
 already reading the loop item is skipped, or resolving it would recurse. Two
@@ -198,7 +200,7 @@ shows a customer a green tick.
   record into the existing `${ERP_URL}/api/link?...` URL. `renderTemplate` uses it ONLY for
   inputs the catalog marks `linkify` (today: the notify action's `message`), wrapping an entity
   part as `[name](url)`. A webhook body has no `linkify`, so it still renders a bare
-  name with no markdown. `packages/workflows` constructs no URL — it calls the callback.
+  name with no markdown. `packages/ee/src/workflows` constructs no URL — it calls the callback.
 - **How a record NAMES itself in prose.** `entityText` in `runtime/resolve.ts` reads the columns
   `CatalogEntity.display` lists, best first, and falls back to the raw id only when none of them
   is readable. `display` is REQUIRED on every registry entry and comes from the hand-written

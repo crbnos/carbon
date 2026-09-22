@@ -3,9 +3,6 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fkDisplayRegistry } from "@carbon/database/audit.config";
 import { requireFeature } from "@carbon/ee/plan.server";
-import { validator } from "@carbon/form";
-import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
-import { datetime } from "@carbon/utils";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   createWorkflowCatalog,
@@ -14,7 +11,10 @@ import {
   validateDefinition,
   type WorkflowIssue,
   workflowDefinitionSchema
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { validator } from "@carbon/form";
+import { executeManualWorkflowRun, noAccess } from "@carbon/jobs/inngest";
+import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getUserClaims } from "~/modules/users/users.server";

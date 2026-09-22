@@ -1,9 +1,25 @@
-# @carbon/workflows
+# @carbon/ee/workflows
 
 The shared contract for a **workflow definition** — the zod schema, the read-time
 normaliser, the validator that decides whether a workflow may be activated, the
 generated catalog of everything a customer can pick, and the pure runtime that
 evaluates a node. It runs nothing and reads no database.
+
+**Commercial.** This engine lives under `packages/ee/src/workflows/` (moved from the
+old standalone `@carbon/workflows` package) and is covered by the `packages/ee`
+commercial license. Import it as `@carbon/ee/workflows` (main barrel),
+`@carbon/ee/workflows/help`, and `@carbon/ee/workflows/labels` (Vite-only — the `msg`
+macro throws in plain Node). The runtime/authoring entitlement lock lives beside it in
+`@carbon/ee/workflows.server` (`workflowsEnabledForCompany` / `requireWorkflowsEntitlement`) —
+see `.claude/rules/commercial-licensing.md`.
+
+The CE-safe wire contracts stayed OUT of the commercial package, in the leaf
+`@carbon/workflows-core` (`packages/workflows-core/`): `runTriggerSchema`/`RunTrigger`
+(what fired a run) and the moment contract (`MOMENT_OUTPUT_KEYS`, `MomentKey`,
+`MomentEntityRef`, `MomentPayload`). `@carbon/lib` (`events.ts`, `workflows/raise-moment.ts`)
+imports these **type-only** from the leaf, never from this engine — that is what breaks the
+`lib → ee → lib` cycle the move would otherwise create. This engine re-exports both from the
+leaf (see `run-trigger.ts` and `catalog/moments.ts` below).
 
 "Workflow" here means the customer-facing feature: a "when this happens, do that" rule a customer
 builds on a canvas. It is **not** the generic sense used by the `.claude/rules/workflow-*.md`
@@ -92,7 +108,7 @@ src/definition/
 
 src/catalog/
 ├── entities.ts             # HAND-WRITTEN. 16 record types — 10 triggerable (watch) + 6 reference-only; write = the update allowlist
-├── moments.ts              # HAND-WRITTEN. 9 business events, their labels and outputs
+├── moments.ts              # HAND-WRITTEN. 9 business events (WORKFLOW_MOMENTS, source of truth) + labels + outputs; re-exports the moment TYPES from @carbon/workflows-core
 ├── actions.ts              # HAND-WRITTEN. 6 actions — 4 creates, notify, webhook
 ├── operations.ts           # HAND-WRITTEN. 15 read-only computations over one record
 ├── build.ts                # buildCatalog(registry, moments, actions, operations, schema) — pure, schema injected
@@ -118,7 +134,7 @@ src/runtime/
 ├── fixtures.ts  # TEST-ONLY fake loader/context. Not exported from the package root
 └── index.ts     # barrel
 
-src/run-trigger.ts # runTriggerSchema — what fired a run; shared with @carbon/lib and @carbon/jobs
+src/run-trigger.ts # re-exports runTriggerSchema / RunTrigger from @carbon/workflows-core — what fired a run; the leaf (not this engine) is what @carbon/lib and @carbon/jobs depend on
 src/sync.ts        # trigger-event + subscription reconciler
 ```
 
@@ -157,7 +173,7 @@ RLS** — the caller authorizes first (the activation route gates on `workflows_
 
 This is the one thing here that lives in this package for a dependency reason rather than a
 conceptual one: it needs `WORKFLOW_EVENTS`, and `@carbon/database` (its more natural home,
-beside `event.ts`) cannot depend on `@carbon/workflows` without creating the package cycle
+beside `event.ts`) cannot depend on `@carbon/ee/workflows` without creating the package cycle
 Turborepo rejects. See `.claude/rules/workflow-matcher.md`.
 
 ## The event catalog
@@ -313,9 +329,9 @@ event id still exists in the catalog.
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/workflows test               # vitest
-pnpm --filter @carbon/workflows exec tsgo --noEmit # typecheck
-pnpm exec biome check packages/workflows           # lint
+pnpm --filter @carbon/ee test                      # vitest
+pnpm --filter @carbon/ee exec tsgo --noEmit        # typecheck
+pnpm exec biome check packages/ee/src/workflows    # lint
 pnpm run generate:workflow-catalog                 # after editing entities/moments/actions/operations.ts
 pnpm run check:workflow-catalog                    # the CI `catalog` job
 ```

@@ -53867,6 +53867,24 @@ export type Database = {
           }
         ]
       }
+      scriptRun: {
+        Row: {
+          name: string
+          ranAt: string
+          result: Json | null
+        }
+        Insert: {
+          name: string
+          ranAt?: string
+          result?: Json | null
+        }
+        Update: {
+          name?: string
+          ranAt?: string
+          result?: Json | null
+        }
+        Relationships: []
+      }
       searchIndexRegistry: {
         Row: {
           companyId: string

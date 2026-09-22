@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
@@ -392,6 +393,8 @@ export const companyRestoreFunction = inngest.createFunction(
     const { companyId, userId, filePath, restoreRunId, label, includeStorage } =
       event.data;
 
+    await requireBackupsEntitlement(companyId);
+
     return await step.run("restore-company", async () => {
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(1);
@@ -622,6 +625,8 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
+    await requireBackupsEntitlement(companyId);
+
     return await step.run("finalize-restore", async () => {
       const client = getCarbonServiceRole();
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
@@ -654,6 +659,8 @@ export const companyRestoreRevertFunction = inngest.createFunction(
   { event: "carbon/company-restore-revert" },
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
+
+    await requireBackupsEntitlement(companyId);
 
     return await step.run("revert-restore", async () => {
       const client = getCarbonServiceRole();

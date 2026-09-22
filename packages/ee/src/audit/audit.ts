@@ -1,16 +1,22 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { auditConfig, getAuditableTableNames } from "./audit.config.ts";
+import type { Database } from "@carbon/database";
+import {
+  auditConfig,
+  getAuditableTableNames
+} from "@carbon/database/audit.config";
 import type {
   AuditLogArchive,
   AuditLogEntry,
   AuditLogFilters,
   AuditLogResponse,
   CreateAuditLogEntry
-} from "./audit.types.ts";
+} from "@carbon/database/audit.types";
 import {
   createEventSystemSubscription,
   deleteEventSystemSubscriptionsByName
-} from "./event.ts";
+} from "@carbon/database/event";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireEntitlement } from "../entitlements.server";
 
 // Type for Supabase client with our custom RPC functions
 type AuditRpcClient = {
@@ -232,6 +238,20 @@ export async function enableAuditLog(
   client: SupabaseClient,
   companyId: string
 ): Promise<void> {
+  // The commercial LOCK. Enabling audit logging is a Business feature, so the
+  // entitlement check lives here inside `@carbon/ee` (not a strippable open
+  // route). CONTROLLED_ENVIRONMENT (ITAR/CUI) audit is mandatory and
+  // non-disableable — it must never be blocked by entitlement, so the gate is
+  // skipped there (a controlled deployment is Enterprise edition and would pass
+  // `companyHasFeature` anyway; this is belt-and-suspenders).
+  if (!CONTROLLED_ENVIRONMENT) {
+    await requireEntitlement(
+      client as unknown as SupabaseClient<Database>,
+      companyId,
+      "AUDIT_LOG"
+    );
+  }
+
   // Create the per-company audit log table
   const { error: createError } = await (
     client as unknown as AuditRpcClient

@@ -2,12 +2,12 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Json } from "@carbon/database";
 import { requireFeature } from "@carbon/ee/plan.server";
-import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   workflowDefinitionSchema
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {

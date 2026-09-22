@@ -613,7 +613,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
 });
 
 // The exact ids the workflow engine's create actions dispatch
-// (packages/workflows/src/catalog/actions.ts). Their results must stay readable by
+// (packages/ee/src/workflows/catalog/actions.ts). Their results must stay readable by
 // create.ts's idIn(): an `id` on the returned object, or on an element of a list.
 //
 // The payloads are the ones runCreateAction actually builds — the catalog's

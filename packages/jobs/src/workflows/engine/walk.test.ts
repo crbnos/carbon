@@ -4,7 +4,7 @@ import {
   type WorkflowDefinition,
   type WorkflowEdge,
   type WorkflowNode
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import {
   advance,

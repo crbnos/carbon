@@ -8,7 +8,7 @@ import {
   type RuntimeValue,
   t,
   WORKFLOW_OPERATIONS
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 type Client = SupabaseClient<Database>;

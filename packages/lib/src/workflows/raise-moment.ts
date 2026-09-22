@@ -1,5 +1,5 @@
 import { getLogger } from "@carbon/logger";
-import type { MomentKey, MomentPayload } from "@carbon/workflows";
+import type { MomentKey, MomentPayload } from "@carbon/workflows-core";
 import { nanoid } from "nanoid";
 import { trigger } from "../trigger";
 

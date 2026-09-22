@@ -9,7 +9,7 @@ import {
   getAuditLogArchives,
   isAuditLogEnabled,
   syncAuditSubscriptions
-} from "@carbon/database/audit";
+} from "@carbon/ee/audit.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";

@@ -10,16 +10,16 @@
 import fs from "node:fs";
 import path from "node:path";
 import schema from "../packages/database/src/swagger-docs-schema";
-import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
-import { buildCatalog } from "../packages/workflows/src/catalog/build";
-import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
-import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
-import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
+import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
+import { buildCatalog } from "../packages/ee/src/workflows/catalog/build";
+import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
+import { WORKFLOW_MOMENTS } from "../packages/ee/src/workflows/catalog/moments";
+import { WORKFLOW_OPERATIONS } from "../packages/ee/src/workflows/catalog/operations";
 
 // Resolved against the repo root; the script must be run from there.
 const CATALOG_DIR = path.join(
   process.cwd(),
-  "packages/workflows/src/catalog"
+  "packages/ee/src/workflows/catalog"
 );
 
 const HEADER =

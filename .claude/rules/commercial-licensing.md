@@ -139,11 +139,44 @@ Refactor one at a time; each PR should leave the tree green.
   `packages/ee/src/customer-portals.server.ts`, `requireEntitlement("CUSTOMER_PORTALS")`;
   the shared `upsertExternalLink` stays ungated (used by quote/RFQ finalize); public share
   pages degrade via `companyHasFeature`.
-- ⬜ **Backups** — engine still in `packages/jobs`; gated via `canManageBackups` only
-  (route-level). Biggest lift — relocate the engine last.
+- ✅ **Audit log** — engine moved to `packages/ee/src/audit/audit.ts`
+  (`@carbon/ee/audit.server`); `enableAuditLog` embeds `requireEntitlement("AUDIT_LOG")`,
+  skipped under `CONTROLLED_ENVIRONMENT` (ITAR audit is mandatory). `auditConfig`/types
+  stay client-safe in `@carbon/database` (generic schema types consumed by CE packages).
+- ✅ **Backups** — engine is Inngest-coupled and CANNOT move to `packages/ee` (it
+  imports `@carbon/jobs`-internal `../../../db` + the inngest client). Locked
+  gate-in-place: `requireBackupsEntitlement(companyId)`
+  (`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`) is embedded at
+  the top of every durable function — `companyExportFunction`,
+  `companyRestore{,Finalize,Revert}Function`, `companyImportFunction`. Local-dev
+  exempt (`IS_LOCAL_DEV` — the service-role job path has no email for the
+  `isInternalEmail` hatch); onboarding demo-template apply/revert call
+  `buildCompanyBackup`/`wipeAndLoad` directly and are NOT gated (import exempts
+  `referencedTemplate`). `canManageBackups` stays the route-level UX gate.
+- ✅ **Email notifications** — the email-channel decision moved to
+  `@carbon/ee/email-notifications.server` (`emailNotificationsEnabled`, DEGRADE);
+  `sendEmail` transactional transport stays ungated in `@carbon/lib`.
+- ✅ **Workflows** — the engine moved to `@carbon/ee/workflows`
+  (`packages/ee/src/workflows/`, was the standalone `@carbon/workflows`). Runtime gate is
+  `workflowsEnabledForCompany` in `@carbon/ee/workflows.server` (DEGRADE — a non-entitled run
+  settles Skipped, embedded in `@carbon/jobs` `engine/execute.ts`); authoring gate is
+  `requireWorkflowsEntitlement` (embedded in the ERP's `publishWorkflowVersion`). The CE-safe
+  wire contracts (`runTriggerSchema`/`RunTrigger` + the moment contract) live in the leaf
+  `@carbon/workflows-core` so `@carbon/lib` need not depend on the commercial engine — that
+  edge would be a `lib → ee → lib` cycle. (The job-side executors in
+  `packages/jobs/src/workflows/` stay in jobs — Inngest-coupled, like backups.)
+- ✅ **MCP** — protocol engine moved to `packages/ee/src/mcp/` (`@carbon/ee/mcp`
+  pure logic; `@carbon/ee/mcp.server` = `server.ts`). `createMcpServer` embeds
+  `requireEntitlement("MCP")` (route catches `EntitlementError` → 402), replacing
+  the former deletable in-route `companyHasFeature`. The dispatch, tool manifest and
+  generated `tool-metadata.json` STAY in the app (derive from `~/modules/*`) and are
+  INJECTED as `deps`. Note: `server.ts` is `@ts-nocheck`, so the live endpoint needs a
+  smoke test before merge (typecheck can't cover its body).
+- Note (context): Planning was NOT a gated feature — MRP + scheduling are now the
+  community `@carbon/planning` package.
 - ⬜ Still on `requirePlan`/`companyHasPlan`, pending an architecture/policy decision
-  (integrations, audit log, AI agent, workflows engine) — migrate to
-  `companyHasFeature`/`requireEntitlement` + move bodies into `packages/ee` when unblocked.
+  (integrations, AI agent) — migrate to `companyHasFeature`/`requireEntitlement` + move
+  bodies into `packages/ee` when unblocked.
 
 ## Bundling gotcha — the `.server` client-graph boundary
 

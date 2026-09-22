@@ -1,4 +1,4 @@
-import type { ItemRef, VariableRef } from "@carbon/workflows";
+import type { ItemRef, VariableRef } from "@carbon/ee/workflows";
 import { nodeNameLabel, outputLabel } from "../labelKeys";
 
 /** The two template parts that are not plain text. */

@@ -4,7 +4,7 @@ import {
   createWorkflowCatalog,
   entityValue,
   primitiveValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { runUpdateAction } from "./update";

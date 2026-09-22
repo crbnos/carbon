@@ -1,3 +1,14 @@
+import type {
+  ValueOrRef,
+  ValueType,
+  WorkflowCatalog
+} from "@carbon/ee/workflows";
+import {
+  isMultiSelect,
+  MAX_LIST_ITEMS,
+  WORKFLOW_ACTION_CATALOG,
+  WORKFLOW_ENTITY_REGISTRY
+} from "@carbon/ee/workflows";
 import {
   Command,
   CommandEmpty,
@@ -15,13 +26,6 @@ import {
   SelectTrigger,
   SelectValue
 } from "@carbon/react";
-import type { ValueOrRef, ValueType, WorkflowCatalog } from "@carbon/workflows";
-import {
-  isMultiSelect,
-  MAX_LIST_ITEMS,
-  WORKFLOW_ACTION_CATALOG,
-  WORKFLOW_ENTITY_REGISTRY
-} from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown, LuListOrdered } from "react-icons/lu";

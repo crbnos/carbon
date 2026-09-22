@@ -41226,6 +41226,123 @@ export default {
         tags: ["documentFavorite"]
       }
     },
+    "/scriptRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scriptRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scriptRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/body.scriptRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scriptRun"]
+      }
+    },
     "/currencies": {
       get: {
         parameters: [
@@ -125078,6 +125195,25 @@ export default {
       },
       type: "object"
     },
+    scriptRun: {
+      required: ["name", "ranAt"],
+      properties: {
+        name: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        ranAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        result: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     currencies: {
       properties: {
         id: {
@@ -171821,6 +171957,33 @@ export default {
     },
     "rowFilter.documentFavorite.userId": {
       name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.scriptRun": {
+      name: "scriptRun",
+      description: "scriptRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scriptRun"
+      }
+    },
+    "rowFilter.scriptRun.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scriptRun.ranAt": {
+      name: "ranAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scriptRun.result": {
+      name: "result",
       required: false,
       in: "query",
       type: "string"
