@@ -643,7 +643,7 @@ msgid "First due {0}"
 msgstr "पहली देय {0}"
 
 msgid "Fix the highlighted quantities before completing."
-msgstr ""
+msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
 
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"

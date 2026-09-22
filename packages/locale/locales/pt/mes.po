@@ -643,7 +643,7 @@ msgid "First due {0}"
 msgstr "Primeiro prazo {0}"
 
 msgid "Fix the highlighted quantities before completing."
-msgstr ""
+msgstr "Corrija as quantidades realçadas antes de concluir."
 
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de apontar fim?"

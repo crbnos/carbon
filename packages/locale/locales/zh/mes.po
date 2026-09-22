@@ -643,7 +643,7 @@ msgid "First due {0}"
 msgstr "最早应交期 {0}"
 
 msgid "Fix the highlighted quantities before completing."
-msgstr ""
+msgstr "完成前请修正突出显示的数量。"
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
