@@ -503,18 +503,22 @@ function BuySelfHosted() {
  * detail line naming enough of both halves to make the glance land correctly. The amber
  * tone marks it as the one column that is not a code boundary.
  *
- * Column widths are measured, not guessed: the detail line under the third header renders
- * at 256px and its bar label at 226px (DM Sans, browser getBBox), which is what sets that
- * column at 278 and squeezes the other two detail lines down to fit beside it. Re-measure
- * before lengthening any of these three strings.
+ * Column widths are measured, not guessed, and the measurement has to be taken IN THE
+ * RENDERED PAGE: getBBox in a standalone SVG returned widths ~28% wider than the real
+ * figure and would have sized every column wrong. Live user units: the three detail lines
+ * are 163 / 155 / 210 and the amber bar label is 194, which is what puts the third column
+ * at 234 while the other two sit at 196. Equal 208-wide columns were tried and rejected —
+ * the third detail line is 210, so it wraps to two lines, which leaves the header block
+ * ragged and the amber label cramped. Re-measure in the page before lengthening any of
+ * these strings; do not estimate from character counts.
  *
  * Prices stay on the pricing page; a second copy here would drift the day one changes. */
 function Plans() {
   /* Column x/width drive both the header text and every bar, so a bar can never drift
    * out of line with the header naming it. */
-  const CE = { x: 92, w: 176 };
-  const EE = { x: 276, w: 172 };
-  const EXTRA = { x: 456, w: 278 };
+  const CE = { x: 92, w: 196 };
+  const EE = { x: 296, w: 196 };
+  const EXTRA = { x: 500, w: 234 };
   const ROWS = [
     { label: "Starter", y: 72, segments: [CE] },
     { label: "Business", y: 126, segments: [CE, EE] },
@@ -523,8 +527,8 @@ function Plans() {
   const TONES = ["svc", "app", "async"] as const;
   const BARS = ["CE", "EE", "Additional features and services"];
   const HEADERS = [
-    { col: CE, name: "Community Edition (CE)", detail: "outside packages/ee · AGPLv3" },
-    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee · Commercial" },
+    { col: CE, name: "Community Edition (CE)", detail: "everything outside packages/ee · AGPLv3" },
+    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee and .ee. files · Commercial" },
     { col: EXTRA, name: "Additional Features and Services", detail: "Additional Features, Compliance, and Implementation" },
   ];
   return (
