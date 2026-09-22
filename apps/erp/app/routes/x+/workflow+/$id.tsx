@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { readWorkflowVersion } from "@carbon/ee/workflows";
 import {
   Alert,
   AlertDescription,
@@ -7,7 +8,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { readWorkflowVersion } from "@carbon/workflows";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";

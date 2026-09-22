@@ -1,9 +1,9 @@
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup
 } from "@carbon/react";
-import type { WorkflowNodeType } from "@carbon/workflows";
 import type { IsValidConnection } from "@xyflow/react";
 import {
   Background,

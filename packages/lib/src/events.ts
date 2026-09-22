@@ -3,7 +3,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
-import type { RunTrigger } from "@carbon/workflows";
+import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 

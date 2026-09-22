@@ -1,6 +1,8 @@
 ---
 paths:
-  - packages/database/src/audit.*
+  - packages/ee/src/audit/audit.ts
+  - packages/database/src/audit.config.ts
+  - packages/database/src/audit.types.ts
   - packages/jobs/src/inngest/functions/events/audit.ts
   - packages/jobs/src/inngest/functions/scheduled/audit-archive.ts
   - apps/erp/app/components/AuditLog/**
@@ -99,7 +101,7 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 
 - RPCs: `create_audit_log_table`, `insert_audit_log_batch`, `get_entity_audit_log` (optional `p_record_id`),
   `get_audit_log` (filters + `totalCount`), `get_audit_logs_for_archive`, `delete_old_audit_logs`.
-- `packages/database/src/audit.ts` wrappers: `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
+- `packages/ee/src/audit/audit.ts` wrappers (commercial — `@carbon/ee/audit.server`; `enableAuditLog` embeds `requireEntitlement("AUDIT_LOG")`, skipped under `CONTROLLED_ENVIRONMENT` where audit is mandatory): `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
   `enableAuditLog`, `disableAuditLog` (keeps data), `isAuditLogEnabled`, `syncAuditSubscriptions`
   (adds triggers for entities added to config after enable), `getAuditLogArchives`, `getArchiveDownloadUrl`,
   `getAuditLogsForArchive`, `deleteOldAuditLogs`, `recordAuditLogArchive`.

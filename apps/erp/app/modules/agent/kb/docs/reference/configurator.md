@@ -36,7 +36,7 @@ function configure(params: Params): number {
 }
 ```
 
-Rule code is transpiled and executed in a restricted sandbox (`packages/database/supabase/functions/lib/sandbox.ee.ts`): no `fetch`, no `setTimeout`/`setInterval`, no dynamic `import`, no `new Promise`, no `Function` constructor. A rule that trips a banned pattern is neutered to `return null`, and any rule that throws falls back to the field's default. Rules are for deriving a value from the inputs, not for side effects.
+Rule code is transpiled and executed in a restricted sandbox (`packages/database/supabase/functions/lib/sandbox.ts`): no `fetch`, no `setTimeout`/`setInterval`, no dynamic `import`, no `new Promise`, no `Function` constructor. A rule that trips a banned pattern is neutered to `return null`, and any rule that throws falls back to the field's default. Rules are for deriving a value from the inputs, not for side effects.
 
 Rules can also **filter** the method wholesale: a `billOfMaterial` or `billOfProcess` rule returns the list of component or operation names to keep, so a boolean parameter can drop a whole subassembly or an outside-processing step from the recipe.
 

@@ -1,9 +1,9 @@
-import { datetime } from "@carbon/utils";
 import {
   createWorkflowCatalog,
   type RunTrigger,
   type WorkflowDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { datetime } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { getJobDatabaseClient } from "../../db";
 import type { EngineLogger, EngineStep, RunPayload } from "./execute";

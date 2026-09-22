@@ -1,3 +1,4 @@
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import {
   DatePicker,
   Input,
@@ -14,7 +15,6 @@ import {
   SelectValue,
   Switch
 } from "@carbon/react";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { parseDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { KeyboardEvent, ReactNode } from "react";

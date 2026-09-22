@@ -1,54 +1,73 @@
 // @ts-nocheck
 import { getLogger } from "@carbon/logger";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import type { McpContext } from "./types";
 import { z } from "zod";
-import { withErrorHandling, READ_ONLY_ANNOTATIONS, WRITE_ANNOTATIONS } from "./types";
-import toolMetadata from "./tool-metadata.json";
-import { isMcpBlockedTool } from "./mcp-blocked-tools";
-import { callOperation } from "../../v1+/lib/call.server";
-import {
-  isListOperation,
-  operationsByName
-} from "../../v1+/lib/operations.server";
-import {
-  formatMcpResult,
-  MCP_DEFAULT_LIMIT,
-  pageMcpListResult
-} from "./format-result";
-import { createCatalogSearch } from "./catalog-search";
+import { requireEntitlement } from "../entitlements.server";
 import {
   deriveNameDescription,
   formatParamSummary,
   formatToolDescription,
   paginatingSibling
 } from "./describe-format";
+import {
+  formatMcpResult,
+  MCP_DEFAULT_LIMIT,
+  pageMcpListResult
+} from "./format-result";
 import { getServerInstructions } from "./instructions";
+import {
+  type McpContext,
+  type McpServerDeps,
+  READ_ONLY_ANNOTATIONS,
+  WRITE_ANNOTATIONS,
+  withErrorHandling
+} from "./types";
 
 const logger = getLogger("erp", "mcp");
 
-// One index for the process; createMcpServer runs per request.
-const catalogSearch = createCatalogSearch(toolMetadata.tools);
+// The MCP protocol server — the commercial feature body. The app's dispatch,
+// tool manifest, blocked-tool predicate and generated catalog are INJECTED via
+// `deps` (they derive from `apps/erp`'s `~/modules/*` and cannot move into a
+// package); the entitlement LOCK lives here so serving MCP requires executing
+// commercial code. `Ctx` is the caller's full auth context (the app's
+// `AuthedContext`), passed straight through to `deps.callOperation`.
+export async function createMcpServer<Ctx extends McpContext>(
+  ctx: Ctx,
+  today: string,
+  deps: McpServerDeps<Ctx>
+): Promise<McpServer> {
+  await requireEntitlement(ctx.client, ctx.companyId, "MCP");
 
-export function createMcpServer(ctx: McpContext, today: string): McpServer {
+  const {
+    callOperation,
+    operationsByName,
+    isListOperation,
+    isMcpBlockedTool,
+    catalogSearch,
+    toolMetadata
+  } = deps;
+
   const server = new McpServer(
     {
       name: "carbon-erp",
-      version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "1.0.0",
+      version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) ?? "1.0.0"
     },
     {
-      instructions: getServerInstructions(today),
-    },
+      instructions: getServerInstructions(today, toolMetadata)
+    }
   );
-
 
   // Register describe_tool to get schema information for any tool
   server.registerTool(
     "describe_tool",
     {
-      description: "Get the full contract for one or more tools: description, permission, input schema and response schema",
+      description:
+        "Get the full contract for one or more tools: description, permission, input schema and response schema",
       inputSchema: z.object({
-        name: z.string().optional().describe("The name of the tool to describe"),
+        name: z
+          .string()
+          .optional()
+          .describe("The name of the tool to describe"),
         names: z
           .array(z.string())
           .max(10)
@@ -65,10 +84,12 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
 
       if (requested.length === 0) {
         return {
-          content: [{
-            type: "text" as const,
-            text: "Pass a tool `name` or a `names` array"
-          }],
+          content: [
+            {
+              type: "text" as const,
+              text: "Pass a tool `name` or a `names` array"
+            }
+          ],
           isError: true
         };
       }
@@ -100,7 +121,9 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
       }
 
       return {
-        content: [{ type: "text" as const, text: sections.join("\n\n---\n\n") }],
+        content: [
+          { type: "text" as const, text: sections.join("\n\n---\n\n") }
+        ],
         ...(missing.length === requested.length ? { isError: true } : {})
       };
     }, "Describe tool failed")
@@ -127,24 +150,31 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
           args = args.trim().length > 0 ? JSON.parse(args) : {};
         } catch {
           return {
-            content: [{ type: "text" as const, text: "Invalid JSON in call_tool.arguments" }],
+            content: [
+              {
+                type: "text" as const,
+                text: "Invalid JSON in call_tool.arguments"
+              }
+            ],
             isError: true
           };
         }
       }
-      
+
       logger.info("call_tool invoked", { name, arguments: args });
 
       if (isMcpBlockedTool(name)) {
         return {
-          content: [{
-            type: "text" as const,
-            text: `Tool disabled: ${name} is not available via MCP.`
-          }],
+          content: [
+            {
+              type: "text" as const,
+              text: `Tool disabled: ${name} is not available via MCP.`
+            }
+          ],
           isError: true
         };
       }
-      
+
       // List reads apply no limit unless the caller passes one (the schema's
       // `default: 100` is documentation, not enforcement — an argless call
       // returned up to PostgREST's 1000-row cap). MCP-only; the other
@@ -168,7 +198,9 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
             ? (args as Record<string, unknown>)
             : null;
         const wrapped =
-          body?.args && typeof body.args === "object" && !Array.isArray(body.args)
+          body?.args &&
+          typeof body.args === "object" &&
+          !Array.isArray(body.args)
             ? (body.args as Record<string, unknown>)
             : null;
         if (meta.paginates) {
@@ -226,10 +258,15 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
         responseTime
       });
       return {
-        content: [{
-          type: "text" as const,
-          text: result.errorKind === "database" ? result.error : `Error: ${result.error}`
-        }],
+        content: [
+          {
+            type: "text" as const,
+            text:
+              result.errorKind === "database"
+                ? result.error
+                : `Error: ${result.error}`
+          }
+        ],
         isError: true
       };
     }, "Call tool failed")
@@ -239,9 +276,15 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
   server.registerTool(
     "search_tools",
     {
-      description: "Relevance-ranked search over ERP tools; understands common abbreviations (PO, RMA, BOM, NCR) and matches schema field names too",
+      description:
+        "Relevance-ranked search over ERP tools; understands common abbreviations (PO, RMA, BOM, NCR) and matches schema field names too",
       inputSchema: z.object({
-        query: z.string().optional().describe("Keywords to match against tool names, descriptions and schema field names"),
+        query: z
+          .string()
+          .optional()
+          .describe(
+            "Keywords to match against tool names, descriptions and schema field names"
+          ),
         module: z.string().optional().describe("Filter by module name"),
         classification: z.enum(["READ", "WRITE", "DESTRUCTIVE"]).optional(),
         limit: z.number().int().min(1).max(100).default(20),
@@ -261,7 +304,7 @@ export function createMcpServer(ctx: McpContext, today: string): McpServer {
         limit,
         offset
       });
-      const toolNames = matches.map(t => t.name);
+      const toolNames = matches.map((t) => t.name);
 
       logger.info("search_tools invoked", {
         query,

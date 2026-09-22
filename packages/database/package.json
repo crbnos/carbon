@@ -33,7 +33,6 @@
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
-    "./audit": "./src/audit.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",
     "./swagger-docs-schema": "./src/swagger-docs-schema.ts",

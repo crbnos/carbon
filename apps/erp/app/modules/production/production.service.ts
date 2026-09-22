@@ -979,7 +979,7 @@ export async function getJobExpediteForecast(
 
   // Simulate-only what-if, run IN-PROCESS (Node) — persists nothing.
   try {
-    const { runExpediteWhatIf } = await import("@carbon/ee/planning");
+    const { runExpediteWhatIf } = await import("@carbon/planning");
     const expedite = await runExpediteWhatIf({
       db,
       client,
@@ -2647,7 +2647,7 @@ export async function recalculateJobOperationDependencies(
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
-    const { runLocationSchedule } = await import("@carbon/ee/planning");
+    const { runLocationSchedule } = await import("@carbon/planning");
     const data = await runLocationSchedule({
       db,
       client,
@@ -2716,7 +2716,7 @@ export async function runMRP(
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
-    const { runMrp } = await import("@carbon/ee/planning");
+    const { runMrp } = await import("@carbon/planning");
     const data = await runMrp(client, db, params);
     return { data, error: null };
   } catch (err) {

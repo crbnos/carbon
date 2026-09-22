@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
@@ -364,6 +365,8 @@ export const companyExportFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, userId, label, includeStorage, skipCorrupted } =
       event.data;
+
+    await requireBackupsEntitlement(companyId);
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();

@@ -1,4 +1,4 @@
-// @carbon/ee/planning — the planning engines (MRP + finite scheduling),
+// @carbon/planning — the planning engines (MRP + finite scheduling),
 // relocated from the Supabase edge runtime to run in-process in Node. Every
 // entry point takes an injected Kysely handle (and, for MRP, a service-role
 // Supabase client); callers authenticate first. Server-only — pulls in

@@ -61,11 +61,14 @@ export const WORKFLOW_MOMENTS = {
   }
 } as const satisfies Record<string, MomentDeclarationLike>;
 
-export type MomentKey = keyof typeof WORKFLOW_MOMENTS;
-
-/** Entity outputs are passed as an id, never a row snapshot. */
-export type MomentEntityRef = { id: string };
-
-export type MomentPayload<K extends MomentKey> = {
-  [O in keyof (typeof WORKFLOW_MOMENTS)[K]["outputs"]]: MomentEntityRef;
-};
+// `MomentKey` / `MomentEntityRef` / `MomentPayload` are the CE-safe moment
+// contract, defined in `@carbon/workflows-core` (so `@carbon/lib` can use them
+// without a cycle into this commercial engine) and derived there from
+// `MOMENT_OUTPUT_KEYS`. `WORKFLOW_MOMENTS` above stays the source of truth for the
+// labels/permissions/entity types; `scripts/check-workflow-catalog.ts` asserts the
+// two never drift (same keys, same output-key names).
+export type {
+  MomentEntityRef,
+  MomentKey,
+  MomentPayload
+} from "@carbon/workflows-core";

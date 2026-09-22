@@ -1,9 +1,12 @@
+import type { ManifestEntry } from "@carbon/api";
 import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
-import { companyHasFeature } from "@carbon/ee/plan.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { createCatalogSearch } from "@carbon/ee/mcp";
+import { createMcpServer } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
 import { Ratelimit, redis } from "@carbon/kv";
 import { withLogContext } from "@carbon/logger/middleware.server";
@@ -12,8 +15,22 @@ import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { authenticateApiKey } from "../v1+/lib/authenticate.server";
-import { createMcpServer } from "./lib/server";
-import type { McpContext } from "./lib/types";
+import type { AuthedContext } from "../v1+/lib/base.server";
+import { callOperation } from "../v1+/lib/call.server";
+import {
+  isListOperation,
+  operationsByName
+} from "../v1+/lib/operations.server";
+import { isMcpBlockedTool } from "./lib/mcp-blocked-tools";
+import toolMetadata from "./lib/tool-metadata.json";
+
+// One catalog search index for the process (built lazily on first query); the
+// MCP engine now lives in `@carbon/ee/mcp.server` and takes the dispatch, the
+// manifest and this index as injected deps — they derive from `~/modules/*` and
+// cannot move into a package.
+const catalogSearch = createCatalogSearch(
+  toolMetadata.tools as unknown as ManifestEntry[]
+);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -111,7 +128,7 @@ function make401Response(request: Request): Response {
 }
 
 async function resolveAuth(request: Request): Promise<{
-  ctx: McpContext;
+  ctx: AuthedContext;
   request: Request;
 }> {
   const authHeader = request.headers.get("Authorization");
@@ -177,36 +194,47 @@ async function resolveAuth(request: Request): Promise<{
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
 
-  // Gate the whole server behind the MCP feature (Business+). One check here
-  // covers every auth path, since both resolve to an McpContext first.
-  if (
-    !(await companyHasFeature(ctx.client, ctx.companyId, { feature: "MCP" }))
-  ) {
-    return addCorsHeaders(makeMcpDisabledResponse());
-  }
-
   // Stamp the authenticated identity into the logging context so every log
   // line in this request carries it alongside the middleware's requestId.
-  const response = await withLogContext(
-    { companyId: ctx.companyId, userId: ctx.userId, authKind: ctx.authKind },
-    async () => {
-      // The agent is told what "today" is; it has to be the company's day, not
-      // the server's, or every relative-date tool call it makes lands a day off.
-      const server = createMcpServer(
-        ctx,
-        datetime
-          .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
-          .toString()
-      );
-      const transport = new WebStandardStreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-        enableJsonResponse: true
-      });
+  let response: Response;
+  try {
+    response = await withLogContext(
+      { companyId: ctx.companyId, userId: ctx.userId, authKind: ctx.authKind },
+      async () => {
+        // The agent is told what "today" is; it has to be the company's day, not
+        // the server's, or every relative-date tool call it makes lands a day off.
+        // `createMcpServer` embeds the MCP entitlement LOCK (Business+), covering
+        // every auth path since both resolve to an authed context first — it
+        // throws `EntitlementError` for community/starter, caught below as 402.
+        const server = await createMcpServer(
+          ctx,
+          datetime
+            .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
+            .toString(),
+          {
+            callOperation,
+            operationsByName,
+            isListOperation,
+            isMcpBlockedTool,
+            catalogSearch,
+            toolMetadata
+          }
+        );
+        const transport = new WebStandardStreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+          enableJsonResponse: true
+        });
 
-      await server.connect(transport);
-      return transport.handleRequest(authedRequest);
+        await server.connect(transport);
+        return transport.handleRequest(authedRequest);
+      }
+    );
+  } catch (err) {
+    if (err instanceof EntitlementError) {
+      return addCorsHeaders(makeMcpDisabledResponse());
     }
-  );
+    throw err;
+  }
 
   return addCorsHeaders(response);
 }

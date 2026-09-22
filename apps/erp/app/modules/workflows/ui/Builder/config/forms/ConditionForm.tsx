@@ -1,5 +1,9 @@
+import type {
+  Clause,
+  ConditionPath,
+  WorkflowIssue
+} from "@carbon/ee/workflows";
 import { Button, IconButton } from "@carbon/react";
-import type { Clause, ConditionPath, WorkflowIssue } from "@carbon/workflows";
 import {
   closestCenter,
   DndContext,

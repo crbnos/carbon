@@ -1,4 +1,4 @@
-import type { ValueType } from "@carbon/workflows";
+import type { ValueType } from "@carbon/ee/workflows";
 
 // Pure label helpers, kept out of `catalog.ts` so they can be imported without
 // pulling in the Lingui macro (which the unit-test runner does not transform).

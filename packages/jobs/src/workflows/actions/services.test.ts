@@ -1,5 +1,5 @@
 import type { Database } from "@carbon/database";
-import { createWorkflowCatalog, entityValue } from "@carbon/workflows";
+import { createWorkflowCatalog, entityValue } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { createWorkflowServices } from "./services";

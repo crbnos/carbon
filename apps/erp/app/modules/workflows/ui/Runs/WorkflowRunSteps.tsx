@@ -1,5 +1,5 @@
-import type { WorkflowDefinition, WorkflowNode } from "@carbon/workflows";
-import { topologicalNodeOrder } from "@carbon/workflows";
+import type { WorkflowDefinition, WorkflowNode } from "@carbon/ee/workflows";
+import { topologicalNodeOrder } from "@carbon/ee/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";

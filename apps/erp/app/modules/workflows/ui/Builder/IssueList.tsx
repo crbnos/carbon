@@ -1,4 +1,4 @@
-import type { WorkflowIssue } from "@carbon/workflows";
+import type { WorkflowIssue } from "@carbon/ee/workflows";
 import { useReactFlow } from "@xyflow/react";
 import { useNodeLabel } from "../Runs/useNodeLabel";
 import { useBuilderStore } from "./context";

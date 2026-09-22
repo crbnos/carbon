@@ -8,7 +8,7 @@
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
     "@carbon/utils": "workspace:*",
-    "@carbon/workflows": "workspace:*",
+    "@carbon/workflows-core": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",

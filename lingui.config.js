@@ -21,7 +21,7 @@ export default defineConfig({
         "packages/printing/src/ui",
         "packages/glossary/src",
         "packages/onboarding/src",
-        "packages/workflows/src"
+        "packages/ee/src/workflows"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },

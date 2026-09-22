@@ -1,10 +1,10 @@
-import type { ConditionPath, WorkflowNode } from "@carbon/workflows";
+import type { ConditionPath, WorkflowNode } from "@carbon/ee/workflows";
 import {
   DEFAULT_HANDLE,
   FAILURE_HANDLE,
   getNodeHandles,
   SUCCESS_HANDLE
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { MessageDescriptor } from "@lingui/core";
 import { msg } from "@lingui/core/macro";
 import type { PortTone } from "./handles";

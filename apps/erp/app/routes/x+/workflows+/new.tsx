@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/ee/workflows";
 import { validationError, validator } from "@carbon/form";
-import { CURRENT_DEFINITION_FORMAT_VERSION } from "@carbon/workflows";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {

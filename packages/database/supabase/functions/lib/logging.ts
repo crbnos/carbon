@@ -32,7 +32,7 @@ function ensureConfigured(): void {
   configured = true;
 
   // Dual-runtime: this module is imported by the scheduling engine, which runs
-  // BOTH in the Deno edge runtime and in-process in Node (@carbon/ee/planning,
+  // BOTH in the Deno edge runtime and in-process in Node (@carbon/planning,
   // the ERP/MES apps, @carbon/jobs).
   //
   // ONLY the edge runtime may configure LogTape. In Node the host app already
