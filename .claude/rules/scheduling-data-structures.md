@@ -50,7 +50,7 @@ Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
   `slot-allocator.ts` / `apply-work-center-selections.ts` / `duration-calculator.ts` /
   `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` /
   `need-by-calculator.ts` are pure and have unit
-  tests (`pnpm --filter @carbon/ee test`, vitest — colocated `*.test.ts`),
+  tests (`pnpm --filter @carbon/planning test`, vitest — colocated `*.test.ts`),
   alongside the determinism + envelope suites. `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).

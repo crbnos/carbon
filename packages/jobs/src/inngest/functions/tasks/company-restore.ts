@@ -625,8 +625,10 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
-    await requireBackupsEntitlement(companyId);
-
+    // No entitlement gate here: finalize only RESOLVES an already-started (and
+    // already-gated) restore. If BACKUPS lapsed while the restore sat "ready",
+    // gating this would strand it — marker stuck "ready", snapshot orphaned,
+    // with no recovery path (retries: 1). The lock is on companyRestoreFunction.
     return await step.run("finalize-restore", async () => {
       const client = getCarbonServiceRole();
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
@@ -660,8 +662,10 @@ export const companyRestoreRevertFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
-    await requireBackupsEntitlement(companyId);
-
+    // No entitlement gate here (see finalize): revert must always be able to
+    // undo a pending restore and return the pre-restore snapshot, even if
+    // BACKUPS lapsed while it sat "ready" — blocking it would strand the company
+    // mid-restore. The lock is on companyRestoreFunction (the start).
     return await step.run("revert-restore", async () => {
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(1);

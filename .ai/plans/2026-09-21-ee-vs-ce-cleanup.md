@@ -285,6 +285,6 @@ Directive: **move the whole `@carbon/workflows` package** into `packages/ee`.
   2b (MCP) — engine → `@carbon/ee/mcp` (pure) + `@carbon/ee/mcp.server` via DI;
   `requireEntitlement("MCP")` inside `createMcpServer`. Final consolidated typecheck GREEN
   9/9 (ee, jobs, planning, workflows-core, lib, checks, erp, mes). Tests green: ee 1499,
-  jobs 734, MCP 158, planning 183, `check:workflow-catalog`. Docs synced. NOT committed.
-  ⚠️ Verify before merge: MCP `POST /api/mcp` endpoint smoke test (server.ts is `@ts-nocheck`,
-  not exercisable in this env).
+  jobs 734, MCP 158, planning 183, `check:workflow-catalog`. Docs synced.
+  Committed 6703148569 + pushed; PR #1696 open (base main).
+  ✅ Brad smoke-tested MCP + the other flagged flows — all pass. No residuals.

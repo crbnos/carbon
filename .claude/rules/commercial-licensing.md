@@ -147,8 +147,12 @@ Refactor one at a time; each PR should leave the tree green.
   imports `@carbon/jobs`-internal `../../../db` + the inngest client). Locked
   gate-in-place: `requireBackupsEntitlement(companyId)`
   (`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`) is embedded at
-  the top of every durable function — `companyExportFunction`,
-  `companyRestore{,Finalize,Revert}Function`, `companyImportFunction`. Local-dev
+  the top of every START-action durable function — `companyExportFunction`,
+  `companyRestoreFunction`, `companyImportFunction`. Finalize/revert
+  (`companyRestore{Finalize,Revert}Function`) are deliberately NOT gated: they only
+  RESOLVE an already-started restore, so gating them would strand a pending restore
+  (marker stuck `ready`, snapshot orphaned) if BACKUPS lapsed while it sat pending.
+  Local-dev
   exempt (`IS_LOCAL_DEV` — the service-role job path has no email for the
   `isInternalEmail` hatch); onboarding demo-template apply/revert call
   `buildCompanyBackup`/`wipeAndLoad` directly and are NOT gated (import exempts

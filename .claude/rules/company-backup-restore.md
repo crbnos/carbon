@@ -49,8 +49,10 @@ Internal = `@carbon.ms` / `@carbon.us.org`.
 `canManageBackups` is the route-level UX gate (a deletable open-code `if`). The
 un-strippable commercial LOCK is `requireBackupsEntitlement(companyId)`
 (`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`), embedded at the
-top of every durable function — `companyExportFunction`,
-`companyRestore{,Finalize,Revert}Function`, `companyImportFunction`. It is
+top of every START-action durable function — `companyExportFunction`,
+`companyRestoreFunction`, `companyImportFunction` (finalize/revert are NOT gated —
+they only resolve an already-started restore, and gating them would strand a
+pending restore if entitlement lapsed). It is
 `IS_LOCAL_DEV`-exempt (the service-role job path carries no `email`, so the
 `isInternalEmail` half of the hatch cannot apply there) and otherwise
 `requireEntitlement("BACKUPS")` — Community/Starter throw. Onboarding demo-template
