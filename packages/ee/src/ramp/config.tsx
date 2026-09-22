@@ -29,7 +29,7 @@ const RampSettingsSchema = z.object({
   // Required non-empty (the card liability + statement bank accounts back every
   // card journal); populated by the loader's dynamicOptions.
   cardLiabilityAccountId: z.string().min(1),
-  statementBankAccountId: z.string().min(1),
+  statementBankAccountId: z.string().optional(),
   cashbackIncomeAccountId: z.string().optional(),
   reimbursementBankAccountId: z.string().optional(),
   // SwitchField posts a literal "true"/"false" string; stored flat as-is.
@@ -93,7 +93,7 @@ export const Ramp = defineIntegration({
       name: "cardLiabilityAccountId",
       label: "Card liability account",
       description:
-        "The liability account Ramp card charges credit (your Ramp card balance).",
+        "Pick the Liability account that tracks what you owe on your Ramp cards — your outstanding Ramp balance. Each card charge Carbon pulls in credits this account; paying a statement debits it back down. Required — no card transactions sync until this is set.",
       group: "Accounts",
       type: "options" as const,
       listOptions: [],
@@ -104,11 +104,11 @@ export const Ramp = defineIntegration({
       name: "statementBankAccountId",
       label: "Statement bank account",
       description:
-        "The bank/asset account statement payments and transfers draw from.",
+        "Optional. Only needed if you want Carbon to book Ramp statement payments and transfers: Carbon credits this bank (Asset) account and debits the card liability above. Leave blank to skip statement-payment and transfer sync — card charges sync without it.",
       group: "Accounts",
       type: "options" as const,
       listOptions: [],
-      required: true,
+      required: false,
       value: ""
     },
     {
