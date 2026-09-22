@@ -120,9 +120,7 @@ export function BatchDetailDrawer({
   // production-event guard is what actually freezes a started batch.
   const isPreStart = batch.status === "Planned" || batch.status === "Active";
 
-  // Removing operations posts the edge fn's "remove" intent, which refuses once
-  // production is recorded — hide the selection then rather than let the
-  // confirm fail. The last operation can't be removed (that is Dissolve).
+  // The edge fn refuses "remove" once production is recorded.
   const permissions = usePermissions();
   const canRemoveOperations =
     isPreStart &&
@@ -130,7 +128,6 @@ export function BatchDetailDrawer({
     permissions.can("update", "production");
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [removeOpen, setRemoveOpen] = useState(false);
-  // Drop ids that left the batch on revalidation (removed here or elsewhere).
   useEffect(() => {
     setSelectedIds((prev) => {
       const memberIds = new Set(batch.members.map((m) => m.id));
