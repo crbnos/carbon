@@ -178,11 +178,24 @@ BEGIN
 
   v_error := pg_temp.try_complete(v_job, 2);
   ASSERT v_error IS NULL, 'Completing with an over-reported operation failed: ' || COALESCE(v_error, '');
-  -- The over-reported operation is left entirely alone (quantity kept, status
-  -- untouched): it owes nothing, so the backfill has no business rewriting it.
-  -- Only the operation that was actually short is completed.
-  ASSERT pg_temp.ops(v_job) = 'Ready:5,Done:2',
-    'The backfill must not lower or re-status a satisfied operation: ' || pg_temp.ops(v_job);
+  -- Its higher reported quantity is preserved, but it still closes: an
+  -- operation that meets its target is Done by the same rule the interceptor
+  -- applies, so leaving it Ready on a Completed job would be inconsistent.
+  ASSERT pg_temp.ops(v_job) = 'Done:5,Done:2',
+    'A satisfied operation must close without losing its quantity: ' || pg_temp.ops(v_job);
+
+  -- Reworked units already count as reported, so closing must not stack the
+  -- full target on top of them and report more units than were ever produced.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_stocked_item, v_part, 'RWJ', 3);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 3, 1);
+  UPDATE "jobOperation" SET "quantityComplete" = 1, "quantityReworked" = 1 WHERE id = v_op1;
+
+  v_error := pg_temp.try_complete(v_job, 3);
+  ASSERT v_error IS NULL, 'Completing with a reworked unit failed: ' || COALESCE(v_error, '');
+  SELECT "quantityComplete", "quantityReworked" INTO v_row FROM "jobOperation" WHERE id = v_op1;
+  ASSERT v_row."quantityComplete" + v_row."quantityReworked" = 3,
+    'Reported units must equal the completed quantity, got '
+      || v_row."quantityComplete" || ' complete + ' || v_row."quantityReworked" || ' reworked';
 
   -- Sub-assembly operations are NOT completed: they build a different item, and
   -- ticking them would claim work that may never have happened.

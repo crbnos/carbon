@@ -34,6 +34,11 @@
 -- the PERFORM below, placed after the validation guards and before the status
 -- UPDATE (the interceptor's roll-up skips an already-Completed job).
 
+-- The 3-argument form below replaces an unreleased 4-argument version that took
+-- p_company_id. CREATE OR REPLACE cannot replace a different signature, so drop
+-- it explicitly rather than leave a second, callable overload behind.
+DROP FUNCTION IF EXISTS complete_job_remaining_quantities(TEXT, NUMERIC, TEXT, TEXT);
+
 -- A job's OPEN terminal top-level operations: the ones that finish the job's
 -- own product, with no further top-level operation depending on them.
 --
@@ -125,16 +130,38 @@ BEGIN
   -- harmless: the job is still open at this point, so the interceptor may
   -- complete it through its own path, and the remainder of this function is
   -- then an idempotent re-completion (zero receipt delta, nothing re-consumed).
+  --
+  -- Every open terminal operation is closed, not only the short ones: an
+  -- operation whose quantity already meets the target is Done by the same
+  -- predicate the interceptor uses, so leaving it Ready on a Completed job
+  -- would recreate the inconsistency this function exists to remove.
+  --
+  -- Reworked units already count as reported, so the new quantityComplete is
+  -- the target MINUS them. Assigning the full target on top of a reworked unit
+  -- would report more units than the operation ever produced (target 3 with 1
+  -- complete + 1 reworked must end at 2 complete + 1 reworked, not 3 + 1).
+  -- GREATEST never lowers a quantity the floor already reported.
   UPDATE "jobOperation" jo
-  SET "quantityComplete" = p_quantity_complete,
+  SET "quantityComplete" = GREATEST(
+        COALESCE(t."quantityComplete", 0),
+        p_quantity_complete - COALESCE(t."quantityReworked", 0)
+      ),
       status = 'Done',
       "updatedBy" = COALESCE(p_user_id, jo."updatedBy", jo."createdBy"),
       "updatedAt" = NOW()
   FROM terminal_job_operations(p_job_id) t
-  WHERE jo.id = t.id
-    AND COALESCE(t."quantityComplete", 0) + COALESCE(t."quantityReworked", 0) < p_quantity_complete;
+  WHERE jo.id = t.id;
 END;
 $$;
+
+-- These helpers take a bare job id and, being SECURITY DEFINER, bypass RLS.
+-- Unlike complete_job_to_inventory they have no p_company_id to bind the call
+-- to a tenant, so PostgreSQL's default PUBLIC EXECUTE grant would let any
+-- authenticated user of any company read and close another tenant's
+-- operations. They are internal helpers of complete_job_to_inventory (which
+-- does enforce the company check), so revoke the API roles entirely.
+REVOKE ALL ON FUNCTION terminal_job_operations(TEXT) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION complete_job_remaining_quantities(TEXT, NUMERIC, TEXT) FROM PUBLIC, anon, authenticated;
 
 
 CREATE OR REPLACE FUNCTION complete_job_to_inventory(
