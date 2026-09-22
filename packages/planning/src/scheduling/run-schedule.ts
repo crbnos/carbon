@@ -70,7 +70,7 @@ const asMs = (value: unknown): number | null =>
  * order leads the queue instead of trailing on NULLS LAST), then due date ASC
  * NULLS LAST, priority ASC, createdAt ASC. Sorted in TS.
  */
-async function loadOrderedBatch(
+export async function loadOrderedBatch(
   db: Kysely<DB>,
   locationId: string,
   companyId: string
