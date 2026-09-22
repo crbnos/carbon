@@ -499,40 +499,43 @@ function BuySelfHosted() {
  * help, when it is really Business plus capabilities that exist nowhere else (SSO is
  * packages/ee code but gates on CarbonEdition rather than the plan, so Business never
  * reaches it; BYOC, GovCloud/ITAR and self-hosting are deployment options, not code at
- * all) AND the people to stand them up. Hence "Additional Features and Services", with the
- * detail line naming enough of both halves to make the glance land correctly. The amber
- * tone marks it as the one column that is not a code boundary.
+ * all) AND the people to stand them up. The amber tone marks it as the one column that is
+ * not a code boundary.
  *
- * Column widths are measured, not guessed, and the measurement has to be taken IN THE
- * RENDERED PAGE: getBBox in a standalone SVG returned widths ~28% wider than the real
- * figure and would have sized every column wrong. Live user units: the three detail lines
- * are 163 / 155 / 210 and the amber bar label is 194, which is what puts the third column
- * at 234 while the other two sit at 196. Equal 208-wide columns were tried and rejected —
- * the third detail line is 210, so it wraps to two lines, which leaves the header block
- * ragged and the amber label cramped. Re-measure in the page before lengthening any of
- * these strings; do not estimate from character counts.
+ * Columns are equal at 208, which is what keeps the three bars reading as categories
+ * rather than magnitudes. Two things pay for that, and both are deliberate: the third
+ * detail line wraps to two lines (it is 210 units, two over), and its bar label is
+ * abbreviated to "Add'l" (164 units, versus 194 spelled out, which left barely seven units
+ * of padding a side and looked cramped). The headers and the detail text keep "Additional"
+ * spelled out — only the bar is abbreviated.
+ *
+ * Widths are measured, not guessed, and the measurement has to be taken IN THE RENDERED
+ * PAGE: getBBox in a standalone SVG returned widths ~28% wider than the real figure,
+ * because the page's font never loaded there, and every column would have been sized
+ * wrong. Live user units: detail lines 163 / 155 / 130 + 79, bar label 164, headers
+ * 121 / 114 / 165. Re-measure in the page before lengthening any of these strings.
  *
  * Prices stay on the pricing page; a second copy here would drift the day one changes. */
 function Plans() {
   /* Column x/width drive both the header text and every bar, so a bar can never drift
    * out of line with the header naming it. */
-  const CE = { x: 92, w: 196 };
-  const EE = { x: 296, w: 196 };
-  const EXTRA = { x: 500, w: 234 };
+  const CE = { x: 92, w: 208 };
+  const EE = { x: 308, w: 208 };
+  const EXTRA = { x: 524, w: 208 };
   const ROWS = [
-    { label: "Starter", y: 72, segments: [CE] },
-    { label: "Business", y: 126, segments: [CE, EE] },
-    { label: "Enterprise", y: 180, segments: [CE, EE, EXTRA] },
+    { label: "Starter", y: 84, segments: [CE] },
+    { label: "Business", y: 138, segments: [CE, EE] },
+    { label: "Enterprise", y: 192, segments: [CE, EE, EXTRA] },
   ];
   const TONES = ["svc", "app", "async"] as const;
-  const BARS = ["CE", "EE", "Additional features and services"];
+  const BARS = ["CE", "EE", "Add'l features and services"];
   const HEADERS = [
-    { col: CE, name: "Community Edition (CE)", detail: "everything outside packages/ee · AGPLv3" },
-    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee and .ee. files · Commercial" },
-    { col: EXTRA, name: "Additional Features and Services", detail: "Additional Features, Compliance, and Implementation" },
+    { col: CE, name: "Community Edition (CE)", detail: ["everything outside packages/ee · AGPLv3"] },
+    { col: EE, name: "Enterprise Edition (EE)", detail: ["packages/ee and .ee. files · Commercial"] },
+    { col: EXTRA, name: "Additional Features and Services", detail: ["Additional Features, Compliance,", "and Implementation"] },
   ];
   return (
-    <svg viewBox="0 0 740 240" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds features and services available nowhere else">
+    <svg viewBox="0 0 740 252" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds features and services available nowhere else">
       <Eyebrow x={0} y={14} label="Carbon Cloud, pick one" />
 
       {HEADERS.map(({ col, name, detail }) => (
@@ -540,9 +543,11 @@ function Plans() {
           <text x={col.x + col.w / 2} y={44} textAnchor="middle" fontSize="11.5" fontWeight={600} fill={INK}>
             {name}
           </text>
-          <text x={col.x + col.w / 2} y={58} textAnchor="middle" fontSize="9.5" fill={INK_45}>
-            {detail}
-          </text>
+          {detail.map((line, i) => (
+            <text key={line} x={col.x + col.w / 2} y={58 + i * 12} textAnchor="middle" fontSize="9.5" fill={INK_45}>
+              {line}
+            </text>
+          ))}
         </g>
       ))}
 
