@@ -41,7 +41,7 @@ Custom features, integrations, data migrations, additional forward-deployed engi
 
 ## Self-hosted — you run it
 
-Clone Carbon from GitHub and run it on your own infrastructure. By default that's the **Community** edition, and how you're licensed depends on what you change and who you run it for.
+Clone Carbon from GitHub and run it on your own infrastructure. By default that's the **Community** edition, which is free under AGPLv3. You only need a commercial license to use Business features or to keep your changes private.
 
 **Community Edition** is the open core under AGPLv3 — free, no agreement needed. Running Community Edition for your own business, modified or not, never requires a license. Two things come with that freedom: if you let others use a modified version over a network, you must offer those users its source under the AGPL, and the Enterprise code is excluded, so community mode ships without Business features, Carbon support, or an SLA.
 
@@ -82,6 +82,6 @@ A commercial agreement covers the signer and its named affiliates. Customer-port
 - **Keep your modifications private** from the people who use them, instead of offering them the source under AGPLv3.
 - **Use Business features:** the integrations and other capabilities in `packages/ee`. See `docs/integrations` for the catalog.
 
-Carbon Cloud's Business plan is the managed path; a commercial license is the self-hosted path. Either one unlocks the Business features.
+Carbon Cloud (the Business plan or an Enterprise Subscription) is the managed path; a commercial license is the self-hosted path. Either one unlocks the Business features.
 
 This page summarizes the terms so you can find the right path quickly. The [LICENSE](https://github.com/crbnos/carbon/blob/main/LICENSE) file is what actually governs. Read it in full, and [email us](mailto:chase@carbon.ms) if you're unsure which edition fits.
