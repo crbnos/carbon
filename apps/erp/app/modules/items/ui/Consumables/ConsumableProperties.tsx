@@ -18,8 +18,12 @@ import { Await, Link, useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { MethodBadge, MethodIcon, TrackingTypeIcon } from "~/components";
-import { Enumerable } from "~/components/Enumerable";
-import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
+import {
+  Boolean,
+  ItemPostingGroup,
+  Tags,
+  UnitOfMeasure
+} from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useCompanySettings, useRouteData } from "~/hooks";
@@ -133,7 +137,8 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
         | "itemPostingGroupId"
         | "consumableId"
         | "active"
-        | "mpn",
+        | "mpn"
+        | "unitOfMeasureCode",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -409,14 +414,27 @@ const ConsumableProperties = ({ data }: ConsumablePropertiesProps) => {
         />
       </ValidatedForm>
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Unit of Measure</Trans>
-        </h3>
-        <Enumerable
-          value={routeData?.consumableSummary?.unitOfMeasure ?? null}
+      <ValidatedForm
+        defaultValues={{
+          unitOfMeasureCode:
+            routeData?.consumableSummary?.unitOfMeasureCode ?? undefined
+        }}
+        validator={z.object({
+          unitOfMeasureCode: z
+            .string()
+            .min(1, { message: "Unit of Measure is required" })
+        })}
+        className="w-full"
+      >
+        <UnitOfMeasure
+          label={t`Unit of Measure`}
+          name="unitOfMeasureCode"
+          inline
+          onChange={(value) => {
+            onUpdate("unitOfMeasureCode", value?.value ?? null);
+          }}
         />
-      </VStack>
+      </ValidatedForm>
 
       <ItemDescription
         value={routeData?.consumableSummary?.description ?? ""}
