@@ -467,8 +467,8 @@ function BuySelfHosted() {
     <svg viewBox="0 0 740 428" className="w-full h-auto" role="img" aria-label="How to buy a self-hosted Carbon license">
       <ArrowDefs />
 
-      <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="AGPLv3 · free" tone="svc" />
-      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="unlocks Business features" tone="svc" />
+      <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="CE · AGPLv3 · free" tone="svc" />
+      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="EE · unlocks Business features" tone="svc" />
 
       <Edge pts={[[185, 70], [185, 100]]} />
       <Node x={45} y={100} w={280} h={48} label="Your own use, modified or not" sub="no license needed" />
@@ -511,8 +511,8 @@ function Plans() {
       <Edge pts={[[610, 80], [610, 128]]} soft />
 
       <Boundary x={8} y={128} w={724} h={156} label="Repository">
-        <Node x={16} y={152} w={708} h={54} label="Community code" sub="everything outside packages/ee · AGPLv3" tone="svc" />
-        <Node x={256} y={218} w={468} h={54} label="Business features" sub="packages/ee and any .ee. file · Commercial" tone="app" />
+        <Node x={16} y={152} w={708} h={54} label="Community Edition (CE)" sub="everything outside packages/ee · AGPLv3" tone="svc" />
+        <Node x={256} y={218} w={468} h={54} label="Enterprise Edition (EE)" sub="packages/ee and any .ee. file · the Business features" tone="app" />
       </Boundary>
     </svg>
   );
