@@ -1,4 +1,3 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { PanelAssemblyLineInput, PanelItemRow } from "@carbon/ee";
 import {
   buildAssemblyLineStatuses,
@@ -18,6 +17,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -33,9 +33,12 @@ export const config = {
  * cached) plus the assembly's own mapping. Everything else is Carbon's DB.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      view: "parts"
+    }
+  );
 
   const url = new URL(request.url);
   const documentId = url.searchParams.get("documentId");

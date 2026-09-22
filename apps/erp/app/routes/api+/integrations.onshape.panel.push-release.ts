@@ -1,8 +1,8 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import type {
   ItemEdit,
+  ItemFieldSnapshot,
   OnshapeBomNode,
   ProposedItem,
   ReleasePlanItem
@@ -13,6 +13,7 @@ import {
   isModelReleaseItem,
   mergeChangeNoticeEdit,
   mergeEditsForCreates,
+  mergeExistingItemEdits,
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
@@ -25,6 +26,7 @@ import {
   selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { trigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -145,10 +147,13 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
  * pairs).
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      create: "parts",
+      update: "parts"
+    }
+  );
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)
@@ -254,6 +259,41 @@ export async function action({ request }: ActionFunctionArgs) {
     alreadyPushed: false,
     skipped: [],
     errors: []
+  };
+
+  // Apply the reviewer's manufacturing edits to an item Carbon already has —
+  // the reused letter item, or a new revision (which inherits the base's
+  // fields). Baseline is the plan's snapshot; only what changed is written.
+  // A part number that is both a release item and a BOM child prefers the
+  // release item's snapshot (items set after children below), and the applied
+  // set guards against writing it twice.
+  const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
+  for (const child of plan.children) {
+    if (child.current) currentByPartNumber.set(child.partNumber, child.current);
+  }
+  for (const item of plan.items) {
+    if (item.current) currentByPartNumber.set(item.partNumber, item.current);
+  }
+  const fieldEditsApplied = new Set<string>();
+  const applyItemFieldEdit = async (partNumber: string, itemId: string) => {
+    if (fieldEditsApplied.has(partNumber)) return;
+    const current = currentByPartNumber.get(partNumber);
+    if (!current) return;
+    fieldEditsApplied.add(partNumber);
+    const mfg = mergeExistingItemEdits(current, edits[partNumber]);
+    if (!mfg.ok) {
+      summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
+      return;
+    }
+    if (Object.keys(mfg.changed).length === 0) return;
+    const updated = await client
+      .from("item")
+      .update({ ...mfg.changed, updatedBy: userId })
+      .eq("id", itemId)
+      .eq("companyId", companyId);
+    if (updated.error) {
+      summary.errors.push(`${partNumber}: ${updated.error.message}`);
+    }
   };
 
   // ---- Re-resolve Carbon rows for every part number (all revisions) -------
@@ -473,6 +513,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (decision.kind === "reuse") {
       summary.reused += 1;
       revisionItemByPartNumber.set(item.partNumber, decision.row);
+      await applyItemFieldEdit(item.partNumber, decision.row.id);
       continue;
     }
 
@@ -550,6 +591,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
     revisionItemByPartNumber.set(item.partNumber, row);
     rememberRow(row);
+    // A new revision inherits the base's manufacturing fields; apply the
+    // reviewer's edits on top. A no-op for a fresh create — it has no `current`
+    // snapshot and already took its edits through the proposal.
+    await applyItemFieldEdit(item.partNumber, row.id);
   }
 
   summary.alreadyPushed = created.length === 0;
@@ -661,6 +706,9 @@ export async function action({ request }: ActionFunctionArgs) {
         pickLatestRow(byReadable.get(child.partNumber) ?? []);
       if (existingChild) {
         childItemByPartNumber.set(child.partNumber, existingChild);
+        // A reused BOM child takes its manufacturing edits too (guarded, so a
+        // child that is also a release item is not written twice).
+        await applyItemFieldEdit(child.partNumber, existingChild.id);
         continue;
       }
       const proposed =

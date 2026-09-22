@@ -1,4 +1,3 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import type {
@@ -13,6 +12,7 @@ import {
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   mergeEditsForCreates,
+  mergeExistingItemEdits,
   missingListOptions,
   pickAdoptTarget,
   proposeItem
@@ -24,6 +24,7 @@ import {
   selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { trigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -93,10 +94,13 @@ type ApplyResult = {
  * the next part still runs, as the single-request push did.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      create: "parts",
+      update: "parts"
+    }
+  );
 
   // The body is validated before the plan is taken: a malformed request must
   // not burn a one-shot plan.
@@ -398,6 +402,43 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (row.action === "unchanged") {
+      // The CAD is unchanged, so nothing about the part is re-synced — but the
+      // reviewer can still have changed a manufacturing field, and that alone
+      // is a real update to the linked item. No mapping re-stamp and no export:
+      // the microversion the last push recorded still stands.
+      const mfg = row.current
+        ? mergeExistingItemEdits(row.current, edits[partId])
+        : null;
+      if (mfg && !mfg.ok) {
+        results.push({
+          partId,
+          action: "error",
+          message: mfg.errors.join("; ")
+        });
+        continue;
+      }
+      if (mfg?.ok && Object.keys(mfg.changed).length > 0 && row.itemId) {
+        const updated = await client
+          .from("item")
+          .update({ ...mfg.changed, updatedBy: userId })
+          .eq("id", row.itemId)
+          .eq("companyId", companyId);
+        if (updated.error) {
+          results.push({
+            partId,
+            action: "error",
+            message: updated.error.message
+          });
+          continue;
+        }
+        results.push({
+          partId,
+          action: "updated",
+          itemId: row.itemId,
+          readableId: row.item?.readableId
+        });
+        continue;
+      }
       results.push({
         partId,
         action: "unchanged",
@@ -469,10 +510,28 @@ export async function action({ request }: ActionFunctionArgs) {
       itemId = (target as PlanItemRow).id;
       readableId = (target as PlanItemRow).readableId;
       // Onshape owns name/description; refresh them on the linked item from
-      // the plan's Onshape values, never from edits.
+      // the plan's Onshape values, never from edits. The three manufacturing
+      // fields are NOT Onshape-owned, so the reviewer's changes to them ride
+      // the same update — only the ones actually changed, so an untouched push
+      // writes exactly what it did before.
+      const mfg = row.current
+        ? mergeExistingItemEdits(row.current, edits[partId])
+        : null;
+      if (mfg && !mfg.ok) {
+        results.push({
+          partId,
+          action: "error",
+          message: mfg.errors.join("; ")
+        });
+        continue;
+      }
       const updated = await client
         .from("item")
-        .update({ ...ownedFields(row), updatedBy: userId })
+        .update({
+          ...ownedFields(row),
+          ...(mfg?.ok ? mfg.changed : {}),
+          updatedBy: userId
+        })
         .eq("id", itemId)
         .eq("companyId", companyId);
       if (updated.error) {

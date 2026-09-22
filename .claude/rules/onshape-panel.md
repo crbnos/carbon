@@ -1,6 +1,5 @@
 paths:
   - "packages/ee/src/onshape/**"
-  - "packages/auth/src/services/panel-session.server.ts"
   - "apps/erp/app/routes/onshape+/**"
   - "apps/erp/app/routes/api+/integrations.onshape*"
   - "apps/erp/app/components/ExternalSource.tsx"
@@ -62,17 +61,25 @@ iframe. So:
   nothing else in the app sets a CSP).
 - `onshape+/auth.tsx` is a same-origin popup: normal cookie session required,
   mints an opaque `cps_<32 base64url>` token (Redis `panel-session:<token>`,
-  12 h TTL, `packages/auth/src/services/panel-session.server.ts`), posts it to
+  12 h TTL, `packages/ee/src/onshape/panel/session.server.ts`), posts it to
   the opener, closes. The panel keeps it in sessionStorage and sends
   `Authorization: Bearer`.
-- `requirePermissions` (`packages/auth/src/services/auth.server.ts`) accepts
-  the token as a third branch and refreshes the underlying access token in
-  place. Supabase rotates refresh tokens, so the refresh runs under an
+- The panel API routes do NOT call `requirePermissions` — that is the core
+  cookie/API-key gate and carries no Onshape coupling. They call the
+  purpose-built `requireOnshapePanelPermissions`
+  (`@carbon/ee/onshape/panel-session.server`), which resolves the bearer token,
+  refreshes the underlying access token in place, and runs the SAME claims check
+  as `requirePermissions`, returning the identical `{ client, companyId, userId,
+  … }` shape. Denials return 401 (token missing/expired/revoked) or 403
+  (permission) — **never redirects** (a redirect inside the iframe is
+  meaningless). This whole credential lives in `@carbon/ee`, not `@carbon/auth`,
+  because it is an integration concern; `@carbon/ee` imports `refreshAccessToken`
+  / `getUserClaims` back from `@carbon/auth`, never the reverse.
+- Supabase rotates refresh tokens, so the panel refresh runs under an
   owner-bound lease lock (`panel-session-refresh:<token>`, 5 s lease renewed
   every 2 s by `withPanelRefreshLock`, compare-and-delete release). Only the
   holder refreshes; waiters poll for its result and retry the lock, and one
-  that sees neither answers 401 rather than racing a second refresh. Panel-token permission denials return 401/403 — **never redirects**
-  (a redirect inside the iframe is meaningless).
+  that sees neither answers 401 rather than racing a second refresh.
 - Tokens never appear in URLs. postMessage targets `window.location.origin`.
 
 ## Identity — externalIntegrationMapping (integration `onshape-v2` for panel writes)
@@ -136,11 +143,25 @@ assemblies whose method is not released).
   returns null when Redis did
   not take the write (`@carbon/kv` is fail-soft) → the PLAN request answers
   503. A missing/expired/foreign plan at apply → 410.
-- The review is READ-ONLY. The panel sends no edits, no exclusions and every
-  pushable row; values change in Onshape (identity, properties) or in the push
-  defaults (item settings), then the user reviews again. The apply routes still
-  accept `edits`/`excluded`/`selected` and validate them with `mergeItemEdits`,
-  so an older panel keeps working — but nothing in the product sends them.
+- The review edits three manufacturing fields per row (`ItemFieldSelects.tsx`).
+  Editable at CREATE (through the proposal): name, description,
+  replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode —
+  validated by `mergeItemEdits` (enum whitelist, the ERP's replenishment↔method
+  interlock duplicated as `VALID_METHOD_TYPES_BY_REPLENISHMENT`, unit must be one
+  of the company's).
+- Editable on an EXISTING item: only the three manufacturing fields
+  (replenishmentSystem, defaultMethodType, itemTrackingType) — they are
+  Carbon-side, not Onshape-owned, so unlike name/description a push may change
+  them on an item that already exists. `applyRequestBody` scopes an existing
+  row's edit to just those three (name/description/unit/customFields are
+  stripped, so the owned-field lock stays true); the plan carries each existing
+  row's `current` snapshot (`currentItemFields`, plan-route selects now read
+  `replenishmentSystem`/`defaultMethodType`/`itemTrackingType`) so the panel
+  seeds the editor with what Carbon holds; the push validates with
+  `mergeExistingItemEdits` and writes ONLY what changed (an untouched re-push
+  stamps nothing). The panel editor is `ItemFieldSelects.tsx` — compact
+  icon-only Selects, text in the dropdown. Name and description on an
+  adopt/update/reuse still come from Onshape's values, never from edits.
 - `proposeItem` takes the company's **push defaults** from
   `parsePushDefaults(companyIntegration.metadata)`
   (`packages/ee/src/onshape/panel/preferences.ts`, pure, total, fail-soft —

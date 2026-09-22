@@ -32,7 +32,7 @@
     "./onshape": "./src/onshape/lib/index.ts",
     "./onshape.server": "./src/onshape/lib/index.server.ts",
     "./onshape/integration-id": "./src/onshape/lib/integration-id.ts",
-    "./onshape.server": "./src/onshape/oauth.server.ts",
+    "./onshape/panel-session.server": "./src/onshape/panel/session.server.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./permissions.server": "./src/permissions.server.ts",
     "./plan": "./src/plan.ts",

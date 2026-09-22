@@ -1,4 +1,3 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { PartPlan, PlanItemRow, PlanMappingRow } from "@carbon/ee";
 import {
   buildPartPlan,
@@ -17,6 +16,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { readPartProperties } from "@carbon/ee/onshape.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -37,7 +37,8 @@ const payloadSchema = z.object({
   partIds: z.array(z.string().min(1)).min(1).max(50)
 });
 
-const ITEM_COLUMNS = "id, readableId, revision, name, description, type";
+const ITEM_COLUMNS =
+  "id, readableId, revision, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType";
 
 /**
  * Plan a part push: what pushing these parts of the current Onshape element
@@ -58,10 +59,13 @@ const ITEM_COLUMNS = "id, readableId, revision, name, description, type";
  * before reviewing and editing anything.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      create: "parts",
+      update: "parts"
+    }
+  );
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)

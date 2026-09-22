@@ -110,6 +110,7 @@ export type {
   AssemblyPlanRoot,
   ChangeNoticeEdit,
   ItemEdit,
+  ItemFieldSnapshot,
   ItemMethodType,
   ItemReplenishmentSystem,
   ItemTrackingType,
@@ -138,6 +139,7 @@ export {
   CHANGE_NOTICE_DESCRIPTION_MAX_LENGTH,
   CHANGE_NOTICE_NAME_MAX_LENGTH,
   changeNoticeDescriptionJson,
+  currentItemFields,
   defaultUnitOfMeasureCode,
   EDITABLE_ITEM_FIELDS,
   flattenNodes,
@@ -148,10 +150,12 @@ export {
   ITEM_TRACKING_TYPES,
   mergeChangeNoticeEdit,
   mergeEditsForCreates,
+  mergeExistingItemEdits,
   mergeItemEdits,
   pickAdoptTarget,
   pickLatestRow,
   proposeItem,
+  reconcileMethodForReplenishment,
   VALID_METHOD_TYPES_BY_REPLENISHMENT
 } from "./onshape/panel/plan";
 export type { OnshapePushDefaults } from "./onshape/panel/preferences";
