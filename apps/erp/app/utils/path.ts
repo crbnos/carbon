@@ -1961,6 +1961,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${id}/details`),
     quoteLineConfigure: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/configure`),
+    quoteLineLeadTime: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/lead-time`),
     quoteLineMakeMethod: (
       quoteId: string,
       lineId: string,
