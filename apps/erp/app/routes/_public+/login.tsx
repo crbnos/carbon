@@ -308,6 +308,19 @@ export default function LoginRoute() {
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
 
+  // A forced logout (see destroyAuthSession) arrives as a bare 302, leaving the
+  // browser no trace of what went wrong. "no-claims" is almost always a user
+  // with no company membership.
+  const logoutReason = searchParams.get("reason");
+  useEffect(() => {
+    if (logoutReason) {
+      // biome-ignore lint/suspicious/noConsole: surfacing the silent logout is the point
+      console.warn(
+        `[carbon:auth] Session was destroyed server-side (reason: ${logoutReason}). See server logs for the full record.`
+      );
+    }
+  }, [logoutReason]);
+
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
 
   useEffect(() => {
