@@ -1,4 +1,5 @@
-import EmployeeTypeForm from "./EmployeeTypeForm";
-import EmployeeTypesTable from "./EmployeeTypesTable";
+import EmployeeTypeForm from "./EmployeeTypeForm.ee";
+import EmployeeTypesTable from "./EmployeeTypesTable.ee";
+import EmployeeTypesUpgradeOverlay from "./EmployeeTypesUpgradeOverlay.ee";
 
-export { EmployeeTypeForm, EmployeeTypesTable };
+export { EmployeeTypeForm, EmployeeTypesTable, EmployeeTypesUpgradeOverlay };

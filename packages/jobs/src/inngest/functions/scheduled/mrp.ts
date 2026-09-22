@@ -1,6 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable } from "@carbon/database";
-import { runMrp } from "@carbon/ee/planning";
+import { runMrp } from "@carbon/planning";
 import { Edition } from "@carbon/utils";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -11,7 +11,7 @@ export const mrpFunction = inngest.createFunction(
   { cron: "0 */3 * * *" },
   async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
-    await step.run("run-mrp-for-all-companies", async () => {
+    const scheduled = await step.run("find-companies", async () => {
       logger.info(
         `Scheduled MRP Calculation Started: ${new Date().toISOString()}`
       );
@@ -66,11 +66,21 @@ export const mrpFunction = inngest.createFunction(
         logger.warn("No companies to run MRP for", {
           companies: companies.data.length
         });
-        return;
       }
 
-      for (const company of scheduled) {
-        try {
+      return scheduled;
+    });
+
+    // One step per company: each is its own invocation with its own retries
+    // and is memoized on replay, so a slow or failing tenant costs only
+    // itself. All companies in one step was one Vercel invocation, timed out
+    // as the tenant count grew, and every retry restarted from company #1.
+    // ponytail: 1000-step-per-run ceiling; fan out with step.sendEvent when
+    // the company count nears it.
+    const failed: string[] = [];
+    for (const company of scheduled) {
+      try {
+        await step.run(`mrp-${company.id}`, async () => {
           // Run MRP in-process (Node) instead of invoking the `mrp` edge
           // function; runMrp throws on failure.
           await runMrp(serviceRole, getJobDatabaseClient(), {
@@ -80,12 +90,15 @@ export const mrpFunction = inngest.createFunction(
             userId: "system"
           });
           logger.info(`Successfully ran MRP for company ${company.name}`);
-        } catch (error) {
-          logger.error(`Failed to run MRP for company ${company.name}`, {
-            error
-          });
-        }
+        });
+      } catch (error) {
+        logger.error(`Failed to run MRP for company ${company.name}`, {
+          error
+        });
+        failed.push(company.id);
       }
-    });
+    }
+
+    return { companies: scheduled.length, failed };
   }
 );

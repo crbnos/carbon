@@ -1,6 +1,8 @@
 ---
 paths:
-  - packages/database/src/audit.*
+  - packages/ee/src/audit/audit.ts
+  - packages/database/src/audit.config.ts
+  - packages/database/src/audit.types.ts
   - packages/jobs/src/inngest/functions/events/audit.ts
   - packages/jobs/src/inngest/functions/scheduled/audit-archive.ts
   - apps/erp/app/components/AuditLog/**
@@ -23,7 +25,7 @@ The partition key *is the table name* — there is **no `companyId` column**. Co
 - `entityId` TEXT — business entity PK the change rolls up to
 - `recordId` TEXT — raw PK of the changed row; equals `entityId` for root tables, differs for children
 - `operation` TEXT CHECK IN (`INSERT`,`UPDATE`,`DELETE`)
-- `actorId` TEXT | null — user who made the change; null = system/service-role (captured via `auth.uid()` in `dispatch_event_batch`)
+- `actorId` TEXT | null — user who made the change; null = system/service-role. Captured via `auth.uid()` in `dispatch_event_batch`, which is NULL on a direct Kysely connection (no `request.jwt.claims` GUC). The handler therefore falls back to the row's own audit columns — `record.actorId ?? new.updatedBy ?? new.createdBy ?? old.updatedBy ?? old.createdBy` (`packages/jobs/src/inngest/functions/events/audit.ts`) — so a Kysely write is still attributed, provided it stamps `updatedBy`/`createdBy`. A write that stamps neither logs as "System"
 - `diff` JSONB | null — `{ field: { old, new, snapshot? } }`
 - `metadata` JSONB | null — `ipAddress`, `userAgent`, `origin`, `requestId`
 - `createdAt` TIMESTAMPTZ — original event time (handler passes `event.timestamp`; falls back to `clock_timestamp()` per row)
@@ -99,7 +101,7 @@ lookup per target table), and writes via `client.rpc("insert_audit_log_batch", {
 
 - RPCs: `create_audit_log_table`, `insert_audit_log_batch`, `get_entity_audit_log` (optional `p_record_id`),
   `get_audit_log` (filters + `totalCount`), `get_audit_logs_for_archive`, `delete_old_audit_logs`.
-- `packages/database/src/audit.ts` wrappers: `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
+- `packages/ee/src/audit/audit.ts` wrappers (commercial — `@carbon/ee/audit.server`; `enableAuditLog` embeds `requireEntitlement("AUDIT_LOG")`, skipped under `CONTROLLED_ENVIRONMENT` where audit is mandatory): `getEntityAuditLog`, `getGlobalAuditLog`, `insertAuditLogEntries`,
   `enableAuditLog`, `disableAuditLog` (keeps data), `isAuditLogEnabled`, `syncAuditSubscriptions`
   (adds triggers for entities added to config after enable), `getAuditLogArchives`, `getArchiveDownloadUrl`,
   `getAuditLogsForArchive`, `deleteOldAuditLogs`, `recordAuditLogArchive`.

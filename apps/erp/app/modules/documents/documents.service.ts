@@ -1,4 +1,6 @@
 import type { Database } from "@carbon/database";
+import { storage } from "@carbon/files";
+import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -10,6 +12,11 @@ import type {
   documentLabelsValidator,
   documentSourceTypes,
   documentValidator
+} from "./documents.models";
+import {
+  buildDocumentUploadPath,
+  buildStagedUploadPath,
+  parseStagedUploadPath
 } from "./documents.models";
 
 export async function deleteDocument(
@@ -194,6 +201,127 @@ export async function upsertDocument(
       })
     )
     .eq("id", document.id);
+}
+
+/**
+ * Create a presigned upload URL for a document in the "private" bucket. First step
+ * of the two-step upload flow: PUT the file bytes to the returned `signedUrl` (or
+ * use supabase-js `uploadToSignedUrl(path, token, file)`), then call
+ * `insertUploadedDocument` with the returned `path` to register the metadata row.
+ * `folder`/`entityId` scope the storage path so the file lands where the entity's
+ * document panel lists it (e.g. `job`/jobId, `parts`/itemId, `opportunity`/opportunityId).
+ *
+ * A `.heic`/`.heif` name is minted into `{companyId}/tmp/uploads/…` instead —
+ * HEIC is never stored as a document, so registration converts the staged
+ * bytes to JPEG at the real path. The caller's flow is unchanged: PUT to the
+ * signed URL, register the returned `path`, receive a `.jpg` document row.
+ * Abandoned staged uploads are swept nightly.
+ */
+export async function createDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    folder: string;
+    entityId: string;
+    name: string;
+  }
+) {
+  const documentPath = isHeic(args.name)
+    ? buildStagedUploadPath(args)
+    : buildDocumentUploadPath(args);
+  return storage(client)
+    .company(args.companyId)
+    .createSignedUploadUrl(documentPath, { upsert: true });
+}
+
+/**
+ * Register the metadata row for a file already uploaded to storage. Second step of
+ * the upload flow: pass the `path` returned by `createDocumentUploadUrl` (or a
+ * per-module `create*DocumentUploadUrl`). Wraps `upsertDocument`, defaulting the
+ * read/write groups to the creating user. `size` is in KB, matching the
+ * `document.size` column and the browser upload hooks. A path minted for a
+ * HEIC name is a staged upload: the bytes are converted to JPEG and moved to
+ * the real document path here, so the registered row is never HEIC.
+ */
+export async function insertUploadedDocument(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    createdBy: string;
+    path: string;
+    name: string;
+    size: number;
+    sourceDocument?: (typeof documentSourceTypes)[number];
+    sourceDocumentId?: string;
+  }
+) {
+  // The path is caller-supplied — never register a row pointing outside the
+  // caller's company.
+  if (!args.path.startsWith(`${args.companyId}/`)) {
+    return {
+      data: null,
+      error: new Error("Document path does not belong to this company")
+    };
+  }
+
+  let { path, name, size } = args;
+
+  // A staged upload (HEIC minted by createDocumentUploadUrl) is converted to
+  // JPEG here, before anything durable exists. The bytes are already in
+  // storage, so the imgproxy transform round-trip is the converter — bounded
+  // memory, no wasm in the app bundle.
+  const staged = parseStagedUploadPath(path);
+  if (staged) {
+    const converted = await storage(client)
+      .company(args.companyId)
+      .download(path, { transform: { quality: 85 } });
+    if (converted.error || !converted.data) {
+      return {
+        data: null,
+        error: new Error(
+          "Failed to convert the staged image — is image transformation enabled on this stack? The staged upload was left in place; re-register to retry."
+        )
+      };
+    }
+
+    const extension = converted.data.type.includes("webp") ? "webp" : "jpg";
+    name = staged.name.replace(/\.[^.]+$/, `.${extension}`);
+    const finalPath = buildDocumentUploadPath({
+      companyId: args.companyId,
+      folder: staged.folder,
+      entityId: staged.entityId,
+      name
+    });
+    const stored = await storage(client)
+      .company(args.companyId)
+      .upload(finalPath, converted.data, {
+        contentType: converted.data.type || "image/jpeg",
+        upsert: true
+      });
+    if (stored.error || !stored.data?.path) {
+      return {
+        data: null,
+        error: stored.error ?? new Error("Failed to store the converted image")
+      };
+    }
+    await storage(client).company(args.companyId).remove([path]);
+    path = stored.data.path;
+    size = Math.round(converted.data.size / 1024);
+  }
+
+  const { sourceDocument, sourceDocumentId } = args;
+  return upsertDocument(client, {
+    companyId: args.companyId,
+    createdBy: args.createdBy,
+    path,
+    name,
+    size,
+    readGroups: [args.createdBy],
+    writeGroups: [args.createdBy],
+    ...(sourceDocument && sourceDocumentId
+      ? { sourceDocument, sourceDocumentId }
+      : {})
+  });
 }
 
 export async function updateDocumentFavorite(

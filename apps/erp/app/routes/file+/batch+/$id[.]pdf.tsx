@@ -7,6 +7,7 @@ import { getPreferenceHeaders } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompany } from "~/modules/settings";
+import { getBase64ImageFromSupabase } from "~/modules/shared";
 
 const logger = getLogger("erp", "batch-list", "pdf");
 
@@ -39,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     serviceRole
       .from("jobOperation")
       .select(
-        "id, description, operationQuantity, workCenter(name), job(jobId), jobMakeMethod(item(readableIdWithRevision, name))"
+        "id, description, operationQuantity, workCenter(name), job(jobId), jobMakeMethod(item(readableIdWithRevision, name, thumbnailPath, modelUpload(thumbnailPath)))"
       )
       .eq("jobOperationBatchId", id)
       .eq("companyId", companyId)
@@ -53,6 +54,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error("Failed to load batch members", { error: members.error });
     throw new Error("Failed to load batch members");
   }
+
+  // Resolve each make-method item's thumbnail to a base64 data URL (the part
+  // built by the operation, NOT the job's parent part). Dedupe by path so a
+  // part shared across jobs in the load is downloaded once.
+  const thumbnailPaths = new Set<string>();
+  for (const m of members.data ?? []) {
+    const path =
+      m.jobMakeMethod?.item?.thumbnailPath ??
+      m.jobMakeMethod?.item?.modelUpload?.thumbnailPath;
+    if (path) thumbnailPaths.add(path);
+  }
+  const thumbnailByPath = new Map<string, string>();
+  await Promise.all(
+    [...thumbnailPaths].map(async (path) => {
+      const dataUrl = await getBase64ImageFromSupabase(serviceRole, path);
+      if (dataUrl) thumbnailByPath.set(path, dataUrl);
+    })
+  );
 
   const { locale } = getPreferenceHeaders(request);
 
@@ -81,16 +100,31 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       }}
       processName={batch.data.process?.name ?? null}
       workCenterName={workCenterName}
-      members={(members.data ?? []).map(
-        (m): BatchListMember => ({
-          id: m.id,
-          jobReadableId: m.job?.jobId ?? null,
-          itemReadableId: m.jobMakeMethod?.item?.readableIdWithRevision ?? null,
-          itemDescription: m.jobMakeMethod?.item?.name ?? null,
-          operationDescription: m.description,
-          quantity: m.operationQuantity
+      members={(members.data ?? [])
+        .map((m): BatchListMember => {
+          const thumbnailPath =
+            m.jobMakeMethod?.item?.thumbnailPath ??
+            m.jobMakeMethod?.item?.modelUpload?.thumbnailPath;
+          return {
+            id: m.id,
+            jobReadableId: m.job?.jobId ?? null,
+            itemReadableId:
+              m.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+            itemDescription: m.jobMakeMethod?.item?.name ?? null,
+            operationDescription: m.description,
+            quantity: m.operationQuantity,
+            thumbnail: thumbnailPath
+              ? (thumbnailByPath.get(thumbnailPath) ?? null)
+              : null
+          };
         })
-      )}
+        .sort((a, b) => {
+          const byJob = (a.jobReadableId ?? "").localeCompare(
+            b.jobReadableId ?? ""
+          );
+          if (byJob !== 0) return byJob;
+          return (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "");
+        })}
       locale={locale}
     />
   );

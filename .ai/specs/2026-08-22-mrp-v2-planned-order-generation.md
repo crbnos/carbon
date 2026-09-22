@@ -478,7 +478,7 @@ lifecycle.
 And it goes past parity. Every system in the research runs MRP as a batch report
 planners learn to distrust. Carbon's engine now runs a full company in **~0.3–0.5 s**
 (`.ai/research/2026-08-12-mrp-findings.md`), lives **in the same Node process and
-package as the finite scheduler** (`@carbon/ee/planning`), and sits next to a
+package as the finite scheduler** (`@carbon/planning`), and sits next to a
 customer-programmable workflow engine and an in-app agent whose data-tool mechanism
 is already built. v1 therefore ships MRP that is:
 
@@ -518,7 +518,7 @@ from Node via the `@carbon/database/mrp-engine` barrel) is a correct multi-level
 explosion: it computes low-level codes, walks items level-by-level, nets each against
 on-hand, and explodes the shortfall to children with lead-time offset. But it only
 cascades what is already in `grossDemand`, and `grossDemand` is seeded
-(`packages/ee/src/planning/mrp/mrp.ts`, Phase 4) from exactly three **actual**
+(`packages/planning/src/mrp/mrp.ts`, Phase 4) from exactly three **actual**
 sources:
 
 - `openSalesOrderLines` — sales-order demand
@@ -1232,7 +1232,7 @@ rows with `forecastMethod = 'suggested'`).
 
 ## API / Service Changes
 
-**Engine (`packages/ee/src/planning/`)**
+**Engine (`packages/planning/src/`)**
 
 - New `lot-sizing` in `@carbon/utils`: pure
   `computePlannedOrderQuantity(netRequirement, policy, params): { quantity, trace }` —
@@ -1264,7 +1264,7 @@ rows with `forecastMethod = 'suggested'`).
   hypothetical demand line, `persist: false`; returns `{ promiseDate, planDelta,
   capacityImpact, estimatedCost, assumptions }`.
 - All relocated/new value-bearing math stays under `@carbon/checks` coverage
-  (`packages/ee/src/planning` is already in the TS source set on this branch); no
+  (`packages/planning/src` is already in the TS source set on this branch); no
   scale literals, whole-unit ceils via `round(x, 0, Up)`.
 
 **Jobs (`packages/jobs`)**
@@ -1655,7 +1655,7 @@ except `api+/planning.what-if.ts`.
   `PlanningExceptions` digest). Fixed from the code review: `jobId` peg source,
   `'Transfer'` reserved, working-day date math, `splitIndex` + partial-unique natural
   key, suggested demand projections. Updated all file references to the
-  `@carbon/ee/planning` extraction. Added the **Deferred** list.
+  `@carbon/planning` extraction. Added the **Deferred** list.
 - 2026-08-22: **Calm-by-default layer** (Brad: "implement the annoyance fixes").
   New §9 + supporting schema: one-click Release with warnings-only draft
   interposition and plain-language Firm prompt (`firmedBy`/`firmedAt`);

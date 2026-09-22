@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
-import { getAppUrl } from "@carbon/env";
+import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {
   type CheckStateRow,
   gatesDone,
@@ -157,7 +157,9 @@ export default function AppIndexRoute() {
       <div className="relative z-10 w-full h-full overflow-y-auto">
         <div className="max-w-7xl mx-auto p-8">
           <div className="mb-8">
-            <OnboardAgentWidget dismissed={agentDismissed} />
+            {!CONTROLLED_ENVIRONMENT && (
+              <OnboardAgentWidget dismissed={agentDismissed} />
+            )}
             <Greeting
               hour={greeting.hour}
               pick={greeting.pick}
@@ -346,9 +348,14 @@ function OnboardAgentWidget({ dismissed: initial }: { dismissed: boolean }) {
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-3 h-9 pl-4 pr-4 rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
+            className="flex items-center gap-3 h-9 pl-4 pr-4 max-w-full rounded-full border border-border bg-muted/30 text-sm font-medium text-foreground hover:bg-muted/50 transition-colors active:scale-[0.98]"
           >
-            <Trans>Onboard your agent to Carbon</Trans>
+            {/* min-w-0 + overflow-hidden lets the label clip instead of
+                wrapping to a second line on narrow screens — the icons keep
+                their width and the text runs out of sight behind them. */}
+            <span className="min-w-0 overflow-hidden whitespace-nowrap">
+              <Trans>Onboard your agent to Carbon</Trans>
+            </span>
             <span className="flex items-center gap-2 text-foreground">
               {AGENT_TOOL_ICONS.map(({ Icon, className }, i) => (
                 <Icon key={i} className={cn("shrink-0", className)} />

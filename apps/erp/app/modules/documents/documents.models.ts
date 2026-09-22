@@ -21,6 +21,8 @@ export const documentSourceTypes = [
   "Sales Return Order",
   "Purchase Return Order",
   "Shipment",
+  "Supplier",
+  "Customer",
   ...itemType
 ] as const;
 
@@ -42,6 +44,12 @@ export const documentLabelsValidator = z.object({
   documentId: z.string().min(20),
   labels: z.array(z.string().min(1).max(50)).optional()
 });
+
+export {
+  buildDocumentUploadPath,
+  buildStagedUploadPath,
+  parseStagedUploadPath
+} from "./documents.paths";
 
 // -- PDF document extraction --------------------------------------------------
 //

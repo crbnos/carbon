@@ -1,3 +1,5 @@
+import type { Database } from "@carbon/database";
+import { Constants } from "@carbon/database";
 import { describe, expect, it } from "vitest";
 import {
   type Catalog,
@@ -5,6 +7,8 @@ import {
   type CompanyBackup,
   type ForeignKey,
   isUserScopedIdentityTable,
+  READABLE_ID_TABLES,
+  STORAGE_PATH_COLUMNS,
   selectWipeableTables,
   type TableInfo
 } from "./company-backup";
@@ -740,5 +744,133 @@ describe("mapCollidingRows", () => {
       [{ id: "tgt", name: null }]
     );
     expect(skippedSourceIds.size).toBe(0);
+  });
+});
+
+// ── Cross-company restore: readable ids and storage paths ────────────────────
+// Both guards pin a hardcoded list that a future schema change can silently
+// invalidate. Each list went stale exactly once already and produced a restore
+// that looked successful and was not: the Items pages rendered empty
+// (readable ids rewritten) and assemblies would not load (path columns left
+// pointing at the source company).
+describe("cross-company restore invariants", () => {
+  // Composite-PK tables backed by a global UNIQUE (id). Their ids MUST be
+  // remapped or a cross-company restore collides with the source company's
+  // still-live rows. Verified against pg_index on 2026-09-18.
+  const GLOBAL_UNIQUE_ID_TABLES = [
+    "balloon",
+    "changeOrderRequiredAction",
+    "demandProjection",
+    "inspectionDocument",
+    "inspectionFeature"
+  ];
+
+  // Every `modelUpload` column whose name ends in `Path`, typed against the
+  // GENERATED row type: `satisfies` makes this list fail to COMPILE if a column
+  // is renamed or removed, and the `Exclude` below fails to compile if a new
+  // `*Path` column is added and not listed. The runtime assertion then checks
+  // STORAGE_PATH_COLUMNS covers them all.
+  type ModelUploadPathColumn = Extract<
+    keyof Database["public"]["Tables"]["modelUpload"]["Row"],
+    `${string}Path`
+  >;
+  const MODEL_UPLOAD_PATH_COLUMNS = [
+    "modelPath",
+    "thumbnailPath",
+    "originalPath",
+    "optimizedModelPath",
+    "glbPath",
+    "graphPath"
+  ] as const satisfies readonly ModelUploadPathColumn[];
+  // Fails to compile when a new `*Path` column exists that the list omits.
+  type _EveryPathColumnListed =
+    Exclude<
+      ModelUploadPathColumn,
+      (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+    > extends never
+      ? true
+      : [
+          "unlisted modelUpload *Path column",
+          Exclude<
+            ModelUploadPathColumn,
+            (typeof MODEL_UPLOAD_PATH_COLUMNS)[number]
+          >
+        ];
+  const _pathColumnsExhaustive: _EveryPathColumnListed = true;
+  void _pathColumnsExhaustive;
+
+  it("keeps a readable-id table out of the id maps, but maps a normal table", () => {
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const workflow = table("workflow", [col("id"), col("companyId")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part, workflow], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }],
+      workflow: [{ id: "wf_1", companyId: "src-co" }]
+    });
+    expect(idMaps.has("part")).toBe(false);
+    expect(idMaps.get("workflow")?.get("wf_1")).toBeTypeOf("string");
+    expect(idMaps.get("workflow")?.get("wf_1")).not.toBe("wf_1");
+  });
+
+  it("preserves a part number verbatim through a cross-company restamp", () => {
+    // The `parts` view inner-joins part.id = item."readableId"; a rewritten id
+    // matches nothing and the Parts page renders empty against a full table.
+    const part = table("part", [col("id"), col("companyId"), col("name")], [], {
+      pkColumns: ["id", "companyId"]
+    });
+    const idMaps = buildIdMaps([part], {
+      part: [{ id: "ADCS-001", companyId: "src-co", name: "Widget" }]
+    });
+    const transforms = buildRowTransforms(part, part.columns, {
+      remap: true,
+      companyId: "target-co",
+      userId: "importer",
+      targetGroupId: "target-grp",
+      sourceCompanyId: "src-co",
+      idMaps,
+      idRewrite: new Map<string, string>()
+    });
+    const row: Record<string, unknown> = {
+      id: "ADCS-001",
+      companyId: "src-co",
+      name: "Widget"
+    };
+    const out: Record<string, unknown> = {};
+    part.columns.forEach((c, i) => {
+      out[c.name] = transforms[i]!(row[c.name]);
+    });
+    expect(out).toEqual({
+      id: "ADCS-001",
+      companyId: "target-co",
+      name: "Widget"
+    });
+  });
+
+  it("exempts the child table of every item type", () => {
+    // Derived from the GENERATED enum, not a hand-copied list: adding an
+    // itemType member ships a new child table keyed on the same readable id,
+    // and `fixture` is unpopulated in every local database, so a data-driven
+    // sweep cannot see it. Regenerating types is what makes this test fail.
+    const missing = Constants.public.Enums.itemType
+      .map((t) => t.toLowerCase())
+      .filter((t) => !READABLE_ID_TABLES.has(t));
+    expect(missing).toEqual([]);
+  });
+
+  it("never exempts a table that needs a fresh id to avoid a unique collision", () => {
+    const overlap = GLOBAL_UNIQUE_ID_TABLES.filter((t) =>
+      READABLE_ID_TABLES.has(t)
+    );
+    expect(overlap).toEqual([]);
+  });
+
+  it("covers every modelUpload artifact column in STORAGE_PATH_COLUMNS", () => {
+    const missing = MODEL_UPLOAD_PATH_COLUMNS.filter(
+      (c) => !STORAGE_PATH_COLUMNS.has(c)
+    );
+    expect(missing).toEqual([]);
   });
 });

@@ -96,11 +96,12 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Revision system | `.claude/rules/revision-system.md` |
 | Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
-| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
+| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/ee/src/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
+| File uploads, images, HEIC, MIME types, CAD formats | `packages/files/AGENTS.md` |
 | PDF generation | `.claude/rules/pdf-generation-patterns.md` + `packages/documents/AGENTS.md` |
 | Printing system | `.claude/rules/printing-system.md` + `packages/printing/AGENTS.md` |
 | CSV import/export | `.claude/rules/csv-import-system.md` + `.claude/rules/table-csv-export.md` |
@@ -111,6 +112,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
 | In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
 | **Integrations** | |
+| Ramp integration (card transactions, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |
@@ -186,7 +188,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, glossary, utils, kv, printing, onboarding, logger
+- **Packages**: 24 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, glossary, utils, files, kv, printing, onboarding, logger
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

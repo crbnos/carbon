@@ -440,6 +440,9 @@ serve(async (req: Request) => {
 
     case "purchaseOrderFromJob": {
       const { jobId, purchaseOrdersBySupplierId } = payload;
+      // The PO each supplier's lines landed on (created or chosen), so a caller
+      // releasing several jobs can put them on one PO per supplier.
+      const purchaseOrderIdsBySupplierId: Record<string, string> = {};
 
       logger.info({ type, jobId, companyId, userId });
       try {
@@ -464,24 +467,73 @@ serve(async (req: Request) => {
               .map((d) => d.operationSupplierProcessId)
               .filter(Boolean)
           );
-          const [supplierProcesses, existingPurchaseOrderLines] =
-            await Promise.all([
-              client
-                .from("supplierProcess")
-                .select("*")
-                .in("id", Array.from(supplierProcessIds)),
-              client
-                .from("purchaseOrderLine")
-                .select("*")
-                .eq("jobId", jobId)
-                .eq(
-                  "jobOperationId",
-                  outsideOperations.map((d) => d.id)
-                ),
-            ]);
+          const outsideProcessIds = new Set(
+            outsideOperations.map((d) => d.processId).filter(Boolean)
+          );
+          const [
+            supplierProcesses,
+            supplierProcessesByProcess,
+            existingPurchaseOrderLines,
+          ] = await Promise.all([
+            supplierProcessIds.size > 0
+              ? client
+                  .from("supplierProcess")
+                  .select("*")
+                  .in("id", Array.from(supplierProcessIds))
+              : Promise.resolve({ data: [], error: null }),
+            outsideProcessIds.size > 0
+              ? client
+                  .from("supplierProcess")
+                  .select("*")
+                  .in("processId", Array.from(outsideProcessIds))
+              : Promise.resolve({ data: [], error: null }),
+            client
+              .from("purchaseOrderLine")
+              .select("*")
+              .eq("jobId", jobId)
+              .in(
+                "jobOperationId",
+                outsideOperations.map((d) => d.id)
+              ),
+          ]);
 
           if (supplierProcesses.error)
             throw new Error(supplierProcesses.error.message);
+          if (supplierProcessesByProcess.error)
+            throw new Error(supplierProcessesByProcess.error.message);
+
+          // Resolve an operation's supplier process: its own, or — when it has none
+          // — the sole supplier configured for its process (a process with exactly
+          // one supplier is unambiguous). Mirrors the release modal's resolution so
+          // an operation the modal counted as "has a supplier" actually gets a PO.
+          const allSupplierProcesses = [
+            ...(supplierProcesses.data ?? []),
+            ...(supplierProcessesByProcess.data ?? []),
+          ];
+          const supplierProcessById = new Map(
+            allSupplierProcesses.map((sp) => [sp.id, sp])
+          );
+          const supplierProcessesByProcessId = new Map<
+            string,
+            typeof allSupplierProcesses
+          >();
+          for (const sp of supplierProcessesByProcess.data ?? []) {
+            const list = supplierProcessesByProcessId.get(sp.processId) ?? [];
+            list.push(sp);
+            supplierProcessesByProcessId.set(sp.processId, list);
+          }
+          const resolveSupplierProcess = (oo: {
+            operationSupplierProcessId: string | null;
+            processId: string | null;
+          }) => {
+            if (oo.operationSupplierProcessId) {
+              return supplierProcessById.get(oo.operationSupplierProcessId);
+            }
+            const candidates = oo.processId
+              ? supplierProcessesByProcessId.get(oo.processId) ?? []
+              : [];
+            return candidates.length === 1 ? candidates[0] : undefined;
+          };
 
           const outsideOperationsBySupplierId = outsideOperations.reduce<
             Record<
@@ -491,9 +543,7 @@ serve(async (req: Request) => {
               })[]
             >
           >((acc, oo) => {
-            const supplierProcess = supplierProcesses.data?.find(
-              (d) => d.id === oo.operationSupplierProcessId
-            );
+            const supplierProcess = resolveSupplierProcess(oo);
             if (
               existingPurchaseOrderLines.data?.find(
                 (d) => d.jobOperationId === oo.id
@@ -689,6 +739,8 @@ serve(async (req: Request) => {
                 ]);
               }
 
+              purchaseOrderIdsBySupplierId[supplier] = purchaseOrderId;
+
               const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
                 [];
 
@@ -698,9 +750,7 @@ serve(async (req: Request) => {
                 const item = items.data?.find(
                   (d) => d.id === operation.jobMakeMethod?.itemId
                 );
-                const supplierProcess = supplierProcesses.data?.find(
-                  (d) => d.id === operation.operationSupplierProcessId
-                );
+                const supplierProcess = resolveSupplierProcess(operation);
 
                 if (item && supplierProcess) {
                   const totalCostWithUnitPrice =
@@ -751,7 +801,7 @@ serve(async (req: Request) => {
         return errorResponse(err, 500);
       }
 
-      return jsonResponse({ success: true });
+      return jsonResponse({ success: true, purchaseOrderIdsBySupplierId });
     }
     case "receiptDefault": {
       const { locationId } = payload;

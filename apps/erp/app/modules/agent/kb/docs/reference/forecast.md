@@ -12,7 +12,7 @@ A projection lives on the `demandProjection` table, keyed by item, location, and
 
 Only **make parts** carry projections. The item picker on the form is fixed to `type="Part"` with `replenishmentSystem="Make"` (`apps/erp/app/modules/production/ui/DemandProjection/DemandProjectionForm.tsx`), so you project the things you build. Their purchased components inherit demand through the BOM explosion, not through their own projection.
 
-Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the MRP run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/ee/src/planning/mrp/mrp.ts`). The Projections screen only ever touches `demandProjection`.
+Two tables look alike. `demandProjection` is your input — the numbers you type. `demandForecast` is planning's output — the exploded, per-component demand the MRP run writes back (`forecastMethod` = `"mrp"`). You never edit `demandForecast` by hand; it's rebuilt on every run (`packages/planning/src/mrp/mrp.ts`). The Projections screen only ever touches `demandProjection`.
 
 ## How you enter one
 
@@ -24,7 +24,7 @@ The grid spans 52 weeks (`WEEKS_TO_PROJECT = 52`, `apps/erp/app/routes/x+/produc
 
 ## How planning consumes it
 
-Planning runs in-process from `@carbon/ee/planning` (`runMrp`), and it reads `demandProjection` directly as a demand source (`packages/ee/src/planning/mrp/mrp.ts`). But a projection does not simply add to demand: **actual demand consumes the forecast**. Each MRP run nets every open sales order line and job-material line against the projections for the same part and location — first in the order's own week, then reaching backward and then forward a configurable number of weeks — and only the *unconsumed remainder* of the projection still drives demand. Ten forecast plus ten on order in the same week is ten of demand, not twenty; twelve on order against ten forecast is twelve.
+Planning runs in-process from `@carbon/planning` (`runMrp`), and it reads `demandProjection` directly as a demand source (`packages/planning/src/mrp/mrp.ts`). But a projection does not simply add to demand: **actual demand consumes the forecast**. Each MRP run nets every open sales order line and job-material line against the projections for the same part and location — first in the order's own week, then reaching backward and then forward a configurable number of weeks — and only the *unconsumed remainder* of the projection still drives demand. Ten forecast plus ten on order in the same week is ten of demand, not twenty; twelve on order against ten forecast is twelve.
 
 The reach is set company-wide under **Settings → Planning**: *consume forecast backward* (default 4 weeks) and *forward* (default 1 week). That window is what heals gaps — if you forecast 10 in one week and 0 the next, a sales order landing in the empty week consumes the neighboring forecast instead of double-counting. Set both to 0 to net strictly within the same week. Each run persists what it consumed to `demandProjection.consumedQuantity`, so the planning screens, the item planning chart, and Inventory all read the same net number, and the grid shows a "consumed" note under each week that actual demand has claimed.
 
@@ -32,7 +32,7 @@ Sales orders consume at their full open quantity — a Make to Order line alread
 
 Open production is handled on the *supply* side, not by consumption: firm job/PO supply is credited exactly once through the BOM explosion's running on-hand/supply balance, so a projection partway covered by in-flight jobs isn't planned twice. Consumption is the *demand*-side reconciliation — forecast versus actual orders — and the two never overlap.
 
-That projection demand joins actual demand (open sales order lines and open job materials) in the gross-demand tally, and MRP explodes each make part's method to push component demand down the BOM. The result is written to `demandForecast` and to a `demandForecastSource` lineage table that tags every unit with where it came from: `"Sales Order"`, `"Job Material"`, or `"Demand Projection"` (`packages/ee/src/planning/mrp/mrp.ts`). On a part's planning page you can open the demand for any week and see exactly which projections, orders, and parent jobs make it up (`apps/erp/app/modules/items/items.service.ts`).
+That projection demand joins actual demand (open sales order lines and open job materials) in the gross-demand tally, and MRP explodes each make part's method to push component demand down the BOM. The result is written to `demandForecast` and to a `demandForecastSource` lineage table that tags every unit with where it came from: `"Sales Order"`, `"Job Material"`, or `"Demand Projection"` (`packages/planning/src/mrp/mrp.ts`). On a part's planning page you can open the demand for any week and see exactly which projections, orders, and parent jobs make it up (`apps/erp/app/modules/items/items.service.ts`).
 
 The run turns projected demand into *suggested* jobs and purchase orders. Nothing is created until you act on a suggestion. See `docs/reference/planning` for how those suggestions surface and how you convert them, and `docs/reference/reordering` for the per-part numbers (lead time, lot size, safety stock) that shape what a projection turns into.
 

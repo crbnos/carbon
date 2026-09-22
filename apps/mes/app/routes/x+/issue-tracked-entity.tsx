@@ -26,6 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
     materialId,
     jobOperationId,
     itemId,
+    batchId,
     parentTrackedEntityId,
     children,
     jobOperationStepId,
@@ -34,22 +35,43 @@ export async function action({ request }: ActionFunctionArgs) {
     overrideReason
   } = validation.data;
 
+  if (batchId ? !itemId : !parentTrackedEntityId) {
+    return data(
+      { success: false, message: "Failed to validate payload" },
+      { status: 400 }
+    );
+  }
+
   const serviceRole = await getCarbonServiceRole();
+  // Batch mode: one pick for the whole operation batch. The edge fn splits the
+  // picked lots pro-rata by each member's remaining requirement and records
+  // per-member consumption, so costing and genealogy stay per job.
   const issue = await serviceRole.functions.invoke("issue", {
-    body: {
-      type: "trackedEntitiesToOperation",
-      materialId,
-      jobOperationId,
-      itemId,
-      parentTrackedEntityId,
-      children,
-      jobOperationStepId,
-      unitNumber,
-      overrideExpired,
-      overrideReason,
-      companyId,
-      userId
-    }
+    body: batchId
+      ? {
+          type: "trackedEntitiesToBatch",
+          batchId,
+          itemId,
+          children,
+          overrideExpired,
+          overrideReason,
+          companyId,
+          userId
+        }
+      : {
+          type: "trackedEntitiesToOperation",
+          materialId,
+          jobOperationId,
+          itemId,
+          parentTrackedEntityId,
+          children,
+          jobOperationStepId,
+          unitNumber,
+          overrideExpired,
+          overrideReason,
+          companyId,
+          userId
+        }
   });
 
   if (issue.error) {

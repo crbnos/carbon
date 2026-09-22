@@ -1,10 +1,7 @@
 import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
@@ -17,7 +14,7 @@ import {
 } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
-// (`@carbon/auth/users.server`, `@carbon/ee/storage-rules.server`). These CANNOT
+// (`@carbon/auth/users.server`, `@carbon/ee/rules.server`). These CANNOT
 // live in `production.service.ts`: that file is re-exported by the
 // `~/modules/production` barrel, which client components value-import, so it is
 // part of the client bundle and React Router's dot-server plugin rejects any
@@ -151,7 +148,7 @@ export async function completeJob(
 /**
  * Schedule or reschedule a job's operations. Routes through
  * `recalculateJobOperationDependencies`, which resolves the job's location and
- * regenerates the whole location IN-PROCESS via `@carbon/ee/planning`
+ * regenerates the whole location IN-PROCESS via `@carbon/planning`
  * (`runLocationSchedule`) — the same in-process path the rest of the app uses now
  * that the `schedule` edge function is gone. Forecast-first scheduling is a single
  * forward-ASAP pass, so there are no `mode`/`direction` knobs to validate.

@@ -59,6 +59,27 @@ Opening a job shows its operations as a directed graph (the routing DAG), so an 
 
 Open an operation and the station panel is where the shift actually happens. A big control starts and stops the clock: **"Start"** opens a production event, **"Pause"** closes it. A toggle picks which kind of time is being logged, matching the three <Term id="production-event-type">production event types</Term>: **"Setup"**, **"Labor"**, or **"Machine"**. The panel is tabbed into **details**, **model** (the 3D part view), **procedure** (work instructions, with **attributes** and **parameters** sub-views), and **chat** (a per-operation note thread).
 
+### The guided assembly view
+
+An operation whose type is **Assembly** opens a guided 3D view instead of a plain part model: the assembly plays back one step at a time, and each step lights up the components it installs.
+
+Deep into a build this creates a problem. The parts already fitted sit between the camera and the ones the current step is naming, so the operator is looking at a finished-looking lump and guessing where the next piece goes. A view control in the player toolbar answers that directly:
+
+<FieldTable>
+  <Field name="Build">The assembly as it stands on the bench right now: everything fitted so far is solid, and anything from a later step is not drawn. This is the default.</Field>
+  <Field name="Focus">The already-fitted parts fade to see-through, so the current step's components are visible in place without losing the shape around them.</Field>
+  <Field name="Isolate">Only the current step's components are drawn. The "just show me the part I am fitting" view.</Field>
+  <Field name="Full">Every component solid, the finished product.</Field>
+</FieldTable>
+
+The view only changes what the operator sees. It never changes the step order, the components a step installs, or anything reported back.
+
+<Callout type="note" title="The camera follows what is drawn.">
+Picking a view that hides parts also stops the camera treating them as obstacles. On **Isolate** the view angle frames the current step's components directly, rather than angling around geometry that is no longer on screen.
+</Callout>
+
+The same control appears in the ERP assembly editor, where an author checks that a step reads clearly before publishing. An author and an operator ask the model the same question, so the buttons mean the same thing on both screens.
+
 ### Reporting quantities
 
 Good, bad, and reworked units are reported separately, so yield stays honest:

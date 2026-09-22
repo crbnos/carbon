@@ -54,6 +54,7 @@ export interface OnshapeRevisionSyncResult {
     | "no-matching-item"
     | "ambiguous-item"
     | "revision-not-found"
+    | "ambiguous-revision"
     | "asset-too-large"; // export exceeds Carbon's upload limits — permanent skip
   itemId?: string;
   modelUploadId?: string | null;
@@ -87,21 +88,28 @@ export async function runOnshapeRevisionSync(
   const onshapeCompanyId =
     input.onshapeCompanyId ?? (await resolveOnshapeCompanyId(carbon, input));
 
-  // Resolve the revision LETTER for this released element. Prefer the revision
-  // whose version + element match this event exactly; fall back to version match.
+  // The webhook is only a hint. Resolve one exact released source from Onshape;
+  // never substitute another element in the same version or another document.
   const revisions = await client.getRevisions(
     onshapeCompanyId,
     input.partNumber,
     input.elementType
   );
   const revisionList = revisions.items ?? [];
-  const releasedRevision =
-    revisionList.find(
-      (revision) =>
-        revision.versionId === input.versionId &&
-        revision.elementId === input.elementId
-    ) ??
-    revisionList.find((revision) => revision.versionId === input.versionId);
+  const matchingRevisions = revisionList.filter(
+    (revision) =>
+      !revision.isObsolete &&
+      revision.documentId === input.documentId &&
+      revision.versionId === input.versionId &&
+      revision.elementId === input.elementId &&
+      revision.elementType === input.elementType &&
+      revision.partNumber === input.partNumber &&
+      (!input.revisionId || revision.id === input.revisionId)
+  );
+  if (matchingRevisions.length > 1) {
+    return { synced: false, skippedReason: "ambiguous-revision" };
+  }
+  const releasedRevision = matchingRevisions[0];
 
   if (!releasedRevision) {
     return { synced: false, skippedReason: "revision-not-found" };
@@ -124,6 +132,7 @@ export async function runOnshapeRevisionSync(
       .from("item")
       .select("id, readableIdWithRevision")
       .eq("companyId", input.companyId)
+      .eq("type", "Part")
       .eq("revision", revision)
       .ilike("readableId", `%${escapeLikePattern(suffix)}`);
     if (candidates.error) {
@@ -189,6 +198,7 @@ export async function runOnshapeRevisionSync(
     .from("item")
     .select("id")
     .eq("companyId", input.companyId)
+    .eq("type", "Part")
     .eq("readableIdWithRevision", key)
     .maybeSingle();
   if (carbonItem.error) {
@@ -215,6 +225,8 @@ export async function runOnshapeRevisionSync(
       versionId: input.versionId,
       modelElementId: input.elementId,
       modelElementKind,
+      partId: releasedRevision.partId,
+      configuration: releasedRevision.configuration,
       assetBaseName: key
     });
   } catch (syncError) {
@@ -309,9 +321,16 @@ export const onshapeRevisionSyncFunction = inngest.createFunction(
       });
     }
 
-    if (result.synced && result.modelUploadId && !result.thumbnailAttached) {
+    if (
+      result.synced &&
+      result.modelUploadId &&
+      !result.thumbnailAttached &&
+      payload.elementType !== 0
+    ) {
       // Fallback only: the sync stores Onshape's server-rendered thumbnail
       // itself; the screenshot pipeline runs just when that fetch failed.
+      // Selected parts wait for model-optimize's completion-chained thumbnail:
+      // their new immutable model IDs have no renderable GLB before that step.
       await step.sendEvent("model-thumbnail", {
         name: "carbon/model-thumbnail" as const,
         data: { companyId: payload.companyId, modelId: result.modelUploadId }

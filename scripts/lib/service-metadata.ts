@@ -66,6 +66,8 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a quote with just customerId.",
   sales_updateQuote:
     "Update an existing quote - handles exchange rate updates when currency changes, syncs customer to opportunity",
+  sales_upsertQuoteLine:
+    "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (TipTap doc JSON, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
   sales_insertSalesOrder:
     "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
   sales_updateSalesOrder:
@@ -120,13 +122,13 @@ const PERMISSION_MODULE_MAP: Record<string, string | null> = {
 // module than their service module (spot-checked against the real routes). Keep
 // this hand-curated list small and grounded — each entry needs a verified route.
 const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
-  // API-key management is an admin capability: every route in the family —
-  // x+/settings+/api-keys.tsx (list loader), api-keys.new.tsx, api-keys.$id.tsx,
-  // api-keys.delete.$id.tsx — gates on { update: "users" }, not "settings".
-  // Deriving "settings" would let a settings-scoped key mint new API keys.
+  // API-key management is an admin capability: the list loader
+  // (x+/settings+/api-keys.tsx) gates on { update: "users" }, not "settings" —
+  // deriving "settings" would let a settings-scoped key read the key family.
+  // The WRITES (upsert/delete) moved to @carbon/ee/api-keys.server behind
+  // requireEntitlement, so they are no longer scanned as MCP tools; only the
+  // read remains here.
   settings_getApiKeys: { module: "users", actions: ["update"] },
-  settings_upsertApiKey: { module: "users", actions: ["update"] },
-  settings_deleteApiKey: { module: "users", actions: ["update"] },
 };
 
 // ---------------------------------------------------------------------------
@@ -1189,6 +1191,17 @@ function computeInjectAuth(
   return ["companyId"];
 }
 
+export function withPayloadUserId(
+  fields: AuthField[],
+  func: ParsedFunction
+): AuthField[] {
+  if (fields.includes("userId")) return fields;
+  const declaresUserId = func.params.some(
+    (p) => p.name !== "userId" && /(^|[{;,\s])userId\s*\??\s*:/.test(p.typeStr)
+  );
+  return declaresUserId ? [...fields, "userId"] : fields;
+}
+
 // The permission an API-key caller must hold. `module` follows the service→permission
 // map; `actions` are derived from the operation verb, mirroring `computeInjectAuth`'s
 // verb groups but split into CRUD actions. An unmatched write verb (issue/post/ship/
@@ -1568,7 +1581,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     if (!fs.existsSync(serviceFile)) {
       // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
       // module keeps its single service file under that name (e.g.
-      // accounting.ee.service.ts).
+      // accounting.service.ts).
       const eeServiceFile = path.join(MODULES_DIR, mod, `${mod}.ee.service.ts`);
       if (!fs.existsSync(eeServiceFile)) {
         console.warn(`  ⚠ Service file not found: ${serviceFile}`);
@@ -1622,9 +1635,11 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
       const classification = classifyFunction(func.name, content);
-      const injectAuth =
+      const injectAuth = withPayloadUserId(
         INJECT_AUTH_OVERRIDES[toolName] ||
-        computeInjectAuth(func.name, classification);
+          computeInjectAuth(func.name, classification),
+        func
+      );
       // A JSDoc on the function itself beats the override table (code closest
       // wins); the de-camelCased name remains the fallback.
       const description =

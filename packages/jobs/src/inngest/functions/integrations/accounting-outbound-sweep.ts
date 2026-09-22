@@ -37,12 +37,17 @@ import { today } from "@internationalized/date";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
+import {
   drainSyncOperations,
   getSweepFloorDate,
   getSyncOperationActor,
   isJournalEntryPostingEnabled,
   MAX_REDRIVE_ATTEMPTS,
   SWEPT_BILL_STATUSES,
+  SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
   SWEPT_PAYMENT_STATUSES
 } from "./accounting-sync-operations";
@@ -61,6 +66,7 @@ type SweepSummary = {
     bills: number;
     invoices: number;
     payments: number;
+    charges: number;
     parkedBills: number;
   };
   skippedReasons: string[];
@@ -82,7 +88,12 @@ type SweepContext = {
 
 async function pageIds(args: {
   ctx: SweepContext;
-  table: "journal" | "purchaseInvoice" | "salesInvoice" | "payment";
+  table:
+    | "journal"
+    | "purchaseInvoice"
+    | "salesInvoice"
+    | "payment"
+    | "cardTransaction";
   statuses: readonly string[];
   dateColumn: string;
   floor: string;
@@ -190,6 +201,7 @@ async function sweepCompanyProvider(args: {
     bills: 0,
     invoices: 0,
     payments: 0,
+    charges: 0,
     parkedBills: 0
   };
 
@@ -311,6 +323,46 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("payments: provider has no outbound payment push");
   }
 
+  // Card charges (Charge/Credit cardTransactions) — the provider's native
+  // card-charge object. Same two-page shape as payments: `transactionDate`
+  // for the window (postingDate is nullable) plus `voidedAt` for late voids.
+  const chargeConfig = provider.getSyncConfig("charge");
+  if (
+    chargeConfig?.enabled &&
+    chargeConfig.direction !== "pull-from-accounting"
+  ) {
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: chargeConfig.syncFromDate
+    });
+    const chargeTypes = (query: any) => query.in("type", ["Charge", "Credit"]);
+    const chargeIds = await pageIds({
+      ctx,
+      table: "cardTransaction",
+      statuses: SWEPT_CHARGE_STATUSES,
+      dateColumn: "transactionDate",
+      floor,
+      extraFilter: chargeTypes
+    });
+    const lateVoidedChargeIds = await pageIds({
+      ctx,
+      table: "cardTransaction",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor,
+      extraFilter: chargeTypes
+    });
+    const sweptChargeIds = [...new Set([...chargeIds, ...lateVoidedChargeIds])];
+    scanned.charges = sweptChargeIds.length;
+    refs.push(
+      ...sweptChargeIds.map(
+        (id): ReconcileRef => ({ entityType: "charge", entityId: id })
+      )
+    );
+  } else {
+    skippedReasons.push("charges: charge sync is disabled");
+  }
+
   // 3. Reconcile — the same executor the event path calls.
   const createdBy = getSyncOperationActor(integration);
   const reconcile: ReconcileSummary = {
@@ -405,7 +457,7 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId")
+        .select("id, companyId, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -417,7 +469,8 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
 
       return (integrations.data ?? []).map((row) => ({
         companyId: row.companyId,
-        providerId: row.id as ProviderID
+        providerId: row.id as ProviderID,
+        updatedBy: row.updatedBy
       }));
     });
 
@@ -426,29 +479,37 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: ProviderID } & SweepSummary
+      {
+        companyId: string;
+        providerId: ProviderID;
+      } & IsolatedStepOutcome<SweepSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `outbound-sweep-${target.providerId}-${target.companyId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `outbound-sweep-${target.providerId}-${target.companyId}`,
+        target,
+        fn: async () => {
+          // Process-lifetime cached pool shared with events/sync.ts and the
+          // pull sweep — never end it here (see accounting-pull-sweep.ts).
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await sweepCompanyProvider({
-              companyId: target.companyId,
-              providerId: target.providerId,
-              database,
-              scope: runId
-            });
-          } finally {
-            await pool.end();
-          }
+          return await sweepCompanyProvider({
+            companyId: target.companyId,
+            providerId: target.providerId,
+            database,
+            scope: runId
+          });
         }
-      );
+      });
 
-      results.push({ ...target, ...result });
+      results.push({
+        companyId: target.companyId,
+        providerId: target.providerId,
+        ...result
+      });
     }
 
     return { targets: targets.length, results };

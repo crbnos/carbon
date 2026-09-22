@@ -6,6 +6,7 @@ import {
   MenuItem,
   useDisclosure
 } from "@carbon/react";
+import { formatAddress } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useMemo, useState } from "react";
@@ -15,6 +16,8 @@ import {
   LuEuro,
   LuGlobe,
   LuHash,
+  LuMail,
+  LuMapPin,
   LuPencil,
   LuPhone,
   LuPrinter,
@@ -38,7 +41,10 @@ import { useSupplierTypes } from "~/components/Form/SupplierType";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCompanySettings, usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
-import type { Supplier } from "~/modules/purchasing";
+import type {
+  Supplier,
+  SupplierReportContactsBySupplierId
+} from "~/modules/purchasing";
 import { supplierStatusType } from "~/modules/purchasing";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import { usePeople } from "~/stores";
@@ -48,9 +54,15 @@ type SuppliersTableProps = {
   data: Supplier[];
   count: number;
   tags: { name: string }[];
+  supplierReportContacts: SupplierReportContactsBySupplierId;
 };
 
-const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
+const SuppliersTable = memo(function SuppliersTable({
+  data,
+  count,
+  tags,
+  supplierReportContacts
+}: SuppliersTableProps) {
   const { t } = useLingui();
   const navigate = useNavigate();
   const permissions = usePermissions();
@@ -66,6 +78,33 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
 
   const customColumns = useCustomColumns<Supplier>("supplier");
   const columns = useMemo<ColumnDef<Supplier>[]>(() => {
+    const getPurchasingContact = (row: Supplier) =>
+      supplierReportContacts[row.id!]?.purchasingContact?.contact ?? null;
+    const getInvoiceContact = (row: Supplier) =>
+      supplierReportContacts[row.id!]?.payment?.invoiceContact?.contact ?? null;
+    const getShippingContact = (row: Supplier) =>
+      supplierReportContacts[row.id!]?.shipping?.shippingContact?.contact ??
+      null;
+    const getInvoiceAddress = (row: Supplier) =>
+      supplierReportContacts[row.id!]?.payment?.invoiceLocation?.address ??
+      null;
+    const getShippingAddress = (row: Supplier) =>
+      supplierReportContacts[row.id!]?.shipping?.shippingLocation?.address ??
+      null;
+    const formatSupplierAddress = (
+      address: ReturnType<typeof getInvoiceAddress>
+    ) =>
+      address
+        ? formatAddress(
+            address.addressLine1,
+            address.addressLine2,
+            address.city,
+            address.stateProvince,
+            address.postalCode,
+            address.country?.name
+          )
+        : null;
+
     const idColumn: ColumnDef<Supplier> = {
       accessorKey: "readableId",
       header: t`ID`,
@@ -255,11 +294,120 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
         meta: {
           icon: <LuCalendar />
         }
+      },
+      {
+        id: "purchasingContactName",
+        header: t`Purchasing Contact Name`,
+        cell: ({ row }) => getPurchasingContact(row.original)?.fullName ?? "",
+        meta: {
+          icon: <LuUser />,
+          exportValue: (row) => getPurchasingContact(row)?.fullName ?? null
+        }
+      },
+      {
+        id: "purchasingContactEmail",
+        header: t`Purchasing Contact Email`,
+        cell: ({ row }) => getPurchasingContact(row.original)?.email ?? "",
+        meta: {
+          icon: <LuMail />,
+          exportValue: (row) => getPurchasingContact(row)?.email ?? null
+        }
+      },
+      {
+        id: "purchasingContactPhone",
+        header: t`Purchasing Contact Phone`,
+        cell: ({ row }) => getPurchasingContact(row.original)?.workPhone ?? "",
+        meta: {
+          icon: <LuPhone />,
+          exportValue: (row) => getPurchasingContact(row)?.workPhone ?? null
+        }
+      },
+      {
+        id: "invoiceAddress",
+        header: t`Invoice Address`,
+        cell: ({ row }) =>
+          formatSupplierAddress(getInvoiceAddress(row.original)) ?? "",
+        meta: {
+          icon: <LuMapPin />,
+          exportValue: (row) => formatSupplierAddress(getInvoiceAddress(row))
+        }
+      },
+      {
+        id: "invoiceContactName",
+        header: t`Invoice Contact Name`,
+        cell: ({ row }) => getInvoiceContact(row.original)?.fullName ?? "",
+        meta: {
+          icon: <LuUser />,
+          exportValue: (row) => getInvoiceContact(row)?.fullName ?? null
+        }
+      },
+      {
+        id: "invoiceContactEmail",
+        header: t`Invoice Contact Email`,
+        cell: ({ row }) => getInvoiceContact(row.original)?.email ?? "",
+        meta: {
+          icon: <LuMail />,
+          exportValue: (row) => getInvoiceContact(row)?.email ?? null
+        }
+      },
+      {
+        id: "invoiceContactPhone",
+        header: t`Invoice Contact Phone`,
+        cell: ({ row }) => getInvoiceContact(row.original)?.workPhone ?? "",
+        meta: {
+          icon: <LuPhone />,
+          exportValue: (row) => getInvoiceContact(row)?.workPhone ?? null
+        }
+      },
+      {
+        id: "shippingAddress",
+        header: t`Shipping Address`,
+        cell: ({ row }) =>
+          formatSupplierAddress(getShippingAddress(row.original)) ?? "",
+        meta: {
+          icon: <LuMapPin />,
+          exportValue: (row) => formatSupplierAddress(getShippingAddress(row))
+        }
+      },
+      {
+        id: "shippingContactName",
+        header: t`Shipping Contact Name`,
+        cell: ({ row }) => getShippingContact(row.original)?.fullName ?? "",
+        meta: {
+          icon: <LuUser />,
+          exportValue: (row) => getShippingContact(row)?.fullName ?? null
+        }
+      },
+      {
+        id: "shippingContactEmail",
+        header: t`Shipping Contact Email`,
+        cell: ({ row }) => getShippingContact(row.original)?.email ?? "",
+        meta: {
+          icon: <LuMail />,
+          exportValue: (row) => getShippingContact(row)?.email ?? null
+        }
+      },
+      {
+        id: "shippingContactPhone",
+        header: t`Shipping Contact Phone`,
+        cell: ({ row }) => getShippingContact(row.original)?.workPhone ?? "",
+        meta: {
+          icon: <LuPhone />,
+          exportValue: (row) => getShippingContact(row)?.workPhone ?? null
+        }
       }
     ];
 
     return [...defaultColumns, ...customColumns];
-  }, [supplierTypes, people, tags, customColumns, t, showSupplierReadableId]);
+  }, [
+    supplierTypes,
+    people,
+    tags,
+    customColumns,
+    t,
+    showSupplierReadableId,
+    supplierReportContacts
+  ]);
 
   const renderContextMenu = useMemo(
     () => (row: Supplier) => (
@@ -301,7 +449,18 @@ const SuppliersTable = memo(({ data, count, tags }: SuppliersTableProps) => {
           createdBy: false,
           createdAt: false,
           updatedBy: false,
-          updatedAt: false
+          updatedAt: false,
+          purchasingContactName: false,
+          purchasingContactEmail: false,
+          purchasingContactPhone: false,
+          invoiceAddress: false,
+          invoiceContactName: false,
+          invoiceContactEmail: false,
+          invoiceContactPhone: false,
+          shippingAddress: false,
+          shippingContactName: false,
+          shippingContactEmail: false,
+          shippingContactPhone: false
         }}
         importCSV={[
           {

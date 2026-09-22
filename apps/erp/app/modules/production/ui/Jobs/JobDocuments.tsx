@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -27,7 +28,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -43,7 +44,7 @@ import {
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
 import { Enumerable } from "~/components/Enumerable";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -85,19 +86,23 @@ const useJobDocuments = ({
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file, bucket as "job" | "parts")]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon, company.id, revalidator, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -137,15 +142,7 @@ const useJobDocuments = ({
       );
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Failed to process file operation", { error });
@@ -191,42 +188,27 @@ const useJobDocuments = ({
     [jobId, submit]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[], bucket: "job" | "parts" = "job") => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
       if (bucket === "parts" && !itemId) {
         toast.error(t`Cannot upload to parts bucket without item ID`);
         return;
       }
 
-      for (const file of files) {
-        const fileName = getPath(file, bucket);
-
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath: (file) => getPath(file, bucket),
+        onSuccess: (file, uploadedPath) =>
           createDocumentRecord({
-            path: fileUpload.data.path,
+            path: uploadedPath,
             name: file.name,
             size: file.size,
             bucket
-          });
-        }
-      }
+          })
+      });
       revalidator.revalidate();
     },
-    [getPath, createDocumentRecord, carbon, revalidator, itemId, t]
+    [uploadFiles, getPath, createDocumentRecord, revalidator, itemId, t]
   );
 
   const moveFile = useCallback(
@@ -254,8 +236,8 @@ const useJobDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const { data: downloadData } = await carbon.storage
-          .from("private")
+        const { data: downloadData } = await storage(carbon)
+          .company(company.id)
           .download(sourcePath);
 
         if (!downloadData) {
@@ -265,8 +247,8 @@ const useJobDocuments = ({
 
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
-        const { error: uploadError } = await carbon.storage
-          .from("private")
+        const { error: uploadError } = await storage(carbon)
+          .company(company.id)
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -278,8 +260,8 @@ const useJobDocuments = ({
         }
 
         // Delete from old location
-        const { error: deleteError } = await carbon.storage
-          .from("private")
+        const { error: deleteError } = await storage(carbon)
+          .company(company.id)
           .remove([sourcePath]);
 
         if (deleteError) {
@@ -298,7 +280,7 @@ const useJobDocuments = ({
         logger.error("Failed to process file operation", { error });
       }
     },
-    [carbon, itemId, getPath, revalidator, t]
+    [carbon, itemId, getPath, revalidator, t, company.id]
   );
 
   return {

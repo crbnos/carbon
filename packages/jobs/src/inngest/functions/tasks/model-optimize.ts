@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
-import { modelPathOptimizeFormat } from "@carbon/utils";
+import { storage } from "@carbon/files";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
@@ -188,8 +189,8 @@ export const modelOptimizeFunction = inngest.createFunction(
       },
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
-        const upload = await client.storage
-          .from("private")
+        const upload = await storage(client)
+          .company(companyId)
           .createSignedUploadUrl(optimizedPath, { upsert: true });
         const urls: Record<string, string> = {};
         if (upload.data)
@@ -205,12 +206,11 @@ export const modelOptimizeFunction = inngest.createFunction(
       // it via the late-mint URL, so the job never holds the bytes) to surface
       // the reduction against the untouched source `size`.
       const dir = `${companyId}/models/${modelUploadId}`;
-      const listed = await client.storage
-        .from("private")
+      const listed = await storage(client)
+        .company(companyId)
         .list(dir, { search: "optimized.glb" });
-      const optimizedSize =
-        listed.data?.find((o) => o.name === "optimized.glb")?.metadata?.size ??
-        null;
+      const optimized = listed.data?.find((o) => o.name === "optimized.glb");
+      const optimizedSize = optimized?.metadata?.size ?? null;
 
       await client
         .from("modelUpload")

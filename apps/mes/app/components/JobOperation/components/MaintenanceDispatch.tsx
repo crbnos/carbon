@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   DateTimePicker,
   Hidden,
@@ -22,21 +21,20 @@ import {
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { useFetcher } from "react-router";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
 import { LowPriorityIcon } from "~/assets/icons/LowPriorityIcon";
 import { MediumPriorityIcon } from "~/assets/icons/MediumPriorityIcon";
-import { useUser } from "~/hooks";
+import { useImageUpload } from "~/hooks";
 import {
   maintenanceDispatchPriority,
   maintenanceDispatchValidator,
   maintenanceSeverity,
   oeeImpact
 } from "~/services/models";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 
 function getPriorityIcon(
   priority: (typeof maintenanceDispatchPriority)[number]
@@ -88,10 +86,6 @@ export function MaintenanceDispatch({
         name: string;
       }>
     >();
-  const {
-    company: { id: companyId }
-  } = useUser();
-  const { carbon } = useCarbon();
 
   const [content, setContent] = useState<JSONContent>({});
   const [severity, setSeverity] =
@@ -122,23 +116,7 @@ export function MaintenanceDispatch({
     // biome-ignore lint/correctness/useExhaustiveDependencies: ignore
   }, [fetcher.state, fetcher.data, handleClose]);
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("maintenance");
 
   if (!isOpen) return null;
 

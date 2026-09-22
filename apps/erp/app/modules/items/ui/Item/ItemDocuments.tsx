@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -21,7 +22,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
 import type { ChangeEvent } from "react";
@@ -36,7 +37,7 @@ import {
   ModelOptimizedIndicator
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { ItemType, OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload } from "~/types";
@@ -343,19 +344,23 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const deleteFile = useCallback(
     async (file: FileObject) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`File deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon, revalidator, t, company.id]
   );
 
   const deleteModel = useCallback(async () => {
@@ -391,15 +396,7 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
       const url = path.to.file.previewFile(`private/${getPath(file)}`);
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -416,30 +413,15 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
     return path.to.file.cadModel(model.modelId);
   }, []);
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      for (const file of files) {
-        toast.info(t`Uploading ${file.name}`);
-        const fileName = getPath(file);
-
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (fileUpload.data?.path) {
+      await uploadFiles(files, {
+        getPath,
+        onSuccess: (file, uploadedPath) => {
           toast.success(t`Uploaded: ${file.name}`);
           const formData = new FormData();
-          formData.append("path", fileUpload.data.path);
+          formData.append("path", uploadedPath);
           formData.append("name", file.name);
           formData.append("size", Math.round(file.size / 1024).toString());
           formData.append("sourceDocument", type);
@@ -452,10 +434,10 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
             fetcherKey: `item:${file.name}`
           });
         }
-      }
+      });
       revalidator.revalidate();
     },
-    [getPath, carbon, revalidator, submit, type, itemId, t]
+    [uploadFiles, getPath, revalidator, submit, type, itemId, t]
   );
 
   return {

@@ -1,0 +1,46 @@
+Carbon Commercial License
+
+Copyright (C) Carbon Manufacturing Systems Corporation ("Carbon")
+
+This license covers the Enterprise files: (a) every file in the packages/ee
+directory of Carbon's source code, including its subdirectories, and (b)
+every file anywhere in Carbon's source code whose file name contains
+".ee.", including any modified version of those files. The rest of Carbon
+is licensed under the GNU Affero General Public License, version 3 only, as
+described in the LICENSE file at the root of the repository.
+
+1. Viewing and sharing. You may view and download the Enterprise files. You
+   may copy and share them only in source code form, only as part of a copy
+   of Carbon's source code, and only with this license and all copyright
+   notices included.
+
+2. Use requires a commercial license. You may not use the Enterprise files
+   in any other way, including running, testing, developing with, or
+   modifying them, unless you have a valid commercial license from Carbon
+   that covers them. A commercial license can be a Carbon Commercial
+   License Agreement (CCLA), an Enterprise Subscription Agreement (ESA), a
+   partner agreement, or any other commercial agreement with Carbon,
+   whether signed, purchased online, or accepted by click-through. Your use
+   must stay within what that agreement allows. The execution of the
+   Enterprise files by Carbon's AGPLv3-licensed code solely for the purpose
+   of determining the existence or validity of a commercial license, or
+   otherwise without making any Enterprise functionality available, shall
+   not, by itself, constitute use of the Enterprise files under this
+   Section 2.
+
+3. Your agreement controls. If this license and your commercial agreement
+   with Carbon conflict, your commercial agreement controls.
+
+4. No other rights. Carbon keeps all rights in the Enterprise files that
+   this license does not expressly grant. This license does not give you
+   any right to use the name "Carbon," Carbon's logos, or any other Carbon
+   trademark.
+
+5. No warranty. Except as your commercial agreement with Carbon says
+   otherwise, THE ENTERPRISE FILES ARE PROVIDED "AS IS," WITHOUT WARRANTY
+   OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+   WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, AND
+   NONINFRINGEMENT. IN NO EVENT SHALL CARBON OR ANY CONTRIBUTOR BE LIABLE
+   FOR ANY CLAIM, DAMAGES, OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+   CONTRACT, TORT, OR OTHERWISE, ARISING FROM, OUT OF, OR IN CONNECTION
+   WITH THE ENTERPRISE FILES OR THE USE OF OR OTHER DEALINGS IN THEM.

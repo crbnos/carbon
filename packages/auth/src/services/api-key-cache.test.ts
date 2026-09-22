@@ -15,7 +15,6 @@ vi.mock("@carbon/kv", () => ({
 // Env is validated at import time (getEnv throws on missing required vars), so we
 // stub the config module rather than requiring a full environment in the test run.
 vi.mock("../config/env", () => ({
-  RESEND_DOMAIN: "test.dev",
   DOMAIN: "localhost",
   ERP_URL: "http://localhost:3000",
   MES_URL: "http://localhost:3001",

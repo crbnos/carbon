@@ -1,5 +1,8 @@
 import { Hidden, Submit, ValidatedForm } from "@carbon/form";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   cn,
   Modal,
   ModalBody,
@@ -11,6 +14,8 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { LuLayers, LuTriangleAlert } from "react-icons/lu";
+import type { useFetcher } from "react-router";
 import type { z } from "zod";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import type { JobOperationBatch } from "~/services/operations.service";
@@ -33,14 +38,21 @@ const toNumber = (value: string) => Number(value) || 0;
 export function BatchCompleteModal({
   batch,
   isCompleting,
+  fetcher,
   onClose
 }: {
   batch: JobOperationBatch;
   isCompleting: boolean;
+  fetcher: ReturnType<typeof useFetcher>;
   onClose: () => void;
 }) {
   const { t } = useLingui();
   const members = batch.operations ?? [];
+  // Any member producing a batch-tracked item gets a batch-number column; its
+  // WIP entity is finalized as the produced lot at completion.
+  const anyTracked = members.some((m) => m.requiresBatchTracking);
+  // A merged batch states its one lot in a banner; split lots show per row.
+  const showLotColumn = anyTracked && !batch.mergeOutput;
 
   const initialValues = {
     batchId: batch.id as string,
@@ -78,6 +90,22 @@ export function BatchCompleteModal({
     (r) => toNumber(r.quantity) === 0 && toNumber(r.scrapQuantity) === 0
   );
 
+  // Lot identity was planned when the batch was created — the floor only
+  // reads it. A merged batch has one lot for everything; otherwise each
+  // batch-tracked member carries its own number (its WIP entity's readableId).
+  const producesLot = (i: number) => {
+    const m = members[i];
+    return Boolean(
+      m?.requiresBatchTracking &&
+        m?.trackedEntityId &&
+        toNumber(rows[i]?.quantity ?? "0") > 0
+    );
+  };
+  const merged = Boolean(batch.mergeOutput && batch.outputLotNumber);
+  const unplanned = merged
+    ? []
+    : members.filter((m, i) => producesLot(i) && !m.batchNumber?.trim());
+
   return (
     <Modal
       open
@@ -101,9 +129,45 @@ export function BatchCompleteModal({
           action={path.to.batchComplete(batch.id as string)}
           validator={completeJobOperationBatchValidator}
           defaultValues={initialValues}
+          fetcher={fetcher}
         >
           <ModalBody>
             <Hidden name="batchId" value={batch.id as string} />
+            {merged && (
+              <Alert variant="success" className="mb-4">
+                <LuLayers />
+                <AlertTitle>
+                  <Trans>
+                    All output goes to lot{" "}
+                    <span className="font-mono">{batch.outputLotNumber}</span>
+                  </Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>Set when the batch was planned.</Trans>
+                </AlertDescription>
+              </Alert>
+            )}
+            {unplanned.length > 0 && (
+              <Alert variant="warning" className="mb-4">
+                <LuTriangleAlert />
+                <AlertTitle>
+                  <Trans>Lot numbers missing</Trans>
+                </AlertTitle>
+                <AlertDescription>
+                  <Trans>
+                    {unplanned
+                      .map(
+                        (m) =>
+                          (m.job as { jobId?: string | null } | null)?.jobId
+                      )
+                      .filter(Boolean)
+                      .join(", ")}{" "}
+                    has no lot number. Set it on the batch or job in Carbon,
+                    then complete.
+                  </Trans>
+                </AlertDescription>
+              </Alert>
+            )}
             <div className="overflow-hidden rounded-lg border border-border bg-card">
               <table className="w-full border-separate border-spacing-0 text-sm">
                 <thead>
@@ -114,9 +178,19 @@ export function BatchCompleteModal({
                     <th className="w-[140px] border-b border-r border-border px-3 py-2 text-right font-medium text-muted-foreground">
                       <Trans>Quantity</Trans>
                     </th>
-                    <th className="w-[140px] border-b border-border px-3 py-2 text-right font-medium text-muted-foreground">
+                    <th
+                      className={cn(
+                        "w-[140px] border-b border-border px-3 py-2 text-right font-medium text-muted-foreground",
+                        showLotColumn && "border-r"
+                      )}
+                    >
                       <Trans>Scrap</Trans>
                     </th>
+                    {showLotColumn && (
+                      <th className="w-[180px] border-b border-border px-3 py-2 text-left font-medium text-muted-foreground">
+                        <Trans>Lot</Trans>
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody>
@@ -140,6 +214,12 @@ export function BatchCompleteModal({
                             name={`members[${i}].excluded`}
                             value={isExcluded ? "true" : ""}
                           />
+                          {m.requiresBatchTracking && m.trackedEntityId && (
+                            <Hidden
+                              name={`members[${i}].trackedEntityId`}
+                              value={m.trackedEntityId}
+                            />
+                          )}
                         </td>
                         <td
                           className={cn(
@@ -163,6 +243,7 @@ export function BatchCompleteModal({
                         <td
                           className={cn(
                             "border-border p-0 align-middle",
+                            showLotColumn && "border-r",
                             !isLast && "border-b"
                           )}
                         >
@@ -179,6 +260,19 @@ export function BatchCompleteModal({
                             className={cellInputClass}
                           />
                         </td>
+                        {showLotColumn && (
+                          <td
+                            className={cn(
+                              "border-border px-3 py-2 align-middle font-mono",
+                              !isLast && "border-b",
+                              !m.batchNumber?.trim() && "text-muted-foreground"
+                            )}
+                          >
+                            {m.requiresBatchTracking && m.trackedEntityId
+                              ? m.batchNumber?.trim() || "—"
+                              : null}
+                          </td>
+                        )}
                       </tr>
                     );
                   })}
@@ -193,8 +287,13 @@ export function BatchCompleteModal({
             </p>
           </ModalBody>
           <ModalFooter>
-            <Submit size="lg" isDisabled={allExcluded}>
-              {isCompleting ? t`Retry Completion` : t`Complete Batch`}
+            <Submit size="lg" isDisabled={allExcluded || unplanned.length > 0}>
+              {/* While the submit is in flight the realtime revalidation sees the
+                  batch pass through Completing — don't flip the label mid-run;
+                  "Retry" is only true once we are idle and still parked there. */}
+              {fetcher.state === "idle" && isCompleting
+                ? t`Retry Completion`
+                : t`Complete Batch`}
             </Submit>
           </ModalFooter>
         </ValidatedForm>

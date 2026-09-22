@@ -33,8 +33,8 @@ export type HiddenOps = {
 // Candidate operations for the batch builder (the batches-page wizard). Wraps the
 // get_batchable_operations RPC — the same source the deleted schedule board used —
 // and enriches each row with the op's time fields + due date (for the wizard's
-// setup-saving/run-time/due-spread chips) and the job item's thumbnail, which the
-// RPC omits. Rows carrying a jobOperationBatchId (Planned/Active/Completing lane
+// setup-saving/run-time/due-spread chips) and the operation's produced-item
+// thumbnail, which the RPC omits. Rows carrying a jobOperationBatchId (Planned/Active/Completing lane
 // members) are kept; the builder partitions client-side (add targets, add-mode).
 // Also returns workCenterLoad (active ops per WC at the location — the "N in
 // queue" helper on the WC picker) and hidden (a per-reason breakdown of the ops
@@ -117,7 +117,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   // Enrich with the fields the RPC doesn't return but the wizard needs.
-  const [opDetails, jobItems] = await Promise.all([
+  // The thumbnail follows the operation's PRODUCED item (r.itemId, the op's
+  // make-method item resolved by the RPC), not the job's root item — a
+  // sub-assembly operation shows its own part, matching its readableId.
+  const [opDetails, itemThumbnails] = await Promise.all([
     client
       .from("jobOperation")
       .select(
@@ -129,17 +132,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       )
       .eq("companyId", companyId),
     client
-      .from("job")
-      .select("id, item(thumbnailPath)")
-      .in("id", [...new Set(rows.map((r) => r.jobId))])
+      .from("item")
+      .select("id, thumbnailPath")
+      .in("id", [...new Set(rows.map((r) => r.itemId))])
       .eq("companyId", companyId)
   ]);
   const detailById = new Map(
     (opDetails.data ?? []).map((d) => [d.id, d] as const)
   );
-  const thumbnailByJobId = new Map(
-    (jobItems.data ?? []).map(
-      (j) => [j.id, j.item?.thumbnailPath ?? null] as const
+  const thumbnailByItemId = new Map(
+    (itemThumbnails.data ?? []).map(
+      (i) => [i.id, i.thumbnailPath ?? null] as const
     )
   );
 
@@ -158,7 +161,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       machineTime: d?.machineTime ?? null,
       machineUnit: d?.machineUnit ?? null,
       dueDate: d?.dueDate ?? null,
-      thumbnailPath: thumbnailByJobId.get(r.jobId) ?? null
+      thumbnailPath: thumbnailByItemId.get(r.itemId) ?? null
     } as BatchCandidate;
   });
 

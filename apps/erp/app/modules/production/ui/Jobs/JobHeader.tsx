@@ -82,12 +82,20 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
 import { isJobLocked, jobCompleteValidator } from "../../production.models";
 import { getJobMethodTree } from "../../production.service";
 import type { Job } from "../../types";
 import JobStatus from "./JobStatus";
+import {
+  getDefaultSerialCompleteQuantity,
+  getFinishedUnreceivedQuantity,
+  getReceivableSerialUnits,
+  type JobReceiptSnapshot
+} from "./job-complete-logic";
+import { makeMethodsMissingOperations } from "./job-release-logic";
 
 const JobHeader = () => {
   const navigate = useNavigate();
@@ -588,6 +596,7 @@ export function JobStartModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const [suppliers] = useSuppliers();
   const [loading, setLoading] = useState(true);
   const [missingOperationAssemblies, setMissingOperationAssemblies] = useState<
     { bomId: string; description: string }[]
@@ -605,8 +614,22 @@ export function JobStartModal({
     selectedPurchaseOrdersBySupplierId,
     setSelectedPurchaseOrdersBySupplierId
   ] = useState<Record<string, string>>({});
+  // Outside operations whose process offers MORE THAN ONE supplier — the user
+  // picks which one (defaulting to the first). Single-supplier and explicitly
+  // assigned operations never appear here; they resolve automatically.
+  const [outsideOperationChoices, setOutsideOperationChoices] = useState<
+    {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[]
+  >([]);
+  const [
+    selectedSupplierProcessByOperationId,
+    setSelectedSupplierProcessByOperationId
+  ] = useState<Record<string, string>>({});
 
-  const validate = async () => {
+  const validate = async (choicesOverride?: Record<string, string>) => {
     if (!carbon || !job) return;
     const [makeMethod, materials, operations, methodTree] = await Promise.all([
       carbon
@@ -643,27 +666,125 @@ export function JobStartModal({
       existingPurchaseOrderLines.data?.map((pol) => pol.jobOperationId) ?? []
     );
 
-    // Filter out operations that already have purchase order lines
-    const operationsNeedingPurchaseOrders = outsideOperations.filter(
-      (op) =>
-        !existingJobOperationIds.has(op.id) && op.operationSupplierProcessId
+    // Outside operations that still need handling (no existing purchase order line)
+    const outsideOperationsWithoutPurchaseOrders = outsideOperations.filter(
+      (op) => !existingJobOperationIds.has(op.id)
     );
 
-    const uniqueOutsideProcessIds = operationsNeedingPurchaseOrders.map(
-      (op) => op.operationSupplierProcessId!
+    // Resolve each operation's supplier: its own supplier process, or — when the
+    // operation has none — the sole supplier configured for its process. A process
+    // with exactly one supplier is unambiguous, so it counts as assigned; a process
+    // with zero or multiple suppliers still requires an explicit per-operation pick.
+    type SupplierProcessRef = {
+      id: string;
+      supplierId: string;
+      processId: string;
+    };
+
+    const outsideProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.processId)
+          .filter(Boolean) as string[]
+      )
+    );
+    const explicitSupplierProcessIds = Array.from(
+      new Set(
+        outsideOperationsWithoutPurchaseOrders
+          .map((op) => op.operationSupplierProcessId)
+          .filter(Boolean) as string[]
+      )
     );
 
-    const supplierProcesses =
-      uniqueOutsideProcessIds.length > 0
+    const supplierProcessesByProcess =
+      outsideProcessIds.length > 0
         ? await carbon
             .from("supplierProcess")
-            .select("supplierId")
-            .in("id", uniqueOutsideProcessIds)
-        : { data: [] };
+            .select("id, supplierId, processId")
+            .in("processId", outsideProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+    const supplierProcessesById =
+      explicitSupplierProcessIds.length > 0
+        ? await carbon
+            .from("supplierProcess")
+            .select("id, supplierId, processId")
+            .in("id", explicitSupplierProcessIds)
+        : { data: [] as SupplierProcessRef[] };
+
+    const supplierProcessById = new Map<string, SupplierProcessRef>();
+    for (const sp of [
+      ...(supplierProcessesByProcess.data ?? []),
+      ...(supplierProcessesById.data ?? [])
+    ]) {
+      supplierProcessById.set(sp.id, sp);
+    }
+    const supplierProcessesByProcessId = new Map<
+      string,
+      SupplierProcessRef[]
+    >();
+    for (const sp of supplierProcessesByProcess.data ?? []) {
+      const list = supplierProcessesByProcessId.get(sp.processId) ?? [];
+      list.push(sp);
+      supplierProcessesByProcessId.set(sp.processId, list);
+    }
+
+    // Resolve each operation's supplier: its own supplier process, the process's
+    // sole supplier, or — when the process offers several — a user pick (defaulting
+    // to the first candidate). Only a process with NO supplier at all is a genuine
+    // "missing supplier". `choicesOverride` carries the picks on a re-run.
+    const supplierProcessChoice =
+      choicesOverride ?? selectedSupplierProcessByOperationId;
+    const resolvedSupplierChoice: Record<string, string> = {};
+    const operationChoices: {
+      id: string;
+      description: string;
+      options: { supplierProcessId: string; supplierId: string }[];
+    }[] = [];
+
+    const resolveSupplierProcess = (op: {
+      id: string;
+      description: string | null;
+      operationSupplierProcessId: string | null;
+      processId: string | null;
+    }): SupplierProcessRef | null => {
+      if (op.operationSupplierProcessId) {
+        return supplierProcessById.get(op.operationSupplierProcessId) ?? null;
+      }
+      const candidates = op.processId
+        ? (supplierProcessesByProcessId.get(op.processId) ?? [])
+        : [];
+      if (candidates.length === 0) return null;
+      if (candidates.length === 1) return candidates[0];
+      // Multiple suppliers for the process — the user chooses which one.
+      operationChoices.push({
+        id: op.id,
+        description: op.description ?? op.id,
+        options: candidates.map((c) => ({
+          supplierProcessId: c.id,
+          supplierId: c.supplierId
+        }))
+      });
+      const chosenId =
+        supplierProcessChoice[op.id] &&
+        candidates.some((c) => c.id === supplierProcessChoice[op.id])
+          ? supplierProcessChoice[op.id]
+          : candidates[0].id;
+      resolvedSupplierChoice[op.id] = chosenId;
+      return supplierProcessById.get(chosenId) ?? null;
+    };
+
+    const operationsWithSupplier = outsideOperationsWithoutPurchaseOrders.map(
+      (op) => ({ op, supplierProcess: resolveSupplierProcess(op) })
+    );
 
     const uniqueSupplierIds = new Set(
-      supplierProcesses.data?.map((sp) => sp.supplierId) ?? []
+      operationsWithSupplier
+        .map((entry) => entry.supplierProcess?.supplierId)
+        .filter(Boolean) as string[]
     );
+
+    setOutsideOperationChoices(operationChoices);
+    setSelectedSupplierProcessByOperationId(resolvedSupplierChoice);
 
     if (uniqueSupplierIds.size) {
       const draftPurchaseOrders = await carbon
@@ -686,36 +807,15 @@ export function JobStartModal({
       );
     }
 
-    setSelectedPurchaseOrdersBySupplierId(
+    setSelectedPurchaseOrdersBySupplierId((prev) =>
       Array.from(uniqueSupplierIds).reduce<Record<string, string>>(
         (acc, supplierId) => {
-          acc[supplierId] = "new";
+          acc[supplierId] = prev[supplierId] ?? "new";
           return acc;
         },
         {}
       )
     );
-
-    const kittedMakeMethodIds = new Set(
-      materials.data
-        ?.filter((m) => m.jobMaterialMakeMethodId && m.kit)
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // make methods for materials
-    const uniqueMakeMethodIds = new Set(
-      materials.data
-        ?.filter(
-          (m) =>
-            m.jobMaterialMakeMethodId &&
-            m.methodType === "Make to Order" &&
-            !kittedMakeMethodIds.has(m.jobMaterialMakeMethodId)
-        )
-        .map((m) => m.jobMaterialMakeMethodId) ?? []
-    );
-
-    // top-level make method
-    uniqueMakeMethodIds.add(makeMethod.data?.id!);
 
     const flatMethod =
       methodTree.data && methodTree.data.length > 0
@@ -732,33 +832,32 @@ export function JobStartModal({
       ])
     );
 
-    const missingAssemblies = Array.from(uniqueMakeMethodIds)
-      .filter(
-        (makeMethodId) =>
-          !(
-            operations.data?.some(
-              (op) => op.jobMakeMethodId === makeMethodId
-            ) ?? false
-          )
-      )
-      .map((makeMethodId) => {
-        const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
-        return info
-          ? { bomId: info.bomId, description: info.description }
-          : { bomId: "?", description: makeMethodId ?? "Unknown" };
-      });
+    const missingAssemblies = makeMethodsMissingOperations(
+      makeMethod.data?.id ?? null,
+      materials.data ?? [],
+      operations.data ?? []
+    ).map((makeMethodId) => {
+      const info = bomInfoByMakeMethodId.get(makeMethodId ?? "");
+      return info
+        ? { bomId: info.bomId, description: info.description }
+        : { bomId: "?", description: makeMethodId ?? "Unknown" };
+    });
 
     flushSync(() => {
       setMissingOperationAssemblies(missingAssemblies);
 
-      // Only show purchase order UI if there are outside operations that need purchase orders
-      setHasOutsideOperations(operationsNeedingPurchaseOrders.length > 0);
+      // Show the release UI whenever there are outside operations still needing handling,
+      // whether or not they have a supplier yet
+      setHasOutsideOperations(
+        outsideOperationsWithoutPurchaseOrders.length > 0
+      );
 
-      // Check if all outside operations that need purchase orders have suppliers
+      // An outside operation "has a supplier" when it resolves to one — either its
+      // own supplier process or its process's sole supplier.
       setEachOutsideOperationHasASupplier(
-        operationsNeedingPurchaseOrders.length === 0 ||
-          operationsNeedingPurchaseOrders.every(
-            (op) => op.operationSupplierProcessId !== null
+        operationsWithSupplier.length === 0 ||
+          operationsWithSupplier.every(
+            (entry) => entry.supplierProcess !== null
           )
       );
     });
@@ -832,6 +931,49 @@ export function JobStartModal({
                         </Trans>
                       </AlertDescription>
                     </Alert>
+                    {outsideOperationChoices.length > 0 && (
+                      <div className="flex flex-col gap-2 w-full">
+                        <p className="text-sm text-muted-foreground">
+                          <Trans>
+                            These operations use a process with multiple
+                            suppliers. Choose a supplier for each.
+                          </Trans>
+                        </p>
+                        {outsideOperationChoices.map((operation) => (
+                          <div
+                            key={operation.id}
+                            className="flex justify-between items-center gap-4 text-sm rounded-lg border p-4 w-full"
+                          >
+                            <span className="font-medium">
+                              {operation.description}
+                            </span>
+                            <Select
+                              size="sm"
+                              value={
+                                selectedSupplierProcessByOperationId[
+                                  operation.id
+                                ] ?? ""
+                              }
+                              options={operation.options.map((option) => ({
+                                value: option.supplierProcessId,
+                                label:
+                                  suppliers.find(
+                                    (s) => s.id === option.supplierId
+                                  )?.name ?? option.supplierId
+                              }))}
+                              onChange={(value) => {
+                                const next = {
+                                  ...selectedSupplierProcessByOperationId,
+                                  [operation.id]: value as string
+                                };
+                                setSelectedSupplierProcessByOperationId(next);
+                                validate(next);
+                              }}
+                            />
+                          </div>
+                        ))}
+                      </div>
+                    )}
                     {Object.entries(selectedPurchaseOrdersBySupplierId).map(
                       ([supplierId, purchaseOrderId]) => {
                         const purchaseOrders =
@@ -937,6 +1079,11 @@ export function JobStartModal({
                   type="hidden"
                   name="selectedPurchaseOrdersBySupplierId"
                   value={JSON.stringify(selectedPurchaseOrdersBySupplierId)}
+                />
+                <input
+                  type="hidden"
+                  name="selectedSupplierProcessByOperationId"
+                  value={JSON.stringify(selectedSupplierProcessByOperationId)}
                 />
                 <Button
                   isLoading={
@@ -1114,6 +1261,24 @@ function JobExpediteModal({
   );
 }
 
+// What the job has received as of now, from api+/production.job.$jobId.receipts.
+// Null when it cannot be read; the dialog then keeps the quantity locked rather
+// than offering units it cannot prove are unreceived.
+async function getJobReceipts(
+  jobId: string
+): Promise<JobReceiptSnapshot | null> {
+  try {
+    const response = await fetch(path.to.api.jobReceipts(jobId));
+    if (!response.ok) return null;
+    const body = (await response.json()) as {
+      receipts: JobReceiptSnapshot | null;
+    };
+    return body.receipts;
+  } catch {
+    return null;
+  }
+}
+
 function JobCompleteModal({
   job,
   onClose,
@@ -1134,6 +1299,20 @@ function JobCompleteModal({
     job?.quantityComplete ?? 0
   );
   const [hasTrackedQuantity, setHasTrackedQuantity] = useState<boolean>(false);
+  // Serial units the completion can still receive, in the order
+  // complete_job_to_inventory receives them. Null when the quantity is not
+  // chosen per serial unit.
+  const [receivableSerials, setReceivableSerials] = useState<string[] | null>(
+    null
+  );
+  // The completed quantity is cumulative; this much was already received.
+  // Refreshed when the dialog opens, since the route's job may be stale.
+  const [priorReceivedQuantity, setPriorReceivedQuantity] = useState<number>(
+    job?.quantityReceivedToInventory ?? 0
+  );
+  // complete_job_to_inventory refuses a stocked job below what it received.
+  const minimumQuantityComplete =
+    job?.itemTrackingType !== "Non-Inventory" ? priorReceivedQuantity : 0;
 
   // Leftover handling state
   const [leftoverAction, setLeftoverAction] = useState<
@@ -1146,11 +1325,16 @@ function JobCompleteModal({
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
+  // Serial units are received one at a time; the database refuses a fraction.
+  const hasFractionalSerialQuantity =
+    receivableSerials !== null &&
+    Number.isFinite(quantityComplete) &&
+    !Number.isInteger(quantityComplete);
 
   const getJobData = async () => {
     if (!carbon) return;
 
-    const [pickMethod, makeMethod] = await Promise.all([
+    const [pickMethod, makeMethod, receipts] = await Promise.all([
       carbon
         .from("pickMethod")
         .select("*")
@@ -1162,8 +1346,19 @@ function JobCompleteModal({
         .select("*")
         .eq("jobId", job?.id!)
         .is("parentMaterialId", null)
-        .single()
+        .single(),
+      getJobReceipts(job?.id!)
     ]);
+
+    // Read now rather than from the job route: a receipt may have been made
+    // since the page loaded. When the read fails, fall back to the route's job
+    // and leave the quantity locked below — offering units that may already be
+    // received is the one thing this must not do. complete_job_to_inventory
+    // enforces both regardless.
+    const currentReceivedQuantity =
+      receipts?.quantityReceivedToInventory ??
+      job?.quantityReceivedToInventory ??
+      0;
 
     if (
       makeMethod.data?.requiresSerialTracking ||
@@ -1183,10 +1378,38 @@ function JobCompleteModal({
           return acc;
         }, 0);
 
-        setQuantityComplete(availableQuantity);
-        setHasTrackedQuantity(true);
+        const receivedEntityIds = new Set(receipts?.trackedEntityIds ?? []);
+        // Only unlock per-serial entry when the receipts are known: without them
+        // the list could offer a unit the job already received.
+        const serialUnits =
+          receipts && makeMethod.data?.requiresSerialTracking
+            ? getReceivableSerialUnits(trackedEntities.data, receivedEntityIds)
+            : null;
+
+        if (serialUnits) {
+          // Every unit already exists as a numbered serial, so the quantity can
+          // be chosen here even when nothing was finished on the shop floor.
+          setReceivableSerials(serialUnits);
+          setHasTrackedQuantity(false);
+          setQuantityComplete(
+            getDefaultSerialCompleteQuantity({
+              finishedUnreceivedQuantity: getFinishedUnreceivedQuantity(
+                trackedEntities.data,
+                receivedEntityIds
+              ),
+              jobQuantity: job?.quantity ?? 0,
+              priorReceivedQuantity: currentReceivedQuantity,
+              receivableSerialCount: serialUnits.length
+            })
+          );
+        } else {
+          setQuantityComplete(availableQuantity);
+          setHasTrackedQuantity(true);
+        }
       }
     }
+
+    setPriorReceivedQuantity(currentReceivedQuantity);
 
     flushSync(() => {
       setDefaultStorageUnitId(
@@ -1302,12 +1525,57 @@ function JobCompleteModal({
                   value={quantityComplete}
                   onChange={(value) => setQuantityComplete(value)}
                   isDisabled={hasTrackedQuantity}
+                  minValue={minimumQuantityComplete}
+                  maxValue={
+                    receivableSerials
+                      ? priorReceivedQuantity + receivableSerials.length
+                      : undefined
+                  }
                   helperText={
                     hasTrackedQuantity
                       ? t`Quantity is derived from completed serials/batches in MES and cannot be edited.`
-                      : undefined
+                      : hasFractionalSerialQuantity
+                        ? t`Serial-tracked jobs must be completed in whole units.`
+                        : undefined
                   }
                 />
+
+                {hasTrackedQuantity && !(quantityComplete > 0) && (
+                  <Alert variant="warning">
+                    <LuTriangleAlert />
+                    <AlertTitle>
+                      <Trans>Nothing completed in MES yet</Trans>
+                    </AlertTitle>
+                    <AlertDescription>
+                      <Trans>
+                        Complete serials/batches in MES before completing this
+                        job, or mark every operation Done to complete it
+                        automatically.
+                      </Trans>
+                    </AlertDescription>
+                  </Alert>
+                )}
+
+                {receivableSerials &&
+                  quantityComplete > priorReceivedQuantity &&
+                  !hasFractionalSerialQuantity && (
+                    <VStack spacing={1} className="w-full">
+                      <span className="text-xs text-muted-foreground">
+                        <Trans>Serial numbers received</Trans>
+                      </span>
+                      <span className="text-sm">
+                        {receivableSerials
+                          .slice(
+                            0,
+                            Math.max(
+                              quantityComplete - priorReceivedQuantity,
+                              0
+                            )
+                          )
+                          .join(", ")}
+                      </span>
+                    </VStack>
+                  )}
 
                 {hasLeftover && (
                   <>
@@ -1447,7 +1715,17 @@ function JobCompleteModal({
                 <Trans>Cancel</Trans>
               </Button>
 
-              <Button type="submit" isDisabled={hasLeftover && !leftoverAction}>
+              <Button
+                type="submit"
+                isDisabled={
+                  (hasLeftover && !leftoverAction) ||
+                  // Completing a stocked item at zero receives nothing and
+                  // consumes nothing; the database refuses it as well.
+                  (job.itemTrackingType !== "Non-Inventory" &&
+                    !(quantityComplete > 0)) ||
+                  hasFractionalSerialQuantity
+                }
+              >
                 <Trans>Complete Job</Trans>
               </Button>
             </ModalFooter>

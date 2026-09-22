@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -11,6 +12,7 @@ import {
   getSalesReturnOrderStatus,
   round
 } from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -18,6 +20,7 @@ import type {
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -38,6 +41,7 @@ import {
 } from "../shared/shared.service";
 import type {
   customerAccountingValidator,
+  customerBankAccountValidator,
   customerContactValidator,
   customerPaymentValidator,
   customerShippingValidator,
@@ -338,6 +342,64 @@ export async function deleteCustomer(
   customerId: string
 ) {
   return client.from("customer").delete().eq("id", customerId);
+}
+
+export async function deleteCustomerBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("customerBankAccount").delete().eq("id", id);
+}
+
+export async function getCustomerBankAccounts(
+  client: SupabaseClient<Database>,
+  customerId: string
+) {
+  return client
+    .from("customerBankAccount")
+    .select("*")
+    .eq("customerId", customerId)
+    .order("name");
+}
+
+export async function upsertCustomerBankAccount(
+  db: Kysely<KyselyDatabase>,
+  bankAccount:
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof customerBankAccountValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const { customerId, companyId } = bankAccount;
+
+  if ("createdBy" in bankAccount) {
+    return await db
+      .insertInto("customerBankAccount")
+      .values(bankAccount)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  }
+
+  const { id, ...update } = bankAccount;
+
+  // customerId and companyId are scoping columns, not editable fields. They are
+  // also re-asserted in the WHERE clause so a forged form value cannot move
+  // this row to another customer.
+  return await db
+    .updateTable("customerBankAccount")
+    .set({ ...update, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("customerId", "=", customerId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
 }
 
 export async function deleteCustomerContact(
@@ -1086,8 +1148,8 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/opportunity/${opportunityId}`);
 
   if (result.error) {
@@ -1097,7 +1159,10 @@ export async function getOpportunityDocuments(
     return [];
   }
 
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "opportunity"
+  }));
 }
 
 export async function getOpportunityLineDocuments(
@@ -1107,12 +1172,12 @@ export async function getOpportunityLineDocuments(
   itemId?: string | null
 ) {
   const [opportunityLineResult, itemResult] = await Promise.all([
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/opportunity-line/${lineId}`),
     itemId
-      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
-      : Promise.resolve({ data: [] as any[], error: null })
+      ? storage(client).company(companyId).list(`${companyId}/parts/${itemId}`)
+      : Promise.resolve({ data: [] as FileObject[], error: null })
   ]);
 
   if (opportunityLineResult.error) {
@@ -1121,16 +1186,19 @@ export async function getOpportunityLineDocuments(
     });
   }
   if (itemResult.error) {
-    logger.error("Failed to list item documents", { error: itemResult.error });
+    logger.error("Failed to list item documents", {
+      error: itemResult.error
+    });
   }
 
-  const opportunityLineDocs =
-    opportunityLineResult.data?.map((f) => ({
-      ...f,
-      bucket: "opportunity-line"
-    })) ?? [];
-  const itemDocs =
-    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+  const opportunityLineDocs = (opportunityLineResult.data ?? []).map((f) => ({
+    ...f,
+    bucket: "opportunity-line"
+  }));
+  const itemDocs = (itemResult.data ?? []).map((f) => ({
+    ...f,
+    bucket: "parts"
+  }));
 
   return [...opportunityLineDocs, ...itemDocs];
 }
@@ -7104,7 +7172,7 @@ export async function getShippedTrackedEntitiesForCustomer(
       (entities.data ?? [])
         .map(
           (entity) =>
-            (entity.attributes as Record<string, unknown> | null)?.["Shipment"]
+            (entity.attributes as Record<string, unknown> | null)?.Shipment
         )
         .filter((value): value is string => typeof value === "string")
     )
@@ -7130,9 +7198,8 @@ export async function getShippedTrackedEntitiesForCustomer(
 
   return {
     data: (entities.data ?? []).filter((entity) => {
-      const shipmentId = (
-        entity.attributes as Record<string, unknown> | null
-      )?.["Shipment"];
+      const shipmentId = (entity.attributes as Record<string, unknown> | null)
+        ?.Shipment;
       return (
         typeof shipmentId === "string" && customerShipmentIds.has(shipmentId)
       );
@@ -7735,4 +7802,42 @@ export async function setSalesReturnOrderLineDisposition(
   }
 
   return { data: { id: lineId }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for an opportunity (quote/sales order/RFQ/sales
+ * invoice) document. First step of the two-step upload flow: PUT the file bytes to
+ * the returned `signedUrl`, then call `documents_insertUploadedDocument` with the
+ * returned `path`, the document type as `sourceDocument`, and the quote/order id as
+ * `sourceDocumentId`. The storage folder is scoped by `opportunityId`, which is a
+ * different id from `sourceDocumentId`.
+ */
+export async function createOpportunityDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; opportunityId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "opportunity",
+    entityId: args.opportunityId,
+    name: args.name
+  });
+}
+
+/**
+ * Create a presigned upload URL for an opportunity LINE document. First step of the
+ * two-step upload flow: PUT the file bytes to the returned `signedUrl`, then call
+ * `documents_insertUploadedDocument` with the returned `path`, the line's document
+ * type as `sourceDocument`, and the line id as `sourceDocumentId`.
+ */
+export async function createOpportunityLineDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; lineId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "opportunity-line",
+    entityId: args.lineId,
+    name: args.name
+  });
 }

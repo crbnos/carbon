@@ -188,6 +188,42 @@ describe("mcp tool-metadata generator", () => {
     expect(p.requiresSerialTracking?.enum).toEqual(["true", "false"]);
   });
 
+  // A JSON-string-transform field ALSO maps "true"/"false" to the booleans
+  // (`JSON.parse("true") === true`), which used to false-positive the
+  // string-encoded-boolean annotator and publish a bogus `enum: ["true","false"]`
+  // — so `{}` and `null` failed input validation and `"false"` corrupted the row.
+  // Guard the whole class: none of these JSON-payload fields is a boolean enum.
+  it("does not mistake JSON-string fields for string-encoded booleans", () => {
+    const boolEnum = (field: any) =>
+      Array.isArray(field?.enum) &&
+      field.enum.length === 2 &&
+      field.enum.includes("true") &&
+      field.enum.includes("false");
+
+    // methodMaterial.storageUnitIds is a location→bin map, published as a proper
+    // object map (or null to clear), and no longer a required field.
+    const mm = get("items_upsertMethodMaterial");
+    const storageUnitIds = props(mm).storageUnitIds;
+    expect(boolEnum(storageUnitIds)).toBe(false);
+    const objectBranch = (storageUnitIds?.anyOf ?? [storageUnitIds]).find(
+      (b: any) => b?.type === "object"
+    );
+    expect(objectBranch?.additionalProperties?.type).toBe("string");
+    expect(mm.schema.required ?? []).not.toContain("storageUnitIds");
+
+    // The other JSON-string transforms found in the audit.
+    expect(boolEnum(props(get("quality_upsertIssueWorkflow")).content)).toBe(
+      false
+    );
+    expect(
+      boolEnum(props(get("quality_upsertIssueWorkflow")).requiredActionIds)
+    ).toBe(false);
+    expect(boolEnum(props(get("quality_upsertGaugeCalibrationRecord")).notes)).toBe(
+      false
+    );
+    expect(boolEnum(props(get("quality_upsertRisk")).notes)).toBe(false);
+  });
+
   // A parenthesized discriminated-upsert union branch resolves instead of
   // publishing an opaque {} member (and the leading-pipe union style must not
   // contribute an empty first member).
@@ -222,22 +258,29 @@ describe("mcp tool-metadata generator", () => {
 
   // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
   it("resolves Array<T> generic params to typed arrays", () => {
-    const forecasts = props(get("production_upsertDemandForecasts")).forecasts;
-    expect(forecasts?.type).toBe("array");
-    expect(Object.keys(forecasts?.items?.properties ?? {})).toContain("itemId");
+    const sourceTools = props(get("production_maxToolQuantityByItem")).sourceTools;
+    expect(sourceTools?.type).toBe("array");
+    expect(Object.keys(sourceTools?.items?.properties ?? {})).toContain("itemId");
   });
 
   // A bare type alias declared in the module's own sources (service file,
   // types.ts, models, or shared) resolves; Partial<{...}> drops required.
+  // `diffMethod(input: DiffMethodInput)` — DiffMethodInput is a named type
+  // alias declared in items.service.ts, so it must resolve to real properties
+  // rather than an opaque {}.
   it("resolves module-local type aliases and Partial wrappers", () => {
-    const rule = props(get("shared_upsertApprovalRule")).rule;
-    const ruleBranches = rule?.anyOf ?? [rule];
+    const input = props(get("items_diffMethod")).input;
+    const inputBranches = input?.anyOf ?? [input];
     expect(
-      Object.keys(ruleBranches[0]?.properties ?? {}).length
+      Object.keys(inputBranches[0]?.properties ?? {}).length
     ).toBeGreaterThan(0);
 
+    // updateAbility takes an optional `name` and an optional cadence, so the
+    // published schema has both fields and no required list.
     const ability = props(get("resources_updateAbility")).ability;
-    expect(Object.keys(ability?.properties ?? {})).toContain("name");
+    expect(Object.keys(ability?.properties ?? {})).toEqual(
+      expect.arrayContaining(["name", "recertifyEveryDays"])
+    );
     expect(ability?.required).toBeUndefined();
   });
 

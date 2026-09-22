@@ -1,9 +1,9 @@
+import type { RuntimeValue } from "@carbon/ee/workflows";
+import { entityValue, listValue, primitiveValue } from "@carbon/ee/workflows";
 import {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
-import type { RuntimeValue } from "@carbon/workflows";
-import { entityValue, listValue, primitiveValue } from "@carbon/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { runNotifyAction } from "./notify";
 

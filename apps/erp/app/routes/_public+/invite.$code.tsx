@@ -4,7 +4,6 @@ import {
   error,
   getAppUrl,
   getPermissionCacheKey,
-  RESEND_DOMAIN,
   success as successFlash
 } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -14,10 +13,10 @@ import {
   getAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
 import { InviteEmail } from "@carbon/documents/email";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { Ratelimit, redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { Button as _Button, Heading as _Heading, VStack } from "@carbon/react";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
@@ -255,7 +254,6 @@ async function requestNewInvite(
     .single();
 
   await sendEmail({
-    from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: invite.data.email,
     subject: `You have been invited to join ${invite.data.company?.name} on Carbon`,
     headers: { "X-Entity-Ref-ID": nanoid() },

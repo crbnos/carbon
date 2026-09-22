@@ -121,6 +121,12 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
          * like `canvas` above.
          */
         ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
+        // unpdf's bundled PDF.js engine is a dead lazy chunk here — the browser
+        // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out.
+        "unpdf/pdfjs": path.resolve(
+          __dirname,
+          "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+        ),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),

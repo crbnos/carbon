@@ -4,6 +4,15 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
+import {
+  approveRequest,
+  canApproveRequest,
+  canCancelRequest,
+  getLatestApprovalRequestForDocument,
+  getLowerTierApproverUserIds,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -35,14 +44,6 @@ import {
   PurchaseOrderProperties
 } from "~/modules/purchasing/ui/PurchaseOrder";
 import { getCompany, getCompanySettings } from "~/modules/settings";
-import {
-  approveRequest,
-  canApproveRequest,
-  canCancelRequest,
-  getLatestApprovalRequestForDocument,
-  getLowerTierApproverUserIds,
-  rejectRequest
-} from "~/modules/shared";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
@@ -221,8 +222,8 @@ export async function action(args: ActionFunctionArgs) {
 
           documentFilePath = `${companyId}/supplier-interaction/${purchaseOrder.data.supplierInteractionId}/${fileName}`;
 
-          const documentFileUpload = await serviceRole.storage
-            .from("private")
+          const documentFileUpload = await storage(serviceRole)
+            .company(companyId)
             .upload(documentFilePath, file, {
               cacheControl: `${12 * 60 * 60}`,
               contentType: "application/pdf",
@@ -318,9 +319,15 @@ export async function action(args: ActionFunctionArgs) {
             const html = await renderAsync(emailTemplate);
             const text = await renderAsync(emailTemplate, { plainText: true });
 
-            const { data: signedUrlData } = await serviceRole.storage
-              .from("private")
+            const signed = await storage(serviceRole)
+              .company(companyId)
               .createSignedUrl(documentFilePath!, 3600);
+            if (signed.error) {
+              logger.error("Failed to create signed URL for attachment", {
+                storagePath: documentFilePath,
+                error: signed.error
+              });
+            }
 
             await trigger("send-email", {
               to: [buyer.data.email, supplierEmail],
@@ -329,10 +336,10 @@ export async function action(args: ActionFunctionArgs) {
               subject: `Purchase Order ${getPurchaseOrderDisplayId(purchaseOrder.data)} from ${company.data.name}`,
               html,
               text,
-              attachments: signedUrlData?.signedUrl
+              attachments: signed.data
                 ? [
                     {
-                      path: signedUrlData.signedUrl,
+                      path: signed.data.signedUrl,
                       filename: fileName!
                     }
                   ]

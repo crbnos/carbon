@@ -16,7 +16,8 @@ import {
   requireAuthSession,
   updateCompanySession
 } from "@carbon/auth/session.server";
-import { isAuditLogEnabled } from "@carbon/database/audit";
+import { isApprovalRequired } from "@carbon/ee/approvals.server";
+import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
 import {
   detectImplementationSignals,
@@ -73,10 +74,7 @@ import {
   getEmployeeCompanies
 } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
-import {
-  getSavedViews,
-  isApprovalRequired
-} from "~/modules/shared/shared.service";
+import { getSavedViews } from "~/modules/shared/shared.service";
 import { getItarCertificationStatus } from "~/modules/users";
 import {
   getModulePreferences,

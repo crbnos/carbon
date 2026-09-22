@@ -19,6 +19,7 @@ declare global {
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
+      RAMP_CLIENT_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
       VERCEL_URL: string;
@@ -54,7 +55,6 @@ declare global {
       QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
-      RESEND_DOMAIN: string;
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
@@ -63,6 +63,11 @@ declare global {
       SLACK_OAUTH_REDIRECT_URL: string;
       SLACK_SIGNING_SECRET: string;
       SLACK_STATE_SECRET: string;
+      SMTP_FROM: string;
+      SMTP_HOST: string;
+      SMTP_PASSWORD: string;
+      SMTP_PORT: string;
+      SMTP_USER: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_CONNECT_WEBHOOK_SECRET: string;
@@ -285,15 +290,44 @@ export const QUICKBOOKS_ENVIRONMENT =
     isSecret: false
   }) ?? "production";
 
+/**
+ * Carbon's own Ramp OAuth application (the "Connect to Ramp" authorization-code
+ * flow). Distinct from any single customer's client-credentials pair — this is
+ * the one app Carbon registers with Ramp. The client id is public (it appears in
+ * the authorize URL); the secret is server-only (code exchange + token refresh).
+ */
+export const RAMP_CLIENT_ID = getEnv("RAMP_CLIENT_ID", {
+  isRequired: false
+});
+
+export const RAMP_CLIENT_SECRET = getEnv("RAMP_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
   isSecret: true
 });
 
-export const RESEND_DOMAIN =
-  getEnv("RESEND_DOMAIN", {
+export const SMTP_FROM = getEnv("SMTP_FROM", {
+  isRequired: false
+});
+export const SMTP_HOST = getEnv("SMTP_HOST", {
+  isRequired: false
+});
+export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD", {
+  isRequired: false,
+  isSecret: true
+});
+export const SMTP_PORT = Number(
+  getEnv("SMTP_PORT", {
     isRequired: false
-  }) ?? "carbon.ms";
+  }) || 587
+);
+export const SMTP_USER = getEnv("SMTP_USER", {
+  isRequired: false
+});
 
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false
@@ -470,6 +504,18 @@ export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false
 });
 
+// Server-only. In a BYOC/self-hosted k8s deployment, the server's own calls to
+// Supabase can be pointed at an in-cluster address (bypassing the ingress hop
+// that some clusters — k3s's load balancer refusing pod-to-own-LB traffic in
+// particular — cannot route) while the browser keeps the public SUPABASE_URL.
+// Falls back to SUPABASE_URL so every existing deployment (Vercel included) is
+// unaffected when unset. Same pattern as INNGEST_BASE_URL: read directly, never
+// added to getBrowserEnv() or the Window.env interface, so it cannot leak to
+// the browser by construction.
+export const SUPABASE_INTERNAL_URL =
+  getEnv("SUPABASE_INTERNAL_URL", { isRequired: false, isSecret: false }) ||
+  SUPABASE_URL;
+
 export const DEFAULT_LANGUAGE =
   getEnv("DEFAULT_LANGUAGE", {
     isRequired: false,
@@ -547,6 +593,7 @@ export function getBrowserEnv() {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
     VERCEL_ENV,

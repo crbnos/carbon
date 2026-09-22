@@ -1,15 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { unassignStorageRule } from "@carbon/ee/rules.server";
+import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { unassignStorageRule } from "~/modules/storage-rules";
 import { path } from "~/utils/path";
-import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -17,7 +13,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     delete: "resources"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -32,7 +28,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await unassignStorageRule(client, {
     targetType: "workCenter",
     targetId: workCenterId,
-    ruleId
+    ruleId,
+    companyId
   });
   if (result.error) {
     throw redirect(
@@ -45,19 +42,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request.headers.get("Referer") ?? path.to.storageRules,
     await flash(request, success("Rule unassigned"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { workCenterId } = params;
-  if (workCenterId) {
-    window?.clientCache?.setQueryData(
-      storageRuleAssignmentsQuery("workCenter", workCenterId, getCompanyId())
-        .queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }

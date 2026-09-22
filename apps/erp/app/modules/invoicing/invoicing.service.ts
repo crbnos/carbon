@@ -34,13 +34,15 @@ import {
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import { getExchangeRate } from "../accounting/accounting.ee.service";
+import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
 import type {
+  CardTransactionStatusType,
+  CardTransactionType,
   invoiceSettlementValidator,
   memoValidator,
   PaymentStatusType,
@@ -1425,6 +1427,53 @@ export async function getPayments(
   // the most recently created payment is at the top (paymentDate ties otherwise).
   query = setGenericQueryFilters(query, args, [
     { column: "paymentId", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getCardTransaction(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  id: string
+) {
+  return client
+    .from("cardTransaction")
+    .select("*, cardTransactionLine(*)")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getCardTransactions(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    type: CardTransactionType | null;
+    status: CardTransactionStatusType | null;
+  }
+) {
+  let query = client
+    .from("cardTransaction")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `cardTransactionId.ilike.%${args.search}%,merchantName.ilike.%${args.search}%`
+    );
+  }
+  if (args.type) {
+    query = query.eq("type", args.type);
+  }
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+
+  // Default to newest first by the sequential cardTransactionId
+  // (CARD-yyyy-mm-NNNNNN), mirroring getPayments' paymentId desc default.
+  query = setGenericQueryFilters(query, args, [
+    { column: "cardTransactionId", ascending: false }
   ]);
   return query;
 }

@@ -206,7 +206,11 @@ export namespace Qbo {
   export type Invoice = z.infer<typeof InvoiceSchema>;
 
   export const AccountBasedExpenseLineDetailSchema = z.object({
-    AccountRef: RefSchema
+    AccountRef: RefSchema,
+    /** Dimension slot target "class" (QBO Class entity) — per line on
+     * expense-style transactions; `DepartmentRef` is transaction-level there
+     * (only JournalEntry carries it per line). */
+    ClassRef: RefSchema.optional()
   });
 
   export type AccountBasedExpenseLineDetail = z.infer<
@@ -277,6 +281,50 @@ export namespace Qbo {
   });
 
   export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
+
+  /**
+   * Reference to a transaction counterparty (`Purchase.EntityRef`): a plain
+   * ref plus the entity kind, since a Purchase can be paid to a Vendor,
+   * Customer or Employee.
+   */
+  export const EntityRefSchema = RefSchema.extend({
+    type: z.enum(["Vendor", "Customer", "Employee"]).optional()
+  });
+
+  export type EntityRef = z.infer<typeof EntityRefSchema>;
+
+  /**
+   * QBO Purchase — a bank / credit-card expense transaction. Carbon writes
+   * only `PaymentType: "CreditCard"` purchases (card charges, entityType
+   * "charge"): `AccountRef` is the credit-card liability account, `EntityRef`
+   * the vendor, and `Credit: true` marks a card REFUND (Intuit: "If Credit is
+   * Null or False, it is considered as Charge. If true, the CreditCard
+   * represents a Refund"). `DepartmentRef` is transaction-level here.
+   */
+  export const PurchaseSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    PaymentType: z.enum(["Cash", "Check", "CreditCard"]),
+    /** The bank / credit-card account the purchase is paid from. */
+    AccountRef: RefSchema,
+    EntityRef: EntityRefSchema.optional(),
+    /** Only meaningful for PaymentType "CreditCard": true = refund. */
+    Credit: z.boolean().optional(),
+    DocNumber: z.string().optional(),
+    TxnDate: z.string().optional(),
+    PrivateNote: z.string().optional(),
+    /** Dimension slot target "department" (QBO Department / Location). */
+    DepartmentRef: RefSchema.optional(),
+    /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX purchases. */
+    CurrencyRef: RefSchema.optional(),
+    /** Foreign→home exchange rate — set on FX purchases (omitted at rate 1). */
+    ExchangeRate: z.number().optional(),
+    Line: z.array(ExpenseLineSchema),
+    TotalAmt: z.number().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type Purchase = z.infer<typeof PurchaseSchema>;
 
   /**
    * A settled transaction referenced by a payment line. QBO BillPayment lines

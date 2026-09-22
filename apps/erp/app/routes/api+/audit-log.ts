@@ -3,7 +3,7 @@ import {
   getEntityAuditLog,
   isAuditLogEnabled,
   syncAuditSubscriptions
-} from "@carbon/database/audit";
+} from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 

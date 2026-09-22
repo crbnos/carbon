@@ -13,16 +13,13 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
   useDebounce
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
-import { usePermissions, useUser } from "~/hooks";
-import { getPrivateUrl } from "~/utils/path";
+import { useImageUpload, usePermissions, useUser } from "~/hooks";
 
 const OpportunityLineNotes = ({
   id,
@@ -41,10 +38,7 @@ const OpportunityLineNotes = ({
   internalNotes?: JSONContent;
   externalNotes?: JSONContent;
 }) => {
-  const {
-    id: userId,
-    company: { id: companyId }
-  } = useUser();
+  const { id: userId } = useUser();
   const { carbon } = useCarbon();
   const permissions = usePermissions();
   const isEmployee = permissions.is("employee");
@@ -58,23 +52,7 @@ const OpportunityLineNotes = ({
     initialExternalNotes ?? {}
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/opportunity-line/${id}/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`opportunity-line/${id}`);
 
   const onUpdateExternalNotes = useDebounce(
     async (content: JSONContent) => {

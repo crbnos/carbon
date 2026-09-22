@@ -32,7 +32,7 @@ function ensureConfigured(): void {
   configured = true;
 
   // Dual-runtime: this module is imported by the scheduling engine, which runs
-  // BOTH in the Deno edge runtime and in-process in Node (@carbon/ee/planning,
+  // BOTH in the Deno edge runtime and in-process in Node (@carbon/planning,
   // the ERP/MES apps, @carbon/jobs).
   //
   // ONLY the edge runtime may configure LogTape. In Node the host app already
@@ -52,7 +52,13 @@ function ensureConfigured(): void {
     .Deno?.env;
   if (!denoEnv) return;
 
-  const raw = denoEnv.get("LOG_LEVEL")?.toLowerCase().trim();
+  let raw: string | undefined;
+  try {
+    raw = denoEnv.get("LOG_LEVEL")?.toLowerCase().trim();
+  } catch {
+    // Permissionless test and tooling processes intentionally deny env access.
+    // They should receive the same default level as an unset LOG_LEVEL.
+  }
   const level: Level =
     raw && (LOG_LEVELS as readonly string[]).includes(raw)
       ? (raw as Level)

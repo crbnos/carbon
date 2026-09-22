@@ -1,4 +1,4 @@
-// Reorder-quantity sizing shared by the MRP engine (@carbon/ee/planning) and the
+// Reorder-quantity sizing shared by the MRP engine (@carbon/planning) and the
 // client planning calculator (ItemReorderPolicy.tsx). Ported 1:1 from the client
 // `calculateOrders` four-policy math, which itself mirrors the SQL
 // `calculate_quantity_to_order` (20260324120000_planning-quantity-to-order.sql).

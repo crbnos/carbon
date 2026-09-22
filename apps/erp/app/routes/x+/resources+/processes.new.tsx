@@ -58,7 +58,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (d.requiresAbility && createProcess.data?.id) {
     const abilityResult = await ensureProcessAbility(client, {
       processId: createProcess.data.id,
-      processName: d.name,
       companyId,
       userId
     });

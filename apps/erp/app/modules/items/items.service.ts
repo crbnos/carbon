@@ -6,11 +6,13 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -795,10 +797,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getItemPostingGroup(
@@ -892,6 +894,47 @@ export async function getItemQuantities(
     .maybeSingle();
 }
 
+/**
+ * On-hand quantity per item for the Item picker's badge, as a plain map.
+ *
+ * `locationId` of "all" totals every location (including the '' bucket for
+ * ledger rows with no location), matching what the picker shows when no
+ * location is in play. Zero rows are dropped — the picker renders no badge for
+ * an item it has no row for, so they carry no information and are the bulk of
+ * the table on a tenant with history.
+ */
+export async function getItemStockQuantitiesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const { data, error } = await fetchAllFromTable<{
+    itemId: string;
+    quantityOnHand: number;
+  }>(client, "itemStockQuantities", "itemId, quantityOnHand", (query) => {
+    const scoped = query
+      .eq("companyId", companyId)
+      .neq("quantityOnHand", 0)
+      // Total order across the whole key: fetchAllFromTable pages, and without
+      // one a concurrent write can shift a row across a page boundary.
+      .order("itemId")
+      .order("locationId");
+
+    return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
+  });
+
+  if (error) return { data: null, error };
+
+  const quantities: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (!row.itemId) continue;
+    quantities[row.itemId] =
+      (quantities[row.itemId] ?? 0) + (Number(row.quantityOnHand) || 0);
+  }
+
+  return { data: quantities, error: null };
+}
+
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -919,6 +962,21 @@ export async function getItemSupersession(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .maybeSingle();
+}
+
+export async function getItemSupersessionsForItems(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+) {
+  if (itemIds.length === 0) return { data: [], error: null };
+  return client
+    .from("itemSupersession")
+    .select(
+      "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor, successor:item!itemSupersession_successorItemId_fkey(readableIdWithRevision)"
+    )
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
 }
 
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
@@ -1782,7 +1840,7 @@ export async function getOpenJobMaterials(
   return client
     .from("openJobMaterialLines")
     .select(
-      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, quantityPerParent, documentReadableId:jobReadableId, documentId:jobId, dueDate"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
@@ -2260,6 +2318,18 @@ export async function getUnitOfMeasure(
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
+}
+
+/**
+ * Which tables still reference a unit of measure, and how many rows each;
+ * empty means safe to delete (or id not visible to the caller). RPC-backed so
+ * the answer doesn't depend on the caller's module permissions.
+ */
+export async function getUnitOfMeasureUsage(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
 export async function getUnitOfMeasures(
@@ -3788,6 +3858,57 @@ export async function upsertItemPurchasing(
     .eq("itemId", update.itemId);
 }
 
+export const SUPERSESSION_CYCLE_CODE = "SUPERSESSION_CYCLE";
+
+const SUPERSESSION_CHAIN_LIMIT = 10;
+
+async function findSupersessionCycle(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  successorItemId: string,
+  companyId: string
+): Promise<
+  | { kind: "ok" }
+  | { kind: "cycle"; path: string[] }
+  | { kind: "tooLong" }
+  | { kind: "error"; error: PostgrestError }
+> {
+  const path = [itemId, successorItemId];
+  const visited = new Set(path);
+  let currentId = successorItemId;
+  let closed = false;
+  for (let hop = 0; hop < SUPERSESSION_CHAIN_LIMIT; hop++) {
+    const link = await client
+      .from("itemSupersession")
+      .select("successorItemId")
+      .eq("itemId", currentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (link.error) return { kind: "error", error: link.error };
+    const next = link.data?.successorItemId;
+    if (!next) return { kind: "ok" };
+    path.push(next);
+    if (visited.has(next)) {
+      closed = true;
+      break;
+    }
+    visited.add(next);
+    currentId = next;
+  }
+  if (!closed) return { kind: "tooLong" };
+
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", Array.from(new Set(path)))
+    .eq("companyId", companyId);
+  if (items.error) return { kind: "error", error: items.error };
+  const readable = new Map(
+    (items.data ?? []).map((i) => [i.id, i.readableIdWithRevision ?? i.id])
+  );
+  return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
+}
+
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -3832,6 +3953,35 @@ export async function upsertItemSupersession(
   }
 
   const isNoStock = supersessionMode === "No Stock";
+
+  if (!isNoStock && successorItemId) {
+    const check = await findSupersessionCycle(
+      client,
+      itemId,
+      successorItemId,
+      companyId
+    );
+    if (check.kind === "error") return { data: null, error: check.error };
+    if (check.kind === "tooLong") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `Supersession chains longer than ${SUPERSESSION_CHAIN_LIMIT} hops are not allowed`
+        }
+      };
+    }
+    if (check.kind === "cycle") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `This would create a supersession loop: ${check.path.join(" → ")}`
+        }
+      };
+    }
+  }
+
   const row = {
     supersessionMode,
     // No Stock has no successor (nothing takes over the demand).
@@ -4017,6 +4167,42 @@ export async function upsertMakeMethodVersion(
  * where an item can be stocked across multiple locations, each with its
  * own preferred bin.
  */
+/**
+ * Coerce whatever a caller supplied for `storageUnitIds` into the
+ * location → storageUnitId map the column stores. The web form pre-parses its
+ * JSON string through `methodMaterialValidator`, but the MCP/API dispatch path
+ * bypasses that validator and hands the service the raw value, so normalize
+ * defensively here too: an object map is kept (string values only), a JSON
+ * string is parsed, and null/undefined/anything-else collapses to `{}`. A bare
+ * string used to be spread character-by-character into the JSONB column
+ * (`"false"` → `{"0":"f","1":"a",…}`) — this is where that is stopped.
+ */
+function normalizeStorageUnitIds(value: unknown): Record<string, string> {
+  const fromObject = (obj: Record<string, unknown>): Record<string, string> => {
+    const out: Record<string, string> = {};
+    for (const [key, v] of Object.entries(obj)) {
+      if (typeof v === "string") out[key] = v;
+    }
+    return out;
+  };
+
+  if (value == null) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? fromObject(parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return fromObject(value as Record<string, unknown>);
+  }
+  return {};
+}
+
 async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
@@ -4090,16 +4276,14 @@ export async function upsertMethodMaterial(
   }
 
   if ("createdBy" in methodMaterial) {
-    // Seed storageUnitIds from the child item's default location/storage-unit
-    // if the caller didn't already provide one for that location. Respects
-    // the form value when supplied, adds a sensible default otherwise.
+    // On create, an omitted / null storageUnitIds normalizes to `{}`, then the
+    // child item's default location/storage-unit picks seed any locations the
+    // caller didn't specify. Respects supplied values; adds sensible defaults.
     const seededStorageUnitIds = await resolveMethodMaterialStorageUnitIds(
       client,
       {
         itemId: methodMaterial.itemId,
-        current: methodMaterial.storageUnitIds as
-          | Record<string, string>
-          | undefined
+        current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );
     return client
@@ -4115,9 +4299,28 @@ export async function upsertMethodMaterial(
       .select("id")
       .single();
   }
+  // On update, an OMITTED storageUnitIds preserves the stored value (drop the key
+  // so `sanitize` can't null it), while an explicit null / {} / map is written —
+  // null and {} both clear it. The web form always submits the field, so its
+  // behavior is unchanged; only the MCP/API caller can omit it.
+  if (methodMaterial.storageUnitIds === undefined) {
+    const { storageUnitIds: _omitted, ...preserved } = methodMaterial;
+    return client
+      .from("methodMaterial")
+      .update(sanitize({ ...preserved, materialMakeMethodId }))
+      .eq("id", methodMaterial.id)
+      .select("id")
+      .single();
+  }
   return client
     .from("methodMaterial")
-    .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
+    .update(
+      sanitize({
+        ...methodMaterial,
+        materialMakeMethodId,
+        storageUnitIds: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
+      })
+    )
     .eq("id", methodMaterial.id)
     .select("id")
     .single();
@@ -8083,4 +8286,23 @@ export async function getChangeNoticeDiff(
   }
 
   return { data: { items }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for an item (part/material/tool/consumable/service)
+ * document. First step of the two-step upload flow: PUT the file bytes to the
+ * returned `signedUrl`, then call `documents_insertUploadedDocument` with the
+ * returned `path`, the item's type as `sourceDocument`, and
+ * `sourceDocumentId: itemId`.
+ */
+export async function createItemDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "parts",
+    entityId: args.itemId,
+    name: args.name
+  });
 }

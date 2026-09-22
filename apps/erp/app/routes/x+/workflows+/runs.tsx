@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
@@ -13,7 +13,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     view: "workflows",
     role: "employee"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

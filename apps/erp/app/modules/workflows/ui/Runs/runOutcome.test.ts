@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from "@carbon/workflows";
+import type { WorkflowDefinition } from "@carbon/ee/workflows";
 import { describe, expect, it, vi } from "vitest";
 import type {
   WorkflowRunDetail,

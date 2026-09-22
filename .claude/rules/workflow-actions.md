@@ -1,6 +1,6 @@
 ---
 description: Workflow actions and operations — the two hand-written catalogue sources plus the entity `write` allowlists, and the job-side executors that carry them out as the workflow's owner. Read before adding an action, an operation, or anything a workflow can write or call.
-paths: ["packages/jobs/src/workflows/actions/**", "packages/workflows/src/catalog/actions.ts", "packages/workflows/src/catalog/operations.ts"]
+paths: ["packages/jobs/src/workflows/actions/**", "packages/ee/src/workflows/catalog/actions.ts", "packages/ee/src/workflows/catalog/operations.ts"]
 ---
 
 # Workflow Actions and Operations
@@ -15,14 +15,14 @@ Matcher: `workflow-matcher.md`.
 ## Where the catalogue comes from
 
 ```
-packages/workflows/src/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
-packages/workflows/src/catalog/operations.ts  HAND-WRITTEN  read-only computations
-packages/workflows/src/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
+packages/ee/src/workflows/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
+packages/ee/src/workflows/catalog/operations.ts  HAND-WRITTEN  read-only computations
+packages/ee/src/workflows/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
                     │
                     ▼  scripts/generate-workflow-catalog.ts → buildCatalog (pure)
-packages/workflows/src/catalog/actions.generated.ts   COMMITTED
+packages/ee/src/workflows/catalog/actions.generated.ts   COMMITTED
       WORKFLOW_ACTION_CATALOG  +  WORKFLOW_OPERATION_CATALOG   (one file, both maps)
-packages/workflows/src/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
+packages/ee/src/workflows/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
 ```
 
 Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and
@@ -117,7 +117,7 @@ the dispatch layer (`enrichWithAuthContext` in
 
 ## `createWorkflowServices` — the one port
 
-`packages/workflows/src/runtime/types.ts` declares `WorkflowServices`
+`packages/ee/src/workflows/runtime/types.ts` declares `WorkflowServices`
 (`runAction`, `runOperation`, `search`). It is **required** on `RuntimeContext`,
 so a missing implementation is a compile error. The pure runtime knows nothing
 else about the world.

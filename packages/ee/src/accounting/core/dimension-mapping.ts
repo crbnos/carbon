@@ -403,7 +403,7 @@ export function matchDimensionValuesByName(args: {
 
 /**
  * The source table + label column per dimension entityType. Mirrors
- * `getEntityValuesByIds` in apps/erp accounting.ee.service.ts and the
+ * `getEntityValuesByIds` in apps/erp accounting.service.ts and the
  * DimensionSelector's client-store resolution (WorkCenter/Process). The
  * Item label is the READABLE part id (readableIdWithRevision), never the
  * internal id.
@@ -424,7 +424,8 @@ const DIMENSION_LABEL_SOURCES: Record<string, LabelSource> = {
   Supplier: { table: "supplier", labelColumn: "name" },
   Item: { table: "item", labelColumn: "readableIdWithRevision" },
   WorkCenter: { table: "workCenter", labelColumn: "name" },
-  Process: { table: "process", labelColumn: "name" }
+  Process: { table: "process", labelColumn: "name" },
+  Project: { table: "project", labelColumn: "name" }
 };
 
 /**

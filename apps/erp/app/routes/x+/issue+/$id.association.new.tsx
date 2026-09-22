@@ -1,10 +1,13 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { getIssue, isIssueLocked } from "~/modules/quality";
 import { issueAssociationValidator } from "~/modules/quality/quality.models";
+import { linkEntitiesToIssueItemRow } from "~/modules/quality/quality-disposition.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -387,31 +390,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const inspection = await (client as any)
         .from("inspection")
         .select(
-          "id, itemId, lotSize, receiptLineId, inspectionSample(trackedEntityId)"
+          "id, itemId, lotSize, sourceDocument, sourceDocumentLineId, inspectionSample(trackedEntityId)"
         )
         .eq("id", id)
+        // The link below is written through Kysely (no RLS), so scope here.
+        .eq("companyId", companyId)
         .single();
       if (inspection.error) {
         logger.error("Failed to create association", {
           error: inspection.error
-        });
-        return {
-          success: false,
-          message: "Failed to create issue inbound inspection"
-        };
-      }
-
-      const linkResult = await (client as any)
-        .from("nonConformanceInspection")
-        .insert({
-          nonConformanceId,
-          inspectionId: inspection.data.id,
-          createdBy: userId,
-          companyId: companyId
-        });
-      if (linkResult.error) {
-        logger.error("Failed to create association", {
-          error: linkResult.error
         });
         return {
           success: false,
@@ -429,12 +416,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Pull the rest of the lot too — un-sampled entities are still part of
       // the lot the MRB needs to disposition.
       let lotEntityIds: string[] = sampledIds;
-      if (inspection.data.receiptLineId) {
+      if (
+        inspection.data.sourceDocument === "Receipt" &&
+        inspection.data.sourceDocumentLineId
+      ) {
         const receiptLineEntities = await client
           .from("trackedEntity")
           .select("id")
-          .eq("attributes ->> Receipt Line", inspection.data.receiptLineId)
+          .eq(
+            "attributes ->> Receipt Line",
+            inspection.data.sourceDocumentLineId
+          )
           .eq("companyId", companyId);
+        // A failed read would link only the sampled part of the lot.
+        if (receiptLineEntities.error) {
+          logger.error("Failed to create association", {
+            error: receiptLineEntities.error
+          });
+          return {
+            success: false,
+            message: "Failed to create issue inbound inspection"
+          };
+        }
         lotEntityIds = Array.from(
           new Set([
             ...sampledIds,
@@ -445,14 +448,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
         );
       }
 
-      await autoLinkInspectionContext(client, {
+      const linked = await linkInspection(client, {
         nonConformanceId,
         companyId,
         userId,
+        inspectionId: inspection.data.id,
         itemId: inspection.data.itemId ?? null,
         lotSize: Number(inspection.data.lotSize ?? 0),
         trackedEntityIds: lotEntityIds
       });
+      if (!linked) {
+        return {
+          success: false,
+          message: "Failed to create issue inbound inspection"
+        };
+      }
       break;
     }
   }
@@ -514,25 +524,48 @@ async function autoLinkJobOperationContext(
   });
 }
 
-async function autoLinkInspectionContext(
+// Links an inspection to the issue and seeds the item's disposition row with
+// the lot. The inspection link and the row writes share one transaction under
+// the issue lock, so a concurrent quantity edit either lands before (and the
+// row write overwrites it) or sees the inspection link and is refused.
+async function linkInspection(
   client: Awaited<ReturnType<typeof requirePermissions>>["client"],
   args: {
     nonConformanceId: string;
     companyId: string;
     userId: string;
+    inspectionId: string;
     itemId: string | null;
     lotSize: number;
     trackedEntityIds: string[];
   }
-) {
+): Promise<boolean> {
   const {
     nonConformanceId,
     companyId,
     userId,
+    inspectionId,
     itemId,
     lotSize,
     trackedEntityIds
   } = args;
+
+  // Read before writing anything: a failed read would seed the row with
+  // wrong quantities and still report success.
+  const entityQuantities =
+    trackedEntityIds.length > 0
+      ? await client
+          .from("trackedEntity")
+          .select("id, quantity")
+          .in("id", trackedEntityIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null };
+  if (entityQuantities.error) {
+    logger.error("Failed to create association", {
+      error: entityQuantities.error
+    });
+    return false;
+  }
 
   await insertMissingTrackedEntities(client, {
     nonConformanceId,
@@ -541,113 +574,54 @@ async function autoLinkInspectionContext(
     trackedEntityIds
   });
 
-  if (!itemId) return;
-
-  // Find or create the disposition row for this item. New rows start at qty 0;
-  // we'll bump the qty below by the sum of newly-attached entity quantities
-  // so nonConformanceItem.quantity stays in sync with sum(links.quantity) and
-  // the closure validator's link-sum check is satisfied.
-  const existing = await client
-    .from("nonConformanceItem")
-    .select("id, quantity")
-    .eq("nonConformanceId", nonConformanceId)
-    .eq("itemId", itemId)
-    .maybeSingle();
-
-  let itemRowId: string;
-  let currentQty: number;
-  if (existing.data) {
-    itemRowId = existing.data.id as string;
-    currentQty = Number(existing.data.quantity ?? 0);
-  } else {
-    const insert = await (client as any)
-      .from("nonConformanceItem")
-      .insert({
-        itemId,
-        nonConformanceId,
-        createdBy: userId,
-        companyId,
-        quantity: 0
-      })
-      .select("id, quantity")
-      .single();
-    if (insert.error || !insert.data) {
-      logger.error("Failed to create association", { error: insert.error });
-      return;
-    }
-    itemRowId = insert.data.id as string;
-    currentQty = Number(insert.data.quantity ?? 0);
-  }
-
-  if (trackedEntityIds.length === 0) {
-    // No entities to link — leave the row at its current qty (or fall back to
-    // the lot size for a freshly-created empty row, so the user sees something
-    // meaningful in the disposition list).
-    if (currentQty === 0 && lotSize > 0) {
-      await client
-        .from("nonConformanceItem")
-        .update({
-          quantity: lotSize,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .eq("id", itemRowId)
-        .eq("companyId", companyId);
-    }
-    return;
-  }
-
-  // An entity may only appear on one disposition row per NCR (DB ncUnique
-  // constraint) — skip anything that's already linked anywhere on this NCR.
-  const alreadyLinked = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", trackedEntityIds);
-  const alreadyLinkedSet = new Set(
-    ((alreadyLinked.data ?? []) as { trackedEntityId: string }[]).map(
-      (r) => r.trackedEntityId
-    )
-  );
-  const toLink = trackedEntityIds.filter((id) => !alreadyLinkedSet.has(id));
-  if (toLink.length === 0) return;
-
-  const entityQuantities = await client
-    .from("trackedEntity")
-    .select("id, quantity")
-    .in("id", toLink)
-    .eq("companyId", companyId);
-  const entityQtyById = new Map(
+  const quantityById = new Map(
     (
       (entityQuantities.data ?? []) as { id: string; quantity: number | null }[]
     ).map((e) => [e.id, Number(e.quantity ?? 1)])
   );
-
-  const linkRows = toLink.map((trackedEntityId) => ({
-    nonConformanceItemId: itemRowId,
-    trackedEntityId,
-    quantity: entityQtyById.get(trackedEntityId) ?? 1,
-    companyId,
-    createdBy: userId
+  const entities = trackedEntityIds.map((id) => ({
+    id,
+    quantity: quantityById.get(id) ?? 1
   }));
-  const linkInsert = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .insert(linkRows);
-  if (linkInsert.error) {
-    logger.error("Failed to create association", { error: linkInsert.error });
-    return;
-  }
 
-  const addedQty = linkRows.reduce((acc, r) => acc + r.quantity, 0);
-  await client
-    .from("nonConformanceItem")
-    .update({
-      quantity: currentQty + addedQty,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", itemRowId)
-    .eq("companyId", companyId);
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        const { status } = await lockIssueDispositions(trx, {
+          nonConformanceId,
+          companyId
+        });
+        if (isIssueLocked(status)) {
+          throw new Error("Cannot modify a closed issue. Reopen it first.");
+        }
+
+        await trx
+          .insertInto("nonConformanceInspection")
+          .values({
+            nonConformanceId,
+            inspectionId,
+            companyId,
+            createdBy: userId
+          })
+          .execute();
+
+        if (itemId) {
+          await linkEntitiesToIssueItemRow(trx, {
+            nonConformanceId,
+            companyId,
+            userId,
+            itemId,
+            entities,
+            fallbackQuantity: lotSize
+          });
+        }
+      });
+    return true;
+  } catch (err) {
+    logger.error("Failed to create association", { error: err });
+    return false;
+  }
 }
 
 async function insertMissingItem(

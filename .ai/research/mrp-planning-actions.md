@@ -252,8 +252,8 @@ Types by Planner / Exception Messages by Planner).
 ## Carbon Current-State (grounding)
 
 **MRP is no longer an edge function** — the old Deno `mrp` function was deleted.
-MRP now runs in-process in Node via **`runMrp`** exported from `@carbon/ee/planning`
-(`packages/ee/src/planning/mrp/mrp.ts`, ~1149 lines). The pure BOM-explosion core
+MRP now runs in-process in Node via **`runMrp`** exported from `@carbon/planning`
+(`packages/planning/src/mrp/mrp.ts`, ~1149 lines). The pure BOM-explosion core
 (`explodeBom`) still lives in `packages/database/supabase/functions/lib/mrp-engine.ts`
 and is reached via the `@carbon/database/mrp-engine` barrel.
 **Note: `.claude/rules/supersession-system.md` still references the old

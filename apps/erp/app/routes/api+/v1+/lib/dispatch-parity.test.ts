@@ -14,6 +14,7 @@ const spies = vi.hoisted(() => ({
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
   upsertJobMaterial: vi.fn(),
+  upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
@@ -33,7 +34,7 @@ const spies = vi.hoisted(() => ({
 vi.mock("~/modules/account/account.service", () => ({
   upsertNotificationPreference: spies.upsertNotificationPreference
 }));
-vi.mock("~/modules/accounting/accounting.ee.service", () => ({
+vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
   upsertAccount: spies.upsertAccount
@@ -46,7 +47,9 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
   applyCreditsToInvoices: spies.applyCreditsToInvoices
 }));
-vi.mock("~/modules/items/items.service", () => ({}));
+vi.mock("~/modules/items/items.service", () => ({
+  upsertMethodMaterial: spies.upsertMethodMaterial
+}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
@@ -65,6 +68,13 @@ vi.mock("~/modules/sales/sales.service", () => ({
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
+// The sales-rule gate imports `~/modules/sales/sales.server` and
+// `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
+// validation at import). Dispatch behavior under a gate block is not what
+// these golden tests pin, so stub it as "no block".
+vi.mock("./sales-rules-gate.server", () => ({
+  checkSalesRulesForOperation: vi.fn(async () => null)
+}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
@@ -82,6 +92,7 @@ vi.mock("@carbon/logger", () => ({
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
 import { callOperation } from "./call.server";
+import { DATABASE_ERROR_MESSAGES } from "./database-errors";
 import {
   type DispatchResult,
   dispatchOperation,
@@ -132,6 +143,7 @@ const allSpies = [
   spies.getTrialBalance,
   spies.upsertAccount,
   spies.upsertJobMaterial,
+  spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
@@ -151,6 +163,68 @@ beforeEach(() => {
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
+  // items_upsertMethodMaterial exposes storageUnitIds as a proper object map. The
+  // MCP path (unlike the web form) does NOT run the zod transform, so the object
+  // must reach the service verbatim — the old required-string-enum schema made a
+  // caller send "false", which the service spread into {"0":"f",…}.
+  const methodMaterialFields = {
+    id: "mm1",
+    makeMethodId: "mk1",
+    order: 1,
+    itemType: "Part",
+    methodType: "Pull from Inventory",
+    sourcingType: "Specified",
+    quantity: 2,
+    unitOfMeasureCode: "EA"
+  };
+
+  it("passes an object storageUnitIds map straight through on create", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      {
+        ...methodMaterialFields,
+        storageUnitIds: { loc1: "su1" },
+        _operation: "create"
+      }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    expect(result.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          ...methodMaterialFields,
+          storageUnitIds: { loc1: "su1" },
+          companyId: "c1",
+          createdBy: "u1"
+        }
+      ]
+    ]);
+  });
+
+  it("omits storageUnitIds from the service payload when the caller omits it (update preserves)", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect("storageUnitIds" in payload).toBe(false);
+    expect(payload).toMatchObject({ companyId: "c1", updatedBy: "u1" });
+  });
+
+  it("forwards an explicit null storageUnitIds to clear on update", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, storageUnitIds: null, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload.storageUnitIds).toBeNull();
+  });
+
   it.each([
     undefined,
     "forged-user"
@@ -421,8 +495,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
     const orpcError = r.dispatchError as ORPCError<string, unknown>;
     expect(orpcError.message).toBe("duplicate key value");
-    // The raw error rides on the ORPCError so callOperation can reconstruct MCP's
-    // byte-identical `Database error: ${JSON.stringify(error)}` text.
     expect(
       (orpcError.data as { supabase?: unknown } | undefined)?.supabase
     ).toEqual(supabaseError);
@@ -435,7 +507,10 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       { args: { channel: "email", enabled: true } }
     );
     expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, { channel: "email", enabled: true, companyId: "c1" }]
+      [
+        spies.FAKE_CLIENT,
+        { channel: "email", enabled: true, companyId: "c1", userId: "u1" }
+      ]
     ]);
   });
 
@@ -538,7 +613,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
 });
 
 // The exact ids the workflow engine's create actions dispatch
-// (packages/workflows/src/catalog/actions.ts). Their results must stay readable by
+// (packages/ee/src/workflows/catalog/actions.ts). Their results must stay readable by
 // create.ts's idIn(): an `id` on the returned object, or on an element of a list.
 //
 // The payloads are the ones runCreateAction actually builds — the catalog's
@@ -605,7 +680,7 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
     expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
   });
 
-  it("maps a Supabase error to the errorKind:database envelope with MCP's exact text", async () => {
+  it("maps a Supabase error to the errorKind:database envelope with a closed-set message", async () => {
     const supabaseError = { message: "boom", code: "XX000" };
     spies.getAccountLedger.mockResolvedValue({
       data: null,
@@ -619,7 +694,30 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
     expect(result).toEqual({
       success: false,
       errorKind: "database",
-      error: `Database error: ${JSON.stringify(supabaseError)}`
+      error: DATABASE_ERROR_MESSAGES.unknown
+    });
+    expect(result).not.toMatchObject({
+      error: expect.stringContaining("boom")
+    });
+  });
+
+  it("classifies a recognized failure without echoing the error", async () => {
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: {
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "ledger_pkey"'
+      }
+    });
+    const result = await callOperation(
+      "accounting_getAccountLedger",
+      ctx,
+      LEDGER_ARGS
+    );
+    expect(result).toEqual({
+      success: false,
+      errorKind: "database",
+      error: DATABASE_ERROR_MESSAGES.conflict
     });
   });
 

@@ -13,7 +13,7 @@ export default defineConfig({
   format: "po",
   catalogs: [
     {
-      path: "packages/locale/locales/{locale}/erp",
+      path: "<rootDir>/packages/locale/locales/{locale}/erp",
       include: [
         "apps/erp/app",
         "packages/react/src",
@@ -21,12 +21,12 @@ export default defineConfig({
         "packages/printing/src/ui",
         "packages/glossary/src",
         "packages/onboarding/src",
-        "packages/workflows/src"
+        "packages/ee/src/workflows"
       ],
       exclude: ["**/*.server.*", "**/*.test.*", "**/*.spec.*"]
     },
     {
-      path: "packages/locale/locales/{locale}/mes",
+      path: "<rootDir>/packages/locale/locales/{locale}/mes",
       include: [
         "apps/mes/app",
         "packages/react/src",

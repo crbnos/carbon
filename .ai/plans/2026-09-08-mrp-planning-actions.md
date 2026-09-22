@@ -275,9 +275,9 @@ pnpm exec turbo run typecheck --filter=erp
 
 **Depends on:** Task 2
 **Files:**
-- Create: `packages/ee/src/planning/mrp/responsible-employee.ts` — pure resolver + a bulk-load query helper
-- Create: `packages/ee/src/planning/mrp/responsible-employee.test.ts`
-- Modify: `packages/ee/src/planning/index.ts` — export the resolver if needed by callers
+- Create: `packages/planning/src/mrp/responsible-employee.ts` — pure resolver + a bulk-load query helper
+- Create: `packages/planning/src/mrp/responsible-employee.test.ts`
+- Modify: `packages/planning/src/index.ts` — export the resolver if needed by callers
 
 **Steps:**
 1. Pure resolver:
@@ -308,9 +308,9 @@ pnpm --filter @carbon/ee test
 
 **Depends on:** Tasks 3, 4, 5
 **Files:**
-- Create: `packages/ee/src/planning/mrp/planning-actions.ts` — `generatePlanningActions(client, db, { companyId, userId })`
-- Create: `packages/ee/src/planning/mrp/planning-actions.test.ts`
-- Modify: `packages/ee/src/planning/mrp/mrp.ts` — call `generatePlanningActions` after the Phase-7 transaction commits (`mrp.ts:937` block)
+- Create: `packages/planning/src/mrp/planning-actions.ts` — `generatePlanningActions(client, db, { companyId, userId })`
+- Create: `packages/planning/src/mrp/planning-actions.test.ts`
+- Modify: `packages/planning/src/mrp/mrp.ts` — call `generatePlanningActions` after the Phase-7 transaction commits (`mrp.ts:937` block)
 - Copy from (precedent): the batched-write + Kysely-transaction style already in `mrp.ts` (Phase 7, `BATCH_SIZE = 500`); the RPC read style in `apps/erp/app/modules/purchasing/purchasing.service.ts:460` (`getPurchasingPlanning`)
 
 **Steps:**

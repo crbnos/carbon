@@ -56,7 +56,7 @@ What's missing is exclusively forecast-vs-actual-demand consumption.
 
 ### The algorithm (industry-standard forecast consumption, bucket-granular)
 
-A pure function `consumeForecast` in `packages/ee/src/planning/mrp/forecast-consumption.ts`:
+A pure function `consumeForecast` in `packages/planning/src/mrp/forecast-consumption.ts`:
 
 ```
 Inputs, per (itemId, locationId):
@@ -189,17 +189,17 @@ No RLS changes (existing table policies cover the new columns). No new enums.
 
 ## API / Service Changes
 
-- **`packages/ee/src/planning/mrp/forecast-consumption.ts`** (new): pure
+- **`packages/planning/src/mrp/forecast-consumption.ts`** (new): pure
   `consumeForecast(forecast, actuals, window)` + types. Sibling
   `forecast-consumption.test.ts` (vitest, `pnpm --filter @carbon/ee test`).
-- **`packages/ee/src/planning/mrp/mrp.ts`**: Phase 4 reordered — actuals loops first
+- **`packages/planning/src/mrp/mrp.ts`**: Phase 4 reordered — actuals loops first
   (also accumulating per-key `quantityToConsume`), then projections loop runs
   `consumeForecast` per (item, location) and adds remainders to `grossDemand` /
   contributors; reads the two window settings from `companySettings` once per run;
   Phase 7 persists `consumedQuantity` (batched update inside the existing transaction).
   Also fix the vestigial `netDemand` name and stale migration-filename comment flagged
   by the audit while in there.
-- **`packages/ee/src/planning/mrp/planning-actions.ts`**: projection query selects
+- **`packages/planning/src/mrp/planning-actions.ts`**: projection query selects
   `forecastQuantity, consumedQuantity`; union adds the `GREATEST` diff.
 - **`apps/erp/app/modules/items/items.service.ts` `getItemDemand`**: add net
   projections so the item planning chart agrees with the planning grid.

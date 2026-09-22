@@ -2,16 +2,16 @@ import {
   assertIsPost,
   CONTROLLED_ENVIRONMENT,
   error,
-  RESEND_DOMAIN,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { render } from "@react-email/components";
@@ -80,6 +80,26 @@ export async function action({ request }: ActionFunctionArgs) {
     usPersonAttestation
   } = validation.data;
 
+  // Community / Starter ships "everyone is an admin": authoring roles is gated,
+  // so an invited user always receives the seeded Admin employee type,
+  // regardless of what the (hidden) form control submitted. `companyHasFeature`
+  // blocks the Community edition outright and applies the plan check on Cloud.
+  let effectiveEmployeeType = employeeType;
+  const canAuthorRoles = await companyHasFeature(client, companyId, {
+    feature: "PERMISSIONS"
+  });
+  if (!canAuthorRoles) {
+    const adminType = await client
+      .from("employeeType")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("systemType", "Admin")
+      .maybeSingle();
+    if (adminType.data?.id) {
+      effectiveEmployeeType = adminType.data.id;
+    }
+  }
+
   // Controlled environments require the inviter to attest the invitee is a
   // U.S. person (22 CFR 120.62) before the invite can be created.
   if (CONTROLLED_ENVIRONMENT && !usPersonAttestation) {
@@ -108,7 +128,7 @@ export async function action({ request }: ActionFunctionArgs) {
     email: email.toLowerCase(),
     firstName,
     lastName,
-    employeeType,
+    employeeType: effectiveEmployeeType,
     locationId,
     companyId,
     createdBy: userId,
@@ -146,7 +166,6 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   await sendEmail({
-    from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
     to: email,
     subject: `You have been invited to join ${company.data?.name} on Carbon`,
     headers: {

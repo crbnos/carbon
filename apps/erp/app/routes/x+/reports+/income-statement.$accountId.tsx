@@ -8,7 +8,7 @@ import {
   getAccountLedger,
   getAccountLedgerSummary
 } from "~/modules/accounting";
-import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.ee.server";
+import { getConsolidatedAccountLedger } from "~/modules/accounting/accounting.server";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
 

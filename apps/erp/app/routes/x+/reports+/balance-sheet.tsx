@@ -21,7 +21,7 @@ import {
 import {
   applyCtaToReportPeriodSeriesForReport,
   getConsolidatedPeriodSeriesForReport
-} from "~/modules/accounting/accounting.ee.server";
+} from "~/modules/accounting/accounting.server";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,

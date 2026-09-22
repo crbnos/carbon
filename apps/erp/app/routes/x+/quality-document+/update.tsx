@@ -1,12 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import type { ActionFunctionArgs } from "react-router";
-import { qualityDocumentStatus } from "~/modules/quality/quality.models";
 import {
   canApproveRequest,
   createApprovalRequest,
@@ -15,7 +9,13 @@ import {
   getLatestApprovalRequestForDocument,
   hasPendingApproval,
   isApprovalRequired
-} from "~/modules/shared";
+} from "@carbon/ee/approvals.server";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { NotificationEvent } from "@carbon/notifications";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { ActionFunctionArgs } from "react-router";
+import { qualityDocumentStatus } from "~/modules/quality/quality.models";
 
 const logger = getLogger("erp", "update");
 

@@ -87,7 +87,16 @@ export const Rillet = defineIntegration({
       value: ""
     }
   ],
-  schema: RilletSettingsSchema
+  schema: RilletSettingsSchema,
+  actions: [
+    {
+      id: "import-contacts",
+      label: "Import customers & vendors",
+      description:
+        "Pull the customers and vendors already in Rillet into Carbon and link them, so documents Carbon posts later reuse the original Rillet records instead of creating duplicates",
+      endpoint: "/api/integrations/rillet/import-contacts"
+    }
+  ]
 });
 
 function SetupInstructions({ companyId }: { companyId: string }) {

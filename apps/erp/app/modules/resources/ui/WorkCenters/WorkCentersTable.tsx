@@ -39,6 +39,7 @@ import {
 import { useFetcher, useNavigate } from "react-router";
 import { EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useProcesses } from "~/components/Form/Process";
 import { Confirm } from "~/components/Modals";
 import {
@@ -135,19 +136,18 @@ const WorkCentersTable = memo(
           id: "processes",
           header: t`Processes`,
           cell: ({ row }) => (
-            <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.processes ?? []) as Array<string>).map((p) => {
-                const process = processes.find((proc) => proc.value === p);
-                return (
-                  <Enumerable
-                    key={process?.label}
-                    value={process?.label ?? null}
-                    onClick={() => navigate(path.to.process(process?.value!))}
-                    className="cursor-pointer"
-                  />
-                );
-              })}
-            </span>
+            <EnumerableGroup
+              items={((row.original.processes ?? []) as Array<string>).flatMap(
+                (p) => {
+                  const process = processes.find((proc) => proc.value === p);
+                  if (!process) return [];
+                  return {
+                    label: process.label,
+                    onClick: () => navigate(path.to.process(process.value))
+                  };
+                }
+              )}
+            />
           ),
           meta: {
             icon: <LuRedoDot />,

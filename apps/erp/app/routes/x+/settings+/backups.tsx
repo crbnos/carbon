@@ -2,6 +2,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { convertKbToString } from "@carbon/files";
 import {
   Hidden,
   Input,
@@ -34,7 +35,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -60,6 +60,7 @@ import {
   totalScopeRows
 } from "~/modules/settings";
 import {
+  canManageBackups,
   dismissCompanyExportFailure,
   finalizeCompanyRestore,
   getCompanyBackups,
@@ -82,7 +83,6 @@ import {
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
-import { canAccessBackups } from "~/utils/backups";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -148,19 +148,14 @@ async function clearStaleExportFailure(
   }
 }
 
-function requireBackupAccess(email: string | null) {
-  // Internal-only in real deployments while multi-tenant hardening is pending;
-  // open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
-  requireBackupAccess(email);
+  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
     getCompanyBackups(client, companyId),
@@ -184,7 +179,9 @@ export async function action({ request }: ActionFunctionArgs) {
       update: "settings"
     }
   );
-  requireBackupAccess(email);
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const formData = await request.formData();
   const intent = formData.get("intent");

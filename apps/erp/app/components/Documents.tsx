@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -21,7 +22,7 @@ import {
   Tr,
   toast
 } from "@carbon/react";
-import { convertKbToString, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useCallback } from "react";
@@ -34,7 +35,7 @@ import {
   ModelOptimizedIndicator
 } from "~/components";
 import DocumentIcon from "~/components/DocumentIcon";
-import { usePermissions, useUser } from "~/hooks";
+import { useFileUpload, usePermissions, useUser } from "~/hooks";
 import type { OptimisticFileObject } from "~/modules/shared";
 import { getDocumentType } from "~/modules/shared";
 import type { ModelUpload, StorageItem } from "~/types";
@@ -108,19 +109,23 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getReadPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t]
+    [carbon, getReadPath, revalidator, t, company.id]
   );
 
   const downloadModel = useCallback(
@@ -165,15 +170,7 @@ const Documents = ({
       const url = path.to.file.previewFile(`private/${getReadPath(file)}`);
       try {
         const response = await fetch(url);
-        const blob = await response.blob();
-        const blobUrl = window.URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        document.body.appendChild(a);
-        a.href = blobUrl;
-        a.download = file.name;
-        a.click();
-        window.URL.revokeObjectURL(blobUrl);
-        document.body.removeChild(a);
+        downloadBlob(await response.blob(), file.name);
       } catch (error) {
         toast.error(t`Error downloading file`);
         logger.error("Error", { error: error });
@@ -182,33 +179,16 @@ const Documents = ({
     [getReadPath, t]
   );
 
+  const { upload: uploadFiles } = useFileUpload();
   const upload = useCallback(
     async (files: File[]) => {
-      if (!carbon) {
-        toast.error(t`Carbon client not available`);
-        return;
-      }
-
-      for (const file of files) {
-        const fileName = getWritePath({ name: file.name });
-        toast.info(t`Uploading ${file.name}`);
-        const fileUpload = await carbon.storage
-          .from("private")
-          .upload(fileName, file, {
-            cacheControl: `${12 * 60 * 60}`,
-            upsert: true
-          });
-
-        if (fileUpload.error) {
-          toast.error(t`Failed to upload file: ${file.name}`);
-        } else if (
-          fileUpload.data?.path &&
-          sourceDocument &&
-          sourceDocumentId
-        ) {
+      await uploadFiles(files, {
+        getPath: (file) => getWritePath({ name: file.name }),
+        onSuccess: (file, uploadedPath) => {
+          if (!sourceDocument || !sourceDocumentId) return;
           toast.success(t`Uploaded: ${file.name}`);
           const formData = new FormData();
-          formData.append("path", fileUpload.data.path);
+          formData.append("path", uploadedPath);
           formData.append("name", file.name);
           formData.append("size", Math.round(file.size / 1024).toString());
           formData.append("sourceDocument", sourceDocument);
@@ -221,12 +201,12 @@ const Documents = ({
             fetcherKey: `${sourceDocument}:${file.name}`
           });
         }
-      }
+      });
       revalidator.revalidate();
     },
     [
+      uploadFiles,
       getWritePath,
-      carbon,
       revalidator,
       submit,
       sourceDocument,

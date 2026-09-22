@@ -1,5 +1,5 @@
+import type { TemplatePart, ValueOrRef } from "@carbon/ee/workflows";
 import type { VariableTextPart } from "@carbon/react/VariableText";
-import type { TemplatePart, ValueOrRef } from "@carbon/workflows";
 import { decodeTokenId, encodeTokenId, namedPath, refLabel } from "./tokenId";
 
 /** What the editor shows for a stored value. Labels are resolved here and nowhere else. */

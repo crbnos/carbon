@@ -3,8 +3,8 @@ import type {
   ValueType,
   VariableRef,
   WorkflowCatalog
-} from "@carbon/workflows";
-import { canAssign, rendersAsText } from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { canAssign, rendersAsText } from "@carbon/ee/workflows";
 import {
   describeVariable,
   nodeNameLabel,

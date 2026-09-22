@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
+import { storage } from "@carbon/files";
 import type { AssemblyPlan } from "@carbon/viewer/steps";
 import { inngest } from "../../client";
 import {
@@ -232,8 +233,8 @@ export const assemblyPlanFunction = inngest.createFunction(
       },
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
-        const upload = await client.storage
-          .from("private")
+        const upload = await storage(client)
+          .company(companyId)
           .createSignedUploadUrl(planPath, { upsert: true });
         const urls: Record<string, string> = {};
         if (upload.data)
@@ -256,8 +257,8 @@ export const assemblyPlanFunction = inngest.createFunction(
     await step.run("persist-plan", async () => {
       const client = getCarbonServiceRole();
       if (inlinePlan) {
-        const upload = await client.storage
-          .from("private")
+        const upload = await storage(client)
+          .company(companyId)
           .upload(donePlanPath, JSON.stringify(inlinePlan), {
             contentType: "application/json",
             upsert: true
@@ -290,12 +291,12 @@ export const assemblyPlanFunction = inngest.createFunction(
         const client = getCarbonServiceRole();
         let plan = inlinePlan;
         if (!plan) {
-          const download = await client.storage
-            .from("private")
+          const download = await storage(client)
+            .company(companyId)
             .download(donePlanPath);
-          if (download.error || !download.data) {
+          if (!download.data) {
             throw new Error(
-              `Failed to download plan.json for re-motion: ${download.error?.message ?? "not found"}`
+              `Failed to download plan.json for re-motion: ${download.error.message}`
             );
           }
           plan = JSON.parse(await download.data.text()) as AssemblyPlan;

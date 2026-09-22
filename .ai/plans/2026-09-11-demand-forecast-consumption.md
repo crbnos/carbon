@@ -37,9 +37,9 @@ persisted as `demandProjection.consumedQuantity`, subtracted with
 
 **Depends on:** none
 **Files:**
-- Create: `packages/ee/src/planning/mrp/forecast-consumption.ts`
-- Create: `packages/ee/src/planning/mrp/forecast-consumption.test.ts`
-- Copy from (precedent): `packages/ee/src/planning/mrp/planning-actions.test.ts` (pure-unit vitest style, named imports from sibling)
+- Create: `packages/planning/src/mrp/forecast-consumption.ts`
+- Create: `packages/planning/src/mrp/forecast-consumption.test.ts`
+- Copy from (precedent): `packages/planning/src/mrp/planning-actions.test.ts` (pure-unit vitest style, named imports from sibling)
 
 **Steps:**
 1. Create `forecast-consumption.ts` with exactly this exported API (JSDoc welcome, no classes):
@@ -212,7 +212,7 @@ grep -n "forecastConsumptionBackwardPeriods" packages/database/src/types.ts | he
 
 **Depends on:** Tasks 1, 3
 **Files:**
-- Modify: `packages/ee/src/planning/mrp/mrp.ts` — Phase 1 settings load; Phase 4 loop reorder + consumption; Phase 7 persist
+- Modify: `packages/planning/src/mrp/mrp.ts` — Phase 1 settings load; Phase 4 loop reorder + consumption; Phase 7 persist
 
 **Steps:**
 1. Import `consumeForecast` from `./forecast-consumption` and `round` from `@carbon/utils`.
@@ -306,7 +306,7 @@ pnpm exec turbo run typecheck --filter=@carbon/ee
 
 **Depends on:** Task 3
 **Files:**
-- Modify: `packages/ee/src/planning/mrp/planning-actions.ts` — the demand union (~lines 527-575)
+- Modify: `packages/planning/src/mrp/planning-actions.ts` — the demand union (~lines 527-575)
 
 **Steps:**
 1. In the three-way `Promise.all` (~line 529), add `"consumedQuantity"` to the `demandProjection` select:

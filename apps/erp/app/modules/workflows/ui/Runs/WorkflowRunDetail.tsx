@@ -1,6 +1,6 @@
+import { readWorkflowVersion } from "@carbon/ee/workflows";
 import { Alert, AlertDescription, AlertTitle, Badge, cn } from "@carbon/react";
 import { formatDateTime, formatDurationMilliseconds } from "@carbon/utils";
-import { readWorkflowVersion } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCircleAlert, LuCircleSlash, LuTriangle } from "react-icons/lu";
