@@ -1096,6 +1096,7 @@ serve(async (req: Request) => {
             .select("status")
             .where("id", "=", payload.batchId)
             .where("companyId", "=", companyId)
+            .forUpdate()
             .executeTakeFirst();
           if (!batch) throw new Error("Batch not found");
           if (batch.status !== "Planned" && batch.status !== "Active") {
