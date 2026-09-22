@@ -844,12 +844,21 @@ serve(async (req: Request) => {
               "Insufficient quantity for negative adjustment"
             );
           }
-          await trx
-            .updateTable("trackedEntity")
-            .set({ quantity: resolvedQty - adjustmentQuantity, readableId })
-            .where("id", "=", resolvedId)
-            .where("companyId", "=", companyId)
-            .execute();
+          {
+            // A negative adjustment draws down Available stock; when it lands
+            // on zero the lot is Consumed, not a zero-quantity Available husk.
+            const drainedQty = round(resolvedQty - adjustmentQuantity);
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                quantity: drainedQty,
+                readableId,
+                ...(drainedQty <= 0 ? { status: "Consumed" as const } : {}),
+              })
+              .where("id", "=", resolvedId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...ledgerBase,
@@ -917,9 +926,13 @@ serve(async (req: Request) => {
           );
         }
         const targetId = targetRow.trackedEntityId as string;
+        const drainedTargetQty = round(targetQty - adjustmentQuantity);
         await trx
           .updateTable("trackedEntity")
-          .set({ quantity: targetQty - adjustmentQuantity })
+          .set({
+            quantity: drainedTargetQty,
+            ...(drainedTargetQty <= 0 ? { status: "Consumed" as const } : {}),
+          })
           .where("id", "=", targetId)
           .where("companyId", "=", companyId)
           .execute();
@@ -950,9 +963,15 @@ serve(async (req: Request) => {
 
       if (trackedEntityId) {
         if (currentQuantity) {
+          const newEntityQuantity = round(signedQuantity + currentQuantityOnHand);
           const entityUpdate: Record<string, unknown> = {
-            quantity: signedQuantity + currentQuantityOnHand,
+            quantity: newEntityQuantity,
           };
+          // Draining an Available lot to zero Consumes it (a Set Quantity to 0
+          // or a full negative adjustment); above zero its status is untouched.
+          if (newEntityQuantity <= 0) {
+            entityUpdate.status = "Consumed";
+          }
           if (readableId !== undefined && readableId !== null) {
             entityUpdate.readableId = readableId;
           }
@@ -964,6 +983,12 @@ serve(async (req: Request) => {
             .execute();
           await applyExpirationOverride(trx, trackedEntityId);
         } else {
+          // Nothing to create for a zero-quantity new entity: the physical
+          // state is already zero, so skip the insert AND the ledger row and
+          // return a success no-op (keeps repeated scanners idempotent).
+          if (round(signedQuantity) === 0) {
+            return;
+          }
           const expirationDate = resolveExpirationForNewEntity();
           // Stamp the trace blob so the popover Source / Override steps can
           // show the entity originated from a manual inventory adjustment.
@@ -1001,7 +1026,7 @@ serve(async (req: Request) => {
               // sales-return picker); omitting it made this stock unreturnable.
               itemId,
               readableId: readableId ?? null,
-              quantity: signedQuantity,
+              quantity: round(signedQuantity),
               status: "Available",
               expirationDate,
               attributes: attributes as unknown as Json,

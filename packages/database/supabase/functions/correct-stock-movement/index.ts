@@ -7,6 +7,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 import { getAccountingPeriodForDate } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -299,12 +300,26 @@ serve(async (req: Request) => {
           .where((eb) => eb("quantity", ">=", -delta))
           // Serial ceiling re-checked atomically: resulting quantity ≤ 1.
           .$if(isSerial, (qb) => qb.where((eb) => eb("quantity", "<=", 1 - delta)))
-          .returning(["id"])
+          .returning(["id", "quantity", "status"])
           .executeTakeFirst();
         if (!updated) {
           throw new ValidationError(
             "Tracked entity changed while correcting — try again"
           );
+        }
+        // If the correction drove the lot to zero, Consume it (a Scrapped lot
+        // stays Scrapped). `updated.status` is the unchanged pre-flip status.
+        const settledStatus = statusAfterQuantityChange(
+          Number(updated.quantity),
+          updated.status
+        );
+        if (settledStatus !== updated.status) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: settledStatus })
+            .where("id", "=", root.trackedEntityId!)
+            .where("companyId", "=", companyId)
+            .execute();
         }
       }
 

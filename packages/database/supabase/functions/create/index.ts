@@ -9,6 +9,8 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database, Json } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -1707,10 +1709,19 @@ serve(async (req: Request) => {
                 })
                 .execute();
 
+              const remainingQuantity = round(
+                Math.max(0, (entity.quantity ?? 0) - quantity)
+              );
               await trx
                 .updateTable("trackedEntity")
                 .set({
-                  quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                  quantity: remainingQuantity,
+                  // A parent drained to zero by the split is Consumed, not a
+                  // zero-quantity Available husk; a Scrapped parent stays so.
+                  status: statusAfterQuantityChange(
+                    remainingQuantity,
+                    entity.status
+                  ),
                 })
                 .where("id", "=", entity.id)
                 .execute();
