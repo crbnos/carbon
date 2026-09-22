@@ -48,6 +48,10 @@ function makeCandidate(
     id,
     jobId: `job-${id}`,
     jobReadableId: `J-${id}`,
+    itemId: null,
+    requiresBatchTracking: false,
+    trackedEntityId: null,
+    lotNumber: null,
     jobDueDate: null,
     jobStatus: "Ready",
     itemReadableId: "SAT-1000",
@@ -100,6 +104,36 @@ describe("materialSignature vs groupingKey", () => {
     expect(materialSignature(a)).toBe("");
     expect(materialSignature(b)).toBe("");
     expect(groupingKey(a)).not.toBe(groupingKey(b));
+  });
+
+  it("producedItem at guide splits signatures by produced item; default ignores it", () => {
+    const steel = makeMaterial({ substanceName: "Steel" });
+    const a = makeCandidate("a", {
+      itemReadableId: "SALAD-01",
+      materials: [steel]
+    });
+    const b = makeCandidate("b", {
+      itemReadableId: "SALAD-02",
+      materials: [steel]
+    });
+    // Default rules: produced item plays no part — same signature.
+    expect(materialSignature(a)).toBe(materialSignature(b));
+    expect(groupingKey(a)).toBe(groupingKey(b));
+    // Opted in: same materials, different produced items → different groups.
+    const rules = resolveBatchRules({ producedItem: "guide" });
+    expect(materialSignature(a, rules)).not.toBe(materialSignature(b, rules));
+    expect(groupingKey(a, rules)).not.toBe(groupingKey(b, rules));
+    // Same produced item still groups.
+    const a2 = makeCandidate("a2", {
+      itemReadableId: "SALAD-01",
+      materials: [steel]
+    });
+    expect(groupingKey(a, rules)).toBe(groupingKey(a2, rules));
+  });
+
+  it("candidateValueSets carries the produced item for must gating", () => {
+    const a = makeCandidate("a", { itemReadableId: "SALAD-01" });
+    expect(candidateValueSets(a).producedItem).toEqual(["SALAD-01"]);
   });
 
   it("ops with real materials group by properties, not by item", () => {

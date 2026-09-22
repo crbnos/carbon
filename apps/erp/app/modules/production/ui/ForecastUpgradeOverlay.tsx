@@ -1,5 +1,4 @@
 import { cn } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuChartLine } from "react-icons/lu";
 import {
@@ -55,9 +54,7 @@ export default function ForecastUpgradeOverlay({
           <UpgradeOverlayDescription>{description}</UpgradeOverlayDescription>
         </UpgradeOverlayContent>
         <UpgradeOverlayActions>
-          <UpgradeOverlayUpgradeButton>
-            <Trans>Upgrade to Business</Trans>
-          </UpgradeOverlayUpgradeButton>
+          <UpgradeOverlayUpgradeButton />
         </UpgradeOverlayActions>
       </UpgradeOverlayCard>
     </UpgradeOverlay>

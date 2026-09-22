@@ -10,9 +10,14 @@ const encodeStoragePath = (path: string) =>
   path.split("/").map(encodeURIComponent).join("/");
 
 export const getPrivateUrl = (path: string) => {
+  // Private files live in one bucket PER COMPANY and stored paths keep the
+  // `${companyId}/...` first segment, so the bucket is that segment. The
+  // preview route also accepts the legacy shared `private` bucket, which is
+  // the fallback when a path has no leading segment.
+  const bucket = path.split("/")[0] || "private";
   return (
     getDatasetAssetUrl(path) ??
-    `/file/preview/private/${encodeStoragePath(path)}`
+    `/file/preview/${encodeURIComponent(bucket)}/${encodeStoragePath(path)}`
   );
 };
 

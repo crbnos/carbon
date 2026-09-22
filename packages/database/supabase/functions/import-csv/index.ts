@@ -968,7 +968,19 @@ serve(async (req: Request) => {
 
     const client = await requirePermissions(req, companyId, userId, { create: "resources" });
 
-    const csvFile = await client.storage.from("private").download(filePath);
+    // The client is service-role and the legacy bucket is shared across
+    // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
+    // caller-supplied path — refuse anything outside it.
+    if (!filePath.startsWith(`${companyId}/`)) {
+      throw new Error("File path is outside the company's storage prefix");
+    }
+
+    // Try the company bucket first; fall back to the legacy shared bucket
+    // for files uploaded before the per-company bucket migration.
+    let csvFile = await client.storage.from(companyId).download(filePath);
+    if (csvFile.error || !csvFile.data) {
+      csvFile = await client.storage.from("private").download(filePath);
+    }
     if (!csvFile.data) {
       throw new Error("Failed to download file");
     }

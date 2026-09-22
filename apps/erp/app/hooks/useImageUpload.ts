@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -9,8 +10,8 @@ import { useUser } from "./useUser";
 
 /**
  * Shared editor/notes image-upload handler. HEIC is converted to JPEG before
- * anything is stored (HEIC is never persisted); the file lands in the private
- * bucket under `{companyId}/{directory}/{nanoid}.{ext}` and the preview URL
+ * anything is stored (HEIC is never persisted); the file lands in the company's
+ * private bucket under `{companyId}/{directory}/{nanoid}.{ext}` and the preview URL
  * is returned for the editor to embed.
  */
 export function useImageUpload(directory: string) {
@@ -22,7 +23,7 @@ export function useImageUpload(directory: string) {
     () =>
       carbon
         ? new MediaUploader(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(company.id),
             directory: `${company.id}/tmp`
           })
         : null,
@@ -46,8 +47,8 @@ export function useImageUpload(directory: string) {
       const fileType = upload.name.split(".").pop();
       const fileName = `${company.id}/${directory}/${nanoid()}.${fileType}`;
 
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(company.id)
         .upload(fileName, upload);
 
       if (result.error) {

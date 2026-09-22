@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { parseCsv } from "@carbon/files/csv";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { itemType as sellableItemTypes } from "~/modules/shared/shared.models";
@@ -193,11 +194,13 @@ export async function importQuotes(
   };
 
   // 1. download + parse ----------------------------------------------------
-  const download = await client.storage.from("private").download(filePath);
-  if (download.error || !download.data) {
+  const download = await storage(client).company(companyId).download(filePath);
+  if (!download.data) {
     return {
       data: null,
-      error: { message: download.error?.message ?? "Failed to download file" }
+      error: {
+        message: download.error.message || "Failed to download file"
+      }
     };
   }
 

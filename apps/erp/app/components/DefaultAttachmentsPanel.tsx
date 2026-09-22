@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { wasConvertedFromHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
@@ -75,8 +75,8 @@ export default function DefaultAttachmentsPanel({
       for (const file of acceptedFiles) {
         const safeName = stripSpecialCharacters(file.name);
         if (wasConvertedFromHeic(file)) {
-          const existing = await carbon.storage
-            .from("private")
+          const existing = await storage(carbon)
+            .company(company.id)
             .info(fullPath(safeName));
           if (!existing.error && existing.data) {
             toast.error(
@@ -85,8 +85,8 @@ export default function DefaultAttachmentsPanel({
             continue;
           }
         }
-        const upload = await carbon.storage
-          .from("private")
+        const upload = await storage(carbon)
+          .company(company.id)
           .upload(fullPath(safeName), file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -95,7 +95,7 @@ export default function DefaultAttachmentsPanel({
       }
       revalidator.revalidate();
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   const onDownload = useCallback(
@@ -121,11 +121,11 @@ export default function DefaultAttachmentsPanel({
       const storagePath = fullPath(name);
       setDeletingPath(storagePath);
       try {
-        const result = await carbon.storage
-          .from("private")
+        const { error } = await storage(carbon)
+          .company(company.id)
           .remove([storagePath]);
-        if (result.error) {
-          toast.error(result.error.message || t`Error deleting file`);
+        if (error) {
+          toast.error(error.message || t`Error deleting file`);
         } else {
           toast.success(t`${name} deleted`);
           revalidator.revalidate();
@@ -134,7 +134,7 @@ export default function DefaultAttachmentsPanel({
         setDeletingPath(null);
       }
     },
-    [carbon, fullPath, revalidator, t]
+    [carbon, company.id, fullPath, revalidator, t]
   );
 
   return (

@@ -8,6 +8,13 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
 - RLS: four policies named exactly `SELECT`/`INSERT`/`UPDATE`/`DELETE`. SELECT uses `get_companies_with_employee_role()`, writes use `get_companies_with_employee_permission('<module>_<action>')`. Schema-qualify tables, cast `::text[]`.
 - Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
+- `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
+  composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
+  `ci/src/migrations.ts` runs after `supabase db push` — see `scripts/one-off/README.md`.
+  It is intentionally NOT tenant-scoped so `selectWipeableTables` (company-backup.ts) cannot
+  select it and a company restore cannot erase it. A migration landing in this package is
+  also what triggers those scripts to deploy (`.github/workflows/supabase.yml` only fires on
+  `packages/database/supabase/**`).
 - Use `fetchAllFromTable` for paginated reads that exceed the 1000-row Supabase limit. It pages
   without `count: "exact"` (a `COUNT(*) OVER ()` per page is not free) and fetches the pages past
   the first concurrently. `fetchAllRecords` is the same pager over a query FACTORY (`() => builder`)
@@ -44,7 +51,7 @@ pnpm --filter @carbon/database typecheck
 | `./datetime` | Node re-export of `supabase/functions/lib/datetime.ts` — the edge-runtime datetime helpers (`datetime`, `getCompanyTimeZone`, `getLocationTimeZone`) for Node consumers |
 | `./methods` | Node re-export of `supabase/functions/lib/methods.ts` — shared make-method helpers |
 | `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |
-| `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/ee/planning`'s `runMrp` (the engine STAYS in the edge-lib; still used by the Deno `recalculate` function) |
+| `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` (the engine STAYS in the edge-lib; still used by the Deno `recalculate` function) |
 | `./fetch-all` | Node re-export of `supabase/functions/lib/fetch-all.ts` (`fetchAll` — paginated PostgREST reads) |
 | `./supersession-pick` | Node re-export of `supabase/functions/lib/supersession-pick.ts` (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Node re-export of `supabase/functions/lib/picked-consumption.ts` (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
@@ -52,7 +59,7 @@ pnpm --filter @carbon/database typecheck
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
 | `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
-| `./audit` | Audit-log functions (`getEntityAuditLog`, `enableAuditLog`, `syncAuditSubscriptions`, …); `auditConfig` + `AuditEntityType` come from the separate `./audit.config` subpath |
+| `./audit.config` / `./audit.types` | `auditConfig`, `AuditEntityType`, `getAuditableTableNames`, and the audit type surface. The audit ENGINE (`getEntityAuditLog`, `enableAuditLog`, `insertAuditLogEntries`, …) MOVED to the commercial `@carbon/ee/audit.server`; config + types stay here (client-safe, generic schema types consumed by CE packages) |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
 | `./datasets` | `applyDataset(pgClient, { companyId, userId, dataset, timeZone, wipeFirst? })` — the one entry point that fills a company with an industry dataset, in a single transaction; `wipeFirst` clears prior business data inside that same transaction while preserving bootstrap config. Plus `DATASETS`, `getDataset`, `datasetKeys`, `datasetForIndustry`. Consumed by onboarding (`industry.tsx`) and the `company-template` Inngest job. See Dev Seed below |
 | `./seed-workflows` | `buildSeedWorkflows` — the seeded workflow definitions (`datasets/tiers/workflow-definitions.ts`) |

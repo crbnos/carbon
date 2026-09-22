@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { readWorkflowVersion } from "@carbon/ee/workflows";
 import {
   Alert,
   AlertDescription,
@@ -7,7 +8,6 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { readWorkflowVersion } from "@carbon/workflows";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { ReactFlowProvider } from "@xyflow/react";
@@ -68,7 +68,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     view: "workflows",
     role: "employee"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

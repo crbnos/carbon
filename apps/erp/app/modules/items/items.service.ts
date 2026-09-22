@@ -6,6 +6,7 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -788,10 +789,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getItemPostingGroup(

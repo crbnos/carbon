@@ -96,7 +96,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Revision system | `.claude/rules/revision-system.md` |
 | Item supersession (phase-out / successor swaps) | `.claude/rules/supersession-system.md` |
 | Kanban | `.claude/rules/kanban-system.md` |
-| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/workflows/AGENTS.md` |
+| Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/ee/src/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
@@ -113,6 +113,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
 | In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
 | **Integrations** | |
+| Ramp integration (card transactions, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` |
 | Linear integration | `.claude/rules/linear-integration.md` |
 | Xero API / webhooks | `.claude/rules/xero-api-contact-structure.md` + `.claude/rules/xero-webhooks.md` |

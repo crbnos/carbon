@@ -1,4 +1,4 @@
-import { WORKFLOW_EVENTS } from "@carbon/workflows";
+import { WORKFLOW_EVENTS } from "@carbon/ee/workflows";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { matchAndQueue } from "../../../workflows/matcher";

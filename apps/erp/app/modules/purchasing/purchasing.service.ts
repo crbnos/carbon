@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
@@ -25,13 +26,9 @@ import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
-} from "../accounting/accounting.ee.service";
+} from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
-import {
-  canApproveRequest,
-  getLatestApprovalRequestForDocument,
-  upsertExternalLink
-} from "../shared/shared.service";
+import { upsertExternalLink } from "../shared/shared.service";
 import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
@@ -583,81 +580,6 @@ export async function getSupplier(
   return client.from("suppliers").select("*").eq("id", supplierId).single();
 }
 
-type ApprovalContext = {
-  approvalRequest: { id: string } | null;
-  canApprove: boolean;
-  decision: {
-    status: "Approved" | "Rejected";
-    decisionBy: string;
-    decisionAt: string;
-  } | null;
-};
-
-export async function getSupplierApprovalContext(
-  serviceRole: SupabaseClient<Database>,
-  supplierId: string,
-  status: string | null,
-  companyId: string,
-  userId: string
-): Promise<ApprovalContext> {
-  const latest = await getLatestApprovalRequestForDocument(
-    serviceRole,
-    "supplier",
-    supplierId
-  );
-
-  const req = latest.data;
-
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: req?.amount ?? null,
-      documentType: "supplier",
-      companyId
-    },
-    userId
-  );
-
-  // Look for the latest terminal decision (Approved or Rejected)
-  let decision: ApprovalContext["decision"] = null;
-  const terminalRequest = await serviceRole
-    .from("approvalRequest")
-    .select("status, decisionBy, decisionAt")
-    .eq("documentType", "supplier")
-    .eq("documentId", supplierId)
-    .in("status", ["Approved", "Rejected"])
-    .order("decisionAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (
-    terminalRequest.data?.decisionBy &&
-    terminalRequest.data?.decisionAt &&
-    (terminalRequest.data.status === "Approved" ||
-      terminalRequest.data.status === "Rejected")
-  ) {
-    decision = {
-      status: terminalRequest.data.status,
-      decisionBy: terminalRequest.data.decisionBy,
-      decisionAt: terminalRequest.data.decisionAt
-    };
-  }
-
-  if (!req || req.status !== "Pending" || !req.requestedBy || !req.id) {
-    return {
-      approvalRequest: null,
-      canApprove,
-      decision
-    };
-  }
-
-  return {
-    approvalRequest: { id: req.id },
-    canApprove,
-    decision
-  };
-}
-
 export async function getSupplierContact(
   client: SupabaseClient<Database>,
   supplierContactId: string
@@ -729,18 +651,21 @@ export async function getSupplierInteractionDocuments(
   companyId: string,
   interactionId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/supplier-interaction/${interactionId}`);
 
   if (result.error) {
-    logger.error("Failed to list supplier interaction documents", result.error);
+    logger.error("Failed to list supplier interaction documents", {
+      error: result.error
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction" })) ?? []
-  );
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "supplier-interaction"
+  }));
 }
 
 export async function getSupplierInteractionLineDocuments(
@@ -748,24 +673,21 @@ export async function getSupplierInteractionLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/supplier-interaction-line/${lineId}`);
 
   if (result.error) {
-    logger.error(
-      "Failed to list supplier interaction line documents",
-      result.error
-    );
+    logger.error("Failed to list supplier interaction line documents", {
+      error: result.error
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({
-      ...f,
-      bucket: "supplier-interaction-line"
-    })) ?? []
-  );
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "supplier-interaction-line"
+  }));
 }
 
 export async function getSupplierLocations(
@@ -3155,11 +3077,12 @@ export async function getDefaultAttachmentsForPO(
   }
 
   const results = await Promise.all(
-    prefixes.map(({ path }) => client.storage.from("private").list(path))
+    prefixes.map(({ path }) => storage(client).company(companyId).list(path))
   );
 
   return results.flatMap((result, idx) => {
     const { source, path: prefix } = prefixes[idx];
+    // the union helper's structural type omits supabase's metadata field
     return (result.data ?? []).map((f) => ({
       source,
       name: f.name,

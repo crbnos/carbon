@@ -76,9 +76,12 @@ serve(async (req: Request) => {
       }
       // imgproxy fallback: stage in the company's temp dir, download the
       // transformed rendition, clean up.
+      // Staging is written and read back within this request, so it goes in
+      // the company's own private bucket (bucket id = companyId) — no legacy
+      // fallback is needed for a file this function just created.
       const tempPath = `${companyId}/tmp/${nanoid()}.${extension}`;
       const upload = await client.storage
-        .from("private")
+        .from(companyId)
         .upload(tempPath, file, { upsert: true });
       if (upload.error) throw new Error(upload.error.message);
       try {
@@ -95,7 +98,7 @@ serve(async (req: Request) => {
                 quality: 90
               };
         const download = await client.storage
-          .from("private")
+          .from(companyId)
           .download(tempPath, { transform });
         if (download.error) throw new Error(download.error.message);
         const contentType =
@@ -105,7 +108,7 @@ serve(async (req: Request) => {
           headers: { ...corsHeaders, "Content-Type": contentType }
         });
       } finally {
-        await client.storage.from("private").remove([tempPath]);
+        await client.storage.from(companyId).remove([tempPath]);
       }
     }
   } catch (err) {

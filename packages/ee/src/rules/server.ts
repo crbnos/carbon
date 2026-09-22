@@ -14,6 +14,19 @@ export {
   resolveSalesOrderShipTo,
   type SalesDocumentType
 } from "./sales/server";
+// Enforcement-rule AUTHORING writes for both families (server-only; embed
+// `requireEntitlement`). Kept out of the client-safe `@carbon/ee/rules` barrel.
+export {
+  assignSalesRule,
+  assignStorageRule,
+  deleteEnforcementRule,
+  type EnforcementRuleFamily,
+  type EnforcementRuleInsert,
+  type EnforcementRuleUpdate,
+  unassignSalesRule,
+  unassignStorageRule,
+  upsertEnforcementRule
+} from "./service.server";
 export {
   dedupeViolations,
   type EvaluateLinesForSurfaceArgs,

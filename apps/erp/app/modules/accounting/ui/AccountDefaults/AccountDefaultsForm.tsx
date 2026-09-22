@@ -1,8 +1,16 @@
+import { downloadCsv } from "@carbon/files/csv";
 import { ValidatedForm } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
-import { Badge, Button, HStack, LabelWithHelp } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  HStack,
+  IconButton,
+  LabelWithHelp
+} from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { LuDownload } from "react-icons/lu";
 import { useNavigate } from "react-router";
 import { Combobox, Hidden, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
@@ -526,6 +534,43 @@ const AccountDefaultsForm = ({
     };
   }, [incomeStatementAccounts, balanceSheetAccounts]);
 
+  const accountsById = useMemo(() => {
+    const map = new Map<string, AccountListItem>();
+    for (const account of [
+      ...balanceSheetAccounts,
+      ...incomeStatementAccounts
+    ]) {
+      map.set(account.id, account);
+    }
+    return map;
+  }, [balanceSheetAccounts, incomeStatementAccounts]);
+
+  // Export every default-account slot with its category and the GL account it is
+  // currently mapped to (from the saved defaults). Built from the same
+  // `categoryGroups` the form renders, so the CSV mirrors the page.
+  const onExportCSV = useCallback(() => {
+    const columns = {
+      group: t`Group`,
+      defaultAccount: t`Default Account`,
+      category: t`Category`,
+      accountNumber: t`Account Number`,
+      accountName: t`Account Name`
+    };
+    const rows = categoryGroups.flatMap((group) =>
+      group.fields.map((field) => {
+        const account = accountsById.get(initialValues[field.name] ?? "");
+        return {
+          [columns.group]: group.title,
+          [columns.defaultAccount]: field.label,
+          [columns.category]: field.badgeType,
+          [columns.accountNumber]: account?.number ?? "",
+          [columns.accountName]: account?.name ?? ""
+        };
+      })
+    );
+    downloadCsv(rows, "default-accounts.csv");
+  }, [categoryGroups, accountsById, initialValues, t]);
+
   return (
     <ValidatedForm
       validator={formValidator}
@@ -549,6 +594,14 @@ const AccountDefaultsForm = ({
             </p>
           </div>
           <HStack>
+            <IconButton
+              size="md"
+              variant="secondary"
+              aria-label={t`Export CSV`}
+              title={t`Export CSV`}
+              icon={<LuDownload />}
+              onClick={onExportCSV}
+            />
             <Submit isDisabled={isDisabled}>
               <Trans>Save</Trans>
             </Submit>

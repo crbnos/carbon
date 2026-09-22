@@ -6,6 +6,7 @@ import {
   linesideCredit
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import { storage } from "@carbon/files";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -748,8 +749,8 @@ export async function getReceiptFiles(
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/inventory/${lineId}`)
       .then((result) => ({
         ...result,
@@ -759,13 +760,9 @@ export async function getReceiptFiles(
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
-    return {
-      data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
-    };
+    return { data: [], error: firstError.message || "Failed to fetch files" };
   }
 
   // Merge data arrays and add lineId as bucketName
@@ -1204,8 +1201,8 @@ export async function getShipmentFiles(
   lineIds: string[]
 ): Promise<{ data: StorageItem[]; error: string | null }> {
   const promises = lineIds.map((lineId) =>
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/inventory/${lineId}`)
       .then((result) => ({
         ...result,
@@ -1215,13 +1212,9 @@ export async function getShipmentFiles(
 
   const results = await Promise.all(promises);
 
-  // Check for errors
-  const firstError = results.find((result) => result.error);
+  const firstError = results.find((result) => result.error)?.error;
   if (firstError) {
-    return {
-      data: [],
-      error: firstError.error?.message ?? "Failed to fetch files"
-    };
+    return { data: [], error: firstError.message || "Failed to fetch files" };
   }
 
   // Merge data arrays and add lineId as bucketName
@@ -1345,6 +1338,30 @@ export async function getShippingTermsList(
     .eq("companyId", companyId)
     .eq("active", true)
     .order("name", { ascending: true });
+}
+
+// Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
+// quantity, earliest expiry) with genealogy back to every parent. The issue
+// edge fn owns the writes; see shared/batch-merge.ts.
+export async function mergeTrackedEntities(
+  client: SupabaseClient<Database>,
+  args: {
+    trackedEntityIds: string[];
+    readableId?: string | null;
+    companyId: string;
+    userId: string;
+  }
+) {
+  return client.functions.invoke<{
+    trackedEntityId?: string;
+    readableId?: string | null;
+    error?: string;
+  }>("issue", {
+    body: {
+      type: "mergeTrackedEntities",
+      ...args
+    }
+  });
 }
 
 export async function getTrackedEntities(

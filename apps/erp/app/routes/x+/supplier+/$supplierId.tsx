@@ -7,11 +7,11 @@ import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect } from "react-router";
 import {
   getSupplier,
-  getSupplierApprovalContext,
   getSupplierContacts,
   getSupplierLocations,
   getSupplierTax
 } from "~/modules/purchasing";
+import { getSupplierApprovalContext } from "~/modules/purchasing/purchasing.server";
 import SupplierHeader from "~/modules/purchasing/ui/Supplier/SupplierHeader";
 import SupplierSidebar from "~/modules/purchasing/ui/Supplier/SupplierSidebar";
 import { getTagsList } from "~/modules/shared";

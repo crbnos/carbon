@@ -43,7 +43,7 @@ filters `isTest = false` — a test is the author's experiment, not the workflow
 ## Step list ordering
 
 `WorkflowRunSteps` builds its row list using `topologicalNodeOrder(definition)` from
-`@carbon/workflows` — trigger first, then breadth-first over edges, ties broken by position in
+`@carbon/ee/workflows` — trigger first, then breadth-first over edges, ties broken by position in
 `definition.nodes`. When `definition` is null (version unreadable), falls back to the steps'
 own `sequence` order and omits "Not reached" rows. A node in `order` with no step rows renders
 as a greyed "Not reached" row. Step rows whose `nodeId` is not in `order` (definition changed
@@ -68,10 +68,10 @@ exists — it was dropped in definition format v3.
 ## The `detail` column contract
 
 `workflowStepRun.detail` is diagnostics, never node data. It holds the per-clause condition
-evaluation written by `conditionExecutor` (`packages/workflows/src/runtime/condition.ts`) and
+evaluation written by `conditionExecutor` (`packages/ee/src/workflows/runtime/condition.ts`) and
 surfaced by `ConditionDetail.tsx`. It is only set on Succeeded and Skipped nodes — Failed nodes
 leave it null (the error string is what matters there, and the inputs are already in `input`).
-The `detail` JSON shape is `NodeDetail` (`packages/workflows/src/runtime/types.ts`):
+The `detail` JSON shape is `NodeDetail` (`packages/ee/src/workflows/runtime/types.ts`):
 `{ kind: "condition", paths: [{ pathId, combinator, evaluations: [{ left, operator, right, passed, reason? }], taken }] }`.
 
 ## Retention — four passes, nightly at 04:00

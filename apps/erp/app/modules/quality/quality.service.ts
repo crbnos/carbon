@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { datetime } from "@carbon/utils";
@@ -1144,10 +1145,10 @@ export async function getQualityFiles(
   id: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/quality/${id}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getRequiredActionsList(

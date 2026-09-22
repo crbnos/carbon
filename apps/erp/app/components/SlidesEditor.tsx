@@ -1,5 +1,6 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -33,8 +34,8 @@ export async function uploadStepSlideModel(
 ): Promise<string | null> {
   const modelUploadId = nanoid();
   const ext = file.name.split(".").pop();
-  const upload = await carbon.storage
-    .from("private")
+  const upload = await storage(carbon)
+    .company(companyId)
     .upload(`${companyId}/models/${modelUploadId}.${ext}`, file, {
       upsert: true
     });

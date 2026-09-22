@@ -99,6 +99,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       } | null
     )?.includeMaterialsOnTraveler ?? false;
 
+  // Opt-out company setting (defaults on): render the operations (routing +
+  // scan barcodes) section on the traveler.
+  const includeOperations =
+    (
+      companySettings.data as {
+        includeOperationsOnTraveler?: boolean | null;
+      } | null
+    )?.includeOperationsOnTraveler ?? true;
+
   const customer = await serviceRole
     .from("customer")
     .select("*")
@@ -272,6 +281,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
             includeMaterials={includeMaterials}
+            includeOperations={includeOperations}
             materials={data.materials}
             methodRevision={data.makeMethod.version?.toString()}
             template={templateConfig}

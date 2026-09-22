@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString } from "@carbon/files";
+import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -77,19 +77,23 @@ const useSupplierInteractionLineDocuments = ({
 
   const deleteFile = useCallback(
     async (file: ItemFile) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator]
+    [getPath, carbon, revalidator, company.id]
   );
 
   const download = useCallback(

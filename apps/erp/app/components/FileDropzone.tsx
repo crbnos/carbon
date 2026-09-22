@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import {
   DuplicateFileNameError,
   isHeic,
@@ -39,7 +40,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({
     let files = acceptedFiles;
     if (carbon && files.some((file) => isHeic(file.name, file.type))) {
       const uploader = new MediaUploader(carbon, {
-        bucket: "private",
+        bucket: getCompanyPrivateBucket(company.id),
         directory: `${company.id}/tmp`
       });
       setIsConverting(true);

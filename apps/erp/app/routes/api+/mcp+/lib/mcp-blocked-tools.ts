@@ -12,10 +12,6 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   // deletes the caller's tenant. Its "internal users only" gate lives in the
   // settings ROUTE, which no API/MCP call passes through.
   "settings_deleteSubsidiary",
-  // Its first parameter is a service-role (RLS-bypassing) client. Blocking keeps
-  // a privileged client off the public API rather than teaching the dispatcher to
-  // hand one out.
-  "purchasing_getSupplierApprovalContext",
   // Internal sweep orchestration invoked by job/operation completion flows.
   // Their args require a userId the MCP executor cannot inject (AuthField has
   // no such payload field), so direct calls would only ever fail validation.

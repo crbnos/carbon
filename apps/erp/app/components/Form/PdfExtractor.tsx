@@ -1,3 +1,4 @@
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -88,8 +89,8 @@ export function PdfExtractor({
     setUploading(true);
     const storagePath = `${company.id}/extractions/${Date.now()}_${file.name}`;
 
-    const { error } = await supabase.storage
-      .from("private")
+    const { error } = await storage(supabase)
+      .company(company.id)
       .upload(storagePath, file);
 
     if (error) {

@@ -90,6 +90,14 @@ export const path = {
         ),
       batchNumbers: (itemId: string) =>
         generatePath(`${api}/inventory/batch-numbers?itemId=${itemId}`),
+      batchReleaseReadiness: (
+        target: { batchId: string } | { jobIds: string[] }
+      ) =>
+        `${api}/production/release-readiness?${
+          "batchId" in target
+            ? new URLSearchParams({ batchId: target.batchId })
+            : new URLSearchParams(target.jobIds.map((id) => ["jobId", id]))
+        }`,
 
       billOfMaterials: (methodId: string, withOperations: boolean = false) =>
         generatePath(
@@ -436,6 +444,11 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
+    cardTransaction: (id: string) =>
+      generatePath(`${x}/invoicing/card-transactions/${id}`),
+    cardTransactions: `${x}/invoicing/card-transactions`,
+    cardTransactionVoid: (id: string) =>
+      generatePath(`${x}/invoicing/card-transactions/${id}/void`),
     // The docs' Subscribe popover links back to Account → Notifications on the
     // reader's OWN instance, which it learns from the `?app=` hint.
     changelog: withDocsHost("https://docs.carbon.ms/changelog"),
@@ -809,6 +822,8 @@ export const path = {
       generatePath(`${x}/job/methods/event/delete/${id}`),
     deleteProductionQuantity: (id: string) =>
       generatePath(`${x}/job/methods/quantity/delete/${id}`),
+    deleteProject: (id: string) =>
+      generatePath(`${x}/accounting/projects/delete/${id}`),
     deletePurchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/delete`),
     deletePurchaseInvoiceLine: (invoiceId: string, lineId: string) =>
@@ -1622,6 +1637,7 @@ export const path = {
     newProcedureStep: (id: string) =>
       generatePath(`${x}/procedure/${id}/steps/new`),
     newProcess: `${x}/resources/processes/new`,
+    newProject: `${x}/accounting/projects/new`,
     newPurchaseInvoice: `${x}/purchase-invoice/new`,
     newPurchaseInvoiceLine: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}/new`),
@@ -1797,6 +1813,7 @@ export const path = {
     postJournalEntry: (id: string) =>
       generatePath(`${x}/journal-entry/${id}/post`),
     priceOverride: (id: string) => generatePath(`${x}/sales/price-list/${id}`),
+    pricing: "https://carbon.ms/pricing",
     pricingRule: (id: string) => generatePath(`${x}/sales/pricing-rules/${id}`),
     printingSettings: `${x}/settings/printing`,
     printingSettingsJobs: `${x}/settings/printing/jobs`,
@@ -1827,6 +1844,8 @@ export const path = {
       generatePath(`${x}/production/planning/${itemId}`),
     productionSettings: `${x}/settings/production`,
     profile: `${x}/account/profile`,
+    project: (id: string) => generatePath(`${x}/accounting/projects/${id}`),
+    projects: `${x}/accounting/projects`,
     purchaseInvoice: (id: string) =>
       generatePath(`${x}/purchase-invoice/${id}`),
     purchaseInvoiceDelivery: (id: string) =>
@@ -2375,12 +2394,25 @@ export const getStoragePath = (bucket: string, path: string) => {
  * request bounce the user to an attacker origin (CWE-601 open redirect), so a
  * cross-origin or unparsable referer yields null and callers fall back to
  * their fixed route.
+ *
+ * Behind a TLS-terminating load balancer `request.url` is `http://` (the
+ * server does not trust proxy headers) while the browser's Referer is
+ * `https://`, so the scheme comes from `X-Forwarded-Proto` when it names one.
+ * Only the scheme is taken from it; the host still has to match.
  */
 export const requestReferrer = (request: Request, withParams = true) => {
   const referer = request.headers.get("referer");
   if (!referer) return null;
   try {
     const requestUrl = new URL(request.url);
+    const forwardedProto = request.headers
+      .get("x-forwarded-proto")
+      ?.split(",")[0]
+      ?.trim()
+      .toLowerCase();
+    if (forwardedProto === "http" || forwardedProto === "https") {
+      requestUrl.protocol = `${forwardedProto}:`;
+    }
     const url = new URL(referer, requestUrl.origin);
     if (url.origin !== requestUrl.origin) return null;
     return url.pathname + url.search + url.hash;

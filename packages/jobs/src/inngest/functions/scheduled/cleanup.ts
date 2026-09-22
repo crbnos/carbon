@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { LEGACY_PRIVATE_BUCKET, storage } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
 import { inngest } from "../../client";
 
@@ -423,17 +424,23 @@ export const cleanupFunction = inngest.createFunction(
       // reader probes/falls back to `private`.
       const relocated = new Set<string>();
       const CHUNK = 20;
+      // A durable copy may live in the company's own bucket (current pipeline)
+      // or the legacy shared `private` bucket (pre-migration relocations);
+      // `info` probes both. Object keys start with the companyId segment, and
+      // a key without one can't have a durable copy anywhere.
+      const probeDurableCopy = async (name: string) => {
+        const companyId = name.split("/")[0];
+        if (!companyId) return null;
+        const found = await storage(serviceRole)
+          .company(companyId)
+          .info(name)
+          .then((r) => !r.error)
+          .catch(() => false);
+        return found ? name : null;
+      };
       for (let i = 0; i < staleNames.length; i += CHUNK) {
         const chunk = staleNames.slice(i, i + CHUNK);
-        const probes = await Promise.all(
-          chunk.map((name) =>
-            serviceRole.storage
-              .from("private")
-              .info(name)
-              .then((r) => (!r.error && r.data ? name : null))
-              .catch(() => null)
-          )
-        );
+        const probes = await Promise.all(chunk.map(probeDurableCopy));
         for (const name of probes) {
           if (name) relocated.add(name);
         }
@@ -502,11 +509,14 @@ export const cleanupFunction = inngest.createFunction(
         Date.now() - TMP_STAGING_TTL_HOURS * 60 * 60 * 1000
       ).toISOString();
 
+      // Staging now lives in each company's own bucket (bucket id = companyId),
+      // with the legacy shared `private` bucket still holding pre-migration
+      // objects — so select the bucket alongside the name and prune per bucket
+      // rather than assuming one shared bucket.
       const stale = await serviceRole
         .schema("storage")
         .from("objects")
-        .select("name")
-        .eq("bucket_id", "private")
+        .select("name, bucket_id")
         .like("name", "%/tmp/%")
         .lt("created_at", cutoff)
         .limit(1000);
@@ -519,27 +529,48 @@ export const cleanupFunction = inngest.createFunction(
       // The LIKE matches "/tmp/" anywhere; only the SECOND segment being
       // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
       // folders are never named tmp, but don't rely on that for a delete.
-      const toRemove = (stale.data ?? [])
-        .map((o) => o.name)
-        .filter(
-          (n): n is string => typeof n === "string" && n.split("/")[1] === "tmp"
-        );
+      const byBucket = new Map<string, string[]>();
+      for (const object of stale.data ?? []) {
+        const name = object.name;
+        const bucketId = object.bucket_id;
+        if (typeof name !== "string" || typeof bucketId !== "string") continue;
+        if (name.split("/")[1] !== "tmp") continue;
+        // A company bucket is named for its company, and its object keys keep
+        // the `{companyId}/` prefix — so a key whose first segment is not this
+        // bucket belongs to neither this company nor the legacy bucket layout.
+        if (
+          bucketId !== LEGACY_PRIVATE_BUCKET &&
+          name.split("/")[0] !== bucketId
+        )
+          continue;
+        const existing = byBucket.get(bucketId);
+        if (existing) existing.push(name);
+        else byBucket.set(bucketId, [name]);
+      }
 
-      if (toRemove.length === 0) {
+      const toRemoveCount = [...byBucket.values()].reduce(
+        (total, names) => total + names.length,
+        0
+      );
+      if (toRemoveCount === 0) {
         logger.info("No stale tmp staging objects");
         return;
       }
 
-      const removed = await serviceRole.storage
-        .from("private")
-        .remove(toRemove);
-      if (removed.error) {
-        logger.error("Error pruning tmp staging objects", {
-          error: removed.error
-        });
-      } else {
+      let failed = false;
+      for (const [bucketId, names] of byBucket) {
+        const removed = await serviceRole.storage.from(bucketId).remove(names);
+        if (removed.error) {
+          failed = true;
+          logger.error("Error pruning tmp staging objects", {
+            bucket: bucketId,
+            error: removed.error
+          });
+        }
+      }
+      if (!failed) {
         logger.info("Pruned stale tmp staging objects", {
-          count: toRemove.length
+          count: toRemoveCount
         });
       }
     });

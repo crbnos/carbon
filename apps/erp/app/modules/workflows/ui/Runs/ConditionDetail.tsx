@@ -1,11 +1,11 @@
-import { Subheading } from "@carbon/react";
-import { OPERATOR_LABELS } from "@carbon/utils";
 import type {
   Clause,
   ClauseEvaluation,
   ConditionNode,
   NodeDetail
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { Subheading } from "@carbon/react";
+import { OPERATOR_LABELS } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuCheck, LuX } from "react-icons/lu";
 import { humanizeField } from "../Builder/nodes/meta";

@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -109,19 +109,23 @@ const Documents = ({
 
   const deleteFile = useCallback(
     async (file: StorageItem) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getReadPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getReadPath, revalidator, t]
+    [carbon, getReadPath, revalidator, t, company.id]
   );
 
   const downloadModel = useCallback(

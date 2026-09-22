@@ -2,7 +2,8 @@ import { useCarbon } from "@carbon/auth";
 import {
   convertKbToString,
   downloadBlob,
-  isPreviewableDocumentType
+  isPreviewableDocumentType,
+  storage
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -229,17 +230,19 @@ function MaintenanceFilesContent({
       }
 
       const filePath = getFilePath(file.name);
-      const result = await carbon.storage.from("private").remove([filePath]);
+      const { error } = await storage(carbon)
+        .company(company.id)
+        .remove([filePath]);
 
-      if (result.error) {
-        toast.error(result.error.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon, getFilePath, revalidator, t]
+    [carbon, company.id, getFilePath, revalidator, t]
   );
 
   const onDrop = useCallback(

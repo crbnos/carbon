@@ -1,6 +1,11 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
-import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import {
+  getContentType,
+  hasCompanyPrivateObjectPathPrefix,
+  MEDIA_CONTENT_TYPES,
+  storage
+} from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -42,7 +47,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
-  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
+  // hoisted so the narrowing survives into downloadFile's closure
+  const shareCompanyId = customer.data.companyId;
+
+  const hasPlan = await companyHasFeature(serviceRole, shareCompanyId, {
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
@@ -50,11 +58,16 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   let path = params["*"];
-  let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
 
   if (!path) throw new Error("Path not found");
 
   path = decodeURIComponent(path);
+
+  // Private objects are keyed by companyId — a path outside the portal's
+  // company must not resolve to another tenant's bucket.
+  if (!hasCompanyPrivateObjectPathPrefix(customer.data.companyId, path)) {
+    return new Response(null, { status: 404 });
+  }
 
   const jobFile = parseJobFilePath(path);
 
@@ -90,8 +103,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   const contentType = getContentType(fileType);
 
   async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
-    if (result.error) {
+    const result = await storage(serviceRole)
+      .company(shareCompanyId)
+      .download(`${path}`);
+    if (!result.data) {
       logger.error("Failed to download file", { error: result.error });
       return null;
     }

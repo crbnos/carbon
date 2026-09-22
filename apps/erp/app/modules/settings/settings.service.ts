@@ -28,14 +28,12 @@ import { sanitize } from "~/utils/supabase";
 import type {
   accountsPayableBillingAddressValidator,
   accountsReceivableBillingAddressValidator,
-  apiKeyValidator,
   companyValidator,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
-  subsidiaryValidator,
-  webhookValidator
+  subsidiaryValidator
 } from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
@@ -85,35 +83,11 @@ export async function updateAccountsReceivableBillingAddress(
     .upsert(sanitize({ id: companyId, ...data, updatedBy }));
 }
 
-export async function deactivateWebhooks(
-  client: SupabaseClient<Database>,
-  companyId: string
-) {
-  return client
-    .from("webhook")
-    .update({ active: false })
-    .eq("companyId", companyId);
-}
-
-export async function deleteApiKey(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("apiKey").delete().eq("id", id);
-}
-
 export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
   return client.from("company").delete().eq("id", companyId);
-}
-
-export async function deleteWebhook(
-  client: SupabaseClient<Database>,
-  id: string
-) {
-  return client.from("webhook").delete().eq("id", id);
 }
 
 export async function getApiKeys(
@@ -1198,6 +1172,17 @@ export async function updateIncludeMaterialsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeOperationsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeOperationsOnTraveler: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ includeOperationsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1314,196 +1299,6 @@ export async function updateSupplierQuoteNotificationSetting(
     .eq("id", companyId);
 }
 
-export async function upsertApiKey(
-  client: SupabaseClient<Database>,
-  apiKey:
-    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
-        createdBy: string;
-        companyId: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-        rawKey: string;
-        keyHash: string;
-        keyPreview: string;
-      })
-    | (Omit<z.infer<typeof apiKeyValidator>, "id" | "scopes" | "expiresAt"> & {
-        id: string;
-        scopes: Record<string, string[]>;
-        expiresAt?: string;
-      })
-) {
-  if ("createdBy" in apiKey) {
-    // Create: store the hash, return the raw key (caller generates both)
-    // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
-    const {
-      scopes,
-      expiresAt,
-      rawKey,
-      keyHash,
-      rateLimit: _rl,
-      rateLimitWindow: _rlw,
-      ...rest
-    } = apiKey as any;
-
-    const result = await client
-      .from("apiKey")
-      .insert(
-        sanitize({
-          ...rest,
-          keyHash,
-          scopes: scopes as any,
-          expiresAt: expiresAt || null
-        }) as any
-      )
-      .select("id")
-      .single();
-
-    if (result.error) {
-      return { data: null, error: result.error };
-    }
-
-    // Return the raw key (shown to user once, never stored)
-    return { data: { key: rawKey, id: result.data.id }, error: null };
-  }
-
-  // Update: update name, scopes, expiration (never the key itself)
-  // Strip rateLimit/rateLimitWindow — these are platform-controlled, not user-configurable
-  const {
-    scopes,
-    expiresAt,
-    rateLimit: _rl,
-    rateLimitWindow: _rlw,
-    ...rest
-  } = apiKey as any;
-  return client
-    .from("apiKey")
-    .update(
-      sanitize({
-        ...rest,
-        scopes: scopes as any,
-        expiresAt: expiresAt || null
-      }) as any
-    )
-    .eq("id", apiKey.id);
-}
-
-export async function updateConsoleSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  consoleEnabled: boolean,
-  userId?: string
-) {
-  const update = await client
-    .from("companySettings")
-    .update(sanitize({ consoleEnabled }) as any)
-    .eq("id", companyId);
-
-  // When enabling, create "Console Operator" employee type if it doesn't exist
-  if (consoleEnabled) {
-    const existing = await client
-      .from("employeeType")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("systemType", "Console Operator")
-      .maybeSingle();
-
-    if (!existing.data) {
-      const newType = await client
-        .from("employeeType")
-        .insert({
-          name: "Console Operator",
-          companyId,
-          protected: true,
-          systemType: "Console Operator"
-        })
-        .select("id")
-        .single();
-
-      // Create default permissions for the Console Operator type.
-      // Only grant what's needed for MES operations — not ERP modules.
-      if (newType.data) {
-        const mesModules = [
-          {
-            module: "Production",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Inventory",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Resources",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Items",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          },
-          {
-            module: "Quality",
-            create: true,
-            update: true,
-            delete: false,
-            view: true
-          },
-          {
-            module: "People",
-            create: false,
-            update: false,
-            delete: false,
-            view: true
-          }
-        ];
-
-        const permissions = mesModules.map((m) => ({
-          employeeTypeId: newType.data.id,
-          module: m.module as "Accounting",
-          create: m.create ? [companyId] : [],
-          update: m.update ? [companyId] : [],
-          delete: m.delete ? [companyId] : [],
-          view: m.view ? [companyId] : []
-        }));
-
-        await client.from("employeeTypePermission").insert(permissions);
-      }
-    }
-
-    // Auto-generate a PIN for the enabling user if they don't have one
-    let generatedPin: string | null = null;
-    if (userId) {
-      const userEmployee = await client
-        .from("employee")
-        .select("id, pin" as any)
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-
-      if (userEmployee.data && !(userEmployee.data as any).pin) {
-        generatedPin = Math.floor(1000 + Math.random() * 9000).toString();
-        await client
-          .from("employee")
-          .update({ pin: generatedPin } as any)
-          .eq("id", userId)
-          .eq("companyId", companyId);
-      }
-    }
-  }
-
-  return update;
-}
-
 export async function updateDefaultSupplierCc(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1512,17 +1307,6 @@ export async function updateDefaultSupplierCc(
   return client
     .from("companySettings")
     .update(sanitize({ defaultSupplierCc }))
-    .eq("id", companyId);
-}
-
-export async function updateRequireMfaSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  requireMfa: boolean
-) {
-  return client
-    .from("companySettings")
-    .update(sanitize({ requireMfa }))
     .eq("id", companyId);
 }
 
@@ -1590,21 +1374,4 @@ export async function updateReturnPickedMaterialTimingSetting(
     .from("companySettings")
     .update(sanitize({ returnPickedMaterialTiming }))
     .eq("id", companyId);
-}
-
-export async function upsertWebhook(
-  client: SupabaseClient<Database>,
-  webhook:
-    | (Omit<z.infer<typeof webhookValidator>, "id"> & {
-        createdBy: string;
-        companyId: string;
-      })
-    | (Omit<z.infer<typeof apiKeyValidator>, "id"> & {
-        id: string;
-      })
-) {
-  if ("createdBy" in webhook) {
-    return client.from("webhook").insert(webhook).select("id").single();
-  }
-  return client.from("webhook").update(sanitize(webhook)).eq("id", webhook.id);
 }

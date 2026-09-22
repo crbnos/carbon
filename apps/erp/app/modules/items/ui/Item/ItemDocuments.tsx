@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -344,19 +344,23 @@ export const useItemDocuments = ({ itemId, type }: Props) => {
 
   const deleteFile = useCallback(
     async (file: FileObject) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error(t`Error deleting file`);
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || t`Error deleting file`);
+      if (error) {
+        toast.error(error.message || t`Error deleting file`);
         return;
       }
 
       toast.success(t`File deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon, revalidator, t, company.id]
   );
 
   const deleteModel = useCallback(async () => {

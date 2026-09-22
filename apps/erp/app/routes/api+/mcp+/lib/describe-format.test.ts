@@ -1,13 +1,13 @@
 import type { ManifestEntry } from "@carbon/api";
-import { describe, expect, test } from "vitest";
 import {
   deriveNameDescription,
   formatParamSummary,
   formatToolDescription,
+  getServerInstructions,
+  MCP_DEFAULT_LIMIT,
   paginatingSibling
-} from "./describe-format";
-import { MCP_DEFAULT_LIMIT } from "./format-result";
-import { getServerInstructions } from "./instructions";
+} from "@carbon/ee/mcp";
+import { describe, expect, test } from "vitest";
 import toolMetadata from "./tool-metadata.json";
 
 const baseTool: ManifestEntry = {
@@ -134,7 +134,10 @@ describe("paginatingSibling", () => {
 });
 
 describe("getServerInstructions", () => {
-  const instructions = getServerInstructions("2026-09-11");
+  const instructions = getServerInstructions(
+    "2026-09-11",
+    toolMetadata as unknown as Parameters<typeof getServerInstructions>[1]
+  );
 
   test("lists every module name", () => {
     const modules = [...new Set(toolMetadata.tools.map((t) => t.module))];

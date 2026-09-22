@@ -489,6 +489,10 @@ services:
       SUPABASE_PUBLIC_URL: ${SUPABASE_URL}
       SUPABASE_ANON_KEY: __ANON_KEY__
       SUPABASE_SERVICE_KEY: __SERVICE_ROLE_KEY__
+      # Studio's SQL-editor snippets are read from a directory on disk; with the
+      # var unset it throws "SNIPPETS_MANAGEMENT_FOLDER env var is not set" on
+      # the SQL editor page. Studio creates the folder itself if missing.
+      SNIPPETS_MANAGEMENT_FOLDER: /app/snippets
     volumes:
       - *shim
     # The image's built-in healthcheck demands HTTP 200 from /api/platform/profile

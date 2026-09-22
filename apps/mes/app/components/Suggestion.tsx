@@ -1,4 +1,5 @@
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import {
   Hidden,
@@ -23,17 +24,21 @@ import {
   VStack
 } from "@carbon/react";
 import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import type { ChangeEvent } from "react";
-import { useEffect, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import { LuImage, LuMailbox } from "react-icons/lu";
 import { useFetcher, useLocation } from "react-router";
 import { useUser } from "~/hooks";
 import type { action } from "~/routes/x+/suggestion";
 import { suggestionValidator } from "~/services/models";
 import { path } from "~/utils/path";
+
+// Lazy, not a static import: @emoji-mart/react is CommonJS, so under SSR its
+// default import is `{ default: Picker }` and dev React warns "type is
+// invalid" the moment the element is created, even in a closed popover.
+const Picker = lazy(() => import("@emoji-mart/react"));
 
 const log = getLogger("mes");
 
@@ -92,7 +97,7 @@ const Suggestion = () => {
       if (isHeic(file.name, file.type)) {
         try {
           file = await convertHeicToJpeg(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(companyId),
             directory: `${companyId}/tmp`,
             file
           });
@@ -104,8 +109,8 @@ const Suggestion = () => {
 
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
-      const imageUpload = await carbon.storage
-        .from("private")
+      const imageUpload = await storage(carbon)
+        .company(companyId)
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true
@@ -214,15 +219,17 @@ const Suggestion = () => {
                   align="end"
                   sideOffset={8}
                 >
-                  <Picker
-                    data={data}
-                    onEmojiSelect={onEmojiSelect}
-                    theme={pickerTheme}
-                    previewPosition="none"
-                    skinTonePosition="none"
-                    navPosition="bottom"
-                    perLine={8}
-                  />
+                  <Suspense>
+                    <Picker
+                      data={data}
+                      onEmojiSelect={onEmojiSelect}
+                      theme={pickerTheme}
+                      previewPosition="none"
+                      skinTonePosition="none"
+                      navPosition="bottom"
+                      perLine={8}
+                    />
+                  </Suspense>
                 </PopoverContent>
               </Popover>
             </HStack>

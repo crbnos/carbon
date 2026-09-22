@@ -1,7 +1,7 @@
 import {
+  getAppUrl,
   QUICKBOOKS_CLIENT_ID,
-  QUICKBOOKS_CLIENT_SECRET,
-  VERCEL_URL
+  QUICKBOOKS_CLIENT_SECRET
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { QuickBooks } from "@carbon/ee";
@@ -64,10 +64,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
       ProviderID.QUICKBOOKS
     );
 
-    // Exchange the authorization code for tokens
+    // Exchange the authorization code for tokens. The redirect_uri must match
+    // the authorize-time one (IntegrationCard builds it from
+    // `window.location.origin`); `new URL(request.url).origin` is the internal
+    // proxy address behind a TLS-terminating proxy and fails as a mismatch.
     const auth = await provider.authenticate(
       params.code,
-      `${url.origin}/api/integrations/quickbooks/oauth`
+      `${getAppUrl()}/api/integrations/quickbooks/oauth`
     );
 
     if (!auth || auth.type !== "oauth2") {
@@ -102,15 +105,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await quickbooksOnInstall(companyId);
 
     if (createdQuickBooksIntegration?.data?.metadata) {
-      const requestUrl = new URL(request.url);
-
-      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-        requestUrl.protocol = "http";
-      }
-
-      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
-
-      return redirect(redirectUrl);
+      // Canonical public origin — `request.url`'s origin is the internal proxy
+      // address in dev, which would drop the session cookies on redirect.
+      return redirect(`${getAppUrl()}${path.to.integrations}`);
     } else {
       return data(
         { error: "Failed to save QuickBooks integration" },

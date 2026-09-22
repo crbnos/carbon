@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
 import type { CalendarDate } from "@internationalized/date";
@@ -187,8 +188,8 @@ export async function generateAndAttachSalesOrderPdf(args: {
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -261,8 +262,8 @@ export async function generateAndAttachSalesReturnOrderPdf(
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/sales-return-order/${id}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -338,8 +339,8 @@ export async function generateAndAttachPurchaseReturnOrderPdf(
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/purchase-return-order/${id}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -470,8 +471,8 @@ export async function sendSalesOrderEmail(args: {
 
   const html = await renderAsync(emailTemplate);
   const text = await renderAsync(emailTemplate, { plainText: true });
-  const { data: signedUrlData } = await serviceRole.storage
-    .from("private")
+  const signed = await storage(serviceRole)
+    .company(companyId)
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
@@ -481,10 +482,10 @@ export async function sendSalesOrderEmail(args: {
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
     html,
     text,
-    attachments: signedUrlData?.signedUrl
+    attachments: signed.data
       ? [
           {
-            path: signedUrlData.signedUrl,
+            path: signed.data.signedUrl,
             filename: fileName
           }
         ]

@@ -2,7 +2,9 @@ export {
   AssemblyPlayer,
   type AssemblyPlayerHandle,
   type AssemblyPlayerProps,
-  type FutureComponentsMode
+  type AssemblyView,
+  type FutureComponentsMode,
+  type InstalledComponentsMode
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
 export { type FramingFit, fitFraming } from "./camera";
@@ -60,4 +62,10 @@ export type {
   Vec3
 } from "./types";
 export { type UseAssemblyResult, useAssembly } from "./useAssembly";
-export { type ComponentVisual, visualForComponent } from "./visibility";
+export {
+  ASSEMBLY_VIEWS,
+  type ComponentVisual,
+  VIEW_MODES,
+  viewForModes,
+  visualForComponent
+} from "./visibility";

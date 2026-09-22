@@ -1,4 +1,4 @@
-import type { Origin, RunTrigger } from "@carbon/workflows";
+import type { Origin, RunTrigger } from "@carbon/ee/workflows";
 
 /** A workflowTriggerEvent row joined to its workflow's owner. */
 export type Subscriber = {

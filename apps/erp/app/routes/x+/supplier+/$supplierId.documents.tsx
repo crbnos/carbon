@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { storage } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import RecordDocuments from "~/components/RecordDocuments";
@@ -11,8 +12,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw new Error("Missing supplierId");
 
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/supplier/${supplierId}`);
 
   return {

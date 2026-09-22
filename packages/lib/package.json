@@ -3,10 +3,12 @@
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
-    "@carbon/workflows": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@carbon/workflows-core": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",

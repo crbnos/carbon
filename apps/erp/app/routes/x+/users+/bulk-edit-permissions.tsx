@@ -1,6 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
@@ -13,8 +14,16 @@ import { getParams, path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "users"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const validation = await validator(bulkPermissionsValidator).validate(

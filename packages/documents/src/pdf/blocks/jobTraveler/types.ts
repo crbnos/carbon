@@ -40,6 +40,11 @@ export interface JobTravelerData {
   methodRevision?: string | null;
   /** Company-setting opt-in (companySettings.includeMaterialsOnTraveler). */
   includeMaterials?: boolean;
+  /**
+   * Company-setting opt-out (companySettings.includeOperationsOnTraveler,
+   * defaults on). Undefined is treated as included.
+   */
+  includeOperations?: boolean;
   materials?: JobTravelerMaterial[];
   theme: DocumentTheme;
   sections: Record<string, ResolvedSection>;

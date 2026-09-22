@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
@@ -240,11 +242,21 @@ export async function buildCompanyBackup(
 
   if (includeStorage === "all") {
     let totalBytes = 0;
-    const paths = await listBucketFilesRecursive(
-      client,
-      STORAGE_BUCKET,
-      companyId
-    );
+    // Assets live in the company's own bucket; files uploaded before the
+    // per-company bucket migration still live in the legacy shared bucket.
+    // Union both listings (same keys), preferring the company bucket's copy.
+    const [companyPaths, legacyPaths] = await Promise.all([
+      listBucketFilesRecursive(
+        client,
+        getCompanyPrivateBucket(companyId),
+        companyId
+      ),
+      listBucketFilesRecursive(client, STORAGE_BUCKET, companyId)
+    ]);
+    const byPath = new Map<string, { path: string; size: number }>();
+    for (const file of legacyPaths) byPath.set(file.path, file);
+    for (const file of companyPaths) byPath.set(file.path, file);
+    const paths = Array.from(byPath.values());
     for (const file of paths) {
       const included = totalBytes + file.size <= MAX_STORAGE_TOTAL_BYTES;
       if (included) {
@@ -353,6 +365,8 @@ export const companyExportFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, userId, label, includeStorage, skipCorrupted } =
       event.data;
+
+    await requireBackupsEntitlement(companyId);
 
     return await step.run("export-company", async () => {
       const client = getCarbonServiceRole();

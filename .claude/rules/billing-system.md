@@ -82,9 +82,38 @@ several `invoice.*` events are forwarded to GTM.
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
-`API_KEYS, WEBHOOKS, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
-CUSTOMER_PORTALS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST`
-(`email`) bypasses the `INTEGRATIONS` gate.
+`API_KEYS, WEBHOOKS, MCP, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
+CUSTOMER_PORTALS, AI_AGENT, WORKFLOWS, FORECAST, TWO_FACTOR, PERMISSIONS, APPROVAL_RULES,
+BACKUPS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST` (`email`) bypasses
+the `INTEGRATIONS` gate. `MCP` gates the MCP server (`POST /api/mcp`) via
+`companyHasFeature` at the route choke point — off on Community/Starter across both the
+OAuth-connector and `carbon-key` auth paths (`api+/mcp+/_index.ts`).
+
+`APPROVAL_RULES` gates the `x+/settings+/approval-rules.*` routes (via `requireFeature`
++ hidden nav); the runtime approval engine (`$supplierId.approval`, request/approve/reject)
+stays ungated — a Community company just has no rules to trigger it. `BACKUPS` gates the
+company backup/restore feature, but through `canManageBackups`
+(`~/modules/settings/backups.server`) = `canAccessBackups(email) ||
+companyHasFeature(BACKUPS)` — i.e. Business/Enterprise customers get it AND internal staff
+/ local dev keep the escape hatch. Demo Data (`x+/settings+/demo-data`) stays internal /
+local-dev only via the plain `canAccessBackups`.
+
+`PERMISSIONS` gates authoring RBAC — creating/editing employee types
+(`x+/users+/employee-types*`), editing an individual user's permissions
+(`employees.$employeeId`, `bulk-edit-permissions`), and console/kiosk mode
+(`x+/settings+/people.tsx`). The licensed logic — the flattened-permission-object
+builder `updatePermissions`, `updateEmployee`, the employee-type CRUD, and the
+claims/employee-type translators — lives once in **`@carbon/ee/permissions.server`**
+(consumed by the ERP authoring routes AND the `@carbon/jobs` bulk-edit task, which
+no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`
+(`updateConsoleSetting`); the authoring UI is `.ee.tsx` in the app (it can't move
+to the package — it imports `~/components/Form` etc.).
+The community primitives it does NOT include — `setUserPermissions` (invite merge)
+and `makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
+`users.server.ts`. Community/Starter ships "everyone is an admin": you can add
+users (every invite defaults to the seeded `Admin` employee type) but not author
+roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
+stays in every edition.
 
 Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId)`):
 
@@ -101,7 +130,19 @@ Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId
   path — reading `companyPlan` directly — still accepted the keys).
 
 **All three short-circuit when `CarbonEdition !== Edition.Cloud` or the company is
-bypass-listed** — gating only bites on Cloud.
+bypass-listed** — plan gating only bites on Cloud. This is a **self-hosted feature
+toggle**: Enterprise AND Community self-hosted both pass `companyHasPlan`.
+
+### `companyHasFeature` / `requireFeature` — Community is blocked, not toggled
+
+For features that must be OFF on the **Community** edition (not merely paywalled on
+Cloud) — RBAC authoring (`PERMISSIONS`), console/kiosk mode — use
+`companyHasFeature(client, companyId, spec)` / `requireFeature({...})` instead.
+They are identical to `companyHasPlan`/`requirePlan` EXCEPT they return
+`false`/throw when `CarbonEdition === Edition.Community`. So: Community → blocked,
+Enterprise/Test self-hosted → allowed (licensed), Cloud → plan-based,
+bypass/carbon-owned → allowed. `requirePlan`'s off-Cloud no-op is wrong for these
+— it would let a self-hosted Community instance author roles.
 
 `spec` is a `GateSpec`: either `{ feature: Feature }` or `{ plan: Plan | Plan[] }`.
 

@@ -148,7 +148,7 @@ export async function completeJob(
 /**
  * Schedule or reschedule a job's operations. Routes through
  * `recalculateJobOperationDependencies`, which resolves the job's location and
- * regenerates the whole location IN-PROCESS via `@carbon/ee/planning`
+ * regenerates the whole location IN-PROCESS via `@carbon/planning`
  * (`runLocationSchedule`) — the same in-process path the rest of the app uses now
  * that the `schedule` edge function is gone. Forecast-first scheduling is a single
  * forward-ASAP pass, so there are no `mode`/`direction` knobs to validate.

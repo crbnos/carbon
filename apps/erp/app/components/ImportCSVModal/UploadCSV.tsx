@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { downloadText } from "@carbon/files";
+import { downloadText, storage } from "@carbon/files";
 import {
   CSV_CONTENT_TYPE,
   encodeCsvTable,
@@ -131,9 +131,8 @@ export const UploadCSV = ({ table }: { table: keyof typeof importSchemas }) => {
       setLoading(false);
       return;
     }
-
-    const { data, error } = await carbon.storage
-      .from("private")
+    const { data, error } = await storage(carbon)
+      .company(company.id)
       .upload(fileName, file);
 
     if (error) {

@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Accounting } from "../../../../core/types";
 import { Rillet } from "../../models";
-import { type BillPostingJournalLine, mapBillToRilletBill } from "../bill";
+import {
+  type BillPostingJournalLine,
+  mapBillToRilletBill,
+  toRilletReimbursement
+} from "../bill";
 import { toRilletExchangeRate } from "../shared";
 
 // The bill's G/L costing comes from its posted Purchase Invoice journal
@@ -446,6 +450,31 @@ describe("Rillet bill currency contract", () => {
     expect(payload.items[0]?.amount).toEqual({
       amount: expected,
       currency: "EUR"
+    });
+  });
+});
+
+describe("toRilletReimbursement", () => {
+  it("re-shapes a bill payload as a reimbursement with the AP control account as payable", () => {
+    const billPayload = {
+      vendor_id: "vendor-uuid",
+      expense_number: "PI-0001",
+      bill_date: "2026-09-07",
+      due_date: "2026-09-07",
+      items: [
+        { account_code: "6100", amount: { amount: "120.00", currency: "USD" } }
+      ],
+      subsidiary_id: "sub-uuid",
+      external_references: [{ type: "carbon", id: "pi_1" }]
+    };
+    expect(toRilletReimbursement(billPayload, "2000")).toEqual({
+      vendor_id: "vendor-uuid",
+      items: billPayload.items,
+      reimbursement_date: "2026-09-07",
+      impact_date: "2026-09-07",
+      payable_account_code: "2000",
+      subsidiary_id: "sub-uuid",
+      external_references: [{ type: "carbon", id: "pi_1" }]
     });
   });
 });

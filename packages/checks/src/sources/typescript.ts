@@ -23,8 +23,8 @@ const TYPESCRIPT_ROOTS = [
   "packages/files/src",
   "packages/form/src",
   "packages/react/src",
-  "packages/printing/src",
-  "packages/workflows/src"
+  "packages/printing/src"
+  // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 
 const EXCLUDED_DIRS = new Set(["node_modules"]);

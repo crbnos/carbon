@@ -13,8 +13,8 @@ import {
 } from "@internationalized/date";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRevalidator } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useParams } from "react-router";
+import { useRealtimeRevalidator, useUrlParams, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import { shouldAdvanceToNextSerialUnit } from "~/services/serial-advancement";
 import type {
@@ -67,7 +67,7 @@ export function useOperation({
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
 
-  const revalidator = useRevalidator();
+  const revalidate = useRealtimeRevalidator();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -132,7 +132,7 @@ export function useOperation({
           },
           (payload) => {
             if (payload.eventType === "UPDATE") {
-              revalidator.revalidate();
+              revalidate();
             }
           }
         )

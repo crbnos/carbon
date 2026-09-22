@@ -1,14 +1,22 @@
 ---
 paths:
   - "apps/erp/app/routes/api+/mcp+/**"
+  - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
 ---
 
 # Carbon ERP MCP Server
 
 The ERP exposes an MCP (Model Context Protocol) server that wraps the module
-service functions as ERP tools. It lives entirely under
-`apps/erp/app/routes/api+/mcp+/`.
+service functions as ERP tools. The **protocol engine is commercial** — it lives
+in `packages/ee/src/mcp/` (`@carbon/ee/mcp` for the pure logic —
+catalog-search/describe-format/format-result/instructions/types; `@carbon/ee/mcp.server`
+for `server.ts`, which embeds the `requireEntitlement("MCP")` lock). The **dispatch,
+tool manifest and generated metadata stay in the app** under
+`apps/erp/app/routes/api+/mcp+/` (they derive from `~/modules/*` and cannot move
+into a package) and are INJECTED into the engine as `deps` by the thin route
+(`_index.ts`): `{ callOperation, operationsByName, isListOperation, isMcpBlockedTool,
+catalogSearch, toolMetadata }`.
 
 > Don't recreate the old per-tool dump — it goes stale instantly (it still listed
 > `inventory_getShelf`, removed when `shelf` was renamed to `storageUnit`). The
@@ -32,8 +40,9 @@ service functions as ERP tools. It lives entirely under
   `OPTIONS` → 204 with CORS. JSON-RPC over
   `WebStandardStreamableHTTPServerTransport` (`enableJsonResponse: true`,
   `sessionIdGenerator: undefined` — stateless, no session).
-- A fresh `McpServer` (`createMcpServer(ctx)`) is built per request and connected
-  to a fresh transport.
+- A fresh `McpServer` (`await createMcpServer(ctx, today, deps)` from
+  `@carbon/ee/mcp.server`) is built per request and connected to a fresh transport.
+  It is async because it `await requireEntitlement("MCP")` first.
 
 ## Public discovery endpoints (unauthenticated)
 
@@ -73,14 +82,26 @@ Three ways in, resolved in this order:
 3. **No auth** → 401 with a `WWW-Authenticate: Bearer resource_metadata=…` header
    so clients can discover the OAuth flow.
 
-Auth always yields an `McpContext` = `{ client, companyId, companyGroupId, userId }`
-(`lib/types.ts`). `companyId`/`userId` come from the auth context and are injected
-server-side — never trusted from tool arguments.
+Auth always yields the app's `AuthedContext` (`../v1+/lib/base.server`; a superset
+of the engine's `McpContext` in `@carbon/ee/mcp` `types.ts`). `companyId`/`userId`
+come from the auth context and are injected server-side — never trusted from tool
+arguments.
+
+**Edition/plan gate (the commercial LOCK).** The MCP server is a Business+ feature.
+The gate lives INSIDE the commercial engine: `createMcpServer` (`@carbon/ee/mcp.server`)
+`await requireEntitlement(ctx.client, ctx.companyId, "MCP")` before building the server,
+throwing `EntitlementError`, which the route catches → 402 (`makeMcpDisabledResponse`).
+One check covers BOTH auth paths and blocks the **Community** edition (self-hosted) as
+well as Cloud **Starter** companies. It is un-strippable — serving MCP requires executing
+`@carbon/ee` code — replacing the former deletable in-route `companyHasFeature` check. The
+unauthenticated discovery endpoints
+(`/.well-known/mcp.json`, `/agent-setup/prompt.md`) are NOT gated — they have no company
+context and only advertise the endpoint; enforcement is at `POST /api/mcp`.
 
 ## The 3 meta-tools (the ONLY tools actually registered)
 
 To avoid context exhaustion, `server.registerTool` registers just three discovery
-tools (`lib/server.ts`); the ~1200 ERP functions are reached through them, not
+tools (`packages/ee/src/mcp/server.ts` (`@carbon/ee/mcp.server`)); the ~1200 ERP functions are reached through them, not
 registered individually:
 
 | Tool | Purpose |
@@ -89,7 +110,7 @@ registered individually:
 | `describe_tool` | Full contract for one `name` or up to 10 `names`: description, permission scope, list-op marker, input schema AND response schema. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
 
-### Catalog search (`lib/catalog-search.ts`)
+### Catalog search (`packages/ee/src/mcp/catalog-search.ts`, `@carbon/ee/mcp`)
 
 `search_tools` runs BM25 full-text search via **zbsearch** (pnpm catalog dep;
 in-process, index built lazily once per process over `tool-metadata.json`),
@@ -109,19 +130,19 @@ not substring filtering. The typed, tested logic lives OUTSIDE the
   concrete names for the enum `where` filter. Filter-only calls (no `query`)
   bypass the index and keep metadata order.
 - Output is one line per tool — `name [READ] (requiredParams, +N optional)`
-  (`formatParamSummary`, `lib/describe-format.ts`); the description line only
+  (`formatParamSummary`, `packages/ee/src/mcp/describe-format.ts`); the description line only
   renders when it differs from the name-derived text
   (`deriveNameDescription`). `describe_tool` output (`formatToolDescription`)
   adds `Permission:` and, for list ops (`isListOperation`), the default page
   size, plus the compact response schema when the generator derived one.
-- Server instructions live in `lib/instructions.ts` (module list + interpolated
+- Server instructions live in `packages/ee/src/mcp/instructions.ts` (module list + interpolated
   `MCP_DEFAULT_LIMIT`), importable by tests without server.ts's auth/env chain.
 - Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`;
   `lib/manifest.ts` carries its own copies of the meta-tool descriptions
   (pinned >40 chars by `manifest.test.ts`) — keep them in sync with
   `server.ts` by hand.
 
-### Response formatting is token-lean BY CONTRACT (`lib/format-result.ts`)
+### Response formatting is token-lean BY CONTRACT (`packages/ee/src/mcp/format-result.ts`)
 
 MCP text responses deliberately differ from the HTTP API's exact data — the
 HTTP/agent/workflow callers of `callOperation` are untouched:
@@ -225,14 +246,27 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
   service whose param is `db` is handed `getDatabaseClient()`; payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
-  `dispatch.server.ts`). A param literally named `args` is stamped too, and
-  which wire shape it takes is read off the operation's schema: a declared `args`
-  object means the body wraps it (`{ args: {...} }`) and the inner object is
-  unwrapped; a flat schema means the body already IS the args object. A flat body
-  is still accepted either way. A param the schema declares as a **scalar** is
-  passed `undefined` when no key matches rather than being handed the whole
-  payload object — that fallback made `deleteApiKey` run `.eq("id", {...})` and
-  return `200 null`. Reading a key by the param's own name is likewise gated
+  `dispatch.server.ts`) — including `userId` when the payload itself declares one
+  (the edge-function wrappers), which the manifest marks via `injectAuth` and the
+  generator derives from the signature. Without it the service runs with no acting
+  user; `apps/erp/test/mcp-tool-auth-injection.test.ts` guards the pairing.
+  A param literally named `args` is stamped too, and which wire shape it takes
+  is read off the operation's schema: a declared `args` object means the body
+  wraps it (`{ args: {...} }`) and the inner object is unwrapped; a flat schema
+  means the body already IS the args object. Both directions have a compatibility
+  path, and they are NOT symmetric:
+  - A wrapped schema also accepts the wrapper's contents sent flat, but only when
+    the wrapper is the schema's **sole required property** (`compileSoleWrapper`
+    in `packages/api/src/schema.ts`). An operation that requires `args` alongside
+    another property rejects a flat body at validation, before dispatch.
+  - A flat schema also accepts a lone `{ args: {...} }` envelope, unwrapped in
+    `callOperation` before validation because the published instructions taught
+    that shape.
+
+  A param the schema declares as a **scalar** is passed `undefined` when no key
+  matches rather than being handed the whole payload object — that fallback made
+  `deleteApiKey` run `.eq("id", {...})` and return `200 null`. Reading a key by
+  the param's own name is likewise gated
   (`addressesWholeParam`): a service whose sole payload param is a destructured
   object can share its name with one of that object's FIELDS —
   `insertNote(client, note: { note, documentId, … })` — and reading `body.note`
@@ -287,10 +321,34 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or
-  `{ success: false, error, errorKind: "database" | "execution" }`. A Supabase
-  failure keeps MCP's exact `Database error: ${JSON.stringify(error)}` text
-  (the raw error rides on `ORPCError.data.supabase`), and HTTP callers get the
-  Postgres `code`/`details`/`hint` in the 400 body.
+  `{ success: false, error, errorKind: "database" | "execution" }`. The raw error
+  rides on `ORPCError.data.supabase`, and the two surfaces treat it differently:
+  - `CallResult.error` (MCP, the in-app agent, workflows) carries a **fixed
+    message from the closed set** in `api+/v1+/lib/database-errors.ts` —
+    `conflict`, `reference`, `required`, `permission`, `notFound`, `rule`,
+    `unknown`. `classifyDatabaseFailure` picks one from STRUCTURED fields only
+    (a Postgres SQLSTATE, or the `FunctionsHttpError` name); message text is never
+    parsed, since parsing it would make the public string a function of the private
+    one. It used to interpolate `JSON.stringify(error)`, which handed a caller the
+    column, constraint and value out of the PostgREST body, and later an edge
+    function's own text — CWE-209 either way.
+  - The **full detail is logged** instead (`logger.error("Operation failed", …)` in
+    `call.server.ts`) with the operation name, the classification, the raw Supabase
+    error, and — for an edge function — the message read off the unread `Response`
+    on `error.context` by `edgeFunctionMessage`. Without that read the log would
+    hold an empty `{"name":"FunctionsHttpError","context":{}}` rather than the rule
+    that fired ("The process is not batchable"), so a business-rule rejection and a
+    malformed payload would be indistinguishable in the log too.
+  - **HTTP is a separate path and is unchanged**: a 400 body is serialized from the
+    `ORPCError` by the oRPC handler, never from `CallResult`, so HTTP callers still
+    receive the Postgres `code`/`details`/`hint`. Narrowing that is a separate
+    decision about the public API.
+
+  The consequence is deliberate and worth knowing when debugging an agent: a
+  business rule an agent could act on ("already in a batch") now reads as the
+  generic `rule` message, and the specific cause is in the server log. An
+  enumerated code returned by the edge functions themselves, mapped to public
+  strings here, is the way to give that back without echoing server text.
 - The dispatch behavior is pinned by
   `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
   deleted `executeFunction`) — a change there is a behavior change for MCP,
@@ -315,7 +373,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
   destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
-  in `lib/types.ts`).
+  in `packages/ee/src/mcp/types.ts`).
 - **Description** precedence: a function-level **JSDoc** on the service export
   (first sentence, `@tag`s stripped, trailing period removed, leading letter
   lowercased unless it starts an acronym, capped ~160 chars —
@@ -365,8 +423,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
 `people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
-`apps/erp/app/modules/<module>/<module>.service.ts` namespace (accounting is the
-`.ee`-licensed `accounting.ee.service.ts`; the registry key stays `accounting`).
+`apps/erp/app/modules/<module>/<module>.service.ts` namespace.
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 

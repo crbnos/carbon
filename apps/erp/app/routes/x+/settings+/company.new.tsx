@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { updateCompanySession } from "@carbon/auth/session.server";
-import { enableAuditLog } from "@carbon/database/audit";
+import { enableAuditLog } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";

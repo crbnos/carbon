@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import { File, toast } from "@carbon/react";
@@ -28,7 +29,7 @@ const DocumentCreateForm = () => {
       if (isHeic(file.name, file.type)) {
         try {
           file = await convertHeicToJpeg(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(companyId),
             directory: `${companyId}/tmp`,
             file
           });
@@ -41,8 +42,8 @@ const DocumentCreateForm = () => {
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const fileName = `${companyId}/${nanoid()}.${fileExtension}`;
 
-      const fileUpload = await carbon.storage
-        .from("private")
+      const fileUpload = await storage(carbon)
+        .company(companyId)
         .upload(fileName, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true

@@ -1,4 +1,4 @@
-import type { ValueType } from "@carbon/workflows";
+import type { ValueType } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { choiceState, readChoices, writeChoices } from "./multiChoice";
 

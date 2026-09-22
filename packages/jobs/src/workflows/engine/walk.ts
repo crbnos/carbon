@@ -2,7 +2,7 @@ import {
   DEFAULT_HANDLE,
   type TriggerNode,
   type WorkflowDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 
 export const MAX_NODE_EXECUTIONS = 500;
 

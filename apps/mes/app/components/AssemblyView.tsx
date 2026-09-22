@@ -82,12 +82,7 @@ import {
   LuWrench,
   LuX
 } from "react-icons/lu";
-import {
-  useFetcher,
-  useNavigate,
-  useRevalidator,
-  useSearchParams
-} from "react-router";
+import { useFetcher, useNavigate, useSearchParams } from "react-router";
 import { TrackingTypeIcon } from "~/components/Icons";
 import { ImageZoomViewer } from "~/components/ImageZoomViewer";
 import { OperationChat } from "~/components/JobOperation/components/Chat";
@@ -98,7 +93,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { SerialSelectorModal } from "~/components/JobOperation/components/SerialSelectorModal";
 import { RecordModal } from "~/components/JobOperation/components/Step";
-import { useUser } from "~/hooks";
+import { useRealtimeRevalidator, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import type {
   JobMaterial,
@@ -524,7 +519,7 @@ export function AssemblyView({
   const { carbon } = useCarbon();
   const mode = useMode();
   const navigate = useNavigate();
-  const revalidator = useRevalidator();
+  const revalidate = useRealtimeRevalidator();
   const [searchParams, setSearchParams] = useSearchParams();
   // Which main panel is shown: the assembly details, the 3D model, or chat.
   const [tab, setTab] = useState<"details" | "model" | "chat">("details");
@@ -569,7 +564,7 @@ export function AssemblyView({
     topic: `assembly:${operationId}`,
     dependencies: [operationId],
     setup(channel) {
-      const refresh = () => revalidator.revalidate();
+      const refresh = () => revalidate();
       return channel
         .on(
           "postgres_changes",

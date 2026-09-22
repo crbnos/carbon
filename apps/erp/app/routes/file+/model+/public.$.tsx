@@ -1,6 +1,6 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getContentType, MEDIA_CONTENT_TYPES } from "@carbon/files";
+import { getContentType, MEDIA_CONTENT_TYPES, storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -28,10 +28,14 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = getContentType(fileType);
 
+  // No auth session on this public route — the object path's first segment is
+  // the companyId, which selects the per-company bucket (with legacy fallback).
+  const companyId = path.split("/")[0];
+
   async function downloadFile() {
-    const result = await client.storage.from("private").download(`${path}`);
-    if (result.error) {
-      logger.error(result.error);
+    const result = await storage(client).company(companyId).download(`${path}`);
+    if (!result.data) {
+      logger.error("Failed to download file", { error: result.error });
       return null;
     }
     return result.data;

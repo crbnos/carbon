@@ -9,7 +9,7 @@
  *    catch on its own — it PARSES those ids rather than looking them up, deliberately,
  *    so that it stays company-blind. The existence check therefore lives here.
  */
-import { createWorkflowCatalog, REGISTRY_ENTRIES } from "@carbon/workflows";
+import { createWorkflowCatalog, REGISTRY_ENTRIES } from "@carbon/ee/workflows";
 import { Client } from "pg";
 
 const CUSTOM_FIELD_EVENT =

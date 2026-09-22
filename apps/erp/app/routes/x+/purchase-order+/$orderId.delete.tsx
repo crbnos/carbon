@@ -2,15 +2,15 @@ import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
-import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
-import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import {
   canApproveRequest,
   canCancelRequest,
   getLatestApprovalRequestForDocument
-} from "~/modules/shared";
+} from "@carbon/ee/approvals.server";
+import { getLogger } from "@carbon/logger";
+import type { ActionFunctionArgs } from "react-router";
+import { redirect } from "react-router";
+import { deletePurchaseOrder, getPurchaseOrder } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "orderid-delete");

@@ -5,6 +5,9 @@ import { convertKbToString } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  Alert,
+  AlertDescription,
+  AlertTitle,
   Badge,
   BarProgress,
   BottomSheet,
@@ -66,15 +69,15 @@ import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
 import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
-import { FaTasks } from "react-icons/fa";
 import { FaCheck, FaPlus, FaTrash } from "react-icons/fa6";
 import {
   LuArrowLeft,
   LuAxis3D,
   LuBarcode,
   LuCheck,
+  LuChevronDown,
   LuChevronLeft,
   LuChevronRight,
   LuCirclePlay,
@@ -84,8 +87,6 @@ import {
   LuEllipsisVertical,
   LuGitBranchPlus,
   LuGitPullRequest,
-  LuHammer,
-  LuHardHat,
   LuLayers,
   LuPackageCheck,
   LuPrinter,
@@ -111,7 +112,11 @@ import {
 } from "~/components/Icons";
 import { useDateFormatter, useUrlParams, useUser } from "~/hooks";
 import type { productionEventType } from "~/services/models";
-import type { JobOperationBatch } from "~/services/operations.service";
+import type {
+  BatchMaterialTotal,
+  BatchWorkInstructions,
+  JobOperationBatch
+} from "~/services/operations.service";
 import { getFileType } from "~/services/operations.service";
 import type {
   Job,
@@ -131,6 +136,7 @@ import { makeDurations } from "~/utils/durations";
 import { getPrivateUrl, getRawModelUrl, path } from "~/utils/path";
 import ItemThumbnail from "../ItemThumbnail";
 import { BatchCompleteModal } from "./components/BatchCompleteModal";
+import { BatchOverview } from "./components/BatchOverview";
 import { OperationChat } from "./components/Chat";
 import {
   Controls,
@@ -155,6 +161,8 @@ import { TableSkeleton } from "./components/TableSkeleton";
 import { useFiles } from "./hooks/useFiles";
 import { useOperation } from "./hooks/useOperation";
 
+const DOCK_COLLAPSED_KEY = "mes:operation-dock-collapsed";
+
 const log = getLogger("mes", "job-operation");
 
 type JobOperationProps = {
@@ -162,6 +170,10 @@ type JobOperationProps = {
   // resolves it and swaps in the batch's events. In batch mode the timers and
   // completion act on the whole batch.
   batch: JobOperationBatch | null;
+  // Batch mode: the combined per-item requirement/issued across every member,
+  // so the materials panel shows the one shared pick (e.g. 6,500 seeds).
+  batchMaterialTotals?: Record<string, BatchMaterialTotal> | null;
+  batchWorkInstructions?: Promise<BatchWorkInstructions> | null;
   events: ProductionEvent[];
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
   autoSelectMaterialWithoutPickingList?: boolean;
@@ -279,6 +291,8 @@ function PickedBreakdown({
 
 export const JobOperation = ({
   batch,
+  batchMaterialTotals,
+  batchWorkInstructions,
   events,
   expiredEntityPolicy = "Block",
   autoSelectMaterialWithoutPickingList = false,
@@ -310,13 +324,69 @@ export const JobOperation = ({
   // Start/Stop timer, planned durations, and completion all act on the whole
   // batch rather than this single member.
   const isBatched = !!batch;
+  // A batched operation opens on the whole batch; "?scope=job" narrows to this
+  // job's own details. Kept in the URL so a member link can land on either.
+  const scope: "batch" | "job" =
+    isBatched && params.get("scope") !== "job" ? "batch" : "job";
   const isCompleting = batch?.status === "Completing";
+  // What the header and dock say about the batch as a whole — never one
+  // member's values, which is what made the batch scope read as a job.
+  const batchFacts = useMemo(() => {
+    if (!batch) return null;
+    const members = batch.operations ?? [];
+    const jobs = members.map(
+      (m) =>
+        m.job as {
+          deadlineType?: string | null;
+          customer?: { name?: string | null } | null;
+        } | null
+    );
+    const unique = (values: (string | null | undefined)[]) => [
+      ...new Set(values.filter((v): v is string => !!v))
+    ];
+    const dueDates = members
+      .filter(
+        (m, i) =>
+          m.dueDate &&
+          !["ASAP", "No Deadline"].includes(jobs[i]?.deadlineType ?? "")
+      )
+      .map((m) => m.dueDate as string)
+      .sort();
+    return {
+      customers: unique(jobs.map((j) => j?.customer?.name)),
+      items: unique(
+        members.map((m) => m.jobMakeMethod?.item?.readableIdWithRevision)
+      ),
+      dueDate: dueDates[0] ?? null,
+      deadline: dueDates[0]
+        ? null
+        : jobs.some((j) => j?.deadlineType === "ASAP")
+          ? "ASAP"
+          : "No Deadline"
+    };
+  }, [batch]);
+  // Same instant comparison the job's own deadline uses (useOperation).
+  const batchOverdue = batchFacts?.dueDate
+    ? new Date(batchFacts.dueDate) < new Date()
+    : false;
   const batchCompleteModal = useDisclosure();
+  // The completion fetcher lives HERE, not in BatchCompleteModal: a successful
+  // completion flips the batch out of Active/Completing, the loader stops
+  // passing `batch`, and the modal unmounts mid-flight.
+  const batchCompleteFetcher = useFetcher<{ completed?: boolean }>();
 
   const serialIndex =
     trackedEntities.findIndex((entity) => entity.id === trackedEntityId) ?? 0;
 
   const navigate = useNavigate();
+  useEffect(() => {
+    if (
+      batchCompleteFetcher.state === "idle" &&
+      batchCompleteFetcher.data?.completed
+    ) {
+      navigate(path.to.operations);
+    }
+  }, [batchCompleteFetcher.state, batchCompleteFetcher.data, navigate]);
   const { carbon } = useCarbon();
   const {
     id: userId,
@@ -384,6 +454,14 @@ export const JobOperation = ({
       setParams({ trackedEntityId: entity.id });
     }
   });
+  // Batch mode: the selected material's outstanding requirement ACROSS the
+  // batch — the shared pick is split pro-rata over every member, so defaulting
+  // to one member's share would under-serve all of them.
+  const selectedBatchRemaining = (() => {
+    if (!isBatched || !selectedMaterial?.itemId) return undefined;
+    const totals = batchMaterialTotals?.[selectedMaterial.itemId];
+    return totals ? Math.max(0, totals.required - totals.issued) : undefined;
+  })();
 
   // In batch mode the shared timer is judged against the batch's TOTAL plan:
   // ONE shared setup (the largest member's — that is the point of batching), the
@@ -456,21 +534,56 @@ export const JobOperation = ({
       : 0;
   const isBehindTarget = daysBehindTarget > 0;
 
-  const controlsHeight = useMemo(() => {
-    let operations = 1;
-    if (displayOperation.setupDuration > 0) operations++;
-    if (displayOperation.laborDuration > 0) operations++;
-    if (displayOperation.machineDuration > 0) operations++;
-    return 60 + operations * 36;
-  }, [
-    displayOperation.laborDuration,
-    displayOperation.machineDuration,
-    displayOperation.setupDuration
-  ]);
+  // The status bar's quantity meter counts the whole run when batched.
+  const quantityProgress = useMemo(() => {
+    if (!batch) {
+      return {
+        complete: operation.quantityComplete,
+        target: operation.targetQuantity,
+        reworked: operation.quantityReworked ?? 0,
+        scrapped: operation.quantityScrapped ?? 0
+      };
+    }
+    const members = batch.operations ?? [];
+    return {
+      complete: members.reduce((n, m) => n + (m.quantityComplete ?? 0), 0),
+      target: members.reduce((n, m) => n + (m.operationQuantity ?? 0), 0),
+      reworked: 0,
+      scrapped: members.reduce((n, m) => n + (m.quantityScrapped ?? 0), 0)
+    };
+  }, [batch, operation]);
 
-  // The side control panel only exists on some tabs; content reserves space for
-  // it via --controls-gutter so the two never overlap.
-  const showControls = !["chat", "procedure"].includes(activeTab);
+  // The action panel only exists on some tabs.
+  const workTypeLabels = {
+    setup: t`Setup`,
+    labor: t`Labor`,
+    machine: t`Machine`
+  } as const;
+  const runningType = (["setup", "labor", "machine"] as const).find(
+    (type) => active[type]
+  );
+  // Chat is one job's thread, so a Chat tab left open in the job scope falls
+  // back to Details on the batch.
+  const tab = scope === "batch" && activeTab === "chat" ? "details" : activeTab;
+  const showControls = !["chat", "procedure"].includes(tab);
+  // Read after mount (never during render) so SSR and the first client
+  // render agree; storage can throw in private/locked-down browsers.
+  const [dockCollapsed, setDockCollapsed] = useState(false);
+  useEffect(() => {
+    try {
+      setDockCollapsed(localStorage.getItem(DOCK_COLLAPSED_KEY) === "true");
+    } catch {
+      // storage unavailable: keep the default (expanded)
+    }
+  }, []);
+  const onDockCollapsedChange = useCallback((collapsed: boolean) => {
+    setDockCollapsed(collapsed);
+    try {
+      localStorage.setItem(DOCK_COLLAPSED_KEY, String(collapsed));
+    } catch {
+      // storage unavailable: the choice lasts for this page only
+    }
+  }, []);
 
   const mode = useMode();
   const { operationId } = useParams();
@@ -626,23 +739,56 @@ export const JobOperation = ({
 
   const item = items.find((it) => it.id === operation.itemId);
 
+  // Mounted by BOTH the per-job materials table and the batch overview —
+  // the batch scope's Pick opens the same shared-pick modal.
+  const renderIssueModal = (
+    resolvedMaterials: Awaited<typeof materials> | undefined
+  ) =>
+    issueModal.isOpen ? (
+      <IssueMaterialModal
+        operationId={operation.id}
+        // The process view issues the whole quantity at
+        // once, so picked lots may pre-fill when the
+        // parent is a single entity. The modal enforces
+        // the full rule: a picking list exists AND (the
+        // parent is not serialized OR the operation
+        // makes exactly one unit).
+        allowPrefill
+        parentUnitCount={operation.operationQuantity ?? undefined}
+        expiredEntityPolicy={expiredEntityPolicy}
+        autoSelectMaterialWithoutPickingList={
+          autoSelectMaterialWithoutPickingList
+        }
+        locationId={locationId}
+        workCenterId={operation.workCenterId ?? undefined}
+        material={selectedMaterial ?? undefined}
+        batchId={batch?.id ?? undefined}
+        batchRemainingQuantity={selectedBatchRemaining}
+        parentId={trackedEntityId ?? ""}
+        parentIdIsSerialized={method?.requiresSerialTracking ?? false}
+        trackedInputs={resolvedMaterials?.trackedInputs ?? []}
+        onClose={() => {
+          setSelectedMaterial(null);
+          issueModal.onClose();
+        }}
+      />
+    ) : null;
+
   return (
     <>
       <Tabs
         key={`operation-${operation.id}`}
-        value={activeTab}
+        value={tab}
         onValueChange={setActiveTab}
-        // Below lg the page scrolls (Controls stacks inline). A fixed h-screen
-        // box would clip that overflow; grow with content on small viewports.
-        className="w-full min-w-0 min-h-screen h-auto lg:h-screen bg-card relative"
-        style={
-          {
-            "--controls-height": `${controlsHeight}px`,
-            "--controls-gutter": showControls ? "var(--controls-width)" : "0px"
-          } as React.CSSProperties
-        }
+        // An application shell, not a page: a grid of named areas where each
+        // pane scrolls on its own, so nothing is positioned or sized by hand.
+        // Below lg the dock is a bottom action bar; from lg it is a column
+        // beside the workspace and status bar. The outlet frame is only
+        // min-height bounded (other MES screens page-scroll), so the shell takes
+        // the viewport itself, less the frame's md:my-2 inset.
+        className="grid h-svh md:h-[calc(100svh-1rem)] min-h-0 w-full min-w-0 bg-card grid-cols-[minmax(0,1fr)] grid-rows-[auto_auto_auto_minmax(0,1fr)_auto_auto] [grid-template-areas:'header'_'context'_'sep'_'main'_'status'_'dock'] lg:grid-cols-[minmax(0,1fr)_auto] lg:grid-rows-[auto_auto_auto_minmax(0,1fr)_auto] lg:[grid-template-areas:'header_header'_'context_context'_'sep_sep'_'main_dock'_'status_dock']"
       >
-        <header className="flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b px-2">
+        <header className="[grid-area:header] flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b px-2">
           <HStack className="w-full justify-between">
             <div className="flex items-center gap-0">
               <SidebarTrigger />
@@ -656,8 +802,8 @@ export const JobOperation = ({
                 <Trans>Schedule</Trans>
               </Button>
             </div>
-            <div className="flex flex-shrink-0 items-center justify-end gap-2">
-              <TabsList className="md:ml-auto">
+            <div className="flex min-w-0 items-center gap-2 overflow-x-auto scrollbar-hide scroll-fade-x">
+              <TabsList className="ml-auto shrink-0">
                 <TabsTrigger value="details">
                   <Trans>Details</Trans>
                 </TabsTrigger>
@@ -670,7 +816,9 @@ export const JobOperation = ({
                 <TabsTrigger value="procedure">
                   <Trans>Instructions</Trans>
                 </TabsTrigger>
-                <TabsTrigger value="chat">
+                {/* Notes are kept per job operation — on the batch there is no
+                    one thread to show, so Chat opens from a job. */}
+                <TabsTrigger value="chat" disabled={scope === "batch"}>
                   <Trans>Chat</Trans>
                 </TabsTrigger>
               </TabsList>
@@ -678,9 +826,111 @@ export const JobOperation = ({
           </HStack>
         </header>
 
-        <div className="flex flex-nowrap items-center justify-between px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-2 md:gap-4 w-full min-w-0 overflow-hidden">
+        <div className="[grid-area:context] flex shrink-0 flex-wrap lg:flex-nowrap items-center justify-start px-4 lg:pl-6 py-2 min-h-[var(--header-height)] bg-card gap-x-2 gap-y-1 md:gap-x-4 w-full min-w-0">
           <HStack className="min-w-22 shrink-0 justify-between">
-            <Heading size="h4">{operation.jobReadableId}</Heading>
+            {batch ? (
+              // One control for "which part of the batch am I looking at":
+              // the batch, this job, or (via the chevron) another member job.
+              <div className="flex shrink-0 items-center rounded-full border bg-card p-0.5 text-sm">
+                <button
+                  type="button"
+                  aria-pressed={scope === "batch"}
+                  aria-label={t`Whole batch`}
+                  onClick={() => setParams({ scope: "" })}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1 transition-[background-color,color,transform] active:scale-[0.98]",
+                    scope === "batch"
+                      ? "bg-accent text-foreground"
+                      : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  <LuLayers className="size-3.5" />
+                  <span className="font-medium tabular-nums">
+                    {batch.readableId}
+                  </span>
+                  <span className="opacity-60">
+                    {t`${(batch.operations ?? []).length} jobs`}
+                  </span>
+                  {isCompleting && (
+                    <Badge variant="yellow" className="ml-0.5">
+                      <Trans>Completing</Trans>
+                    </Badge>
+                  )}
+                </button>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <button
+                      type="button"
+                      aria-pressed={scope === "job"}
+                      aria-label={t`Choose a job`}
+                      className={cn(
+                        "flex items-center gap-1 rounded-full py-1 pl-3 pr-2 font-medium transition-[background-color,color,transform] active:scale-[0.98]",
+                        scope === "job"
+                          ? "bg-accent text-foreground"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {scope === "job" ? (
+                        operation.jobReadableId
+                      ) : (
+                        <Trans>Jobs</Trans>
+                      )}
+                      <LuChevronDown className="size-3.5" />
+                    </button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start" className="min-w-[240px]">
+                    <DropdownMenuLabel>
+                      <Trans>Open a job in this batch</Trans>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {[...(batch.operations ?? [])]
+                      .sort((a, b) =>
+                        (
+                          (a.job as { jobId?: string | null } | null)?.jobId ??
+                          ""
+                        ).localeCompare(
+                          (b.job as { jobId?: string | null } | null)?.jobId ??
+                            "",
+                          undefined,
+                          { numeric: true }
+                        )
+                      )
+                      .map((member) => {
+                        const isOpen =
+                          scope === "job" && member.id === operation.id;
+                        return (
+                          <DropdownMenuItem key={member.id} asChild>
+                            <Link
+                              to={`${path.to.operation(member.id)}?scope=job`}
+                            >
+                              <DropdownMenuIcon
+                                icon={
+                                  isOpen ? (
+                                    <LuCheck className="text-emerald-500" />
+                                  ) : (
+                                    <LuClipboardCheck />
+                                  )
+                                }
+                              />
+                              <span className="truncate">
+                                {(
+                                  member.job as { jobId?: string | null } | null
+                                )?.jobId ?? member.id}
+                                {member.jobMakeMethod?.item
+                                  ?.readableIdWithRevision
+                                  ? ` — ${member.jobMakeMethod.item.readableIdWithRevision}`
+                                  : ""}
+                              </span>
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            ) : (
+              <Heading size="h4">{operation.jobReadableId}</Heading>
+            )}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -691,107 +941,85 @@ export const JobOperation = ({
                 />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start">
-                <DropdownMenuItem asChild>
-                  <a
-                    href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuQrCode />} />
-                    <Trans>Job Traveler</Trans>
-                  </a>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link to={path.to.jobDetail(operation.jobId)}>
-                    <DropdownMenuIcon icon={<LuCirclePlay />} />
-                    <Trans>Job Details</Trans>
-                  </Link>
-                </DropdownMenuItem>
-                {item && (
+                {scope === "job" && (
                   <DropdownMenuItem asChild>
-                    <Link to={path.to.itemMaster(item?.id, item.type)}>
-                      <DropdownMenuIcon
-                        icon={<MethodItemTypeIcon type={item.type} />}
-                      />
-                      <Trans>Item Master</Trans>
+                    <a
+                      href={path.to.file.jobTraveler(operation.jobMakeMethodId)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuQrCode />} />
+                      <Trans>Job Traveler</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                {scope === "job" && (
+                  <DropdownMenuItem asChild>
+                    <Link to={path.to.jobDetail(operation.jobId)}>
+                      <DropdownMenuIcon icon={<LuCirclePlay />} />
+                      <Trans>Job Details</Trans>
                     </Link>
                   </DropdownMenuItem>
                 )}
+                {scope === "batch" && batch && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.batchDetail(batch.id as string)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuLayers />} />
+                      <Trans>Batch Details</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                {scope === "batch" && batch && (
+                  <DropdownMenuItem asChild>
+                    <a
+                      href={path.to.file.batchList(batch.id as string)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuPrinter />} />
+                      <Trans>Print batch list</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                {item &&
+                  (scope === "job" || batchFacts?.items.length === 1) && (
+                    <DropdownMenuItem asChild>
+                      <Link to={path.to.itemMaster(item?.id, item.type)}>
+                        <DropdownMenuIcon
+                          icon={<MethodItemTypeIcon type={item.type} />}
+                        />
+                        <Trans>Item Master</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
               </DropdownMenuContent>
             </DropdownMenu>
           </HStack>
 
-          {batch && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1 text-sm shrink-0 active:scale-[0.98] transition-transform"
-                >
-                  <LuLayers className="size-3.5 text-muted-foreground" />
-                  <span className="font-medium tabular-nums">
-                    {batch.readableId}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {t`${(batch.operations ?? []).length} jobs`}
-                  </span>
-                  {isCompleting && (
-                    <Badge variant="yellow" className="ml-1">
-                      <Trans>Completing</Trans>
-                    </Badge>
-                  )}
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="min-w-[240px]">
-                <DropdownMenuLabel>
-                  <Trans>Batched jobs</Trans>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {(batch.operations ?? []).map((member) => {
-                  const isCurrent = member.id === operation.id;
-                  return (
-                    <DropdownMenuItem key={member.id} asChild>
-                      <Link to={path.to.operation(member.id)}>
-                        <DropdownMenuIcon
-                          icon={
-                            isCurrent ? (
-                              <LuCheck className="text-emerald-500" />
-                            ) : (
-                              <LuClipboardCheck />
-                            )
-                          }
-                        />
-                        <span className="truncate">
-                          {(member.job as { jobId?: string | null } | null)
-                            ?.jobId ?? member.id}
-                          {member.description ? ` — ${member.description}` : ""}
-                        </span>
-                      </Link>
-                    </DropdownMenuItem>
-                  );
-                })}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <a
-                    href={path.to.file.batchList(batch.id as string)}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    <DropdownMenuIcon icon={<LuPrinter />} />
-                    <Trans>Print batch list</Trans>
-                  </a>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          <HStack className="hidden lg:flex min-w-0 flex-1 justify-end items-center gap-3 overflow-hidden">
-            {job.customer?.name && (
-              <HStack className="min-w-0 justify-start space-x-2">
-                <LuSquareUser className="text-muted-foreground shrink-0" />
-                <span className="text-sm truncate">{job.customer.name}</span>
-              </HStack>
-            )}
+          <HStack className="flex w-full lg:w-auto min-w-0 lg:flex-1 justify-start lg:justify-end items-center gap-3 overflow-x-auto lg:overflow-hidden scrollbar-hide scroll-fade-x [&>*]:shrink-0 lg:[&>*]:shrink">
+            {scope === "batch" && batchFacts
+              ? batchFacts.customers.length > 0 && (
+                  <HStack className="min-w-0 justify-start space-x-2">
+                    <LuSquareUser className="text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">
+                      {batchFacts.customers.length === 1
+                        ? batchFacts.customers[0]
+                        : t`${batchFacts.customers.length} customers`}
+                    </span>
+                  </HStack>
+                )
+              : job.customer?.name && (
+                  <HStack className="min-w-0 justify-start space-x-2">
+                    <LuSquareUser className="text-muted-foreground shrink-0" />
+                    <span className="text-sm truncate">
+                      {job.customer.name}
+                    </span>
+                  </HStack>
+                )}
             {operation.description && (
               <HStack className="min-w-0 justify-start space-x-2">
                 <LuClipboardCheck className="text-muted-foreground shrink-0" />
@@ -800,21 +1028,30 @@ export const JobOperation = ({
                 </span>
               </HStack>
             )}
-            {operation.operationStatus && (
+            {scope === "batch" && batch ? (
               <HStack className="min-w-0 shrink-0 justify-start space-x-2">
-                <OperationStatusIcon
-                  status={
-                    operation.jobStatus === "Paused"
-                      ? "Paused"
-                      : operation.operationStatus
-                  }
-                />
+                <LuLayers className="text-muted-foreground shrink-0" />
                 <span className="text-sm truncate">
-                  {operation.jobStatus === "Paused"
-                    ? "Paused"
-                    : operation.operationStatus}
+                  {isCompleting ? t`Completing` : t`Released`}
                 </span>
               </HStack>
+            ) : (
+              operation.operationStatus && (
+                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
+                  <OperationStatusIcon
+                    status={
+                      operation.jobStatus === "Paused"
+                        ? "Paused"
+                        : operation.operationStatus
+                    }
+                  />
+                  <span className="text-sm truncate">
+                    {operation.jobStatus === "Paused"
+                      ? "Paused"
+                      : operation.operationStatus}
+                  </span>
+                </HStack>
+              )
             )}
             {/* Batch mode shows the batch's planned total (shared setup +
                 summed work); a zero plan renders nothing rather than
@@ -828,43 +1065,64 @@ export const JobOperation = ({
                   </span>
                 </HStack>
               )}
-            {operation.jobDeadlineType && (
+            {scope === "batch" && batchFacts ? (
               <HStack className="min-w-0 shrink-0 justify-start space-x-2">
                 <DeadlineIcon
-                  deadlineType={operation.jobDeadlineType}
-                  overdue={isOverdue}
+                  deadlineType={
+                    (batchFacts.deadline ??
+                      "Hard Deadline") as typeof operation.jobDeadlineType
+                  }
+                  overdue={batchOverdue}
                 />
-
                 <span
                   className={cn(
                     "text-sm truncate",
-                    isOverdue ? "text-red-500" : ""
+                    batchOverdue ? "text-red-500" : ""
                   )}
                 >
-                  {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
-                    ? operation.jobDeadlineType
-                    : operation.operationDueDate
-                      ? t`Due ${formatRelativeTime(
-                          convertDateStringToIsoString(
-                            operation.operationDueDate
-                          )
-                        )}`
-                      : "–"}
+                  {batchFacts.dueDate
+                    ? t`First due ${formatRelativeTime(
+                        convertDateStringToIsoString(batchFacts.dueDate)
+                      )}`
+                    : batchFacts.deadline}
                 </span>
               </HStack>
+            ) : (
+              operation.jobDeadlineType && (
+                <HStack className="min-w-0 shrink-0 justify-start space-x-2">
+                  <DeadlineIcon
+                    deadlineType={operation.jobDeadlineType}
+                    overdue={isOverdue}
+                  />
+
+                  <span
+                    className={cn(
+                      "text-sm truncate",
+                      isOverdue ? "text-red-500" : ""
+                    )}
+                  >
+                    {["ASAP", "No Deadline"].includes(operation.jobDeadlineType)
+                      ? operation.jobDeadlineType
+                      : operation.operationDueDate
+                        ? t`Due ${formatRelativeTime(
+                            convertDateStringToIsoString(
+                              operation.operationDueDate
+                            )
+                          )}`
+                        : "–"}
+                  </span>
+                </HStack>
+              )
             )}
           </HStack>
         </div>
-        <Separator />
+        <Separator className="[grid-area:sep]" />
 
-        <TabsContent value="details" className="flex flex-col">
-          {/*
-            Native scrollport (not Radix ScrollArea): below lg height is auto so
-            Files/Serials participate in page scroll with the stacked Controls.
-            At lg+ a fixed height + overflow-y-auto docks beside absolute Controls.
-            (#959)
-          */}
-          <div className="w-full min-w-0 lg:pr-[var(--controls-gutter)] h-auto lg:h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] overflow-y-visible lg:overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <TabsContent
+          value="details"
+          className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
+          <div className="w-full min-w-0">
             {isCompleting && (
               <div className="px-4 pt-4 lg:px-6">
                 <Card>
@@ -885,728 +1143,595 @@ export const JobOperation = ({
                 </Card>
               </div>
             )}
-            <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
-              <HStack className="min-w-0">
-                {thumbnailPath && (
-                  <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
-                )}
-                <div className="flex flex-col flex-grow min-w-0">
-                  <HStack spacing={2}>
-                    <Heading size="h3" className="line-clamp-1">
-                      {operation.description}
-                    </Heading>
-                    {operation.reworkId && <Badge variant="red">Rework</Badge>}
-                  </HStack>
-                  <p className="text-muted-foreground line-clamp-1">
-                    {operation.itemReadableId}
-                  </p>
-                </div>
-              </HStack>
-              <div className="flex flex-col shrink-0 items-end">
-                <Heading size="h2">
-                  {formatDurationMilliseconds(
-                    ((progress.setup ?? 0) +
-                      (progress.labor ?? 0) +
-                      (progress.machine ?? 0)) /
-                      // Batch mode: the timer is shared, so the per-piece rate
-                      // is elapsed over ALL members' completed parts — a
-                      // quantity-weighted average, matching how completion
-                      // slices the shared time (weight = operationQuantity).
-                      Math.max(
-                        batch
-                          ? (batch.operations ?? []).reduce(
-                              (sum, m) => sum + (m.quantityComplete ?? 0),
-                              0
-                            )
-                          : operation.quantityComplete,
-                        1
-                      ),
-                    {
-                      style: "short"
-                    }
-                  )}
-                </Heading>
-                <p className="text-muted-foreground line-clamp-1">
-                  {operation.itemUnitOfMeasure}
-                </p>
-              </div>
-            </div>
-            <Separator />
-            <div className="flex items-start p-4 lg:p-6">
-              <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full min-w-0">
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-2 justify-between">
-                    <CardTitle>
-                      <Trans>Completed</Trans>
-                    </CardTitle>
-                    <FaCheck className="h-3 w-3 text-emerald-500" />
-                  </CardHeader>
-
-                  <CardContent>
-                    <Heading size="h1">
-                      <Trans>
-                        {operation.quantityComplete} of{" "}
-                        {operation.targetQuantity}
-                      </Trans>
-                    </Heading>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-2 justify-between">
-                    <CardTitle>
-                      <Trans>Scrapped</Trans>
-                    </CardTitle>
-                    <FaTrash className="h-3 w-3 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <Heading size="h1">{operation.quantityScrapped}</Heading>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center gap-2 justify-between">
-                    <CardTitle>
-                      <Trans>Due Date</Trans>
-                    </CardTitle>
-                    <DeadlineIcon
-                      deadlineType={operation.jobDeadlineType}
-                      overdue={isOverdue}
-                    />
-                  </CardHeader>
-                  <CardContent>
-                    <VStack className="justify-start" spacing={0}>
-                      <Heading
-                        size="h3"
-                        className={cn(
-                          "w-full truncate",
-                          isOverdue ? "text-red-500" : ""
-                        )}
-                      >
-                        {["ASAP", "No Deadline"].includes(
-                          operation.jobDeadlineType
-                        )
-                          ? operation.jobDeadlineType
-                          : operation.operationDueDate
-                            ? t`Due ${formatRelativeTime(
-                                convertDateStringToIsoString(
-                                  operation.operationDueDate
-                                )
-                              )}`
-                            : "–"}
-                      </Heading>
-                      <span className="text-muted-foreground text-sm">
-                        {operation.operationDueDate ? (
-                          <DateTime
-                            value={operation.operationDueDate}
-                            variant="date"
-                          />
-                        ) : null}
+            {scope === "job" && batch && (
+              <div className="px-4 pt-4 lg:px-6">
+                <Alert>
+                  <LuLayers />
+                  <AlertTitle>
+                    <Trans>
+                      {operation.jobReadableId} runs in batch {batch.readableId}
+                    </Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <span className="text-pretty">
+                        <Trans>
+                          The timer and completion are shared by all{" "}
+                          {(batch.operations ?? []).length} jobs. Steps,
+                          materials and files here are this job's own.
+                        </Trans>
                       </span>
-                      {projectedCompletionDate &&
-                        (isBehindTarget ? (
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <Badge variant="red">
-                                {t`Proj. ${formatDate(
-                                  projectedCompletionDate
-                                )}`}
-                              </Badge>
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              {t`Behind target by ${daysBehindTarget} day(s)`}
-                            </TooltipContent>
-                          </Tooltip>
-                        ) : (
-                          <span className="text-sm text-muted-foreground">
-                            {t`Proj. ${formatDate(projectedCompletionDate)}`}
-                          </span>
-                        ))}
-                    </VStack>
-                  </CardContent>
-                </Card>
+                      <Button
+                        variant="secondary"
+                        leftIcon={<LuChevronLeft />}
+                        onClick={() => setParams({ scope: "" })}
+                      >
+                        <Trans>Back to batch</Trans>
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
               </div>
-            </div>
-
-            <Suspense key={`non-conformance-actions-${operationId}`}>
-              <Await resolve={nonConformanceActions}>
-                {(resolvedNonConformanceActions) => {
-                  return resolvedNonConformanceActions.map((action) => {
-                    if (Object.keys(action.notes).length === 0) {
-                      return null;
-                    }
-
-                    return (
-                      <>
-                        <Separator />
-                        <div className="flex flex-col items-start justify-between w-full">
-                          <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                            <div className="flex flex-col gap-0.5">
-                              <Heading size="h3">
-                                {action.actionTypeName}
-                              </Heading>
-                              <div>
-                                <Badge variant="outline">
-                                  {action.nonConformanceId}
-                                </Badge>
-                              </div>
-                            </div>
-                            <div
-                              className="prose dark:prose-invert prose-sm max-w-none"
-                              dangerouslySetInnerHTML={{
-                                __html: generateHTML(action.notes)
-                              }}
-                            />
-                          </div>
-                        </div>
-                      </>
-                    );
-                  });
-                }}
-              </Await>
-            </Suspense>
-
-            <Suspense key={`attributes-${operationId}`}>
-              <Await resolve={procedure}>
-                {(resolvedProcedure) => {
-                  const { attributes, parameters } = resolvedProcedure;
-
-                  return (
+            )}
+            {scope === "batch" && batch ? (
+              <Suspense
+                key={`batch-overview-${operationId}`}
+                fallback={<TableSkeleton />}
+              >
+                <Await resolve={materials}>
+                  {(resolvedMaterials) => (
                     <>
-                      {attributes.length > 0 && (
-                        <>
-                          <Separator />
-                          <div className="flex flex-col items-start justify-between w-full">
-                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                              <HStack className="justify-between w-full">
-                                <Heading size="h3">
-                                  <Trans>Steps</Trans>
-                                </Heading>
-                                <div className="flex items-center gap-2">
-                                  {attributes.length > 0 &&
-                                    (() => {
-                                      const maxRecords = parentIsSerial
-                                        ? trackedEntities.length
-                                        : operation.operationQuantity +
-                                          operation.quantityScrapped;
-
-                                      const isRecordSetStarted =
-                                        recordSetIsStarted(
-                                          attributes,
-                                          activeStep
-                                        );
-
-                                      const canCreateNewRecord =
-                                        !parentIsSerial && isRecordSetStarted;
-
-                                      const canNavigateNext =
-                                        isRecordSetStarted &&
-                                        activeStep <
-                                          operation.operationQuantity +
-                                            operation.quantityScrapped -
-                                            1;
-
-                                      const showNavigation =
-                                        hasMultipleRecords ||
-                                        attributes.some(
-                                          (att) =>
-                                            att.jobOperationStepRecord.length >
-                                            1
-                                        );
-
-                                      return (
-                                        <div className="flex flex-col items-end justify-center gap-2">
-                                          <div className="flex items-center gap-1">
-                                            {showNavigation &&
-                                              !parentIsSerial && (
-                                                <>
-                                                  <IconButton
-                                                    aria-label="Previous record set"
-                                                    variant="secondary"
-                                                    icon={<LuChevronLeft />}
-                                                    onClick={() => {
-                                                      setActiveStep(
-                                                        activeStep - 1
-                                                      );
-                                                    }}
-                                                    isDisabled={
-                                                      activeStep === 0
-                                                    }
-                                                  />
-                                                  <span className="text-sm font-medium px-2 min-w-[60px] text-center">
-                                                    <Trans>
-                                                      Record {activeStep + 1}
-                                                    </Trans>
-                                                  </span>
-                                                  <IconButton
-                                                    aria-label="Next record set"
-                                                    variant="secondary"
-                                                    icon={<LuChevronRight />}
-                                                    onClick={() => {
-                                                      setActiveStep(
-                                                        activeStep + 1
-                                                      );
-                                                    }}
-                                                    isDisabled={
-                                                      !canNavigateNext
-                                                    }
-                                                  />
-                                                </>
-                                              )}
-                                            {canCreateNewRecord &&
-                                              !showNavigation && (
-                                                <Button
-                                                  aria-label="Add new record set"
-                                                  variant="secondary"
-                                                  leftIcon={<LuCirclePlus />}
-                                                  onClick={() => {
-                                                    const nextIndex =
-                                                      activeStep + 1;
-                                                    if (
-                                                      nextIndex >= maxRecords
-                                                    ) {
-                                                      toast.warning(
-                                                        t`Maximum number of records reached`
-                                                      );
-                                                      return;
-                                                    }
-                                                    setHasMultipleRecords(true);
-                                                    setActiveStep(nextIndex);
-                                                  }}
-                                                  isDisabled={
-                                                    activeStep + 1 >= maxRecords
-                                                  }
-                                                >
-                                                  <Trans>New Record</Trans>
-                                                </Button>
-                                              )}
-                                            {parentIsSerial && (
-                                              <Heading size="h2">
-                                                <Trans>
-                                                  {serialIndex + 1} of{" "}
-                                                  {operation.operationQuantity}
-                                                </Trans>
-                                              </Heading>
-                                            )}
-                                          </div>
-
-                                          <BarProgress
-                                            label={t`Steps`}
-                                            gradient
-                                            invertGradient
-                                            progress={
-                                              (attributes.filter((a) =>
-                                                a.jobOperationStepRecord.some(
-                                                  (r) => r.index === activeStep
-                                                )
-                                              ).length /
-                                                attributes.length) *
-                                              100
-                                            }
-                                          />
-                                          <span className="text-xs text-muted-foreground">
-                                            <Trans>
-                                              {
-                                                attributes.filter((a) =>
-                                                  a.jobOperationStepRecord.some(
-                                                    (r) =>
-                                                      r.index === activeStep
-                                                  )
-                                                ).length
-                                              }{" "}
-                                              of {attributes.length} complete
-                                            </Trans>
-                                          </span>
-                                        </div>
-                                      );
-                                    })()}
-                                </div>
-                              </HStack>
-                              <div className="border rounded-lg">
-                                {attributes
-                                  .sort(
-                                    (a, b) =>
-                                      (a.sortOrder ?? 0) - (b.sortOrder ?? 0)
-                                  )
-                                  .map((step, index) => (
-                                    <StepsListItem
-                                      key={`step-${step.id}`}
-                                      activeStep={activeStep}
-                                      step={step}
-                                      onRecord={onRecordStepRecord}
-                                      onDelete={onDeleteStepRecord}
-                                      operationId={operationId}
-                                      className={
-                                        index === attributes.length - 1
-                                          ? "border-none"
-                                          : ""
-                                      }
-                                    />
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-                      {parameters.length > 0 && (
-                        <>
-                          <Separator />
-                          <div className="flex flex-col items-start justify-between w-full">
-                            <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                              <HStack className="justify-between w-full">
-                                <Heading size="h3">
-                                  <Trans>Process Parameters</Trans>
-                                </Heading>
-                              </HStack>
-                              <div className="border rounded-lg">
-                                {parameters
-                                  .sort((a, b) =>
-                                    (a.key ?? "").localeCompare(b.key ?? "")
-                                  )
-                                  .map((p, index) => (
-                                    <ParametersListItem
-                                      key={`parameter-${p.id}`}
-                                      parameter={p}
-                                      operationId={operationId}
-                                      className={
-                                        index === parameters.length - 1
-                                          ? "border-none"
-                                          : ""
-                                      }
-                                    />
-                                  ))}
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
+                      <BatchOverview
+                        batch={batch}
+                        totals={batchMaterialTotals ?? {}}
+                        currentMaterials={resolvedMaterials?.materials ?? []}
+                        onIssue={(material) => {
+                          flushSync(() => {
+                            setSelectedMaterial(material);
+                          });
+                          issueModal.onOpen();
+                        }}
+                        workInstructions={batchWorkInstructions}
+                        onDownloadFile={downloadFile}
+                      />
+                      {renderIssueModal(resolvedMaterials)}
                     </>
-                  );
-                }}
-              </Await>
-            </Suspense>
+                  )}
+                </Await>
+              </Suspense>
+            ) : (
+              <>
+                <div className="flex items-start justify-between gap-4 p-4 lg:p-6">
+                  <HStack className="min-w-0">
+                    {thumbnailPath && (
+                      <ItemThumbnail thumbnailPath={thumbnailPath} size="xl" />
+                    )}
+                    <div className="flex flex-col flex-grow min-w-0">
+                      <HStack spacing={2}>
+                        <Heading size="h3" className="line-clamp-1">
+                          {operation.description}
+                        </Heading>
+                        {operation.reworkId && (
+                          <Badge variant="red">Rework</Badge>
+                        )}
+                      </HStack>
+                      <p className="text-muted-foreground line-clamp-1">
+                        {operation.itemReadableId}
+                      </p>
+                    </div>
+                  </HStack>
+                  <div className="flex flex-col shrink-0 items-end">
+                    <Heading size="h2">
+                      {formatDurationMilliseconds(
+                        ((progress.setup ?? 0) +
+                          (progress.labor ?? 0) +
+                          (progress.machine ?? 0)) /
+                          // Batch mode: the timer is shared, so the per-piece rate
+                          // is elapsed over ALL members' completed parts — a
+                          // quantity-weighted average, matching how completion
+                          // slices the shared time (weight = operationQuantity).
+                          Math.max(
+                            batch
+                              ? (batch.operations ?? []).reduce(
+                                  (sum, m) => sum + (m.quantityComplete ?? 0),
+                                  0
+                                )
+                              : operation.quantityComplete,
+                            1
+                          ),
+                        {
+                          style: "short"
+                        }
+                      )}
+                    </Heading>
+                    <p className="text-muted-foreground line-clamp-1">
+                      {operation.itemUnitOfMeasure}
+                    </p>
+                  </div>
+                </div>
+                <Separator />
+                <div className="flex items-start p-4 lg:p-6">
+                  <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3 w-full min-w-0">
+                    <Card>
+                      <CardHeader className="flex flex-row items-center gap-2 justify-between">
+                        <CardTitle>
+                          <Trans>Completed</Trans>
+                        </CardTitle>
+                        <FaCheck className="h-3 w-3 text-emerald-500" />
+                      </CardHeader>
 
-            <Separator />
-            <div className="flex flex-col items-start justify-between w-full">
-              <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                <HStack className="justify-between w-full">
-                  <Heading size="h3">
-                    <Trans>Materials</Trans>
-                  </Heading>
-                  <Button
-                    aria-label="Issue Material"
-                    leftIcon={<LuGitBranchPlus />}
-                    variant="secondary"
-                    size="lg"
-                    onClick={() => {
-                      flushSync(() => {
-                        setSelectedMaterial(null);
+                      <CardContent>
+                        <Heading size="h1">
+                          <Trans>
+                            {operation.quantityComplete} of{" "}
+                            {operation.targetQuantity}
+                          </Trans>
+                        </Heading>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center gap-2 justify-between">
+                        <CardTitle>
+                          <Trans>Scrapped</Trans>
+                        </CardTitle>
+                        <FaTrash className="h-3 w-3 text-muted-foreground" />
+                      </CardHeader>
+                      <CardContent>
+                        <Heading size="h1">
+                          {operation.quantityScrapped}
+                        </Heading>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardHeader className="flex flex-row items-center gap-2 justify-between">
+                        <CardTitle>
+                          <Trans>Due Date</Trans>
+                        </CardTitle>
+                        <DeadlineIcon
+                          deadlineType={operation.jobDeadlineType}
+                          overdue={isOverdue}
+                        />
+                      </CardHeader>
+                      <CardContent>
+                        <VStack className="justify-start" spacing={0}>
+                          <Heading
+                            size="h3"
+                            className={cn(
+                              "w-full truncate",
+                              isOverdue ? "text-red-500" : ""
+                            )}
+                          >
+                            {["ASAP", "No Deadline"].includes(
+                              operation.jobDeadlineType
+                            )
+                              ? operation.jobDeadlineType
+                              : operation.operationDueDate
+                                ? t`Due ${formatRelativeTime(
+                                    convertDateStringToIsoString(
+                                      operation.operationDueDate
+                                    )
+                                  )}`
+                                : "–"}
+                          </Heading>
+                          <span className="text-muted-foreground text-sm">
+                            {operation.operationDueDate ? (
+                              <DateTime
+                                value={operation.operationDueDate}
+                                variant="date"
+                              />
+                            ) : null}
+                          </span>
+                          {projectedCompletionDate &&
+                            (isBehindTarget ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant="red">
+                                    {t`Proj. ${formatDate(
+                                      projectedCompletionDate
+                                    )}`}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  {t`Behind target by ${daysBehindTarget} day(s)`}
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <span className="text-sm text-muted-foreground">
+                                {t`Proj. ${formatDate(projectedCompletionDate)}`}
+                              </span>
+                            ))}
+                        </VStack>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+
+                <Suspense key={`non-conformance-actions-${operationId}`}>
+                  <Await resolve={nonConformanceActions}>
+                    {(resolvedNonConformanceActions) => {
+                      return resolvedNonConformanceActions.map((action) => {
+                        if (Object.keys(action.notes).length === 0) {
+                          return null;
+                        }
+
+                        return (
+                          <>
+                            <Separator />
+                            <div className="flex flex-col items-start justify-between w-full">
+                              <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                                <div className="flex flex-col gap-0.5">
+                                  <Heading size="h3">
+                                    {action.actionTypeName}
+                                  </Heading>
+                                  <div>
+                                    <Badge variant="outline">
+                                      {action.nonConformanceId}
+                                    </Badge>
+                                  </div>
+                                </div>
+                                <div
+                                  className="prose dark:prose-invert prose-sm max-w-none"
+                                  dangerouslySetInnerHTML={{
+                                    __html: generateHTML(action.notes)
+                                  }}
+                                />
+                              </div>
+                            </div>
+                          </>
+                        );
                       });
-                      issueModal.onOpen();
                     }}
-                  >
-                    <Trans>Issue Material</Trans>
-                  </Button>
-                </HStack>
-                <Suspense
-                  key={`materials-${operationId}`}
-                  fallback={<TableSkeleton />}
-                >
-                  <Await resolve={materials}>
-                    {(resolvedMaterials) => {
-                      const baseMaterials = resolvedMaterials?.materials.filter(
-                        (m) => !m.isKitComponent
-                      );
+                  </Await>
+                </Suspense>
 
-                      const kitMaterialsByParentId =
-                        resolvedMaterials?.materials
-                          .filter((m) => m.isKitComponent ?? false)
-                          .reduce(
-                            (acc, material) => {
-                              if (material.kitParentId) {
-                                if (!acc[material.kitParentId]) {
-                                  acc[material.kitParentId] = [];
-                                }
-                                acc[material.kitParentId].push(material);
-                              }
-                              return acc;
-                            },
-                            {} as Record<string, JobMaterial[]>
-                          );
+                <Suspense key={`attributes-${operationId}`}>
+                  <Await resolve={procedure}>
+                    {(resolvedProcedure) => {
+                      const { attributes, parameters } = resolvedProcedure;
 
                       return (
                         <>
-                          <Table className="w-full text-base">
-                            <Thead>
-                              <Tr>
-                                <Th className="text-sm">
-                                  <Trans>Part</Trans>
-                                </Th>
-                                <Th className="text-sm lg:table-cell hidden">
-                                  <Trans>Source</Trans>
-                                </Th>
-                                <Th className="text-sm">
-                                  <Trans>Estimated</Trans>
-                                </Th>
-                                <Th className="text-sm">
-                                  <Trans>Actual</Trans>
-                                </Th>
-                                <Th className="text-right" />
-                              </Tr>
-                            </Thead>
-                            <Tbody>
-                              {baseMaterials.length === 0 ? (
-                                <Tr>
-                                  <Td
-                                    colSpan={24}
-                                    className="py-8 text-muted-foreground text-center"
-                                  >
-                                    <Trans>No materials</Trans>
-                                  </Td>
-                                </Tr>
-                              ) : (
-                                baseMaterials.map((material) => {
-                                  const isRelatedToOperation =
-                                    material.jobOperationId === operationId;
+                          {attributes.length > 0 && (
+                            <>
+                              <Separator />
+                              <div className="flex flex-col items-start justify-between w-full">
+                                <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                                  <HStack className="justify-between w-full">
+                                    <Heading size="h3">
+                                      <Trans>Steps</Trans>
+                                    </Heading>
+                                    <div className="flex items-center gap-2">
+                                      {attributes.length > 0 &&
+                                        (() => {
+                                          const maxRecords = parentIsSerial
+                                            ? trackedEntities.length
+                                            : operation.operationQuantity +
+                                              operation.quantityScrapped;
 
-                                  const someRelatedMaterialIsIssued =
-                                    baseMaterials.some(
-                                      (m) =>
-                                        m.itemReadableIdWithoutRevision ===
-                                          material.itemReadableIdWithoutRevision &&
-                                        ((m.quantityIssued ?? 0) > 0 ||
-                                          (material.quantityIssued ?? 0) > 0)
-                                    );
+                                          const isRecordSetStarted =
+                                            recordSetIsStarted(
+                                              attributes,
+                                              activeStep
+                                            );
 
-                                  const kittedChildren = material.id
-                                    ? kitMaterialsByParentId[material.id]
-                                    : [];
+                                          const canCreateNewRecord =
+                                            !parentIsSerial &&
+                                            isRecordSetStarted;
 
-                                  return (
-                                    <>
-                                      <Tr
-                                        key={`material-${material.id}`}
-                                        className={cn(
-                                          "[&>td]:py-3",
-                                          !isRelatedToOperation &&
-                                            "opacity-50 hover:opacity-100"
-                                        )}
-                                      >
-                                        <Td className="max-w-[20vw]">
-                                          <HStack
-                                            spacing={2}
-                                            className="justify-between min-w-0"
-                                          >
-                                            <VStack
-                                              spacing={0}
-                                              className="min-w-0"
-                                            >
-                                              <span className="font-semibold text-base truncate max-w-full">
-                                                {getItemReadableId(
-                                                  items,
-                                                  material.itemId ?? ""
+                                          const canNavigateNext =
+                                            isRecordSetStarted &&
+                                            activeStep <
+                                              operation.operationQuantity +
+                                                operation.quantityScrapped -
+                                                1;
+
+                                          const showNavigation =
+                                            hasMultipleRecords ||
+                                            attributes.some(
+                                              (att) =>
+                                                att.jobOperationStepRecord
+                                                  .length > 1
+                                            );
+
+                                          return (
+                                            <div className="flex flex-col items-end justify-center gap-2">
+                                              <div className="flex items-center gap-1">
+                                                {showNavigation &&
+                                                  !parentIsSerial && (
+                                                    <>
+                                                      <IconButton
+                                                        aria-label="Previous record set"
+                                                        variant="secondary"
+                                                        icon={<LuChevronLeft />}
+                                                        onClick={() => {
+                                                          setActiveStep(
+                                                            activeStep - 1
+                                                          );
+                                                        }}
+                                                        isDisabled={
+                                                          activeStep === 0
+                                                        }
+                                                      />
+                                                      <span className="text-sm font-medium px-2 min-w-[60px] text-center">
+                                                        <Trans>
+                                                          Record{" "}
+                                                          {activeStep + 1}
+                                                        </Trans>
+                                                      </span>
+                                                      <IconButton
+                                                        aria-label="Next record set"
+                                                        variant="secondary"
+                                                        icon={
+                                                          <LuChevronRight />
+                                                        }
+                                                        onClick={() => {
+                                                          setActiveStep(
+                                                            activeStep + 1
+                                                          );
+                                                        }}
+                                                        isDisabled={
+                                                          !canNavigateNext
+                                                        }
+                                                      />
+                                                    </>
+                                                  )}
+                                                {canCreateNewRecord &&
+                                                  !showNavigation && (
+                                                    <Button
+                                                      aria-label="Add new record set"
+                                                      variant="secondary"
+                                                      leftIcon={
+                                                        <LuCirclePlus />
+                                                      }
+                                                      onClick={() => {
+                                                        const nextIndex =
+                                                          activeStep + 1;
+                                                        if (
+                                                          nextIndex >=
+                                                          maxRecords
+                                                        ) {
+                                                          toast.warning(
+                                                            t`Maximum number of records reached`
+                                                          );
+                                                          return;
+                                                        }
+                                                        setHasMultipleRecords(
+                                                          true
+                                                        );
+                                                        setActiveStep(
+                                                          nextIndex
+                                                        );
+                                                      }}
+                                                      isDisabled={
+                                                        activeStep + 1 >=
+                                                        maxRecords
+                                                      }
+                                                    >
+                                                      <Trans>New Record</Trans>
+                                                    </Button>
+                                                  )}
+                                                {parentIsSerial && (
+                                                  <Heading size="h2">
+                                                    <Trans>
+                                                      {serialIndex + 1} of{" "}
+                                                      {
+                                                        operation.operationQuantity
+                                                      }
+                                                    </Trans>
+                                                  </Heading>
                                                 )}
-                                              </span>
-                                              <span className="text-muted-foreground text-sm truncate max-w-full">
-                                                {material.description}
-                                              </span>
-                                              <PickedBreakdown
-                                                materialItemId={material.itemId}
-                                                pickedByItem={
-                                                  (
-                                                    material as {
-                                                      pickedByItem?: {
-                                                        itemId: string;
-                                                        itemReadableId: string;
-                                                        quantityPicked: number;
-                                                        quantityToPick: number;
-                                                      }[];
-                                                    }
-                                                  ).pickedByItem
+                                              </div>
+
+                                              <BarProgress
+                                                label={t`Steps`}
+                                                gradient
+                                                invertGradient
+                                                progress={
+                                                  (attributes.filter((a) =>
+                                                    a.jobOperationStepRecord.some(
+                                                      (r) =>
+                                                        r.index === activeStep
+                                                    )
+                                                  ).length /
+                                                    attributes.length) *
+                                                  100
                                                 }
                                               />
-                                            </VStack>
-                                            {material.requiresBatchTracking ? (
-                                              <Badge variant="secondary">
-                                                <TrackingTypeIcon
-                                                  type="Batch"
-                                                  className="shrink-0"
-                                                />
-                                              </Badge>
-                                            ) : material.requiresSerialTracking ? (
-                                              <Badge variant="secondary">
-                                                <TrackingTypeIcon
-                                                  type="Serial"
-                                                  className="shrink-0"
-                                                />
-                                              </Badge>
-                                            ) : null}
-                                            {(
-                                              material as {
-                                                hasExpiredConsumed?: boolean;
-                                              }
-                                            ).hasExpiredConsumed && (
-                                              <Badge
-                                                variant="red"
-                                                className="gap-1 shrink-0"
-                                                title="A consumed batch or serial is now past its expiry date."
-                                              >
-                                                <LuTriangleAlert className="size-3" />
-                                                <Trans>Consumed expired</Trans>
-                                              </Badge>
-                                            )}
-                                            <PickedBadge
-                                              quantityPicked={
-                                                (
-                                                  material as {
-                                                    quantityPicked?:
-                                                      | number
-                                                      | null;
-                                                  }
-                                                ).quantityPicked
-                                              }
-                                              quantityToPick={
-                                                (
-                                                  material as {
-                                                    quantityToPick?:
-                                                      | number
-                                                      | null;
-                                                  }
-                                                ).quantityToPick
-                                              }
-                                            />
-                                          </HStack>
-                                        </Td>
-                                        <Td className="hidden lg:table-cell">
-                                          <div className="flex flex-row items-center gap-1">
-                                            <Badge variant="secondary">
-                                              <MethodIcon
-                                                type={material.methodType ?? ""}
-                                                isKit={material.kit ?? false}
-                                                className="mr-2"
-                                              />
-                                              {material.methodType ===
-                                                "Make to Order" && material.kit
-                                                ? t`Kit`
-                                                : material.methodType}
-                                            </Badge>
-                                            <LuArrowLeft
-                                              className={cn(
-                                                material.methodType ===
-                                                  "Make to Order"
-                                                  ? "rotate-180"
-                                                  : ""
-                                              )}
-                                            />
-                                            <Badge variant="secondary">
-                                              <LuGitPullRequest className="size-3 mr-1" />
-                                              {material.storageUnitName ??
-                                                (material.methodType ===
-                                                "Make to Order"
-                                                  ? t`WIP`
-                                                  : t`Default Storage Unit`)}
-                                            </Badge>
-                                          </div>
-                                        </Td>
+                                              <span className="text-xs text-muted-foreground">
+                                                <Trans>
+                                                  {
+                                                    attributes.filter((a) =>
+                                                      a.jobOperationStepRecord.some(
+                                                        (r) =>
+                                                          r.index === activeStep
+                                                      )
+                                                    ).length
+                                                  }{" "}
+                                                  of {attributes.length}{" "}
+                                                  complete
+                                                </Trans>
+                                              </span>
+                                            </div>
+                                          );
+                                        })()}
+                                    </div>
+                                  </HStack>
+                                  <div className="border rounded-lg">
+                                    {attributes
+                                      .sort(
+                                        (a, b) =>
+                                          (a.sortOrder ?? 0) -
+                                          (b.sortOrder ?? 0)
+                                      )
+                                      .map((step, index) => (
+                                        <StepsListItem
+                                          key={`step-${step.id}`}
+                                          activeStep={activeStep}
+                                          step={step}
+                                          onRecord={onRecordStepRecord}
+                                          onDelete={onDeleteStepRecord}
+                                          operationId={operationId}
+                                          className={
+                                            index === attributes.length - 1
+                                              ? "border-none"
+                                              : ""
+                                          }
+                                        />
+                                      ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                          {parameters.length > 0 && (
+                            <>
+                              <Separator />
+                              <div className="flex flex-col items-start justify-between w-full">
+                                <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                                  <HStack className="justify-between w-full">
+                                    <Heading size="h3">
+                                      <Trans>Process Parameters</Trans>
+                                    </Heading>
+                                  </HStack>
+                                  <div className="border rounded-lg">
+                                    {parameters
+                                      .sort((a, b) =>
+                                        (a.key ?? "").localeCompare(b.key ?? "")
+                                      )
+                                      .map((p, index) => (
+                                        <ParametersListItem
+                                          key={`parameter-${p.id}`}
+                                          parameter={p}
+                                          operationId={operationId}
+                                          className={
+                                            index === parameters.length - 1
+                                              ? "border-none"
+                                              : ""
+                                          }
+                                        />
+                                      ))}
+                                  </div>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      );
+                    }}
+                  </Await>
+                </Suspense>
 
-                                        <Td>
-                                          {parentIsSerial &&
-                                          (material.requiresBatchTracking ||
-                                            material.requiresSerialTracking)
-                                            ? `${
-                                                material.quantity ??
-                                                material.estimatedQuantity
-                                              }/${
-                                                material.estimatedQuantity ??
-                                                material.quantity
-                                              }`
-                                            : (material.estimatedQuantity ??
-                                              material.quantity)}
-                                        </Td>
-                                        <Td>
-                                          {material.methodType ===
-                                            "Make to Order" &&
-                                          material.requiresBatchTracking ===
-                                            false &&
-                                          material.requiresSerialTracking ===
-                                            false ? (
-                                            <MethodIcon
-                                              type="Make to Order"
-                                              isKit={material.kit ?? false}
-                                            />
-                                          ) : parentIsSerial &&
-                                            (material.requiresBatchTracking ||
-                                              material.requiresSerialTracking) ? (
-                                            `${material.quantityIssued}/${
-                                              material.quantity ??
-                                              material.estimatedQuantity
-                                            }`
-                                          ) : (
-                                            material.quantityIssued
-                                          )}
-                                        </Td>
-                                        <Td className="text-right">
-                                          {material.methodType !==
-                                            "Make to Order" &&
-                                            material.requiresBatchTracking ===
-                                              false &&
-                                            material.requiresSerialTracking ===
-                                              false && (
-                                              <IconButton
-                                                aria-label="Issue Material"
-                                                variant="ghost"
-                                                icon={<LuGitBranchPlus />}
-                                                className="h-8 w-8"
-                                                onClick={() => {
-                                                  flushSync(() => {
-                                                    setSelectedMaterial(
-                                                      material
-                                                    );
-                                                  });
-                                                  issueModal.onOpen();
-                                                }}
-                                              />
-                                            )}
-                                          {(material.requiresBatchTracking ||
-                                            material.requiresSerialTracking) && (
-                                            <Button
-                                              className="flex-shrink-0"
-                                              size="lg"
-                                              variant={
-                                                someRelatedMaterialIsIssued ||
-                                                !isRelatedToOperation
-                                                  ? "secondary"
-                                                  : "primary"
-                                              }
-                                              leftIcon={<LuQrCode />}
-                                              onClick={() => {
-                                                flushSync(() => {
-                                                  setSelectedMaterial(material);
-                                                });
-                                                issueModal.onOpen();
-                                              }}
-                                            >
-                                              <Trans>Issue</Trans>
-                                            </Button>
-                                          )}
+                <Separator />
+                <div className="flex flex-col items-start justify-between w-full">
+                  <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                    <HStack className="justify-between w-full">
+                      <Heading size="h3">
+                        <Trans>Materials</Trans>
+                      </Heading>
+                      <Button
+                        aria-label="Issue Material"
+                        leftIcon={<LuGitBranchPlus />}
+                        variant="secondary"
+                        size="lg"
+                        onClick={() => {
+                          flushSync(() => {
+                            setSelectedMaterial(null);
+                          });
+                          issueModal.onOpen();
+                        }}
+                      >
+                        <Trans>Issue Material</Trans>
+                      </Button>
+                    </HStack>
+                    <Suspense
+                      key={`materials-${operationId}`}
+                      fallback={<TableSkeleton />}
+                    >
+                      <Await resolve={materials}>
+                        {(resolvedMaterials) => {
+                          const baseMaterials =
+                            resolvedMaterials?.materials.filter(
+                              (m) => !m.isKitComponent
+                            );
+
+                          const kitMaterialsByParentId =
+                            resolvedMaterials?.materials
+                              .filter((m) => m.isKitComponent ?? false)
+                              .reduce(
+                                (acc, material) => {
+                                  if (material.kitParentId) {
+                                    if (!acc[material.kitParentId]) {
+                                      acc[material.kitParentId] = [];
+                                    }
+                                    acc[material.kitParentId].push(material);
+                                  }
+                                  return acc;
+                                },
+                                {} as Record<string, JobMaterial[]>
+                              );
+
+                          return (
+                            <>
+                              <div className="w-full overflow-hidden rounded-lg border bg-card">
+                                <Table className="w-full text-base">
+                                  <Thead className="bg-muted/40">
+                                    <Tr>
+                                      <Th className="text-sm">
+                                        <Trans>Part</Trans>
+                                      </Th>
+                                      <Th className="text-sm lg:table-cell hidden">
+                                        <Trans>Source</Trans>
+                                      </Th>
+                                      <Th className="text-sm">
+                                        <Trans>Estimated</Trans>
+                                      </Th>
+                                      <Th className="text-sm">
+                                        <Trans>Actual</Trans>
+                                      </Th>
+                                      <Th className="text-right" />
+                                    </Tr>
+                                  </Thead>
+                                  <Tbody className="[&>tr]:border-b [&>tr:last-child]:border-0">
+                                    {baseMaterials.length === 0 ? (
+                                      <Tr>
+                                        <Td
+                                          colSpan={24}
+                                          className="py-8 text-muted-foreground text-center"
+                                        >
+                                          <Trans>No materials</Trans>
                                         </Td>
                                       </Tr>
+                                    ) : (
+                                      baseMaterials.map((material) => {
+                                        const isRelatedToOperation =
+                                          material.jobOperationId ===
+                                          operationId;
 
-                                      {kittedChildren &&
-                                        kittedChildren.map(
-                                          (kittedChild, index) => (
+                                        const someRelatedMaterialIsIssued =
+                                          baseMaterials.some(
+                                            (m) =>
+                                              m.itemReadableIdWithoutRevision ===
+                                                material.itemReadableIdWithoutRevision &&
+                                              ((m.quantityIssued ?? 0) > 0 ||
+                                                (material.quantityIssued ?? 0) >
+                                                  0)
+                                          );
+
+                                        const kittedChildren = material.id
+                                          ? kitMaterialsByParentId[material.id]
+                                          : [];
+
+                                        return (
+                                          <>
                                             <Tr
-                                              key={`kittedChild-${kittedChild.id}`}
+                                              key={`material-${material.id}`}
                                               className={cn(
-                                                index ===
-                                                  kittedChildren.length - 1
-                                                  ? "border-b"
-                                                  : index === 0
-                                                    ? "border-t"
-                                                    : "",
+                                                "[&>td]:py-3",
                                                 !isRelatedToOperation &&
                                                   "opacity-50 hover:opacity-100"
                                               )}
                                             >
-                                              <Td className="pl-10 max-w-[20vw]">
+                                              <Td className="max-w-[20vw]">
                                                 <HStack
                                                   spacing={2}
                                                   className="justify-between min-w-0"
@@ -1615,22 +1740,22 @@ export const JobOperation = ({
                                                     spacing={0}
                                                     className="min-w-0"
                                                   >
-                                                    <span className="font-semibold truncate max-w-full">
+                                                    <span className="font-semibold text-base truncate max-w-full">
                                                       {getItemReadableId(
                                                         items,
-                                                        kittedChild.itemId
+                                                        material.itemId ?? ""
                                                       )}
                                                     </span>
-                                                    <span className="text-muted-foreground text-xs truncate max-w-full">
-                                                      {kittedChild.description}
+                                                    <span className="text-muted-foreground text-sm truncate max-w-full">
+                                                      {material.description}
                                                     </span>
                                                     <PickedBreakdown
                                                       materialItemId={
-                                                        kittedChild.itemId
+                                                        material.itemId
                                                       }
                                                       pickedByItem={
                                                         (
-                                                          kittedChild as {
+                                                          material as {
                                                             pickedByItem?: {
                                                               itemId: string;
                                                               itemReadableId: string;
@@ -1642,14 +1767,14 @@ export const JobOperation = ({
                                                       }
                                                     />
                                                   </VStack>
-                                                  {kittedChild.requiresBatchTracking ? (
+                                                  {material.requiresBatchTracking ? (
                                                     <Badge variant="secondary">
                                                       <TrackingTypeIcon
                                                         type="Batch"
                                                         className="shrink-0"
                                                       />
                                                     </Badge>
-                                                  ) : kittedChild.requiresSerialTracking ? (
+                                                  ) : material.requiresSerialTracking ? (
                                                     <Badge variant="secondary">
                                                       <TrackingTypeIcon
                                                         type="Serial"
@@ -1657,10 +1782,26 @@ export const JobOperation = ({
                                                       />
                                                     </Badge>
                                                   ) : null}
+                                                  {(
+                                                    material as {
+                                                      hasExpiredConsumed?: boolean;
+                                                    }
+                                                  ).hasExpiredConsumed && (
+                                                    <Badge
+                                                      variant="red"
+                                                      className="gap-1 shrink-0"
+                                                      title="A consumed batch or serial is now past its expiry date."
+                                                    >
+                                                      <LuTriangleAlert className="size-3" />
+                                                      <Trans>
+                                                        Consumed expired
+                                                      </Trans>
+                                                    </Badge>
+                                                  )}
                                                   <PickedBadge
                                                     quantityPicked={
                                                       (
-                                                        kittedChild as {
+                                                        material as {
                                                           quantityPicked?:
                                                             | number
                                                             | null;
@@ -1669,7 +1810,7 @@ export const JobOperation = ({
                                                     }
                                                     quantityToPick={
                                                       (
-                                                        kittedChild as {
+                                                        material as {
                                                           quantityToPick?:
                                                             | number
                                                             | null;
@@ -1679,72 +1820,116 @@ export const JobOperation = ({
                                                   />
                                                 </HStack>
                                               </Td>
-                                              <Td className="lg:table-cell hidden">
-                                                <Badge variant="secondary">
-                                                  <MethodIcon
-                                                    type={
-                                                      kittedChild.methodType ??
-                                                      ""
-                                                    }
-                                                    isKit={
-                                                      kittedChild.kit ?? false
-                                                    }
-                                                    className="mr-2"
+                                              <Td className="hidden lg:table-cell">
+                                                <div className="flex flex-row items-center gap-1">
+                                                  <Badge variant="secondary">
+                                                    <MethodIcon
+                                                      type={
+                                                        material.methodType ??
+                                                        ""
+                                                      }
+                                                      isKit={
+                                                        material.kit ?? false
+                                                      }
+                                                      className="mr-2"
+                                                    />
+                                                    {material.methodType ===
+                                                      "Make to Order" &&
+                                                    material.kit
+                                                      ? t`Kit`
+                                                      : material.methodType}
+                                                  </Badge>
+                                                  <LuArrowLeft
+                                                    className={cn(
+                                                      material.methodType ===
+                                                        "Make to Order"
+                                                        ? "rotate-180"
+                                                        : ""
+                                                    )}
                                                   />
-                                                  {kittedChild.methodType ===
-                                                    "Make to Order" &&
-                                                  kittedChild.kit
-                                                    ? t`Kit`
-                                                    : kittedChild.methodType}
-                                                </Badge>
+                                                  <Badge variant="secondary">
+                                                    <LuGitPullRequest className="size-3 mr-1" />
+                                                    {material.storageUnitName ??
+                                                      (material.methodType ===
+                                                      "Make to Order"
+                                                        ? t`WIP`
+                                                        : t`Default Storage Unit`)}
+                                                  </Badge>
+                                                </div>
                                               </Td>
 
                                               <Td>
                                                 {parentIsSerial &&
-                                                (kittedChild.requiresBatchTracking ||
-                                                  kittedChild.requiresSerialTracking)
+                                                (material.requiresBatchTracking ||
+                                                  material.requiresSerialTracking)
                                                   ? `${
-                                                      kittedChild.quantity ??
-                                                      kittedChild.estimatedQuantity
+                                                      material.quantity ??
+                                                      material.estimatedQuantity
                                                     }/${
-                                                      kittedChild.estimatedQuantity ??
-                                                      kittedChild.quantity
+                                                      material.estimatedQuantity ??
+                                                      material.quantity
                                                     }`
-                                                  : (kittedChild.estimatedQuantity ??
-                                                    kittedChild.quantity)}
+                                                  : (material.estimatedQuantity ??
+                                                    material.quantity)}
+                                                {isBatched &&
+                                                  material.itemId &&
+                                                  batchMaterialTotals?.[
+                                                    material.itemId
+                                                  ] && (
+                                                    <div className="text-xs text-muted-foreground whitespace-nowrap">
+                                                      <Trans>Batch</Trans>:{" "}
+                                                      {
+                                                        batchMaterialTotals[
+                                                          material.itemId
+                                                        ].required
+                                                      }
+                                                    </div>
+                                                  )}
                                               </Td>
                                               <Td>
-                                                {kittedChild.methodType ===
+                                                {material.methodType ===
                                                   "Make to Order" &&
-                                                kittedChild.requiresBatchTracking ===
+                                                material.requiresBatchTracking ===
                                                   false &&
-                                                kittedChild.requiresSerialTracking ===
+                                                material.requiresSerialTracking ===
                                                   false ? (
                                                   <MethodIcon
                                                     type="Make to Order"
                                                     isKit={
-                                                      kittedChild.kit ?? false
+                                                      material.kit ?? false
                                                     }
                                                   />
                                                 ) : parentIsSerial &&
-                                                  (kittedChild.requiresBatchTracking ||
-                                                    kittedChild.requiresSerialTracking) ? (
-                                                  `${
-                                                    kittedChild.quantityIssued
-                                                  }/${
-                                                    kittedChild.quantity ??
-                                                    kittedChild.estimatedQuantity
+                                                  (material.requiresBatchTracking ||
+                                                    material.requiresSerialTracking) ? (
+                                                  `${material.quantityIssued}/${
+                                                    material.quantity ??
+                                                    material.estimatedQuantity
                                                   }`
                                                 ) : (
-                                                  kittedChild.quantityIssued
+                                                  material.quantityIssued
                                                 )}
+                                                {isBatched &&
+                                                  material.itemId &&
+                                                  batchMaterialTotals?.[
+                                                    material.itemId
+                                                  ] && (
+                                                    <div className="text-xs text-muted-foreground whitespace-nowrap">
+                                                      <Trans>Batch</Trans>:{" "}
+                                                      {
+                                                        batchMaterialTotals[
+                                                          material.itemId
+                                                        ].issued
+                                                      }
+                                                    </div>
+                                                  )}
                                               </Td>
                                               <Td className="text-right">
-                                                {kittedChild.methodType !==
+                                                {material.methodType !==
                                                   "Make to Order" &&
-                                                  kittedChild.requiresBatchTracking ===
+                                                  material.requiresBatchTracking ===
                                                     false &&
-                                                  kittedChild.requiresSerialTracking ===
+                                                  material.requiresSerialTracking ===
                                                     false && (
                                                     <IconButton
                                                       aria-label="Issue Material"
@@ -1754,398 +1939,602 @@ export const JobOperation = ({
                                                       onClick={() => {
                                                         flushSync(() => {
                                                           setSelectedMaterial(
-                                                            kittedChild
+                                                            material
                                                           );
                                                         });
                                                         issueModal.onOpen();
                                                       }}
                                                     />
                                                   )}
-                                                {(kittedChild.requiresBatchTracking ||
-                                                  kittedChild.requiresSerialTracking) && (
-                                                  <IconButton
-                                                    aria-label="Issue Material"
-                                                    variant="secondary"
-                                                    icon={<LuQrCode />}
-                                                    className="h-8 w-8"
+                                                {(material.requiresBatchTracking ||
+                                                  material.requiresSerialTracking) && (
+                                                  <Button
+                                                    className="flex-shrink-0"
+                                                    size="lg"
+                                                    variant={
+                                                      someRelatedMaterialIsIssued ||
+                                                      !isRelatedToOperation
+                                                        ? "secondary"
+                                                        : "primary"
+                                                    }
+                                                    leftIcon={<LuQrCode />}
                                                     onClick={() => {
                                                       flushSync(() => {
                                                         setSelectedMaterial(
-                                                          kittedChild
+                                                          material
                                                         );
                                                       });
                                                       issueModal.onOpen();
                                                     }}
-                                                  />
+                                                  >
+                                                    <Trans>Issue</Trans>
+                                                  </Button>
                                                 )}
                                               </Td>
                                             </Tr>
-                                          )
-                                        )}
-                                    </>
-                                  );
-                                })
-                              )}
-                            </Tbody>
-                          </Table>
-                          {issueModal.isOpen && (
-                            <IssueMaterialModal
-                              operationId={operation.id}
-                              // The process view issues the whole quantity at
-                              // once, so picked lots may pre-fill when the
-                              // parent is a single entity. The modal enforces
-                              // the full rule: a picking list exists AND (the
-                              // parent is not serialized OR the operation
-                              // makes exactly one unit).
-                              allowPrefill
-                              parentUnitCount={
-                                operation.operationQuantity ?? undefined
-                              }
-                              expiredEntityPolicy={expiredEntityPolicy}
-                              autoSelectMaterialWithoutPickingList={
-                                autoSelectMaterialWithoutPickingList
-                              }
-                              locationId={locationId}
-                              workCenterId={operation.workCenterId ?? undefined}
-                              material={selectedMaterial ?? undefined}
-                              parentId={trackedEntityId ?? ""}
-                              parentIdIsSerialized={
-                                method?.requiresSerialTracking ?? false
-                              }
-                              trackedInputs={
-                                resolvedMaterials?.trackedInputs ?? []
-                              }
-                              onClose={() => {
-                                setSelectedMaterial(null);
-                                issueModal.onClose();
-                              }}
-                            />
-                          )}
-                        </>
-                      );
-                    }}
-                  </Await>
-                </Suspense>
-              </div>
-            </div>
 
-            <Separator />
-            <div className="flex flex-col items-start justify-between w-full">
-              <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                <Heading size="h3">
-                  <Trans>Files</Trans>
-                </Heading>
-                <p className="text-muted-foreground text-sm -mt-2">
-                  <Trans>
-                    Files related to the job and the opportunity line.
-                  </Trans>
-                </p>
-                <Suspense
-                  key={`files-${operationId}`}
-                  fallback={<TableSkeleton />}
-                >
-                  <Await resolve={files}>
-                    {(resolvedFiles) => (
-                      <Table className="w-full text-base">
-                        <Thead>
-                          <Tr>
-                            <Th className="text-sm">
-                              <Trans>Name</Trans>
-                            </Th>
-                            <Th className="text-sm">
-                              <Trans>Size</Trans>
-                            </Th>
-                            <Th></Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {resolvedFiles.length === 0 && !modelUpload ? (
-                            <Tr>
-                              <Td
-                                colSpan={24}
-                                className="py-8 text-muted-foreground text-center"
-                              >
-                                <Trans>No files</Trans>
-                              </Td>
-                            </Tr>
-                          ) : (
-                            <>
-                              {modelUpload?.modelName && (
-                                <Tr className="[&>td]:py-3">
-                                  <Td>
-                                    <HStack>
-                                      <LuAxis3D className="text-emerald-500 w-6 h-6" />
-                                      <span>{modelUpload.modelName}</span>
-                                    </HStack>
-                                  </Td>
-                                  <Td className="text-sm font-mono">
-                                    {modelUpload.modelSize
-                                      ? convertKbToString(
-                                          Math.floor(
-                                            (modelUpload.modelSize ?? 0) / 1024
-                                          )
-                                        )
-                                      : "--"}
-                                  </Td>
-                                  <Td>
-                                    <div className="flex justify-end w-full">
-                                      <DropdownMenu>
-                                        <DropdownMenuTrigger asChild>
-                                          <IconButton
-                                            aria-label="More"
-                                            icon={<LuEllipsisVertical />}
-                                            variant="secondary"
-                                          />
-                                        </DropdownMenuTrigger>
-                                        <DropdownMenuContent align="end">
-                                          <DropdownMenuItem
-                                            onClick={() =>
-                                              downloadModel(modelUpload)
-                                            }
-                                          >
-                                            <DropdownMenuIcon
-                                              icon={<LuDownload />}
-                                            />
-                                            <Trans>Download</Trans>
-                                          </DropdownMenuItem>
-                                        </DropdownMenuContent>
-                                      </DropdownMenu>
-                                    </div>
-                                  </Td>
-                                </Tr>
-                              )}
-                              {resolvedFiles.map((file) => {
-                                const type = getFileType(file.name);
-                                return (
-                                  <Tr
-                                    key={`file-${file.id}`}
-                                    className="[&>td]:py-3"
-                                  >
-                                    <Td>
-                                      <HStack>
-                                        <FileIcon type={type} />
-                                        <span
-                                          className="font-medium"
-                                          onClick={() => {
-                                            if (
-                                              ["PDF", "Image"].includes(type)
-                                            ) {
-                                              window.open(
-                                                path.to.file.previewFile(
-                                                  `${"private"}/${getFilePath(
-                                                    file
-                                                  )}`
-                                                ),
-                                                "_blank"
-                                              );
-                                            }
-                                          }}
-                                        >
-                                          {["PDF", "Image"].includes(type) ? (
-                                            <FilePreview
-                                              bucket="private"
-                                              pathToFile={getFilePath(file)}
-                                              // @ts-ignore
-                                              type={getFileType(file.name)}
-                                            >
-                                              {file.name}
-                                            </FilePreview>
-                                          ) : (
-                                            file.name
-                                          )}
-                                        </span>
-                                      </HStack>
-                                    </Td>
-                                    <Td className="text-sm font-mono">
-                                      {convertKbToString(
-                                        Math.floor(
-                                          (file.metadata?.size ?? 0) / 1024
-                                        )
-                                      )}
-                                    </Td>
-                                    <Td>
-                                      <div className="flex justify-end w-full">
-                                        <DropdownMenu>
-                                          <DropdownMenuTrigger asChild>
-                                            <IconButton
-                                              aria-label="More"
-                                              icon={<LuEllipsisVertical />}
-                                              variant="secondary"
-                                            />
-                                          </DropdownMenuTrigger>
-                                          <DropdownMenuContent align="end">
-                                            <DropdownMenuItem
-                                              onClick={() => downloadFile(file)}
-                                            >
-                                              <DropdownMenuIcon
-                                                icon={<LuDownload />}
-                                              />
-                                              Download
-                                            </DropdownMenuItem>
-                                          </DropdownMenuContent>
-                                        </DropdownMenu>
-                                      </div>
-                                    </Td>
-                                  </Tr>
-                                );
-                              })}
+                                            {kittedChildren &&
+                                              kittedChildren.map(
+                                                (kittedChild, index) => (
+                                                  <Tr
+                                                    key={`kittedChild-${kittedChild.id}`}
+                                                    className={cn(
+                                                      index ===
+                                                        kittedChildren.length -
+                                                          1
+                                                        ? "border-b"
+                                                        : index === 0
+                                                          ? "border-t"
+                                                          : "",
+                                                      !isRelatedToOperation &&
+                                                        "opacity-50 hover:opacity-100"
+                                                    )}
+                                                  >
+                                                    <Td className="pl-10 max-w-[20vw]">
+                                                      <HStack
+                                                        spacing={2}
+                                                        className="justify-between min-w-0"
+                                                      >
+                                                        <VStack
+                                                          spacing={0}
+                                                          className="min-w-0"
+                                                        >
+                                                          <span className="font-semibold truncate max-w-full">
+                                                            {getItemReadableId(
+                                                              items,
+                                                              kittedChild.itemId
+                                                            )}
+                                                          </span>
+                                                          <span className="text-muted-foreground text-xs truncate max-w-full">
+                                                            {
+                                                              kittedChild.description
+                                                            }
+                                                          </span>
+                                                          <PickedBreakdown
+                                                            materialItemId={
+                                                              kittedChild.itemId
+                                                            }
+                                                            pickedByItem={
+                                                              (
+                                                                kittedChild as {
+                                                                  pickedByItem?: {
+                                                                    itemId: string;
+                                                                    itemReadableId: string;
+                                                                    quantityPicked: number;
+                                                                    quantityToPick: number;
+                                                                  }[];
+                                                                }
+                                                              ).pickedByItem
+                                                            }
+                                                          />
+                                                        </VStack>
+                                                        {kittedChild.requiresBatchTracking ? (
+                                                          <Badge variant="secondary">
+                                                            <TrackingTypeIcon
+                                                              type="Batch"
+                                                              className="shrink-0"
+                                                            />
+                                                          </Badge>
+                                                        ) : kittedChild.requiresSerialTracking ? (
+                                                          <Badge variant="secondary">
+                                                            <TrackingTypeIcon
+                                                              type="Serial"
+                                                              className="shrink-0"
+                                                            />
+                                                          </Badge>
+                                                        ) : null}
+                                                        <PickedBadge
+                                                          quantityPicked={
+                                                            (
+                                                              kittedChild as {
+                                                                quantityPicked?:
+                                                                  | number
+                                                                  | null;
+                                                              }
+                                                            ).quantityPicked
+                                                          }
+                                                          quantityToPick={
+                                                            (
+                                                              kittedChild as {
+                                                                quantityToPick?:
+                                                                  | number
+                                                                  | null;
+                                                              }
+                                                            ).quantityToPick
+                                                          }
+                                                        />
+                                                      </HStack>
+                                                    </Td>
+                                                    <Td className="lg:table-cell hidden">
+                                                      <Badge variant="secondary">
+                                                        <MethodIcon
+                                                          type={
+                                                            kittedChild.methodType ??
+                                                            ""
+                                                          }
+                                                          isKit={
+                                                            kittedChild.kit ??
+                                                            false
+                                                          }
+                                                          className="mr-2"
+                                                        />
+                                                        {kittedChild.methodType ===
+                                                          "Make to Order" &&
+                                                        kittedChild.kit
+                                                          ? t`Kit`
+                                                          : kittedChild.methodType}
+                                                      </Badge>
+                                                    </Td>
+
+                                                    <Td>
+                                                      {parentIsSerial &&
+                                                      (kittedChild.requiresBatchTracking ||
+                                                        kittedChild.requiresSerialTracking)
+                                                        ? `${
+                                                            kittedChild.quantity ??
+                                                            kittedChild.estimatedQuantity
+                                                          }/${
+                                                            kittedChild.estimatedQuantity ??
+                                                            kittedChild.quantity
+                                                          }`
+                                                        : (kittedChild.estimatedQuantity ??
+                                                          kittedChild.quantity)}
+                                                    </Td>
+                                                    <Td>
+                                                      {kittedChild.methodType ===
+                                                        "Make to Order" &&
+                                                      kittedChild.requiresBatchTracking ===
+                                                        false &&
+                                                      kittedChild.requiresSerialTracking ===
+                                                        false ? (
+                                                        <MethodIcon
+                                                          type="Make to Order"
+                                                          isKit={
+                                                            kittedChild.kit ??
+                                                            false
+                                                          }
+                                                        />
+                                                      ) : parentIsSerial &&
+                                                        (kittedChild.requiresBatchTracking ||
+                                                          kittedChild.requiresSerialTracking) ? (
+                                                        `${
+                                                          kittedChild.quantityIssued
+                                                        }/${
+                                                          kittedChild.quantity ??
+                                                          kittedChild.estimatedQuantity
+                                                        }`
+                                                      ) : (
+                                                        kittedChild.quantityIssued
+                                                      )}
+                                                    </Td>
+                                                    <Td className="text-right">
+                                                      {kittedChild.methodType !==
+                                                        "Make to Order" &&
+                                                        kittedChild.requiresBatchTracking ===
+                                                          false &&
+                                                        kittedChild.requiresSerialTracking ===
+                                                          false && (
+                                                          <IconButton
+                                                            aria-label="Issue Material"
+                                                            variant="ghost"
+                                                            icon={
+                                                              <LuGitBranchPlus />
+                                                            }
+                                                            className="h-8 w-8"
+                                                            onClick={() => {
+                                                              flushSync(() => {
+                                                                setSelectedMaterial(
+                                                                  kittedChild
+                                                                );
+                                                              });
+                                                              issueModal.onOpen();
+                                                            }}
+                                                          />
+                                                        )}
+                                                      {(kittedChild.requiresBatchTracking ||
+                                                        kittedChild.requiresSerialTracking) && (
+                                                        <IconButton
+                                                          aria-label="Issue Material"
+                                                          variant="secondary"
+                                                          icon={<LuQrCode />}
+                                                          className="h-8 w-8"
+                                                          onClick={() => {
+                                                            flushSync(() => {
+                                                              setSelectedMaterial(
+                                                                kittedChild
+                                                              );
+                                                            });
+                                                            issueModal.onOpen();
+                                                          }}
+                                                        />
+                                                      )}
+                                                    </Td>
+                                                  </Tr>
+                                                )
+                                              )}
+                                          </>
+                                        );
+                                      })
+                                    )}
+                                  </Tbody>
+                                </Table>
+                              </div>
+                              {renderIssueModal(resolvedMaterials)}
                             </>
-                          )}
-                        </Tbody>
-                      </Table>
-                    )}
-                  </Await>
-                </Suspense>
-              </div>
-            </div>
+                          );
+                        }}
+                      </Await>
+                    </Suspense>
+                  </div>
+                </div>
 
-            {parentIsSerial && (
-              <>
                 <Separator />
                 <div className="flex flex-col items-start justify-between w-full">
                   <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
-                    <HStack className="justify-between w-full">
-                      <Heading size="h3">
-                        <Trans>Serial Numbers</Trans>
-                      </Heading>
-                      {trackedEntities?.length > 0 && (
-                        <HStack>
-                          <PrintButton
-                            sourceDocument="Operation"
-                            sourceDocumentId={operationId!}
-                            locationId={locationId}
-                            context="workCenter"
-                            workCenterId={operation.workCenterId ?? undefined}
-                            size="lg"
-                            fileRoutes={{
-                              pdf: path.to.file.operationLabelsPdf,
-                              zpl: path.to.file.operationLabelsZpl
-                            }}
-                          />
-                          <Button
-                            variant="secondary"
-                            size="lg"
-                            leftIcon={<LuBarcode />}
-                            onClick={serialModal.onOpen}
-                          >
-                            <Trans>Scan</Trans>
-                          </Button>
-                        </HStack>
-                      )}
-                    </HStack>
-
-                    <Table className="w-full text-base">
-                      <Thead>
-                        <Tr>
-                          <Th className="text-sm">
-                            <Trans>Serial</Trans>
-                          </Th>
-                          <Th className="text-right" />
-                        </Tr>
-                      </Thead>
-                      <Tbody>
-                        {trackedEntities?.length === 0 ? (
-                          <Tr>
-                            <Td
-                              colSpan={24}
-                              className="py-8 text-muted-foreground text-center"
-                            >
-                              <LuTriangleAlert className="text-red-500 size-4" />
-                              <Trans>No serial numbers</Trans>
-                            </Td>
-                          </Tr>
-                        ) : (
-                          trackedEntities?.map((entity) => (
-                            <Tr
-                              key={`serial-${entity.id}`}
-                              className={cn(
-                                "[&>td]:py-3",
-                                entity.status === "Scrapped" && "opacity-60"
-                              )}
-                            >
-                              <Td>
-                                <div className="flex gap-2 items-center">
-                                  <div className="flex flex-col min-w-0">
-                                    {entity.readableId ? (
-                                      <>
-                                        <span className="font-medium truncate">
-                                          {entity.readableId}
-                                        </span>
-                                        <span className="text-xs text-muted-foreground font-mono truncate">
-                                          {entity.id}
-                                        </span>
-                                      </>
-                                    ) : (
-                                      <span className="font-mono truncate">
-                                        {entity.id}
-                                      </span>
+                    <Heading size="h3">
+                      <Trans>Files</Trans>
+                    </Heading>
+                    <p className="text-muted-foreground text-sm -mt-2">
+                      <Trans>
+                        Files related to the job and the opportunity line.
+                      </Trans>
+                    </p>
+                    <Suspense
+                      key={`files-${operationId}`}
+                      fallback={<TableSkeleton />}
+                    >
+                      <Await resolve={files}>
+                        {(resolvedFiles) => (
+                          <div className="w-full overflow-hidden rounded-lg border bg-card">
+                            <Table className="w-full text-base">
+                              <Thead className="bg-muted/40">
+                                <Tr>
+                                  <Th className="text-sm">
+                                    <Trans>Name</Trans>
+                                  </Th>
+                                  <Th className="text-sm">
+                                    <Trans>Size</Trans>
+                                  </Th>
+                                  <Th></Th>
+                                </Tr>
+                              </Thead>
+                              <Tbody className="[&>tr]:border-b [&>tr:last-child]:border-0">
+                                {resolvedFiles.length === 0 && !modelUpload ? (
+                                  <Tr>
+                                    <Td
+                                      colSpan={24}
+                                      className="py-8 text-muted-foreground text-center"
+                                    >
+                                      <Trans>No files</Trans>
+                                    </Td>
+                                  </Tr>
+                                ) : (
+                                  <>
+                                    {modelUpload?.modelName && (
+                                      <Tr className="[&>td]:py-3">
+                                        <Td>
+                                          <HStack>
+                                            <LuAxis3D className="text-emerald-500 w-6 h-6" />
+                                            <span>{modelUpload.modelName}</span>
+                                          </HStack>
+                                        </Td>
+                                        <Td className="text-sm font-mono">
+                                          {modelUpload.modelSize
+                                            ? convertKbToString(
+                                                Math.floor(
+                                                  (modelUpload.modelSize ?? 0) /
+                                                    1024
+                                                )
+                                              )
+                                            : "--"}
+                                        </Td>
+                                        <Td>
+                                          <div className="flex justify-end w-full">
+                                            <DropdownMenu>
+                                              <DropdownMenuTrigger asChild>
+                                                <IconButton
+                                                  aria-label="More"
+                                                  icon={<LuEllipsisVertical />}
+                                                  variant="secondary"
+                                                />
+                                              </DropdownMenuTrigger>
+                                              <DropdownMenuContent align="end">
+                                                <DropdownMenuItem
+                                                  onClick={() =>
+                                                    downloadModel(modelUpload)
+                                                  }
+                                                >
+                                                  <DropdownMenuIcon
+                                                    icon={<LuDownload />}
+                                                  />
+                                                  <Trans>Download</Trans>
+                                                </DropdownMenuItem>
+                                              </DropdownMenuContent>
+                                            </DropdownMenu>
+                                          </div>
+                                        </Td>
+                                      </Tr>
                                     )}
-                                  </div>
-                                  {entity.id === trackedEntityId && (
-                                    <LuCheck className="text-emerald-500 size-4 shrink-0" />
-                                  )}
-                                  <Copy text={entity.readableId || entity.id} />
-                                  {entity.status === "Scrapped" && (
-                                    <Badge variant="red">
-                                      <Trans>Scrapped</Trans>
-                                    </Badge>
-                                  )}
-                                </div>
-                              </Td>
-
-                              <Td className="text-right">
-                                <div className="flex justify-end gap-2">
-                                  <PrintButton
-                                    sourceDocument="Entity"
-                                    sourceDocumentId={entity.id}
-                                    locationId={locationId}
-                                    context="workCenter"
-                                    workCenterId={
-                                      operation.workCenterId ?? undefined
-                                    }
-                                    size="lg"
-                                    fileRoutes={{
-                                      pdf: path.to.file.trackedEntityLabelPdf,
-                                      zpl: path.to.file.trackedEntityLabelZpl
-                                    }}
-                                  />
-                                  <Button
-                                    variant="secondary"
-                                    size="lg"
-                                    isDisabled={
-                                      entity.id === trackedEntityId ||
-                                      entity.status === "Scrapped"
-                                    }
-                                    onClick={() => {
-                                      const entityIndex =
-                                        trackedEntities.findIndex(
-                                          (e) => e.id === entity.id
-                                        );
-                                      if (entityIndex !== -1) {
-                                        setActiveStep(entityIndex);
-                                      }
-                                      setParams({
-                                        trackedEntityId: entity.id
-                                      });
-                                    }}
-                                  >
-                                    <Trans>Select</Trans>
-                                  </Button>
-                                </div>
-                              </Td>
-                            </Tr>
-                          ))
+                                    {resolvedFiles.map((file) => {
+                                      const type = getFileType(file.name);
+                                      return (
+                                        <Tr
+                                          key={`file-${file.id}`}
+                                          className="[&>td]:py-3"
+                                        >
+                                          <Td>
+                                            <HStack>
+                                              <FileIcon type={type} />
+                                              <span
+                                                className="font-medium"
+                                                onClick={() => {
+                                                  if (
+                                                    ["PDF", "Image"].includes(
+                                                      type
+                                                    )
+                                                  ) {
+                                                    window.open(
+                                                      path.to.file.previewFile(
+                                                        `${"private"}/${getFilePath(
+                                                          file
+                                                        )}`
+                                                      ),
+                                                      "_blank"
+                                                    );
+                                                  }
+                                                }}
+                                              >
+                                                {["PDF", "Image"].includes(
+                                                  type
+                                                ) ? (
+                                                  <FilePreview
+                                                    bucket="private"
+                                                    pathToFile={getFilePath(
+                                                      file
+                                                    )}
+                                                    // @ts-ignore
+                                                    type={getFileType(
+                                                      file.name
+                                                    )}
+                                                  >
+                                                    {file.name}
+                                                  </FilePreview>
+                                                ) : (
+                                                  file.name
+                                                )}
+                                              </span>
+                                            </HStack>
+                                          </Td>
+                                          <Td className="text-sm font-mono">
+                                            {convertKbToString(
+                                              Math.floor(
+                                                (file.metadata?.size ?? 0) /
+                                                  1024
+                                              )
+                                            )}
+                                          </Td>
+                                          <Td>
+                                            <div className="flex justify-end w-full">
+                                              <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                  <IconButton
+                                                    aria-label="More"
+                                                    icon={
+                                                      <LuEllipsisVertical />
+                                                    }
+                                                    variant="secondary"
+                                                  />
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                  <DropdownMenuItem
+                                                    onClick={() =>
+                                                      downloadFile(file)
+                                                    }
+                                                  >
+                                                    <DropdownMenuIcon
+                                                      icon={<LuDownload />}
+                                                    />
+                                                    Download
+                                                  </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                              </DropdownMenu>
+                                            </div>
+                                          </Td>
+                                        </Tr>
+                                      );
+                                    })}
+                                  </>
+                                )}
+                              </Tbody>
+                            </Table>
+                          </div>
                         )}
-                      </Tbody>
-                    </Table>
+                      </Await>
+                    </Suspense>
                   </div>
                 </div>
+
+                {parentIsSerial && (
+                  <>
+                    <Separator />
+                    <div className="flex flex-col items-start justify-between w-full">
+                      <div className="flex flex-col gap-4 p-4 lg:p-6 w-full">
+                        <HStack className="justify-between w-full">
+                          <Heading size="h3">
+                            <Trans>Serial Numbers</Trans>
+                          </Heading>
+                          {trackedEntities?.length > 0 && (
+                            <HStack>
+                              <PrintButton
+                                sourceDocument="Operation"
+                                sourceDocumentId={operationId!}
+                                locationId={locationId}
+                                context="workCenter"
+                                workCenterId={
+                                  operation.workCenterId ?? undefined
+                                }
+                                size="lg"
+                                fileRoutes={{
+                                  pdf: path.to.file.operationLabelsPdf,
+                                  zpl: path.to.file.operationLabelsZpl
+                                }}
+                              />
+                              <Button
+                                variant="secondary"
+                                size="lg"
+                                leftIcon={<LuBarcode />}
+                                onClick={serialModal.onOpen}
+                              >
+                                <Trans>Scan</Trans>
+                              </Button>
+                            </HStack>
+                          )}
+                        </HStack>
+
+                        <div className="w-full overflow-hidden rounded-lg border bg-card">
+                          <Table className="w-full text-base">
+                            <Thead className="bg-muted/40">
+                              <Tr>
+                                <Th className="text-sm">
+                                  <Trans>Serial</Trans>
+                                </Th>
+                                <Th className="text-right" />
+                              </Tr>
+                            </Thead>
+                            <Tbody className="[&>tr]:border-b [&>tr:last-child]:border-0">
+                              {trackedEntities?.length === 0 ? (
+                                <Tr>
+                                  <Td
+                                    colSpan={24}
+                                    className="py-8 text-muted-foreground text-center"
+                                  >
+                                    <LuTriangleAlert className="text-red-500 size-4" />
+                                    <Trans>No serial numbers</Trans>
+                                  </Td>
+                                </Tr>
+                              ) : (
+                                trackedEntities?.map((entity) => (
+                                  <Tr
+                                    key={`serial-${entity.id}`}
+                                    className={cn(
+                                      "[&>td]:py-3",
+                                      entity.status === "Scrapped" &&
+                                        "opacity-60"
+                                    )}
+                                  >
+                                    <Td>
+                                      <div className="flex gap-2 items-center">
+                                        <div className="flex flex-col min-w-0">
+                                          {entity.readableId ? (
+                                            <>
+                                              <span className="font-medium truncate">
+                                                {entity.readableId}
+                                              </span>
+                                              <span className="text-xs text-muted-foreground font-mono truncate">
+                                                {entity.id}
+                                              </span>
+                                            </>
+                                          ) : (
+                                            <span className="font-mono truncate">
+                                              {entity.id}
+                                            </span>
+                                          )}
+                                        </div>
+                                        {entity.id === trackedEntityId && (
+                                          <LuCheck className="text-emerald-500 size-4 shrink-0" />
+                                        )}
+                                        <Copy
+                                          text={entity.readableId || entity.id}
+                                        />
+                                        {entity.status === "Scrapped" && (
+                                          <Badge variant="red">
+                                            <Trans>Scrapped</Trans>
+                                          </Badge>
+                                        )}
+                                      </div>
+                                    </Td>
+
+                                    <Td className="text-right">
+                                      <div className="flex justify-end gap-2">
+                                        <PrintButton
+                                          sourceDocument="Entity"
+                                          sourceDocumentId={entity.id}
+                                          locationId={locationId}
+                                          context="workCenter"
+                                          workCenterId={
+                                            operation.workCenterId ?? undefined
+                                          }
+                                          size="lg"
+                                          fileRoutes={{
+                                            pdf: path.to.file
+                                              .trackedEntityLabelPdf,
+                                            zpl: path.to.file
+                                              .trackedEntityLabelZpl
+                                          }}
+                                        />
+                                        <Button
+                                          variant="secondary"
+                                          size="lg"
+                                          isDisabled={
+                                            entity.id === trackedEntityId ||
+                                            entity.status === "Scrapped"
+                                          }
+                                          onClick={() => {
+                                            const entityIndex =
+                                              trackedEntities.findIndex(
+                                                (e) => e.id === entity.id
+                                              );
+                                            if (entityIndex !== -1) {
+                                              setActiveStep(entityIndex);
+                                            }
+                                            setParams({
+                                              trackedEntityId: entity.id
+                                            });
+                                          }}
+                                        >
+                                          <Trans>Select</Trans>
+                                        </Button>
+                                      </div>
+                                    </Td>
+                                  </Tr>
+                                ))
+                              )}
+                            </Tbody>
+                          </Table>
+                        </div>
+                      </div>
+                    </div>
+                  </>
+                )}
               </>
             )}
           </div>
         </TabsContent>
-        <TabsContent value="model">
-          <div className="relative w-full min-w-0 lg:pr-[var(--controls-gutter)] h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] p-0">
+        <TabsContent
+          value="model"
+          className="[grid-area:main] mt-0 h-full min-h-0"
+        >
+          <div className="relative h-full w-full min-w-0 p-0">
             {modelPath ? (
               <ModelPreview
                 key={modelPath}
@@ -2205,370 +2594,328 @@ export const JobOperation = ({
             )}
           </div>
         </TabsContent>
-        <TabsContent value="procedure" className="flex flex-grow">
-          <div className="flex h-[calc(100dvh-var(--header-height)*2-var(--controls-height)-2rem)] w-full">
-            <Suspense key={`procedure-${operationId}`}>
-              <Await resolve={procedure}>
-                {(resolvedProcedure) => {
-                  const { attributes, parameters } = resolvedProcedure;
-                  if (attributes.length === 0 && parameters.length === 0)
-                    return null;
+        <TabsContent
+          value="procedure"
+          className="[grid-area:main] mt-0 flex h-full min-h-0"
+        >
+          {scope === "batch" && batch ? (
+            <div className="h-full w-full overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+              <BatchOverview
+                view="instructions"
+                batch={batch}
+                totals={batchMaterialTotals ?? {}}
+                currentMaterials={[]}
+                onIssue={() => {}}
+                workInstructions={batchWorkInstructions}
+                onDownloadFile={downloadFile}
+              />
+            </div>
+          ) : (
+            <div className="flex h-full w-full">
+              <Suspense key={`procedure-${operationId}`}>
+                <Await resolve={procedure}>
+                  {(resolvedProcedure) => {
+                    const { attributes, parameters } = resolvedProcedure;
+                    if (attributes.length === 0 && parameters.length === 0)
+                      return null;
 
-                  return (
-                    <ScrollArea className="hidden lg:block w-1/3 border-r shrink-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-                      <Tabs
-                        defaultValue="attributes"
-                        className="w-full flex-1 h-full flex flex-col"
-                      >
-                        <div className="w-full py-2 px-4 sticky top-0 z-10">
-                          <TabsList className="w-full grid grid-cols-2">
-                            <TabsTrigger value="attributes">
-                              <Trans>Steps</Trans>
-                            </TabsTrigger>
-                            <TabsTrigger value="parameters">
-                              <Trans>Parameters</Trans>
-                            </TabsTrigger>
-                          </TabsList>
-                        </div>
-                        <TabsContent
-                          value="attributes"
-                          className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
+                    return (
+                      <ScrollArea className="hidden lg:block w-1/3 border-r shrink-0 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                        <Tabs
+                          defaultValue="attributes"
+                          className="w-full flex-1 h-full flex flex-col"
                         >
-                          <VStack
-                            className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-                            spacing={0}
+                          <div className="w-full py-2 px-4 sticky top-0 z-10">
+                            <TabsList className="w-full grid grid-cols-2">
+                              <TabsTrigger value="attributes">
+                                <Trans>Steps</Trans>
+                              </TabsTrigger>
+                              <TabsTrigger value="parameters">
+                                <Trans>Parameters</Trans>
+                              </TabsTrigger>
+                            </TabsList>
+                          </div>
+                          <TabsContent
+                            value="attributes"
+                            className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
                           >
-                            {attributes.length > 0 &&
-                              (() => {
-                                const maxRecords = parentIsSerial
-                                  ? trackedEntities.length
-                                  : operation.operationQuantity +
-                                    operation.quantityScrapped;
+                            <VStack
+                              className="w-full flex-1 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+                              spacing={0}
+                            >
+                              {attributes.length > 0 &&
+                                (() => {
+                                  const maxRecords = parentIsSerial
+                                    ? trackedEntities.length
+                                    : operation.operationQuantity +
+                                      operation.quantityScrapped;
 
-                                const isRecordSetStarted = recordSetIsStarted(
-                                  attributes,
-                                  activeStep
-                                );
-
-                                const canCreateNewRecord =
-                                  !parentIsSerial && isRecordSetStarted;
-
-                                const canNavigateNext =
-                                  isRecordSetStarted &&
-                                  activeStep <
-                                    operation.operationQuantity +
-                                      operation.quantityScrapped -
-                                      1;
-
-                                const showNavigation =
-                                  hasMultipleRecords ||
-                                  attributes.some(
-                                    (att) =>
-                                      att.jobOperationStepRecord.length > 1
+                                  const isRecordSetStarted = recordSetIsStarted(
+                                    attributes,
+                                    activeStep
                                   );
 
-                                return (
-                                  <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
-                                    <div className="flex items-center gap-1">
-                                      {showNavigation && !parentIsSerial && (
-                                        <>
-                                          <IconButton
-                                            aria-label="Previous record set"
-                                            variant="secondary"
-                                            icon={<LuChevronLeft />}
-                                            onClick={() => {
-                                              setActiveStep(activeStep - 1);
-                                            }}
-                                            isDisabled={activeStep === 0}
-                                          />
-                                          <span className="text-sm font-medium px-2 min-w-[60px] text-center">
-                                            <Trans>
-                                              Record {activeStep + 1}
-                                            </Trans>
-                                          </span>
-                                          <IconButton
-                                            aria-label="Next record set"
-                                            variant="secondary"
-                                            icon={<LuChevronRight />}
-                                            onClick={() => {
-                                              setActiveStep(activeStep + 1);
-                                            }}
-                                            isDisabled={!canNavigateNext}
-                                          />
-                                        </>
-                                      )}
-                                      {canCreateNewRecord &&
-                                        !showNavigation && (
-                                          <Button
-                                            aria-label="Add new record set"
-                                            variant="secondary"
-                                            leftIcon={<LuCirclePlus />}
-                                            onClick={() => {
-                                              const nextIndex = activeStep + 1;
-                                              if (nextIndex >= maxRecords) {
-                                                toast.warning(
-                                                  t`Maximum number of records reached`
-                                                );
-                                                return;
-                                              }
-                                              setHasMultipleRecords(true);
-                                              setActiveStep(nextIndex);
-                                            }}
-                                            isDisabled={
-                                              activeStep + 1 >= maxRecords
-                                            }
-                                          >
-                                            <Trans>New Record</Trans>
-                                          </Button>
-                                        )}
-                                      {parentIsSerial && (
-                                        <Heading size="h2">
-                                          <Trans>
-                                            {serialIndex + 1} of{" "}
-                                            {operation.operationQuantity}
-                                          </Trans>
-                                        </Heading>
-                                      )}
-                                    </div>
+                                  const canCreateNewRecord =
+                                    !parentIsSerial && isRecordSetStarted;
 
-                                    <div className="flex flex-col justify-center items-end gap-1">
-                                      <BarProgress
-                                        label={t`Steps`}
-                                        gradient
-                                        invertGradient
-                                        progress={
-                                          (attributes.filter((a) =>
-                                            a.jobOperationStepRecord.some(
-                                              (r) => r.index === activeStep
-                                            )
-                                          ).length /
-                                            attributes.length) *
-                                          100
-                                        }
-                                      />
-                                      <span className="text-xs text-muted-foreground">
-                                        <Trans>
-                                          {
-                                            attributes.filter((a) =>
+                                  const canNavigateNext =
+                                    isRecordSetStarted &&
+                                    activeStep <
+                                      operation.operationQuantity +
+                                        operation.quantityScrapped -
+                                        1;
+
+                                  const showNavigation =
+                                    hasMultipleRecords ||
+                                    attributes.some(
+                                      (att) =>
+                                        att.jobOperationStepRecord.length > 1
+                                    );
+
+                                  return (
+                                    <div className="flex items-end justify-between gap-1 w-full px-4 pb-2 border-b">
+                                      <div className="flex items-center gap-1">
+                                        {showNavigation && !parentIsSerial && (
+                                          <>
+                                            <IconButton
+                                              aria-label="Previous record set"
+                                              variant="secondary"
+                                              icon={<LuChevronLeft />}
+                                              onClick={() => {
+                                                setActiveStep(activeStep - 1);
+                                              }}
+                                              isDisabled={activeStep === 0}
+                                            />
+                                            <span className="text-sm font-medium px-2 min-w-[60px] text-center">
+                                              <Trans>
+                                                Record {activeStep + 1}
+                                              </Trans>
+                                            </span>
+                                            <IconButton
+                                              aria-label="Next record set"
+                                              variant="secondary"
+                                              icon={<LuChevronRight />}
+                                              onClick={() => {
+                                                setActiveStep(activeStep + 1);
+                                              }}
+                                              isDisabled={!canNavigateNext}
+                                            />
+                                          </>
+                                        )}
+                                        {canCreateNewRecord &&
+                                          !showNavigation && (
+                                            <Button
+                                              aria-label="Add new record set"
+                                              variant="secondary"
+                                              leftIcon={<LuCirclePlus />}
+                                              onClick={() => {
+                                                const nextIndex =
+                                                  activeStep + 1;
+                                                if (nextIndex >= maxRecords) {
+                                                  toast.warning(
+                                                    t`Maximum number of records reached`
+                                                  );
+                                                  return;
+                                                }
+                                                setHasMultipleRecords(true);
+                                                setActiveStep(nextIndex);
+                                              }}
+                                              isDisabled={
+                                                activeStep + 1 >= maxRecords
+                                              }
+                                            >
+                                              <Trans>New Record</Trans>
+                                            </Button>
+                                          )}
+                                        {parentIsSerial && (
+                                          <Heading size="h2">
+                                            <Trans>
+                                              {serialIndex + 1} of{" "}
+                                              {operation.operationQuantity}
+                                            </Trans>
+                                          </Heading>
+                                        )}
+                                      </div>
+
+                                      <div className="flex flex-col justify-center items-end gap-1">
+                                        <BarProgress
+                                          label={t`Steps`}
+                                          gradient
+                                          invertGradient
+                                          progress={
+                                            (attributes.filter((a) =>
                                               a.jobOperationStepRecord.some(
                                                 (r) => r.index === activeStep
                                               )
-                                            ).length
-                                          }{" "}
-                                          of {attributes.length} completed
-                                        </Trans>
-                                      </span>
+                                            ).length /
+                                              attributes.length) *
+                                            100
+                                          }
+                                        />
+                                        <span className="text-xs text-muted-foreground">
+                                          <Trans>
+                                            {
+                                              attributes.filter((a) =>
+                                                a.jobOperationStepRecord.some(
+                                                  (r) => r.index === activeStep
+                                                )
+                                              ).length
+                                            }{" "}
+                                            of {attributes.length} completed
+                                          </Trans>
+                                        </span>
+                                      </div>
                                     </div>
-                                  </div>
-                                );
-                              })()}
-                            {attributes.length > 0 && (
-                              <>
-                                <div className="flex flex-col items-start justify-between w-full">
-                                  <div className="flex flex-col w-full">
-                                    <div>
-                                      {attributes
-                                        .sort(
-                                          (a, b) =>
-                                            (a.sortOrder ?? 0) -
-                                            (b.sortOrder ?? 0)
-                                        )
-                                        .map((step, index) => (
-                                          <StepsListItem
-                                            key={`step-${step.id}`}
-                                            activeStep={activeStep}
-                                            step={step}
-                                            compact={true}
-                                            onRecord={onRecordStepRecord}
-                                            onDelete={onDeleteStepRecord}
-                                            operationId={operationId}
-                                            className={
-                                              index === attributes.length - 1
-                                                ? "border-none"
-                                                : ""
-                                            }
-                                          />
-                                        ))}
-                                    </div>
-                                  </div>
-                                </div>
-                              </>
-                            )}
-                          </VStack>
-                        </TabsContent>
-                        <TabsContent
-                          value="parameters"
-                          className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
-                        >
-                          <VStack
-                            className="w-full flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-                            spacing={0}
-                          >
-                            {parameters.length > 0 && (
-                              <>
-                                <Separator />
-                                <div className="flex flex-col items-start justify-between w-full">
-                                  <div className="flex flex-col gap-4 w-full">
-                                    <div>
-                                      {parameters
-                                        .sort((a, b) =>
-                                          (a.key ?? "").localeCompare(
-                                            b.key ?? ""
+                                  );
+                                })()}
+                              {attributes.length > 0 && (
+                                <>
+                                  <div className="flex flex-col items-start justify-between w-full">
+                                    <div className="flex flex-col w-full">
+                                      <div>
+                                        {attributes
+                                          .sort(
+                                            (a, b) =>
+                                              (a.sortOrder ?? 0) -
+                                              (b.sortOrder ?? 0)
                                           )
-                                        )
-                                        .map((p, index) => (
-                                          <ParametersListItem
-                                            key={`parameter-${p.id}`}
-                                            parameter={p}
-                                            operationId={operationId}
-                                            className={
-                                              index === parameters.length - 1
-                                                ? "border-none"
-                                                : ""
-                                            }
-                                          />
-                                        ))}
+                                          .map((step, index) => (
+                                            <StepsListItem
+                                              key={`step-${step.id}`}
+                                              activeStep={activeStep}
+                                              step={step}
+                                              compact={true}
+                                              onRecord={onRecordStepRecord}
+                                              onDelete={onDeleteStepRecord}
+                                              operationId={operationId}
+                                              className={
+                                                index === attributes.length - 1
+                                                  ? "border-none"
+                                                  : ""
+                                              }
+                                            />
+                                          ))}
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              </>
-                            )}
-                          </VStack>
-                        </TabsContent>
-                      </Tabs>
-                    </ScrollArea>
-                  );
-                }}
-              </Await>
-            </Suspense>
+                                </>
+                              )}
+                            </VStack>
+                          </TabsContent>
+                          <TabsContent
+                            value="parameters"
+                            className="w-full flex-1 flex flex-col overflow-y-auto data-[state=inactive]:hidden"
+                          >
+                            <VStack
+                              className="w-full flex-1 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+                              spacing={0}
+                            >
+                              {parameters.length > 0 && (
+                                <>
+                                  <Separator />
+                                  <div className="flex flex-col items-start justify-between w-full">
+                                    <div className="flex flex-col gap-4 w-full">
+                                      <div>
+                                        {parameters
+                                          .sort((a, b) =>
+                                            (a.key ?? "").localeCompare(
+                                              b.key ?? ""
+                                            )
+                                          )
+                                          .map((p, index) => (
+                                            <ParametersListItem
+                                              key={`parameter-${p.id}`}
+                                              parameter={p}
+                                              operationId={operationId}
+                                              className={
+                                                index === parameters.length - 1
+                                                  ? "border-none"
+                                                  : ""
+                                              }
+                                            />
+                                          ))}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </>
+                              )}
+                            </VStack>
+                          </TabsContent>
+                        </Tabs>
+                      </ScrollArea>
+                    );
+                  }}
+                </Await>
+              </Suspense>
 
-            <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-              <div
-                className="prose dark:prose-invert"
-                dangerouslySetInnerHTML={{
-                  __html: generateHTML(
-                    (operation.workInstruction ?? {}) as JSONContent
-                  )
-                }}
-              />
-            </ScrollArea>
-          </div>
+              <ScrollArea className="flex-1 p-4 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+                <div
+                  className="prose dark:prose-invert"
+                  dangerouslySetInnerHTML={{
+                    __html: generateHTML(
+                      (operation.workInstruction ?? {}) as JSONContent
+                    )
+                  }}
+                />
+              </ScrollArea>
+            </div>
+          )}
         </TabsContent>
-        <TabsContent value="chat">
+        <TabsContent
+          value="chat"
+          className="[grid-area:main] mt-0 h-full min-h-0"
+        >
           <OperationChat operation={operation} />
         </TabsContent>
         {showControls && (
-          <Controls>
-            <div className="flex flex-col items-center gap-2 p-4">
-              <VStack spacing={2}>
-                <VStack spacing={1}>
-                  <span className="text-muted-foreground text-xs">
+          <Controls
+            className="[grid-area:dock]"
+            collapsed={dockCollapsed}
+            onCollapsedChange={onDockCollapsedChange}
+          >
+            <div className="flex w-full min-w-0 items-center gap-2 lg:flex-col lg:py-2">
+              <dl className="hidden w-full gap-3 rounded-lg border bg-card p-3 lg:grid lg:group-data-[collapsed=true]/dock:hidden">
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">
                     <Trans>Work Center</Trans>
-                  </span>
-                  <Suspense
-                    fallback={<Heading size="h4">...</Heading>}
-                    key={`work-center-${operationId}`}
-                  >
-                    <Await resolve={workCenter}>
-                      {(resolvedWorkCenter) =>
-                        resolvedWorkCenter.data && (
-                          <Heading size="h4" className="line-clamp-1">
-                            {resolvedWorkCenter.data?.name}
-                          </Heading>
-                        )
-                      }
-                    </Await>
-                  </Suspense>
-                </VStack>
-
-                <VStack className="hidden tall:flex" spacing={1}>
-                  <span className="text-muted-foreground text-xs">
+                  </dt>
+                  <dd>
+                    <Suspense
+                      fallback={<span className="text-sm">...</span>}
+                      key={`work-center-${operationId}`}
+                    >
+                      <Await resolve={workCenter}>
+                        {(resolvedWorkCenter) =>
+                          resolvedWorkCenter.data && (
+                            <span className="line-clamp-1 text-sm font-medium">
+                              {resolvedWorkCenter.data?.name}
+                            </span>
+                          )
+                        }
+                      </Await>
+                    </Suspense>
+                  </dd>
+                </div>
+                <div className="min-w-0">
+                  <dt className="text-xs text-muted-foreground">
                     <Trans>Item</Trans>
-                  </span>
-                  <Heading size="h4" className="line-clamp-1">
-                    {operation.itemReadableId}
-                  </Heading>
-                </VStack>
-              </VStack>
-
-              <div className="lg:hidden flex flex-col items-center gap-2 w-full">
-                <VStack spacing={1}>
-                  <span className="text-muted-foreground text-xs">
-                    <Trans>Job</Trans>
-                  </span>
-                  <HStack className="justify-start space-x-2">
-                    <LuClipboardCheck className="text-muted-foreground" />
-                    <span className="text-sm truncate">
-                      {operation.jobReadableId}
-                    </span>
-                  </HStack>
-                </VStack>
-                {job.customer?.name && (
-                  <VStack spacing={1}>
-                    <span className="text-muted-foreground text-xs">
-                      <Trans>Customer</Trans>
-                    </span>
-                    <HStack className="justify-start space-x-2">
-                      <LuSquareUser className="text-muted-foreground" />
-                      <span className="text-sm truncate">
-                        {job.customer.name}
-                      </span>
-                    </HStack>
-                  </VStack>
-                )}
-
-                {operation.description && (
-                  <VStack spacing={1}>
-                    <span className="text-muted-foreground text-xs">
-                      <Trans>Description</Trans>
-                    </span>
-                    <HStack className="justify-start space-x-2">
-                      <LuClipboardCheck className="text-muted-foreground" />
-                      <span className="text-sm truncate">
-                        {operation.description}
-                      </span>
-                    </HStack>
-                  </VStack>
-                )}
-                {operation.jobDeadlineType && (
-                  <VStack spacing={1}>
-                    <span className="text-muted-foreground text-xs">
-                      <Trans>Deadline</Trans>
-                    </span>
-                    <HStack className="justify-start space-x-2">
-                      <DeadlineIcon
-                        deadlineType={operation.jobDeadlineType}
-                        overdue={isOverdue}
-                      />
-
-                      <span
-                        className={cn(
-                          "text-sm truncate",
-                          isOverdue ? "text-red-500" : ""
-                        )}
-                      >
-                        {["ASAP", "No Deadline"].includes(
-                          operation.jobDeadlineType
-                        )
-                          ? operation.jobDeadlineType
-                          : operation.operationDueDate
-                            ? t`Due ${formatRelativeTime(
-                                convertDateStringToIsoString(
-                                  operation.operationDueDate
-                                )
-                              )}`
-                            : "–"}
-                      </span>
-                    </HStack>
-                  </VStack>
-                )}
-              </div>
+                  </dt>
+                  <dd className="line-clamp-1 text-sm font-medium">
+                    {scope === "batch" && batchFacts
+                      ? batchFacts.items.length === 1
+                        ? batchFacts.items[0]
+                        : t`${batchFacts.items.length} items`
+                      : operation.itemReadableId}
+                  </dd>
+                </div>
+              </dl>
 
               <WorkTypeToggle
                 active={active}
                 operation={displayOperation}
                 value={eventType}
                 onChange={setEventType}
+                className="min-w-0 flex-1 lg:flex-none"
               />
 
               <StartStopButton
@@ -2586,7 +2933,30 @@ export const JobOperation = ({
                 trackedEntityId={trackedEntityId}
                 batchId={batch?.id}
               />
-              <div className="flex flex-row lg:flex-col items-center gap-2 justify-center">
+              {/* What the big button will do, or what is running — the dock
+                  only; the rail and the phone bar stay icon-sized. */}
+              <div className="hidden flex-col items-center gap-0.5 text-center lg:flex lg:group-data-[collapsed=true]/dock:hidden">
+                {runningType ? (
+                  <>
+                    <span className="flex items-center gap-1.5 text-xs font-medium text-emerald-600 dark:text-emerald-400">
+                      <span className="size-2 animate-pulse rounded-full bg-emerald-500" />
+                      {workTypeLabels[runningType]}
+                    </span>
+                    <span className="font-mono text-lg tabular-nums">
+                      {formatDurationMilliseconds(progress[runningType], {
+                        style: "short"
+                      })}
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-sm text-muted-foreground">
+                    {t`Start ${workTypeLabels[
+                      eventType.toLowerCase() as keyof typeof workTypeLabels
+                    ].toLowerCase()}`}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-row lg:hidden lg:group-data-[collapsed=true]/dock:flex lg:flex-col items-center gap-2 justify-center">
                 <IconButtonWithTooltip
                   disabled={
                     !isBatched &&
@@ -2618,157 +2988,129 @@ export const JobOperation = ({
                   onClick={actionsSheet.onOpen}
                 />
               </div>
+              <div className="hidden w-full flex-col gap-2 lg:flex lg:group-data-[collapsed=true]/dock:hidden">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full"
+                  leftIcon={isBatched ? <LuPackageCheck /> : <FaPlus />}
+                  isDisabled={
+                    !isBatched &&
+                    parentIsSerial &&
+                    trackedEntities.some(
+                      (entity) =>
+                        entity.id === trackedEntityId &&
+                        `Operation ${operationId}` in
+                          (entity.attributes as TrackedEntityAttributes)
+                    )
+                  }
+                  onClick={
+                    isBatched ? batchCompleteModal.onOpen : completeModal.onOpen
+                  }
+                >
+                  {isBatched ? (
+                    <Trans>Complete batch</Trans>
+                  ) : (
+                    <Trans>Log completed</Trans>
+                  )}
+                </Button>
+                <Button
+                  size="lg"
+                  variant="ghost"
+                  className="w-full"
+                  leftIcon={<LuEllipsisVertical />}
+                  onClick={actionsSheet.onOpen}
+                >
+                  <Trans>More actions</Trans>
+                </Button>
+              </div>
             </div>
           </Controls>
         )}
         {!["chat"].includes(activeTab) && (
-          <Times>
-            <div className=" lg:p-6">
-              <div className="w-full gap-2 grid grid-cols-[auto_auto_1fr]">
-                {displayOperation.setupDuration > 0 && (
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuTimer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <Trans>Setup</Trans>
-                      </TooltipContent>
-                    </Tooltip>
-                    <span className="text-xs text-muted-foreground font-mono flex-shrink-0 flex-nowrap">
-                      {formatDurationMilliseconds(progress.setup, {
-                        style: "short"
-                      })}
-                      /
-                      {formatDurationMilliseconds(
-                        displayOperation.setupDuration,
-                        {
-                          style: "short"
-                        }
-                      )}
-                    </span>
+          <Times className="[grid-area:status]">
+            {/* Labelled meters: two per row on a phone, then as many columns
+                as fit (four across a desktop). */}
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:gap-x-6 sm:grid-cols-[repeat(auto-fit,minmax(180px,1fr))]">
+              {(
+                [
+                  {
+                    type: "setup",
+                    label: t`Setup`,
+                    elapsed: progress.setup,
+                    planned: displayOperation.setupDuration
+                  },
+                  {
+                    type: "labor",
+                    label: t`Labor`,
+                    elapsed: progress.labor,
+                    planned: displayOperation.laborDuration
+                  },
+                  {
+                    type: "machine",
+                    label: t`Machine`,
+                    elapsed: progress.machine,
+                    planned: displayOperation.machineDuration
+                  }
+                ] as const
+              )
+                .filter((meter) => meter.planned > 0)
+                .map((meter) => {
+                  // A batch with no planned time anywhere carries a 1ms
+                  // placeholder plan (so ratios never divide by zero). That is
+                  // not a plan: show elapsed time alone over an empty track.
+                  const hasPlan = meter.planned > 1;
+                  const elapsed = formatDurationMilliseconds(meter.elapsed, {
+                    style: "short"
+                  });
+                  return (
                     <BarProgress
+                      key={meter.type}
+                      label={meter.label}
+                      value={
+                        hasPlan
+                          ? `${elapsed} / ${formatDurationMilliseconds(
+                              meter.planned,
+                              { style: "short" }
+                            )}`
+                          : elapsed
+                      }
                       gradient
                       invertGradient
                       progress={
-                        (progress.setup / displayOperation.setupDuration) * 100
+                        hasPlan ? (meter.elapsed / meter.planned) * 100 : 0
                       }
                       activeClassName={
-                        progress.setup > displayOperation.setupDuration
+                        meter.elapsed > meter.planned
                           ? "bg-red-500"
                           : "bg-emerald-500"
                       }
                     />
-                  </>
-                )}
-                {displayOperation.laborDuration > 0 && (
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHardHat className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <Trans>Labor</Trans>
-                      </TooltipContent>
-                    </Tooltip>
-                    <span className="text-xs text-muted-foreground font-mono flex-shrink-0 flex-nowrap">
-                      {formatDurationMilliseconds(progress.labor, {
-                        style: "short"
-                      })}
-                      /
-                      {formatDurationMilliseconds(
-                        displayOperation.laborDuration,
-                        {
-                          style: "short"
-                        }
-                      )}
-                    </span>
-                    <BarProgress
-                      gradient
-                      invertGradient
-                      progress={
-                        (progress.labor / displayOperation.laborDuration) * 100
-                      }
-                      activeClassName={
-                        progress.labor > displayOperation.laborDuration
-                          ? "bg-red-500"
-                          : "bg-emerald-500"
-                      }
-                    />
-                  </>
-                )}
-                {displayOperation.machineDuration > 0 && (
-                  <>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <LuHammer className="h-4 w-4 mr-1" />
-                      </TooltipTrigger>
-                      <TooltipContent side="right">
-                        <Trans>Machine</Trans>
-                      </TooltipContent>
-                    </Tooltip>
-                    <span className="text-xs text-muted-foreground font-mono flex-shrink-0 flex-nowrap">
-                      {formatDurationMilliseconds(progress.machine, {
-                        style: "short"
-                      })}
-                      /
-                      {formatDurationMilliseconds(
-                        displayOperation.machineDuration,
-                        {
-                          style: "short"
-                        }
-                      )}
-                    </span>
-                    <BarProgress
-                      gradient
-                      invertGradient
-                      progress={
-                        (progress.machine / displayOperation.machineDuration) *
-                        100
-                      }
-                      activeClassName={
-                        progress.machine > displayOperation.machineDuration
-                          ? "bg-red-500"
-                          : "bg-emerald-500"
-                      }
-                    />
-                  </>
-                )}
-                <>
-                  <Tooltip>
-                    <TooltipTrigger>
-                      <FaTasks className="h-4 w-4 mr-1" />
-                    </TooltipTrigger>
-                    <TooltipContent side="right">
-                      <Trans>Quantity</Trans>
-                    </TooltipContent>
-                  </Tooltip>
-                  <span className="text-xs text-muted-foreground font-mono flex-shrink-0 flex-nowrap min-w-[100px]">
-                    {operation.quantityComplete}/{operation.targetQuantity}
-                  </span>
-                  <BarProgress
-                    segments={[
-                      {
-                        value: operation.quantityComplete,
-                        className: "bg-emerald-500"
-                      },
-                      {
-                        value: operation.quantityReworked ?? 0,
-                        className: "bg-yellow-500"
-                      },
-                      {
-                        value: operation.quantityScrapped ?? 0,
-                        className: "bg-red-500"
-                      }
-                    ]}
-                    max={operation.targetQuantity || 1}
-                    progress={
-                      (operation.quantityComplete / operation.targetQuantity) *
-                      100
-                    }
-                  />
-                </>
-              </div>
+                  );
+                })}
+              <BarProgress
+                label={isBatched ? t`Batch quantity` : t`Quantity`}
+                value={`${quantityProgress.complete} / ${quantityProgress.target}`}
+                segments={[
+                  {
+                    value: quantityProgress.complete,
+                    className: "bg-emerald-500"
+                  },
+                  {
+                    value: quantityProgress.reworked,
+                    className: "bg-yellow-500"
+                  },
+                  {
+                    value: quantityProgress.scrapped,
+                    className: "bg-red-500"
+                  }
+                ]}
+                max={quantityProgress.target || 1}
+                progress={
+                  (quantityProgress.complete / (quantityProgress.target || 1)) *
+                  100
+                }
+              />
             </div>
           </Times>
         )}
@@ -2962,6 +3304,7 @@ export const JobOperation = ({
         <BatchCompleteModal
           batch={batch}
           isCompleting={isCompleting}
+          fetcher={batchCompleteFetcher}
           onClose={batchCompleteModal.onClose}
         />
       )}

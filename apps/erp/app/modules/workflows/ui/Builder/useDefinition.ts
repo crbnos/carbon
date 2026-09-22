@@ -5,13 +5,13 @@ import type {
   ValueType,
   WorkflowCatalog,
   WorkflowDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   availableVariables,
   batchPlan,
   createContext,
   variablesFromHandle
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { useCallback, useMemo } from "react";
 import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStoreApi, useBuilderStoreShallow } from "./context";

@@ -160,6 +160,24 @@ shared record builder is `functions/shared/batch-split.ts` (`buildBatchSplitReco
 `quality-disposition.subdivideBatchEntity`. Serial paths never split. Exception: the
 PO-sourced `post-shipment` split posts no `itemLedger` (matches pre-flip behavior).
 
+**Lot merge (the deliberate inverse; spec `.ai/specs/2026-09-16-batch-materials-and-output-lots.md`):**
+`issue` case `mergeTrackedEntities` combines N **same-item, Available** entities into ONE
+new entity via `buildBatchMergeRecords` (`functions/shared/batch-merge.ts`, the mirror of
+`buildBatchSplitRecords`). Parents keep their quantity as a historical record and flip
+`Consumed`; the merged entity gets a fresh id, the SUMMED quantity, the **earliest** parent
+`expirationDate`, and only those `attributes` every parent agrees on, plus
+`"Merged From Entity IDs"` provenance. It inherits the FIRST parent's `readableId` when the
+caller supplies none — an `Available` lot with a NULL batch number is unidentifiable on the
+floor (the split child inherits `parent.readableId` for the same reason), so callers that
+care about which number wins must pass the parents in their intended order. Genealogy is one
+`trackedActivity` `type: 'Merge'` with an input edge per parent (at its quantity) and one
+output edge for the merged entity; the ledger gets net-zero `Batch Merge` rows (−q at each
+parent's `resolveTrackedEntityBin`, +Σq at the first parent's). Distinct from
+`buildMergeRecords` in `batch-split.ts`, which is the **merge-on-return** of a split child
+back into its own parent — same activity type, different operation. Reached from the MES
+batch-completion prompt and the ERP batch drawer's "Merge output lots"; both derive the
+parent ids server-side from the batch's membership (see `mes-job-operation-ui.md`).
+
 **Pick → consume → return lifecycle (batch/serial):** a **pick** (`post-picking`) is an
 `itemLedger` Transfer warehouse→lineside (the departing lineside lot is the split CHILD, and
 `pickingListLineTrackedEntity` records the CHILD id); **consumption** (`issue`

@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString, downloadBlob } from "@carbon/files";
+import { convertKbToString, downloadBlob, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Card,
@@ -86,19 +86,23 @@ const useJobDocuments = ({
   const deleteFile = useCallback(
     async (file: FileObject & { bucket?: string }) => {
       const bucket = file.bucket === "parts" ? "parts" : "job";
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file, bucket as "job" | "parts")]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator, t]
+    [getPath, carbon, company.id, revalidator, t]
   );
 
   const deleteModel = useCallback(async () => {
@@ -232,8 +236,8 @@ const useJobDocuments = ({
       try {
         // Download the file first
         const sourcePath = getPath(file, currentBucket);
-        const { data: downloadData } = await carbon.storage
-          .from("private")
+        const { data: downloadData } = await storage(carbon)
+          .company(company.id)
           .download(sourcePath);
 
         if (!downloadData) {
@@ -243,8 +247,8 @@ const useJobDocuments = ({
 
         // Upload to new location
         const targetPath = getPath(file, targetBucket);
-        const { error: uploadError } = await carbon.storage
-          .from("private")
+        const { error: uploadError } = await storage(carbon)
+          .company(company.id)
           .upload(targetPath, downloadData, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -256,8 +260,8 @@ const useJobDocuments = ({
         }
 
         // Delete from old location
-        const { error: deleteError } = await carbon.storage
-          .from("private")
+        const { error: deleteError } = await storage(carbon)
+          .company(company.id)
           .remove([sourcePath]);
 
         if (deleteError) {
@@ -276,7 +280,7 @@ const useJobDocuments = ({
         logger.error("Failed to process file operation", { error });
       }
     },
-    [carbon, itemId, getPath, revalidator, t]
+    [carbon, itemId, getPath, revalidator, t, company.id]
   );
 
   return {

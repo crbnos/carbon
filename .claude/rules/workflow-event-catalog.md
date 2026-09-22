@@ -1,7 +1,7 @@
 ---
 description: The workflow catalog — four hand-written inputs generate one committed catalog of every trigger, action and operation a customer can pick; never hand-edit the generated files, and every declared moment must be raised somewhere or the build fails.
 paths:
-  - "packages/workflows/src/catalog/**"
+  - "packages/ee/src/workflows/catalog/**"
   - "packages/lib/src/workflows/**"
   - "scripts/generate-workflow-catalog.ts"
   - "scripts/check-workflow-catalog.ts"
@@ -16,20 +16,20 @@ customer-facing feature (a "when this happens, do that" rule built on a canvas) 
 `nonConformanceWorkflow`.
 
 Spec: `.ai/specs/2026-07-30-workflows-event-catalog.md`. Package guide:
-`packages/workflows/AGENTS.md`.
+`packages/ee/src/workflows/AGENTS.md`.
 
 ## Four hand-written inputs, three generated files
 
 ```
-packages/workflows/src/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
-packages/workflows/src/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
-packages/workflows/src/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
-packages/workflows/src/catalog/operations.ts HAND-WRITTEN  read-only computations
+packages/ee/src/workflows/catalog/entities.ts   HAND-WRITTEN  record types + watched columns + write allowlist
+packages/ee/src/workflows/catalog/moments.ts    HAND-WRITTEN  business events + labels + outputs
+packages/ee/src/workflows/catalog/actions.ts    HAND-WRITTEN  the actions with no generic form
+packages/ee/src/workflows/catalog/operations.ts HAND-WRITTEN  read-only computations
                     │
                     ▼  scripts/generate-workflow-catalog.ts  (buildCatalog, pure)
-packages/workflows/src/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
-packages/workflows/src/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
-packages/workflows/src/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
+packages/ee/src/workflows/catalog/events.generated.ts   COMMITTED  ids, outputs, permission, match
+packages/ee/src/workflows/catalog/actions.generated.ts  COMMITTED  action + operation catalogs
+packages/ee/src/workflows/catalog/labels.generated.ts   COMMITTED  one msg`` per event, action and operation id
 ```
 
 Today: 10 triggerable entities with 77 watched columns → 97 record events, plus 9 moments
@@ -75,7 +75,7 @@ A `.changed` event hands out `record`, `before` and `after`; `created`/`deleted`
 `packages/database/src/swagger-docs-schema.ts` as an **argument**. That file is already generated and committed and — unlike `types.ts` — is
 a runtime *value* carrying every column's type, enum values and foreign-key target, so no
 TypeScript-compiler-API parsing is needed. Injecting it keeps `@carbon/database` out of
-`@carbon/workflows`' runtime graph (it is a **devDependency, types only**) and lets the
+`@carbon/ee/workflows`' runtime graph (it is a **devDependency, types only**) and lets the
 transform be unit-tested in `build.test.ts`.
 
 Entity properties are generated from the table's own columns, minus `companyId`,
@@ -112,7 +112,7 @@ Update a/an {entity}                 the generated <entity>.update action
 
 Moment, action and operation labels are hand-written and mandatory (an empty one is a
 build failure from `validateCatalogInputs`).
-`packages/workflows/src` is in `lingui.config.js`'s `erp` catalog `include` and in
+`packages/ee/src/workflows` is in `lingui.config.js`'s `erp` catalog `include` and in
 `//#lingui:compile`'s `inputs` in `turbo.json`. After regenerating, run
 `pnpm run lingui:extract && pnpm run lingui:clean` — the clean step strips the origin
 references that otherwise churn every `.po` file.

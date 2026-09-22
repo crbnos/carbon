@@ -3,7 +3,7 @@ import type {
   NotificationDestination,
   NotificationEvent
 } from "@carbon/notifications";
-import type { RunTrigger } from "@carbon/workflows";
+import type { RunTrigger } from "@carbon/workflows-core";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
@@ -645,6 +645,17 @@ export type Events = {
         operation?: "create" | "update" | "delete" | "sync";
       }>;
       metadata?: Record<string, unknown>;
+    };
+  };
+
+  // Ramp inbound sync — drain every ready-to-sync Ramp accounting family for
+  // one company into Carbon card transactions (+ bills/reimbursements/etc. in
+  // later tasks). Fired per company by the hourly ramp-sweep, the install hook,
+  // and the Ramp webhook route.
+  "carbon/ramp-sync": {
+    data: {
+      companyId: string;
+      reason?: string;
     };
   };
 

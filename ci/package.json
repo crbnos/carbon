@@ -15,7 +15,7 @@
     "ci:assembler": "tsx src/assembler.ts",
     "ci:jobs": "tsx src/jobs.ts",
     "ci:upload-backup-templates": "tsx src/upload-backup-templates.ts",
-    "test": "echo \"no tests\""
+    "test": "tsx --test src/*.test.ts"
   },
   "devDependencies": {
     "sst": "catalog:"

@@ -20,6 +20,7 @@ export const dimensions = [
   { name: "Supplier", entityType: "Supplier" },
   { name: "Item", entityType: "Item" },
   { name: "Scrap Reason", entityType: "ScrapReason" },
+  { name: "Project", entityType: "Project" },
 ] as const;
 
 export const supplierStatuses = [
@@ -494,6 +495,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "cardTransaction",
+    name: "Card Transaction",
+    prefix: "CARD-%{yyyy}-%{mm}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     // Credit/debit memos are payment-shaped `memo` documents with their own
     // numbering; the insert path picks the sequence by direction. Mirrors the
     // backfill in 20260628143012_ar-ap-payments.sql.
@@ -906,7 +916,7 @@ export const fiscalYearSettings = {
  * Default period-close checklist (NetSuite-style). Seeded per company as system
  * task definitions; getPeriodCloseChecklist instantiates a periodCloseTask per
  * period from the active definitions. `autoCheckKey` binds Auto tasks to a
- * readiness evaluator in accounting.ee.service.ts (computePeriodReadiness).
+ * readiness evaluator in accounting.service.ts (computePeriodReadiness).
  */
 export const periodCloseTaskDefinitions = [
   {

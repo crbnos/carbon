@@ -8,7 +8,7 @@ import {
   type SearchOutcome,
   type WorkflowCatalog,
   type WorkflowServices
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { runCreateAction } from "./create";
 import { getWorkflowDispatch } from "./dispatcher";

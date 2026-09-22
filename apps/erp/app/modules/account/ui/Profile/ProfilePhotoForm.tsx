@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
@@ -37,7 +38,7 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
 
       try {
         const processed = await prepareImageUpload(carbon, {
-          bucket: "private",
+          bucket: getCompanyPrivateBucket(company.id),
           directory: `${company.id}/tmp`,
           file: avatarFile
         });
