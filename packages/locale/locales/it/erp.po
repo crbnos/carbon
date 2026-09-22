@@ -63,17 +63,17 @@ msgstr "{0, plural, one {Questo articolo è in 1 avviso di modifica aperto} othe
 #. placeholder {0}: forecast.zeroStandardOperationCount
 #. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
 msgid "{0} {1} no time standards"
-msgstr ""
+msgstr "{0} {1} senza standard di tempo"
 
 #. placeholder {0}: target.slackDays
 #. placeholder {1}: target.slackDays === 1 ? "day" : "days"
 msgid "{0} {1} of slack"
-msgstr ""
+msgstr "{0} {1} di margine"
 
 #. placeholder {0}: -target.slackDays
 #. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
 msgid "{0} {1} short"
-msgstr ""
+msgstr "{0} {1} insufficienti"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -302,7 +302,7 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 
 #. placeholder {0}: days === 1 ? "day" : "days"
 msgid "{days} {0}"
-msgstr ""
+msgstr "{days} {0}"
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -2026,7 +2026,7 @@ msgid "Apply To"
 msgstr "Applica a"
 
 msgid "Apply to all quantities"
-msgstr ""
+msgstr "Applica a tutte le quantità"
 
 msgid "Apply to invoice"
 msgstr "Applica alla fattura"
@@ -3017,7 +3017,7 @@ msgid "Best case…"
 msgstr "Caso migliore…"
 
 msgid "Best-case finish"
-msgstr ""
+msgstr "Completamento nel caso migliore"
 
 msgid "Beta"
 msgstr "Beta"
@@ -4499,7 +4499,7 @@ msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Impossibile dissolvere {0}: {1} — produzione già registrata"
 
 msgid "Could not predict lead time"
-msgstr ""
+msgstr "Impossibile prevedere il lead time"
 
 msgid "Could not prepare region image for analysis"
 msgstr "Impossibile preparare l'immagine della regione per l'analisi"
@@ -6836,7 +6836,7 @@ msgid "End of Last Quarter"
 msgstr "Fine dell'ultimo trimestre"
 
 msgid "End of queue"
-msgstr ""
+msgstr "Fine della coda"
 
 msgid "End Time"
 msgstr "Ora di fine"
@@ -7658,7 +7658,7 @@ msgid "Failed to update item cost"
 msgstr "Impossibile aggiornare il costo dell'articolo"
 
 msgid "Failed to update lead times"
-msgstr ""
+msgstr "Impossibile aggiornare i lead time"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Impossibile aggiornare l'opportunità con l'ordine di acquisto"
@@ -10676,7 +10676,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "Richiede un piano Business o Partner."
 
 msgid "Needs expedite"
-msgstr ""
+msgstr "Richiede urgenza"
 
 msgid "Needs fixing"
 msgstr "Necessita correzione"
@@ -11656,7 +11656,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "Non ci sono abbastanza ordini di produzione per coprire la quantità"
 
 msgid "Not feasible"
-msgstr ""
+msgstr "Non fattibile"
 
 msgid "Not reached"
 msgstr "Non raggiunto"
@@ -11844,7 +11844,7 @@ msgid "On this operation"
 msgstr "Su questa operazione"
 
 msgid "On time"
-msgstr ""
+msgstr "Puntuale"
 
 msgid "On-account credit available"
 msgstr "Credito a conto disponibile"
@@ -11882,7 +11882,7 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "Un'esecuzione di un flusso di lavoro, registrata passo dopo passo con i valori che ogni passo ha utilizzato e prodotto, agendo con le autorizzazioni del proprietario del flusso di lavoro."
 
 msgid "One or more quantities cannot meet this date"
-msgstr ""
+msgstr "Una o più quantità non possono rispettare questa data"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Un'unità seriale o un lotto che Carbon segue individualmente, portando il suo stato e gli attributi propri come una data di scadenza."
@@ -12693,7 +12693,7 @@ msgid "Pick a record type…"
 msgstr "Scegli un tipo di record…"
 
 msgid "Pick a target date to compare."
-msgstr ""
+msgstr "Seleziona una data di destinazione da confrontare."
 
 msgid "Pick a value from an earlier step"
 msgstr "Scegli un valore da un passaggio precedente"
@@ -12956,10 +12956,10 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-compilato per un nuovo articolo quando la scadenza è Durata Fissa."
 
 msgid "Predict lead time"
-msgstr ""
+msgstr "Prevedi il lead time"
 
 msgid "Predicting lead time…"
-msgstr ""
+msgstr "Previsione del lead time…"
 
 msgid "Preferred Supplier"
 msgstr "Fornitore preferenziale"
@@ -13641,7 +13641,7 @@ msgid "Queued"
 msgstr "In coda"
 
 msgid "Queued finish"
-msgstr ""
+msgstr "Completamento in coda"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Tranquillo in officina stasera, {name}."
@@ -15128,7 +15128,7 @@ msgid "Scheduled"
 msgstr "Programmato"
 
 msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
-msgstr ""
+msgstr "Programmato rispetto al carico di lavoro attuale della tua officina. Nulla viene salvato finché non applichi."
 
 msgid "Scheduled Maintenance"
 msgstr "Manutenzione Programmata"
@@ -16928,7 +16928,7 @@ msgid "Target customers by type."
 msgstr "Indirizzare clienti per tipo."
 
 msgid "Target date"
-msgstr ""
+msgstr "Data di destinazione"
 
 msgid "Target disposition row"
 msgstr "Riga di disposizione di destinazione"
@@ -18072,7 +18072,7 @@ msgid "This job's own required quantity for the material."
 msgstr "La quantità richiesta da questo lavoro per il materiale."
 
 msgid "This line has no routing to schedule."
-msgstr ""
+msgstr "Questa riga non ha un ciclo di lavorazione da programmare."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Questa ubicazione pianifica solo centri di lavoro con personale assegnato, ma questa è una stazione di lights-out (24×7) — è esente e continua a funzionare senza supervisione."
@@ -19232,7 +19232,7 @@ msgid "Vendor Write-Off Income"
 msgstr "Proventi da Stralcio"
 
 msgid "Verdict"
-msgstr ""
+msgstr "Verdetto"
 
 msgid "Verification Error"
 msgstr "Errore di verifica"

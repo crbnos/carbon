@@ -40,6 +40,7 @@ Single subpath `@carbon/planning` (`./src/index.ts`):
 |--------|----------|
 | `runMrp(client, db, payload)` | Material Requirements Planning (`src/mrp/mrp.ts`; formerly the `mrp` edge function) |
 | `runLocationSchedule` / `runExpediteWhatIf` | Finite scheduling — regenerate a whole location, or a simulate-only expedite what-if (`src/scheduling/run-schedule.ts`) |
+| `runQuoteLeadTimeWhatIf(params)` | Capable-to-promise for a quote line — drives the pure `WorkCenterSelector` with synthetic ops (queued vs front-of-queue contexts) per quantity, returns `QuoteLeadTimeForecast`; persists nothing (`src/scheduling/quote-lead-time.ts`) |
 | `resolveLocationWindows` / `resolveWorkCenterWindows` / `subtractIntervals` | Machine/work-center availability window resolvers (`src/scheduling/`) |
 | types (`LadderShiftRow`, `MrpPayload`, `MrpResult`, `LocationScheduleResult`, `ExpediteWhatIfResult`, `NewlyLateJob`, …) | Engine type surface |
 

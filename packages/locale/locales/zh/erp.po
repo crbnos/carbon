@@ -63,17 +63,17 @@ msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料
 #. placeholder {0}: forecast.zeroStandardOperationCount
 #. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
 msgid "{0} {1} no time standards"
-msgstr ""
+msgstr "{0} {1} 没有时间标准"
 
 #. placeholder {0}: target.slackDays
 #. placeholder {1}: target.slackDays === 1 ? "day" : "days"
 msgid "{0} {1} of slack"
-msgstr ""
+msgstr "{0} {1} 的余量"
 
 #. placeholder {0}: -target.slackDays
 #. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
 msgid "{0} {1} short"
-msgstr ""
+msgstr "{0} {1} 不足"
 
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
@@ -302,7 +302,7 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
 #. placeholder {0}: days === 1 ? "day" : "days"
 msgid "{days} {0}"
-msgstr ""
+msgstr "{days} {0}"
 
 msgid "{days}d"
 msgstr "{days}天"
@@ -2026,7 +2026,7 @@ msgid "Apply To"
 msgstr "应用于"
 
 msgid "Apply to all quantities"
-msgstr ""
+msgstr "应用到所有数量"
 
 msgid "Apply to invoice"
 msgstr "应用到发票"
@@ -3017,7 +3017,7 @@ msgid "Best case…"
 msgstr "最佳情况…"
 
 msgid "Best-case finish"
-msgstr ""
+msgstr "最快完成"
 
 msgid "Beta"
 msgstr "测试版"
@@ -4499,7 +4499,7 @@ msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "无法解散 {0}: {1} — 生产已记录"
 
 msgid "Could not predict lead time"
-msgstr ""
+msgstr "无法预测提前期"
 
 msgid "Could not prepare region image for analysis"
 msgstr "无法准备区域图像以进行分析"
@@ -6836,7 +6836,7 @@ msgid "End of Last Quarter"
 msgstr "上一季度末"
 
 msgid "End of queue"
-msgstr ""
+msgstr "队列末尾"
 
 msgid "End Time"
 msgstr "结束时间"
@@ -7658,7 +7658,7 @@ msgid "Failed to update item cost"
 msgstr "更新项目成本失败"
 
 msgid "Failed to update lead times"
-msgstr ""
+msgstr "无法更新提前期"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "未能使用采购订单更新商机"
@@ -10676,7 +10676,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
 
 msgid "Needs expedite"
-msgstr ""
+msgstr "需要加急"
 
 msgid "Needs fixing"
 msgstr "需要修复"
@@ -11656,7 +11656,7 @@ msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
 msgid "Not feasible"
-msgstr ""
+msgstr "不可行"
 
 msgid "Not reached"
 msgstr "未到达"
@@ -11844,7 +11844,7 @@ msgid "On this operation"
 msgstr "在此工序上"
 
 msgid "On time"
-msgstr ""
+msgstr "准时"
 
 msgid "On-account credit available"
 msgstr "可用账户贷方"
@@ -11882,7 +11882,7 @@ msgid "One firing of a workflow, recorded step by step with the values each step
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
 
 msgid "One or more quantities cannot meet this date"
-msgstr ""
+msgstr "一个或多个数量无法满足此日期"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己的状态和属性，例如有效期。"
@@ -12693,7 +12693,7 @@ msgid "Pick a record type…"
 msgstr "选择记录类型…"
 
 msgid "Pick a target date to compare."
-msgstr ""
+msgstr "选择一个目标日期进行比较。"
 
 msgid "Pick a value from an earlier step"
 msgstr "从早期步骤选择一个值"
@@ -12956,10 +12956,10 @@ msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当有效期为固定期间时，为新物料预填充。"
 
 msgid "Predict lead time"
-msgstr ""
+msgstr "预测提前期"
 
 msgid "Predicting lead time…"
-msgstr ""
+msgstr "正在预测提前期…"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -13641,7 +13641,7 @@ msgid "Queued"
 msgstr "排队中"
 
 msgid "Queued finish"
-msgstr ""
+msgstr "排队中的完成"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今晚车间很安静，{name}。"
@@ -15128,7 +15128,7 @@ msgid "Scheduled"
 msgstr "已计划"
 
 msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
-msgstr ""
+msgstr "根据您车间当前工作负荷进行排程。在您应用前，不会保存任何内容。"
 
 msgid "Scheduled Maintenance"
 msgstr "定期维护"
@@ -16928,7 +16928,7 @@ msgid "Target customers by type."
 msgstr "按类型定位客户。"
 
 msgid "Target date"
-msgstr ""
+msgstr "目标日期"
 
 msgid "Target disposition row"
 msgstr "目标处置行"
@@ -18072,7 +18072,7 @@ msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
 
 msgid "This line has no routing to schedule."
-msgstr ""
+msgstr "此行没有要排程的工艺路线。"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "此地点仅排程有人值守的工作中心，但这是一个无人值守工作站（24×7）— 它被豁免并保持无人运行。"
@@ -19232,7 +19232,7 @@ msgid "Vendor Write-Off Income"
 msgstr "供应商核销收益"
 
 msgid "Verdict"
-msgstr ""
+msgstr "结果"
 
 msgid "Verification Error"
 msgstr "验证错误"
