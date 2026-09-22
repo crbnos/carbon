@@ -54,9 +54,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   if (rpc.error) {
+    // complete_job_to_inventory refuses completions it cannot satisfy (serials
+    // outstanding, quantity below what was received). Those are validation
+    // failures, and its message is the only thing that says what to do next.
     throw redirect(
       requestReferrer(request) ?? path.to.job(jobId),
-      await flash(request, error(rpc.error, "Failed to complete job"))
+      await flash(
+        request,
+        error(rpc.error, rpc.error.message || "Failed to complete job")
+      )
     );
   }
 
