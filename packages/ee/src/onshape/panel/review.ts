@@ -198,69 +198,119 @@ export type ReleaseApplyBody = {
   makeDefault: boolean;
 };
 
-function pickEdits(
+/** A create keeps its whole edit; an existing item keeps only what it may change. */
+function scopeEdit(
+  edit: ItemEdit | undefined,
+  isCreate: boolean
+): ItemEdit | undefined {
+  if (!edit) return undefined;
+  if (isCreate) return edit;
+  // An existing item's name, description, unit and custom fields are
+  // Onshape-owned or create-only; keep only the three manufacturing fields so
+  // a push can never carry the rest, whatever the editor put in the edit map.
+  const out: ItemEdit = {};
+  if (edit.replenishmentSystem !== undefined) {
+    out.replenishmentSystem = edit.replenishmentSystem;
+  }
+  if (edit.defaultMethodType !== undefined) {
+    out.defaultMethodType = edit.defaultMethodType;
+  }
+  if (edit.itemTrackingType !== undefined) {
+    out.itemTrackingType = edit.itemTrackingType;
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/**
+ * Collect the edits to send, keyed as the plan is. Each entry says whether the
+ * row is a create; existing rows are scoped to their manufacturing fields.
+ */
+function collectEdits(
   edits: Record<string, ItemEdit>,
-  keys: Iterable<string>
+  entries: Array<{ key: string; isCreate: boolean }>
 ): Record<string, ItemEdit> {
   const out: Record<string, ItemEdit> = {};
-  for (const key of keys) {
-    const edit = edits[key];
-    if (edit) out[key] = edit;
+  for (const { key, isCreate } of entries) {
+    const scoped = scopeEdit(edits[key], isCreate);
+    if (scoped) out[key] = scoped;
   }
   return out;
 }
 
 /**
- * The apply request for a review. Edits travel only for rows the server will
- * merge — selected or included creates — so a row the user edited and then
- * deselected sends nothing, and a reuse row can never carry an edit.
+ * The apply request for a review. A create carries its whole edit (name,
+ * description, unit, custom fields and the three manufacturing fields); an
+ * existing item carries only the three manufacturing fields — its name and
+ * description stay Onshape-owned. A row the user edited then deselected or
+ * excluded sends nothing, and the server recomputes what actually changed, so
+ * an edit that matches the current value writes nothing.
  */
 export function applyRequestBody(
   review: ReviewState
 ): PartApplyBody | AssemblyApplyBody | ReleaseApplyBody {
   switch (review.kind) {
     case "part": {
-      const selected = review.plan.rows
-        .filter((row) => review.selected.has(row.partId))
-        .map((row) => row.partId);
-      const createKeys = review.plan.rows
-        .filter(
-          (row) => row.action === "create" && review.selected.has(row.partId)
-        )
-        .map((row) => row.partId);
+      const selectedRows = review.plan.rows.filter(
+        (row) =>
+          review.selected.has(row.partId) &&
+          row.action !== "skip-no-part-number"
+      );
       return {
         planId: review.planId,
-        selected,
-        edits: pickEdits(review.edits, createKeys)
+        selected: selectedRows.map((row) => row.partId),
+        edits: collectEdits(
+          review.edits,
+          selectedRows.map((row) => ({
+            key: row.partId,
+            isCreate: row.action === "create"
+          }))
+        )
       };
     }
     case "assembly": {
-      const keys: string[] = [];
-      if (review.plan.root.action === "create") {
-        keys.push(review.plan.root.partNumber);
-      }
-      for (const item of review.plan.items) {
-        if (item.action === "create" && !review.excluded.has(item.partNumber)) {
-          keys.push(item.partNumber);
-        }
-      }
+      const entries = [
+        {
+          key: review.plan.root.partNumber,
+          isCreate: review.plan.root.action === "create"
+        },
+        ...review.plan.items
+          .filter((item) => !review.excluded.has(item.partNumber))
+          .map((item) => ({
+            key: item.partNumber,
+            isCreate: item.action === "create"
+          }))
+      ];
       return {
         planId: review.planId,
-        edits: pickEdits(review.edits, keys),
+        edits: collectEdits(review.edits, entries),
         excluded: [...review.excluded]
       };
     }
     case "release": {
-      const keys: string[] = [];
-      for (const item of review.plan.items) {
-        if (item.action === "create") keys.push(item.partNumber);
-      }
-      for (const child of review.plan.children) {
-        if (child.action === "create") keys.push(child.partNumber);
-      }
+      const entries = [
+        ...review.plan.items
+          .filter(
+            (item) =>
+              item.action === "create" ||
+              item.action === "reuse" ||
+              item.action === "revision"
+          )
+          .map((item) => ({
+            key: item.partNumber,
+            isCreate: item.action === "create"
+          })),
+        ...review.plan.children
+          .filter(
+            (child) => child.action === "create" || child.action === "reuse"
+          )
+          .map((child) => ({
+            key: child.partNumber,
+            isCreate: child.action === "create"
+          }))
+      ];
       return {
         planId: review.planId,
-        edits: pickEdits(review.edits, keys),
+        edits: collectEdits(review.edits, entries),
         changeNotice:
           review.plan.changeNotice && review.createChangeNotice
             ? review.changeNotice

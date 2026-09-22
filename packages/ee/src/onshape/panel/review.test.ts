@@ -368,6 +368,30 @@ describe("applyRequestBody", () => {
     });
   });
 
+  it("sends manufacturing edits for a selected existing part, but never its name", () => {
+    const review = partReview([
+      partRow({ partId: "p1", action: "adopt", itemId: "i1" }),
+      partRow({ partId: "p2", action: "update", itemId: "i2" })
+    ]);
+    const edited: PartReview = {
+      ...review,
+      selected: new Set(["p1", "p2"]),
+      edits: {
+        // name is Onshape-owned on an existing item: it must be stripped.
+        p1: { name: "Nope", replenishmentSystem: "Buy" },
+        p2: { itemTrackingType: "Serial" }
+      }
+    };
+    expect(applyRequestBody(edited)).toEqual({
+      planId: "plan-1",
+      selected: ["p1", "p2"],
+      edits: {
+        p1: { replenishmentSystem: "Buy" },
+        p2: { itemTrackingType: "Serial" }
+      }
+    });
+  });
+
   it("carries custom-field edits inside a selected create's entry", () => {
     const review = partReview([partRow({ partId: "p1", action: "create" })]);
     const edited: PartReview = {

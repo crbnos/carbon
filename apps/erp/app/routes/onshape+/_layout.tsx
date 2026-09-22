@@ -19,7 +19,7 @@ export default function OnshapeLayout() {
        * here keeps the document itself unscrolled, which fixes it and is what
        * lets the panel pin a header and an action bar.
        */}
-      <div className="isolate flex h-dvh flex-col overflow-hidden bg-background text-foreground antialiased">
+      <div className="isolate flex h-dvh flex-col overflow-hidden bg-card text-foreground antialiased">
         <Outlet />
       </div>
     </TooltipProvider>

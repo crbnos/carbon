@@ -1,4 +1,3 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ReleaseCarbonItemRow } from "@carbon/ee";
 import {
   groupRevisionsIntoReleases,
@@ -11,6 +10,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -27,9 +27,12 @@ const MAX_RELEASES = 20;
  * already has in Carbon.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    view: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      view: "parts"
+    }
+  );
 
   const url = new URL(request.url);
   const documentId = url.searchParams.get("documentId");
