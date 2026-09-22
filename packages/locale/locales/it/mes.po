@@ -642,6 +642,9 @@ msgstr "Terminare con il materiale non prelevato?"
 msgid "First due {0}"
 msgstr "Prima scadenza {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato il timbra fine?"
 

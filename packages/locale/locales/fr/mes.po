@@ -642,6 +642,9 @@ msgstr "Terminer avec du matériel non prélevé?"
 msgid "First due {0}"
 msgstr "Première échéance {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 

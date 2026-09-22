@@ -642,6 +642,9 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "작업 종료를 잊었나요?"
 

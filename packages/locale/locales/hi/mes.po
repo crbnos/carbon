@@ -642,6 +642,9 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "First due {0}"
 msgstr "पहली देय {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 

@@ -642,6 +642,9 @@ msgstr "物料未拣货的情况下要完成吗？"
 msgid "First due {0}"
 msgstr "最早应交期 {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr ""
+
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
 

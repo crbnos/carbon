@@ -109,3 +109,34 @@ describe("completeJobOperationBatchValidator", () => {
     }
   });
 });
+
+describe("completeJobOperationBatchValidator — decimals", () => {
+  const parseMember = (member: Record<string, unknown>) =>
+    completeJobOperationBatchValidator.safeParse({
+      batchId: "bat_1",
+      members: [{ jobOperationId: "op_1", ...member }]
+    });
+
+  it("accepts a fractional quantity", () => {
+    const result = parseMember({ quantity: 0.5 });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.members[0]!.quantity).toBe(0.5);
+  });
+
+  it("rounds quantity to internal precision at parse", () => {
+    const result = parseMember({ quantity: 0.123456 });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.members[0]!.quantity).toBe(0.12346);
+  });
+
+  it("accepts a fractional scrap quantity", () => {
+    const result = parseMember({ quantity: 1, scrapQuantity: 0.25 });
+    expect(result.success).toBe(true);
+    if (result.success)
+      expect(result.data.members[0]!.scrapQuantity).toBe(0.25);
+  });
+
+  it("rejects a negative quantity", () => {
+    expect(parseMember({ quantity: -1 }).success).toBe(false);
+  });
+});
