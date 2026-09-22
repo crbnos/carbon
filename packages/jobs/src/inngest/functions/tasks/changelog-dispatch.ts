@@ -179,6 +179,11 @@ export const changelogDispatchFunction = inngest.createFunction(
               guid: entry.guid,
               title: entry.title,
               description: entry.description,
+              // One statement seeds every row, so the NOW() default would give
+              // them all the same timestamp and leave "latest" arbitrary for
+              // the What's new panel. Stamp the feed's publication date instead
+              // — Postgres parses the RFC 822 pubDate directly, no JS Date.
+              ...(entry.pubDate ? { dispatchedAt: entry.pubDate } : {}),
               emailsSent: 0
             }))
           )
@@ -219,9 +224,12 @@ export const changelogDispatchFunction = inngest.createFunction(
         );
       }
       if (subscribers.length > 0 && emailsSent === 0) {
-        logger.info("Email disabled — recording dispatch without sending", {
-          guid: entry.guid
-        });
+        // sendEmail returns data: null with no error when no transport is
+        // configured. Ledgering the entry now would mark it dispatched for
+        // good, and nobody would ever get it once mail is configured.
+        throw new Error(
+          `No changelog email was delivered for ${entry.guid} — mail transport not configured; refusing to ledger the dispatch`
+        );
       }
 
       await step.run(`ledger-${entry.guid}`, async () => {

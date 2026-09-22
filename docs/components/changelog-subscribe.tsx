@@ -9,11 +9,22 @@
  */
 
 import { useEffect, useRef, useState } from "react";
+import { DEFAULT_APP_ORIGIN } from "./api/config-constants";
+import { ApiConfigProvider, appOrigin, useApiConfig } from "./api/config-context";
 
 const FEED_URL = "https://docs.carbon.ms/changelog/rss.xml";
 const SLACK_COMMAND = `/feed subscribe ${FEED_URL}`;
-// path.to.notificationSettings in the ERP (`/x/account/notifications`).
-const NEWSLETTER_SETTINGS_URL = "https://app.carbon.ms/x/account/notifications";
+// path.to.notificationSettings in the ERP.
+const NEWSLETTER_SETTINGS_PATH = "/x/account/notifications";
+
+/** The settings page on the reader's OWN instance when it is known — the region
+ *  they picked on the API pages, or the `?app=` hint a referring ERP adds to its
+ *  docs links — and Carbon Cloud US otherwise. A hardcoded app.carbon.ms sent EU,
+ *  ITAR and self-hosted readers to an account they cannot sign in to. */
+function useNewsletterSettingsUrl(): string {
+  const { base, appBase } = useApiConfig();
+  return `${appOrigin(base, appBase) ?? DEFAULT_APP_ORIGIN}${NEWSLETTER_SETTINGS_PATH}`;
+}
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const [copied, setCopied] = useState(false);
@@ -42,7 +53,18 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+/** The popover reads the reader's instance through the same provider the API
+ *  pages use; the changelog is outside that layout, so it mounts its own. */
 export function ChangelogSubscribe() {
+  return (
+    <ApiConfigProvider>
+      <SubscribePopover />
+    </ApiConfigProvider>
+  );
+}
+
+function SubscribePopover() {
+  const newsletterSettingsUrl = useNewsletterSettingsUrl();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -80,7 +102,7 @@ export function ChangelogSubscribe() {
               Email
             </div>
             <a
-              href={NEWSLETTER_SETTINGS_URL}
+              href={newsletterSettingsUrl}
               className="flex w-full items-center justify-between gap-2 rounded-lg bg-[#1E84B0] px-3.5 py-2 text-ed-14 font-book text-white no-underline transition-opacity hover:opacity-90"
             >
               <span>Manage in your Carbon account</span>

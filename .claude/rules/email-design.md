@@ -58,5 +58,5 @@ are label/value details. Every piece below is load-bearing:
 - [ ] `packages/documents/src/email/<Name>Email.tsx`, copied from `MfaRequiredEmail.tsx` or `NotificationEmail.tsx`, all eleven pieces present
 - [ ] Exported from `src/email/index.ts`
 - [ ] `previews/<Name>Email.tsx` fixture
-- [ ] Job renders with `render(<Name>Email({...}))` and sends `html` + `text` (+ unsubscribe headers if broadcast)
+- [ ] Job renders with `render(NameEmail({ ...props }))` — a function call, never JSX — and sends `html` + `text` (+ unsubscribe headers if broadcast)
 - [ ] `pnpm --filter @carbon/documents typecheck` and `email:previews` checked in light AND dark
