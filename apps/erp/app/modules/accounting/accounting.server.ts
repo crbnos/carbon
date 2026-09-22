@@ -12,7 +12,7 @@ import {
   getAccountLedgerSummary,
   getConsolidatedBalances,
   getConsolidatedPeriodSeries
-} from "./accounting.ee.service";
+} from "./accounting.service";
 import { acquisitionLines } from "./accounting.utils";
 
 /** Resolve only the authorized group's root CTA configuration for reporting.

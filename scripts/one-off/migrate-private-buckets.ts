@@ -67,20 +67,20 @@ async function getCompanyIds(): Promise<string[]> {
   return ids;
 }
 
-// Recursively list every object key under `prefix` in the legacy bucket.
+// Recursively list every object key under `prefix` in `bucket`.
 // Storage list returns folders as entries with id === null; recurse into them.
-async function listObjectKeys(prefix: string): Promise<string[]> {
+async function listObjectKeys(bucket: string, prefix: string): Promise<string[]> {
   const keys: string[] = [];
   for (let offset = 0; ; offset += LIST_PAGE_SIZE) {
     const { data, error } = await client.storage
-      .from(LEGACY_BUCKET)
+      .from(bucket)
       .list(prefix, { limit: LIST_PAGE_SIZE, offset });
     if (error) {
-      throw new Error(`Failed to list ${LEGACY_BUCKET}/${prefix}: ${error.message}`);
+      throw new Error(`Failed to list ${bucket}/${prefix}: ${error.message}`);
     }
     for (const entry of data as Array<{ name: string; id: string | null }>) {
       if (entry.id === null) {
-        keys.push(...(await listObjectKeys(`${prefix}/${entry.name}`)));
+        keys.push(...(await listObjectKeys(bucket, `${prefix}/${entry.name}`)));
       } else {
         keys.push(`${prefix}/${entry.name}`);
       }
@@ -88,6 +88,18 @@ async function listObjectKeys(prefix: string): Promise<string[]> {
     if (data.length < LIST_PAGE_SIZE) break;
   }
   return keys;
+}
+
+// Keys already present in the destination bucket, so a re-run skips them
+// without issuing a copy request per object. Purely an optimization: if the
+// listing fails (bucket missing on a dry run, transient error), return
+// nothing and let the per-object already-exists check catch the duplicates.
+async function listAlreadyMigratedKeys(companyId: string): Promise<string[]> {
+  try {
+    return await listObjectKeys(companyId, companyId);
+  } catch {
+    return [];
+  }
 }
 
 async function ensureBucket(companyId: string) {
@@ -107,9 +119,15 @@ async function migrateCompany(companyId: string): Promise<CompanySummary> {
     await ensureBucket(companyId);
   }
 
-  const keys = await listObjectKeys(companyId);
+  const keys = await listObjectKeys(LEGACY_BUCKET, companyId);
+  const alreadyMigrated = new Set(await listAlreadyMigratedKeys(companyId));
 
   for (const key of keys) {
+    if (alreadyMigrated.has(key)) {
+      summary.skipped += 1;
+      continue;
+    }
+
     if (isDryRun) {
       process.stdout.write(`  would copy ${LEGACY_BUCKET}/${key} -> ${companyId}/${key}\n`);
       summary.copied += 1;

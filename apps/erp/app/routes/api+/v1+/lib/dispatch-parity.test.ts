@@ -34,7 +34,7 @@ const spies = vi.hoisted(() => ({
 vi.mock("~/modules/account/account.service", () => ({
   upsertNotificationPreference: spies.upsertNotificationPreference
 }));
-vi.mock("~/modules/accounting/accounting.ee.service", () => ({
+vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
   upsertAccount: spies.upsertAccount

@@ -10,7 +10,7 @@ import {
   isAuditLogEnabled,
   syncAuditSubscriptions
 } from "@carbon/database/audit";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -89,7 +89,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (actionType) {
     case "enable": {
-      await requirePlan({
+      await requireFeature({
         request,
         client,
         companyId,

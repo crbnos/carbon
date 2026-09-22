@@ -9,7 +9,7 @@ Carbon is licensed as follows:
 2. The Enterprise files are (a) every file in the packages/ee directory,
    including its subdirectories, and (b) every file anywhere in this
    repository whose file name contains ".ee." (for example,
-   "ConfiguratorForm.ee.tsx"). The Enterprise files are not licensed under
+   "ApprovalRuleForm.ee.tsx"). The Enterprise files are not licensed under
    the AGPLv3. They are licensed only under the Carbon Commercial License
    in packages/ee/LICENSE.
 

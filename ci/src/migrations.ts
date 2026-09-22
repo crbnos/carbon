@@ -74,9 +74,16 @@ async function runPendingScripts(
       const { stdout } = await $$`tsx ${script.path}`;
       const tail = stdout.trim().split("\n").slice(-20).join("\n");
 
+      // ignoreDuplicates: a row for this name may already exist — a retried
+      // insert whose first attempt landed, or an earlier run that recorded it.
+      // Either way the run IS recorded; keep the original row (and its ranAt)
+      // rather than failing the whole deploy over bookkeeping.
       const { error } = await ledger
         .from("scriptRun")
-        .insert({ name: script.name, result: { output: tail } });
+        .upsert(
+          { name: script.name, result: { output: tail } },
+          { onConflict: "name", ignoreDuplicates: true }
+        );
 
       if (error) {
         // The work is done but unrecorded, so the next deploy runs it again.

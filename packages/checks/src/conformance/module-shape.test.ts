@@ -44,13 +44,13 @@ describe("moduleShape", () => {
 
   it("accepts the .ee-licensed service/server variant as the primary file", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
         "index.ts",
-        "accounting.ee.server.ts"
+        "widget.ee.server.ts"
       ])
     );
     expect(v).toHaveLength(0);
@@ -58,9 +58,9 @@ describe("moduleShape", () => {
 
   it("still flags a second service file alongside the .ee variant", () => {
     const v = moduleShape.inspect(
-      mod("accounting", [
-        "accounting.ee.service.ts",
-        "accounting.models.ts",
+      mod("widget", [
+        "widget.ee.service.ts",
+        "widget.models.ts",
         "types.ts",
         "ui",
         "index.ts",

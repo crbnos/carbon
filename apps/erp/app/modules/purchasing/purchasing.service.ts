@@ -26,7 +26,7 @@ import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
-} from "../accounting/accounting.ee.service";
+} from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import { upsertExternalLink } from "../shared/shared.service";
 import type {

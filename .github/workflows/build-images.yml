@@ -1,0 +1,136 @@
+name: Build images
+
+# Gives every commit on main the complete image set, tagged :<full sha>, so
+# any commit can become a release. Images whose files did not change are
+# re-tagged from the previous commit instead of rebuilt. Forks run this
+# into their own registry.
+#
+# Configure vars.IMAGE_REGISTRY — any OCI registry, with an optional
+# namespace: ghcr.io/acme, docker.io/acme, 123456789012.dkr.ecr.<region>.
+# amazonaws.com. Unset, nothing runs. Then credentials for it:
+#   GHCR  none; the workflow token pushes to this repository's packages
+#   ECR   vars.IMAGE_AWS_REGION, and vars.IMAGE_AWS_ROLE_ARN (OIDC) or
+#         secrets.IMAGE_AWS_ACCESS_KEY_ID + IMAGE_AWS_SECRET_ACCESS_KEY
+#   other secrets.IMAGE_REGISTRY_USERNAME + IMAGE_REGISTRY_PASSWORD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Serial, so each run finds the previous commit's tags already written.
+concurrency:
+  group: build-images
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+env:
+  REGISTRY: ${{ vars.IMAGE_REGISTRY }}
+
+jobs:
+  image:
+    name: carbon/${{ matrix.image }}
+    if: vars.IMAGE_REGISTRY != ''
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        image: [erp, mes, ops, edge-functions, assembler]
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          aws-region: ${{ vars.IMAGE_AWS_REGION }}
+          role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
+
+      - id: host
+        run: echo "host=${REGISTRY%%/*}" >> "$GITHUB_OUTPUT"
+
+      # ECR logs in from the AWS credentials above when no password is given.
+      - uses: docker/login-action@v4
+        with:
+          registry: ${{ steps.host.outputs.host }}
+          username: ${{ secrets.IMAGE_REGISTRY_USERNAME || (steps.host.outputs.host == 'ghcr.io' && github.actor) || '' }}
+          password: ${{ secrets.IMAGE_REGISTRY_PASSWORD || (steps.host.outputs.host == 'ghcr.io' && secrets.GITHUB_TOKEN) || '' }}
+
+      - id: buildx
+        uses: docker/setup-buildx-action@v4
+        with:
+          # The runner is thrown away after the job; removing the builder
+          # on the way out only produces an error when something still
+          # holds it.
+          cleanup: false
+
+      - id: plan
+        run: .github/scripts/build-images.sh ${{ matrix.image }}
+        env:
+          SHA: ${{ github.sha }}
+          BEFORE: ${{ github.event.before }}
+
+      - if: steps.plan.outputs.action == 'retag'
+        run: docker buildx imagetools create --tag "$IMAGE:$SHA" "$IMAGE:$FROM"
+        env:
+          IMAGE: ${{ steps.plan.outputs.image }}
+          FROM: ${{ steps.plan.outputs.from }}
+          SHA: ${{ github.sha }}
+
+      # The assembler links a prebuilt OCCT base; built here only when this
+      # registry does not have the one its sources describe.
+      - if: steps.plan.outputs.occt_build == 'true'
+        uses: docker/build-push-action@v7
+        with:
+          context: apps/assembler
+          file: apps/assembler/occt.Dockerfile
+          push: true
+          tags: ${{ steps.plan.outputs.occt }}
+          platforms: linux/amd64
+          provenance: false
+
+      # The Dockerfiles' cache mounts (the pnpm store, Turborepo's cache)
+      # start empty on every runner; carry them between runs. Keyed by
+      # commit and restored from the newest, so each run saves what it adds.
+      - if: steps.plan.outputs.action == 'build'
+        uses: actions/cache@v6
+        with:
+          path: cache-mounts
+          key: cache-mounts-${{ matrix.image }}-${{ github.sha }}
+          restore-keys: cache-mounts-${{ matrix.image }}-
+
+      - if: steps.plan.outputs.action == 'build'
+        uses: reproducible-containers/buildkit-cache-dance@v3
+        with:
+          builder: ${{ steps.buildx.outputs.name }}
+          cache-dir: cache-mounts
+          dockerfile: ${{ steps.plan.outputs.file }}
+
+      - if: steps.plan.outputs.action == 'build'
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: ${{ steps.plan.outputs.file }}
+          target: ${{ steps.plan.outputs.target }}
+          build-args: ${{ steps.plan.outputs.args }}
+          # source links a GHCR package to this repository, which is what
+          # lets the workflow token keep pushing to it.
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          push: true
+          tags: ${{ steps.plan.outputs.image }}:${{ github.sha }}
+          platforms: linux/amd64
+          provenance: false
+          # In the registry beside the image, not GitHub's cache: that holds
+          # 10 GB a repository, which five images outgrow. The ECR options
+          # are what ECR needs to store a cache manifest.
+          cache-from: type=registry,ref=${{ steps.plan.outputs.image }}:buildcache
+          cache-to: type=registry,ref=${{ steps.plan.outputs.image }}:buildcache,mode=max,image-manifest=true,oci-mediatypes=true

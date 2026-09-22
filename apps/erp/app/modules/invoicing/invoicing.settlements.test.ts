@@ -13,7 +13,7 @@ vi.mock("@carbon/glossary", () => ({
 vi.mock("~/modules/purchasing", () => ({}));
 vi.mock("../people/people.service", () => ({}));
 vi.mock("../sales/sales.service", () => ({}));
-vi.mock("../accounting/accounting.ee.service", () => ({}));
+vi.mock("../accounting/accounting.service", () => ({}));
 
 import * as service from "./invoicing.service";
 
