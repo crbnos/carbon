@@ -41226,6 +41226,123 @@ export default {
         tags: ["documentFavorite"]
       }
     },
+    "/scriptRun": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/scriptRun"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.scriptRun"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scriptRun"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.name"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.ranAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.scriptRun.result"
+          },
+          {
+            $ref: "#/parameters/body.scriptRun"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["scriptRun"]
+      }
+    },
     "/currencies": {
       get: {
         parameters: [
@@ -91615,9 +91732,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91625,6 +91739,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -91824,9 +91941,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91834,6 +91948,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -91987,9 +92104,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91997,6 +92111,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -96594,6 +96711,58 @@ export default {
         tags: ["(rpc) getIntercompanyBalance"]
       }
     },
+    "/rpc/complete_job_remaining_quantities": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                },
+                p_quantity_complete: {
+                  format: "numeric",
+                  type: "number"
+                },
+                p_user_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: [
+                "p_job_id",
+                "p_quantity_complete",
+                "p_company_id",
+                "p_user_id"
+              ],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) complete_job_remaining_quantities"]
+      }
+    },
     "/rpc/get_production_projections": {
       post: {
         parameters: [
@@ -98096,6 +98265,63 @@ export default {
           }
         },
         tags: ["(rpc) get_part_details"]
+      }
+    },
+    "/rpc/terminal_job_operations": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "p_job_id",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) terminal_job_operations"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_job_id: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_job_id"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) terminal_job_operations"]
       }
     },
     "/rpc/sync_check_method_material_self_reference": {
@@ -125078,6 +125304,25 @@ export default {
       },
       type: "object"
     },
+    scriptRun: {
+      required: ["name", "ranAt"],
+      properties: {
+        name: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        ranAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        result: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     currencies: {
       properties: {
         id: {
@@ -148985,10 +149230,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler"
       ],
       properties: {
@@ -149236,13 +149481,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -149257,6 +149495,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         includeOperationsOnTraveler: {
           default: true,
@@ -171821,6 +172066,33 @@ export default {
     },
     "rowFilter.documentFavorite.userId": {
       name: "userId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.scriptRun": {
+      name: "scriptRun",
+      description: "scriptRun",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/scriptRun"
+      }
+    },
+    "rowFilter.scriptRun.name": {
+      name: "name",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scriptRun.ranAt": {
+      name: "ranAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.scriptRun.result": {
+      name: "result",
       required: false,
       in: "query",
       type: "string"
@@ -198669,12 +198941,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -198689,6 +198955,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"
