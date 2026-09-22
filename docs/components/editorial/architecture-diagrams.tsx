@@ -33,7 +33,8 @@ export type ArchitectureDiagramKey =
   | "runs"
   | "triage"
   | "buy-hosted"
-  | "buy-selfhosted";
+  | "buy-selfhosted"
+  | "plans";
 
 /* Part 1. The spine only: people, the two apps, Supabase over Postgres, and the event
  * loop back into the ERP. Redis and the Assembler are deliberately absent — they are
@@ -476,13 +477,42 @@ function BuySelfHosted() {
 
       <Boundary x={16} y={180} w={708} h={232} label="Inside the Commercial License">
         <Eyebrow x={40} y={210} label="For businesses" />
-        <Node x={40} y={220} w={326} h={54} label="Subscription (SCLA)" sub="per user, per year" />
-        <Node x={390} y={220} w={306} h={54} label="Perpetual (PCLA)" sub="one-time · own it" />
+        <Node x={40} y={220} w={656} h={54} label="Subscription (SCLA)" sub="per user, per year" />
 
         <Eyebrow x={40} y={306} label="For partners" />
         <Node x={40} y={316} w={206} h={54} label="Reseller" sub="under Carbon's name" />
         <Node x={270} y={316} w={196} h={54} label="White label" sub="their brand" />
         <Node x={490} y={316} w={206} h={54} label="OEM embedded" sub="ships in their machines" />
+      </Boundary>
+    </svg>
+  );
+}
+
+/* The Cloud plans against the repository's own dividing line. No edges into the second
+ * row: the rows are cut to the plan columns above them, so the Business features box
+ * starting under "Business" IS the statement, and an arrow would only restate it. The
+ * three that do exist stop ON the boundary edge (y=128) rather than reaching the node
+ * inside: Boundary paints a knockout rect behind its label from x+22 for label.length*6.6+18,
+ * which for this x would paint over a line continuing down x=130. That is also why the
+ * label is one word. Prices are deliberately absent: they live on the pricing page, and a
+ * second copy here would drift the day one changes. */
+function Plans() {
+  return (
+    <svg viewBox="0 0 740 306" className="w-full h-auto" role="img" aria-label="How the Carbon Cloud plans map to the code in the repository">
+      <ArrowDefs />
+
+      <Eyebrow x={16} y={14} label="Carbon Cloud, pick one" />
+      <Node x={16} y={24} w={228} h={56} label="Starter" sub="the open core, hosted" />
+      <Node x={256} y={24} w={228} h={56} label="Business" sub="adds the Business features" tone="app" />
+      <Node x={496} y={24} w={228} h={56} label="Enterprise" sub="adds services and support" tone="app" />
+
+      <Edge pts={[[130, 80], [130, 128]]} soft />
+      <Edge pts={[[370, 80], [370, 128]]} soft />
+      <Edge pts={[[610, 80], [610, 128]]} soft />
+
+      <Boundary x={8} y={128} w={724} h={156} label="Repository">
+        <Node x={16} y={152} w={708} h={54} label="Community code" sub="everything outside packages/ee · AGPLv3" tone="svc" />
+        <Node x={256} y={218} w={468} h={54} label="Business features" sub="packages/ee and any .ee. file · Commercial" tone="app" />
       </Boundary>
     </svg>
   );
@@ -498,4 +528,5 @@ export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactEle
   triage: Triage,
   "buy-hosted": BuyHosted,
   "buy-selfhosted": BuySelfHosted,
+  plans: Plans,
 };
