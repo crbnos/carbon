@@ -218,19 +218,56 @@ BEGIN
   ASSERT v_row.status <> 'Done' AND v_row."quantityComplete" = 0,
     'A sub-assembly operation must not be completed by the job: ' || v_row.status || ' @ ' || v_row."quantityComplete";
 
-  -- Serial job with units still outstanding is refused, and nothing is applied.
+  -- REGRESSION: a serial job whose units already exist completes from the desk.
+  --
+  -- Serial numbers are assigned at job CREATION, so the ordinary desk flow --
+  -- create, release, never open the Operations tab, press Complete -- has every
+  -- numbered unit Reserved and ready while the operations still read 0. The
+  -- first version of this guard refused exactly that, naming a serial number
+  -- that was sitting right there. Operation shortfall is not evidence of a
+  -- missing serial; only the absence of un-received units is.
   v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'SJ', 3);
   v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 3, 1);
 
   v_error := pg_temp.try_complete(v_job, 3);
-  ASSERT v_error LIKE '%serial number is required%',
-    'Serial job with outstanding units was not refused: ' || COALESCE(v_error, '<succeeded>');
+  ASSERT v_error IS NULL,
+    'Serial job with its units already assigned was refused: ' || COALESCE(v_error, '');
+  SELECT status, "quantityComplete" INTO v_row FROM job WHERE id = v_job;
+  ASSERT v_row.status = 'Completed' AND v_row."quantityComplete" = 3,
+    'Serial job with assigned units did not complete from the desk';
+  ASSERT pg_temp.ops(v_job) = 'Done:3',
+    'Serial desk completion left its operations open: ' || pg_temp.ops(v_job);
+  -- Serial receipts post one itemLedger row per numbered unit, so three units
+  -- are three rows totalling three -- not a single row of three.
+  ASSERT pg_temp.receipts(v_job) = '3:3',
+    'Serial desk completion did not receive its three units: ' || pg_temp.receipts(v_job);
+
+  -- A serial job genuinely short of numbered units is still refused, and
+  -- nothing is applied. Here the units are consumed elsewhere, so there is
+  -- nothing left for this job to receive.
+  --
+  -- The refusal comes from complete_job_to_inventory's serial branch, not from
+  -- complete_job_remaining_quantities: the receipt is the code that knows which
+  -- tracked entities it can actually consume, so it is the only place that can
+  -- tell a numbered-but-unreported job from a genuinely short one.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'SJ-SHORT', 3);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 3, 1);
+  UPDATE "trackedEntity" SET status = 'Consumed'
+  WHERE attributes->>'Job Make Method' = (
+    SELECT id FROM "jobMakeMethod" WHERE "jobId" = v_job AND "parentMaterialId" IS NULL
+  );
+
+  v_error := pg_temp.try_complete(v_job, 3);
+  ASSERT v_error LIKE '%serial unit(s) left to receive%',
+    'Serial job with no available units was not refused: ' || COALESCE(v_error, '<succeeded>');
   SELECT status INTO v_row FROM job WHERE id = v_job;
   ASSERT v_row.status <> 'Completed', 'A refused serial completion still completed the job';
   ASSERT pg_temp.ops(v_job) = 'Ready:0',
     'A refused serial completion still wrote quantities: ' || pg_temp.ops(v_job);
 
   -- The same serial job completes once the floor has reported every unit.
+  v_job := pg_temp.make_job(v_company_id, v_location_id, v_serial_item, v_part, 'SJ-MES', 3);
+  v_op1 := pg_temp.add_operation(v_job, v_company_id, v_process, v_work_center, 3, 1);
   UPDATE "jobOperation" SET "quantityComplete" = 3 WHERE id = v_op1;
   v_error := pg_temp.try_complete(v_job, 3);
   ASSERT v_error IS NULL, 'Serial job finished in MES failed to complete: ' || COALESCE(v_error, '');
