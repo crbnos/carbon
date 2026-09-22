@@ -27,7 +27,16 @@ import { path } from "~/utils/path";
 const cellInputClass =
   "block h-full min-h-12 w-full bg-transparent px-3 text-right font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40";
 
-const digitsOnly = (value: string) => value.replace(/[^0-9]/g, "");
+// Allow a decimal quantity — a job's operation quantity can be fractional (any
+// non-discrete unit of measure). Keep digits and a single leading decimal point;
+// strip everything else and any extra dots.
+const numericOnly = (value: string) => {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const dot = cleaned.indexOf(".");
+  return dot === -1
+    ? cleaned
+    : cleaned.slice(0, dot + 1) + cleaned.slice(dot + 1).replace(/\./g, "");
+};
 const toNumber = (value: string) => Number(value) || 0;
 
 // The batch completion form, opened from the batched operation view. Posts to
@@ -80,7 +89,7 @@ export function BatchCompleteModal({
   );
   const setRow = (i: number, key: "quantity" | "scrapQuantity", v: string) =>
     setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [key]: digitsOnly(v) } : r))
+      prev.map((r, idx) => (idx === i ? { ...r, [key]: numericOnly(v) } : r))
     );
 
   const isExcludedRow = (i: number) =>
@@ -229,7 +238,7 @@ export function BatchCompleteModal({
                         >
                           <input
                             type="text"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             name={`members[${i}].quantity`}
                             aria-label={t`Quantity`}
                             value={rows[i]?.quantity ?? ""}
@@ -249,7 +258,7 @@ export function BatchCompleteModal({
                         >
                           <input
                             type="text"
-                            inputMode="numeric"
+                            inputMode="decimal"
                             name={`members[${i}].scrapQuantity`}
                             aria-label={t`Scrap`}
                             value={rows[i]?.scrapQuantity ?? ""}

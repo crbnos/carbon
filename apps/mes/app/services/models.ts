@@ -256,8 +256,13 @@ export const completeJobOperationBatchValidator = z.object({
         // disabled and therefore omitted from FormData. The route forces
         // excluded members to 0 after validation and coerces an omitted
         // included quantity to 0, so `undefined` never reaches the edge fn.
-        quantity: zfd.numeric(z.number().int().min(0).optional()),
-        scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // Not integer-only: a job's operation quantity can be fractional (any
+        // non-discrete unit of measure), so the pre-filled remainder — and the
+        // operator's edit — must accept decimals, matching single-op completion
+        // (baseQuantityValidator). An `.int()` here silently failed validation
+        // and the modal never submitted.
+        quantity: zfd.numeric(z.number().min(0).optional()),
+        scrapQuantity: zfd.numeric(z.number().min(0).optional()),
         // Batch-tracked output: the member's WIP entity finalized as the
         // produced lot. Its lot number was planned at batch creation and is
         // resolved server-side — never an operator input.
