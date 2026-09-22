@@ -503,24 +503,29 @@ function BuySelfHosted() {
  * detail line naming enough of both halves to make the glance land correctly. The amber
  * tone marks it as the one column that is not a code boundary.
  *
+ * Column widths are measured, not guessed: the detail line under the third header renders
+ * at 256px and its bar label at 226px (DM Sans, browser getBBox), which is what sets that
+ * column at 278 and squeezes the other two detail lines down to fit beside it. Re-measure
+ * before lengthening any of these three strings.
+ *
  * Prices stay on the pricing page; a second copy here would drift the day one changes. */
 function Plans() {
   /* Column x/width drive both the header text and every bar, so a bar can never drift
    * out of line with the header naming it. */
-  const CE = { x: 108, w: 196 };
-  const EE = { x: 312, w: 196 };
-  const EXTRA = { x: 516, w: 218 };
+  const CE = { x: 92, w: 176 };
+  const EE = { x: 276, w: 172 };
+  const EXTRA = { x: 456, w: 278 };
   const ROWS = [
     { label: "Starter", y: 72, segments: [CE] },
     { label: "Business", y: 126, segments: [CE, EE] },
     { label: "Enterprise", y: 180, segments: [CE, EE, EXTRA] },
   ];
   const TONES = ["svc", "app", "async"] as const;
-  const BARS = ["CE", "EE", "Features and services"];
+  const BARS = ["CE", "EE", "Additional features and services"];
   const HEADERS = [
-    { col: CE, name: "Community Edition (CE)", detail: "everything outside packages/ee · AGPLv3" },
-    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee and .ee. files · Commercial" },
-    { col: EXTRA, name: "Additional Features and Services", detail: "SSO, BYOC, ITAR, CMMC, and an FDE" },
+    { col: CE, name: "Community Edition (CE)", detail: "outside packages/ee · AGPLv3" },
+    { col: EE, name: "Enterprise Edition (EE)", detail: "packages/ee · Commercial" },
+    { col: EXTRA, name: "Additional Features and Services", detail: "Additional Features, Compliance, and Implementation" },
   ];
   return (
     <svg viewBox="0 0 740 240" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds features and services available nowhere else">
@@ -539,7 +544,7 @@ function Plans() {
 
       {ROWS.map(({ label, y, segments }) => (
         <g key={label}>
-          <text x={92} y={y + 28} textAnchor="end" fontSize="14" fontWeight={545} fill={INK}>
+          <text x={84} y={y + 28} textAnchor="end" fontSize="14" fontWeight={545} fill={INK}>
             {label}
           </text>
           {segments.map((col, i) => (
