@@ -45,10 +45,11 @@ for months, can still sign them out.
 Signing out and back in this morning doesn't weaken your laptop. What counts is how long Carbon has
 recognized the **browser**, which is the day you first signed in on it.
 
-Carbon recognizes a browser by a cookie set the first time you sign in there. Clearing cookies, private
-browsing, or switching browsers makes it a device Carbon is meeting for the first time, so older
-sessions may show **"Newer device"**. Use a browser you've had longer, or wait for the new one to age
-past the sessions you want to end.
+Carbon recognizes a browser by a cookie set the first time you sign in there. Clearing site data or
+cookies, private browsing, or switching browsers makes it a device Carbon is meeting for the first time,
+so older sessions may show **"Newer device"**. Use a browser you've had longer, or wait: the sessions
+that browser left behind can't be used by anyone (their cookie is gone too), and a session unused for
+seven days drops off the list on its own.
 
 **"Sign out other devices"** is all or nothing: it's disabled while any row reads **"Newer device"**, and
 also when yours is the only device.
@@ -56,15 +57,16 @@ also when yours is the only device.
 ## The new-device email
 
 The first time your account is signed into from a browser Carbon hasn't seen, you get an email:
-**"A new device signed in to your Carbon account"**. It names the device and the time, and links back to
-this card. If it was you, do nothing.
+**"We've noticed a new login to your Carbon account"**. It lists the time (in UTC), the IP address, the
+approximate location, and the browser, and links back to this card. If it was you, do nothing.
 
 - **One email per device, not per sign-in.** A laptop you use daily is announced once.
 - **Both apps trigger it**, including MES.
 - **It ignores notification settings.** This is a security receipt, not a notification, so nothing can
   switch it off. It's the one message that reaches you when someone else is in your account.
-- **It carries no IP or location.** Those are approximate at best and unavailable on self-hosted
-  installs, so a security alert shouldn't lean on them. Open this card for those details.
+- **IP and location are best-effort.** The IP is the address Carbon's own edge saw, and the location
+  comes from the hosting platform's geo lookup. A self-hosted install has no geo lookup, so the location
+  reads "Unknown" there, and a sign-in from inside your own network reads "Local network".
 
 With two-factor on, the email waits until the code is entered. A sign-in abandoned at the prompt never
 completed, so announcing it would only teach you to ignore the alert.
@@ -90,8 +92,14 @@ records are what the card reads from.
 The current browser's first recorded sign-in is later than that session's start, so the device-age gate
 refuses. Posting the revoke directly returns 403 with "Sign out from a device you've used for longer".
 The gate is `deviceFirstSeenAt < session.startedAt`, evaluated in both the loader and the action through
-the same `getDevices` helper (`apps/erp/app/routes/x+/account+/security.tsx`). Causes: cookies cleared,
-private browsing, a different browser, or a genuinely new machine.
+the same `getDevices` helper (`apps/erp/app/routes/x+/account+/security.tsx`). Causes: site data or
+cookies cleared, private browsing, a different browser, or a genuinely new machine. Hovering the label
+says the same thing in the app.
+
+A session the list shows is one that has been used within the last seven days; older ones are filtered
+out (`getActiveSessions` in `apps/erp/app/modules/account/account.service.ts`, bounded by the session
+cookie's lifetime). So the rows a cleared browser leaves behind disappear after a week without needing
+to be signed out.
 
 ### "Sign out other devices" is disabled
 Either no other session is live, or at least one row reads "Newer device". The bulk revoke is
@@ -107,7 +115,7 @@ devices.
 It sends only on the first completed sign-in per device, so a browser already on record stays quiet.
 With two-factor enabled it's deferred until the code is entered, and a sign-in abandoned at the prompt
 never sends. Accounts with no company membership are skipped, because the send is company-scoped. Subject:
-"A new device signed in to your Carbon account".
+"We've noticed a new login to your Carbon account".
 
 ### A row says "Unknown device" with no location
 The sign-in predates the device details Carbon now records, or its user agent wasn't classifiable. The

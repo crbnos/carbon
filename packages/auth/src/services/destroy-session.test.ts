@@ -1,8 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 
-// ── Isolation mocks ───────────────────────────────────────────────────────
-// Mirrors session-timeout.test.ts: stub session.server's siblings so the
-// cookie logic runs against the real react-router session storage only.
 vi.mock("@carbon/kv", () => ({
   redis: {
     get: vi.fn().mockResolvedValue(null),

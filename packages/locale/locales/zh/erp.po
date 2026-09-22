@@ -17504,6 +17504,9 @@ msgstr "无法完成此备份。"
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "此浏览器在该会话启动后才加入您的账户，因此无法结束该会话。请从已使用更长时间的浏览器中退出登录，或者等待：一周内未使用的会话将从此列表中自动移除。清除浏览器的网站数据可使其恢复为新设备。"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"
 
@@ -19402,8 +19405,8 @@ msgstr "你今天的位置"
 msgid "Where you want to grow"
 msgstr "你想要成长的地方"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "您登录所在位置。注销您不认识的任何设备 — 仅从您使用时间较长的设备中注销。"
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "您登录的位置。从任何不识别的设备中退出登录 — 请从已使用时间更长的设备执行此操作。清除浏览器的网站数据可使其成为新设备。"
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金额是按行价格的百分比解释，还是按固定货币金额解释。"

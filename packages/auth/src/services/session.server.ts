@@ -149,11 +149,6 @@ export async function completeMfaChallenge(
       authSession: AuthSession;
       sessionCookie: string;
       redirectTo?: string;
-      /**
-       * True when this device had never completed a login for this user before.
-       * The new-device alert is deferred to here rather than sent at the
-       * callback, which could not know whether the second factor would clear.
-       */
       isNewDevice: boolean;
     }
   | { success: false; reason: "no-session" | "invalid-code" }
@@ -202,8 +197,6 @@ export async function completeMfaChallenge(
 
   const sessionCookie = await setAuthSession(request, { authSession });
 
-  // The second factor is now proven, so this session's login row counts: it may
-  // age the device for the revoke gate and mark the device as seen.
   const { isNewDevice } = await markLoginMfaComplete(
     source.accessToken,
     authSession.accessToken
@@ -230,31 +223,16 @@ export async function clearAuthCookies(request: Request) {
   ];
 }
 
-/** How long a best-effort revocation may delay clearing cookies. */
 const REVOKE_TIMEOUT_MS = 2000;
 
 export async function destroyAuthSession(
   request: Request,
-  /**
-   * Whether to also revoke the GoTrue session server-side (deleting the
-   * auth.sessions row; its refresh tokens cascade), so a signed-out session
-   * doesn't linger as a live device and its refresh token is dead.
-   *
-   * Defaults to FALSE because this function is also called from recoverable
-   * error paths — a failed RPC in the app shell, a missing companyId on
-   * company switch, the callback loader clearing a pre-existing session. Those
-   * want cookies cleared, not the user's credentials destroyed across every
-   * device. Only genuine logout passes `true`.
-   */
   { revoke = false }: { revoke?: boolean } = {}
 ) {
   if (revoke) {
     try {
       const authSession = await getAuthSession(request);
       if (authSession?.accessToken) {
-        // Bounded: a hung GoTrue must not stop us clearing cookies, which is
-        // the part the user is actually waiting on. A rejection or a timeout
-        // both fall through to the cookie clear below.
         await Promise.race([
           getCarbonServiceRole().auth.admin.signOut(
             authSession.accessToken,
@@ -264,7 +242,7 @@ export async function destroyAuthSession(
         ]);
       }
     } catch {
-      // ignore — logout must never fail because revocation did
+      // best-effort
     }
   }
   const headers = await clearAuthCookies(request);

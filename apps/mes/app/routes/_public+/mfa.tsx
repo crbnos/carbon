@@ -25,7 +25,6 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
-import { parseUserAgent } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuCircleAlert } from "react-icons/lu";
@@ -115,17 +114,12 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // The new-device alert lands here, not at the callback: until the second
-  // factor cleared, the sign-in had not actually happened.
   if (result.isNewDevice && result.authSession.companyId) {
-    const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
     await sendNewDeviceEmail(
       getCarbonServiceRole(),
       result.authSession.companyId,
       result.authSession.userId,
-      browser && os
-        ? `${browser} on ${os}`
-        : (browser ?? os ?? "Unknown device")
+      request
     );
   }
 

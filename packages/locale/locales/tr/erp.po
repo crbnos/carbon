@@ -17504,6 +17504,9 @@ msgstr "Bu yedekleme tamamlanamadı."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Bu yedek henüz kontrol edilmedi. Herhangi bir fark, geri yükleme çalıştığında bulunur."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Bu tarayıcı, bu oturum başladıktan sonra hesaba katılmış, bu nedenle onu sonlandıramaz. Daha uzun süredir kullandığınız bir tarayıcıdan oturum kapatın veya bekleyin: bir hafta boyunca kullanılmayan bir oturum bu listeden kaldırılır. Site verilerini temizlemek bir tarayıcıyı tekrar yeni yapar."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Bu Carbon örneğinde Onshape OAuth kimlik bilgileri eksik. Bir yöneticiden bunları ayarlamasını isteyin."
 
@@ -19402,8 +19405,8 @@ msgstr "Bugün nerede olduğunuz"
 msgid "Where you want to grow"
 msgstr "Büyümek istediğin yer"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Oturum açtığınız yerler. Tanımadığınız herhangi bir cihazdan oturumu kapatın — daha uzun süredir kullandığınız bir cihazdan."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Nerede oturum açmış olduğunuz. Tanımadığınız herhangi bir cihazdan oturum kapatın — bu oturumdan daha uzun süredir kullandığınız bir cihazdan. Tarayıcınızın site verilerini temizlemek onu yeni bir cihaz haline getirir."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Tutarın, satır fiyatının yüzdesi olarak mı yoksa sabit bir para birimi tutarı olarak mı yorumlanacağı."

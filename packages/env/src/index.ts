@@ -396,10 +396,6 @@ export const REDIS_URL = getEnv("REDIS_URL", {
   isRequired: true,
   isSecret: true
 });
-// How many rightmost x-forwarded-for hops belong to our own edge. The leftmost
-// hop is whatever the client sent, so reading it trusts attacker input on any
-// deployment whose proxy appends rather than replaces the header — Carbon's
-// self-hosted Caddy does exactly that. See getClientIp in @carbon/utils.
 export const TRUSTED_PROXY_COUNT = getEnv("TRUSTED_PROXY_COUNT", {
   isRequired: false,
   isSecret: false

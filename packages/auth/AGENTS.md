@@ -39,7 +39,7 @@ pnpm --filter @carbon/auth test
 | `./mfa.server` | TOTP MFA: `enrollTotpFactor`, `verifyTotpChallenge`, `unenrollTotpFactor`, `userHasVerifiedTotpFactor` (Redis-cached), `adminDeleteTotpFactors` |
 | `./session.server` | `createCookieSessionStorage`, `requireAuthSession` (incl. MFA re-check), `destroyAuthSession`, session refresh, pending-MFA session + `completeMfaChallenge` |
 | `./company.server` | Company switching, `updateCompanySession` |
-| `./user-login.server` | `recordLogin` (writes a `userLogin` sign-in record at every login mint point; never throws), `deriveLoginMethod`, `getSessionId` (GoTrue `session_id` claim — links rows to revocable sessions) |
+| `./user-login.server` | `recordLogin` (writes a `userLogin` sign-in record at every login mint point; never throws), `markLoginMfaComplete` (clears `mfaPending` after the second factor; returns `isNewDevice`), `getLoginContext` (the one place client IP, geo headers and user agent are read from a sign-in request), `describeNewDeviceLogin` (formats that context into the new-device email's Time / IP / Location / Browser block, shared by the ERP and MES senders), `deriveLoginMethod`, `getSessionId` (GoTrue `session_id` claim — links rows to revocable sessions) |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
 | `./middleware/flash.server` | Flash message middleware |

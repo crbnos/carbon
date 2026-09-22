@@ -17504,6 +17504,9 @@ msgstr "Diese Sicherung konnte nicht abgeschlossen werden."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Diese Sicherung wurde noch nicht überprüft. Alle Unterschiede werden beim Ausführen der Wiederherstellung gefunden."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Dieser Browser ist dem Konto nach dem Start dieser Sitzung beigetreten, daher kann er diese nicht beenden. Melden Sie sich von einem Browser ab, den Sie länger nutzen, oder warten Sie: Eine Sitzung, die eine Woche lang nicht verwendet wird, wird aus dieser Liste entfernt. Durch Löschen der Website-Daten wird ein Browser wieder neu."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Dieser Carbon-Instanz fehlen die Onshape-OAuth-Anmeldedaten. Bitten Sie einen Administrator, sie einzurichten."
 
@@ -19402,8 +19405,8 @@ msgstr "Wo du heute stehst"
 msgid "Where you want to grow"
 msgstr "Wo du wachsen möchtest"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Wo Sie angemeldet sind. Melden Sie sich von jedem Gerät ab, das Sie nicht erkennen — von einem Gerät, das Sie länger als diese Sitzung lang verwendet haben."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Hier sind Sie angemeldet. Melden Sie sich von Geräten ab, die Sie nicht erkennen — von einem Gerät, das Sie länger nutzen als diese Sitzung. Durch Löschen der Website-Daten in Ihrem Browser wird es zu einem neuen Gerät."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Ob der Betrag als Prozentsatz des Zeilenpreises oder als fester Währungsbetrag interpretiert wird."

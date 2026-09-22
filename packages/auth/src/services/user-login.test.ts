@@ -1,16 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import {
   deriveLoginMethod,
+  describeNewDeviceLogin,
   getSessionId,
   recordLogin
 } from "./user-login.server";
 
 const mocks = vi.hoisted(() => {
   const insert = vi.fn();
-  // The retention prune is one RPC so it cannot drop a device's anchor row.
   const rpc = vi.fn().mockResolvedValue({ error: null });
-  // The device-novelty probe: an existence check, not a count —
-  // .select(id).eq(userId).eq(deviceId).eq(mfaPending).limit(1).maybeSingle()
   const maybeSingle = vi.fn().mockResolvedValue({ data: null });
   const limit = vi.fn(() => ({ maybeSingle }));
   const seenEq3 = vi.fn(() => ({ limit }));
@@ -36,8 +34,6 @@ vi.mock("../lib/supabase/client.server", () => ({
   getCarbonServiceRole: mocks.getCarbonServiceRole
 }));
 
-// device.server imports ../config/env, which validates EVERY required var at
-// module load — stub it so this suite does not depend on unrelated config.
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",
@@ -147,7 +143,6 @@ describe("recordLogin", () => {
   it("inserts a row with IP, decoded geo, and user agent from headers", async () => {
     await recordLogin({
       request: makeRequest({
-        // Rightmost hop wins: the leftmost is client-supplied.
         "x-forwarded-for": "203.0.113.9, 10.0.0.1",
         "x-vercel-ip-city": "S%C3%A3o%20Paulo",
         "x-vercel-ip-country": "BR",
@@ -265,8 +260,6 @@ describe("recordLogin", () => {
       app: "erp"
     });
 
-    // Via RPC, not a bare delete: the SQL function keeps each device's earliest
-    // row so the revoke gate's "first seen" cannot be pruned forward.
     expect(mocks.rpc).toHaveBeenCalledWith(
       "prune_user_logins",
       expect.objectContaining({ p_user_id: "user_1" })
@@ -299,8 +292,6 @@ describe("recordLogin", () => {
   });
 
   it("ignores pending rows when deciding whether a device is new", async () => {
-    // A login that never cleared MFA must not make the device look seen, or the
-    // alert for the sign-in that DID succeed would be suppressed.
     await recordLogin({
       request: makeRequest({}),
       userId: "user_1",
@@ -359,5 +350,46 @@ describe("recordLogin", () => {
         app: "erp"
       })
     ).resolves.toEqual({ isNewDevice: false });
+  });
+});
+
+describe("describeNewDeviceLogin", () => {
+  it("formats the email detail block from the sign-in request", () => {
+    const result = describeNewDeviceLogin(
+      makeRequest({
+        "x-forwarded-for": "203.0.113.42",
+        "x-vercel-ip-city": "S%C3%A3o%20Paulo",
+        "x-vercel-ip-country": "BR",
+        "user-agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0 Safari/537.36"
+      })
+    );
+    expect(result.ipAddress).toBe("203.0.113.42");
+    expect(result.location).toBe("São Paulo, BR");
+    expect(result.browser).toBe("Chrome on macOS");
+    expect(result.signedInAt).toMatch(/UTC$/);
+  });
+
+  it("reads a private address as the local network when geo is absent", () => {
+    const result = describeNewDeviceLogin(
+      makeRequest({ "x-forwarded-for": "::ffff:192.168.1.20" })
+    );
+    expect(result.ipAddress).toBe("192.168.1.20");
+    expect(result.location).toBe("Local network");
+    expect(result.browser).toBeNull();
+  });
+
+  it("leaves unknown fields null rather than inventing them", () => {
+    const result = describeNewDeviceLogin(makeRequest({}));
+    expect(result.ipAddress).toBeNull();
+    expect(result.location).toBeNull();
+    expect(result.browser).toBeNull();
+  });
+
+  it("falls back to the raw user agent when it cannot be classified", () => {
+    const result = describeNewDeviceLogin(
+      makeRequest({ "user-agent": "GrokApp/55 CFNetwork/1568.200.51" })
+    );
+    expect(result.browser).toBe("GrokApp/55 CFNetwork/1568.200.51");
   });
 });

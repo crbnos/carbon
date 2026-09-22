@@ -1,10 +1,3 @@
-/**
- * IP display/storage helpers for sign-in activity. Proxies often report an
- * IPv4 client as an IPv4-mapped IPv6 address ("::ffff:127.0.0.1"); normalize
- * before storing or showing it. Private/loopback detection lets the UI say
- * "Local network" instead of pretending a geo lookup failed.
- */
-
 export function normalizeIp(value: string | null | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();
@@ -29,34 +22,16 @@ export function isPrivateIp(value: string | null | undefined): boolean {
 }
 
 export type ClientIpOptions = {
-  /** How many rightmost x-forwarded-for hops are our own proxies. */
   trustedProxyCount?: number;
-  /** Explicit proxy addresses to skip, in addition to the count. */
   trustedProxyIps?: string[];
 };
 
-/**
- * The client address, read RIGHT to LEFT.
- *
- * The leftmost x-forwarded-for hop is whatever the client sent, so it is
- * attacker-controlled on any deployment whose edge appends rather than replaces
- * the header (Carbon's self-hosted Caddy does exactly this —
- * `trusted_proxies static private_ranges`). Walking from the right and skipping
- * the hops we know are ours yields the first address our own infrastructure
- * actually observed.
- *
- * With no trusted-proxy configuration this returns the RIGHTMOST hop, which is
- * the conservative answer: it may be our own proxy, but it is never
- * attacker-supplied.
- */
 export function getClientIp(
   request: Request,
   options: ClientIpOptions = {}
 ): string | null {
   const { trustedProxyCount = 0, trustedProxyIps = [] } = options;
 
-  // A repeated header arrives joined by ", " in the Fetch API, so one read
-  // covers both shapes.
   const forwarded = request.headers.get("x-forwarded-for");
   const hops = (forwarded ?? "")
     .split(",")
@@ -76,16 +51,9 @@ export function getClientIp(
   let index = hops.length - 1 - trustedProxyCount;
   while (index >= 0 && trusted.has(hops[index]!)) index--;
 
-  // Everything was trusted: the leftmost hop is the only candidate left, and it
-  // is the client's own claim. Prefer it over returning nothing, but it is
-  // exactly the value the walk exists to avoid trusting blindly.
   return hops[Math.max(index, 0)] ?? null;
 }
 
-/**
- * Remove a ":port" suffix (AWS ALB appends one). IPv6 is bracketed when it
- * carries a port, so a bare colon-count check distinguishes the two safely.
- */
 function stripPort(value: string | null | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();

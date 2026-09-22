@@ -17504,6 +17504,9 @@ msgstr "이 백업을 완료할 수 없습니다."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "이 브라우저는 해당 세션 시작 후에 계정에 추가되었으므로 그 세션을 종료할 수 없습니다. 더 오래 사용한 브라우저에서 로그아웃하거나 기다리세요. 1주일 동안 사용하지 않은 세션은 이 목록에서 제거됩니다. 브라우저의 사이트 데이터를 지우면 해당 브라우저가 새 브라우저가 됩니다."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
@@ -19402,8 +19405,8 @@ msgstr "현재 상황"
 msgid "Where you want to grow"
 msgstr "성장하고자 하는 방향"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "이곳이 로그인 위치입니다. 인식하지 못하는 기기에서 로그아웃하세요 — 해당 세션보다 더 오래 사용 중인 기기에서만 수행하세요."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "로그인한 위치입니다. 인식하지 못한 기기에서 로그아웃하세요 — 해당 세션보다 더 오래 사용한 기기에서. 브라우저의 사이트 데이터를 지우면 그 기기가 새 기기가 됩니다."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "금액을 라인 가격의 백분율로 해석할지, 고정 통화 금액으로 해석할지 여부입니다."

@@ -12,7 +12,6 @@ import {
 import { recordLogin } from "@carbon/auth/user-login.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
-import { parseUserAgent } from "@carbon/utils";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -137,11 +136,6 @@ export async function action({ request }: ActionFunctionArgs) {
     // (NIST 3.1.8 reset-on-success), before the TOTP gate below.
     await new AccountLockout({ redis }).reset(authUser.user.email);
 
-    // Record the sign-in (fire-and-forget: recordLogin never throws) before
-    // the TOTP gate — first-factor success is the login fact being recorded.
-    // Resolved first so the row can be marked pending: a login still facing a
-    // TOTP challenge must not age the device or count as a sighting until
-    // completeMfaChallenge clears it.
     const mfaPending = await userHasVerifiedTotpFactor(credRow.userId);
     const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
     const login = await recordLogin({
@@ -155,17 +149,12 @@ export async function action({ request }: ActionFunctionArgs) {
       mfaPending
     });
 
-    // Held back while MFA is pending: the alert belongs to the sign-in that
-    // actually succeeds, and /mfa sends it there.
     if (login.isNewDevice && authSession.companyId && !mfaPending) {
-      const { browser, os } = parseUserAgent(request.headers.get("user-agent"));
       await sendNewDeviceEmail(
         serviceRole,
         authSession.companyId,
         credRow.userId,
-        browser && os
-          ? `${browser} on ${os}`
-          : (browser ?? os ?? "Unknown device")
+        request
       );
     }
 

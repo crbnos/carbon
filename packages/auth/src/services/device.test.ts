@@ -1,7 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
 
-// Stub env so the cookie logic runs against the real react-router session
-// storage only — mirrors destroy-session.test.ts.
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",

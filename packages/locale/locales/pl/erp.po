@@ -17504,6 +17504,9 @@ msgstr "Nie można było ukończyć tej kopii zapasowej."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Ta kopia zapasowa nie została jeszcze sprawdzona. Wszelkie różnice są znaleziane po uruchomieniu przywracania."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Ta przeglądarka dołączyła do konta po uruchomieniu tej sesji, więc nie może jej zamknąć. Wyloguj się z przeglądarki, którą masz dłużej, lub czekaj: sesja nieużywana przez tydzień zostanie usunięta z tej listy. Wyczyszczenie danych witryny sprawia, że przeglądarka jest traktowana jako nowa."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Ta instancja Carbon nie ma danych uwierzytelniających OAuth Onshape. Poproś administratora o ich ustawienie."
 
@@ -19402,8 +19405,8 @@ msgstr "Gdzie jesteś dzisiaj"
 msgid "Where you want to grow"
 msgstr "Gdzie chcesz się rozwijać"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Miejsce, gdzie jesteś zalogowany. Wyloguj się z dowolnego urządzenia, którego nie rozpoznajesz — z urządzenia, które używałeś dłużej niż ta sesja."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Miejsca zalogowania. Wyloguj się z dowolnego urządzenia, które nie rozpoznajesz — z urządzenia, z którego korzystasz dłużej niż ta sesja. Wyczyszczenie danych witryny w przeglądarce sprawia, że urządzenie jest traktowane jako nowe."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Czy kwota jest interpretowana jako procent ceny pozycji, czy jako stała kwota w walucie."

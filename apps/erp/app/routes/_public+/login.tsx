@@ -192,7 +192,6 @@ export async function action({ request }: ActionFunctionArgs) {
     if (authSession) {
       // Genuine completed login — clear any accumulated lockout state.
       await lockout.reset(email);
-      // Records the userLogin row AND emits the login_success auth event.
       const { deviceId, setCookie: deviceCookie } =
         await ensureDeviceId(request);
       await recordLogin({

@@ -12,8 +12,8 @@ age** instead of session age: the older device wins. A device that has signed
 into this account before may sign out newer sessions with no prompt; a newer or
 unrecognised device is refused with a message telling the user to act from a
 device they have used before. **Self-termination is never gated.** A new device
-also triggers an out-of-band email alert naming the device and time — **no IP,
-no location**. Also hardens client-IP extraction, which is attacker-controlled
+also triggers an out-of-band email alert with the time, IP, location and
+browser (revised 2026-09-18 — see §3). Also hardens client-IP extraction, which is attacker-controlled
 on self-hosted Caddy today.
 
 There is deliberately **no step-up re-authentication anywhere in this design** —
@@ -109,14 +109,20 @@ a hidden button stops nobody.
 
 ### 3. New-device email alert
 
-On a login whose `(userId, deviceId)` pair is unseen, send an out-of-band email:
-device (parsed browser + OS) and timestamp, plus a link to Account → Security.
+On a login whose `(userId, deviceId)` pair is unseen, send an out-of-band email
+in the shape of the common "we've noticed a new login" alert: a detail block of
+**Time** (UTC, zone spelled out), **IP address**, **Location** and **Browser**
+(parsed browser + OS), then a link to Account → Security.
 
-**No IP address and no location.** *User decision on the IP; location follows
-from it* — with no IP in the message, a location adds a dependency and a GDPR
-surface for a field the owner cannot act on, and `x-vercel-ip-*` is blank
-self-hosted, so half of installs would read "Unknown location" forever. Device
-plus time is enough to answer "was that me?".
+**Revised 2026-09-18 (user decision).** The original decision was device and
+time only — no IP, no location — on the grounds that the IP was
+attacker-controlled and `x-vercel-ip-*` is blank self-hosted. The IP is now the
+rightmost trusted hop (§4), so it is no longer client-supplied, and the user
+chose the fuller alert. Each line renders "Unknown" when the value is missing
+rather than being dropped, and a private-range IP renders "Local network", so a
+self-hosted install still gets a coherent message. All four values come from
+`describeNewDeviceLogin` in `@carbon/auth`, the same request read the
+`userLogin` row uses, so the email and the devices card agree.
 
 Bypasses notification preferences and plan gates, exactly as
 `mfa-email.server.ts` already does — an attacker with account access would
@@ -150,7 +156,7 @@ rate-limit keying, a documented bypass) are **not** in scope — flagged in Risk
 | Newer/unrecognised device | Refused with a message naming the remedy | **User decision.** No exception path; the user acts from a device they have used before |
 | Self-termination | Never gated, in every combination | The escape hatch that stops step-up becoming a lockout (ASVS 7.5.2) |
 | Alert trigger | New `(userId, deviceId)` pair, all login methods | Every vendor surveyed alerts on new device, not every login (>90 % want the former) |
-| Alert content | Device + timestamp + security link. **No IP, no location** | **User decision** (no IP). Location follows: no dependency, no GDPR surface, identical on cloud and self-hosted |
+| Alert content | Time + IP + location + browser + security link | **User decision, revised 2026-09-18** (was device + time only). "Unknown" / "Local network" placeholders keep self-hosted installs coherent |
 | Alert delivery | `trigger("send-email")` with a resolved `companyId` | **User decision.** Reuses `mfa-email.server.ts` exactly; a user with no membership gets no alert and has nothing to protect |
 | Client IP | New `getClientIp`, rightmost-first, trusted-proxy bounded | **User decision.** A forgeable IP in a security record is worse than none |
 | Audit table | Deferred to its own spec | **User decision.** Keeps this spec's review surface on the gate |
@@ -250,9 +256,8 @@ specs.
 - [ ] "Sign out other devices" is refused outright when any single other session
       predates the caller's device
 - [ ] The refusals hold when the request is POSTed directly, bypassing the UI
-- [ ] A login from an unseen `(userId, deviceId)` sends one email naming the
-      device and time, containing **no IP and no location**; a login from a seen
-      pair sends none
+- [ ] A login from an unseen `(userId, deviceId)` sends one email listing the
+      time, IP, location and browser; a login from a seen pair sends none
 - [ ] The email sends regardless of notification preferences and plan gates
 - [ ] A user with no company membership triggers no alert and no error
 - [ ] With `TRUSTED_PROXY_COUNT` set, a request whose `x-forwarded-for` carries a
@@ -297,9 +302,11 @@ specs.
 - [x] Does the audit table belong in this spec? — **Answer (user):** no,
       separate spec built afterwards.
 - [x] How to treat the attacker-controlled client IP? — **Answer (user):** fix
-      it in this spec, and put no IP in the email at all.
+      it in this spec, and put no IP in the email at all. **Revised 2026-09-18:**
+      with the trusted-hop fix in place the IP goes in the email.
 - [x] Geolocation for self-hosted alerts? — **Answer (user):** none — device
-      name and time only, identical on every deployment.
+      name and time only, identical on every deployment. **Revised 2026-09-18:**
+      location is shown, "Unknown" where the platform provides none.
 
 ## Changelog
 

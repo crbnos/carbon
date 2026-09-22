@@ -17504,6 +17504,9 @@ msgstr "このバックアップを完了できませんでした。"
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "このブラウザーはセッション開始後にアカウントに追加されたため、そのセッションを終了することはできません。より長く使用しているブラウザーからサインアウトするか、待機してください。1週間使用されていないセッションはリストから削除されます。ブラウザーのサイトデータをクリアすると、そのブラウザーが新しいものとして扱われます。"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
 
@@ -19402,8 +19405,8 @@ msgstr "今日のあなたの状況"
 msgid "Where you want to grow"
 msgstr "成長したい場所"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "サインインしている場所です。認識していないデバイスからサインアウトしてください — そのセッション期間より長く使用しているデバイスから実行してください。"
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "サインイン中のデバイス一覧です。認識していないデバイスからサインアウトしてください — そのセッションより長く使用しているデバイスからサインアウトしてください。ブラウザーのサイトデータをクリアするとデバイスが新しくなります。"
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金額を明細価格に対する割合として解釈するか、固定の通貨額として解釈するか。"

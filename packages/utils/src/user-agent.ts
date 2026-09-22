@@ -1,17 +1,8 @@
-/**
- * Minimal user-agent classification for display ("Chrome on macOS").
- * Deliberately not a full UA parser: sign-in activity only needs a
- * recognizable family name, and anything unmatched falls back to null so
- * callers can show the raw string instead.
- */
-
 export type ParsedUserAgent = {
   browser: string | null;
   os: string | null;
 };
 
-// Order matters: more specific tokens first (Edge/Opera embed "Chrome",
-// Chrome embeds "Safari").
 const BROWSERS: [RegExp, string][] = [
   [/edg(?:e|a|ios)?\//i, "Edge"],
   [/opr\/|opera/i, "Opera"],
@@ -21,7 +12,6 @@ const BROWSERS: [RegExp, string][] = [
   [/safari\//i, "Safari"]
 ];
 
-// iOS before macOS: iPadOS user agents can carry "like Mac OS X".
 const OPERATING_SYSTEMS: [RegExp, string][] = [
   [/iphone|ipad|ipod/i, "iOS"],
   [/android/i, "Android"],

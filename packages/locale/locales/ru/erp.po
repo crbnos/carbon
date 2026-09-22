@@ -17504,6 +17504,9 @@ msgstr "Эта резервная копия не может быть завер
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Эта резервная копия еще не была проверена. Любые различия будут обнаружены при запуске восстановления."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Этот браузер был подключен к учетной записи после начала этого сеанса, поэтому не может его завершить. Выходите, используя браузер, который использовали дольше, или подождите: неиспользованный сеанс удаляется из этого списка через неделю. Очистка данных сайта делает браузер новым."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "В этом экземпляре Carbon отсутствуют учётные данные OAuth для Onshape. Попросите администратора настроить их."
 
@@ -19402,8 +19405,8 @@ msgstr "Где вы находитесь сегодня"
 msgid "Where you want to grow"
 msgstr "Где вы хотите расти"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Где вы вошли. Выйдите из любого устройства, которое вы не распознаете — с устройства, которое вы использовали дольше, чем этот сеанс."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Где вы вошли. Выходите из любого неизвестного устройства — с помощью устройства, которое использовали дольше. Очистка данных браузера делает его новым."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Интерпретируется ли сумма как процент от цены строки или как фиксированная сумма в валюте."

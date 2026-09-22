@@ -17504,6 +17504,9 @@ msgstr "Cette sauvegarde n'a pas pu être complétée."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Cette sauvegarde n'a pas encore été vérifiée. Toute différence est trouvée lors de l'exécution de la restauration."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Ce navigateur s'est connecté après le démarrage de cette session et ne peut donc pas la terminer. Déconnectez-vous depuis un navigateur utilisé depuis plus longtemps, ou attendez : une session inactive pendant une semaine disparaît de la liste. Effacer les données du site rend un navigateur nouveau."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Cette instance Carbon n'a pas d'identifiants OAuth Onshape. Demandez à un administrateur de les configurer."
 
@@ -19402,8 +19405,8 @@ msgstr "Où vous en êtes aujourd'hui"
 msgid "Where you want to grow"
 msgstr "Où vous voulez grandir"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Où vous êtes connecté. Déconnectez-vous de tout appareil que vous ne reconnaissez pas — à partir d'un appareil que vous avez utilisé plus longtemps que cette session."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Où vous êtes connecté. Déconnectez-vous de tout appareil que vous ne reconnaissez pas — à partir d'un appareil utilisé depuis plus longtemps que cette session. L'effacement des données du site de votre navigateur le rend nouveau."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Si le montant est interprété comme un pourcentage du prix de ligne ou comme un montant fixe en devise."

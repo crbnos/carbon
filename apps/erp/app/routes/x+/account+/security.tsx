@@ -3,6 +3,7 @@ import {
   CONTROLLED_ENVIRONMENT,
   error,
   isAuthProviderEnabled,
+  SESSION_MAX_AGE,
   success
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
@@ -32,6 +33,9 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   toast,
   VStack
 } from "@carbon/react";
@@ -82,14 +86,6 @@ type Passkey = {
   backedUp: boolean;
 };
 
-/**
- * The live sessions on this account, each annotated with when it began and
- * whether the CALLING device is old enough to end it.
- *
- * Shared by the loader and the action so the gate is computed once: two copies
- * of this join would drift, and the action's copy is the one that actually
- * enforces anything.
- */
 async function getDevices(request: Request, sessionUserId: string) {
   const client = getCarbonServiceRole();
   const authSession = await getAuthSession(request);
@@ -98,10 +94,8 @@ async function getDevices(request: Request, sessionUserId: string) {
     : null;
 
   const [loginsResult, activeSessions, deviceFirstSeenAt] = await Promise.all([
-    // History rows are the JOIN SOURCE for device/location detail, not a
-    // displayed list — fetch enough to cover every live session's login.
     getUserLogins(client as any, sessionUserId, 100),
-    getActiveSessions(getDatabaseClient(), sessionUserId),
+    getActiveSessions(getDatabaseClient(), sessionUserId, SESSION_MAX_AGE),
     getDeviceFirstSeenAt(
       client as any,
       sessionUserId,
@@ -115,9 +109,6 @@ async function getDevices(request: Request, sessionUserId: string) {
       .map((login) => [login.sessionId as string, login])
   );
 
-  // One entry per LIVE session ("where you're signed in"). Sessions without a
-  // login row (minted before sessionId capture) fall back to what GoTrue
-  // recorded on the session itself.
   const devices = activeSessions
     .map((session) => {
       const login = loginBySession.get(session.id);
@@ -132,9 +123,6 @@ async function getDevices(request: Request, sessionUserId: string) {
         app: login?.app ?? null,
         startedAt,
         lastActiveAt: session.refreshedAt ?? session.createdAt,
-        // The gate: this device may only end sessions that began AFTER it
-        // first appeared. An attacker's fresh browser is always newer than the
-        // owner's established one, and cannot become older by waiting.
         canRevoke:
           deviceFirstSeenAt !== null &&
           Date.parse(deviceFirstSeenAt) < Date.parse(startedAt)
@@ -152,10 +140,6 @@ async function getDevices(request: Request, sessionUserId: string) {
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  // sessionUserId, not userId: the effective user can be a console-pinned
-  // operator, and GoTrue sessions/passkeys belong to whoever is actually
-  // signed in. Keying these off the effective user would list (and allow
-  // revoking) another person's sessions.
   const { sessionUserId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
 
@@ -173,8 +157,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     passkeys: (passkeysResult.data ?? []) as Passkey[],
     totpFactors: totpFactors.filter((f) => f.status === "verified"),
     devices: deviceState.devices,
-    // "Sign out other devices" ends EVERY other session at once, so it needs
-    // to outrank all of them — one session it cannot touch refuses the lot.
     canRevokeAll:
       deviceState.deviceFirstSeenAt !== null &&
       deviceState.devices
@@ -246,11 +228,6 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(error(null, "Missing sessionId"), { status: 400 });
     }
 
-    // Refuse the caller's own session even if posted directly — ending the
-    // session you are on is logout, not revocation. When the current session
-    // id cannot be derived we refuse outright rather than compare against
-    // null: every id would differ from null, so the guard would pass for the
-    // caller's own session — the exact case it exists to prevent.
     const authSession = await getAuthSession(request);
     const currentSessionId = authSession
       ? getSessionId(authSession.accessToken)
@@ -261,8 +238,6 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
-    // The device gate, enforced here and not only in the UI — a hidden button
-    // stops nobody. The caller's device must predate the session it is ending.
     const { devices } = await getDevices(request, sessionUserId);
     const target = devices.find((device) => device.sessionId === sessionId);
     if (!target?.canRevoke) {
@@ -290,9 +265,6 @@ export async function action({ request }: ActionFunctionArgs) {
       return data(error(null, "No active session"), { status: 400 });
     }
 
-    // All-or-nothing: this ends EVERY other session, so the caller's device
-    // must outrank all of them. One session it cannot touch refuses the lot,
-    // rather than partially applying.
     const { devices } = await getDevices(request, sessionUserId);
     const others = devices.filter((device) => !device.isCurrent);
     if (!others.every((device) => device.canRevoke)) {
@@ -676,7 +648,8 @@ export default function AccountSecurity() {
                 <Trans>
                   Where you're signed in. Sign out of any device you don't
                   recognize — from a device you've used for longer than that
-                  session.
+                  session. Clearing your browser's site data makes it a new
+                  device.
                 </Trans>
               </CardDescription>
             </div>
@@ -704,8 +677,6 @@ export default function AccountSecurity() {
                   browser && os
                     ? t`${browser} on ${os}`
                     : (browser ?? os ?? t`Unknown device`);
-                // Normalize at display too, so sessions recorded before
-                // normalization ("::ffff:127.0.0.1") still render cleanly.
                 const ipAddress = normalizeIp(device.ipAddress);
                 const location =
                   [device.city, device.country].filter(Boolean).join(", ") ||
@@ -763,9 +734,24 @@ export default function AccountSecurity() {
                           className="shrink-0 cursor-pointer text-muted-foreground hover:text-foreground"
                         />
                       ) : (
-                        <span className="text-xs text-muted-foreground">
-                          <Trans>Newer device</Trans>
-                        </span>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="text-xs text-muted-foreground cursor-help">
+                              <Trans>Newer device</Trans>
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent className="max-w-xs">
+                            <span>
+                              <Trans>
+                                This browser joined the account after that
+                                session started, so it can't end it. Sign out
+                                from a browser you've used for longer, or wait:
+                                a session unused for a week drops off this list.
+                                Clearing site data makes a browser new again.
+                              </Trans>
+                            </span>
+                          </TooltipContent>
+                        </Tooltip>
                       )}
                     </HStack>
                   </HStack>

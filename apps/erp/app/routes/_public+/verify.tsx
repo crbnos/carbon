@@ -121,7 +121,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Record the first sign-in (fire-and-forget: recordLogin never throws).
   const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
   await recordLogin({
     request,

@@ -4,14 +4,6 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { sanitize } from "~/utils/supabase";
 
-// ── GoTrue session access ─────────────────────────────────────────────────
-// GoTrue's auth schema is not in the generated types and its admin REST API
-// has no endpoint for these two operations, so they use the sql template
-// against auth.sessions directly. This is the ONE place that reaches into
-// that schema — if a Supabase upgrade moves auth.sessions, fix it here.
-// (Revoking the CURRENT session and "sign out others" use the official
-// admin.signOut API instead; see x+/account+/security.tsx.)
-
 export type ActiveSession = {
   id: string;
   createdAt: string;
@@ -22,10 +14,9 @@ export type ActiveSession = {
 
 export async function getActiveSessions(
   db: Kysely<KyselyDatabase>,
-  userId: string
+  userId: string,
+  maxAgeSeconds: number
 ): Promise<ActiveSession[]> {
-  // to_jsonb #>> '{}' emits ISO-8601 with offset (what <DateTime> parses);
-  // refreshed_at is a bare timestamp GoTrue writes in UTC, so anchor it there.
   const { rows } = await sql<ActiveSession>`
     SELECT id::text AS id,
            to_jsonb(created_at) #>> '{}' AS "createdAt",
@@ -34,18 +25,13 @@ export async function getActiveSessions(
            host(ip) AS ip
     FROM auth.sessions
     WHERE user_id::text = ${userId}
+      AND (not_after IS NULL OR not_after > now())
+      AND COALESCE(refreshed_at AT TIME ZONE 'UTC', created_at)
+            > now() - make_interval(secs => ${maxAgeSeconds})
   `.execute(db);
   return rows;
 }
 
-/**
- * Deletes one of the user's OWN GoTrue sessions; its refresh tokens cascade
- * away (FK ON DELETE CASCADE), and the device is bounced to login at its next
- * shell navigation. The user_id constraint makes a forged session id a no-op.
- * Returns the affected count so callers can tell "signed out" from "was
- * already signed out". Text comparison on purpose: a malformed id must
- * compare false, not throw a uuid cast error.
- */
 export async function revokeSession(
   db: Kysely<KyselyDatabase>,
   userId: string,
@@ -63,7 +49,6 @@ export async function getUserLogins(
   userId: string,
   limit = 20
 ) {
-  // RLS restricts reads to the owner; the userId filter is belt-and-braces.
   return client
     .from("userLogin")
     .select(
@@ -74,23 +59,12 @@ export async function getUserLogins(
     .limit(limit);
 }
 
-/**
- * When this device was FIRST seen for this user, or null if never.
- *
- * This is the device's age, and the whole basis of the revoke gate: a device
- * may only end sessions that began after it first appeared. Null means
- * unrecognised — no cookie, a tampered one, or a genuinely new browser — which
- * can revoke nothing but itself.
- */
 export async function getDeviceFirstSeenAt(
   client: SupabaseClient<Database>,
   userId: string,
   deviceId: string | null
 ): Promise<string | null> {
   if (!deviceId) return null;
-  // mfaPending rows are excluded: a login that never cleared its second factor
-  // must not age the device, or failing MFA once would be enough to make an
-  // attacker's browser look older than the owner's sessions.
   const { data } = await client
     .from("userLogin")
     .select("createdAt")

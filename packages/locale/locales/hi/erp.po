@@ -17504,6 +17504,9 @@ msgstr "यह बैकअप पूर्ण नहीं किया जा 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "इस बैकअप की अभी जांच नहीं की गई है। कोई भी अंतर पुनः स्थापित करने के समय पाया जाता है।"
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "यह ब्राउज़र उस सत्र के शुरू होने के बाद खाते में शामिल हुआ, इसलिए यह इसे समाप्त नहीं कर सकता। किसी ऐसे ब्राउज़र से साइन आउट करें जिसका आपने लंबे समय से उपयोग किया है, या प्रतीक्षा करें: एक सप्ताह तक उपयोग न किए गए सत्र इस सूची से हट जाते हैं। साइट डेटा साफ़ करने से ब्राउज़र नया हो जाता है।"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "इस Carbon इंस्टेंस में Onshape OAuth क्रेडेंशियल नहीं हैं। किसी व्यवस्थापक से उन्हें सेट करने के लिए कहें।"
 
@@ -19402,8 +19405,8 @@ msgstr "आप आज कहाँ हैं"
 msgid "Where you want to grow"
 msgstr "जहां आप बढ़ना चाहते हैं"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "जहाँ आप साइन इन हैं। किसी भी डिवाइस से साइन आउट करें जिसे आप नहीं पहचानते — एक ऐसी डिवाइस से जिसे आप उस सेशन से अधिक समय तक उपयोग करते हैं।"
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "जहाँ आप साइन इन हैं। किसी भी ऐसे डिवाइस से साइन आउट करें जिसे आप नहीं पहचानते — उस डिवाइस से जिसका आपने उस सत्र से लंबे समय तक उपयोग किया है। अपने ब्राउज़र का साइट डेटा साफ़ करने से यह एक नया डिवाइस बन जाता है।"
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "क्या राशि को लाइन मूल्य के प्रतिशत के रूप में या एक निश्चित मुद्रा राशि के रूप में समझा जाता है।"

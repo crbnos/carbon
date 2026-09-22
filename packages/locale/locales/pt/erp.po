@@ -17504,6 +17504,9 @@ msgstr "Este backup não pôde ser concluído."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Este backup ainda não foi verificado. As diferenças são encontradas quando a restauração é executada."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Este navegador entrou na conta depois desta sessão ter começado, portanto não consegue encerrá-la. Termine a sessão de um navegador que tem utilizado há mais tempo ou aguarde: uma sessão não utilizada durante uma semana desaparece desta lista. Limpar os dados do site do navegador faz-o parecer novo novamente."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instância do Carbon não tem credenciais OAuth do Onshape. Peça a um administrador para configurá-las."
 
@@ -19402,8 +19405,8 @@ msgstr "Onde você está hoje"
 msgid "Where you want to grow"
 msgstr "Onde você quer crescer"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Onde você está conectado. Desconecte-se de qualquer dispositivo que você não reconheça — em um dispositivo que você usou por mais tempo que essa sessão."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Onde está autenticado. Termine a sessão de qualquer dispositivo que não reconheça — de um dispositivo que tenha utilizado há mais tempo do que essa sessão. Limpar os dados do site do seu navegador faz-o tornar-se um novo dispositivo."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Se o valor é interpretado como uma porcentagem do preço da linha ou como um valor fixo em moeda."

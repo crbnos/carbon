@@ -17504,6 +17504,9 @@ msgstr "Non è stato possibile completare questo backup."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Questo backup non è stato ancora verificato. Le eventuali differenze vengono rilevate quando il ripristino viene eseguito."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Questo browser si è collegato all'account dopo l'inizio della sessione, quindi non può terminarla. Disconnettiti da un browser che utilizzi da più tempo, oppure attendi: una sessione inutilizzata per una settimana verrà rimossa da questo elenco. La cancellazione dei dati del sito rende il browser nuovo."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "A questa istanza di Carbon mancano le credenziali OAuth di Onshape. Chiedi a un amministratore di configurarle."
 
@@ -19402,8 +19405,8 @@ msgstr "Dove sei oggi"
 msgid "Where you want to grow"
 msgstr "Dove vuoi crescere"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Dove sei connesso. Esci da qualsiasi dispositivo che non riconosci — da un dispositivo che usi da più tempo."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Dove sei collegato. Disconnettiti da qualsiasi dispositivo non riconosciuto — da un dispositivo che utilizzi da più tempo rispetto a questa sessione. La cancellazione dei dati del sito del browser lo rende un nuovo dispositivo."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Se l'importo viene interpretato come percentuale del prezzo di riga o come importo fisso in valuta."

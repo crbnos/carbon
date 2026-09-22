@@ -17504,6 +17504,9 @@ msgstr "Esta copia de seguridad no se pudo completar."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Esta copia de seguridad aún no ha sido verificada. Se encontrarán diferencias cuando se ejecute la restauración."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Este navegador accedió a la cuenta después de que esa sesión comenzó, por lo que no puede terminarla. Cierre sesión desde un navegador que haya utilizado durante más tiempo, o espere: una sesión no utilizada durante una semana desaparece de esta lista. Borrar los datos del sitio hace que un navegador vuelva a ser nuevo."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instancia de Carbon no tiene credenciales OAuth de Onshape. Pide a un administrador que las configure."
 
@@ -19402,8 +19405,8 @@ msgstr "Dónde estás hoy"
 msgid "Where you want to grow"
 msgstr "Dónde quieres crecer"
 
-msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session."
-msgstr "Dónde has iniciado sesión. Cierra sesión en cualquier dispositivo que no reconozcas — desde un dispositivo que hayas usado más tiempo que esa sesión."
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Dónde está conectado. Cierre sesión en cualquier dispositivo que no reconozca — desde un dispositivo que haya utilizado durante más tiempo que esa sesión. Borrar los datos del sitio de su navegador lo hace un dispositivo nuevo."
 
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Si el importe se interpreta como un porcentaje del precio de línea o como un importe fijo de moneda."

@@ -1,3 +1,4 @@
+import { describeNewDeviceLogin } from "@carbon/auth/user-login.server";
 import type { Database } from "@carbon/database";
 import {
   MfaEnabledEmail,
@@ -6,7 +7,7 @@ import {
 } from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { chunkArray, datetime } from "@carbon/utils";
+import { chunkArray } from "@carbon/utils";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getUser } from "~/modules/users/users.server";
@@ -147,19 +148,11 @@ export async function sendMfaEnabledEmail(
   }
 }
 
-/**
- * Tell the account owner that a device we have never seen just signed in.
- *
- * Same stance as the MFA mail above: account-security post, so no notification
- * preference and no plan gate. Carries the device and the time only — never an
- * IP or a location (see NewDeviceEmail for why). Swallows its own errors: a
- * login must not fail because the alert did.
- */
 export async function sendNewDeviceEmail(
   serviceRole: SupabaseClient<Database>,
   companyId: string,
   userId: string,
-  deviceLabel: string
+  request: Request
 ) {
   try {
     const user = await getUser(serviceRole, userId);
@@ -169,15 +162,13 @@ export async function sendNewDeviceEmail(
 
     const email = NewDeviceEmail({
       recipientName: user.data.fullName ?? undefined,
-      deviceLabel,
-      // UTC instant via the sanctioned helper — never a raw JS Date.
-      signedInAt: datetime.timestamp(),
+      ...describeNewDeviceLogin(request),
       securityUrl: SECURITY_URL
     });
 
     await trigger("send-email", {
       to: [user.data.email],
-      subject: "A new device signed in to your Carbon account",
+      subject: "We've noticed a new login to your Carbon account",
       html: await render(email),
       text: await render(email, { plainText: true }),
       companyId
