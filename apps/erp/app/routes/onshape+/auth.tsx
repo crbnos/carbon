@@ -1,6 +1,6 @@
-import { createPanelSession } from "@carbon/auth/panel-session.server";
 import { requireAuthSession } from "@carbon/auth/session.server";
 import { PANEL_SESSION_MESSAGE } from "@carbon/ee";
+import { createPanelSession } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 
 export const config = {

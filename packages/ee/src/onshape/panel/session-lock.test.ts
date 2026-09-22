@@ -6,7 +6,7 @@ import {
   releasePanelRefreshLock,
   renewPanelRefreshLock,
   withPanelRefreshLock
-} from "./panel-session.server";
+} from "./session.server";
 
 // An in-memory Redis with the three things the lock uses: SET PX NX, and the
 // two owner-checked scripts (told apart by the command they end in). Expiry
@@ -57,6 +57,19 @@ vi.mock("@carbon/kv", () => ({
     }
   }
 }));
+
+// The session module also carries the panel's permission gate; the lock tests
+// never reach it, so its @carbon/auth dependencies are stubbed out.
+vi.mock("@carbon/auth", () => ({
+  CONTROLLED_ENVIRONMENT: false,
+  getCarbon: vi.fn(),
+  SESSION_IDLE_LOCK_MS: 0
+}));
+vi.mock("@carbon/auth/auth.server", () => ({ refreshAccessToken: vi.fn() }));
+vi.mock("@carbon/auth/client.server", () => ({
+  getCarbonServiceRole: vi.fn()
+}));
+vi.mock("@carbon/auth/users.server", () => ({ getUserClaims: vi.fn() }));
 
 const TOKEN = "cps_aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
 

@@ -25,11 +25,13 @@ import {
   LuTriangleAlert
 } from "react-icons/lu";
 import { bomParentIndexes, buildBomViewTree, visibleBomRows } from "./bom-view";
+import { ItemFieldSelects } from "./ItemFieldSelects";
 import type { OnshapePanelContext } from "./messages";
 import { isPanelSessionMessage, postApplicationInit } from "./messages";
 import type {
   AssemblyPlan,
   AssemblyPlanDepth,
+  ItemFieldSnapshot,
   PartPlan,
   PartPlanRow,
   ProposedItem,
@@ -1212,6 +1214,33 @@ export function OnshapePanel({
 
   const cancelReview = () => setReview(null);
 
+  /**
+   * Record a manufacturing-field edit for one review row, keyed as the plan is
+   * (partId for parts, part number for assemblies and releases). Merged sparsely
+   * over any edit already there; the apply diffs against the live value, so a
+   * value set back to its original writes nothing. For a part review the row is
+   * also selected — editing a linked/unchanged row is intent to push it, and it
+   * would otherwise be unticked and its edit dropped by `applyRequestBody`.
+   */
+  const editItem = useCallback(
+    (key: string, patch: Partial<ItemFieldSnapshot>) => {
+      setReview((current) => {
+        if (!current) return current;
+        const edits = {
+          ...current.edits,
+          [key]: { ...(current.edits[key] ?? {}), ...patch }
+        };
+        if (current.kind === "part") {
+          const selected = new Set(current.selected);
+          selected.add(key);
+          return { ...current, edits, selected };
+        }
+        return { ...current, edits };
+      });
+    },
+    []
+  );
+
   /** After a 410: the same plan request again, which replaces the review. */
   const replan = (token: string) => {
     if (!review) return;
@@ -1444,6 +1473,7 @@ export function OnshapePanel({
                     onCancel={cancelReview}
                     onApply={() => applyReview(session.token)}
                     onReplan={() => replan(session.token)}
+                    onEditItem={editItem}
                     replanning={!!pushing}
                   />
                 ) : (
@@ -1478,6 +1508,7 @@ export function OnshapePanel({
                   onCancel={cancelReview}
                   onApply={() => applyReview(session.token)}
                   onReplan={() => replan(session.token)}
+                  onEditItem={editItem}
                   replanning={!!pushing}
                 />
               ) : (
@@ -1504,6 +1535,7 @@ export function OnshapePanel({
                 onCancel={cancelReview}
                 onApply={() => applyReview(session.token)}
                 onReplan={() => replan(session.token)}
+                onEditItem={editItem}
                 replanning={!!pushingReleaseId}
               />
             ) : (
@@ -2087,6 +2119,8 @@ type ReviewSectionProps<R extends ReviewState> = {
   onCancel: () => void;
   onApply: () => void;
   onReplan: () => void;
+  /** Record a manufacturing-field edit for one row, keyed as the plan is. */
+  onEditItem: (key: string, patch: Partial<ItemFieldSnapshot>) => void;
   /** A plan request after expiry is in flight. */
   replanning: boolean;
 };
@@ -2111,7 +2145,7 @@ function ReviewActionBar({
 }) {
   const count = applyCount(review);
   return (
-    <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-background px-4 py-2">
+    <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
       <Button
         className="w-full"
         onClick={onApply}
@@ -2194,14 +2228,24 @@ function ReviewSummary({ counts }: { counts: Array<[number, string]> }) {
   );
 }
 
-/** The settings a created item gets, as one line. */
-function proposedSummary(proposed: ProposedItem): string {
-  return [
-    proposed.replenishmentSystem,
-    proposed.defaultMethodType,
-    proposed.itemTrackingType,
-    proposed.unitOfMeasureCode
-  ].join(" · ");
+/**
+ * What the three manufacturing dropdowns start from: the item's current values
+ * for anything Carbon already has, else the proposal a create would write.
+ * Null for a row that resolves to no item (a skip, a drawing).
+ */
+function fieldBaseline(row: {
+  proposed?: ProposedItem | null;
+  current?: ItemFieldSnapshot | null;
+}): ItemFieldSnapshot | null {
+  if (row.current) return row.current;
+  if (row.proposed) {
+    return {
+      replenishmentSystem: row.proposed.replenishmentSystem,
+      defaultMethodType: row.proposed.defaultMethodType,
+      itemTrackingType: row.proposed.itemTrackingType
+    };
+  }
+  return null;
 }
 
 /**
@@ -2287,6 +2331,7 @@ function PartReviewSection({
   onCancel,
   onApply,
   onReplan,
+  onEditItem,
   replanning
 }: ReviewSectionProps<PartReview>) {
   const { plan } = review;
@@ -2350,7 +2395,7 @@ function PartReviewSection({
 
           <ul className="w-full divide-y divide-border rounded-md border border-border">
             {plan.rows.map((row) => (
-              <li key={row.partId} className="px-3 py-2">
+              <li key={row.partId} className="bg-card px-3 py-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm" title={row.name}>
@@ -2365,11 +2410,6 @@ function PartReviewSection({
                     <PartPlanBadge row={row} />
                   </div>
                 </div>
-                {row.action === "create" && row.proposed ? (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {proposedSummary(row.proposed)}
-                  </p>
-                ) : null}
                 {(row.action === "update" || row.action === "adopt") &&
                 row.changes.length > 0 ? (
                   <p className="mt-1 truncate text-xs text-muted-foreground">
@@ -2381,6 +2421,17 @@ function PartReviewSection({
                       .join(" · ")}
                   </p>
                 ) : null}
+                {(() => {
+                  const baseline = fieldBaseline(row);
+                  return baseline ? (
+                    <ItemFieldSelects
+                      baseline={baseline}
+                      edit={review.edits[row.partId]}
+                      disabled={busy}
+                      onChange={(patch) => onEditItem(row.partId, patch)}
+                    />
+                  ) : null;
+                })()}
                 {row.action === "create" ||
                 row.action === "update" ||
                 row.action === "adopt" ? (
@@ -2410,6 +2461,7 @@ function AssemblyReviewSection({
   onCancel,
   onApply,
   onReplan,
+  onEditItem,
   replanning
 }: ReviewSectionProps<AssemblyReview>) {
   const { plan } = review;
@@ -2540,7 +2592,7 @@ function AssemblyReviewSection({
 
       <ul className="w-full divide-y divide-border rounded-md border border-border">
         {/* The root first: it is what is being pushed. */}
-        <li className="px-3 py-2">
+        <li className="bg-card px-3 py-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
               <p
@@ -2555,18 +2607,26 @@ function AssemblyReviewSection({
                 {" · this assembly"}
               </p>
             </div>
-            <div className="shrink-0">
-              <ItemActionBadge
-                action={plan.root.action === "create" ? "create" : "reuse"}
-                conflict={plan.root.conflict}
-              />
-            </div>
+            {/* Create/Reuse is not actionable, so it is not shown. A conflict
+                is: the part number clashes with an item this push would write
+                into, and the way out is to renumber in Onshape. */}
+            {plan.root.conflict ? (
+              <div className="shrink-0">
+                <ItemActionBadge action="reuse" conflict />
+              </div>
+            ) : null}
           </div>
-          {plan.root.action === "create" && plan.root.proposed ? (
-            <p className="mt-1 truncate text-xs text-muted-foreground">
-              {proposedSummary(plan.root.proposed)}
-            </p>
-          ) : null}
+          {(() => {
+            const baseline = fieldBaseline(plan.root);
+            return baseline ? (
+              <ItemFieldSelects
+                baseline={baseline}
+                edit={review.edits[plan.root.partNumber]}
+                disabled={busy}
+                onChange={(patch) => onEditItem(plan.root.partNumber, patch)}
+              />
+            ) : null;
+          })()}
           <RowFields
             isCreate={plan.root.action === "create"}
             fields={plan.root.customFields}
@@ -2574,7 +2634,7 @@ function AssemblyReviewSection({
           />
         </li>
         {plan.items.map((item) => (
-          <li key={item.partNumber} className="px-3 py-2">
+          <li key={item.partNumber} className="bg-card px-3 py-2">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p
@@ -2590,18 +2650,25 @@ function AssemblyReviewSection({
                   {item.isAssembly ? " · assembly" : ""}
                 </p>
               </div>
-              <div className="shrink-0">
-                <ItemActionBadge
-                  action={item.action === "create" ? "create" : "reuse"}
-                  conflict={item.conflict}
-                />
-              </div>
+              {/* Only a conflict is actionable (renumber in Onshape); plain
+                  Create/Reuse is not shown. */}
+              {item.conflict ? (
+                <div className="shrink-0">
+                  <ItemActionBadge action="reuse" conflict />
+                </div>
+              ) : null}
             </div>
-            {item.action === "create" && item.proposed ? (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {proposedSummary(item.proposed)}
-              </p>
-            ) : null}
+            {(() => {
+              const baseline = fieldBaseline(item);
+              return baseline ? (
+                <ItemFieldSelects
+                  baseline={baseline}
+                  edit={review.edits[item.partNumber]}
+                  disabled={busy}
+                  onChange={(patch) => onEditItem(item.partNumber, patch)}
+                />
+              ) : null;
+            })()}
           </li>
         ))}
       </ul>
@@ -2665,6 +2732,7 @@ function ReleaseReviewSection({
   onCancel,
   onApply,
   onReplan,
+  onEditItem,
   replanning
 }: ReviewSectionProps<ReleaseReview>) {
   const { plan } = review;
@@ -2763,7 +2831,7 @@ function ReleaseReviewSection({
         {plan.items.map((item) => (
           <li
             key={`${item.elementId}:${item.partNumber}:${item.revision}`}
-            className="px-3 py-2"
+            className="bg-card px-3 py-2"
           >
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
@@ -2785,11 +2853,17 @@ function ReleaseReviewSection({
                 Released — BOM lines won't change
               </p>
             ) : null}
-            {item.action === "create" && item.proposed ? (
-              <p className="mt-1 truncate text-xs text-muted-foreground">
-                {proposedSummary(item.proposed)}
-              </p>
-            ) : null}
+            {(() => {
+              const baseline = fieldBaseline(item);
+              return baseline ? (
+                <ItemFieldSelects
+                  baseline={baseline}
+                  edit={review.edits[item.partNumber]}
+                  disabled={busy}
+                  onChange={(patch) => onEditItem(item.partNumber, patch)}
+                />
+              ) : null;
+            })()}
           </li>
         ))}
       </ul>
@@ -2801,7 +2875,7 @@ function ReleaseReviewSection({
           </span>
           <ul className="w-full divide-y divide-border rounded-md border border-border">
             {plan.children.map((child) => (
-              <li key={child.partNumber} className="px-3 py-2">
+              <li key={child.partNumber} className="bg-card px-3 py-2">
                 <div className="flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <p
@@ -2820,11 +2894,17 @@ function ReleaseReviewSection({
                     action={child.action === "create" ? "create" : "reuse"}
                   />
                 </div>
-                {child.action === "create" && child.proposed ? (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {proposedSummary(child.proposed)}
-                  </p>
-                ) : null}
+                {(() => {
+                  const baseline = fieldBaseline(child);
+                  return baseline ? (
+                    <ItemFieldSelects
+                      baseline={baseline}
+                      edit={review.edits[child.partNumber]}
+                      disabled={busy}
+                      onChange={(patch) => onEditItem(child.partNumber, patch)}
+                    />
+                  ) : null;
+                })()}
               </li>
             ))}
           </ul>

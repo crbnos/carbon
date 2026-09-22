@@ -6,12 +6,15 @@ import {
   buildPartPlan,
   buildReleasePlan,
   changeNoticeDescriptionJson,
+  currentItemFields,
   defaultUnitOfMeasureCode,
   mergeChangeNoticeEdit,
   mergeEditsForCreates,
+  mergeExistingItemEdits,
   mergeItemEdits,
   pickAdoptTarget,
-  proposeItem
+  proposeItem,
+  reconcileMethodForReplenishment
 } from "./plan";
 import { DEFAULT_PUSH_DEFAULTS } from "./preferences";
 import type { PanelRelease } from "./releases";
@@ -179,6 +182,92 @@ describe("mergeItemEdits", () => {
     expect(items.get("a")?.name).toBe("A");
     expect(items.has("b")).toBe(false);
     expect(errors).toEqual([{ key: "b", errors: ["Name is required"] }]);
+  });
+});
+
+describe("reconcileMethodForReplenishment", () => {
+  it("keeps a legal method and swaps an illegal one for the first allowed", () => {
+    expect(reconcileMethodForReplenishment("Make", "Make to Order")).toBe(
+      "Make to Order"
+    );
+    // "Make to Order" is not allowed for Buy, so it falls to the first allowed.
+    expect(reconcileMethodForReplenishment("Buy", "Make to Order")).toBe(
+      "Pull from Inventory"
+    );
+  });
+});
+
+describe("currentItemFields", () => {
+  it("coerces an item's stored fields to the enums", () => {
+    expect(
+      currentItemFields({
+        replenishmentSystem: "Make",
+        defaultMethodType: "Make to Order",
+        itemTrackingType: "Serial"
+      })
+    ).toEqual({
+      replenishmentSystem: "Make",
+      defaultMethodType: "Make to Order",
+      itemTrackingType: "Serial"
+    });
+  });
+
+  it("falls back for missing values and reconciles an illegal pair", () => {
+    // A legacy Buy item carrying a Make-only method resolves to a legal pair
+    // rather than seeding the editor with something the interlock refuses.
+    expect(
+      currentItemFields({
+        replenishmentSystem: "Buy",
+        defaultMethodType: "Make to Order",
+        itemTrackingType: null
+      })
+    ).toEqual({
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Pull from Inventory",
+      itemTrackingType: "Inventory"
+    });
+  });
+});
+
+describe("mergeExistingItemEdits", () => {
+  const current = {
+    replenishmentSystem: "Make",
+    defaultMethodType: "Make to Order",
+    itemTrackingType: "Inventory"
+  } as const;
+
+  it("returns no changes for an empty edit", () => {
+    const result = mergeExistingItemEdits(current, undefined);
+    expect(result).toEqual({ ok: true, values: current, changed: {} });
+  });
+
+  it("returns only the fields that differ from the current values", () => {
+    const result = mergeExistingItemEdits(current, {
+      replenishmentSystem: "Make",
+      itemTrackingType: "Serial"
+    });
+    expect(result).toEqual({
+      ok: true,
+      values: { ...current, itemTrackingType: "Serial" },
+      changed: { itemTrackingType: "Serial" }
+    });
+  });
+
+  it("refuses a method the replenishment system does not allow", () => {
+    const result = mergeExistingItemEdits(current, {
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Make to Order"
+    });
+    expect(result.ok).toBe(false);
+  });
+
+  it("ignores name, description and unit on an existing edit", () => {
+    const result = mergeExistingItemEdits(current, {
+      name: "Ignored",
+      description: "Ignored",
+      unitOfMeasureCode: "M"
+    });
+    expect(result).toEqual({ ok: true, values: current, changed: {} });
   });
 });
 
@@ -580,6 +669,62 @@ describe("buildAssemblyPlan", () => {
 
     it("treats an unlinked reused root as a conflict", () => {
       expect(build([]).root.conflict).toBe(true);
+    });
+
+    it("keeps a part linked when a release added a higher revision the mapping does not point at", () => {
+      // A release minted Rev B for the root and for LEG-003, made B the
+      // default, and left the part-studio mappings on the Rev A items. The
+      // plan resolves each part number to the latest revision (B), but the
+      // link on Rev A is still a link to that same part — not a conflict.
+      const plan = buildAssemblyPlan({
+        documentId: "d",
+        wv: "w",
+        wvId: "w1",
+        elementId: "e",
+        root: {
+          partNumber: "WB-100",
+          name: null,
+          description: null,
+          revision: null
+        },
+        nodes: conflictNodes,
+        items: [
+          {
+            id: "wb-a",
+            readableId: "WB-100",
+            revision: "A",
+            name: "Workbench"
+          },
+          {
+            id: "wb-b",
+            readableId: "WB-100",
+            revision: "B",
+            name: "Workbench"
+          },
+          { id: "leg-a", readableId: "LEG-003", revision: "A", name: "Leg" },
+          { id: "leg-b", readableId: "LEG-003", revision: "B", name: "Leg" },
+          { id: "hdw", readableId: "HDW-010", revision: "0", name: "Bolt" },
+          { id: "pad", readableId: "PAD-005", revision: "0", name: "Pad" }
+        ],
+        methodByItemId: new Map(),
+        mappedLinesByMethodId: new Map(),
+        manualLinesByMethodId: new Map(),
+        options,
+        linkedItemIdByExternalId: new Map([
+          ["d:e:assembly", "wb-a"],
+          ["d2:ps:JHD", "leg-a"]
+        ])
+      });
+      expect(plan.root.conflict).toBeUndefined();
+      expect(
+        Object.fromEntries(plan.items.map((i) => [i.partNumber, i.conflict]))
+      ).toEqual({
+        "LEG-003": undefined,
+        // Still linked to no item at all → a genuine conflict.
+        "HDW-010": true,
+        "PAD-005": true,
+        "TOP-001": undefined
+      });
     });
   });
 });

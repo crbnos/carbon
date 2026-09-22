@@ -39,14 +39,6 @@ import { logAuthEvent } from "./auth-events.server";
 import { getCompanyPlanId, isCarbonOwnedCompany } from "./company.server";
 import { resolveConsolePinIn } from "./console-pin.server";
 import {
-  acquirePanelRefreshLock,
-  loadPanelSession,
-  PANEL_REFRESH_LOCK_LEASE_MS,
-  panelSessionTokenFromRequest,
-  savePanelSession,
-  withPanelRefreshLock
-} from "./panel-session.server";
-import {
   destroyAuthSession,
   flash,
   requireAuthSession
@@ -349,13 +341,7 @@ export async function requirePermissions(
     }
   }
 
-  // A panel session (Carbon UI inside another product's iframe, e.g. the
-  // Onshape right panel) authenticates with a bearer token instead of the
-  // cookie, then goes through the same claims check and RLS client below.
-  const panelToken = panelSessionTokenFromRequest(request);
-  const authSession = panelToken
-    ? await requirePanelSession(panelToken)
-    : await requireAuthSession(request);
+  const authSession = await requireAuthSession(request);
   const { accessToken, companyId, companyGroupId, email, userId } = authSession;
   const consoleMode = authSession.console === companyId;
 
@@ -434,11 +420,6 @@ export async function requirePermissions(
       ip: getClientIp(request) ?? undefined,
       reason: JSON.stringify(requiredPermissions)
     });
-    // A panel request is a fetch from an iframe: a redirect to the app would
-    // be followed silently and land as HTML. Answer with a status instead.
-    if (panelToken) {
-      throw new Response("Forbidden", { status: 403 });
-    }
     if (myClaims.role === null) {
       throw redirect("/", await destroyAuthSession(request));
     }
@@ -688,118 +669,4 @@ export async function signInWithPasskey(
     companies?.[0] ?? "",
     companyRecord?.companyGroupId ?? ""
   );
-}
-
-// Mirrors session.server's isExpiringSoon: `expiresAt` is epoch seconds.
-const PANEL_REFRESH_THRESHOLD_SECONDS = 60;
-
-/**
- * Resolve a panel session token to a live `AuthSession`, refreshing the
- * Supabase token in place when it is about to expire. A missing, expired or
- * unrefreshable session is a 401 — the panel then asks the user to sign in
- * again through its popup.
- */
-function isPanelSessionExpiringSoon(session: AuthSession) {
-  return (
-    (session.expiresAt - PANEL_REFRESH_THRESHOLD_SECONDS) * 1000 < Date.now()
-  );
-}
-
-/**
- * How long a request will wait for whoever is already refreshing: past one
- * full lease, so a holder that died has let its lock lapse and a waiter can
- * take it over before giving up.
- */
-const PANEL_REFRESH_WAIT_MS = 100;
-const PANEL_REFRESH_WAIT_ATTEMPTS =
-  Math.ceil(PANEL_REFRESH_LOCK_LEASE_MS / PANEL_REFRESH_WAIT_MS) + 10;
-
-async function refreshPanelSessionNow(
-  token: string,
-  stored: AuthSession
-): Promise<AuthSession | null> {
-  const refreshed = await refreshAccessToken(
-    stored.refreshToken,
-    stored.companyId,
-    stored.companyGroupId
-  );
-  // Deliberately NOT deleting the session here. A failed refresh is far more
-  // often a lost race than a revoked account, and deleting took the session
-  // away from the request that had just refreshed it successfully. Only
-  // `loadPanelSession` returning nothing proves the session is gone.
-  if (!refreshed) return null;
-
-  // Same carry-over as refreshAuthSession: a refresh is not a re-auth.
-  if (stored.console) refreshed.console = stored.console;
-  if (stored.mfaVerified) refreshed.mfaVerified = stored.mfaVerified;
-  if (stored.createdAt) refreshed.createdAt = stored.createdAt;
-  if (stored.lastActiveAt) refreshed.lastActiveAt = stored.lastActiveAt;
-
-  await savePanelSession(token, refreshed);
-  return refreshed;
-}
-
-/**
- * Refresh a panel session's Supabase token exactly once across concurrent
- * requests.
- *
- * The panel fires several requests together the moment it opens (part status
- * and releases in the same tick, plus the identity read), and Supabase rotates
- * refresh tokens. Left unserialized they all refresh with the same token: the
- * first succeeds, the rest are told it was already used, and each loser
- * answered 401 — which is why a panel opened after a period of inactivity
- * showed a 401 in one section and was fine again the moment anything
- * re-requested.
- *
- * So one request holds the lock and refreshes; the others wait for it and read
- * what it stored.
- *
- * Only the lock holder ever refreshes. A waiter that refreshed on its own
- * after a timeout spent the same rotating refresh token the holder was using,
- * and whichever lost answered 401 and sent the panel back through sign-in. A
- * waiter instead keeps trying to take the lock — a holder that died stops
- * renewing its lease, so the lock frees itself — and refreshes only once it
- * holds it, from the session as stored at that moment.
- */
-async function refreshPanelSession(
-  token: string,
-  stored: AuthSession
-): Promise<AuthSession | null> {
-  for (let attempt = 0; attempt <= PANEL_REFRESH_WAIT_ATTEMPTS; attempt++) {
-    const owner = await acquirePanelRefreshLock(token);
-    if (owner) {
-      return withPanelRefreshLock(token, owner, async () => {
-        // Re-read under the lock: an earlier holder may have finished between
-        // the expiry check and the lock being acquired.
-        const current = (await loadPanelSession(token)) ?? stored;
-        if (!isPanelSessionExpiringSoon(current)) return current;
-        return refreshPanelSessionNow(token, current);
-      });
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, PANEL_REFRESH_WAIT_MS));
-    const current = await loadPanelSession(token);
-    // Gone while we waited: genuinely signed out or revoked.
-    if (!current) return null;
-    if (!isPanelSessionExpiringSoon(current)) return current;
-  }
-
-  // Nobody published a result and the lock never came free: the holder's
-  // refresh failed or is stuck. A 401 sends the panel to sign in again, which
-  // is safer than a second refresh racing the first.
-  return null;
-}
-
-async function requirePanelSession(token: string): Promise<AuthSession> {
-  const stored = await loadPanelSession(token);
-  if (!stored) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-  if (!isPanelSessionExpiringSoon(stored)) return stored;
-
-  const refreshed = await refreshPanelSession(token, stored);
-  if (!refreshed) {
-    throw new Response("Unauthorized", { status: 401 });
-  }
-  return refreshed;
 }

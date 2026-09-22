@@ -1,7 +1,11 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
-import type { ItemEdit, OnshapeBomNode, ProposedItem } from "@carbon/ee";
+import type {
+  ItemEdit,
+  ItemFieldSnapshot,
+  OnshapeBomNode,
+  ProposedItem
+} from "@carbon/ee";
 import {
   bomLineItemType,
   defaultUnitOfMeasureCode,
@@ -11,6 +15,7 @@ import {
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   mergeEditsForCreates,
+  mergeExistingItemEdits,
   missingListOptions,
   normalizeConfiguration,
   pickLatestRow,
@@ -27,6 +32,7 @@ import {
   selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import { trigger } from "@carbon/jobs";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -117,10 +123,13 @@ type ItemRow = {
  * their fields land when their own part studio is pushed.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      create: "parts",
+      update: "parts"
+    }
+  );
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)
@@ -299,6 +308,15 @@ export async function action({ request }: ActionFunctionArgs) {
   const itemByReadableId = new Map<string, ItemRow>();
   const fallbackUnit = defaultUnitOfMeasureCode(options);
 
+  // The reviewer's manufacturing edits apply to reused items too (a create
+  // gets them through its proposal). Baseline is the plan's current snapshot,
+  // keyed by part number; only what actually changed is written.
+  const currentByPartNumber = new Map<string, ItemFieldSnapshot>();
+  if (root.current) currentByPartNumber.set(root.partNumber, root.current);
+  for (const item of plan.items) {
+    if (item.current) currentByPartNumber.set(item.partNumber, item.current);
+  }
+
   /**
    * The row for a part number: the one the plan pinned when it still exists,
    * else the first by revision, else a fresh item from the merged proposal
@@ -319,11 +337,29 @@ export async function action({ request }: ActionFunctionArgs) {
     if (found) {
       itemByReadableId.set(partNumber, found);
       summary.itemsReused += 1;
-      // The review offered an editor for this one; the edits went nowhere.
       if (plannedItemId === null) {
         summary.skipped.push(
           `${partNumber}: added to Carbon since the review; reused as is`
         );
+      }
+      // A reused item still takes the reviewer's manufacturing edits — they are
+      // Carbon-side, not Onshape-owned. Baseline is the plan's snapshot; only
+      // the fields the user actually changed are written.
+      const baseline = currentByPartNumber.get(partNumber);
+      if (baseline) {
+        const mfg = mergeExistingItemEdits(baseline, edits[partNumber]);
+        if (!mfg.ok) {
+          summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
+        } else if (Object.keys(mfg.changed).length > 0) {
+          const updated = await client
+            .from("item")
+            .update({ ...mfg.changed, updatedBy: userId })
+            .eq("id", found.id)
+            .eq("companyId", companyId);
+          if (updated.error) {
+            summary.errors.push(`${partNumber}: ${updated.error.message}`);
+          }
+        }
       }
       return found;
     }

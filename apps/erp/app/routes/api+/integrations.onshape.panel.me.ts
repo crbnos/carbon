@@ -1,5 +1,5 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import type { OnshapePanelMe } from "@carbon/ee";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -9,10 +9,8 @@ export const config = {
 
 /** Who the panel's bearer token belongs to. 401 when it is missing or dead. */
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {}
-  );
+  const { client, companyId, userId, email } =
+    await requireOnshapePanelPermissions(request, {});
 
   const company = await client
     .from("company")

@@ -21,9 +21,12 @@ import {
  * user's edits and deselections) without reading Onshape again. The builders
  * here are pure so the decision a user reviewed is the decision that runs.
  *
- * Editable at CREATE only. Onshape owns identity (part number, revision) and,
- * once an item is linked, its name and description — an update never takes
- * edits, so the owned-field lock on the item page stays true.
+ * Onshape owns identity (part number, revision) and, once an item is linked,
+ * its name and description — an update never takes edits for those, so the
+ * owned-field lock on the item page stays true. The three Carbon-side
+ * manufacturing fields (replenishment, method, tracking) are NOT owned by
+ * Onshape, so they are editable both at create (through the proposal) and on
+ * an existing item (see `mergeExistingItemEdits` / `currentItemFields`).
  */
 
 // Enum literals from packages/database (item.replenishmentSystem,
@@ -124,7 +127,14 @@ export type PlanItemRow = {
   description?: string | null;
   /** item.type — Part, Material, Consumable, … */
   type?: string | null;
+  /**
+   * The three Carbon-side manufacturing attributes the panel can edit on an
+   * existing item. Optional so a plan built before these were read still
+   * type-checks; `currentItemFields` coerces whatever is present.
+   */
+  replenishmentSystem?: string | null;
   defaultMethodType?: string | null;
+  itemTrackingType?: string | null;
   unitOfMeasureCode?: string | null;
 };
 
@@ -337,6 +347,146 @@ export function mergeItemEdits(
 }
 
 // ---------------------------------------------------------------------------
+// Existing-item field edits (replenishment / method / tracking)
+// ---------------------------------------------------------------------------
+
+/**
+ * The three manufacturing attributes the panel can set on an item. Onshape
+ * does not own them — they are Carbon-side — so unlike name and description a
+ * push may change them on an item that already exists, not only at create.
+ */
+export type ItemFieldSnapshot = {
+  replenishmentSystem: ItemReplenishmentSystem;
+  defaultMethodType: ItemMethodType;
+  itemTrackingType: ItemTrackingType;
+};
+
+function coerceEnum<T extends string>(
+  value: unknown,
+  allowed: readonly T[],
+  fallback: T
+): T {
+  return typeof value === "string" &&
+    (allowed as readonly string[]).includes(value)
+    ? (value as T)
+    : fallback;
+}
+
+/** A method the replenishment system allows, keeping the given one when legal. */
+export function reconcileMethodForReplenishment(
+  replenishment: ItemReplenishmentSystem,
+  method: ItemMethodType
+): ItemMethodType {
+  const allowed = VALID_METHOD_TYPES_BY_REPLENISHMENT[replenishment];
+  return allowed.includes(method) ? method : (allowed[0] ?? method);
+}
+
+/**
+ * An existing item's current three fields, coerced to the enums. A stored
+ * value outside the enum (or a legacy replenishment/method pair that no longer
+ * interlocks) falls back to something legal, so the review always renders and
+ * the seed the editor shows is always a valid starting point.
+ */
+export function currentItemFields(row: {
+  replenishmentSystem?: string | null;
+  defaultMethodType?: string | null;
+  itemTrackingType?: string | null;
+}): ItemFieldSnapshot {
+  const replenishmentSystem = coerceEnum(
+    row.replenishmentSystem,
+    ITEM_REPLENISHMENT_SYSTEMS,
+    "Buy"
+  );
+  return {
+    replenishmentSystem,
+    defaultMethodType: reconcileMethodForReplenishment(
+      replenishmentSystem,
+      coerceEnum(
+        row.defaultMethodType,
+        ITEM_METHOD_TYPES,
+        "Pull from Inventory"
+      )
+    ),
+    itemTrackingType: coerceEnum(
+      row.itemTrackingType,
+      ITEM_TRACKING_TYPES,
+      "Inventory"
+    )
+  };
+}
+
+/**
+ * Apply the panel's three manufacturing edits to an existing item's current
+ * values, refusing an unknown enum or a method the replenishment system does
+ * not allow (the same interlock `mergeItemEdits` enforces for creates). Name,
+ * description, unit and custom fields on the edit are ignored — an existing
+ * item's name and description stay Onshape-owned. Returns the merged values
+ * and the subset that actually CHANGED, so an untouched edit writes nothing
+ * and stamps no audit fields.
+ */
+export function mergeExistingItemEdits(
+  current: ItemFieldSnapshot,
+  edit: ItemEdit | null | undefined
+):
+  | { ok: true; values: ItemFieldSnapshot; changed: Partial<ItemFieldSnapshot> }
+  | { ok: false; errors: string[] } {
+  const errors: string[] = [];
+  const values: ItemFieldSnapshot = { ...current };
+  if (edit?.replenishmentSystem !== undefined) {
+    if (
+      (ITEM_REPLENISHMENT_SYSTEMS as readonly string[]).includes(
+        edit.replenishmentSystem
+      )
+    ) {
+      values.replenishmentSystem =
+        edit.replenishmentSystem as ItemReplenishmentSystem;
+    } else {
+      errors.push("Replenishment system is not valid");
+    }
+  }
+  if (edit?.defaultMethodType !== undefined) {
+    if (
+      (ITEM_METHOD_TYPES as readonly string[]).includes(edit.defaultMethodType)
+    ) {
+      values.defaultMethodType = edit.defaultMethodType as ItemMethodType;
+    } else {
+      errors.push("Default method type is not valid");
+    }
+  }
+  if (edit?.itemTrackingType !== undefined) {
+    if (
+      (ITEM_TRACKING_TYPES as readonly string[]).includes(edit.itemTrackingType)
+    ) {
+      values.itemTrackingType = edit.itemTrackingType as ItemTrackingType;
+    } else {
+      errors.push("Tracking type is not valid");
+    }
+  }
+  if (
+    !VALID_METHOD_TYPES_BY_REPLENISHMENT[values.replenishmentSystem].includes(
+      values.defaultMethodType
+    )
+  ) {
+    errors.push(
+      `${values.defaultMethodType} is not a valid method for ${values.replenishmentSystem} items`
+    );
+  }
+  if (errors.length > 0) return { ok: false, errors };
+
+  const changed: Partial<ItemFieldSnapshot> = {};
+  if (values.replenishmentSystem !== current.replenishmentSystem) {
+    changed.replenishmentSystem = values.replenishmentSystem;
+  }
+  if (values.defaultMethodType !== current.defaultMethodType) {
+    changed.defaultMethodType = values.defaultMethodType;
+  }
+  if (values.itemTrackingType !== current.itemTrackingType) {
+    changed.itemTrackingType = values.itemTrackingType;
+  }
+  return { ok: true, values, changed };
+}
+
+// ---------------------------------------------------------------------------
 // Part plan
 // ---------------------------------------------------------------------------
 
@@ -360,6 +510,12 @@ export type PartPlanRow = {
   item: { readableId: string; revision: string; name: string } | null;
   /** Create only. */
   proposed: ProposedItem | null;
+  /**
+   * adopt/update/unchanged only: the linked/matched item's CURRENT
+   * manufacturing fields, so the review can seed the editor with what Carbon
+   * holds and only send the ones the user changes.
+   */
+  current?: ItemFieldSnapshot | null;
   /** Update only: Onshape-owned fields the push will overwrite. */
   changes: Array<{
     field: "name" | "description";
@@ -458,6 +614,7 @@ export function buildPartPlan({
           revision: linked.revision,
           name: linked.name
         },
+        current: currentItemFields(linked),
         changes: unchanged ? [] : ownedFieldChanges(linked, part)
       });
       continue;
@@ -482,6 +639,7 @@ export function buildPartPlan({
           revision: matched.revision,
           name: matched.name
         },
+        current: currentItemFields(matched),
         changes: ownedFieldChanges(matched, part)
       });
       continue;
@@ -545,6 +703,8 @@ export type AssemblyPlanItem = {
   conflict?: boolean;
   /** Create only. */
   proposed: ProposedItem | null;
+  /** Reuse only: the existing item's current manufacturing fields. */
+  current?: ItemFieldSnapshot | null;
   /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
   purchased: boolean;
@@ -588,6 +748,8 @@ export type AssemblyPlanRoot = {
   /** As on {@link AssemblyPlanItem}: reused by part number alone. */
   conflict?: boolean;
   proposed: ProposedItem | null;
+  /** Reuse only: the existing item's current manufacturing fields. */
+  current?: ItemFieldSnapshot | null;
   /** Mapped custom fields for the root item (element properties). */
   customFields?: PlanCustomField[];
   unmappedProperties?: UnmappedProperty[];
@@ -702,7 +864,11 @@ export function buildAssemblyPlan({
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
   const itemByReadableId = new Map<string, PlanItemRow>();
+  // Every item id → its part number, across all revisions. A link that points
+  // at ANY revision of a part is still a link to that part (see below).
+  const readableIdByItemId = new Map<string, string>();
   for (const item of items) {
+    readableIdByItemId.set(item.id, item.readableId);
     const current = itemByReadableId.get(item.readableId);
     if (!current || (item.revision ?? "") > (current.revision ?? "")) {
       itemByReadableId.set(item.readableId, item);
@@ -724,8 +890,13 @@ export function buildAssemblyPlan({
     }
   }
 
-  // A part number is linked when any BOM row carrying it maps to the item the
-  // push would reuse. A row with no source can never be linked, as in status.
+  // A part number is linked when any BOM row carrying it maps to an item that
+  // IS that part number — any revision of it, not only the latest. A release
+  // mints a higher revision and repoints the default to it while leaving the
+  // part-studio mapping on the old revision; matching on the mapped item's own
+  // part number (not id-identity with the latest revision) keeps that row
+  // linked instead of flipping every released part to a false conflict. A row
+  // with no source can never be linked, as in status.
   const linkedPartNumbers = new Set<string>();
   for (const node of everything) {
     if (!node.partNumber) continue;
@@ -733,17 +904,18 @@ export function buildAssemblyPlan({
     const linkedId = externalId
       ? linkedItemIdByExternalId.get(externalId)
       : undefined;
-    if (linkedId && linkedId === itemByReadableId.get(node.partNumber)?.id) {
+    if (linkedId && readableIdByItemId.get(linkedId) === node.partNumber) {
       linkedPartNumbers.add(node.partNumber);
     }
   }
 
   const rootItem = itemByReadableId.get(root.partNumber);
+  const linkedRootId = linkedItemIdByExternalId.get(
+    externalIdForAssembly(documentId, elementId, configuration)
+  );
   const rootConflict =
     !!rootItem &&
-    linkedItemIdByExternalId.get(
-      externalIdForAssembly(documentId, elementId, configuration)
-    ) !== rootItem.id;
+    (!linkedRootId || readableIdByItemId.get(linkedRootId) !== root.partNumber);
   const planRoot: AssemblyPlanRoot = {
     partNumber: root.partNumber,
     name: root.name,
@@ -752,6 +924,7 @@ export function buildAssemblyPlan({
     action: rootItem ? "reuse" : "create",
     itemId: rootItem?.id ?? null,
     ...(rootConflict ? { conflict: true } : {}),
+    ...(rootItem ? { current: currentItemFields(rootItem) } : {}),
     proposed: rootItem
       ? null
       : proposeItem(
@@ -797,6 +970,7 @@ export function buildAssemblyPlan({
       ...(existing && !linkedPartNumbers.has(node.partNumber)
         ? { conflict: true }
         : {}),
+      ...(existing ? { current: currentItemFields(existing) } : {}),
       proposed: existing
         ? null
         : proposeItem(
@@ -945,6 +1119,12 @@ export type ReleasePlanItem = {
   /** Create only. */
   proposed: ProposedItem | null;
   /**
+   * reuse/revision only: the manufacturing fields the target item currently
+   * has — the reused letter item, or the base a revision is copied from (the
+   * new revision inherits them). Seeds the editor; only changes are sent.
+   */
+  current?: ItemFieldSnapshot | null;
+  /**
    * Released assemblies only: whether the BOM can be applied to the target
    * method. A reused item with a released (Active) method is refused.
    */
@@ -960,6 +1140,8 @@ export type ReleasePlanChild = {
   action: "create" | "reuse";
   itemId: string | null;
   proposed: ProposedItem | null;
+  /** Reuse only: the existing item's current manufacturing fields. */
+  current?: ItemFieldSnapshot | null;
 };
 
 export type ReleasePlan = {
@@ -1048,6 +1230,7 @@ export function buildReleasePlan({
         baseRevision: null,
         existingItemId: existingLetter.id,
         proposed: null,
+        current: currentItemFields(existingLetter),
         methodStatus: !isAssembly
           ? null
           : !method
@@ -1070,6 +1253,9 @@ export function buildReleasePlan({
         baseRevision: base.revision,
         existingItemId: null,
         proposed: null,
+        // A new revision inherits the base's manufacturing fields, so the base
+        // is what the editor seeds from and edits diff against.
+        current: currentItemFields(base),
         methodStatus: isAssembly ? "new" : null
       });
       continue;
@@ -1113,6 +1299,7 @@ export function buildReleasePlan({
         purchased: node.purchased,
         action: existing ? "reuse" : "create",
         itemId: existing?.id ?? null,
+        ...(existing ? { current: currentItemFields(existing) } : {}),
         proposed: existing
           ? null
           : proposeItem(

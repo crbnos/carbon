@@ -1,7 +1,7 @@
 import {
   deletePanelSession,
   panelSessionTokenFromRequest
-} from "@carbon/auth/panel-session.server";
+} from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 

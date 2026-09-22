@@ -1,4 +1,3 @@
-import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { PlanItemRow } from "@carbon/ee";
 import {
@@ -27,6 +26,7 @@ import {
   onshapeFailure,
   selectInBatches
 } from "@carbon/ee/onshape";
+import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -76,10 +76,13 @@ const MAX_PLAN_PARTS = 1500;
  * before reviewing.
  */
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
-    create: "parts",
-    update: "parts"
-  });
+  const { client, companyId, userId } = await requireOnshapePanelPermissions(
+    request,
+    {
+      create: "parts",
+      update: "parts"
+    }
+  );
 
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)
@@ -211,7 +214,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, name, description, type, defaultMethodType, unitOfMeasureCode"
+        "id, readableId, revision, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
