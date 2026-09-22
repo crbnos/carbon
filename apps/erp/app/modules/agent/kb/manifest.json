@@ -707,6 +707,7 @@
         "What you can import",
         "The import flow",
         "Insert, update, or skip",
+        "Opening stock",
         "Errors and partial failures",
         "Related",
         "Troubleshooting",
@@ -715,6 +716,8 @@
         "A fixed-asset CSV is rejected",
         "An enum column imported as the wrong value",
         "Re-importing created duplicates — or didn't update what I expected",
+        "Opening stock doubled after a second import",
+        "An opening-stock row says the item is tracked differently",
         "My custom fields are blank after import"
       ]
     },

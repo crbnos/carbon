@@ -13,6 +13,7 @@ import { classifyImportRow } from "./classify-import-row.ts";
 import { importConfigLookups } from "./config-lookup-import.ts";
 import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
+import { importStockQuantities } from "./stock-quantity-import.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -47,6 +48,9 @@ const importCsvValidator = z.object({
     "materialGrade",
     "materialType",
     "materialDimension",
+    "inventoryQuantity",
+    "batchQuantity",
+    "serialQuantity",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -2959,6 +2963,18 @@ serve(async (req: Request) => {
       case "materialType":
       case "materialDimension": {
         await importMaterialProperties(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "inventoryQuantity":
+      case "batchQuantity":
+      case "serialQuantity": {
+        await importStockQuantities(db, client, {
           table,
           mappedRecords,
           companyId,

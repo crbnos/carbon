@@ -2942,6 +2942,9 @@ msgstr "배치 번호"
 msgid "Batch Properties"
 msgstr "배치 속성"
 
+msgid "Batch Quantities"
+msgstr "배치 수량"
+
 msgid "Batch Size"
 msgstr "배치 크기"
 
@@ -8990,6 +8993,9 @@ msgid "Inventory Movements"
 msgstr "재고 이동"
 
 msgid "Inventory Qty"
+msgstr "재고 수량"
+
+msgid "Inventory Quantities"
 msgstr "재고 수량"
 
 msgid "Inventory Tracking"
@@ -15559,6 +15565,9 @@ msgstr "반품할 시리얼 번호"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "일련번호 또는 배치 추적 필요"
+
+msgid "Serial Quantities"
+msgstr "일련번호 수량"
 
 msgid "Serial tracking"
 msgstr "일련번호 추적"

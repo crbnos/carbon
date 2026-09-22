@@ -2942,6 +2942,9 @@ msgstr "批号"
 msgid "Batch Properties"
 msgstr "批量属性"
 
+msgid "Batch Quantities"
+msgstr "生产批次数量"
+
 msgid "Batch Size"
 msgstr "批量大小"
 
@@ -8990,6 +8993,9 @@ msgid "Inventory Movements"
 msgstr "库存移动"
 
 msgid "Inventory Qty"
+msgstr "库存数量"
+
+msgid "Inventory Quantities"
 msgstr "库存数量"
 
 msgid "Inventory Tracking"
@@ -15559,6 +15565,9 @@ msgstr "要退货的序列号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "序列号或批次跟踪必需"
+
+msgid "Serial Quantities"
+msgstr "序列号数量"
 
 msgid "Serial tracking"
 msgstr "序列号追踪"
