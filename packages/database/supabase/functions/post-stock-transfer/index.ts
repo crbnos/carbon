@@ -9,6 +9,11 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords } from "../shared/batch-split.ts";
 import { equals, round } from "../shared/precision.ts";
+import {
+  assertEntityCoversPick,
+  PickGuardError,
+  resolvePick,
+} from "./pick-guards.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -305,13 +310,48 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
-          // Get stock transfer line details
+          // Get stock transfer line details. Lock the row so concurrent scans
+          // of the same line cannot both write a +1 over a stale read.
           const stockTransferLine = await trx
             .selectFrom("stockTransferLine")
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
+
+          // Refuse a scan that would exceed the line's serial count.
+          const newPickedQuantity = resolvePick({
+            lineQuantity: Number(stockTransferLine.quantity ?? 0),
+            pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
+            transferQuantity: 1,
+          });
+
+          // Refuse a REPEAT scan of the same serial on this transfer. Each scan
+          // posts a Transfer activity + a −1/+1 ledger pair, so a silent no-op
+          // would let the ledger double; the guard is an explicit 400.
+          const alreadyOnTransfer = await trx
+            .selectFrom("trackedActivityInput as tai")
+            .innerJoin("trackedActivity as ta", "ta.id", "tai.trackedActivityId")
+            .where("tai.trackedEntityId", "=", trackedEntityId)
+            .where("tai.companyId", "=", companyId)
+            .where("ta.type", "=", "Transfer")
+            .where("ta.sourceDocument", "=", "Stock Transfer")
+            .where("ta.sourceDocumentId", "=", stockTransferId)
+            .select("tai.trackedEntityId")
+            .executeTakeFirst();
+          if (alreadyOnTransfer) {
+            const entity = await trx
+              .selectFrom("trackedEntity")
+              .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
+              .select("readableId")
+              .executeTakeFirst();
+            throw new PickGuardError(
+              "already-picked",
+              `Serial ${entity?.readableId ?? trackedEntityId} is already picked on this transfer`
+            );
+          }
 
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
@@ -389,13 +429,13 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          // Update stock transfer line with picked quantity
+          // Update stock transfer line with the accumulated picked quantity.
           await trx
             .updateTable("stockTransferLine")
             .set({
               trackedEntityId,
               fromStorageUnitId: fromStorageUnitId,
-              pickedQuantity: (stockTransferLine.pickedQuantity ?? 0) + 1,
+              pickedQuantity: newPickedQuantity,
               updatedBy: userId,
               updatedAt: new Date().toISOString(),
             })
@@ -424,21 +464,38 @@ serve(async (req: Request) => {
         const policy = await getExpiredEntityPolicy(companyId);
 
         await db.transaction().execute(async (trx) => {
-          // Get stock transfer line details
+          // Get stock transfer line details. Lock the row so two concurrent
+          // scans of the same line accumulate instead of racing to overwrite
+          // pickedQuantity (the ledger would double otherwise).
           const stockTransferLine = await trx
             .selectFrom("stockTransferLine")
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
-          // Get tracked entity details
+          // Get tracked entity details. Lock it too so the on-hand this pick
+          // draws against cannot be spent by a concurrent transaction.
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
+
+          // Refuse a pick that over-draws the line or the source lot before any
+          // record is written; resolvePick returns the new running total.
+          const newPickedQuantity = resolvePick({
+            lineQuantity: Number(stockTransferLine.quantity ?? 0),
+            pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
+            transferQuantity: quantity,
+          });
+          assertEntityCoversPick({
+            entityQuantity: Number(trackedEntity.quantity),
+            transferQuantity: quantity,
+          });
 
           // Expiry policy gate (throws on hard reject; returns warning for 'Warn').
           const expiredCheck = checkExpiredEntity(
@@ -606,14 +663,16 @@ serve(async (req: Request) => {
               .execute();
           }
 
-          // Update stock transfer line with picked quantity — the line
-          // references the entity that physically arrives at the destination.
+          // Update stock transfer line with the accumulated picked quantity.
+          // trackedEntityId is keep-last: each partial pick mints a fresh child
+          // entity, so the line points at the newest departing lot (matching
+          // serial). Unpick reverses only the last activity on such a line.
           await trx
             .updateTable("stockTransferLine")
             .set({
               trackedEntityId: transferredEntityId,
               fromStorageUnitId: fromStorageUnitId,
-              pickedQuantity: transferQuantity,
+              pickedQuantity: newPickedQuantity,
               updatedBy: userId,
               updatedAt: new Date().toISOString(),
             })
@@ -1099,6 +1158,10 @@ serve(async (req: Request) => {
       splitEntityId,
     });
   } catch (err) {
-    return errorResponse(err, 500);
+    // A pick guard is a caller-input refusal, not a server fault — surface it
+    // as a 400 with its message so the scan UI can show "already fully picked"
+    // instead of a generic failure.
+    const status = err instanceof PickGuardError ? 400 : 500;
+    return errorResponse(err, status);
   }
 });

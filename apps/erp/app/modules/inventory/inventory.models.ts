@@ -1,5 +1,6 @@
 import {
   conditionAstFormField,
+  equals,
   getFieldDef,
   isFieldAvailableOnSurfaces,
   RULE_SEVERITIES,
@@ -579,8 +580,47 @@ export const stockTransferLineScanValidator = z.object({
   stockTransferId: z.string().min(1, { message: "Stock transfer is required" }),
   trackedEntityId: z
     .string()
-    .min(1, { message: "Tracked entity ID is required" })
+    .min(1, { message: "Tracked entity ID is required" }),
+  // The picker sends the clamped pick quantity and the bin the user chose; the
+  // action forwards both to the edge function (serial always posts 1).
+  quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
+  storageUnitId: z.string().nullable().optional()
 });
+
+/**
+ * Decide what a stock-transfer scan forwards to the post-stock-transfer edge
+ * function, or refuse the pick before invoking it. Pure so the route's parsing
+ * is testable without the edge function or the client graph — the edge function
+ * re-checks the same limits under a row lock (see post-stock-transfer/pick-guards).
+ *   - A serial scan always moves one unit; a batch scan moves the picker's
+ *     clamped quantity.
+ *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
+ *   - A line with no outstanding quantity (or a pick that exceeds it) is refused.
+ */
+export function resolveStockTransferPickForward(input: {
+  transferType: "batch" | "serial";
+  quantity: number;
+  storageUnitId: string | null | undefined;
+  currentStorageUnitId: string | null;
+  lineQuantity: number;
+  pickedQuantity: number;
+}):
+  | { ok: true; quantity: number; fromStorageUnitId: string | null }
+  | { ok: false; message: string } {
+  const pickQuantity = input.transferType === "batch" ? input.quantity : 1;
+  const outstanding = input.lineQuantity - input.pickedQuantity;
+  if (
+    outstanding <= 0 ||
+    (!equals(pickQuantity, outstanding) && pickQuantity > outstanding)
+  ) {
+    return { ok: false, message: "This line is already fully picked" };
+  }
+  return {
+    ok: true,
+    quantity: pickQuantity,
+    fromStorageUnitId: input.storageUnitId ?? input.currentStorageUnitId
+  };
+}
 
 export const pickingListStatusType = [
   "Draft",
