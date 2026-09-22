@@ -15,6 +15,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
   HStack,
+  IconButton,
   Input,
   NumberField,
   NumberInput,
@@ -36,6 +37,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  LuCalendarClock,
   LuChevronDown,
   LuChevronRight,
   LuCirclePlus,
@@ -67,6 +69,7 @@ import type {
   QuotationLine,
   QuotationPrice
 } from "../../types";
+import QuoteLeadTimeModal from "./QuoteLeadTimeModal";
 
 const logger = getLogger("erp", "sales", "quote-line-pricing");
 
@@ -583,6 +586,58 @@ const QuoteLinePricing = ({
     ]
   );
 
+  const [leadTimeModalOpen, setLeadTimeModalOpen] = useState(false);
+
+  // Applies one predicted lead time per quantity break in ONE state update:
+  // onUpdatePrice snapshots editableFields.prices per call and replaces the
+  // whole map, so looping it would keep only the last quantity's value.
+  const onUpdateLeadTimes = useCallback(
+    async (leadTimeByQuantity: Record<number, number>) => {
+      const prices = { ...editableFields.prices };
+      const missing: number[] = [];
+      for (const [key, days] of Object.entries(leadTimeByQuantity)) {
+        const quantity = Number(key);
+        if (prices[quantity]) {
+          prices[quantity] = { ...prices[quantity], leadTime: days };
+        } else {
+          missing.push(quantity);
+          prices[quantity] = {
+            quoteId,
+            quoteLineId: lineId,
+            quantity,
+            leadTime: days,
+            unitPrice: 0,
+            discountPercent: 0,
+            exchangeRate: exchangeRate ?? 1,
+            shippingCost: 0,
+            createdBy: userId
+          } as unknown as QuotationPrice;
+        }
+      }
+      setEditableFields((prev) => ({ ...prev, prices }));
+      const writes = Object.entries(leadTimeByQuantity).map(([key, days]) => {
+        const quantity = Number(key);
+        return missing.includes(quantity)
+          ? carbon
+              ?.from("quoteLinePrice")
+              .insert({ ...prices[quantity], quoteLineId: lineId, quantity })
+          : carbon
+              ?.from("quoteLinePrice")
+              .update({ leadTime: days, quoteLineId: lineId, quantity })
+              .eq("quoteLineId", lineId)
+              .eq("quantity", quantity);
+      });
+      const results = await Promise.all(writes);
+      if (results.some((r) => r?.error)) {
+        logger.error("Failed to update quote line lead times", {
+          errors: results.map((r) => r?.error).filter(Boolean)
+        });
+        toast.error(t`Failed to update lead times`);
+      }
+    },
+    [editableFields.prices, carbon, lineId, quoteId, exchangeRate, userId, t]
+  );
+
   return (
     <Card>
       <HStack className="justify-between">
@@ -750,6 +805,15 @@ const QuoteLinePricing = ({
               <Td className="border-r border-border group-hover:bg-muted/50">
                 <HStack className="w-full justify-between ">
                   <span>Lead Time</span>
+                  {isEmployee && hasCalculatedCost && (
+                    <IconButton
+                      aria-label={t`Predict lead time`}
+                      icon={<LuCalendarClock />}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setLeadTimeModalOpen(true)}
+                    />
+                  )}
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
@@ -1361,6 +1425,16 @@ const QuoteLinePricing = ({
           </Tbody>
         </Table>
       </CardContent>
+      {leadTimeModalOpen && (
+        <QuoteLeadTimeModal
+          quoteId={quoteId}
+          lineId={lineId}
+          quantities={quantities}
+          isEditable={isEditable}
+          onApply={onUpdateLeadTimes}
+          onClose={() => setLeadTimeModalOpen(false)}
+        />
+      )}
     </Card>
   );
 };

@@ -60,6 +60,21 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
+#. placeholder {0}: forecast.zeroStandardOperationCount
+#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
+msgid "{0} {1} no time standards"
+msgstr ""
+
+#. placeholder {0}: target.slackDays
+#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} of slack"
+msgstr ""
+
+#. placeholder {0}: -target.slackDays
+#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} short"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 件のアカウント"
@@ -284,6 +299,10 @@ msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残�
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
+
+#. placeholder {0}: days === 1 ? "day" : "days"
+msgid "{days} {0}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}日"
@@ -2006,6 +2025,9 @@ msgstr "提案を適用"
 msgid "Apply To"
 msgstr "適用対象"
 
+msgid "Apply to all quantities"
+msgstr ""
+
 msgid "Apply to invoice"
 msgstr "請求書に適用"
 
@@ -2993,6 +3015,9 @@ msgstr "最良ケース予測"
 
 msgid "Best case…"
 msgstr "最良ケース…"
+
+msgid "Best-case finish"
+msgstr ""
 
 msgid "Beta"
 msgstr "ベータ"
@@ -4472,6 +4497,9 @@ msgstr "PDFを作成できませんでした。もう一度お試しください
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}を解除できません: {1} — 生産がすでに記録されています"
+
+msgid "Could not predict lead time"
+msgstr ""
 
 msgid "Could not prepare region image for analysis"
 msgstr "分析用の領域画像を準備できませんでした"
@@ -6807,6 +6835,9 @@ msgstr "先月末"
 msgid "End of Last Quarter"
 msgstr "前四半期末"
 
+msgid "End of queue"
+msgstr ""
+
 msgid "End Time"
 msgstr "終了時刻"
 
@@ -7625,6 +7656,9 @@ msgstr "カウントの更新に失敗しました"
 
 msgid "Failed to update item cost"
 msgstr "品目の原価を更新できませんでした"
+
+msgid "Failed to update lead times"
+msgstr ""
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "商談を発注書で更新できませんでした"
@@ -10641,6 +10675,9 @@ msgstr "必要人数は、その日の予定作業時間を{personDayHours}hで�
 msgid "Needs a Business or Partner plan."
 msgstr "ビジネスプランまたはパートナープランが必要です。"
 
+msgid "Needs expedite"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "修理が必要です"
 
@@ -11618,6 +11655,9 @@ msgstr "未設定"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
+msgid "Not feasible"
+msgstr ""
+
 msgid "Not reached"
 msgstr "未到達"
 
@@ -11803,6 +11843,9 @@ msgstr "保管ユニット上"
 msgid "On this operation"
 msgstr "この操作で"
 
+msgid "On time"
+msgstr ""
+
 msgid "On-account credit available"
 msgstr "掛け売掛金利用可能"
 
@@ -11837,6 +11880,9 @@ msgstr "1 {0} は何 {1} に相当しますか？"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "ワークフローの1回の実行。各ステップが使用および生成した値を含めてステップバイステップで記録され、全体を通じてワークフロー責任者の権限で実行されます。"
+
+msgid "One or more quantities cannot meet this date"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbonが個別に追跡する1個のシリアルユニットまたは1つのバッチ。使用期限などのステータスと属性を独自に保有しています。"
@@ -12646,6 +12692,9 @@ msgstr "まずプロパティを選択"
 msgid "Pick a record type…"
 msgstr "レコード種類を選択..."
 
+msgid "Pick a target date to compare."
+msgstr ""
+
 msgid "Pick a value from an earlier step"
 msgstr "前のステップの値を選択"
 
@@ -12905,6 +12954,12 @@ msgstr "潜在的データ損失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "使用期限が固定期間の場合、新規品目に対して事前入力されます。"
+
+msgid "Predict lead time"
+msgstr ""
+
+msgid "Predicting lead time…"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "優先仕入先"
@@ -13584,6 +13639,9 @@ msgstr "質問"
 
 msgid "Queued"
 msgstr "キュー待ち"
+
+msgid "Queued finish"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今夜のフロアは静かですね、{name}さん。"
@@ -15068,6 +15126,9 @@ msgstr "スケジュール再生成完了"
 
 msgid "Scheduled"
 msgstr "スケジュール済み"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr ""
 
 msgid "Scheduled Maintenance"
 msgstr "計画保全"
@@ -16866,6 +16927,9 @@ msgstr "対象会社"
 msgid "Target customers by type."
 msgstr "得意先をタイプ別に絞り込む。"
 
+msgid "Target date"
+msgstr ""
+
 msgid "Target disposition row"
 msgstr "対象の処置行"
 
@@ -18006,6 +18070,9 @@ msgstr "この製造指図は製造現場で利用できなくなります。"
 
 msgid "This job's own required quantity for the material."
 msgstr "この材料に対するこのジョブ自体の必要数量。"
+
+msgid "This line has no routing to schedule."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "この拠点は人員配置された作業区のみをスケジュールしますが、これは無人(24×7)ステーションです — 適用対象外であり、無人で稼働し続けます。"
@@ -19163,6 +19230,9 @@ msgstr "VAT番号"
 
 msgid "Vendor Write-Off Income"
 msgstr "仕入先償却収益"
+
+msgid "Verdict"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "認証エラー"

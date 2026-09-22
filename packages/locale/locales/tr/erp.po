@@ -60,6 +60,21 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: forecast.zeroStandardOperationCount
+#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
+msgid "{0} {1} no time standards"
+msgstr ""
+
+#. placeholder {0}: target.slackDays
+#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} of slack"
+msgstr ""
+
+#. placeholder {0}: -target.slackDays
+#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} short"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} hesaplar"
@@ -284,6 +299,10 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
+
+#. placeholder {0}: days === 1 ? "day" : "days"
+msgid "{days} {0}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}g"
@@ -2006,6 +2025,9 @@ msgstr "Önerileri Uygula"
 msgid "Apply To"
 msgstr "Uygulanacak Alan"
 
+msgid "Apply to all quantities"
+msgstr ""
+
 msgid "Apply to invoice"
 msgstr "Faturaya uygula"
 
@@ -2993,6 +3015,9 @@ msgstr "En iyi durum projeksiyonu"
 
 msgid "Best case…"
 msgstr "En iyi durum…"
+
+msgid "Best-case finish"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -4472,6 +4497,9 @@ msgstr "PDF oluşturulamadı. Lütfen tekrar deneyin."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} çözülemedi: {1} — üretim zaten kaydedildi"
+
+msgid "Could not predict lead time"
+msgstr ""
 
 msgid "Could not prepare region image for analysis"
 msgstr "Bölge görüntüsü analiz için hazırlanamadı"
@@ -6807,6 +6835,9 @@ msgstr "Geçen Ayın Sonu"
 msgid "End of Last Quarter"
 msgstr "Son Çeyreğin Sonu"
 
+msgid "End of queue"
+msgstr ""
+
 msgid "End Time"
 msgstr "Bitiş Saati"
 
@@ -7625,6 +7656,9 @@ msgstr "Sayı güncelleme başarısız"
 
 msgid "Failed to update item cost"
 msgstr "Ürün maliyeti güncellenemedi"
+
+msgid "Failed to update lead times"
+msgstr ""
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Satın alma siparişi ile fırsat güncellenemedi"
@@ -10641,6 +10675,9 @@ msgstr "Gerekli olan, o gün vadesi gelen iş saatleri {personDayHours}s'ye böl
 msgid "Needs a Business or Partner plan."
 msgstr "Business veya Partner planı gereklidir."
 
+msgid "Needs expedite"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "Onarılması gerekir"
 
@@ -11618,6 +11655,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
 
+msgid "Not feasible"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Ulaşılmadı"
 
@@ -11803,6 +11843,9 @@ msgstr "Depolama biriminde"
 msgid "On this operation"
 msgstr "Bu operasyonda"
 
+msgid "On time"
+msgstr ""
+
 msgid "On-account credit available"
 msgstr "Hesap kredisi kullanılabilir"
 
@@ -11837,6 +11880,9 @@ msgstr "1 {0} kaç {1} eder?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Bir iş akışının bir kez çalıştırılması, her adımın kullandığı ve ürettiği değerlerle adım adım kaydedilmiş, iş akışının sahibinin izinleriyle hareket eder."
+
+msgid "One or more quantities cannot meet this date"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon tarafından bireysel takip edilen bir seri adet veya bir parti, son kullanma tarihi gibi kendi durumu ve öznitelikleri taşıyan."
@@ -12646,6 +12692,9 @@ msgstr "Önce bir özellik seçin"
 msgid "Pick a record type…"
 msgstr "Bir kayıt türü seçin…"
 
+msgid "Pick a target date to compare."
+msgstr ""
+
 msgid "Pick a value from an earlier step"
 msgstr "Önceki bir adımdan bir değer seçin"
 
@@ -12905,6 +12954,12 @@ msgstr "Potansiyel Veri Kaybı"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Son kullanma tarihi Sabit Süre olduğunda yeni bir ürün için önceden doldurulur."
+
+msgid "Predict lead time"
+msgstr ""
+
+msgid "Predicting lead time…"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Tercih Edilen Tedarikçi"
@@ -13584,6 +13639,9 @@ msgstr "Soru"
 
 msgid "Queued"
 msgstr "Kuyrukta"
+
+msgid "Queued finish"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Atölyede bu gece sessiz, {name}."
@@ -15068,6 +15126,9 @@ msgstr "Çizelge yeniden oluşturuldu"
 
 msgid "Scheduled"
 msgstr "Zamanlandı"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr ""
 
 msgid "Scheduled Maintenance"
 msgstr "Planlanmış Bakım"
@@ -16866,6 +16927,9 @@ msgstr "Hedef Şirket"
 msgid "Target customers by type."
 msgstr "Müşterileri türlerine göre hedefleyin."
 
+msgid "Target date"
+msgstr ""
+
 msgid "Target disposition row"
 msgstr "Hedef karar satırı"
 
@@ -18006,6 +18070,9 @@ msgstr "Bu iş emri atölye'de artık kullanılamayacaktır."
 
 msgid "This job's own required quantity for the material."
 msgstr "Bu işin malzeme için kendi gerekli miktarı."
+
+msgid "This line has no routing to schedule."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Bu lokasyon yalnızca personel atanmış iş merkezlerini çizelgelendirir, ancak bu otomatik (24×7) istasyondur — muaf tutulur ve gözetimsiz çalışmaya devam eder."
@@ -19163,6 +19230,9 @@ msgstr "Vergi numarası"
 
 msgid "Vendor Write-Off Income"
 msgstr "Tedarikçi Kayıttan Düşme Geliri"
+
+msgid "Verdict"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "Doğrulama Hatası"

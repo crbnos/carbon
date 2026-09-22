@@ -60,6 +60,21 @@ msgstr "{0, plural, one {# linha vincula dados fora desta empresa, portanto não
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Este item está em 1 aviso de alteração aberto} other {Este item está em # avisos de alteração abertos}}"
 
+#. placeholder {0}: forecast.zeroStandardOperationCount
+#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
+msgid "{0} {1} no time standards"
+msgstr ""
+
+#. placeholder {0}: target.slackDays
+#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} of slack"
+msgstr ""
+
+#. placeholder {0}: -target.slackDays
+#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} short"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} contas"
@@ -284,6 +299,10 @@ msgstr "{count, plural, one {# conta com saldo} other {# contas com saldo}}"
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# curso} other {# cursos}}"
+
+#. placeholder {0}: days === 1 ? "day" : "days"
+msgid "{days} {0}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -2006,6 +2025,9 @@ msgstr "Aplicar sugestões"
 msgid "Apply To"
 msgstr "Aplicar a"
 
+msgid "Apply to all quantities"
+msgstr ""
+
 msgid "Apply to invoice"
 msgstr "Aplicar à fatura"
 
@@ -2993,6 +3015,9 @@ msgstr "Projeção do melhor caso"
 
 msgid "Best case…"
 msgstr "Melhor caso…"
+
+msgid "Best-case finish"
+msgstr ""
 
 msgid "Beta"
 msgstr "Beta"
@@ -4472,6 +4497,9 @@ msgstr "Não foi possível criar o PDF. Tente novamente."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Não foi possível dissolver {0}: {1} — produção já registrada"
+
+msgid "Could not predict lead time"
+msgstr ""
 
 msgid "Could not prepare region image for analysis"
 msgstr "Não foi possível preparar a imagem da região para análise"
@@ -6807,6 +6835,9 @@ msgstr "Fim do Mês Anterior"
 msgid "End of Last Quarter"
 msgstr "Fim do Trimestre Anterior"
 
+msgid "End of queue"
+msgstr ""
+
 msgid "End Time"
 msgstr "Hora de Término"
 
@@ -7625,6 +7656,9 @@ msgstr "Falha ao atualizar contagem"
 
 msgid "Failed to update item cost"
 msgstr "Falha ao atualizar custo do item"
+
+msgid "Failed to update lead times"
+msgstr ""
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Falha ao atualizar oportunidade com pedido de compra"
@@ -10641,6 +10675,9 @@ msgstr "Necessário é as horas de trabalho devidas naquele dia divididas por {p
 msgid "Needs a Business or Partner plan."
 msgstr "Requer um plano Business ou Partner."
 
+msgid "Needs expedite"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "Precisa de reparo"
 
@@ -11618,6 +11655,9 @@ msgstr "Não Configurado"
 msgid "Not enough jobs to cover quantity"
 msgstr "Não há ordens de produção suficientes para cobrir a quantidade"
 
+msgid "Not feasible"
+msgstr ""
+
 msgid "Not reached"
 msgstr "Não atingido"
 
@@ -11803,6 +11843,9 @@ msgstr "Na Unidade de Armazenamento"
 msgid "On this operation"
 msgstr "Nesta operação"
 
+msgid "On time"
+msgstr ""
+
 msgid "On-account credit available"
 msgstr "Crédito em conta disponível"
 
@@ -11837,6 +11880,9 @@ msgstr "1 {0} equivale a quantos {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Uma execução de um fluxo de trabalho, registrada passo a passo com os valores que cada etapa usou e produziu, agindo sempre com as permissões do proprietário do fluxo de trabalho."
+
+msgid "One or more quantities cannot meet this date"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Uma unidade serial ou um lote que Carbon acompanha individualmente, carregando seu próprio status e atributos como data de validade."
@@ -12646,6 +12692,9 @@ msgstr "Escolha uma propriedade primeiro"
 msgid "Pick a record type…"
 msgstr "Escolha um tipo de registro…"
 
+msgid "Pick a target date to compare."
+msgstr ""
+
 msgid "Pick a value from an earlier step"
 msgstr "Escolha um valor de uma etapa anterior"
 
@@ -12905,6 +12954,12 @@ msgstr "Possível Perda de Dados"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pré-preenchido para um novo item quando a validade é Duração Fixa."
+
+msgid "Predict lead time"
+msgstr ""
+
+msgid "Predicting lead time…"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "Fornecedor preferencial"
@@ -13584,6 +13639,9 @@ msgstr "Pergunta"
 
 msgid "Queued"
 msgstr "Na fila"
+
+msgid "Queued finish"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Tranquilo no piso esta noite, {name}."
@@ -15068,6 +15126,9 @@ msgstr "Programação regenerada"
 
 msgid "Scheduled"
 msgstr "Agendado"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr ""
 
 msgid "Scheduled Maintenance"
 msgstr "Manutenção Agendada"
@@ -16866,6 +16927,9 @@ msgstr "Empresa Alvo"
 msgid "Target customers by type."
 msgstr "Segmentar clientes por tipo."
 
+msgid "Target date"
+msgstr ""
+
 msgid "Target disposition row"
 msgstr "Linha de disposição de destino"
 
@@ -18006,6 +18070,9 @@ msgstr "Este trabalho não estará mais disponível no chão de fábrica."
 
 msgid "This job's own required quantity for the material."
 msgstr "A quantidade própria exigida por este trabalho para o material."
+
+msgid "This line has no routing to schedule."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Este local programa apenas centros de trabalho com escalação, mas esta é uma estação sem pessoal (24×7) — ela está isenta e continua funcionando sem supervisão."
@@ -19163,6 +19230,9 @@ msgstr "Número de IVA"
 
 msgid "Vendor Write-Off Income"
 msgstr "Receitas de baixa contábil de fornecedor"
+
+msgid "Verdict"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "Erro de Verificação"

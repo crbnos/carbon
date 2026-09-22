@@ -60,6 +60,21 @@ msgstr "{0, plural, one {# 행은 이 회사 외부의 데이터에 연결되어
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {이 품목은 1개의 미결 변경 통지에 포함되어 있습니다} other {이 품목은 # 개의 미결 변경 통지에 포함되어 있습니다}}"
 
+#. placeholder {0}: forecast.zeroStandardOperationCount
+#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
+msgid "{0} {1} no time standards"
+msgstr ""
+
+#. placeholder {0}: target.slackDays
+#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} of slack"
+msgstr ""
+
+#. placeholder {0}: -target.slackDays
+#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} short"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 계정"
@@ -284,6 +299,10 @@ msgstr "{count, plural, one {# 잔액이 있는 계정} other {# 잔액이 있�
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "교육과정 {count}개"
+
+#. placeholder {0}: days === 1 ? "day" : "days"
+msgid "{days} {0}"
+msgstr ""
 
 msgid "{days}d"
 msgstr "{days}일"
@@ -2006,6 +2025,9 @@ msgstr "제안 적용"
 msgid "Apply To"
 msgstr "적용 대상"
 
+msgid "Apply to all quantities"
+msgstr ""
+
 msgid "Apply to invoice"
 msgstr "송장에 적용"
 
@@ -2993,6 +3015,9 @@ msgstr "최선의 경우 예측"
 
 msgid "Best case…"
 msgstr "최선의 경우…"
+
+msgid "Best-case finish"
+msgstr ""
 
 msgid "Beta"
 msgstr "베타"
@@ -4472,6 +4497,9 @@ msgstr "PDF를 생성할 수 없습니다. 다시 시도하세요."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0}을(를) 해제할 수 없습니다: {1} — 생산이 이미 기록됨"
+
+msgid "Could not predict lead time"
+msgstr ""
 
 msgid "Could not prepare region image for analysis"
 msgstr "분석을 위한 영역 이미지를 준비할 수 없습니다"
@@ -6807,6 +6835,9 @@ msgstr "지난달 말"
 msgid "End of Last Quarter"
 msgstr "지난 분기 말"
 
+msgid "End of queue"
+msgstr ""
+
 msgid "End Time"
 msgstr "종료 시간"
 
@@ -7625,6 +7656,9 @@ msgstr "카운트를 업데이트하지 못했습니다"
 
 msgid "Failed to update item cost"
 msgstr "품목 원가를 업데이트하지 못했습니다"
+
+msgid "Failed to update lead times"
+msgstr ""
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "발주서로 영업 기회 업데이트 실패"
@@ -10641,6 +10675,9 @@ msgstr "필요한 것은 그 날의 작업 지시 시간을 {personDayHours}h로
 msgid "Needs a Business or Partner plan."
 msgstr "Business 또는 Partner 요금제가 필요합니다."
 
+msgid "Needs expedite"
+msgstr ""
+
 msgid "Needs fixing"
 msgstr "수정 필요"
 
@@ -11618,6 +11655,9 @@ msgstr "미설정"
 msgid "Not enough jobs to cover quantity"
 msgstr "수량을 충당하기에 충분한 작업 지시가 없습니다."
 
+msgid "Not feasible"
+msgstr ""
+
 msgid "Not reached"
 msgstr "도달하지 않음"
 
@@ -11803,6 +11843,9 @@ msgstr "보관 단위에"
 msgid "On this operation"
 msgstr "이 작업 시"
 
+msgid "On time"
+msgstr ""
+
 msgid "On-account credit available"
 msgstr "계정상 가용 신용"
 
@@ -11837,6 +11880,9 @@ msgstr "1 {0}은(는) 몇 {1}입니까?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "워크플로의 한 번 실행으로, 각 단계가 사용하고 생성한 값을 단계별로 기록하며 워크플로 책임자의 권한으로 전체적으로 작동합니다."
+
+msgid "One or more quantities cannot meet this date"
+msgstr ""
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon이 개별적으로 추적하는 하나의 일련 단위 또는 하나의 배치로, 유통기한과 같은 자체 상태와 속성을 가집니다."
@@ -12646,6 +12692,9 @@ msgstr "먼저 속성 선택"
 msgid "Pick a record type…"
 msgstr "레코드 유형 선택…"
 
+msgid "Pick a target date to compare."
+msgstr ""
+
 msgid "Pick a value from an earlier step"
 msgstr "이전 단계에서 값 선택"
 
@@ -12905,6 +12954,12 @@ msgstr "데이터 손실 가능성"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "유통기한이 고정 기간일 때 새 품목에 대해 미리 입력됨."
+
+msgid "Predict lead time"
+msgstr ""
+
+msgid "Predicting lead time…"
+msgstr ""
 
 msgid "Preferred Supplier"
 msgstr "우선 공급업체"
@@ -13584,6 +13639,9 @@ msgstr "질문"
 
 msgid "Queued"
 msgstr "대기열"
+
+msgid "Queued finish"
+msgstr ""
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "{name}님, 오늘 밤 현장이 조용하네요."
@@ -15068,6 +15126,9 @@ msgstr "일정 재생성됨"
 
 msgid "Scheduled"
 msgstr "예정됨"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr ""
 
 msgid "Scheduled Maintenance"
 msgstr "예정된 유지보수"
@@ -16866,6 +16927,9 @@ msgstr "대상 회사"
 msgid "Target customers by type."
 msgstr "유형별로 고객을 대상으로 지정합니다."
 
+msgid "Target date"
+msgstr ""
+
 msgid "Target disposition row"
 msgstr "처분 결정 대상 행"
 
@@ -18006,6 +18070,9 @@ msgstr "이 작업 지시는 현장에서 더 이상 가용하지 않을 것입�
 
 msgid "This job's own required quantity for the material."
 msgstr "이 작업 자체의 자재 소요 수량입니다."
+
+msgid "This line has no routing to schedule."
+msgstr ""
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "이 사업장은 인력이 배치된 작업장만 일정을 계획하지만, 이것은 무인(24×7) 작업장입니다 — 면제되며 무인으로 계속 운영됩니다."
@@ -19163,6 +19230,9 @@ msgstr "사업자등록번호"
 
 msgid "Vendor Write-Off Income"
 msgstr "공급업체 대손 처리 수익"
+
+msgid "Verdict"
+msgstr ""
 
 msgid "Verification Error"
 msgstr "확인 오류"

@@ -60,6 +60,21 @@ msgstr "{0, plural, one {# row links to data outside this company, so it can't b
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
+#. placeholder {0}: forecast.zeroStandardOperationCount
+#. placeholder {1}: forecast.zeroStandardOperationCount === 1 ? "operation has" : "operations have"
+msgid "{0} {1} no time standards"
+msgstr "{0} {1} no time standards"
+
+#. placeholder {0}: target.slackDays
+#. placeholder {1}: target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} of slack"
+msgstr "{0} {1} of slack"
+
+#. placeholder {0}: -target.slackDays
+#. placeholder {1}: -target.slackDays === 1 ? "day" : "days"
+msgid "{0} {1} short"
+msgstr "{0} {1} short"
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} accounts"
@@ -284,6 +299,10 @@ msgstr "{count, plural, one {# account with a balance} other {# accounts with a 
 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
+
+#. placeholder {0}: days === 1 ? "day" : "days"
+msgid "{days} {0}"
+msgstr "{days} {0}"
 
 msgid "{days}d"
 msgstr "{days}d"
@@ -2006,6 +2025,9 @@ msgstr "Apply suggestions"
 msgid "Apply To"
 msgstr "Apply To"
 
+msgid "Apply to all quantities"
+msgstr "Apply to all quantities"
+
 msgid "Apply to invoice"
 msgstr "Apply to invoice"
 
@@ -2993,6 +3015,9 @@ msgstr "Best case projection"
 
 msgid "Best case…"
 msgstr "Best case…"
+
+msgid "Best-case finish"
+msgstr "Best-case finish"
 
 msgid "Beta"
 msgstr "Beta"
@@ -4472,6 +4497,9 @@ msgstr "Could not build PDF. Try again."
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Could not dissolve {0}: {1} — production already recorded"
+
+msgid "Could not predict lead time"
+msgstr "Could not predict lead time"
 
 msgid "Could not prepare region image for analysis"
 msgstr "Could not prepare region image for analysis"
@@ -6807,6 +6835,9 @@ msgstr "End of Last Month"
 msgid "End of Last Quarter"
 msgstr "End of Last Quarter"
 
+msgid "End of queue"
+msgstr "End of queue"
+
 msgid "End Time"
 msgstr "End Time"
 
@@ -7625,6 +7656,9 @@ msgstr "Failed to update count"
 
 msgid "Failed to update item cost"
 msgstr "Failed to update item cost"
+
+msgid "Failed to update lead times"
+msgstr "Failed to update lead times"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Failed to update opportunity with purchase order"
@@ -10641,6 +10675,9 @@ msgstr "Needed is the job hours due that day divided by {personDayHours}h, round
 msgid "Needs a Business or Partner plan."
 msgstr "Needs a Business or Partner plan."
 
+msgid "Needs expedite"
+msgstr "Needs expedite"
+
 msgid "Needs fixing"
 msgstr "Needs fixing"
 
@@ -11618,6 +11655,9 @@ msgstr "Not Configured"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
+msgid "Not feasible"
+msgstr "Not feasible"
+
 msgid "Not reached"
 msgstr "Not reached"
 
@@ -11803,6 +11843,9 @@ msgstr "On Storage Unit"
 msgid "On this operation"
 msgstr "On this operation"
 
+msgid "On time"
+msgstr "On time"
+
 msgid "On-account credit available"
 msgstr "On-account credit available"
 
@@ -11837,6 +11880,9 @@ msgstr "One {0} is equal to how many {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
+
+msgid "One or more quantities cannot meet this date"
+msgstr "One or more quantities cannot meet this date"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
@@ -12646,6 +12692,9 @@ msgstr "Pick a property first"
 msgid "Pick a record type…"
 msgstr "Pick a record type…"
 
+msgid "Pick a target date to compare."
+msgstr "Pick a target date to compare."
+
 msgid "Pick a value from an earlier step"
 msgstr "Pick a value from an earlier step"
 
@@ -12905,6 +12954,12 @@ msgstr "Potential Data Loss"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Pre-filled for a new item when expiry is Fixed Duration."
+
+msgid "Predict lead time"
+msgstr "Predict lead time"
+
+msgid "Predicting lead time…"
+msgstr "Predicting lead time…"
 
 msgid "Preferred Supplier"
 msgstr "Preferred Supplier"
@@ -13584,6 +13639,9 @@ msgstr "Question"
 
 msgid "Queued"
 msgstr "Queued"
+
+msgid "Queued finish"
+msgstr "Queued finish"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Quiet on the floor tonight, {name}."
@@ -15068,6 +15126,9 @@ msgstr "Schedule regenerated"
 
 msgid "Scheduled"
 msgstr "Scheduled"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr "Scheduled against your shop's current workload. Nothing is saved until you apply."
 
 msgid "Scheduled Maintenance"
 msgstr "Scheduled Maintenance"
@@ -16866,6 +16927,9 @@ msgstr "Target Company"
 msgid "Target customers by type."
 msgstr "Target customers by type."
 
+msgid "Target date"
+msgstr "Target date"
+
 msgid "Target disposition row"
 msgstr "Target disposition row"
 
@@ -18006,6 +18070,9 @@ msgstr "This job will no longer be available on the shop floor."
 
 msgid "This job's own required quantity for the material."
 msgstr "This job's own required quantity for the material."
+
+msgid "This line has no routing to schedule."
+msgstr "This line has no routing to schedule."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
@@ -19163,6 +19230,9 @@ msgstr "VAT Number"
 
 msgid "Vendor Write-Off Income"
 msgstr "Vendor Write-Off Income"
+
+msgid "Verdict"
+msgstr "Verdict"
 
 msgid "Verification Error"
 msgstr "Verification Error"
