@@ -6,6 +6,8 @@
 // Every accepted row becomes ONE Positive Adjmt. — these imports only ever add
 // stock, never reduce or set it.
 
+import { round } from "../shared/precision.ts";
+
 export type StockImportTable =
   | "inventoryQuantity"
   | "batchQuantity"
@@ -27,6 +29,11 @@ const IMPORT_LABEL_BY_TRACKING_TYPE: Record<string, string> = {
 };
 
 export type StockItemInfo = {
+  // More than one item shares this part number + revision AND this import's
+  // tracking type, so the row cannot name one item. Reported per row rather
+  // than resolved arbitrarily: posting opening stock to the wrong item is
+  // silent and expensive to unwind.
+  ambiguous?: boolean;
   id: string;
   itemTrackingType: string | null;
   hasItemCost: boolean;
@@ -75,11 +82,23 @@ export function buildStockItemMap(
   for (const c of candidates) {
     const key = itemKey(c.readableId, c.revision ?? "0");
     const current = map.get(key);
-    if (
-      !current ||
-      (current.itemTrackingType !== expected &&
-        c.itemTrackingType === expected)
-    ) {
+    if (!current) {
+      map.set(key, {
+        id: c.id,
+        itemTrackingType: c.itemTrackingType,
+        hasItemCost: c.hasItemCost,
+      });
+      continue;
+    }
+    const currentMatches = current.itemTrackingType === expected;
+    const candidateMatches = c.itemTrackingType === expected;
+    if (candidateMatches && currentMatches) {
+      // Two items of this import's tracking type share the identity: neither
+      // can be chosen, so mark the key and let classifyStockRow reject rows.
+      map.set(key, { ...current, ambiguous: true });
+      continue;
+    }
+    if (candidateMatches && !currentMatches) {
       map.set(key, {
         id: c.id,
         itemTrackingType: c.itemTrackingType,
@@ -146,6 +165,11 @@ export function classifyStockRow(params: {
   if (!item) return error(`Item ${readableId} rev ${revision} not found`);
 
   const expectedTrackingType = STOCK_IMPORT_TRACKING_TYPE[table];
+  if (item.ambiguous) {
+    return error(
+      `More than one item is ${expectedTrackingType} tracked with part number ${readableId} rev ${revision}`
+    );
+  }
   if (item.itemTrackingType !== expectedTrackingType) {
     const other = IMPORT_LABEL_BY_TRACKING_TYPE[item.itemTrackingType ?? ""];
     return error(
@@ -177,8 +201,14 @@ export function classifyStockRow(params: {
   let quantity = 1;
   if (table !== "serialQuantity") {
     const raw = text(record.quantity);
-    quantity = raw === "" ? Number.NaN : Number(raw);
-    if (!Number.isFinite(quantity) || quantity <= 0) {
+    const parsed = raw === "" ? Number.NaN : Number(raw);
+    // Round to posting precision BEFORE validating, and carry the rounded
+    // value: buildItemLedgerRow rounds the same way, so a quantity finer than
+    // the scale (0.000001) would otherwise report an inserted movement that
+    // adds nothing, and leave trackedEntity.quantity disagreeing with the
+    // ledger.
+    quantity = round(parsed);
+    if (!Number.isFinite(parsed) || quantity <= 0) {
       return error("Quantity must be a positive number");
     }
   }

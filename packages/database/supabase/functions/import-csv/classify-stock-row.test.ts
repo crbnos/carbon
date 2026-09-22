@@ -291,6 +291,56 @@ Deno.test("items sharing Part Number + Revision: the one matching the import's t
   );
 });
 
+Deno.test("two items of the import's tracking type share the identity: rows are rejected", () => {
+  const candidates = [
+    { id: "a-part", readableId: "X-100", revision: "0", itemTrackingType: "Inventory", hasItemCost: true },
+    { id: "b-tool", readableId: "X-100", revision: "0", itemTrackingType: "Inventory", hasItemCost: true },
+  ];
+  const itemMap = buildStockItemMap("inventoryQuantity", candidates);
+  assertEquals(itemMap.get(itemKey("X-100", "0"))?.ambiguous, true);
+  assertEquals(
+    reason(
+      classify(
+        "inventoryQuantity",
+        { readableId: "X-100", locationId: "loc-1", quantity: "5" },
+        { itemMap }
+      )
+    ),
+    "error: More than one item is Inventory tracked with part number X-100 rev 0"
+  );
+  // One match plus one of another tracking type is still unambiguous.
+  const mixed = buildStockItemMap("inventoryQuantity", [
+    candidates[0],
+    { ...candidates[1], itemTrackingType: "Batch" },
+  ]);
+  assertEquals(mixed.get(itemKey("X-100", "0"))?.ambiguous, undefined);
+  assertEquals(mixed.get(itemKey("X-100", "0"))?.id, "a-part");
+});
+
+Deno.test("quantity is rounded to posting precision before it is validated", () => {
+  // Rounds to 0 at the ledger's scale, so it would post a movement that adds
+  // nothing: rejected instead.
+  assertEquals(
+    reason(
+      classify("inventoryQuantity", {
+        readableId: "PN-INV",
+        locationId: "loc-1",
+        quantity: "0.000001",
+      })
+    ),
+    "error: Quantity must be a positive number"
+  );
+  // A quantity finer than the scale carries the ROUNDED value, so the tracked
+  // entity and the item ledger agree.
+  const decision = classify("batchQuantity", {
+    readableId: "PN-BATCH",
+    locationId: "loc-1",
+    batchNumber: "L-ROUND",
+    quantity: "1.0000049",
+  });
+  assertEquals(decision.action === "post" ? decision.row.quantity : null, 1.00000);
+});
+
 Deno.test("inventory rows have no natural key: identical rows both post", () => {
   const record = { readableId: "PN-INV", locationId: "loc-1", quantity: "1" };
   const seenTrackedKeys = new Set<string>();

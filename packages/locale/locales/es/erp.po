@@ -15567,7 +15567,7 @@ msgid "Serial or Batch Tracking Required"
 msgstr "Seguimiento Serial o por Lote Requerido"
 
 msgid "Serial Quantities"
-msgstr "Cantidades de Serie"
+msgstr "Cantidades por Número de Serie"
 
 msgid "Serial tracking"
 msgstr "Seguimiento de números de serie"
