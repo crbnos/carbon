@@ -30,7 +30,7 @@ A **rule** binds a *field* of the method to a snippet of code (`configurationRul
 
 Rules attach per-field right on the embedded [method](/docs/reference/methods) editors. On the bill of materials each component exposes configurable fields — `itemId` (swap the component), `quantity`, `unitOfMeasureCode`, and `methodType` (`BillOfMaterial.tsx:841,866,890,1043`); on the bill of process, operation fields like the work center, process, and setup/labor/machine times. A field with a rule shows a "configured" marker instead of a static value.
 
-You author the code in a **Monaco editor** (`ConfigurationEditor.ee.tsx`) that generates the function skeleton and type definitions for you from the parameters, with a **Run** button to test the output before saving. The code is the body of a `configure(params)` function; `params` holds your parameters by key, and you `return` the value for that field:
+You author the code in a **Monaco editor** (`ConfigurationEditor.tsx`) that generates the function skeleton and type definitions for you from the parameters, with a **Run** button to test the output before saving. The code is the body of a `configure(params)` function; `params` holds your parameters by key, and you `return` the value for that field:
 
 ```typescript
 function configure(params: Params): number {
@@ -40,7 +40,7 @@ function configure(params: Params): number {
 ```
 
 <Callout type="note" title="Rules run in a sandbox — keep them pure">
-Rule code is transpiled and executed in a restricted sandbox (`packages/database/supabase/functions/lib/sandbox.ee.ts`): no `fetch`, no `setTimeout`/`setInterval`, no dynamic `import`, no `new Promise`, no `Function` constructor. A rule that trips a banned pattern is neutered to `return null`, and any rule that throws falls back to the field's default. Rules are for deriving a value from the inputs, not for side effects.
+Rule code is transpiled and executed in a restricted sandbox (`packages/database/supabase/functions/lib/sandbox.ts`): no `fetch`, no `setTimeout`/`setInterval`, no dynamic `import`, no `new Promise`, no `Function` constructor. A rule that trips a banned pattern is neutered to `return null`, and any rule that throws falls back to the field's default. Rules are for deriving a value from the inputs, not for side effects.
 </Callout>
 
 Rules can also **filter** the method wholesale: a `billOfMaterial` or `billOfProcess` rule returns the list of component or operation names to keep, so a boolean parameter can drop a whole subassembly or an outside-processing step from the recipe.

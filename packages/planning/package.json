@@ -1,12 +1,11 @@
 {
-  "name": "@carbon/workflows",
+  "name": "@carbon/planning",
   "private": true,
   "version": "0.0.0",
+  "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts",
-    "./help": "./src/catalog/help.generated.ts",
-    "./labels": "./src/catalog/labels.generated.ts"
+    ".": "./src/index.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules",
@@ -15,16 +14,15 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
+    "@carbon/database": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",
-    "@lingui/core": "catalog:",
+    "@supabase/supabase-js": "catalog:",
+    "kysely": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "@carbon/database": "workspace:*",
-    "@carbon/glossary": "workspace:*",
-    "kysely": "catalog:",
     "typescript": "catalog:",
     "vitest": "catalog:"
   }

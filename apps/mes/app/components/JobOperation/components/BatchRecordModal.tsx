@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import {
   Button,
   Checkbox,
@@ -130,8 +131,8 @@ export function BatchRecordModal({
       const safeName = stripSpecialCharacters(file.name) || "file";
       const uploads = await Promise.all(
         changed.map((m) =>
-          carbon.storage
-            .from("private")
+          storage(carbon)
+            .company(company.id)
             .upload(
               `${company.id}/job/${m.jobOperationId}/${m.stepId}/${nanoid()}/${safeName}`,
               file,

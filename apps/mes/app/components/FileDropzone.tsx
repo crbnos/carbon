@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
 import { cn, toast } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -23,7 +24,7 @@ const FileDropzone: React.FC<FileDropzoneProps> = ({ onDrop }) => {
     let files = acceptedFiles;
     if (carbon && files.some((file) => isHeic(file.name, file.type))) {
       const uploader = new MediaUploader(carbon, {
-        bucket: "private",
+        bucket: getCompanyPrivateBucket(company.id),
         directory: `${company.id}/tmp`
       });
       setIsConverting(true);

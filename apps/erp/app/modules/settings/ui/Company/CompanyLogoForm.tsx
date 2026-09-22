@@ -1,4 +1,5 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
 import {
   IMAGE_UPLOAD_MIME_TYPES,
   isHeic,
@@ -101,7 +102,7 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
 
       try {
         const processed = await prepareImageUpload(carbon, {
-          bucket: "private",
+          bucket: getCompanyPrivateBucket(company.id ?? ""),
           directory: `${company.id}/tmp`,
           file: logo,
           height: resizeHeight

@@ -48,6 +48,8 @@ export const path = {
     authenticatedRoot: x,
     batch: (id: string) => generatePath(`${x}/batch/${id}`),
     batchComplete: (id: string) => generatePath(`${x}/batch/${id}/complete`),
+    // Batch details live in ERP; MES links to it cross-origin.
+    batchDetail: (id: string) => `${getAppUrl()}${x}/production/batches/${id}`,
     batchRecord: (id: string) => generatePath(`${x}/batch/${id}/record`),
     callback: "/callback",
     companySwitch: (companyId: string) =>

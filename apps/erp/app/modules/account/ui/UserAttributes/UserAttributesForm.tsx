@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -769,8 +770,8 @@ function FileAttributeForm({
 
     const fileName = `${company.id}/person/${userId}/${fileUpload.name}`;
 
-    const upload = await carbon?.storage
-      .from("private")
+    const upload = await storage(carbon)
+      .company(company.id)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true

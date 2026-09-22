@@ -3,6 +3,7 @@ import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
+import { storage } from "@carbon/files";
 import type { JobSource } from "@carbon/lib/telemetry";
 import { asJobSource, trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -28,7 +29,6 @@ import {
   indexAssemblyGraph
 } from "@carbon/viewer";
 import { parseDate } from "@internationalized/date";
-import type { FileObject, StorageError } from "@supabase/storage-js";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { ExpressionBuilder } from "kysely";
 import { sql } from "kysely";
@@ -844,45 +844,39 @@ export async function getJobDocuments(
     itemId?: string | null;
   }
 ): Promise<StorageItem[]> {
-  const promises: Promise<
-    | {
-        data: FileObject[];
-        error: null;
-      }
-    | {
-        data: null;
-        error: StorageError;
-      }
-  >[] = [client.storage.from("private").list(`${companyId}/job/${job.id}`)];
-
-  // Add opportunity line files if available
-  if (job.salesOrderLineId || job.quoteLineId) {
-    const opportunityLine = job.salesOrderLineId || job.quoteLineId;
-    promises.push(
-      client.storage
-        .from("private")
-        .list(`${companyId}/opportunity-line/${opportunityLine}`)
-    );
-  }
-
-  // Add parts files if itemId is available
-  if (job.itemId) {
-    promises.push(
-      client.storage.from("private").list(`${companyId}/parts/${job.itemId}`)
-    );
-  }
-
-  const results = await Promise.all(promises);
-  const [jobFiles, opportunityLineFiles, partsFiles] = results;
+  // Fixed positions, not a conditionally-grown array: the destructuring below
+  // is positional, so a job with an itemId but no sales/quote line would
+  // otherwise land its PARTS listing in `opportunityLineFiles` and label those
+  // files `bucket: "opportunity-line"`, which resolves the wrong storage path.
+  const opportunityLine = job.salesOrderLineId || job.quoteLineId;
+  const [jobFiles, opportunityLineFiles, partsFiles] = await Promise.all([
+    storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
+    opportunityLine
+      ? storage(client)
+          .company(companyId)
+          .list(`${companyId}/opportunity-line/${opportunityLine}`)
+      : null,
+    job.itemId
+      ? storage(client)
+          .company(companyId)
+          .list(`${companyId}/parts/${job.itemId}`)
+      : null
+  ]);
 
   // Combine and return all sets of files with their respective buckets
   return [
-    ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
-    ...(opportunityLineFiles?.data?.map((f) => ({
+    ...(jobFiles.data ?? []).map((f) => ({
+      ...f,
+      bucket: "job"
+    })),
+    ...(opportunityLineFiles?.data ?? []).map((f) => ({
       ...f,
       bucket: "opportunity-line"
-    })) || []),
-    ...(partsFiles?.data?.map((f) => ({ ...f, bucket: "parts" })) || [])
+    })),
+    ...(partsFiles?.data ?? []).map((f) => ({
+      ...f,
+      bucket: "parts"
+    }))
   ];
 }
 
@@ -892,13 +886,17 @@ export const getPartDocuments = async (
   ...items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await client.storage
-      .from("private")
+    const res = await storage(client)
+      .company(companyId)
       .list(`${companyId}/parts/${id}`);
 
-    if (res.error || !res.data) return null;
+    if (res.error) return null;
 
-    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+    return res.data.map((f) => ({
+      ...f,
+      bucket: "parts",
+      itemId: id
+    }));
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -920,28 +918,28 @@ export async function getJobDocumentsWithItemId(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles] = await Promise.all([
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`)
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data?.map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
-    const [jobFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`)
-    ]);
+    const jobFiles = await storage(client)
+      .company(companyId)
+      .list(`${companyId}/job/${job.id}`);
 
     return [
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -981,7 +979,7 @@ export async function getJobExpediteForecast(
 
   // Simulate-only what-if, run IN-PROCESS (Node) — persists nothing.
   try {
-    const { runExpediteWhatIf } = await import("@carbon/ee/planning");
+    const { runExpediteWhatIf } = await import("@carbon/planning");
     const expedite = await runExpediteWhatIf({
       db,
       client,
@@ -2649,7 +2647,7 @@ export async function recalculateJobOperationDependencies(
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
-    const { runLocationSchedule } = await import("@carbon/ee/planning");
+    const { runLocationSchedule } = await import("@carbon/planning");
     const data = await runLocationSchedule({
       db,
       client,
@@ -2718,7 +2716,7 @@ export async function runMRP(
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
-    const { runMrp } = await import("@carbon/ee/planning");
+    const { runMrp } = await import("@carbon/planning");
     const data = await runMrp(client, db, params);
     return { data, error: null };
   } catch (err) {
@@ -6221,6 +6219,17 @@ export async function getJobOperationBatchMembers(
       quantityScrapped: op.quantityScrapped ?? 0
     });
   }
+  // Sort each batch's members by job, then by item readable id, matching the
+  // detail drawer and the printable batch list.
+  for (const group of Object.values(members)) {
+    group.sort((a, b) => {
+      const byJob = (a.jobReadableId ?? "").localeCompare(
+        b.jobReadableId ?? ""
+      );
+      if (byJob !== 0) return byJob;
+      return (a.itemReadableId ?? "").localeCompare(b.itemReadableId ?? "");
+    });
+  }
   return { data: members, error: null };
 }
 
@@ -6284,8 +6293,17 @@ export async function getJobOperationBatchWithMembers(
     deriveSharedWorkCenterName(
       (members.data ?? []).map((m) => m.workCenter?.name)
     );
+  // Sort by job, then by the member item's readable id, so the drawer's member
+  // table matches the printable batch list's ordering.
+  const sortedMembers = [...(members.data ?? [])].sort((a, b) => {
+    const byJob = (a.job?.jobId ?? "").localeCompare(b.job?.jobId ?? "");
+    if (byJob !== 0) return byJob;
+    return (a.jobMakeMethod?.item?.readableIdWithRevision ?? "").localeCompare(
+      b.jobMakeMethod?.item?.readableIdWithRevision ?? ""
+    );
+  });
   return {
-    data: { ...batch.data, workCenterName, members: members.data ?? [] },
+    data: { ...batch.data, workCenterName, members: sortedMembers },
     error: members.error
   };
 }
@@ -7007,7 +7025,9 @@ async function invalidateAssemblyPlanCache(
     // Best-effort artifact cleanup (removing a nonexistent path is a no-op);
     // deleting the rows below is what actually invalidates the cache
     // (getLatestAssemblyPlan then finds nothing).
-    await client.storage.from("private").remove(planPaths);
+    // Private object paths are prefixed with the owning company's id.
+    const companyId = planPaths[0].split("/")[0];
+    await storage(client).company(companyId).remove(planPaths);
   }
 
   await client
@@ -7067,7 +7087,10 @@ export async function invalidateAssemblyModelCache(
 
   if (paths.size > 0) {
     // Best-effort file cleanup; the row updates below are what invalidate.
-    await client.storage.from("private").remove([...paths]);
+    // Private object paths are prefixed with the owning company's id.
+    const objectPaths = [...paths];
+    const companyId = objectPaths[0].split("/")[0];
+    await storage(client).company(companyId).remove(objectPaths);
   }
 
   await client
@@ -7815,8 +7838,10 @@ export async function syncAssemblyStepMaterialsFromMappings(
   const steps = await stepsQuery;
   if (!steps.data?.length) return { created: 0 };
 
-  const graphFile = await client.storage.from("private").download(graphPath);
-  if (graphFile.error || !graphFile.data) return { created: 0 };
+  const graphFile = await storage(client)
+    .company(args.companyId)
+    .download(graphPath);
+  if (!graphFile.data) return { created: 0 };
   let graphIndex: AssemblyGraphIndex;
   try {
     graphIndex = indexAssemblyGraph(
@@ -8002,8 +8027,12 @@ export async function getAssemblyPlanJson(
   const job = await getLatestAssemblyPlan(client, modelUploadId);
   if (!job.data?.planPath) return null;
 
-  const file = await client.storage.from("private").download(job.data.planPath);
-  if (file.error || !file.data) return null;
+  // Private object paths are prefixed with the owning company's id.
+  const planCompanyId = job.data.planPath.split("/")[0];
+  const file = await storage(client)
+    .company(planCompanyId)
+    .download(job.data.planPath);
+  if (!file.data) return null;
 
   try {
     const plan = JSON.parse(await file.data.text()) as AssemblyPlan;
@@ -8169,8 +8198,10 @@ export async function autoMatchAssemblyComponents(
     return { error: "The model has not been processed" };
   }
 
-  const graphFile = await client.storage.from("private").download(graphPath);
-  if (graphFile.error || !graphFile.data) {
+  const graphFile = await storage(client)
+    .company(args.companyId)
+    .download(graphPath);
+  if (!graphFile.data) {
     return { error: "Failed to load the model graph" };
   }
   let graph: AssemblyGraph;
@@ -9009,7 +9040,9 @@ export async function generateAssemblyStepsFromPlan(
   let graphIndex: AssemblyGraphIndex | null = null;
   const graphPath = instruction.data.modelUpload?.graphPath;
   if (graphPath) {
-    const graphFile = await client.storage.from("private").download(graphPath);
+    const graphFile = await storage(client)
+      .company(args.companyId)
+      .download(graphPath);
     if (graphFile.data) {
       try {
         const graph = JSON.parse(await graphFile.data.text()) as AssemblyGraph;

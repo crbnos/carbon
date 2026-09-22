@@ -1,7 +1,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule } from "@carbon/ee/planning";
+import { runLocationSchedule } from "@carbon/planning";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@carbon/auth", () => ({
@@ -18,7 +18,7 @@ vi.mock("@carbon/auth/client.server", () => ({
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
-vi.mock("@carbon/ee/planning", () => ({
+vi.mock("@carbon/planning", () => ({
   runLocationSchedule: vi.fn()
 }));
 vi.mock("@carbon/logger", () => ({

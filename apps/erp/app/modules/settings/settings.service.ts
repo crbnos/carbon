@@ -1172,6 +1172,17 @@ export async function updateIncludeMaterialsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+export async function updateIncludeOperationsOnTravelerSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  includeOperationsOnTraveler: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ includeOperationsOnTraveler }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,

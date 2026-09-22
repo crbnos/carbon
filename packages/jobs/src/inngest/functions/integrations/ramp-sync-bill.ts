@@ -5,6 +5,7 @@ import {
   type RampClient,
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
+import { storage } from "@carbon/files";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,
@@ -241,8 +242,8 @@ async function attachBillDocuments(
       const name = stripSpecialCharacters(basename);
       const path = `${ctx.companyId}/purchase-invoice/${args.invoiceRowId}/${name}`;
 
-      const uploaded = await ctx.client.storage
-        .from("private")
+      const uploaded = await storage(ctx.client)
+        .company(ctx.companyId)
         .upload(path, bytes, { upsert: true });
       if (uploaded.error) {
         console.error(

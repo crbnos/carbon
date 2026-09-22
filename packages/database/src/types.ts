@@ -7914,6 +7914,7 @@ export type Database = {
           gaugeCalibrationExpiredNotificationGroup: string[]
           id: string
           includeMaterialsOnTraveler: boolean
+          includeOperationsOnTraveler: boolean
           incompletePickingListPolicy: string
           inventoryJobCompletedNotificationGroup: string[]
           inventoryShelfLife: Json
@@ -7965,6 +7966,7 @@ export type Database = {
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id: string
           includeMaterialsOnTraveler?: boolean
+          includeOperationsOnTraveler?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -8016,6 +8018,7 @@ export type Database = {
           gaugeCalibrationExpiredNotificationGroup?: string[]
           id?: string
           includeMaterialsOnTraveler?: boolean
+          includeOperationsOnTraveler?: boolean
           incompletePickingListPolicy?: string
           inventoryJobCompletedNotificationGroup?: string[]
           inventoryShelfLife?: Json
@@ -53863,6 +53866,24 @@ export type Database = {
             referencedColumns: ["userId"]
           }
         ]
+      }
+      scriptRun: {
+        Row: {
+          name: string
+          ranAt: string
+          result: Json | null
+        }
+        Insert: {
+          name: string
+          ranAt?: string
+          result?: Json | null
+        }
+        Update: {
+          name?: string
+          ranAt?: string
+          result?: Json | null
+        }
+        Relationships: []
       }
       searchIndexRegistry: {
         Row: {

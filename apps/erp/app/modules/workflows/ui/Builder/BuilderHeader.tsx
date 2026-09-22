@@ -1,3 +1,4 @@
+import type { WorkflowIssue } from "@carbon/ee/workflows";
 import {
   Button,
   Modal,
@@ -12,7 +13,6 @@ import {
   TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
-import type { WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef, useState } from "react";
 import { LuLock, LuPencil } from "react-icons/lu";

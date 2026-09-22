@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
@@ -11,6 +12,7 @@ import {
   getSalesReturnOrderStatus,
   round
 } from "@carbon/utils";
+import type { FileObject } from "@supabase/storage-js";
 import type {
   PostgrestError,
   PostgrestSingleResponse,
@@ -1146,8 +1148,8 @@ export async function getOpportunityDocuments(
   companyId: string,
   opportunityId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/opportunity/${opportunityId}`);
 
   if (result.error) {
@@ -1157,7 +1159,10 @@ export async function getOpportunityDocuments(
     return [];
   }
 
-  return result.data?.map((f) => ({ ...f, bucket: "opportunity" })) ?? [];
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "opportunity"
+  }));
 }
 
 export async function getOpportunityLineDocuments(
@@ -1167,12 +1172,12 @@ export async function getOpportunityLineDocuments(
   itemId?: string | null
 ) {
   const [opportunityLineResult, itemResult] = await Promise.all([
-    client.storage
-      .from("private")
+    storage(client)
+      .company(companyId)
       .list(`${companyId}/opportunity-line/${lineId}`),
     itemId
-      ? client.storage.from("private").list(`${companyId}/parts/${itemId}`)
-      : Promise.resolve({ data: [] as any[], error: null })
+      ? storage(client).company(companyId).list(`${companyId}/parts/${itemId}`)
+      : Promise.resolve({ data: [] as FileObject[], error: null })
   ]);
 
   if (opportunityLineResult.error) {
@@ -1181,16 +1186,19 @@ export async function getOpportunityLineDocuments(
     });
   }
   if (itemResult.error) {
-    logger.error("Failed to list item documents", { error: itemResult.error });
+    logger.error("Failed to list item documents", {
+      error: itemResult.error
+    });
   }
 
-  const opportunityLineDocs =
-    opportunityLineResult.data?.map((f) => ({
-      ...f,
-      bucket: "opportunity-line"
-    })) ?? [];
-  const itemDocs =
-    itemResult.data?.map((f) => ({ ...f, bucket: "parts" })) ?? [];
+  const opportunityLineDocs = (opportunityLineResult.data ?? []).map((f) => ({
+    ...f,
+    bucket: "opportunity-line"
+  }));
+  const itemDocs = (itemResult.data ?? []).map((f) => ({
+    ...f,
+    bucket: "parts"
+  }));
 
   return [...opportunityLineDocs, ...itemDocs];
 }

@@ -964,6 +964,18 @@ export const JobOperation = ({
                 {scope === "batch" && batch && (
                   <DropdownMenuItem asChild>
                     <a
+                      href={path.to.batchDetail(batch.id as string)}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      <DropdownMenuIcon icon={<LuLayers />} />
+                      <Trans>Batch Details</Trans>
+                    </a>
+                  </DropdownMenuItem>
+                )}
+                {scope === "batch" && batch && (
+                  <DropdownMenuItem asChild>
+                    <a
                       href={path.to.file.batchList(batch.id as string)}
                       target="_blank"
                       rel="noreferrer"

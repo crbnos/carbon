@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString } from "@carbon/files";
+import { convertKbToString, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   Badge,
@@ -318,19 +318,23 @@ export const useOpportunityDocuments = ({
 
   const deleteAttachment = useCallback(
     async (attachment: FileObject) => {
-      const result = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(attachment)]);
 
-      if (!result || result.error) {
-        toast.error(result?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(t`${attachment.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [carbon?.storage, getPath, revalidator, t]
+    [carbon, getPath, revalidator, t, company.id]
   );
 
   const download = useCallback(

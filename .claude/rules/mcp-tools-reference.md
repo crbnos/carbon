@@ -1,14 +1,22 @@
 ---
 paths:
   - "apps/erp/app/routes/api+/mcp+/**"
+  - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
 ---
 
 # Carbon ERP MCP Server
 
 The ERP exposes an MCP (Model Context Protocol) server that wraps the module
-service functions as ERP tools. It lives entirely under
-`apps/erp/app/routes/api+/mcp+/`.
+service functions as ERP tools. The **protocol engine is commercial** — it lives
+in `packages/ee/src/mcp/` (`@carbon/ee/mcp` for the pure logic —
+catalog-search/describe-format/format-result/instructions/types; `@carbon/ee/mcp.server`
+for `server.ts`, which embeds the `requireEntitlement("MCP")` lock). The **dispatch,
+tool manifest and generated metadata stay in the app** under
+`apps/erp/app/routes/api+/mcp+/` (they derive from `~/modules/*` and cannot move
+into a package) and are INJECTED into the engine as `deps` by the thin route
+(`_index.ts`): `{ callOperation, operationsByName, isListOperation, isMcpBlockedTool,
+catalogSearch, toolMetadata }`.
 
 > Don't recreate the old per-tool dump — it goes stale instantly (it still listed
 > `inventory_getShelf`, removed when `shelf` was renamed to `storageUnit`). The
@@ -32,8 +40,9 @@ service functions as ERP tools. It lives entirely under
   `OPTIONS` → 204 with CORS. JSON-RPC over
   `WebStandardStreamableHTTPServerTransport` (`enableJsonResponse: true`,
   `sessionIdGenerator: undefined` — stateless, no session).
-- A fresh `McpServer` (`createMcpServer(ctx)`) is built per request and connected
-  to a fresh transport.
+- A fresh `McpServer` (`await createMcpServer(ctx, today, deps)` from
+  `@carbon/ee/mcp.server`) is built per request and connected to a fresh transport.
+  It is async because it `await requireEntitlement("MCP")` first.
 
 ## Public discovery endpoints (unauthenticated)
 
@@ -73,24 +82,26 @@ Three ways in, resolved in this order:
 3. **No auth** → 401 with a `WWW-Authenticate: Bearer resource_metadata=…` header
    so clients can discover the OAuth flow.
 
-Auth always yields an `McpContext` = `{ client, companyId, companyGroupId, userId }`
-(`lib/types.ts`). `companyId`/`userId` come from the auth context and are injected
-server-side — never trusted from tool arguments.
+Auth always yields the app's `AuthedContext` (`../v1+/lib/base.server`; a superset
+of the engine's `McpContext` in `@carbon/ee/mcp` `types.ts`). `companyId`/`userId`
+come from the auth context and are injected server-side — never trusted from tool
+arguments.
 
-**Edition/plan gate.** The MCP server is a Business+ feature. Immediately after
-`resolveAuth`, `action` calls `companyHasFeature(ctx.client, ctx.companyId, { feature: "MCP" })`
-and returns 402 when false — one check that covers BOTH auth paths and blocks the
-**Community** edition (self-hosted) as well as Cloud **Starter** companies. This is the
-edge enforcement (the MCP server code lives in `apps/erp`, community-licensed, so there is
-no `packages/ee` body to relocate); `companyHasFeature` is the same entitlement helper the
-rest of the gated features use. The unauthenticated discovery endpoints
+**Edition/plan gate (the commercial LOCK).** The MCP server is a Business+ feature.
+The gate lives INSIDE the commercial engine: `createMcpServer` (`@carbon/ee/mcp.server`)
+`await requireEntitlement(ctx.client, ctx.companyId, "MCP")` before building the server,
+throwing `EntitlementError`, which the route catches → 402 (`makeMcpDisabledResponse`).
+One check covers BOTH auth paths and blocks the **Community** edition (self-hosted) as
+well as Cloud **Starter** companies. It is un-strippable — serving MCP requires executing
+`@carbon/ee` code — replacing the former deletable in-route `companyHasFeature` check. The
+unauthenticated discovery endpoints
 (`/.well-known/mcp.json`, `/agent-setup/prompt.md`) are NOT gated — they have no company
 context and only advertise the endpoint; enforcement is at `POST /api/mcp`.
 
 ## The 3 meta-tools (the ONLY tools actually registered)
 
 To avoid context exhaustion, `server.registerTool` registers just three discovery
-tools (`lib/server.ts`); the ~1200 ERP functions are reached through them, not
+tools (`packages/ee/src/mcp/server.ts` (`@carbon/ee/mcp.server`)); the ~1200 ERP functions are reached through them, not
 registered individually:
 
 | Tool | Purpose |
@@ -99,7 +110,7 @@ registered individually:
 | `describe_tool` | Full contract for one `name` or up to 10 `names`: description, permission scope, list-op marker, input schema AND response schema. |
 | `call_tool` | Execute any ERP tool: `{ name, arguments }`. `arguments` may arrive as a JSON string and is normalized to an object. |
 
-### Catalog search (`lib/catalog-search.ts`)
+### Catalog search (`packages/ee/src/mcp/catalog-search.ts`, `@carbon/ee/mcp`)
 
 `search_tools` runs BM25 full-text search via **zbsearch** (pnpm catalog dep;
 in-process, index built lazily once per process over `tool-metadata.json`),
@@ -119,19 +130,19 @@ not substring filtering. The typed, tested logic lives OUTSIDE the
   concrete names for the enum `where` filter. Filter-only calls (no `query`)
   bypass the index and keep metadata order.
 - Output is one line per tool — `name [READ] (requiredParams, +N optional)`
-  (`formatParamSummary`, `lib/describe-format.ts`); the description line only
+  (`formatParamSummary`, `packages/ee/src/mcp/describe-format.ts`); the description line only
   renders when it differs from the name-derived text
   (`deriveNameDescription`). `describe_tool` output (`formatToolDescription`)
   adds `Permission:` and, for list ops (`isListOperation`), the default page
   size, plus the compact response schema when the generator derived one.
-- Server instructions live in `lib/instructions.ts` (module list + interpolated
+- Server instructions live in `packages/ee/src/mcp/instructions.ts` (module list + interpolated
   `MCP_DEFAULT_LIMIT`), importable by tests without server.ts's auth/env chain.
 - Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`;
   `lib/manifest.ts` carries its own copies of the meta-tool descriptions
   (pinned >40 chars by `manifest.test.ts`) — keep them in sync with
   `server.ts` by hand.
 
-### Response formatting is token-lean BY CONTRACT (`lib/format-result.ts`)
+### Response formatting is token-lean BY CONTRACT (`packages/ee/src/mcp/format-result.ts`)
 
 MCP text responses deliberately differ from the HTTP API's exact data — the
 HTTP/agent/workflow callers of `callOperation` are untouched:
@@ -362,7 +373,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
   destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
-  in `lib/types.ts`).
+  in `packages/ee/src/mcp/types.ts`).
 - **Description** precedence: a function-level **JSDoc** on the service export
   (first sentence, `@tag`s stripped, trailing period removed, leading letter
   lowercased unless it starts an acronym, capped ~160 chars —
@@ -412,8 +423,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
 `people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
-`apps/erp/app/modules/<module>/<module>.service.ts` namespace (accounting is the
-`.ee`-licensed `accounting.ee.service.ts`; the registry key stays `accounting`).
+`apps/erp/app/modules/<module>/<module>.service.ts` namespace.
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 

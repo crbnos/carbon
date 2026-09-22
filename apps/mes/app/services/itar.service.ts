@@ -4,7 +4,7 @@
 import { ITAR_RIDER_SHA256, ITAR_RIDER_VERSION } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { insertAuditLogEntries } from "@carbon/database/audit";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";

@@ -4,6 +4,7 @@ import {
   dedupeViolations,
   evaluateSalesRulesForSalesDocument
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -237,8 +238,8 @@ export async function action(args: ActionFunctionArgs) {
       if (file && file instanceof File) {
         const purchaseOrderDocumentPath = `${companySettings.data.id}/opportunity/${quote.data.opportunityId}/${file.name}`;
 
-        const fileUpload = await serviceRole.storage
-          .from("private")
+        const fileUpload = await storage(serviceRole)
+          .company(quote.data.companyId)
           .upload(purchaseOrderDocumentPath, file);
 
         if (fileUpload.error) {

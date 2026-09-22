@@ -30,7 +30,7 @@ import {
 import { getFunctionLogger } from "../lib/logging.ts";
 import { toJson, toJsonColumns } from "../lib/json.ts";
 import { KyselyDatabase } from "../lib/postgres/index.ts";
-import { importTypeScript } from "../lib/sandbox.ee.ts";
+import { importTypeScript } from "../lib/sandbox.ts";
 import { getStorageUnitId } from "../lib/storage-units.ts";
 import { effectiveReplenishment } from "../lib/mrp-engine.ts";
 import {

@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -681,13 +682,19 @@ const getItemFiles = async (
   items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await client.storage
-      .from("private")
+    const res = await storage(client)
+      .company(companyId)
       .list(`${companyId}/parts/${id}`);
 
-    if (res.error || !res.data) return null;
+    if (!res.data?.length) return null;
 
-    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+    return res.data.map(
+      (f): StorageItem => ({
+        ...f,
+        bucket: "parts",
+        itemId: id
+      })
+    );
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -707,30 +714,30 @@ export async function getJobFiles(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data?.map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     return [
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -991,7 +998,9 @@ export async function getBatchWorkInstructions(
     Promise.all(
       jobs.map(async (job) => {
         const folder = `${args.companyId}/job/${job.id}`;
-        const listed = await client.storage.from("private").list(folder);
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
         return (listed.data ?? []).map(
           (file): BatchFile => ({
             ...file,
@@ -1005,7 +1014,9 @@ export async function getBatchWorkInstructions(
     Promise.all(
       itemIds.map(async (itemId) => {
         const folder = `${args.companyId}/parts/${itemId}`;
-        const listed = await client.storage.from("private").list(folder);
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
         return (listed.data ?? []).map(
           (file): BatchFile => ({
             ...file,

@@ -9,9 +9,12 @@ import {
   evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { datetime, type Violation } from "@carbon/utils";
+import { getLogger } from "@carbon/logger";
+import type { Violation } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -30,6 +33,8 @@ import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
+
+const logger = getLogger("erp", "quote", "finalize");
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -138,8 +143,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${quote.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await client.storage
-      .from("private")
+    const documentFileUpload = await storage(client)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -263,9 +268,15 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await client.storage
-          .from("private")
+        const signed = await storage(client)
+          .company(companyId)
           .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath: documentFilePath,
+            error: signed.error
+          });
+        }
 
         await trigger("send-email", {
           to: [user.data.email, customerContact.data.contact!.email!],
@@ -274,10 +285,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Quote ${getQuoteDisplayId(quote.data)}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

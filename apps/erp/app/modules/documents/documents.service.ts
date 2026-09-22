@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -228,8 +229,8 @@ export async function createDocumentUploadUrl(
   const documentPath = isHeic(args.name)
     ? buildStagedUploadPath(args)
     : buildDocumentUploadPath(args);
-  return client.storage
-    .from("private")
+  return storage(client)
+    .company(args.companyId)
     .createSignedUploadUrl(documentPath, { upsert: true });
 }
 
@@ -271,8 +272,8 @@ export async function insertUploadedDocument(
   // memory, no wasm in the app bundle.
   const staged = parseStagedUploadPath(path);
   if (staged) {
-    const converted = await client.storage
-      .from("private")
+    const converted = await storage(client)
+      .company(args.companyId)
       .download(path, { transform: { quality: 85 } });
     if (converted.error || !converted.data) {
       return {
@@ -291,8 +292,8 @@ export async function insertUploadedDocument(
       entityId: staged.entityId,
       name
     });
-    const stored = await client.storage
-      .from("private")
+    const stored = await storage(client)
+      .company(args.companyId)
       .upload(finalPath, converted.data, {
         contentType: converted.data.type || "image/jpeg",
         upsert: true
@@ -303,7 +304,7 @@ export async function insertUploadedDocument(
         error: stored.error ?? new Error("Failed to store the converted image")
       };
     }
-    await client.storage.from("private").remove([path]);
+    await storage(client).company(args.companyId).remove([path]);
     path = stored.data.path;
     size = Math.round(converted.data.size / 1024);
   }

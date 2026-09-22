@@ -48,7 +48,7 @@ import {
 } from "@carbon/ee/hooks.server";
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -73,7 +73,7 @@ import {
 import {
   getAccountsList,
   getActiveDimensionsWithValues
-} from "~/modules/accounting/accounting.ee.service";
+} from "~/modules/accounting/accounting.service";
 import {
   getIntegration,
   IntegrationForm,
@@ -1567,7 +1567,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (!isIntegrationWhitelisted(integrationId)) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,

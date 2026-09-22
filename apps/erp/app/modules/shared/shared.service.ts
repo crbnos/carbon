@@ -1,5 +1,5 @@
 import type { Database, Tables } from "@carbon/database";
-import { getContentType, getFileExtension } from "@carbon/files";
+import { getContentType, getFileExtension, storage } from "@carbon/files";
 import type {
   PostgrestResponse,
   PostgrestSingleResponse,
@@ -56,10 +56,19 @@ export async function getBase64ImageFromSupabase(
   const extension = getFileExtension(path);
   const heic = extension === "heic" || extension === "heif";
 
-  const { data, error } = await client.storage
-    .from("private")
+  // Private object paths are prefixed with the owning company's id. A path
+  // with no leading segment has no company to resolve a bucket from, and
+  // `.company("")` throws — this function's contract is to return null on a
+  // miss, so callers would get a rejected promise instead of the fallback.
+  const companyId = path.split("/")[0];
+  if (!companyId) {
+    return null;
+  }
+
+  const { data } = await storage(client)
+    .company(companyId)
     .download(path, heic ? { transform: { quality: 90 } } : undefined);
-  if (error) {
+  if (!data) {
     return null;
   }
 

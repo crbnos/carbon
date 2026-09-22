@@ -46,6 +46,20 @@ on deny); the nav gates it in `useSettingsSubmodules.tsx` via `usePlanGate({ fea
 "BACKUPS" })` OR `isInternal`/`isLocalDev` (Demo Data still uses `localOrInternalRoutes`).
 Internal = `@carbon.ms` / `@carbon.us.org`.
 
+`canManageBackups` is the route-level UX gate (a deletable open-code `if`). The
+un-strippable commercial LOCK is `requireBackupsEntitlement(companyId)`
+(`packages/ee/src/backups.server.ts` → `@carbon/ee/backups.server`), embedded at the
+top of every START-action durable function — `companyExportFunction`,
+`companyRestoreFunction`, `companyImportFunction` (finalize/revert are NOT gated —
+they only resolve an already-started restore, and gating them would strand a
+pending restore if entitlement lapsed). It is
+`IS_LOCAL_DEV`-exempt (the service-role job path carries no `email`, so the
+`isInternalEmail` half of the hatch cannot apply there) and otherwise
+`requireEntitlement("BACKUPS")` — Community/Starter throw. Onboarding demo-template
+apply/revert call `buildCompanyBackup`/`wipeAndLoad` DIRECTLY, and the import fn
+exempts `referencedTemplate`, so templating stays free on every edition. Do NOT push
+the check into `buildCompanyBackup`/`wipeAndLoad` — that breaks onboarding.
+
 The multi-tenant caveats below are real but are NOT a cross-tenant leak in the backup
 feature — every entry point is scoped to the caller's `companyId`. They were the reason
 this stayed internal-only, and exposing it to customers is a deliberate product decision:
@@ -133,7 +147,14 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   `("id","companyId")`) and `demandProjection` (PK
   `("itemId","locationId","periodId")`). Leaving their source ids in place made a
   cross-company restore collide with the SOURCE company's still-live rows and roll
-  the whole thing back. Serial/int ids are left alone. A
+  the whole thing back. Five OTHER composite-PK tables are excluded BY NAME
+  (`READABLE_ID_TABLES`: `part`, `material`, `consumable`, `service`, `tool`)
+  because their `id` is a human-authored part number matched by VALUE against
+  `item."readableId"`, not an identifier — minting a fresh one orphans every row
+  from its item and every list view renders empty against a full table. They carry
+  only the composite PK (no global `UNIQUE (id)`), so preserving their ids cannot
+  collide; the two sets are disjoint by construction and a test enforces it.
+  Serial/int ids are left alone. A
   1:1 extension table whose `id` is itself an FK (`purchaseOrderDelivery.id ->
   purchaseOrder.id`) SHARES its parent's map rather than minting a second id,
   which would split the pair — and under `session_replication_role='replica'`
@@ -141,10 +162,12 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
 - Storage path rewriting: `rewriteStoragePath` (swap `{sourceCompanyId}/` →
   `{targetCompanyId}/` + remapped id segments), `rewriteToTemplateAssetPath`
   (`{co}/…` → `_templates/{industryId}/…`). `STORAGE_PATH_COLUMNS` =
-  `thumbnailPath` ONLY. `modelPath` (raw CAD) is deliberately excluded — raw
-  models live in the transient `temp-staging` bucket, not `private`, so a backup
-  never carries them; a restored model keeps its thumbnail and regenerates its 3D
-  artifacts if the raw is re-uploaded.
+  `thumbnailPath`, `modelPath`, `originalPath`, `optimizedModelPath`,
+  `glbPath`, `graphPath` — every `modelUpload` artifact column. A backup enumerates assets by LISTING the bucket under
+  `{companyId}/` (`company-export.ts`), not by reading these columns, so raw CAD
+  IS carried; a column missing from this set survives a cross-company restore
+  still pointing at the SOURCE company's prefix (which is what left restored
+  assemblies unable to load their model).
 - Asset transport: `copyAssetsToBackup` (server-side `storage.copy`
   of `private/{companyId}/…` files into a backup's `assets/` folder) and
   `restoreAssetsFromBackup` (copy them back to `private/`, rewriting paths +

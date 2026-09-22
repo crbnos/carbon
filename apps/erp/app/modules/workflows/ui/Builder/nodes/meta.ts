@@ -1,6 +1,6 @@
+import type { WorkflowNode, WorkflowNodeType } from "@carbon/ee/workflows";
+import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
 import { OPERATOR_LABELS } from "@carbon/utils";
-import type { WorkflowNode, WorkflowNodeType } from "@carbon/workflows";
-import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
 import type { IconType } from "react-icons";
 import {
   LuCalculator,

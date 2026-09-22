@@ -1,4 +1,5 @@
 import { CARBON_SLACK_ENABLED, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import {
   Hidden,
@@ -110,7 +111,7 @@ const Suggestion = () => {
       if (isHeic(file.name, file.type)) {
         try {
           file = await convertHeicToJpeg(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(companyId),
             directory: `${companyId}/tmp`,
             file
           });
@@ -122,8 +123,8 @@ const Suggestion = () => {
 
       const fileExtension = file.name.substring(file.name.lastIndexOf(".") + 1);
       const storagePath = `${companyId}/suggestions/${nanoid()}.${fileExtension}`;
-      const imageUpload = await carbon.storage
-        .from("private")
+      const imageUpload = await storage(carbon)
+        .company(companyId)
         .upload(storagePath, file, {
           cacheControl: `${12 * 60 * 60}`,
           upsert: true

@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -54,8 +55,8 @@ const SupplierTaxForm = ({ initialValues }: SupplierTaxFormProps) => {
       const fileExtension = file.name.split(".").pop();
       const fileName = `${companyId}/tax-certificates/${nanoid()}.${fileExtension}`;
 
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, file);
 
       if (result.error) {

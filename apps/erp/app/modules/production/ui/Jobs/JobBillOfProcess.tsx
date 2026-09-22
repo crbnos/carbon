@@ -1,6 +1,7 @@
 "use client";
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { convertHeicToJpeg, isHeic } from "@carbon/files/media";
 import { Array as ArrayInput, Input, ValidatedForm } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -1308,15 +1309,15 @@ function StepsForm({
     try {
       const upload = isHeic(file.name, file.type)
         ? await convertHeicToJpeg(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(companyId),
             directory: `${companyId}/tmp`,
             file
           })
         : file;
       const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);
@@ -1944,15 +1945,15 @@ function JobStepSlides({
     try {
       const upload = isHeic(file.name, file.type)
         ? await convertHeicToJpeg(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(companyId),
             directory: `${companyId}/tmp`,
             file
           })
         : file;
       const ext = upload.name.split(".").pop();
       const fileName = `${companyId}/parts/${nanoid()}.${ext}`;
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(companyId)
         .upload(fileName, upload);
       if (result.error || !result.data) {
         toast.error(t`Failed to upload image`);

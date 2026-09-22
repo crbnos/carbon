@@ -1,4 +1,4 @@
-import type { WorkflowNode } from "@carbon/workflows";
+import type { WorkflowNode } from "@carbon/ee/workflows";
 import type { Edge, Node } from "@xyflow/react";
 
 export type BuilderNode = Node<

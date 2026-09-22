@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import {
   DuplicateFileNameError,
   MediaUploader,
@@ -19,7 +20,7 @@ export type FileUploadOptions = {
 };
 
 /**
- * The one private-bucket upload mutation for document panels: prepare the
+ * The one company-private-bucket upload mutation for document panels: prepare the
  * files (HEIC → JPEG, duplicate-name refusal), store each one, surface
  * failures. Panels supply only what differs — the path and what a stored file
  * means — either once at the hook (the common case) or per call when a
@@ -40,7 +41,7 @@ export function useFileUpload(options: FileUploadOptions = {}) {
     () =>
       carbon
         ? new MediaUploader(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(company.id),
             directory: `${company.id}/tmp`
           })
         : null,
@@ -85,8 +86,8 @@ export function useFileUpload(options: FileUploadOptions = {}) {
           // the user never mentioned. Plain same-name re-uploads keep the
           // replace-by-name behavior; only the masked case is refused.
           if (wasConvertedFromHeic(file)) {
-            const existing = await carbon.storage
-              .from("private")
+            const existing = await storage(carbon)
+              .company(company.id)
               .info(targetPath);
             if (!existing.error && existing.data) {
               toast.error(
@@ -97,8 +98,8 @@ export function useFileUpload(options: FileUploadOptions = {}) {
             }
           }
           toast.info(t`Uploading ${file.name}`);
-          const result = await carbon.storage
-            .from("private")
+          const result = await storage(carbon)
+            .company(company.id)
             .upload(targetPath, file, {
               cacheControl: `${12 * 60 * 60}`,
               upsert: true
@@ -116,7 +117,7 @@ export function useFileUpload(options: FileUploadOptions = {}) {
       }
     },
     // options fields are destructured above so callers may pass an inline object
-    [carbon, uploader, t, baseGetPath, baseOnSuccess, baseOnError]
+    [carbon, uploader, company.id, t, baseGetPath, baseOnSuccess, baseOnError]
   );
 
   return { upload, isUploading };

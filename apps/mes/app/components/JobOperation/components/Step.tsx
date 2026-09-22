@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { storage } from "@carbon/files";
 import {
   Combobox,
   DateTimePicker,
@@ -509,8 +510,8 @@ export function RecordModal({
     const safeName = stripSpecialCharacters(fileUpload.name) || "file";
     const fileName = `${company.id}/job/${attribute.operationId}/${attribute.id}/${nanoid()}/${safeName}`;
 
-    const upload = await carbon?.storage
-      .from("private")
+    const upload = await storage(carbon)
+      .company(company.id)
       .upload(fileName, fileUpload, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true

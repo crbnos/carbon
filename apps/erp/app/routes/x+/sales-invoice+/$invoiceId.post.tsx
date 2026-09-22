@@ -9,6 +9,7 @@ import {
   evaluateSalesRulesForSalesDocument,
   isBlocked
 } from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -92,8 +93,8 @@ async function storeStripeInvoicePdf({
   );
   const filePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const upload = await serviceRole.storage
-    .from("private")
+  const upload = await storage(serviceRole)
+    .company(companyId)
     .upload(filePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -749,8 +750,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${salesInvoice.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await serviceRole.storage
-      .from("private")
+    const documentFileUpload = await storage(serviceRole)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -897,9 +898,15 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await serviceRole.storage
-          .from("private")
+        const signed = await storage(serviceRole)
+          .company(companyId)
           .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath: documentFilePath,
+            error: signed.error
+          });
+        }
 
         await trigger("send-email", {
           to: [seller.data.email, customer.data.contact.email!],
@@ -908,10 +915,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Invoice ${salesInvoice.data.invoiceId} from ${company.data.name}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

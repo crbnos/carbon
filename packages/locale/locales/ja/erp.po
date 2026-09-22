@@ -113,7 +113,7 @@ msgstr "{0}件の下書き仕訳"
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0}に仕入先がありません"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1116,7 +1116,7 @@ msgid "Account Mapping"
 msgstr "勘定科目マッピング"
 
 msgid "Account Name"
-msgstr ""
+msgstr "勘定科目名"
 
 msgid "Account Number"
 msgstr "勘定番号"
@@ -1340,6 +1340,9 @@ msgstr "影響を受けるアイテムを追加"
 
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "認証器アプリからのコードを要求することで、サインイン時のセキュリティレイヤーを追加します。"
+
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr "各工順工程とその予想時間及びスキャンバーコードをリストアップした工程セクションを追加します。"
 
 msgid "Add any notes about your decision..."
 msgstr "あなたの決定についてのメモを追加してください..."
@@ -3597,7 +3600,7 @@ msgstr "シリアル番号を選択"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "製造指図上の{0}の仕入先を選択してください"
 
 msgid "Choose another file"
 msgstr "別のファイルを選択"
@@ -5299,7 +5302,7 @@ msgid "Default"
 msgstr "デフォルト"
 
 msgid "Default Account"
-msgstr ""
+msgstr "デフォルト勘定科目"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "請求書からの販売売上高を転記するデフォルト勘定"
@@ -10335,7 +10338,7 @@ msgstr "マーチャント"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "{0}のロットを統合"
 
 msgid "Merge output lots"
 msgstr "出力ロットをマージ"
@@ -12081,6 +12084,12 @@ msgstr "工程"
 
 msgid "Operations / steps"
 msgstr "工程 / ステップ"
+
+msgid "Operations are included"
+msgstr "工程が含まれています"
+
+msgid "Operations are not included"
+msgstr "工程が含まれていません"
 
 msgid "Operations Type"
 msgstr "工程タイプ"
@@ -15916,7 +15925,7 @@ msgstr "表示"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "あと{0}個表示"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "得意先リスト、得意先フォーム、ドロップダウンで読みやすい得意先IDカラムを表示します。得意先はどちらの方法でも内部的に識別されます。"
@@ -17784,6 +17793,9 @@ msgstr "校正値の比較対象となる追跡可能な参照（例：NIST標�
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "現品票は部品表上の各品目をその数量と共にリストします。"
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr "現品票は各工順工程とその予想時間及びスキャンバーコードをリストアップします。"
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "タイプは新しい従業員が受け取るデフォルトの権限を制御します。ここで選択すると、タイプのテンプレートから権限マトリックスが事前に入力されます。"

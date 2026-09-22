@@ -1,4 +1,4 @@
-import { referenceIssues } from "@carbon/workflows";
+import { referenceIssues } from "@carbon/ee/workflows";
 import { useEffect } from "react";
 import { useWorkflowCatalog } from "./catalog";
 import { useBuilderStore, useBuilderStoreApi } from "./context";

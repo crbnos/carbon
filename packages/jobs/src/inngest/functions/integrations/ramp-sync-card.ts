@@ -10,6 +10,7 @@ import {
   resolveMerchantSupplier,
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
+import { storage } from "@carbon/files";
 import { stageOrResumeRampCardTransaction } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
@@ -72,8 +73,8 @@ async function attachReceipts(
       );
       const path = `${ctx.companyId}/card-transaction/${args.cardTransactionId}/${name}`;
 
-      const uploaded = await ctx.client.storage
-        .from("private")
+      const uploaded = await storage(ctx.client)
+        .company(ctx.companyId)
         .upload(path, bytes, { upsert: true });
       if (uploaded.error) {
         console.error(

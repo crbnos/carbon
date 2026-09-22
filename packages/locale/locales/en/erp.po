@@ -1341,6 +1341,9 @@ msgstr "Add Affected Item"
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+
 msgid "Add any notes about your decision..."
 msgstr "Add any notes about your decision..."
 
@@ -12082,6 +12085,12 @@ msgstr "Operations"
 msgid "Operations / steps"
 msgstr "Operations / steps"
 
+msgid "Operations are included"
+msgstr "Operations are included"
+
+msgid "Operations are not included"
+msgstr "Operations are not included"
+
 msgid "Operations Type"
 msgstr "Operations Type"
 
@@ -17784,6 +17793,9 @@ msgstr "The traceable reference (e.g. NIST standard, master gauge serial) the ca
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "The traveler lists each item on the bill of materials with its quantity."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr "The traveler lists each routing operation with its expected times and scan barcodes."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."

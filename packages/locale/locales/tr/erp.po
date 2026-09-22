@@ -113,7 +113,7 @@ msgstr "{0} taslak muhasebe fişi"
 
 #. placeholder {0}: op.description
 msgid "{0} has no supplier"
-msgstr ""
+msgstr "{0} için tedarikçi yok"
 
 #. placeholder {0}: formatter.format(onHand)
 #. placeholder {1}: formatter.format(assembliesInStock)
@@ -1116,7 +1116,7 @@ msgid "Account Mapping"
 msgstr "Hesap Haritalama"
 
 msgid "Account Name"
-msgstr ""
+msgstr "Hesap Adı"
 
 msgid "Account Number"
 msgstr "Hesap Numarası"
@@ -1340,6 +1340,9 @@ msgstr "Etkilenen Öğe Ekle"
 
 msgid "Add an extra layer of security by requiring a code from an authenticator app when signing in."
 msgstr "Oturum açarken bir kimlik doğrulayıcı uygulamadan kod isteyerek güvenliğe ekstra bir katman ekle."
+
+msgid "Add an operations section that lists each routing operation with its expected times and scan barcodes."
+msgstr "Her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeleyen bir operasyonlar bölümü ekleyin."
 
 msgid "Add any notes about your decision..."
 msgstr "Kararınızla ilgili herhangi bir not ekleyin..."
@@ -3597,7 +3600,7 @@ msgstr "Bir seri numarası seçin"
 
 #. placeholder {0}: op.description
 msgid "choose a supplier for {0} on the job"
-msgstr ""
+msgstr "İş emirde {0} için bir tedarikçi seçin"
 
 msgid "Choose another file"
 msgstr "Başka bir dosya seç"
@@ -5299,7 +5302,7 @@ msgid "Default"
 msgstr "Varsayılan"
 
 msgid "Default Account"
-msgstr ""
+msgstr "Varsayılan Hesap"
 
 msgid "Default account for posting sales revenue from invoices"
 msgstr "Faturalardan satış hasılatını muhasebeleştirmek için varsayılan hesap"
@@ -10335,7 +10338,7 @@ msgstr "Satıcı"
 
 #. placeholder {0}: getItemReadableId(items, itemId) ?? itemId
 msgid "Merge {0} lots"
-msgstr ""
+msgstr "{0} lot birleştir"
 
 msgid "Merge output lots"
 msgstr "Çıkış lotlarını birleştir"
@@ -12081,6 +12084,12 @@ msgstr "Operasyonlar"
 
 msgid "Operations / steps"
 msgstr "Operasyonlar / Adımlar"
+
+msgid "Operations are included"
+msgstr "Operasyonlar dahil"
+
+msgid "Operations are not included"
+msgstr "Operasyonlar dahil değil"
 
 msgid "Operations Type"
 msgstr "Operasyon Türü"
@@ -15916,7 +15925,7 @@ msgstr "Göster"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
-msgstr ""
+msgstr "{0} daha göster"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "Müşteri listesinde, müşteri formlarında ve açılır menülerde okunabilir bir Müşteri Kimliği sütunu gösterir. Müşteriler her iki durumda da dahili olarak tanımlanmaya devam eder."
@@ -17784,6 +17793,9 @@ msgstr "Kalibrasyon değerlerinin karşılaştırıldığı izlenebilir referans
 
 msgid "The traveler lists each item on the bill of materials with its quantity."
 msgstr "İş takip kartı ürün ağacındaki her stok kartını miktarıyla birlikte listeler."
+
+msgid "The traveler lists each routing operation with its expected times and scan barcodes."
+msgstr "İş takip kartı her rota operasyonunun beklenen zamanlarını ve tarama barkodlarını listeler."
 
 msgid "The type controls which default permissions the new employee receives; selecting it here pre-fills the permission matrix from the type's template."
 msgstr "Tür, yeni çalışanın aldığı varsayılan izinleri kontrol eder; buradan seçmek, tür şablonundan izin matrisini önceden doldurur."

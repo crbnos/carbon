@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { getAppUrl, SLACK_BOT_TOKEN } from "@carbon/env";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { WebClientOptions } from "@slack/web-api";
 import { WebClient } from "@slack/web-api";
@@ -114,8 +115,8 @@ export async function postSuggestionToCarbonSlack(
             .single()
         : Promise.resolve(null),
       input.attachmentPath
-        ? client.storage
-            .from("private")
+        ? storage(client)
+            .company(input.companyId)
             .createSignedUrl(input.attachmentPath, 60 * 60 * 24 * 7)
             .then((result) => result.data?.signedUrl ?? null)
         : Promise.resolve(null)

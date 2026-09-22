@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { isHeic, MediaUploader } from "@carbon/files/media";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -22,7 +23,7 @@ export function useImageUpload(directory: string) {
     () =>
       carbon
         ? new MediaUploader(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(company.id),
             directory: `${company.id}/tmp`
           })
         : null,
@@ -46,8 +47,8 @@ export function useImageUpload(directory: string) {
       const fileType = upload.name.split(".").pop();
       const fileName = `${company.id}/${directory}/${nanoid()}.${fileType}`;
 
-      const result = await carbon.storage
-        .from("private")
+      const result = await storage(carbon)
+        .company(company.id)
         .upload(fileName, upload);
 
       if (result.error) {

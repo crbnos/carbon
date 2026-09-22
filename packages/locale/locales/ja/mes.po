@@ -27,7 +27,7 @@ msgstr "{0}前"
 
 #. placeholder {0}: batchFacts.customers.length
 msgid "{0} customers"
-msgstr ""
+msgstr "{0}件の得意先"
 
 #. placeholder {0}: unplanned .map( (m) => (m.job as { jobId?: string | null } | null)?.jobId ) .filter(Boolean) .join(", ")
 msgid "{0} has no lot number. Set it on the batch or job in Carbon, then complete."
@@ -35,7 +35,7 @@ msgstr "{0}にはロット番号がありません。Carbonでバッチまたは
 
 #. placeholder {0}: batchFacts.items.length
 msgid "{0} items"
-msgstr ""
+msgstr "{0}個の品目"
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "{0} jobs"
@@ -71,7 +71,7 @@ msgstr "{0} 実行中"
 #. placeholder {0}: operation.jobReadableId
 #. placeholder {1}: batch.readableId
 msgid "{0} runs in batch {1}"
-msgstr ""
+msgstr "{0}がバッチ{1}内で実行"
 
 #. placeholder {0}: item.quantityScrapped
 msgid "{0} Scrapped"
@@ -88,7 +88,7 @@ msgstr "{fails}件のサンプル不良が記録されており、完了され�
 
 #. placeholder {0}: step.perMember.length
 msgid "{recorded}/{0} jobs"
-msgstr ""
+msgstr "{recorded}/{0}件の製造指図"
 
 msgid "+{overflow} more"
 msgstr "+{overflow} その他"
@@ -204,10 +204,13 @@ msgid "Available"
 msgstr "利用可能"
 
 msgid "Back to batch"
-msgstr ""
+msgstr "バッチへ戻る"
 
 msgid "Batch"
 msgstr "バッチ"
+
+msgid "Batch Details"
+msgstr "バッチ詳細"
 
 msgid "Batch is not available"
 msgstr "バッチは利用可能ではありません"
@@ -232,7 +235,7 @@ msgstr "目標より{daysBehindTarget}日遅れ"
 #. placeholder {1}: step.maxValue
 #. placeholder {2}: step.unitOfMeasureCode ?? ""
 msgid "Between {0} and {1} {2}"
-msgstr ""
+msgstr "{0}から{1} {2}まで"
 
 #. placeholder {0}: column.blockingDispatchReadableId
 msgid "Blocked by {0}"
@@ -272,7 +275,7 @@ msgid "Check your email"
 msgstr "メールを確認してください"
 
 msgid "Choose a job"
-msgstr ""
+msgstr "製造指図を選択"
 
 msgid "Clear"
 msgstr "クリア"
@@ -334,7 +337,7 @@ msgid "Complete All"
 msgstr "すべて完了"
 
 msgid "Complete batch"
-msgstr ""
+msgstr "バッチを完了"
 
 msgid "Complete Batch"
 msgstr "バッチを完了"
@@ -436,7 +439,7 @@ msgid "Displays"
 msgstr "表示"
 
 msgid "Done"
-msgstr ""
+msgstr "完了"
 
 msgid "Down"
 msgstr "停止"
@@ -471,7 +474,7 @@ msgid "Dragging {0} cancelled."
 msgstr "ドラッグ {0} キャンセル済。"
 
 msgid "Due"
-msgstr ""
+msgstr "期日"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString( operation.operationDueDate ) )
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(operation.jobDueDate) )
@@ -499,7 +502,7 @@ msgid "Duration"
 msgstr "時間"
 
 msgid "Each job's output is its own lot — keep each job's parts apart."
-msgstr ""
+msgstr "各製造指図の出力はそれぞれのロット — 各製造指図の部品は分けておく"
 
 msgid "Edit"
 msgstr "編集"
@@ -517,7 +520,7 @@ msgid "End Operations"
 msgstr "工程を終了"
 
 msgid "Enter each job's value, or fill every job at once from the first row. Empty rows are skipped."
-msgstr ""
+msgstr "各製造指図の値を入力するか、最初の行からすべての製造指図を一度に入力します。空の行はスキップされます。"
 
 #. placeholder {0}: selectedPerson.name
 msgid "Enter PIN for {0}"
@@ -536,7 +539,7 @@ msgid "Estimated"
 msgstr "見積"
 
 msgid "Every job in the batch follows these steps. Record a step for all of them at once."
-msgstr ""
+msgstr "バッチ内のすべての製造指図がこれらのステップに従います。すべてのステップを一度に記録します。"
 
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "すべてのユニットに判定があります: {passes}件が合格し、{fails}件が不合格です。ロットは各ユニットが独自の結果にルーティングされて終了します。"
@@ -589,7 +592,7 @@ msgstr "結果の保存に失敗しました"
 
 #. placeholder {0}: file.name
 msgid "Failed to upload {0}"
-msgstr ""
+msgstr "{0}のアップロードに失敗しました"
 
 #. placeholder {0}: fileUpload.name
 msgid "Failed to upload file: {0}"
@@ -637,7 +640,7 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
-msgstr ""
+msgstr "最初の期日 {0}"
 
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
@@ -652,7 +655,7 @@ msgid "Go to onboarding"
 msgstr "オンボーディングに移動"
 
 msgid "Hide description"
-msgstr ""
+msgstr "説明を非表示"
 
 msgid "How many were actually picked?"
 msgstr "実際にはいくつ選ばれましたか？"
@@ -779,7 +782,7 @@ msgid "List view"
 msgstr "リスト表示"
 
 msgid "Load list"
-msgstr ""
+msgstr "リストをロード"
 
 msgid "Loading item details..."
 msgstr "品目詳細を読み込み中..."
@@ -794,7 +797,7 @@ msgid "Location"
 msgstr "ロケーション"
 
 msgid "Log completed"
-msgstr ""
+msgstr "完了をログ記録"
 
 msgid "Log Completed"
 msgstr "完了を記録"
@@ -827,7 +830,7 @@ msgid "Lot numbers missing"
 msgstr "ロット番号がありません"
 
 msgid "Lot tracked"
-msgstr ""
+msgstr "ロット追跡対象"
 
 msgid "Machine"
 msgstr "機械"
@@ -1069,7 +1072,7 @@ msgstr "OEM対応必要"
 
 #. placeholder {0}: m.operationQuantity ?? 0
 msgid "of {0}"
-msgstr ""
+msgstr "の{0}"
 
 msgid "Oldest first"
 msgstr "最も古い順"
@@ -1081,7 +1084,7 @@ msgid "one per job · planned"
 msgstr "1つ/製造指図 · 計画済"
 
 msgid "One pick covers the whole batch — it is shared out to the jobs automatically."
-msgstr ""
+msgstr "1回のピッキングがバッチ全体をカバーし、各製造指図に自動的に配分されます。"
 
 #. placeholder {0}: batch.quantity
 msgid "Only {0} available"
@@ -1097,7 +1100,7 @@ msgid "Open a display on the screen mounted at the work center and leave it runn
 msgstr "作業区に設置されたスクリーン上にディスプレイを表示して、実行し続けてください。各ボードは自動的に更新されます。"
 
 msgid "Open a job in this batch"
-msgstr ""
+msgstr "このバッチの製造指図を開く"
 
 msgid "Open an NCR for MRB disposition"
 msgstr "MRB処置のためにNCRを開く"
@@ -1145,7 +1148,7 @@ msgid "Partial Disposition"
 msgstr "一部処置"
 
 msgid "Passed inspection"
-msgstr ""
+msgstr "検査合格"
 
 msgid "Passed Inspection"
 msgstr "検査合格"
@@ -1279,7 +1282,7 @@ msgstr "レコード {0}"
 
 #. placeholder {0}: changed.length
 msgid "Record {0} jobs"
-msgstr ""
+msgstr "{0}件の製造指図を記録"
 
 msgid "Record only"
 msgstr "記録のみ"
@@ -1288,7 +1291,7 @@ msgid "Record Partial"
 msgstr "一部を記録"
 
 msgid "Recorded"
-msgstr ""
+msgstr "記録済"
 
 msgid "Reject"
 msgstr "却下"
@@ -1297,7 +1300,7 @@ msgid "Reject Lot"
 msgstr "ロットを却下"
 
 msgid "Released"
-msgstr ""
+msgstr "リリース済"
 
 msgid "Remove"
 msgstr "除去"
@@ -1339,7 +1342,7 @@ msgid "Sales Order"
 msgstr "受注"
 
 msgid "Same for every job"
-msgstr ""
+msgstr "すべての製造指図で同じ"
 
 msgid "Save"
 msgstr "保存"
@@ -1483,7 +1486,7 @@ msgid "Serial Numbers"
 msgstr "シリアル番号"
 
 msgid "Serialized"
-msgstr ""
+msgstr "シリアル化済"
 
 msgid "Session locked"
 msgstr "セッションはロック中です。"
@@ -1513,7 +1516,7 @@ msgid "Short pick {itemName}"
 msgstr "短いピック {itemName}"
 
 msgid "Show description"
-msgstr ""
+msgstr "説明を表示"
 
 msgid "Show this overlay"
 msgstr "このオーバーレイを表示"
@@ -1556,7 +1559,7 @@ msgstr "開始"
 
 #. placeholder {0}: workTypeLabels[ eventType.toLowerCase() as keyof typeof workTypeLabels ].toLowerCase()
 msgid "Start {0}"
-msgstr ""
+msgstr "{0}を開始"
 
 msgid "Start or pause the operation"
 msgstr "工程を開始 / 一時停止"
@@ -1608,10 +1611,10 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
 
 msgid "The jobs and parts that make up this run."
-msgstr ""
+msgstr "このランを構成する製造指図と部品"
 
 msgid "The jobs make different items — keep each job's parts apart."
-msgstr ""
+msgstr "製造指図は異なる品目を製造します — 各製造指図の部品は分けておく"
 
 msgid "The lot will be marked Passed and {remaining} remaining unit(s) will be completed at this operation."
 msgstr "ロットは「合格」とマークされ、{remaining}個の残りユニットがこの工程で完了します。"
@@ -1621,7 +1624,7 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
-msgstr ""
+msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"
@@ -1633,7 +1636,7 @@ msgid "These items still have material to pick. Finishing now marks the list Par
 msgstr "これらの品目にはまだピッキングする材料があります。今、完了するとリストが一部としてマークされます。"
 
 msgid "This batch has no work instructions."
-msgstr ""
+msgstr "このバッチには作業手順書がありません。"
 
 msgid "This lot is expired and can't be picked."
 msgstr "このロットは期限切れであり、ピックできません。"
@@ -1651,7 +1654,7 @@ msgid "Thumbnail"
 msgstr "サムネイル"
 
 msgid "Tick the jobs this was done for."
-msgstr ""
+msgstr "これが完了した製造指図をチェック"
 
 msgid "Time and cost split across jobs proportionally to quantity."
 msgstr "時間と原価が数量に比例して製造指図全体に分配されます。"
@@ -1664,10 +1667,10 @@ msgid "Time Worked: {0}"
 msgstr "作業時間: {0}"
 
 msgid "To pick"
-msgstr ""
+msgstr "ピッキング待ち"
 
 msgid "To run"
-msgstr ""
+msgstr "実行待ち"
 
 msgid "Today"
 msgstr "今日"
@@ -1679,7 +1682,7 @@ msgid "Tools"
 msgstr "工具"
 
 msgid "Total"
-msgstr ""
+msgstr "合計"
 
 msgid "Total Quantity"
 msgstr "合計数量"
@@ -1770,10 +1773,10 @@ msgid "Use a different account"
 msgstr "別のアカウントを使用"
 
 msgid "Used automatically at completion"
-msgstr ""
+msgstr "完了時に自動使用"
 
 msgid "Value"
-msgstr ""
+msgstr "値"
 
 msgid "Verify"
 msgstr "確認"

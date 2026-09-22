@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
 import {
   formatMcpResult,
   MCP_MAX_ROWS,
   pageMcpListResult,
   stripNulls
-} from "./format-result";
+} from "@carbon/ee/mcp";
+import { describe, expect, it } from "vitest";
 
 describe("stripNulls", () => {
   it("drops null and undefined object entries, recursively", () => {

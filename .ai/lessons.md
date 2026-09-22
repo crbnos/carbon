@@ -386,7 +386,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
 
-**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.ee.service.ts`).
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
 
 ## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
 
@@ -2072,6 +2072,16 @@ full-screen ERP route.
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
 
+## Sweeping storage call sites by one literal misses named-constant buckets
+
+**Context:** The company-private-bucket migration swept every `storage.from("private")` call in the repo to per-company buckets. The literal grep found ~160 call sites and missed six more: `RAW_DURABLE_BUCKET = "private"` (assembler-client), `STORAGE_BUCKET = "private"` (company-backup/export), `BUCKET = "private"` (onshape-attach), `DOCUMENTS_BUCKET = "private"` (download.$token), `archiveBucket: "private"` (audit.config), and the `["private", "temp-staging"]` probe arrays in both apps' model.artifacts/model.download routes.
+
+**Problem:** Each miss was a real defect, not noise — new CAD raws kept landing in the legacy bucket, backups silently skipped assets uploaded to company buckets, restores wrote assets back into the legacy bucket, and token downloads / audit-archive reads would 404 on new files once the legacy fallback is removed.
+
+**Rule:** When migrating a string-keyed resource (a bucket, a queue, a topic), grep for the VALUE in every syntactic position — `= "x"`, `: "x"`, `"x",`, `("x"`, and type unions — not just the one call pattern you are rewriting. Constants exist precisely to hide the literal from the call site.
+
+**Applies to:** any repo-wide sweep keyed on a string literal; storage buckets (`private`, `temp-staging`, `company-templates`), PGMQ queue names, Inngest event names.
+
 ## A merged-away table breaks every existing backup unless the rename map and schema manifest move with it
 
 **Context:** The sales-rules PR (#1382) merged `storageRule` / `storageRuleItemAssignment` / `storageRuleWorkCenterAssignment` into the shared `enforcementRule*` tables and dropped the old ones. The branch shipped with no `TABLE_RENAMES` entries and a stale `packages/jobs/manifests/schema.json` still listing the dropped tables.
@@ -2111,3 +2121,90 @@ full-screen ERP route.
 **Rule:** Realtime listeners must not revalidate while a fetcher on the page is submitting — use `useRealtimeRevalidator()` (`apps/mes/app/hooks/useRealtime.tsx`), never a bare `useRevalidator().revalidate()` in a realtime callback. Skipping loses nothing: the router revalidates after every action, which is why `revalidate()` already no-ops during a navigation submission. The same race also reached single-operation completion: finishing a job's last operation completes the job, the job UPDATE revalidated the operation loader mid-action, its floor gate redirected with "This operation's job has not been released to the floor", and the operator saw that error instead of "Operation finished successfully" (reproduced 2 of 10 runs before the guard, 0 of 8 after). Batch completion additionally returns `data({ completed: true })` and navigates client-side.
 
 **Applies to:** every realtime- or interval-driven `revalidate()` on a page that submits fetchers — MES `useOperation`, `AssemblyView`, `useRealtime`.
+
+## A hardcoded list that mirrors the schema goes stale silently, and a restore still reports success
+
+**Context:** Two independent cross-company restore defects, found together while
+tracing one broken restored company. (1) #1148 (2026-07-20) added `glbPath` /
+`graphPath` to `modelUpload` and removed `modelPath` from `STORAGE_PATH_COLUMNS`
+without adding the two new columns, so restored assemblies pointed at the SOURCE
+company's storage prefix. (2) `2a19048def` (2026-08-31) correctly widened
+id-remapping to composite-PK tables, which swept in `part`/`material`/
+`consumable`/`service`/`tool` — whose `id` is a human-authored part number
+(`ADCS-001`) that the `parts` view joins against `item."readableId"`, not an
+identifier. Every Items page rendered empty against 860 intact rows.
+
+**Problem:** Both lists mirror a schema property no constraint expresses, so
+neither compiler nor DB catches drift. Worse, the restore job reports SUCCESS in
+both cases — the rows load and the files copy; only a join or a URL silently
+resolves to nothing. And both are invisible on a same-company restore, where the
+remap is a no-op, so the usual manual test passes.
+
+**Rule:** When a list in code enumerates schema facts (path columns, tables
+exempt from a transform), pin it with a test that fails when the schema outgrows
+it, and state in the list's own doc comment what must be added alongside a new
+column/table. When widening a rule that mints or rewrites ids, ask which of the
+newly-swept tables use that column as a VALUE others match on rather than as an
+identifier — `part.id` is a part number. Verify a restore by querying the view
+the UI reads (`parts`), not the table (`part`); the table was always full.
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-backup.ts`
+(`STORAGE_PATH_COLUMNS`, `READABLE_ID_TABLES`), `buildIdMaps` in
+`company-backup.transforms.ts`, and any future cross-company restore work — test
+cross-company, never same-company.
+
+## A folder that implies "run this in production" arms every file dropped into it
+
+**Context:** One-off data migrations (copying the legacy `private` bucket into
+per-company buckets) needed to run automatically, once per database. The design
+made `scripts/one-off/` self-registering: `discoverOneOffScripts` reads the
+directory and every `.ts` file is executed against every production database
+after `supabase db push`, recorded in that database's own `scriptRun` table.
+
+**Problem:** Removing the hardcoded registry array killed a real duplication —
+a list that could disagree with the folder — but replaced an explicit opt-in
+with an implicit one. `endsWith(".ts")` also matches `foo.test.ts`, and
+`scripts/lib/` already colocates `*.test.ts` beside its sources. A developer
+following the repo's own established convention would have shipped a test file
+into production execution. Nothing in the type system, the linter, or a review
+diff makes a new file in a directory look dangerous.
+
+**Rule:** When a directory's *membership* is what triggers an action, gate it
+with an ALLOWLIST pattern and make non-matching files a loud failure, never a
+silent skip. A blocklist arms whatever nobody thought to exclude; a silent skip
+is worse than a crash, because a script ignored for a filename typo is
+indistinguishable from one that already ran, and the deploy reports success
+having done nothing. State the naming rule in the folder's README, and test it
+with the exact filename the surrounding conventions would produce.
+
+**Applies to:** `ci/src/one-off-scripts.ts` (`SCRIPT_FILENAME`,
+`discoverOneOffScripts`), `scripts/one-off/`, and any future
+convention-over-configuration discovery where the discovered thing is executed
+rather than merely loaded.
+
+## A wrapper that narrows a result type needs its call sites re-read, not re-cast
+
+**Context:** Replacing the free-function storage helpers
+(`listCompanyPrivateObjects` and friends) with a fluent
+`storage(client).company(id)` client in `@carbon/files`. The old helpers
+returned `{ data: StorageFileLike[]; errors: [] }` — `data` never null, entries
+structurally typed — so ~10 call sites carried `as FileObject[]` /
+`as unknown as StorageItem[]` casts to recover the real supabase fields. The
+new client returns supabase's own `{ data: FileObject[] | null; error }`.
+
+**Problem:** Every one of those casts still compiled, and now silently asserted
+away a `null` the wrapper had just introduced. `(result.data as FileObject[]).map(...)`
+typechecks and throws at runtime the first time a company bucket errors —
+exactly the case the legacy-fallback window makes likely. A cast written to
+paper over a WIDER type keeps compiling when the type gets NARROWER, and TS
+reports nothing.
+
+**Rule:** When a refactor changes a shared helper's return type, grep its call
+sites for casts on the changed field BEFORE trusting a green typecheck — a cast
+is a silenced diagnostic, so the compiler cannot tell you it is now wrong.
+Delete the cast and let the type flow; if the new type is right, the cast was
+load-bearing only for the old one.
+
+**Applies to:** `packages/files/src/storage.ts` (`CompanyBucket`), its ~60 call
+sites across `apps/erp`, `apps/mes`, `packages/{jobs,ee,lib}`, and any future
+change to a helper whose result is destructured widely.

@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket, storage } from "@carbon/files";
 import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
@@ -152,7 +153,7 @@ export function ItemThumbnailUpload({
 
         try {
           const processed = await prepareImageUpload(carbon, {
-            bucket: "private",
+            bucket: getCompanyPrivateBucket(company.id),
             directory: `${company.id}/tmp`,
             file,
             contained: true
@@ -172,9 +173,8 @@ export function ItemThumbnailUpload({
           const thumbnailFile = new File([processed], fileName, {
             type: processed.type
           });
-
-          const { data, error } = await carbon.storage
-            .from("private")
+          const { data, error } = await storage(carbon)
+            .company(company.id)
             .upload(
               `${company.id}/thumbnails/${itemId}/${fileName}`,
               thumbnailFile,

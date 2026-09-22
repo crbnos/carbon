@@ -1,6 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { processImage } from "@carbon/files/media";
 import { initNodeImageCodecs } from "@carbon/files/media/node";
@@ -840,8 +841,8 @@ async function uploadModelFile(
     logger.info(`Uploading CAD model ${file.name} to ${modelPath}`);
 
     // Upload model to storage
-    const modelUpload = await carbon.storage
-      .from("private")
+    const modelUpload = await storage(carbon)
+      .company(companyId)
       .upload(modelPath, file, {
         upsert: true
       });
@@ -929,8 +930,8 @@ async function uploadFileToItem(
 
     logger.info(`Uploading ${file.name} to ${storagePath}`);
 
-    const fileUpload = await carbon.storage
-      .from("private")
+    const fileUpload = await storage(carbon)
+      .company(companyId)
       .upload(storagePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         upsert: true
@@ -1977,10 +1978,10 @@ async function downloadAndUploadThumbnail(
       type: processed.contentType
     });
 
-    // Upload to private bucket
+    // Upload to the company's private bucket
     const storagePath = `${companyId}/thumbnails/${itemId}/${fileName}`;
-    const { data, error } = await carbon.storage
-      .from("private")
+    const { data, error } = await storage(carbon)
+      .company(companyId)
       .upload(storagePath, thumbnailFile, {
         upsert: true
       });

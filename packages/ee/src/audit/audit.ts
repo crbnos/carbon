@@ -1,16 +1,22 @@
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { auditConfig, getAuditableTableNames } from "./audit.config.ts";
+import type { Database } from "@carbon/database";
+import {
+  auditConfig,
+  getAuditableTableNames
+} from "@carbon/database/audit.config";
 import type {
   AuditLogArchive,
   AuditLogEntry,
   AuditLogFilters,
   AuditLogResponse,
   CreateAuditLogEntry
-} from "./audit.types.ts";
+} from "@carbon/database/audit.types";
 import {
   createEventSystemSubscription,
   deleteEventSystemSubscriptionsByName
-} from "./event.ts";
+} from "@carbon/database/event";
+import { CONTROLLED_ENVIRONMENT } from "@carbon/env";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { requireEntitlement } from "../entitlements.server";
 
 // Type for Supabase client with our custom RPC functions
 type AuditRpcClient = {
@@ -232,6 +238,20 @@ export async function enableAuditLog(
   client: SupabaseClient,
   companyId: string
 ): Promise<void> {
+  // The commercial LOCK. Enabling audit logging is a Business feature, so the
+  // entitlement check lives here inside `@carbon/ee` (not a strippable open
+  // route). CONTROLLED_ENVIRONMENT (ITAR/CUI) audit is mandatory and
+  // non-disableable — it must never be blocked by entitlement, so the gate is
+  // skipped there (a controlled deployment is Enterprise edition and would pass
+  // `companyHasFeature` anyway; this is belt-and-suspenders).
+  if (!CONTROLLED_ENVIRONMENT) {
+    await requireEntitlement(
+      client as unknown as SupabaseClient<Database>,
+      companyId,
+      "AUDIT_LOG"
+    );
+  }
+
   // Create the per-company audit log table
   const { error: createError } = await (
     client as unknown as AuditRpcClient
@@ -350,7 +370,7 @@ export async function getArchiveDownloadUrl(
   // First get the archive record to get the path
   const { data: archive, error: fetchError } = await client
     .from("auditLogArchive")
-    .select("archivePath")
+    .select("archivePath, companyId")
     .eq("id", archiveId)
     .single();
 
@@ -358,10 +378,23 @@ export async function getArchiveDownloadUrl(
     throw new Error(`Archive not found: ${fetchError?.message}`);
   }
 
-  // Generate signed URL (1 hour expiry)
-  const { data, error } = await client.storage
-    .from(auditConfig.archiveBucket)
-    .createSignedUrl((archive as { archivePath: string }).archivePath, 3600);
+  const { archivePath, companyId } = archive as {
+    archivePath: string;
+    companyId: string;
+  };
+
+  // Generate signed URL (1 hour expiry). New archives live in the company's
+  // own private bucket (bucket id = companyId); pre-migration archives live in
+  // the legacy shared bucket (auditConfig.archiveBucket), so fall back.
+  let { data, error } = await client.storage
+    .from(companyId)
+    .createSignedUrl(archivePath, 3600);
+
+  if (error || !data?.signedUrl) {
+    ({ data, error } = await client.storage
+      .from(auditConfig.archiveBucket)
+      .createSignedUrl(archivePath, 3600));
+  }
 
   if (error || !data?.signedUrl) {
     throw new Error(`Failed to generate download URL: ${error?.message}`);
