@@ -38,6 +38,39 @@ async function seed() {
   );
 
   if (upsertPlans.error) throw upsertPlans.error;
+
+  await seedInstanceAdmin();
+}
+
+/**
+ * Self-hosted installs run with GOTRUE_DISABLE_SIGNUP on, so somebody has
+ * to exist before anybody can log in. When the deployment names an
+ * instance admin (ADMIN_EMAIL, set by the BYOC control plane), create
+ * that one account — its owner logs in via magic link and sets up the
+ * first company through onboarding.
+ *
+ * No password and no company: this is an account, not a bootstrap. The
+ * dev bootstrap (datasets/bootstrap.ts) stays what seeds a whole company.
+ */
+async function seedInstanceAdmin() {
+  const email = process.env.ADMIN_EMAIL?.trim().toLowerCase();
+  if (!email) return;
+
+  const { error } = await supabaseAdmin.auth.admin.createUser({
+    email,
+    email_confirm: true,
+    app_metadata: {
+      role: "employee",
+      provider: "email",
+      providers: ["email"]
+    }
+  });
+  // Idempotent the cheap way: this runs on every upgrade, and the account
+  // existing is the desired state, not a failure.
+  if (error && error.code !== "email_exists") {
+    throw new Error(`seed: creating instance admin: ${error.message}`);
+  }
+  console.log(`instance admin ${email} ${error ? "already exists" : "created"}`);
 }
 
 // Postgres triggers + edge functions call back to the API from inside the
