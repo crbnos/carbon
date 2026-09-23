@@ -203,6 +203,18 @@ export const ENTITY_DEFINITIONS: Record<
     type: "transaction",
     dependsOn: ["vendor"],
     supportedDirections: ["push-to-accounting"]
+  },
+  creditMemo: {
+    label: "Credit Memos",
+    type: "transaction",
+    dependsOn: ["customer", "invoice"],
+    supportedDirections: ["push-to-accounting"]
+  },
+  vendorCredit: {
+    label: "Vendor Credits",
+    type: "transaction",
+    dependsOn: ["vendor", "bill"],
+    supportedDirections: ["push-to-accounting"]
   }
 };
 
@@ -260,6 +272,18 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       // journals are DOC_BACKED-excluded per row (core/posting.ts) so the
       // same spend is never both a journal entry and a charge.
       enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    // Memo credits are opt-in (families default to "none"); see
+    // PostingSyncStoredSchema.families.
+    creditMemo: {
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    vendorCredit: {
+      enabled: false,
       direction: "push-to-accounting",
       owner: "carbon"
     }
@@ -765,7 +789,9 @@ export const SyncConfigSchema = z
         payment: createEntityConfigSchema().optional(),
         inventoryAdjustment: createEntityConfigSchema().optional(),
         journalEntry: createEntityConfigSchema().optional(),
-        charge: createEntityConfigSchema().optional()
+        charge: createEntityConfigSchema().optional(),
+        creditMemo: createEntityConfigSchema().optional(),
+        vendorCredit: createEntityConfigSchema().optional()
       })
       .optional()
   })

@@ -252,7 +252,9 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
   "invoice",
   "bill",
   "journalEntry",
-  "charge"
+  "charge",
+  "creditMemo",
+  "vendorCredit"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
