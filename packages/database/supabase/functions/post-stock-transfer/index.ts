@@ -7,8 +7,8 @@ import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import type { Database } from "../lib/types.ts";
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
-import { equals, round } from "../shared/precision.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
+import { round } from "../shared/precision.ts";
 import {
   assertEntityCoversPick,
   PickGuardError,
@@ -327,6 +327,19 @@ serve(async (req: Request) => {
             transferQuantity: 1,
           });
 
+          // Lock the serial itself BEFORE the repeat-scan query: the guard
+          // below reads trackedActivityInput, and two concurrent scans of the
+          // same serial would both read "not on this transfer" and both post a
+          // Transfer activity + ledger pair. The batch case takes the same
+          // lock; here it serializes the guard rather than an on-hand draw.
+          const trackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
+            .select(["id", "readableId"])
+            .forUpdate()
+            .executeTakeFirstOrThrow();
+
           // Refuse a REPEAT scan of the same serial on this transfer. Each scan
           // posts a Transfer activity + a −1/+1 ledger pair, so a silent no-op
           // would let the ledger double; the guard is an explicit 400.
@@ -341,15 +354,9 @@ serve(async (req: Request) => {
             .select("tai.trackedEntityId")
             .executeTakeFirst();
           if (alreadyOnTransfer) {
-            const entity = await trx
-              .selectFrom("trackedEntity")
-              .where("id", "=", trackedEntityId)
-              .where("companyId", "=", companyId)
-              .select("readableId")
-              .executeTakeFirst();
             throw new PickGuardError(
               "already-picked",
-              `Serial ${entity?.readableId ?? trackedEntityId} is already picked on this transfer`
+              `Serial ${trackedEntity.readableId ?? trackedEntityId} is already picked on this transfer`
             );
           }
 
@@ -508,8 +515,12 @@ serve(async (req: Request) => {
             expiredWarning = expiredCheck.warning;
           }
 
-          const entityQuantity = Number(trackedEntity.quantity);
-          const transferQuantity = quantity;
+          // Round BOTH operands once, here: everything downstream — the split
+          // gate, the split records, the Transfer activity input and the two
+          // ledger rows — derives from these, so a residue draw can never book
+          // an unrounded quantity against a lot the gate treated as whole.
+          const entityQuantity = round(Number(trackedEntity.quantity));
+          const transferQuantity = round(quantity);
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
@@ -517,7 +528,7 @@ serve(async (req: Request) => {
           // source entity keeps its id and is decremented; a NEW child entity
           // departs to the destination bin with the transfer quantity.
           let transferredEntityId = trackedEntityId;
-          if (!equals(entityQuantity, transferQuantity)) {
+          if (!isFullDraw(entityQuantity, transferQuantity)) {
             const childId = nanoid();
             splitEntityId = childId;
             transferredEntityId = childId;
@@ -856,7 +867,10 @@ serve(async (req: Request) => {
             .selectAll("trackedActivity")
             .executeTakeFirstOrThrow();
 
-          const transferQuantity = Number(trackedEntity.quantity);
+          // The whole child returns to its parent, so round once here and let
+          // the parent increase, the ledger pair and the pickedQuantity
+          // decrement all derive from the same value.
+          const transferQuantity = round(Number(trackedEntity.quantity));
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
@@ -888,7 +902,7 @@ serve(async (req: Request) => {
             await trx
               .updateTable("trackedEntity")
               .set({
-                quantity: Number(parent.quantity) + transferQuantity,
+                quantity: round(round(Number(parent.quantity)) + transferQuantity),
               })
               .where("id", "=", parent.id)
               .execute();
@@ -972,8 +986,9 @@ serve(async (req: Request) => {
               .selectAll()
               .executeTakeFirstOrThrow();
 
-            const originalQuantity =
-              Number(originalEntity.quantity) + transferQuantity;
+            const originalQuantity = round(
+              round(Number(originalEntity.quantity)) + transferQuantity
+            );
 
             // Find the split activity — scoped to the remainder entity this
             // pointer names, not just the transfer (multi-line safety).
@@ -1138,7 +1153,7 @@ serve(async (req: Request) => {
               trackedEntityId: null,
               pickedQuantity: Math.max(
                 0,
-                (stockTransferLine.pickedQuantity ?? 0) - transferQuantity
+                round(round(stockTransferLine.pickedQuantity ?? 0) - transferQuantity)
               ),
               updatedBy: userId,
               updatedAt: new Date().toISOString(),

@@ -9,7 +9,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database, Json } from "../lib/types.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
@@ -1695,7 +1695,7 @@ serve(async (req: Request) => {
                 .insertInto("trackedEntity")
                 .values({
                   id: nanoid(),
-                  quantity: quantity,
+                  quantity: round(quantity),
                   status: entity.status,
                   sourceDocument: entity.sourceDocument,
                   sourceDocumentId: entity.sourceDocumentId,
@@ -1709,20 +1709,19 @@ serve(async (req: Request) => {
                 })
                 .execute();
 
-              const remainingQuantity = round(
-                Math.max(0, (entity.quantity ?? 0) - quantity)
-              );
               await trx
                 .updateTable("trackedEntity")
-                .set({
-                  quantity: remainingQuantity,
-                  // A parent drained to zero by the split is Consumed, not a
-                  // zero-quantity Available husk; a Scrapped parent stays so.
-                  status: statusAfterQuantityChange(
-                    remainingQuantity,
-                    entity.status
-                  ),
-                })
+                // A parent drained to zero by the split is Consumed, not a
+                // zero-quantity Available husk; a Scrapped parent stays so.
+                // The Math.max clamp is kept deliberately: a receipt-line
+                // split over the parent's quantity has always clamped here
+                // rather than refused, and that is not this change to make.
+                .set(
+                  settleQuantity({
+                    quantity: Math.max(0, (entity.quantity ?? 0) - quantity),
+                    status: entity.status,
+                  })
+                )
                 .where("id", "=", entity.id)
                 .execute();
             }

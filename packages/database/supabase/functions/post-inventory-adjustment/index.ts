@@ -3,18 +3,35 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
-import type { Json } from "../lib/types.ts";
+import type { Database, Json } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 import { round } from "../shared/precision.ts";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
+
+// settleQuantity needs the lot's CURRENT status to know whether to preserve it
+// (a Scrapped lot stays Scrapped at zero). get_item_quantities_by_tracking_id
+// doesn't carry status, so read it off the row — one PK lookup inside the open
+// transaction, next to the write it informs.
+async function currentEntityStatus(
+  trx: Transaction<DB>,
+  trackedEntityId: string
+): Promise<Database["public"]["Enums"]["trackedEntityStatus"]> {
+  const row = await trx
+    .selectFrom("trackedEntity")
+    .select("status")
+    .where("id", "=", trackedEntityId)
+    .executeTakeFirstOrThrow();
+  return row.status;
+}
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -400,9 +417,9 @@ serve(async (req: Request) => {
               "Only available tracked entities can be scrapped"
             );
           }
-          const entityQuantity = Number(entity.quantity) || 0;
+          const entityQuantity = round(Number(entity.quantity) || 0);
           // quantity 0 ⇒ scrap the whole entity (serial UIs don't send a qty)
-          const scrapQuantity = quantity > 0 ? quantity : entityQuantity;
+          const scrapQuantity = quantity > 0 ? round(quantity) : entityQuantity;
           if (scrapQuantity > entityQuantity) {
             throw new ValidationError("Insufficient quantity for scrap");
           }
@@ -410,7 +427,7 @@ serve(async (req: Request) => {
             currentQuantity?.storageUnitId ?? storageUnitId ?? null;
 
           let scrappedEntityId = trackedEntityId;
-          if (scrapQuantity < entityQuantity) {
+          if (!isFullDraw(entityQuantity, scrapQuantity)) {
             // Partial batch scrap: identity-flip split — the parent keeps its
             // id and is decremented; the departing child is the Scrapped
             // record of what left.
@@ -838,27 +855,28 @@ serve(async (req: Request) => {
             throw new ValidationError("Serial number not found");
           }
           const resolvedId = resolvedQtyRow.trackedEntityId as string;
-          const resolvedQty = resolvedQtyRow.quantity ?? 0;
-          if (adjustmentQuantity > resolvedQty) {
+          const resolvedQty = round(resolvedQtyRow.quantity ?? 0);
+          if (round(adjustmentQuantity) > resolvedQty) {
             throw new ValidationError(
               "Insufficient quantity for negative adjustment"
             );
           }
-          {
             // A negative adjustment draws down Available stock; when it lands
             // on zero the lot is Consumed, not a zero-quantity Available husk.
-            const drainedQty = round(resolvedQty - adjustmentQuantity);
+            // settleQuantity is the shared rule, so this path also preserves a
+            // Scrapped lot — which the inline flip it replaces did not.
             await trx
               .updateTable("trackedEntity")
               .set({
-                quantity: drainedQty,
+                ...settleQuantity({
+                  quantity: resolvedQty - adjustmentQuantity,
+                  status: await currentEntityStatus(trx, resolvedId),
+                }),
                 readableId,
-                ...(drainedQty <= 0 ? { status: "Consumed" as const } : {}),
               })
               .where("id", "=", resolvedId)
               .where("companyId", "=", companyId)
               .execute();
-          }
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...ledgerBase,
@@ -919,20 +937,21 @@ serve(async (req: Request) => {
           );
         }
         const targetRow = trackedRowsInUnit[0];
-        const targetQty = targetRow.quantity ?? 0;
-        if (adjustmentQuantity > targetQty) {
+        const targetQty = round(targetRow.quantity ?? 0);
+        if (round(adjustmentQuantity) > targetQty) {
           throw new ValidationError(
             "Insufficient quantity for negative adjustment"
           );
         }
         const targetId = targetRow.trackedEntityId as string;
-        const drainedTargetQty = round(targetQty - adjustmentQuantity);
         await trx
           .updateTable("trackedEntity")
-          .set({
-            quantity: drainedTargetQty,
-            ...(drainedTargetQty <= 0 ? { status: "Consumed" as const } : {}),
-          })
+          .set(
+            settleQuantity({
+              quantity: targetQty - adjustmentQuantity,
+              status: await currentEntityStatus(trx, targetId),
+            })
+          )
           .where("id", "=", targetId)
           .where("companyId", "=", companyId)
           .execute();
@@ -963,15 +982,14 @@ serve(async (req: Request) => {
 
       if (trackedEntityId) {
         if (currentQuantity) {
-          const newEntityQuantity = round(signedQuantity + currentQuantityOnHand);
-          const entityUpdate: Record<string, unknown> = {
-            quantity: newEntityQuantity,
-          };
-          // Draining an Available lot to zero Consumes it (a Set Quantity to 0
-          // or a full negative adjustment); above zero its status is untouched.
-          if (newEntityQuantity <= 0) {
-            entityUpdate.status = "Consumed";
-          }
+          // Draining a lot to zero Consumes it (a Set Quantity to 0 or a full
+          // negative adjustment); above zero its status is untouched. This path
+          // takes an arbitrary trackedEntityId from the payload, so it is the
+          // one that can land on a Scrapped lot — settleQuantity preserves it.
+          const entityUpdate: Record<string, unknown> = settleQuantity({
+            quantity: signedQuantity + currentQuantityOnHand,
+            status: await currentEntityStatus(trx, trackedEntityId),
+          });
           if (readableId !== undefined && readableId !== null) {
             entityUpdate.readableId = readableId;
           }

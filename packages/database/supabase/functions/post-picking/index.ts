@@ -9,8 +9,11 @@ import type { Database } from "../lib/types.ts";
 import { resolveTrackedEntityBin } from "../issue/resolve-tracked-entity-bin.ts";
 import {
   buildBatchSplitRecords,
-  buildMergeRecords
+  buildMergeRecords,
+  isFullDraw
 } from "../shared/batch-split.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
+import { PickGuardError, resolvePick } from "../shared/pick-guards.ts";
 import { round } from "../shared/precision.ts";
 import { getPickedBudgets, orderOldFirst } from "../lib/picked-consumption.ts";
 
@@ -138,11 +141,16 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const inserts: ItemLedgerInsert[] = [
@@ -177,7 +185,11 @@ serve(async (req: Request) => {
           await trx
             .updateTable("pickingListLine")
             .set({
-              quantityPicked: Number(line.quantityPicked ?? 0) + quantity,
+              quantityPicked: resolvePick({
+                lineQuantity: Number(line.quantityToPick ?? 0),
+                pickedQuantity: Number(line.quantityPicked ?? 0),
+                transferQuantity: quantity
+              }),
               status: "Picked",
               updatedBy: userId,
               updatedAt: new Date().toISOString()
@@ -203,11 +215,16 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const inserts: ItemLedgerInsert[] = [
@@ -244,7 +261,7 @@ serve(async (req: Request) => {
             .set({
               quantityPicked: Math.max(
                 0,
-                Number(line.quantityPicked ?? 0) - quantity
+                round(round(Number(line.quantityPicked ?? 0)) - round(quantity))
               ),
               status: "Pending",
               updatedBy: userId,
@@ -272,11 +289,16 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const activityId = nanoid();
@@ -342,7 +364,11 @@ serve(async (req: Request) => {
           await trx
             .updateTable("pickingListLine")
             .set({
-              quantityPicked: Number(line.quantityPicked ?? 0) + 1,
+              quantityPicked: resolvePick({
+                lineQuantity: Number(line.quantityToPick ?? 0),
+                pickedQuantity: Number(line.quantityPicked ?? 0),
+                transferQuantity: 1
+              }),
               status: "Picked",
               updatedBy: userId,
               updatedAt: new Date().toISOString()
@@ -388,29 +414,50 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
+          // Lock the source lot too: the split below draws against this
+          // on-hand, and a concurrent pick of the same lot must not spend it.
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
-          const entityQuantity = Number(trackedEntity.quantity);
-          const transferQuantity = quantity;
+          // Refuse an over-pick before any record is written; resolvePick
+          // returns the new running total (the UI caps the picker at the same
+          // outstanding figure, so this only fires on a stale page or a
+          // double submit — which is exactly when it matters).
+          const newQuantityPicked = resolvePick({
+            lineQuantity: Number(line.quantityToPick ?? 0),
+            pickedQuantity: Number(line.quantityPicked ?? 0),
+            transferQuantity: quantity
+          });
+
+          // Round BOTH operands once: the split gate, the split records, the
+          // Pick activity input, the allocation row and the two ledger rows
+          // all derive from these.
+          const entityQuantity = round(Number(trackedEntity.quantity));
+          const transferQuantity = round(quantity);
           const inserts: ItemLedgerInsert[] = [];
 
           // Split the batch when picking less than the whole entity: the shelf
           // entity keeps its id and is decremented; a NEW child entity departs
           // to the lineside bin carrying the drawn quantity.
           let pickedEntityId = trackedEntityId;
-          if (entityQuantity !== transferQuantity) {
+          if (!isFullDraw(entityQuantity, transferQuantity)) {
             const childId = nanoid();
             splitEntityId = childId;
             pickedEntityId = childId;
@@ -543,8 +590,7 @@ serve(async (req: Request) => {
           await trx
             .updateTable("pickingListLine")
             .set({
-              quantityPicked:
-                Number(line.quantityPicked ?? 0) + transferQuantity,
+              quantityPicked: newQuantityPicked,
               status: "Picked",
               updatedBy: userId,
               updatedAt: new Date().toISOString()
@@ -595,11 +641,16 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const trackedEntity = await trx
@@ -670,7 +721,7 @@ serve(async (req: Request) => {
             .set({
               quantityPicked: Math.max(
                 0,
-                Number(line.quantityPicked ?? 0) - qty
+                round(round(Number(line.quantityPicked ?? 0)) - round(qty))
               ),
               status: "Pending",
               updatedBy: userId,
@@ -703,11 +754,16 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const trackedEntity = await trx
@@ -801,13 +857,16 @@ serve(async (req: Request) => {
               .executeTakeFirst();
 
             if (parent && parent.readableId === trackedEntity.readableId) {
-              const childRemaining =
-                Number(trackedEntity.quantity) - unpickQuantity;
-              if (childRemaining < 0) {
-                throw new Error(
-                  `Cannot unpick batch: entity ${trackedEntityId} holds ${trackedEntity.quantity} but ${unpickQuantity} was picked — partial consumption must be unconsumed first`
-                );
-              }
+              // Round before comparing: a residue child (holding
+              // 0.020000000000000018 after an earlier split) giving back its
+              // 0.02 lands on −1.7e-17, and a raw `< 0` refuses a legitimate
+              // full unpick. settleQuantity rounds, refuses a REAL negative,
+              // and Consumes the emptied child in one decision.
+              const childSettled = settleQuantity({
+                quantity: Number(trackedEntity.quantity) - unpickQuantity,
+                status: trackedEntity.status,
+                refusal: `Cannot unpick batch: entity ${trackedEntityId} holds ${trackedEntity.quantity} but ${unpickQuantity} was picked — partial consumption must be unconsumed first`
+              });
 
               const splitActivity = await trx
                 .selectFrom("trackedActivity")
@@ -821,17 +880,17 @@ serve(async (req: Request) => {
 
               await trx
                 .updateTable("trackedEntity")
-                .set({ quantity: Number(parent.quantity) + unpickQuantity })
+                .set({
+                  quantity: round(
+                    round(Number(parent.quantity)) + round(unpickQuantity)
+                  )
+                })
                 .where("id", "=", parent.id)
                 .execute();
 
               await trx
                 .updateTable("trackedEntity")
-                .set(
-                  childRemaining === 0
-                    ? { quantity: 0, status: "Consumed" }
-                    : { quantity: childRemaining }
-                )
+                .set(childSettled)
                 .where("id", "=", trackedEntityId)
                 .execute();
 
@@ -901,7 +960,7 @@ serve(async (req: Request) => {
             .set({
               quantityPicked: Math.max(
                 0,
-                Number(line.quantityPicked ?? 0) - unpickQuantity
+                round(round(Number(line.quantityPicked ?? 0)) - round(unpickQuantity))
               ),
               status: "Pending",
               updatedBy: userId,
@@ -928,11 +987,16 @@ serve(async (req: Request) => {
           validatedPayload;
 
         await db.transaction().execute(async (trx) => {
+          // Lock the line: every case here read-modify-writes its picked or
+          // returned counter, so two concurrent scans of the same line would
+          // both add to the same stale total and the ledger would double. Same
+          // lock post-stock-transfer takes.
           const line = await trx
             .selectFrom("pickingListLine")
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           const totalReturned = await returnTrackedAllocationRemainder(trx, {
@@ -1029,7 +1093,11 @@ serve(async (req: Request) => {
 
     return jsonResponse({ success: true, splitEntityId });
   } catch (err) {
-    return errorResponse(err, 500);
+    // A pick guard is a caller-input refusal, not a server fault — surface it
+    // as a 400 with its message so the scan UI can show "already fully picked"
+    // instead of a generic failure. Matches post-stock-transfer.
+    const status = err instanceof PickGuardError ? 400 : 500;
+    return errorResponse(err, status);
   }
 });
 
@@ -1253,7 +1321,10 @@ async function returnTrackedAllocationRemainder(
         parent &&
         parent.status === "Available" &&
         parent.readableId === entity.readableId &&
-        onHand <= Number(entity.quantity)
+        // Rounded: buildMergeRecords refuses merge > childQty at scale, so a
+        // raw compare here could skip a merge the builder would have accepted
+        // (0.30000000000000004 of a 0.3 lot) and silently fall back.
+        round(onHand) <= round(Number(entity.quantity))
       ) {
         const parentLedgers = await trx
           .selectFrom("itemLedger")
