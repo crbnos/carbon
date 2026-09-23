@@ -44,7 +44,7 @@ const QuotePDF = ({
   meta,
   exchangeRate,
   quote,
-  quoteLines,
+  quoteLines: unsortedQuoteLines,
   quoteLinePrices,
   quoteCustomerDetails,
   payment,
@@ -58,6 +58,15 @@ const QuotePDF = ({
   sections = {},
   title = "Quote"
 }: QuotePDFProps) => {
+  // Quantity breaks are stored in entry order; the PDF renders them
+  // least-to-most, and the single-quantity totals below use the smallest
+  // break — matching the in-app summary and the share page, which sort too.
+  const quoteLines = unsortedQuoteLines.map((line) =>
+    line.quantity
+      ? { ...line, quantity: [...line.quantity].sort((a, b) => a - b) }
+      : line
+  );
+
   const currencyCode = quote.currencyCode ?? company.baseCurrencyCode;
   const shouldConvertCurrency =
     !!currencyCode && currencyCode !== company.baseCurrencyCode;
