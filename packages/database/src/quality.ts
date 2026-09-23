@@ -12,6 +12,11 @@ import type { Transaction } from "kysely";
 import { sql } from "kysely";
 
 import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
+import {
+  computeLotStatus,
+  deriveSampleStatus,
+  valuateMeasurement
+} from "../supabase/functions/shared/inspection-verdict.ts";
 import type { Kysely, KyselyDatabase } from "./client.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
@@ -19,6 +24,8 @@ import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };
 export type Result<T> = Ok<T> | Err;
+
+export { valuateMeasurement };
 
 export function errResult(message: string, blockers?: unknown): Err {
   return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
@@ -132,16 +139,6 @@ async function assertSampleNotLinked(
       "Sample is locked: its unit was already completed from this verdict"
     );
   }
-}
-
-// Mirrors the old in-service helper. Terminal states (Passed/Failed/Partial)
-// are owned by the disposition path, so the per-sample recompute only flips
-// between Pending and In Progress.
-function computeLotStatus(
-  samples: { status: string }[]
-): "Pending" | "In Progress" {
-  const inspected = samples.filter((s) => s.status !== "Pending").length;
-  return inspected > 0 ? "In Progress" : "Pending";
 }
 
 // Entity-level side effects of a sample verdict (serial parts only): flip the
@@ -656,46 +653,6 @@ export async function dispositionInspection(
 // 3. Measurements (document-driven lots)
 // -------------------------------------------------------------
 
-function parseSpecNumber(value: string | null | undefined): number | null {
-  if (value == null) return null;
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed.replace(/^\+/, ""));
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-// Pure valuation of one reading against the live feature spec. Measurement
-// features with a parseable nominal are judged numerically inside
-// [nominal - |tol-|, nominal + |tol+|]; everything else (attribute features,
-// GD&T strings that don't parse) is a pass/fail toggle.
-export function valuateMeasurement(
-  feature: {
-    type: string;
-    nominalValue: string | null;
-    tolerancePlus: string | null;
-    toleranceMinus: string | null;
-  },
-  value: number | null,
-  passed?: boolean | null
-): "Pending" | "Passed" | "Failed" {
-  const nominal =
-    feature.type === "Measurement"
-      ? parseSpecNumber(feature.nominalValue)
-      : null;
-
-  if (feature.type === "Measurement" && nominal !== null) {
-    if (value == null) return "Pending";
-    const tolPlus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
-    const tolMinus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-    return value >= nominal - tolMinus && value <= nominal + tolPlus
-      ? "Passed"
-      : "Failed";
-  }
-
-  if (passed == null) return "Pending";
-  return passed ? "Passed" : "Failed";
-}
-
 // Records one cell of the features x samples grid. Valuates the reading,
 // upserts the measurement, derives the sample's status from its required
 // measurements (strict: no override), applies serial-entity side effects on
@@ -832,12 +789,7 @@ export async function upsertInspectionMeasurement(
         measurementId = inserted.id;
       }
 
-      // Derive the sample's status. Sampling is count-based, not positional —
-      // a feature's n is the minimum number of readings across ANY samples
-      // (per-feature gating at disposition enforces the counts), so a sample's
-      // own verdict is: Failed the moment any of its readings fails, Passed
-      // once every plan feature has a passing reading on it (a fully-inspected
-      // unit), otherwise Pending (partially inspected).
+      // Derive the sample's status from every plan feature's reading on it.
       const lotFeatures = await trx
         .selectFrom("inspectionSamplingPlan")
         .select(["inspectionFeatureId", "sampleSize"])
@@ -849,20 +801,10 @@ export async function upsertInspectionMeasurement(
         .where("inspectionSampleId", "=", sample.id)
         .execute();
 
-      const anyFailed = sampleMeasurements.some((m) => m.status === "Failed");
-      const allFeaturesPassed =
-        lotFeatures.length > 0 &&
-        lotFeatures.every(
-          (f) =>
-            sampleMeasurements.find(
-              (m) => m.inspectionFeatureId === f.inspectionFeatureId
-            )?.status === "Passed"
-        );
-      const derivedStatus: "Pending" | "Passed" | "Failed" = anyFailed
-        ? "Failed"
-        : allFeaturesPassed
-          ? "Passed"
-          : "Pending";
+      const derivedStatus = deriveSampleStatus(
+        lotFeatures.map((f) => f.inspectionFeatureId),
+        sampleMeasurements
+      );
 
       if (derivedStatus !== sample.status) {
         await trx
