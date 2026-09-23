@@ -34,7 +34,12 @@ import { postingSyncSettingsValidator } from "~/modules/settings/settings.models
 export type PostingSyncFamilyMode = "documents" | "journals" | "none";
 
 export type PostingSyncSettingsValues = {
-  families: { ar: PostingSyncFamilyMode; ap: PostingSyncFamilyMode };
+  families: {
+    ar: PostingSyncFamilyMode;
+    ap: PostingSyncFamilyMode;
+    creditMemo: PostingSyncFamilyMode;
+    vendorCredit: PostingSyncFamilyMode;
+  };
   sourceTypes: Record<
     string,
     { enabled: boolean; granularity: "individual" | "daily-summary" }
@@ -163,6 +168,8 @@ export function PostingSyncSettings({
     if (family === "ar") return t`AR`;
     if (family === "ap") return t`AP`;
     if (family === "per-line") return t`AR/AP`;
+    // Resolved per record from the memo's party, so the row can't name one side.
+    if (family === "per-party") return t`Credits`;
     return null;
   };
 
@@ -180,6 +187,10 @@ export function PostingSyncSettings({
           settings.families.ap === "journals"
             ? "documents"
             : settings.families.ap,
+        // Memo families are NOT coerced the way ar/ap are above: their default
+        // is "none" (opt-in, go-forward) and that must survive to the form.
+        familyCreditMemo: settings.families.creditMemo,
+        familyVendorCredit: settings.families.vendorCredit,
         periodLockPolicy: settings.periodLockPolicy,
         lockDate: settings.lockDate
       }}
@@ -309,6 +320,35 @@ export function PostingSyncSettings({
                 </Badge>
               </div>
             ))}
+          </div>
+        </section>
+
+        <section className="flex w-full flex-col gap-2 border-t border-border pt-4">
+          <div className="flex flex-col gap-0.5">
+            <Subheading variant="light">
+              <Trans>Credit representation</Trans>
+            </Subheading>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                Credit memos and vendor credits are gated separately from
+                invoices and bills, so payables can be handled outside the sync
+                while credits still reach the ledger. Enabling one pushes
+                credits from the enable date forward — existing history is left
+                alone, and bringing it across needs an explicit backfill.
+              </Trans>
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Select
+              name="familyCreditMemo"
+              label={t`Credit Memos`}
+              options={familyOptions}
+            />
+            <Select
+              name="familyVendorCredit"
+              label={t`Vendor Credits`}
+              options={familyOptions}
+            />
           </div>
         </section>
 

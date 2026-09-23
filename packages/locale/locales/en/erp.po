@@ -4884,6 +4884,12 @@ msgstr "Credit Memo"
 msgid "Credit Memos"
 msgstr "Credit Memos"
 
+msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+
+msgid "Credit representation"
+msgstr "Credit representation"
+
 msgid "Credit total"
 msgstr "Credit total"
 

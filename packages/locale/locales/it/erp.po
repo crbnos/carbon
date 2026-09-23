@@ -4884,6 +4884,12 @@ msgstr "Nota di Credito"
 msgid "Credit Memos"
 msgstr "Note di credito"
 
+msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr ""
+
+msgid "Credit representation"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Totale credito"
 

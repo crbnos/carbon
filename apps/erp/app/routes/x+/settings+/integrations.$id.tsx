@@ -1461,6 +1461,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       sourceTypeConfigs,
       familyAr,
       familyAp,
+      familyCreditMemo,
+      familyVendorCredit,
       periodLockPolicy,
       lockDate
     } = validation.data;
@@ -1542,7 +1544,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ...existingSettings,
         postingSync: {
           ...postingSyncWithoutEnabled,
-          families: { ar: familyAr, ap: familyAp },
+          families: {
+            ar: familyAr,
+            ap: familyAp,
+            creditMemo: familyCreditMemo,
+            vendorCredit: familyVendorCredit
+          },
           sourceTypes,
           periodLockPolicy,
           ...(lockDate ? { lockDate } : {})
