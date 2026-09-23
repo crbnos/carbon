@@ -372,7 +372,10 @@ describe("resolvePostingSyncSettings", () => {
     expect(DEFAULT_POSTING_SYNC_SETTINGS.enabled).toBe(true);
     expect(DEFAULT_POSTING_SYNC_SETTINGS.families).toEqual({
       ar: "documents",
-      ap: "documents"
+      ap: "documents",
+      // Memo families are opt-in, go-forward — see PostingSyncStoredSchema.
+      creditMemo: "none",
+      vendorCredit: "none"
     });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.periodLockPolicy).toBe("park");
     expect(DEFAULT_POSTING_SYNC_SETTINGS.onUnmappedDimensionValue).toBe("warn");
@@ -412,7 +415,12 @@ describe("resolvePostingSyncSettings", () => {
       granularity: "daily-summary"
     });
     expect(resolved.sourceTypes.Manual.enabled).toBe(false);
-    expect(resolved.families).toEqual({ ar: "documents", ap: "documents" });
+    expect(resolved.families).toEqual({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      vendorCredit: "none"
+    });
   });
 
   it("upgrades a stored v2 sourceTypes array + includeManual through the shim", () => {

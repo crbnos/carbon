@@ -620,9 +620,20 @@ const PostingSyncStoredSchema = z.object({
   families: z
     .object({
       ar: PostingSyncFamilyModeSchema.default("documents"),
-      ap: PostingSyncFamilyModeSchema.default("documents")
+      ap: PostingSyncFamilyModeSchema.default("documents"),
+      // Memo families default to "none" deliberately: a family that has never
+      // synced has no correct backlog — the accountant has already hand-booked
+      // those credits in the provider, so pushing history would double-count.
+      // Opt-in, go-forward (set syncFromDate on first enable).
+      creditMemo: PostingSyncFamilyModeSchema.default("none"),
+      vendorCredit: PostingSyncFamilyModeSchema.default("none")
     })
-    .default({ ar: "documents", ap: "documents" }),
+    .default({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      vendorCredit: "none"
+    }),
   /** Partial per-source-type overrides; missing entries fill from POSTING_POLICY. */
   sourceTypes: z
     .record(z.string(), PostingSyncSourceTypeConfigSchema)

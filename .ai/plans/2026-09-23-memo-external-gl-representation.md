@@ -3,7 +3,7 @@
 **Spec:** `.ai/specs/2026-09-23-memo-external-gl-representation.md`
 **Research:** `.ai/research/2026-09-22-sap-grade-ap-ar-document-model.md` + the Xero/QBO/Rillet
 API surveys and Rillet sandbox probe recorded in the spec.
-**Branch:** `memo-external-gl-representation` (branch from `main`)
+**Branch:** `rillet-ramp-accounting-provider` — stacks on the charge rename commit (`92a6e812e7`), which is a prerequisite and lives on this branch.
 
 > **Prerequisite:** the in-flight `card-transaction → charge` rename must land first. This plan
 > assumes `Charge` / `chargeLine` / `post-charge` are the current names. If `POSTING_POLICY`
@@ -17,7 +17,7 @@ API surveys and Rillet sandbox probe recorded in the spec.
 > never legitimately change.
 
 ## Progress
-- [ ] Task 1: Add `creditMemo` / `vendorCredit` posting-sync families
+- [x] Task 1: Add `creditMemo` / `vendorCredit` posting-sync families
 - [ ] Task 2: Add `creditMemo` / `vendorCredit` accounting entity types
 - [ ] Task 3: Per-party policy resolution + the family-misclassification fix
 - [ ] Task 4: Resolve a memo journal's party at the call site
