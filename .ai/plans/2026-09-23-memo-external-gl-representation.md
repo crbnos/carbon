@@ -22,12 +22,12 @@ API surveys and Rillet sandbox probe recorded in the spec.
 - [x] Task 3: Per-party policy resolution + the family-misclassification fix
 - [x] Task 4: Resolve a memo journal's party at the call site
 - [x] Task 5: Shared credit-reason-item resolver
-- [ ] Task 6: Xero client — credit notes + allocations
-- [ ] Task 7: Xero syncers — credit memo + vendor credit
-- [ ] Task 8: QBO client — CreditMemo, VendorCredit, Service item, applications
-- [ ] Task 9: QBO syncers — credit memo + vendor credit
-- [ ] Task 10: Rillet client — credit memos, vendor credits, products, applications
-- [ ] Task 11: Rillet syncers — credit memo + vendor credit
+- [x] Task 6: Xero client — credit notes + allocations
+- [x] Task 7: Xero syncers — credit memo + vendor credit
+- [x] Task 8: QBO client — CreditMemo, VendorCredit, Service item, applications
+- [x] Task 9: QBO syncers — credit memo + vendor credit
+- [x] Task 10: Rillet client — credit memos, vendor credits, products, applications
+- [x] Task 11: Rillet syncers — credit memo + vendor credit
 - [ ] Task 12: Event subscriptions + party-resolved table mapping
 - [ ] Task 13: Outbound sweep picks up posted memos
 - [ ] Task 14: Posting-sync settings UI — two family selectors

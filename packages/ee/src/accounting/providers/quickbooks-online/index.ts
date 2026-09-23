@@ -2,6 +2,7 @@ import { ProviderID } from "../../core/models";
 import { type SyncerRegistry, SyncFactory } from "../../core/sync";
 import { QboBillSyncer } from "./entities/bill";
 import { QboChargeSyncer } from "./entities/charge";
+import { QboCreditMemoSyncer } from "./entities/credit-memo";
 import { QboCustomerSyncer } from "./entities/customer";
 import { QboSalesInvoiceSyncer } from "./entities/invoice";
 import { QboItemSyncer } from "./entities/item";
@@ -9,9 +10,13 @@ import { QboJournalEntrySyncer } from "./entities/journal-entry";
 import { QboPaymentSyncer } from "./entities/payment";
 import { QboPurchaseOrderSyncer } from "./entities/purchase-order";
 import { QboVendorSyncer } from "./entities/vendor";
+import { QboVendorCreditSyncer } from "./entities/vendor-credit";
 
 export * from "./entities/bill";
 export * from "./entities/charge";
+// credit-memo additionally exports the shared memo source shape + loader the
+// vendor-credit syncer reads (declared once so the barrel cannot collide)
+export * from "./entities/credit-memo";
 export * from "./entities/customer";
 export * from "./entities/invoice";
 export * from "./entities/item";
@@ -24,6 +29,7 @@ export * from "./entities/payment";
 export * from "./entities/purchase-order";
 export * from "./entities/shared";
 export * from "./entities/vendor";
+export * from "./entities/vendor-credit";
 export * from "./models";
 export * from "./provider";
 
@@ -48,6 +54,13 @@ export const qboSyncerRegistry: SyncerRegistry = {
   charge: QboChargeSyncer,
   invoice: QboSalesInvoiceSyncer,
   purchaseOrder: QboPurchaseOrderSyncer,
+
+  // Memo credits (posted `memo` rows) as native QBO credit documents:
+  // a CUSTOMER memo -> CreditMemo, a SUPPLIER memo -> VendorCredit. Both are
+  // push-only and gated by their own posting-sync family (creditMemo /
+  // vendorCredit), which default to "none".
+  creditMemo: QboCreditMemoSyncer,
+  vendorCredit: QboVendorCreditSyncer,
 
   // Posting sync (push-only journal entries -> QBO JournalEntry objects)
   journalEntry: QboJournalEntrySyncer,

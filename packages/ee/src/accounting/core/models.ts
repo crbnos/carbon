@@ -566,6 +566,16 @@ export const POSTING_SYNC_EXCLUDED_SOURCE_TYPES =
     (sourceType) => POSTING_POLICY[sourceType].representation === "document"
   );
 
+/**
+ * Why a balance-INCREASING memo (supplier+Credit, customer+Debit) is skipped.
+ *
+ * Canonical here because all three providers skip for the identical reason and
+ * `accounting/index.ts` star-exports both `core/*` and `providers/*` into one
+ * namespace — three independently-declared copies collided at typecheck.
+ */
+export const MEMO_INCREASER_SKIP_REASON =
+  "Balance-increasing memos are not supported in v1";
+
 export const PostingSyncFamilyModeSchema = z.enum([
   "documents",
   "journals",

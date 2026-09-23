@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { z } from "zod";
 import { ProviderID } from "../../core/models";
 import type {
@@ -44,6 +45,48 @@ export const QBO_MINOR_VERSION = "75";
 
 /** QBO's hard upper bound for MAXRESULTS on /query. */
 export const QBO_QUERY_MAX_RESULTS = 1000;
+
+/**
+ * QBO caps the `requestid` idempotency token at 50 characters. Intuit replays
+ * a write's ORIGINAL response for the same `requestid`, which is what makes a
+ * retried create safe after a lost response.
+ * https://blogs.a.intuit.com/2018/09/10/quickbooks-online-api-best-practices/
+ */
+export const QBO_REQUEST_ID_MAX_LENGTH = 50;
+
+/**
+ * Deterministic `?requestid=` for a create: sha256 of
+ * `companyId:operation:localId`, truncated inside QBO's 50-char cap. Keyed by
+ * the CARBON id (never the payload) so a retry after a crash between the remote
+ * create and the local mapping write replays the original response instead of
+ * minting a second document — the same contract as Rillet's
+ * `buildRilletIdempotencyKey`.
+ */
+export function buildQboRequestId(
+  companyId: string,
+  operation: string,
+  localId: string
+): string {
+  return createHash("sha256")
+    .update(`${companyId}:${operation}:${localId}`)
+    .digest("hex")
+    .slice(0, 40);
+}
+
+/**
+ * QBO quotes `ExchangeRate` as HOME currency units per ONE unit of the
+ * document currency. Carbon's `exchangeRate` is the INVERSE — document units
+ * per base unit (`.claude/rules/numeric-precision.md`). Invert at this
+ * boundary and nowhere else.
+ */
+export function toQboExchangeRate(carbonExchangeRate: number): number {
+  if (!Number.isFinite(carbonExchangeRate) || carbonExchangeRate <= 0) {
+    throw new Error(
+      `Cannot convert exchange rate ${carbonExchangeRate} to QuickBooks Online's home-per-foreign convention: it must be finite and positive`
+    );
+  }
+  return 1 / carbonExchangeRate;
+}
 
 /**
  * Dimension slot target ids (stored on
@@ -829,6 +872,162 @@ export class QboProvider extends BaseProvider {
   }
 
   // =================================================================
+  // Credit documents — CreditMemo (AR) / VendorCredit (AP), and the
+  // provider-side Service item an AR credit line must reference
+  // =================================================================
+
+  /** GET /creditmemo/{id}. */
+  async getCreditMemo(id: string): Promise<Qbo.CreditMemo | null> {
+    return this.readEntity<Qbo.CreditMemo>("creditmemo", "CreditMemo", id);
+  }
+
+  /**
+   * Create a QBO CreditMemo (POST /creditmemo) — a CUSTOMER credit.
+   *
+   * Every line MUST carry `SalesItemLineDetail.ItemRef`: QBO accepts only
+   * `SalesItemLine`/`GroupLine` here, and an item-less line's `Amount` is
+   * SILENTLY IGNORED (no fault — you get a zero-total credit memo). The
+   * credit-memo syncer resolves that item from the memo's reason account.
+   *
+   * VERIFY (QBO sandbox): no sandbox was available when this shipped — the
+   * payload follows Intuit's CreditMemo reference but is unverified against a
+   * live QBO company, like the QBO payment push.
+   */
+  async createCreditMemo(
+    creditMemo: QboCreatePayload<Qbo.CreditMemo>,
+    requestId?: string
+  ): Promise<Qbo.CreditMemo> {
+    return this.writeEntity(
+      "creditmemo",
+      "CreditMemo",
+      "create credit memo",
+      creditMemo,
+      requestId
+    );
+  }
+
+  /** GET /vendorcredit/{id}. */
+  async getVendorCredit(id: string): Promise<Qbo.VendorCredit | null> {
+    return this.readEntity<Qbo.VendorCredit>(
+      "vendorcredit",
+      "VendorCredit",
+      id
+    );
+  }
+
+  /**
+   * Create a QBO VendorCredit (POST /vendorcredit) — a SUPPLIER credit.
+   * Account-coded through `AccountBasedExpenseLineDetail.AccountRef`, so
+   * unlike CreditMemo it needs no provider-side item.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async createVendorCredit(
+    vendorCredit: QboCreatePayload<Qbo.VendorCredit>,
+    requestId?: string
+  ): Promise<Qbo.VendorCredit> {
+    return this.writeEntity(
+      "vendorcredit",
+      "VendorCredit",
+      "create vendor credit",
+      vendorCredit,
+      requestId
+    );
+  }
+
+  /**
+   * Create a `Service` Item whose `IncomeAccountRef` is the mapped credit
+   * reason account — the GL binding a QBO CreditMemo line needs
+   * (`ItemAccountRef` is invoice-only). This is the `createItem` callback the
+   * shared `resolveCreditReasonItem` injects on QBO; the Item is a
+   * PROVIDER-SIDE ARTIFACT and never becomes a Carbon `item` row.
+   *
+   * QBO's name namespace is shared and unique, so a name collision (fault
+   * 6240) is recovered by adopting the existing Item rather than failing the
+   * memo forever — the reason account's name is exactly the sort of label a
+   * customer already has in Products & Services.
+   */
+  async createServiceItem(args: {
+    name: string;
+    incomeAccountRef: Qbo.Ref;
+    description?: string;
+    requestId?: string;
+  }): Promise<Qbo.Item> {
+    const payload: QboCreatePayload<Qbo.Item> = {
+      Name: args.name,
+      Type: "Service",
+      IncomeAccountRef: args.incomeAccountRef,
+      ...(args.description ? { Description: args.description } : {})
+    };
+
+    try {
+      return await this.writeEntity<Qbo.Item>(
+        "item",
+        "Item",
+        "create service item",
+        payload,
+        args.requestId
+      );
+    } catch (error) {
+      if (!isQboDuplicateNameError(error)) throw error;
+
+      const existing = await this.query<Qbo.Item>(
+        "Item",
+        `Name = '${args.name.replace(/'/g, "\\'")}'`
+      );
+      const match = existing.find((item) => item.Name === args.name);
+      if (!match) throw error;
+      return match;
+    }
+  }
+
+  /**
+   * Apply a CreditMemo to an Invoice: a ZERO-cash QBO `Payment` whose lines
+   * link both transactions (`LinkedTxn` TxnType `Invoice` and `CreditMemo`).
+   * QBO has no dedicated allocation endpoint — the zero-total Payment IS the
+   * allocation. Returns the created Payment id.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async applyCreditMemo(
+    payload: QboCreditMemoApplicationPayload,
+    requestId?: string
+  ): Promise<string> {
+    const created = await this.writeEntity<Qbo.Payment>(
+      "payment",
+      "Payment",
+      "apply credit memo",
+      payload,
+      requestId
+    );
+    return created.Id;
+  }
+
+  /**
+   * Apply a VendorCredit to a Bill: a ZERO-cash QBO `BillPayment` whose lines
+   * link both transactions (`LinkedTxn` TxnType `Bill` and `VendorCredit`).
+   *
+   * `BillPayment` requires a `PayType` AND a bank account even when no cash
+   * moves, which is why the caller must resolve the company's configured bank
+   * account first. Returns the created BillPayment id.
+   *
+   * VERIFY (QBO sandbox): unverified against a live QBO company.
+   */
+  async applyVendorCredit(
+    payload: QboVendorCreditApplicationPayload,
+    requestId?: string
+  ): Promise<string> {
+    const created = await this.writeEntity<Qbo.BillPayment>(
+      "billpayment",
+      "BillPayment",
+      "apply vendor credit",
+      payload,
+      requestId
+    );
+    return created.Id;
+  }
+
+  // =================================================================
   // Payments (two-way) — directly addressable by id
   // =================================================================
 
@@ -1235,6 +1434,43 @@ export type QboBillPaymentCreatePayload = {
   PayType: "Check";
   CheckPayment: { BankAccountRef: Qbo.Ref };
   Line: Qbo.PaymentLine[];
+};
+
+/**
+ * Write payload for the zero-cash `Payment` that APPLIES a CreditMemo to an
+ * Invoice. QBO has no allocation endpoint: the application IS a Payment whose
+ * `TotalAmt` is 0 and whose lines link the Invoice and the CreditMemo through
+ * `LinkedTxn`. `CustomerRef` is required (QBO cannot infer the party from the
+ * links).
+ */
+export type QboCreditMemoApplicationPayload = {
+  CustomerRef: Qbo.Ref;
+  /** Always 0 — applying a credit moves no cash. */
+  TotalAmt: 0;
+  TxnDate: string;
+  Line: Qbo.PaymentLine[];
+  CurrencyRef?: Qbo.Ref;
+  /** HOME per FOREIGN unit — see toQboExchangeRate. */
+  ExchangeRate?: number;
+};
+
+/**
+ * Write payload for the zero-cash `BillPayment` that APPLIES a VendorCredit to
+ * a Bill. `PayType` and a bank account are required by QBO even at zero cash,
+ * so the caller resolves the company's configured bank/cash account and fails
+ * with a clear reason when it is unset or unmapped.
+ */
+export type QboVendorCreditApplicationPayload = {
+  VendorRef: Qbo.Ref;
+  /** Always 0 — applying a credit moves no cash. */
+  TotalAmt: 0;
+  TxnDate: string;
+  PayType: "Check";
+  CheckPayment: { BankAccountRef: Qbo.Ref };
+  Line: Qbo.PaymentLine[];
+  CurrencyRef?: Qbo.Ref;
+  /** HOME per FOREIGN unit — see toQboExchangeRate. */
+  ExchangeRate?: number;
 };
 
 /**

@@ -26,12 +26,16 @@ import type {
   Rillet,
   RilletBillCreate,
   RilletChargeCreate,
+  RilletCreditMemoApplicationsRequest,
+  RilletCreditMemoCreate,
   RilletCustomerWrite,
   RilletInvoiceCreate,
   RilletJournalEntryCreate,
   RilletPaymentCreate,
   RilletProductWrite,
   RilletReimbursementCreate,
+  RilletVendorCreditApplicationsRequest,
+  RilletVendorCreditCreate,
   RilletVendorWrite
 } from "./models";
 
@@ -810,6 +814,14 @@ export class RilletProvider extends BaseProvider {
     await this.deleteEntity(`/reimbursements/${id}`, "void reimbursement");
   }
 
+  async deleteCreditMemo(id: string): Promise<void> {
+    await this.deleteEntity(`/credit-memos/${id}`, "void credit memo");
+  }
+
+  async deleteVendorCredit(id: string): Promise<void> {
+    await this.deleteEntity(`/vendor-credits/${id}`, "void vendor credit");
+  }
+
   async deleteInvoicePayment(
     invoiceId: string,
     paymentId: string
@@ -1048,6 +1060,114 @@ export class RilletProvider extends BaseProvider {
       payload: charge,
       idempotencyKey
     });
+  }
+
+  async getVendorCredit(id: string): Promise<Rillet.VendorCredit | null> {
+    return this.readEntity<Rillet.VendorCredit>(
+      `/vendor-credits/${id}`,
+      "vendor_credit"
+    );
+  }
+
+  /**
+   * `POST /vendor-credits` — Rillet's native AP credit document. Lines are
+   * account-coded (`line_items[].account_code`), so a supplier credit needs
+   * no product: the memo's reason account IS the GL binding.
+   */
+  async createVendorCredit(
+    vendorCredit: RilletVendorCreditCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.VendorCredit> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/vendor-credits",
+      envelopeKey: "vendor_credit",
+      operation: "create vendor credit",
+      payload: vendorCredit,
+      idempotencyKey
+    });
+  }
+
+  async getCreditMemo(id: string): Promise<Rillet.CreditMemo | null> {
+    return this.readEntity<Rillet.CreditMemo>(
+      `/credit-memos/${id}`,
+      "credit_memo"
+    );
+  }
+
+  /**
+   * `POST /credit-memos` — Rillet's native AR credit document. Every line
+   * REQUIRES `price.product_id`, `price.quantity` and `price.amount_per_unit`;
+   * there is no account-coded AR line variant anywhere in the API, which is
+   * why a customer credit resolves a reason-bound product first
+   * (`core/credit-reason-item.ts` + `createProduct`).
+   *
+   * Deliberately NOT a journal entry: a sandbox probe (2026-09-23) showed
+   * Rillet accepts a journal to the AR control account and SILENTLY DISCARDS
+   * `related_entity`, leaving the control balance moved with no subledger
+   * document behind it. Do not add a journal fallback.
+   */
+  async createCreditMemo(
+    creditMemo: RilletCreditMemoCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.CreditMemo> {
+    return this.writeEntity({
+      method: "POST",
+      path: "/credit-memos",
+      envelopeKey: "credit_memo",
+      operation: "create credit memo",
+      payload: creditMemo,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * `POST /credit-memos/{id}/applications` — **FULL RECONCILE**. Rillet
+   * replaces the credit memo's ENTIRE application set with this body, so an
+   * entry omitted here is DELETED remotely. Callers must always pass the
+   * complete desired set (the credit memo syncer derives it from every
+   * `invoiceSettlement` row of the memo in one call), never one entry at a
+   * time.
+   *
+   * Returns nothing: the response body is not an entity envelope, so this
+   * goes through `request` directly rather than `writeEntity`.
+   */
+  async applyCreditMemo(
+    id: string,
+    applications: Rillet.CreditMemoApplication[],
+    idempotencyKey?: string
+  ): Promise<void> {
+    const body: RilletCreditMemoApplicationsRequest = { applications };
+    const response = await this.request<unknown>(
+      "POST",
+      `/credit-memos/${id}/applications`,
+      { body: JSON.stringify(body), idempotencyKey }
+    );
+    if (response.error) {
+      throwRilletApiError("apply credit memo", response);
+    }
+  }
+
+  /**
+   * `POST /vendor-credits/{id}/applications` — entries are
+   * `{ bill_id, amount }`; this side has **no `application_date`**. Carbon
+   * sends the complete set in one call, so it satisfies the AR
+   * full-reconcile rule too whatever this endpoint's own semantics are.
+   */
+  async applyVendorCredit(
+    id: string,
+    applications: Rillet.VendorCreditApplication[],
+    idempotencyKey?: string
+  ): Promise<void> {
+    const body: RilletVendorCreditApplicationsRequest = { applications };
+    const response = await this.request<unknown>(
+      "POST",
+      `/vendor-credits/${id}/applications`,
+      { body: JSON.stringify(body), idempotencyKey }
+    );
+    if (response.error) {
+      throwRilletApiError("apply vendor credit", response);
+    }
   }
 
   /**

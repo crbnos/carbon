@@ -522,6 +522,159 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     return created.PaymentID;
   }
 
+  // =================================================================
+  // Credit notes (memo external-GL representation)
+  // =================================================================
+
+  /**
+   * Create a credit note (POST /CreditNotes), ACCRECCREDIT (customer credit,
+   * reduces AR) or ACCPAYCREDIT (supplier credit, reduces AP).
+   *
+   * Created directly as **AUTHORISED**, forced here so no caller can weaken it:
+   * Xero will not allocate a DRAFT/SUBMITTED credit note, and it explicitly
+   * refuses create-and-allocate in one request — so the note has to land
+   * allocatable and the allocation is a second round-trip
+   * (`allocateCreditNote`).
+   *
+   * `Idempotency-Key` is a TRANSIENT-NETWORK guard only: Xero expires the key
+   * after six minutes, so it cannot be the job-level dedupe. That remains the
+   * `externalIntegrationMapping` row, backed by the deterministic
+   * `getCreditNoteByNumber` recovery read for the create-succeeded-but-mapping-
+   * failed window.
+   *
+   * Throws an AccountingApiError when Xero rejects the payload.
+   */
+  async createCreditNote(
+    creditNote: Omit<Xero.CreditNote, "CreditNoteID" | "UpdatedDateUTC">,
+    options?: { idempotencyKey?: string }
+  ): Promise<Xero.CreditNote> {
+    const response = await this.request<{ CreditNotes: Xero.CreditNote[] }>(
+      "POST",
+      "/CreditNotes?unitdp=4",
+      {
+        // Status last: a credit note MUST be AUTHORISED to be allocatable.
+        body: JSON.stringify({
+          CreditNotes: [{ ...creditNote, Status: "AUTHORISED" }]
+        }),
+        ...(options?.idempotencyKey
+          ? { headers: { "Idempotency-Key": options.idempotencyKey } }
+          : {})
+      }
+    );
+
+    if (response.error) {
+      throwXeroApiError("create credit note", response);
+    }
+
+    const created = response.data?.CreditNotes?.[0];
+    if (!created?.CreditNoteID) {
+      throw new Error(
+        "Xero API returned success but no CreditNoteID was returned"
+      );
+    }
+
+    return created;
+  }
+
+  /**
+   * Find a credit note by its `CreditNoteNumber` (the Carbon memo document
+   * number). This is the durable recovery path for the window where the remote
+   * create succeeded but the local mapping write did not — Xero's
+   * `Idempotency-Key` expires after six minutes and cannot cover it.
+   *
+   * Returns null when no credit note carries the number. Throws when more than
+   * one does (a real duplicate a human has to resolve; silently picking one
+   * would allocate against the wrong document).
+   */
+  async getCreditNoteByNumber(
+    creditNoteNumber: string
+  ): Promise<Xero.CreditNote | null> {
+    const where = encodeURIComponent(
+      `CreditNoteNumber==${JSON.stringify(creditNoteNumber)}`
+    );
+    const response = await this.request<{ CreditNotes: Xero.CreditNote[] }>(
+      "GET",
+      `/CreditNotes?where=${where}&page=1`
+    );
+
+    if (response.error) {
+      throwXeroApiError("find credit note by number", response);
+    }
+    if (!Array.isArray(response.data?.CreditNotes)) {
+      throw new Error("Xero credit note lookup returned no credit note list");
+    }
+
+    const matches = response.data.CreditNotes;
+    if (matches.length > 1) {
+      throw new Error(
+        `Multiple Xero credit notes carry CreditNoteNumber ${creditNoteNumber}; resolve the duplicates before retrying`
+      );
+    }
+
+    return matches[0] ?? null;
+  }
+
+  /**
+   * Allocate a credit note against one invoice
+   * (**PUT** /CreditNotes/{id}/Allocations).
+   *
+   * This is **ADDITIVE, not a reconcile** — Xero appends the allocation to
+   * whatever the credit note already carries, so the caller owns
+   * idempotency (re-sending double-allocates). Remove one with
+   * `deleteCreditNoteAllocation`.
+   *
+   * `Date` is sent even though the docs describe it as read-only: Xero's own
+   * OpenAPI spec marks it required on write.
+   */
+  async allocateCreditNote(
+    creditNoteId: string,
+    allocation: {
+      Invoice: { InvoiceID: string };
+      Amount: number;
+      Date: string;
+    }
+  ): Promise<Xero.CreditNoteAllocation> {
+    const response = await this.request<{
+      Allocations: Xero.CreditNoteAllocation[];
+    }>("PUT", `/CreditNotes/${encodeURIComponent(creditNoteId)}/Allocations`, {
+      body: JSON.stringify({ Allocations: [allocation] })
+    });
+
+    if (response.error) {
+      throwXeroApiError("allocate credit note", response);
+    }
+
+    const created = response.data?.Allocations?.[0];
+    if (!created) {
+      throw new Error(
+        "Xero API returned success but no Allocation was returned for the credit note"
+      );
+    }
+
+    return created;
+  }
+
+  /**
+   * Remove one allocation from a credit note
+   * (DELETE /CreditNotes/{id}/Allocations/{allocationId}) — the counterpart of
+   * the additive `allocateCreditNote`.
+   */
+  async deleteCreditNoteAllocation(
+    creditNoteId: string,
+    allocationId: string
+  ): Promise<void> {
+    const response = await this.request(
+      "DELETE",
+      `/CreditNotes/${encodeURIComponent(
+        creditNoteId
+      )}/Allocations/${encodeURIComponent(allocationId)}`
+    );
+
+    if (response.error) {
+      throwXeroApiError("delete credit note allocation", response);
+    }
+  }
+
   /**
    * List all contacts from Xero with pagination support.
    * Xero returns 100 contacts per page by default.
