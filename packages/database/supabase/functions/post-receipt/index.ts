@@ -13,6 +13,7 @@ import {
   TrackedEntityAttributes,
 } from "../lib/utils.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
@@ -730,10 +731,13 @@ serve(async (req: Request) => {
             Database["public"]["Tables"]["trackedEntity"]["Update"]
           >
         >((acc, trackedEntity) => {
-          acc[trackedEntity.id] = {
-            status: "Available",
-            quantity: trackedEntity.quantity,
-          };
+          // Voiding restores the lot, but a lot with nothing in it must not
+          // come back Available — that is the zero-quantity husk the drain
+          // rule forbids (Scrapped/Rejected are preserved by the helper).
+          acc[trackedEntity.id] = settleQuantity({
+            quantity: Number(trackedEntity.quantity ?? 0),
+            status: "Available" as const,
+          });
           return acc;
         }, {}) ?? {};
 
