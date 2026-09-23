@@ -2021,9 +2021,6 @@ msgstr "Önerileri Uygula"
 msgid "Apply To"
 msgstr "Uygulanacak Alan"
 
-msgid "Apply to all quantities"
-msgstr "Tüm miktarlara uygula"
-
 msgid "Apply to invoice"
 msgstr "Faturaya uygula"
 
@@ -2563,6 +2560,9 @@ msgstr "Bu sevkiyatı hükümsüz kılmak istediğinizden emin misiniz? Bu işle
 msgid "Are you sure?"
 msgstr "Emin misiniz?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "Sanki atölyenin kuyruğunun başına geçmiş gibi."
+
 msgid "As needed"
 msgstr "Gerektiğinde"
 
@@ -2685,6 +2685,9 @@ msgstr "Bu depolama birimini bir iş merkezine atar (hat yanı)"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Bu birimi hat yanı malzemesi için bir iş merkezine atar; böylece operatörler bunu üretim görünümünde görürler; orada ayarlandığında ana birimden devralınır."
+
+msgid "Assumptions"
+msgstr "Varsayımlar"
 
 msgid "At each gate"
 msgstr "Her kapıda"
@@ -3111,6 +3114,9 @@ msgstr "Defterlerin kilitlenme tarihi (manuel)"
 
 msgid "Both"
 msgstr "Her ikisi"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Her iki bitişin seçtiğiniz tarihle karşılaştırılması."
 
 msgid "Bottleneck"
 msgstr "Darboğaz"
@@ -8645,6 +8651,9 @@ msgstr "Eğer engel oluşturuyorsa veya bir tarih risk altındaysa, bir sahibi a
 
 msgid "If items already exist"
 msgstr "Eğer öğeler zaten varsa"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "Bugün sipariş edilirse — zaten serbest bırakıldı olanların arkasına konur."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Sipariş edildiyse, sonraki 48 haftada stoksuzluk projeksiyonu yoktur"

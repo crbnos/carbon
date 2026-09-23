@@ -2021,9 +2021,6 @@ msgstr "सुझाव लागू करें"
 msgid "Apply To"
 msgstr "लागू करें"
 
-msgid "Apply to all quantities"
-msgstr "सभी मात्रा के लिए लागू करें"
-
 msgid "Apply to invoice"
 msgstr "चालान पर लागू करें"
 
@@ -2563,6 +2560,9 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure?"
 msgstr "क्या आप सुनिश्चित हैं?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "मानो यह कार्यशाला की कतार के आगे कूद गया हो।"
+
 msgid "As needed"
 msgstr "आवश्यकतानुसार"
 
@@ -2685,6 +2685,9 @@ msgstr "यह भंडारण इकाई को वर्क सेंट�
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "इकाई को लाइनसाइड सामग्री के लिए वर्क सेंटर में असाइन करता है, इसलिए ऑपरेटर इसे उत्पादन दृश्य में देखते हैं; मूल इकाई में सेट किए जाने पर मूल इकाई से विरासत में मिलता है।"
+
+msgid "Assumptions"
+msgstr "मान्यताएँ"
 
 msgid "At each gate"
 msgstr "हर गेट पर"
@@ -3111,6 +3114,9 @@ msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
 
 msgid "Both"
 msgstr "दोनों"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "दोनों समाप्तियों की तुलना आपके द्वारा चुनी गई तारीख से की गई है।"
 
 msgid "Bottleneck"
 msgstr "अड़चन"
@@ -8645,6 +8651,9 @@ msgstr "यदि यह अवरुद्ध है या एक तारी
 
 msgid "If items already exist"
 msgstr "अगर आइटम पहले से मौजूद हैं"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "यदि आज ऑर्डर किया गया — सब कुछ पहले से जारी के पीछे रखा जाएगा।"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "यदि ऑर्डर किया जाता है, तो अगले 48 सप्ताह में कोई स्टॉकआउट प्रक्षेपित नहीं है"

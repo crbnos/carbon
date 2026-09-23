@@ -56,6 +56,8 @@ export type QuoteMaterialRow = {
   id: string;
   quoteMakeMethodId: string;
   itemId: string;
+  /** human-readable part id, for the "gated by material — {item}" cause */
+  itemReadableId: string;
   methodType: "Purchase to Order" | "Pull from Inventory" | "Make to Order";
   /** per parent unit */
   quantity: number;
@@ -108,6 +110,8 @@ export function buildQuoteSimulation(args: {
   dependencies: JobOperationDependency[];
   /** max floor in whole days, 0 if none */
   materialReadyDays: number;
+  /** readable id of the part behind the largest floor, null if none */
+  materialFloorItem: string | null;
   /** ops whose three times are all 0 */
   zeroStandardOperationCount: number;
 } {
@@ -233,6 +237,7 @@ export function buildQuoteSimulation(args: {
   // Material floors: a purchased part, or a stocked part short of the required
   // quantity, gates its consuming operation at now + the item's lead time.
   let materialReadyDays = 0;
+  let materialFloorItem: string | null = null;
   for (const material of materials) {
     const multiplier = multiplierByMethod.get(material.quoteMakeMethodId);
     if (multiplier === undefined) continue;
@@ -268,7 +273,10 @@ export function buildQuoteSimulation(args: {
       consumingOp.materialReadyAt === undefined
         ? readyAt
         : Math.max(consumingOp.materialReadyAt, readyAt);
-    if (floorDays > materialReadyDays) materialReadyDays = floorDays;
+    if (floorDays > materialReadyDays) {
+      materialReadyDays = floorDays;
+      materialFloorItem = material.itemReadableId;
+    }
   }
 
   const zeroStandardOperationCount = builtOps.filter(
@@ -283,6 +291,7 @@ export function buildQuoteSimulation(args: {
     operations: builtOps,
     dependencies,
     materialReadyDays,
+    materialFloorItem,
     zeroStandardOperationCount
   };
 }
@@ -324,6 +333,86 @@ export function calendarDaysFromNow(
   const today = toCalendarDate(fromAbsolute(nowMs, timeZone));
   const days = finish.compare(today);
   return days < 1 ? 1 : days;
+}
+
+export type QuoteScenarioSignals = {
+  /** an unplaceable / late conflict on any op — wins outright when present */
+  conflict: string | null;
+  /** the engine's note for the reservation that waited longest for capacity */
+  queueNote: string | null;
+  /** name of the work center carrying the most placed time on the critical path */
+  bottleneckWorkCenter: string | null;
+  /** how many of this scenario's operations run on that work center */
+  bottleneckOperationCount: number;
+};
+
+/**
+ * The makespan DRIVER, not the largest single wait. A long quote lead time is
+ * usually dominated by (a) a purchased/short-stock material floor — an absolute
+ * `now + leadTime` date the queue can't move — or (b) the job's own production
+ * volume on a shared work center, which is identical whether or not other jobs
+ * are excluded. The old "largest capacity wait" cause never surfaced either, so
+ * an end-of-queue and a best-case run that finish on the same day looked
+ * unexplained. This decomposes the total into the three parts and names the
+ * biggest one, so the sentence tells the same story the numbers do.
+ *
+ * `ownProductionDays` is `bestCaseDays - materialDays` (best case has no
+ * other-job queue, so it is material + the job's own work); `queueRemovableDays`
+ * is `queuedDays - bestCaseDays` — exactly what jumping the queue would save.
+ * Pure so `quote-lead-time.test.ts` can pin the ranking.
+ */
+export function composeQuoteCause(args: {
+  scenario: "queued" | "bestCase";
+  materialDays: number;
+  materialItem: string | null;
+  ownProductionDays: number;
+  queueRemovableDays: number;
+  signals: QuoteScenarioSignals;
+}): string | null {
+  const {
+    scenario,
+    materialDays,
+    materialItem,
+    ownProductionDays,
+    queueRemovableDays,
+    signals
+  } = args;
+
+  // A real placement conflict (unplaceable op, past due date) always wins.
+  if (signals.conflict) return signals.conflict;
+
+  // Best case has no other-job queue, so its queue component is zero.
+  const queueDays = scenario === "queued" ? queueRemovableDays : 0;
+
+  const productionCause = () => {
+    if (signals.bottleneckWorkCenter) {
+      return `Mostly this job's own production — ${signals.bottleneckWorkCenter} carries the most work across ${signals.bottleneckOperationCount} operations`;
+    }
+    return "Mostly this job's own production time across the routing";
+  };
+  const materialCause = () =>
+    materialItem
+      ? `Gated by material — ${materialItem} lead time is ${materialDays} days`
+      : `Gated by material — a purchased part's lead time is ${materialDays} days`;
+
+  // Rank the three contributors; name the largest. Ties fall to the more
+  // actionable explanation: material (order sooner) over production, and queue
+  // (expedite) only when it genuinely dominates.
+  if (
+    queueDays > materialDays &&
+    queueDays > ownProductionDays &&
+    signals.queueNote
+  ) {
+    return signals.queueNote;
+  }
+  if (materialDays > 0 && materialDays >= ownProductionDays) {
+    return materialCause();
+  }
+  if (ownProductionDays > 0) return productionCause();
+
+  // Nothing dominant (a tiny job placed at once) — fall back to whatever the
+  // engine noted, else no cause.
+  return signals.queueNote;
 }
 
 // ============================================================================
@@ -390,16 +479,18 @@ async function loadQuoteLineRouting(
       .execute(),
     db
       .selectFrom("quoteMaterial")
+      .innerJoin("item", "item.id", "quoteMaterial.itemId")
       .select([
-        "id",
-        "quoteMakeMethodId",
-        "itemId",
-        "methodType",
-        "quantity",
-        "quoteOperationId"
+        "quoteMaterial.id as id",
+        "quoteMaterial.quoteMakeMethodId as quoteMakeMethodId",
+        "quoteMaterial.itemId as itemId",
+        "item.readableId as itemReadableId",
+        "quoteMaterial.methodType as methodType",
+        "quoteMaterial.quantity as quantity",
+        "quoteMaterial.quoteOperationId as quoteOperationId"
       ])
-      .where("quoteLineId", "=", quoteLineId)
-      .where("companyId", "=", companyId)
+      .where("quoteMaterial.quoteLineId", "=", quoteLineId)
+      .where("quoteMaterial.companyId", "=", companyId)
       .execute(),
     db
       .selectFrom("quoteOperation")
@@ -435,6 +526,7 @@ async function loadQuoteLineRouting(
     id: m.id,
     quoteMakeMethodId: m.quoteMakeMethodId,
     itemId: m.itemId,
+    itemReadableId: m.itemReadableId,
     methodType: m.methodType,
     quantity: Number(m.quantity),
     quoteOperationId: m.quoteOperationId
@@ -632,13 +724,29 @@ export async function runQuoteLeadTimeWhatIf(params: {
     excludeJobIds: batch
   });
 
+  // The busiest work center is named in the cause sentence, so map the
+  // candidate work-center ids to names once.
+  const workCenterNames = new Map<string, string>();
+  {
+    const ids = Array.from(windows.workCenterIds);
+    if (ids.length > 0) {
+      const wcRows = await db
+        .selectFrom("workCenter")
+        .select(["id", "name"])
+        .where("id", "in", ids)
+        .where("companyId", "=", companyId)
+        .execute();
+      for (const wc of wcRows) workCenterNames.set(wc.id, wc.name);
+    }
+  }
+
   // One selector instance for every run: selectWorkCentersForOperations resets
   // plannedReservations at its start and setFiniteContext swaps the context, so
   // a cloned context per run is the only isolation needed.
   const runScenario = (
     ctx: FiniteSchedulingContext,
     ops: ScheduledOperation[]
-  ): { finishMs: number | null; cause: string | null } => {
+  ): { finishMs: number | null; signals: QuoteScenarioSignals } => {
     selector.setFiniteContext(cloneFiniteContext(ctx));
     const selections = selector.selectWorkCentersForOperations(ops, {
       jobDueDate: dueDate ?? null,
@@ -653,43 +761,65 @@ export async function runQuoteLeadTimeWhatIf(params: {
     for (const s of selections.values()) {
       if (s.placedEnd) bump(toInstantMs(s.placedEnd));
     }
-    for (const p of selector.getPlannedReservations()) {
-      if (p.endAt > p.startAt) bump(p.endAt);
-    }
-    // Cause: the first conflict, else the note of the reservation that waited
-    // longest for capacity.
-    let cause: string | null = null;
+    // The first placement conflict (unplaceable / past due), if any.
+    let conflict: string | null = null;
     for (const s of selections.values()) {
       if (s.conflict) {
-        cause = s.conflict;
+        conflict = s.conflict;
         break;
       }
     }
-    if (!cause) {
-      let maxWait = -1;
-      for (const p of selector.getPlannedReservations()) {
-        if (!p.scheduleNote) continue;
+    // The note of the reservation that waited longest for capacity, and the
+    // work center carrying the most placed time (the bottleneck resource).
+    let queueNote: string | null = null;
+    let maxWait = -1;
+    const wcLoad = new Map<string, { ms: number; ops: number }>();
+    for (const p of selector.getPlannedReservations()) {
+      if (p.endAt > p.startAt) bump(p.endAt);
+      if (p.scheduleNote) {
         const wait =
           p.earliestStartAt !== undefined ? p.startAt - p.earliestStartAt : 0;
         if (wait > maxWait) {
           maxWait = wait;
-          cause = p.scheduleNote;
+          queueNote = p.scheduleNote;
         }
       }
+      if (p.resourceKind === "WorkCenter" && p.endAt > p.startAt) {
+        const load = wcLoad.get(p.resourceId) ?? { ms: 0, ops: 0 };
+        load.ms += p.endAt - p.startAt;
+        load.ops += 1;
+        wcLoad.set(p.resourceId, load);
+      }
     }
-    return { finishMs, cause };
+    let bottleneckWorkCenter: string | null = null;
+    let bottleneckOperationCount = 0;
+    let maxLoad = -1;
+    for (const [wcId, load] of wcLoad) {
+      if (load.ms > maxLoad) {
+        maxLoad = load.ms;
+        bottleneckWorkCenter = workCenterNames.get(wcId) ?? null;
+        bottleneckOperationCount = load.ops;
+      }
+    }
+    return {
+      finishMs,
+      signals: {
+        conflict,
+        queueNote,
+        bottleneckWorkCenter,
+        bottleneckOperationCount
+      }
+    };
   };
 
-  const scenarioResult = (r: {
-    finishMs: number | null;
-    cause: string | null;
-  }): QuoteLeadTimeScenario => ({
-    finishAt: r.finishMs === null ? null : msToInstantIso(r.finishMs),
+  const scenarioResult = (
+    finishMs: number | null,
+    cause: string | null
+  ): QuoteLeadTimeScenario => ({
+    finishAt: finishMs === null ? null : msToInstantIso(finishMs),
     leadTimeDays:
-      r.finishMs === null
-        ? null
-        : calendarDaysFromNow(r.finishMs, now, timeZone),
-    cause: r.cause
+      finishMs === null ? null : calendarDaysFromNow(finishMs, now, timeZone),
+    cause
   });
 
   const quantityResults = quantities.map((quantity) => {
@@ -704,6 +834,38 @@ export async function runQuoteLeadTimeWhatIf(params: {
 
     const queued = runScenario(queuedCtx, ops);
     const bestCase = runScenario(bestCtx, ops);
+
+    const queuedDays =
+      queued.finishMs === null
+        ? null
+        : calendarDaysFromNow(queued.finishMs, now, timeZone);
+    const bestDays =
+      bestCase.finishMs === null
+        ? null
+        : calendarDaysFromNow(bestCase.finishMs, now, timeZone);
+    // Decompose the total so the cause names the makespan DRIVER, not the
+    // largest single wait: best case = material floor + the job's own work;
+    // queued adds the removable other-job queue on top.
+    const materialDays = sim.materialReadyDays;
+    const ownProductionDays = Math.max(0, (bestDays ?? 0) - materialDays);
+    const queueRemovableDays = Math.max(0, (queuedDays ?? 0) - (bestDays ?? 0));
+
+    const queuedCause = composeQuoteCause({
+      scenario: "queued",
+      materialDays,
+      materialItem: sim.materialFloorItem,
+      ownProductionDays,
+      queueRemovableDays,
+      signals: queued.signals
+    });
+    const bestCaseCause = composeQuoteCause({
+      scenario: "bestCase",
+      materialDays,
+      materialItem: sim.materialFloorItem,
+      ownProductionDays,
+      queueRemovableDays,
+      signals: bestCase.signals
+    });
 
     let target: {
       date: string;
@@ -736,8 +898,8 @@ export async function runQuoteLeadTimeWhatIf(params: {
     return {
       quantity,
       materialReadyDays: sim.materialReadyDays,
-      queued: scenarioResult(queued),
-      bestCase: scenarioResult(bestCase),
+      queued: scenarioResult(queued.finishMs, queuedCause),
+      bestCase: scenarioResult(bestCase.finishMs, bestCaseCause),
       target
     };
   });

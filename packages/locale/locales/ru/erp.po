@@ -2021,9 +2021,6 @@ msgstr "Применить предложения"
 msgid "Apply To"
 msgstr "Применить к"
 
-msgid "Apply to all quantities"
-msgstr "Применить ко всем количествам"
-
 msgid "Apply to invoice"
 msgstr "Применить к счет-фактуре"
 
@@ -2563,6 +2560,9 @@ msgstr "Вы уверены, что хотите аннулировать эту
 msgid "Are you sure?"
 msgstr "Вы уверены?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "Как будто прыгнула в начало цеховой очереди"
+
 msgid "As needed"
 msgstr "По мере необходимости"
 
@@ -2685,6 +2685,9 @@ msgstr "Назначает данную единицу хранения рабо
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Назначает данную единицу рабочему центру для прилинейного запаса материала, чтобы операторы видели его в представлении производства; наследуется от родительской единицы, если установлено там."
+
+msgid "Assumptions"
+msgstr "Предположения"
 
 msgid "At each gate"
 msgstr "На каждом этапе"
@@ -3111,6 +3114,9 @@ msgstr "Дата блокировки книг (вручную)"
 
 msgid "Both"
 msgstr "Оба"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Оба варианта завершения сравниваются с выбранной вами датой"
 
 msgid "Bottleneck"
 msgstr "Узкое место"
@@ -8645,6 +8651,9 @@ msgstr "Если это блокирует или есть риск по дат�
 
 msgid "If items already exist"
 msgstr "Если элементы уже существуют"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "Если заказано сегодня — будет размещено позади уже запущенного"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Если заказано, дефицит не прогнозируется в течение следующих 48 недель"

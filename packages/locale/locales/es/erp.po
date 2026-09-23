@@ -2021,9 +2021,6 @@ msgstr "Aplicar sugerencias"
 msgid "Apply To"
 msgstr "Aplicar a"
 
-msgid "Apply to all quantities"
-msgstr "Aplicar a todas las cantidades"
-
 msgid "Apply to invoice"
 msgstr "Aplicar a factura"
 
@@ -2563,6 +2560,9 @@ msgstr "¿Estás seguro de que deseas anular este envío? Esta acción revertir�
 msgid "Are you sure?"
 msgstr "¿Estás seguro?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "Como si saltara al frente de la cola de la tienda."
+
 msgid "As needed"
 msgstr "Según sea necesario"
 
@@ -2685,6 +2685,9 @@ msgstr "Asigna esta unidad de almacenamiento a un centro de trabajo (pie de lín
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Asigna esta unidad a un centro de trabajo para material de pie de línea, de modo que los operarios la vean en la vista de producción; se hereda de la unidad padre cuando se establece allí."
+
+msgid "Assumptions"
+msgstr "Supuestos"
 
 msgid "At each gate"
 msgstr "En cada puerta"
@@ -3111,6 +3114,9 @@ msgstr "Fecha de bloqueo de libros (manual)"
 
 msgid "Both"
 msgstr "Ambos"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Ambas fechas de finalización comparadas con la fecha que elijas."
 
 msgid "Bottleneck"
 msgstr "Cuello de botella"
@@ -8645,6 +8651,9 @@ msgstr "Si está bloqueando o una fecha está en riesgo, se asigna un propietari
 
 msgid "If items already exist"
 msgstr "Si los artículos ya existen"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "Si se pide hoy — se coloca detrás de todo lo que ya está liberado."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Si hay un Pedido, ninguna Rotura de stock proyectada en las próximas 48 semanas"

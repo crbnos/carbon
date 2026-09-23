@@ -2021,9 +2021,6 @@ msgstr "Apply suggestions"
 msgid "Apply To"
 msgstr "Apply To"
 
-msgid "Apply to all quantities"
-msgstr "Apply to all quantities"
-
 msgid "Apply to invoice"
 msgstr "Apply to invoice"
 
@@ -2563,6 +2560,9 @@ msgstr "Are you sure you want to void this shipment? This action will reverse al
 msgid "Are you sure?"
 msgstr "Are you sure?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "As if it jumped to the front of the shop's queue."
+
 msgid "As needed"
 msgstr "As needed"
 
@@ -2685,6 +2685,9 @@ msgstr "Assigns this storage unit to a work center (lineside)"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
+
+msgid "Assumptions"
+msgstr "Assumptions"
 
 msgid "At each gate"
 msgstr "At each gate"
@@ -3111,6 +3114,9 @@ msgstr "Books lock date (manual)"
 
 msgid "Both"
 msgstr "Both"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Both finishes compared against a date you choose."
 
 msgid "Bottleneck"
 msgstr "Bottleneck"
@@ -8645,6 +8651,9 @@ msgstr "If it's blocking or a date is at risk, it gets an owner and is tracked."
 
 msgid "If items already exist"
 msgstr "If items already exist"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "If ordered today — placed behind everything already released."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "If ordered, no stockout projected in the next 48 weeks"

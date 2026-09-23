@@ -2021,9 +2021,6 @@ msgstr "Applica proposte"
 msgid "Apply To"
 msgstr "Applica a"
 
-msgid "Apply to all quantities"
-msgstr "Applica a tutte le quantità"
-
 msgid "Apply to invoice"
 msgstr "Applica alla fattura"
 
@@ -2563,6 +2560,9 @@ msgstr "Sei sicuro di voler stornare questa spedizione? Questa azione annullerà
 msgid "Are you sure?"
 msgstr "Sei sicuro?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "Come se saltasse davanti in coda all'officina."
+
 msgid "As needed"
 msgstr "Su richiesta"
 
@@ -2685,6 +2685,9 @@ msgstr "Assegna questa unità di stoccaggio a un centro di lavoro (bordo linea)"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Assegna questa unità a un centro di lavoro per il materiale a bordo linea, in modo che gli operatori lo vedano nella visualizzazione della produzione; ereditato dall'unità padre se impostato lì."
+
+msgid "Assumptions"
+msgstr "Presupposti"
 
 msgid "At each gate"
 msgstr "Ad ogni gate"
@@ -3111,6 +3114,9 @@ msgstr "Data di blocco dei registri (manuale)"
 
 msgid "Both"
 msgstr "Entrambi"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Entrambi i tempi di fine confrontati con una data a tua scelta."
 
 msgid "Bottleneck"
 msgstr "Collo di bottiglia"
@@ -8645,6 +8651,9 @@ msgstr "Se blocca o una data è a rischio, riceve un responsabile ed è tracciat
 
 msgid "If items already exist"
 msgstr "Se gli articoli esistono già"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "Se ordinato oggi — posizionato dietro tutto ciò che è già Rilasciato."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Se ordinato, nessuna rottura di stock prevista nelle prossime 48 settimane"

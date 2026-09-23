@@ -4,10 +4,12 @@ import {
   buildQuoteSimulation,
   calendarDaysFromNow,
   cloneFiniteContext,
+  composeQuoteCause,
   type MaterialAvailability,
   type QuoteMakeMethodRow,
   type QuoteMaterialRow,
-  type QuoteOperationRow
+  type QuoteOperationRow,
+  type QuoteScenarioSignals
 } from "./quote-lead-time.ts";
 import { assert, assertEquals } from "./test-helpers.ts";
 import type { FiniteSchedulingContext } from "./work-center-selector.ts";
@@ -83,6 +85,7 @@ it("a sub-assembly scales child quantities and links to the consuming op", () =>
       id: "mat-sub",
       quoteMakeMethodId: "mm-root",
       itemId: "item-sub",
+      itemReadableId: "SUB-1",
       methodType: "Make to Order",
       quantity: 2,
       quoteOperationId: "op-root-2"
@@ -127,6 +130,7 @@ it("a sub-assembly material with no consuming op links to the parent's first op"
       id: "mat-sub",
       quoteMakeMethodId: "mm-root",
       itemId: "item-sub",
+      itemReadableId: "SUB-1",
       methodType: "Make to Order",
       quantity: 1,
       quoteOperationId: null
@@ -164,6 +168,7 @@ it("a Purchase to Order material floors its consuming op at now + lead time", ()
       id: "mat-p",
       quoteMakeMethodId: "mm-root",
       itemId: "item-p",
+      itemReadableId: "PUR-1",
       methodType: "Purchase to Order",
       quantity: 1,
       quoteOperationId: "op-1"
@@ -202,6 +207,7 @@ it("a Pull from Inventory material floors only when on-hand is short", () => {
     id: "mat-s",
     quoteMakeMethodId: "mm-root",
     itemId: "item-s",
+    itemReadableId: "STK-1",
     methodType: "Pull from Inventory",
     quantity: 1,
     quoteOperationId: "op-1"
@@ -298,4 +304,78 @@ it("calendarDaysFromNow counts local calendar days, minimum 1", () => {
   const finishLate = ms("2026-01-07T04:30:00.000Z"); // 2026-01-06 23:30 NY
   const nowNext = ms("2026-01-07T05:30:00.000Z"); // 2026-01-07 00:30 NY
   assertEquals(calendarDaysFromNow(finishLate, nowNext, tz), 1);
+});
+
+const signals = (
+  o: Partial<QuoteScenarioSignals> = {}
+): QuoteScenarioSignals => ({
+  conflict: null,
+  queueNote: null,
+  bottleneckWorkCenter: null,
+  bottleneckOperationCount: 0,
+  ...o
+});
+
+it("composeQuoteCause: a conflict wins outright", () => {
+  const cause = composeQuoteCause({
+    scenario: "queued",
+    materialDays: 60,
+    materialItem: "GBX-80",
+    ownProductionDays: 150,
+    queueRemovableDays: 0,
+    signals: signals({ conflict: "No qualified operator" })
+  });
+  assertEquals(cause, "No qualified operator");
+});
+
+it("composeQuoteCause: production volume dominates → names the bottleneck WC", () => {
+  // qty 50 shape: 60d material, 300d own work, no removable queue → production.
+  const cause = composeQuoteCause({
+    scenario: "queued",
+    materialDays: 60,
+    materialItem: "GBX-80",
+    ownProductionDays: 300,
+    queueRemovableDays: 0,
+    signals: signals({
+      bottleneckWorkCenter: "5-Axis Mill",
+      bottleneckOperationCount: 8,
+      queueNote: "Waited 2d for the work center"
+    })
+  });
+  assert(cause?.includes("5-Axis Mill"));
+  assert(cause?.includes("8 operations"));
+});
+
+it("composeQuoteCause: material dominates → names the gating item", () => {
+  const cause = composeQuoteCause({
+    scenario: "bestCase",
+    materialDays: 60,
+    materialItem: "GBX-80",
+    ownProductionDays: 5,
+    queueRemovableDays: 0,
+    signals: signals({ bottleneckWorkCenter: "5-Axis Mill" })
+  });
+  assertEquals(cause, "Gated by material — GBX-80 lead time is 60 days");
+});
+
+it("composeQuoteCause: queue dominates only in the queued scenario", () => {
+  const args = {
+    materialDays: 0,
+    materialItem: null,
+    ownProductionDays: 10,
+    queueRemovableDays: 14,
+    signals: signals({
+      queueNote: "Queued behind J000001 (4 ops)",
+      bottleneckWorkCenter: "Lathe",
+      bottleneckOperationCount: 2
+    })
+  };
+  // Queued: removable queue (14) beats own production (10) → the queue note.
+  assertEquals(
+    composeQuoteCause({ scenario: "queued", ...args }),
+    "Queued behind J000001 (4 ops)"
+  );
+  // Best case: no queue component, so production wins instead.
+  const best = composeQuoteCause({ scenario: "bestCase", ...args });
+  assert(best?.includes("Lathe"));
 });

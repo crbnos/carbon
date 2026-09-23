@@ -2021,9 +2021,6 @@ msgstr "应用建议"
 msgid "Apply To"
 msgstr "应用于"
 
-msgid "Apply to all quantities"
-msgstr "应用到所有数量"
-
 msgid "Apply to invoice"
 msgstr "应用到发票"
 
@@ -2563,6 +2560,9 @@ msgstr "您确定要作废此发货吗？此操作将反转所有库存交易，
 msgid "Are you sure?"
 msgstr "你确定吗？"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "就像它跳到了车间队列的最前面。"
+
 msgid "As needed"
 msgstr "按需"
 
@@ -2685,6 +2685,9 @@ msgstr "将此存储单元分配给工作中心（线边）"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "将此库位分配给工作中心以进行线边物料管理，使操作员能在生产视图上看到；从父库位继承该设置。"
+
+msgid "Assumptions"
+msgstr "假设"
 
 msgid "At each gate"
 msgstr "在每个关卡"
@@ -3111,6 +3114,9 @@ msgstr "账册锁定日期（手动）"
 
 msgid "Both"
 msgstr "两者"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "将两个交期与您选择的日期进行对比。"
 
 msgid "Bottleneck"
 msgstr "瓶颈"
@@ -8645,6 +8651,9 @@ msgstr "如果它正在阻塞或日期处于风险中，它会获得一个负责
 
 msgid "If items already exist"
 msgstr "如果物料已经存在"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "如果今日订购——将排在所有已下达工作之后。"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "如果已订购，未来48周内无缺货预测"

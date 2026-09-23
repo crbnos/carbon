@@ -2021,9 +2021,6 @@ msgstr "제안 적용"
 msgid "Apply To"
 msgstr "적용 대상"
 
-msgid "Apply to all quantities"
-msgstr "모든 수량에 적용"
-
 msgid "Apply to invoice"
 msgstr "송장에 적용"
 
@@ -2563,6 +2560,9 @@ msgstr "이 출하를 무효 처리하시겠습니까? 이 작업은 모든 재�
 msgid "Are you sure?"
 msgstr "확실합니까?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "마치 공장의 대기열 맨 앞으로 뛰어든 것처럼."
+
 msgid "As needed"
 msgstr "필요 시"
 
@@ -2685,6 +2685,9 @@ msgstr "이 보관 단위를 작업장(라인사이드)에 할당합니다"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "라인사이드 자재를 위해 이 보관 단위를 작업장에 할당하므로 작업자들이 생산 화면에서 볼 수 있습니다. 부모 단위에 설정되면 상속됩니다."
+
+msgid "Assumptions"
+msgstr "가정사항"
 
 msgid "At each gate"
 msgstr "각 게이트마다"
@@ -3111,6 +3114,9 @@ msgstr "장부 잠금 날짜(수동)"
 
 msgid "Both"
 msgstr "모두"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "두 완료 날짜를 선택한 날짜와 비교합니다."
 
 msgid "Bottleneck"
 msgstr "병목"
@@ -8645,6 +8651,9 @@ msgstr "차단 중이거나 날짜가 위험하면 책임자가 지정되고 추
 
 msgid "If items already exist"
 msgstr "품목이 이미 존재하는 경우"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "오늘 발주됨되면 — 이미 릴리스됨된 모든 것 뒤에 배치됩니다."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "주문할 경우, 향후 48주간 재고 부족이 예상되지 않습니다"

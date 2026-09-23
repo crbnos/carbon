@@ -100,7 +100,9 @@ const QuoteLinePricing = ({
   const permissions = usePermissions();
 
   const hasCalculatedCost = line.methodType !== "Pull from Inventory";
-  const quantities = line.quantity ?? [1];
+  // Present quantity breaks least-to-greatest; every column loop and the
+  // derived `...ByQuantity` arrays read from this one variable.
+  const quantities = [...(line.quantity ?? [1])].sort((a, b) => a - b);
 
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");

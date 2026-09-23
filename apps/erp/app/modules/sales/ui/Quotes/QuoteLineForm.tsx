@@ -114,6 +114,12 @@ const QuoteLineForm = ({
 
   const isEditing = initialValues.id !== undefined;
 
+  // Quantity breaks are always presented least-to-greatest, regardless of the
+  // order they were entered/stored in.
+  const sortedQuantity = [...(initialValues.quantity ?? [])].sort(
+    (a, b) => a - b
+  );
+
   const [itemData, setItemData] = useState<{
     customerPartId: string;
     customerPartRevision: string;
@@ -306,7 +312,7 @@ const QuoteLineForm = ({
           <ModalCardContent size="xxlarge">
             <ValidatedForm
               fetcher={fetcher}
-              defaultValues={initialValues}
+              defaultValues={{ ...initialValues, quantity: sortedQuantity }}
               validator={quoteLineValidator}
               method="post"
               action={
@@ -338,7 +344,7 @@ const QuoteLineForm = ({
                             className="flex items-center gap-2"
                           >
                             <MethodIcon type={itemData.methodType} />
-                            {initialValues?.quantity.join(", ")}
+                            {sortedQuantity.join(", ")}
                           </Badge>
                           {initialValues?.taxPercent > 0 ? (
                             <Badge variant="red">

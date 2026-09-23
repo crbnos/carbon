@@ -2021,9 +2021,6 @@ msgstr "提案を適用"
 msgid "Apply To"
 msgstr "適用対象"
 
-msgid "Apply to all quantities"
-msgstr "全数量に適用"
-
 msgid "Apply to invoice"
 msgstr "請求書に適用"
 
@@ -2563,6 +2560,9 @@ msgstr "この出荷を取消してもよろしいですか？この操作はす
 msgid "Are you sure?"
 msgstr "本当ですか？"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "工場の処理待ちキューの最前列に割り込むように。"
+
 msgid "As needed"
 msgstr "必要に応じて"
 
@@ -2685,6 +2685,9 @@ msgstr "この保管ユニットを作業区（ラインサイド）に割り当
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "この保管ユニットをラインサイド材料用の作業区に割り当てます。作業者は生産ビューでそれを参照できます。親ユニットで設定されている場合、そこから継承されます。"
+
+msgid "Assumptions"
+msgstr "前提条件"
 
 msgid "At each gate"
 msgstr "各ゲートで"
@@ -3111,6 +3114,9 @@ msgstr "帳簿ロック日 (手動)"
 
 msgid "Both"
 msgstr "両方"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "両方の完了予定日を選択した日付と比較。"
 
 msgid "Bottleneck"
 msgstr "ボトルネック"
@@ -8645,6 +8651,9 @@ msgstr "ブロック状態か期日がリスクの場合は、責任者が割り
 
 msgid "If items already exist"
 msgstr "アイテムが既に存在する場合"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "今日注文した場合 — すでにリリース済のすべてのジョブの後ろに配置されます。"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "発注済の場合、今後48週間での欠品は見込まれていません"
