@@ -4,6 +4,7 @@ import {
   getFieldDef,
   isFieldAvailableOnSurfaces,
   RULE_SEVERITIES,
+  round,
   SURFACES_BY_TARGET_TYPE,
   TARGET_TYPES,
   TRANSACTION_SURFACES
@@ -607,13 +608,28 @@ export function resolveStockTransferPickForward(input: {
 }):
   | { ok: true; quantity: number; fromStorageUnitId: string | null }
   | { ok: false; message: string } {
-  const pickQuantity = input.transferType === "batch" ? input.quantity : 1;
-  const outstanding = input.lineQuantity - input.pickedQuantity;
-  if (
-    outstanding <= 0 ||
-    (!equals(pickQuantity, outstanding) && pickQuantity > outstanding)
-  ) {
+  // Round like the edge function's resolvePick does, so the pre-check and the
+  // post-lock re-check cannot disagree about a residue pick.
+  const pickQuantity = round(
+    input.transferType === "batch" ? input.quantity : 1
+  );
+  const outstanding = round(
+    round(input.lineQuantity) - round(input.pickedQuantity)
+  );
+  if (equals(outstanding, 0) || outstanding < 0) {
     return { ok: false, message: "This line is already fully picked" };
+  }
+  // Two different refusals: nothing left to pick, versus more than is left.
+  // One message for both told an operator with 2 outstanding that the line was
+  // fully picked.
+  if (!equals(pickQuantity, outstanding) && pickQuantity > outstanding) {
+    return {
+      ok: false,
+      message: `Only ${outstanding} left to pick on this line`
+    };
+  }
+  if (pickQuantity <= 0) {
+    return { ok: false, message: "Enter a quantity to pick" };
   }
   return {
     ok: true,

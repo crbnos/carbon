@@ -94,14 +94,27 @@ describe("resolveStockTransferPickForward", () => {
     });
   });
 
-  it("refuses a batch pick that exceeds the outstanding quantity", () => {
+  it("names the outstanding quantity when a batch pick exceeds it", () => {
+    // Not "already fully picked" — there are 5 left, the operator asked for 8.
     const r = resolveStockTransferPickForward({
       ...base,
       transferType: "batch",
       quantity: 8,
       pickedQuantity: 5
     });
-    expect(r.ok).toBe(false);
+    expect(r).toEqual({
+      ok: false,
+      message: "Only 5 left to pick on this line"
+    });
+  });
+
+  it("refuses a batch pick that rounds to nothing", () => {
+    const r = resolveStockTransferPickForward({
+      ...base,
+      transferType: "batch",
+      quantity: 0.000001
+    });
+    expect(r).toEqual({ ok: false, message: "Enter a quantity to pick" });
   });
 
   it("allows an equal-at-scale full pick (0.98 + 0.02)", () => {
