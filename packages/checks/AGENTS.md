@@ -37,6 +37,7 @@ pnpm --filter @carbon/checks baseline      # regenerate baseline (careful!)
 - **Clobber detection**: `findClobbers(branch, main)` — identifies DB objects redefined on both sides
 - **Baseline**: `src/baseline.ts` — grandfathered violations keyed by `checkId + file + line + snippet`
 - **Invariants**: SQL queries loaded from directory, injected `Query` for testability
+- **`tracked-entity-zero-available.sql`**: a lot whose quantity is gone must be `Consumed`, never a live status. `Scrapped`/`Rejected` are excluded — both are quality markers kept as historical record and already excluded from on-hand. Enforcement of the drain rule is per-writer, so this is the net that catches husks from ANY source: rows predating the rule, and any writer that revives a drained lot (unconsume, shipment void, disposition Use As Is / Rework). Run it before deciding whether to promote the rule to a DB CHECK
 - **Workflows**: two DB-backed drift checks, answering different questions.
   `src/invariants/workflow-trigger-event-drift.sql` (via `pnpm --filter @carbon/checks invariants`)
   compares each active workflow's `workflowTriggerEvent` rows against its active version's trigger
