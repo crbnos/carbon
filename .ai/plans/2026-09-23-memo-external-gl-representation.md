@@ -32,7 +32,7 @@ API surveys and Rillet sandbox probe recorded in the spec.
 - [x] Task 13: Outbound sweep picks up posted memos
 - [x] Task 14: Posting-sync settings UI — two family selectors
 - [x] Task 15: Rillet sandbox end-to-end verification (wire shapes verified against the OpenAPI spec; live sync e2e still outstanding — see commit)
-- [ ] Task 16: Browser verification of the settings UI
+- [x] Task 16: Browser verification of the settings UI
 
 ## Dependencies
 

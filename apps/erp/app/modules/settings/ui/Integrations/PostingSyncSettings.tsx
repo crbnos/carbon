@@ -127,9 +127,20 @@ export function PostingSyncSettings({
   const journalRows = policy.filter(
     (row) => row.representation === "journal" && row.sourceType !== "Manual"
   );
+  // Split by which SECTION's controls govern the row. A "per-party" row (Credit
+  // Memo / Debit Memo) is gated by the Credit Memos / Vendor Credits selects, NOT
+  // by Receivables/Payables — listing it under AR/AP reads as if those selects
+  // controlled it.
   const documentRows = policy.filter(
-    (row) => row.representation === "document"
+    (row) => row.representation === "document" && row.family !== "per-party"
   );
+  const memoDocumentRows = policy.filter(
+    (row) => row.representation === "document" && row.family === "per-party"
+  );
+
+  /** The select that actually governs a memo policy row, by its direction. */
+  const memoRowGovernedBy = (sourceType: string) =>
+    sourceType === "Debit Memo" ? t`Vendor Credits` : t`Credit Memos`;
 
   const [rowState, setRowState] = useState<Record<string, SourceTypeRowState>>(
     () =>
@@ -349,6 +360,25 @@ export function PostingSyncSettings({
               label={t`Vendor Credits`}
               options={familyOptions}
             />
+          </div>
+          <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+            {memoDocumentRows.map((row) => (
+              <div
+                key={row.sourceType}
+                className="flex items-center gap-3 px-3 py-2.5"
+              >
+                <span className="flex-1 text-sm">{row.sourceType}</span>
+                {/* The source type is named by DIRECTION ("Debit Memo") but the
+                    control is named by what it is ("Vendor Credits"); without
+                    this nothing on screen connects the two. */}
+                <Badge variant="secondary">
+                  {memoRowGovernedBy(row.sourceType)}
+                </Badge>
+                <Badge variant="outline">
+                  <Trans>Document</Trans>
+                </Badge>
+              </div>
+            ))}
           </div>
         </section>
 
