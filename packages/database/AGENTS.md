@@ -38,8 +38,9 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 ```bash
 pnpm db:migrate          # Apply pending migrations + regenerate types
 pnpm db:types            # Regenerate types only
-pnpm db:check:datasets   # Dry-run every demo dataset against the schema (writes nothing)
+pnpm db:check:datasets   # Validate + dry-run every demo dataset against the schema (writes nothing)
 pnpm --filter @carbon/database typecheck
+pnpm --filter @carbon/database test   # includes the pure dataset validator
 ```
 
 ## Key Exports
@@ -77,7 +78,8 @@ pnpm --filter @carbon/database typecheck
   industry's content into them breaks every other dataset.
 - **Engine** — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in numeric order because
   each tier depends on ids the earlier ones put in `ctx.refs`. The ordering IS the contract.
-  Change a tier only to support a new *shape* of data.
+  Change a tier only to support a new *shape* of data. A `Dataset` has twelve slices; `ops`
+  (tier 10) carries maintenance, training, timecards, suggestions and notes.
 
 Dates are signed day-offsets resolved against the company's today — never JS `Date`, never
 `CURRENT_DATE` in a tier's SQL. Primary keys must never be literals: several tables
@@ -86,12 +88,18 @@ company seeded into the same database.
 
 `pnpm db:seed:dev` runs `src/seed-dev.ts` (the dev CLI); `cli.ts` parses its args,
 `bootstrap.ts` sets up the company and `wipe.ts` clears prior data. `cli.ts` and `bootstrap.ts`
-are dev-only. `wipe.ts` is reached from the shared engine via `applyDataset`'s `wipeFirst`
-option, which both the dev CLI and the `company-template` job use; it is not exported on its own.
+are dev tooling (the dev CLI and the drift check), outside the `./datasets` export. `wipe.ts` is
+reached from the shared engine via `applyDataset`'s `wipeFirst` option, which both the dev CLI
+and the `company-template` job use; it is not exported on its own.
 
-`pnpm db:check:datasets` (`src/check-datasets.ts` → `datasets/verify.ts`) catches schema drift:
-it applies every dataset to a scratch company inside a transaction it always rolls back, so it
-writes nothing. The pre-commit hook runs it on any `packages/database/**` change.
+`pnpm db:check:datasets` (`src/check-datasets.ts`) has two layers. First the pure
+`validateDataset` (`datasets/validate.ts`) cross-checks every dataset with no database —
+ref resolution, required status coverage, on-hand ≥ 0, journal balance, settlement
+consistency — so a broken dataset blocks the commit even when the stack is down (it also runs
+in `pnpm --filter @carbon/database test`). Then `datasets/verify.ts` applies every dataset to
+a scratch company, asserts the `datasets/coverage.ts` row-count floors, and always rolls back,
+so it writes nothing; this layer skips with a warning when there is no database. The pre-commit
+hook runs it on any `packages/database/**` change.
 
 Per-module seed scripts were folded into this structure: `seed-change-orders.ts` and its
 `db:seed:change-orders` script are gone, replaced by `tiers/08-change-orders.ts`.

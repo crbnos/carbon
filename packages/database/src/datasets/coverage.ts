@@ -1,0 +1,237 @@
+/**
+ * Row-count floors verify.ts checks for the scratch company after the tiers run,
+ * so a tier that silently writes nothing fails. Includes sync-interceptor tables;
+ * counts are absolute, so bootstrap-filled tables include its rows.
+ *
+ * Floor = the smallest count any dataset produced (`// min` = that count when
+ * min ≥ 20, floored at 80%). New table → measure and add it; removing data on
+ * purpose → lower the floor. The global `period` table is shared, so omitted.
+ */
+export const COVERAGE_FLOORS: Record<string, number> = {
+  ability: 6,
+  accountingPeriod: 12,
+  address: 14,
+  assemblyInstruction: 1,
+  assemblyInstructionStep: 5,
+  changeOrder: 6,
+  changeOrderActionTask: 6,
+  changeOrderAffectedItem: 3,
+  configurationParameter: 3,
+  configurationParameterGroup: 1,
+  consumable: 2,
+  contact: 16,
+  contractor: 2,
+  contractorAbility: 2,
+  costCenter: 4,
+  customer: 4,
+  customerContact: 4,
+  customerItemPriceOverride: 1,
+  customerItemPriceOverrideBreak: 2,
+  customerLocation: 4,
+  customerPartToItem: 2,
+  customerPayment: 4,
+  customerShipping: 4,
+  customerTax: 4,
+  customerType: 4,
+  demandProjection: 19, // min 24
+  department: 4,
+  depreciationRun: 1,
+  depreciationRunLine: 3,
+  dimension: 16,
+  dimensionValue: 2,
+  employeeAbility: 2,
+  employeeShift: 1,
+  eventSystemSubscription: 18,
+  exchangeRateOverride: 1,
+  externalLink: 5,
+  fixedAsset: 6,
+  fixedAssetDisposal: 1,
+  fixedAssetUsageLog: 2,
+  gauge: 3,
+  gaugeCalibrationRecord: 4,
+  group: 23, // min 29
+  holiday: 3,
+  inspection: 1,
+  inspectionDocument: 1,
+  inspectionFeature: 2,
+  inspectionHistory: 1,
+  inspectionMeasurement: 4,
+  inspectionSample: 2,
+  inspectionSamplingPlan: 2,
+  inventoryCount: 2,
+  inventoryCountLine: 11,
+  invoiceSettlement: 6,
+  item: 29, // min 37
+  itemCost: 29, // min 37
+  itemInspectionDocumentAssignment: 1,
+  itemLedger: 30, // min 38
+  itemPlanning: 59, // min 74
+  itemPostingGroup: 5,
+  itemReplenishment: 29, // min 37
+  itemShelfLife: 1,
+  itemStockQuantities: 16, // min 20
+  itemSupersession: 1,
+  itemUnitSalePrice: 29, // min 37
+  job: 8,
+  jobFavorite: 1,
+  jobMakeMethod: 16, // min 21
+  jobMaterial: 50, // min 63
+  jobOperation: 43, // min 54
+  jobOperationBatch: 1,
+  jobOperationNote: 2,
+  jobOperationStep: 31, // min 39
+  journal: 5,
+  journalLine: 10,
+  journalLineDimension: 2,
+  kanban: 5,
+  location: 2,
+  maintenanceDispatch: 5,
+  maintenanceDispatchComment: 3,
+  maintenanceDispatchEvent: 2,
+  maintenanceDispatchItem: 1,
+  maintenanceDispatchWorkCenter: 2,
+  maintenanceSchedule: 5,
+  maintenanceScheduleItem: 1,
+  makeMethod: 24, // min 30
+  material: 6,
+  materialDimension: 2,
+  materialFinish: 2,
+  materialForm: 1,
+  materialGrade: 3,
+  materialSubstance: 2,
+  materialType: 1,
+  memo: 2,
+  methodMaterial: 40, // min 51
+  methodOperation: 26, // min 33
+  methodOperationParameter: 4,
+  methodOperationTool: 1,
+  modelUpload: 1,
+  nonConformance: 5,
+  nonConformanceActionTask: 7,
+  nonConformanceApprovalTask: 1,
+  nonConformanceCustomer: 1,
+  nonConformanceInspection: 1,
+  nonConformanceItem: 1,
+  nonConformanceJobOperation: 1,
+  nonConformancePurchaseOrderLine: 1,
+  nonConformanceReviewer: 2,
+  nonConformanceSalesOrderLine: 1,
+  nonConformanceSupplier: 1,
+  nonConformanceTrackedEntity: 1,
+  noQuoteReason: 4,
+  note: 2,
+  opportunity: 22, // min 28
+  part: 18, // min 23
+  payment: 6,
+  periodCloseTask: 3,
+  pickingList: 2,
+  pickingListLine: 4,
+  pricingRule: 1,
+  printerRoute: 1,
+  procedure: 4,
+  procedureStep: 19,
+  process: 11,
+  productionEvent: 7,
+  productionQuantity: 3,
+  project: 2,
+  purchaseInvoice: 7,
+  purchaseInvoiceDelivery: 7,
+  purchaseInvoiceLine: 8,
+  purchaseOrder: 17,
+  purchaseOrderDelivery: 17,
+  purchaseOrderLine: 16, // min 20
+  purchaseOrderPayment: 17,
+  purchaseOrderStatusHistory: 3,
+  purchaseReturnOrder: 3,
+  purchaseReturnOrderLine: 3,
+  purchasingRfq: 3,
+  purchasingRfqLine: 5,
+  purchasingRfqSupplier: 7,
+  purchasingRfqToPurchaseOrder: 1,
+  purchasingRfqToSupplierQuote: 3,
+  qualityDocument: 3,
+  qualityDocumentStep: 3,
+  quote: 8,
+  quoteFavorite: 1,
+  quoteLine: 10,
+  quoteLinePrice: 13,
+  quoteMakeMethod: 10,
+  quotePayment: 8,
+  quoteShipment: 8,
+  receipt: 5,
+  receiptLine: 6,
+  rework: 1,
+  riskRegister: 5,
+  salesInvoice: 7,
+  salesInvoiceLine: 7,
+  salesInvoiceShipment: 7,
+  salesOrder: 16, // min 20
+  salesOrderFavorite: 1,
+  salesOrderLine: 18, // min 23
+  salesOrderPayment: 16, // min 20
+  salesOrderShipment: 16, // min 20
+  salesOrderStatusHistory: 3,
+  salesReturnOrder: 3,
+  salesReturnOrderLine: 3,
+  salesRfq: 4,
+  salesRfqLine: 4,
+  service: 1,
+  shift: 2,
+  shipment: 5,
+  shipmentLine: 5,
+  shippingMethod: 5,
+  shippingTerm: 4,
+  stockTransfer: 3,
+  stockTransferLine: 3,
+  storageType: 3,
+  storageUnit: 18,
+  suggestion: 2,
+  supplier: 11,
+  supplierContact: 12,
+  supplierInteraction: 17, // min 22
+  supplierLocation: 10,
+  supplierPart: 14,
+  supplierPartPrice: 14,
+  supplierPayment: 11,
+  supplierProcess: 3,
+  supplierQuote: 6,
+  supplierQuoteLine: 9,
+  supplierQuoteLinePrice: 17, // min 22
+  supplierShipping: 11,
+  supplierTax: 11,
+  supplierType: 6,
+  tag: 5,
+  timeCardEntry: 6,
+  tool: 2,
+  trackedActivity: 7,
+  trackedActivityInput: 6,
+  trackedActivityOutput: 6,
+  trackedEntity: 36, // min 45
+  training: 3,
+  trainingAssignment: 2,
+  trainingCompletion: 1,
+  trainingQuestion: 8,
+  warehouse: 3,
+  warehouseTransfer: 3,
+  warehouseTransferLine: 3,
+  workCenter: 7,
+  workCenterProcess: 14,
+  workflow: 7,
+  workflowRun: 3,
+  workflowStepRun: 4,
+  workflowTriggerEvent: 1,
+  workflowVersion: 7
+};
+
+/**
+ * Tables with no `companyId`, counted through their owning row (`$1` = scratch
+ * company id). Group-scoped dimension rows are exact: the scratch company gets
+ * a fresh group.
+ */
+export const COVERAGE_SCOPES: Record<string, string> = {
+  dimension: `"companyGroupId" = (SELECT "companyGroupId" FROM company WHERE id = $1)`,
+  dimensionValue: `"companyGroupId" = (SELECT "companyGroupId" FROM company WHERE id = $1)`,
+  jobFavorite: `"jobId" IN (SELECT id FROM job WHERE "companyId" = $1)`,
+  quoteFavorite: `"quoteId" IN (SELECT id FROM quote WHERE "companyId" = $1)`,
+  salesOrderFavorite: `"salesOrderId" IN (SELECT id FROM "salesOrder" WHERE "companyId" = $1)`
+};

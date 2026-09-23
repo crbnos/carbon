@@ -7,8 +7,10 @@ paths:
 # Onboarding Company Templates
 
 Onboarding's third data choice — "Use a demo template" — fills a brand-new company with a
-full industry story: items, BOMs, customers, quotes, orders, jobs, non-conformances,
-change orders, ledger entries, workflows. The same data and the same insertion code back
+full industry story: items, BOMs, customers, quotes, orders, returns, jobs, picking,
+inspections, non-conformances, gauges, change orders, maintenance, training, timecards,
+posted journals, payments, accounting periods, workflows and their run history — with
+every user-reachable status of the major documents represented. The same data and the same insertion code back
 `pnpm db:seed:dev`. **There is exactly one copy of both.**
 
 Grounded against `packages/database/src/datasets/`,
@@ -18,10 +20,13 @@ Grounded against `packages/database/src/datasets/`,
 ## The shape of it
 
 A **dataset** is data only — plain TypeScript literals, no SQL, no ids. It is a `Dataset`
-object (`packages/database/src/datasets/types.ts`) with eleven slices: `foundation`,
+object (`packages/database/src/datasets/types.ts`) with twelve slices: `foundation`,
 `items`, `inventory`, `sales`, `purchasing`, `production`, `quality`, `changeOrders`,
-`accounting`, `workflows`, `planning`. Each slice lives in its own file under
-`data/<key>/`, and `data/<key>/index.ts` assembles them.
+`accounting`, `ops`, `workflows`, `planning`. Each slice lives in its own file under
+`data/<key>/` (production's CAD assembly additionally in `assembly.ts`), and
+`data/<key>/index.ts` assembles them. `ops` (tier 10) holds maintenance schedules and
+dispatches, trainings, timecards, suggestions and person notes; `workflows` also carries
+the seeded run history (`runs`).
 
 The **tiers** are the engine — `tiers/01-foundation.ts` … `tiers/12-planning.ts`, run in
 numeric order. The ordering IS the contract: tier 4 can only build a sales order because
@@ -63,6 +68,34 @@ asymmetry is deliberate: each wipe is paired with whatever repopulates after it.
 `wipeCompanyBusinessData` is NOT exported on its own — `wipeFirst` is the only way to
 reach it, so no caller can wipe without also re-seeding.
 
+Because the datasets now seed posted/paid documents, the dataset wipe does four things
+before its generic FK-null + topological delete, all inside the apply transaction:
+
+1. **Non-Draft `salesInvoice` / `purchaseInvoice` rows are set back to `Draft`.** The
+   `prevent_posted_{sales,purchase}_invoice_deletion` sync interceptors refuse deleting any
+   other status and run even under `app.sync_in_progress`. This is a re-seed clear, not an
+   app-level delete of a posted document.
+2. **`invoiceSettlement`, `payment` and `memo` are deleted first.** Settlements hold
+   ON DELETE RESTRICT FKs to their invoice/memo; payment and memo carry a
+   customer-XOR-supplier CHECK the FK-nulling pass would violate.
+3. The existing header-first deletes (invoices, orders, quotes, RFQs) and MRP output.
+4. After the delete pass, **orphaned customer/supplier org groups and customer/supplier
+   type groups are removed** — the partner interceptors mint one `group` per partner and
+   type, and `group` is preserved, so without this every re-apply left the previous
+   story's partners in the group pickers. Bootstrap's root groups (kept by their
+   `getGroupId` ids) and employee-type groups are untouched.
+
+Two things deliberately survive a cross-dataset re-apply:
+
+- **`journal` / `journalLine`** are in `PRESERVED_TABLES` (posted journals are
+  trigger-immutable). Tier 09 adopts an existing entry by `journalEntryId`
+  (`JE-SEED-00x`) and skips it, so after applying dataset B over dataset A the journal
+  text is still A's, and a re-seed will not pick up a journal you just edited in the
+  data — delete those rows by hand first.
+- **`dimension` / `dimensionValue`** are `companyGroupId`-scoped, and a company wipe must
+  never touch group-shared rows. Each distinct dataset applied adds its own name-keyed
+  custom dimension (bounded at one per dataset); tier 09 looks it up before inserting.
+
 `externalIntegrationMapping` is in that wipe's `PRESERVED_TABLES` because the wipe runs
 INSIDE the job whose own marker lives in that table. Without it the apply deleted the row
 holding `snapshotPath`, the `ready` write re-inserted a bare one, and the revert then had
@@ -78,8 +111,9 @@ pnpm db:seed:dev -- --email you@example.com --dataset satellite
 ```
 
 `--tiers 1,2,3` and `--skip-wipe` are dev-only conveniences (`--skip-wipe` just passes
-`wipeFirst: false`). `bootstrap.ts` and `cli.ts` are dev-only; `wipe.ts` is now shared,
-reachable only through `wipeFirst`.
+`wipeFirst: false`). `bootstrap.ts` and `cli.ts` are dev tooling — used by `seed-dev.ts`
+and the drift check (`verify.ts` / `check-datasets.ts`), never by the `./datasets` export;
+`wipe.ts` is shared, reachable only through `wipeFirst`.
 
 **Onboarding** — the browser flow. `industry.tsx` maps the chosen industry to a dataset
 key with `datasetForIndustry(companyData.industryId)`, passes it to
@@ -189,14 +223,58 @@ against `ctx.anchor` (today in the company's timezone). A template seeded next y
 orders from last month, not from 2025. The satellite offsets were derived against a
 reference date of 2026-08-13, so every interval between two dates is preserved exactly.
 
-`previousMonthEnd(anchor)` is the one exception-shaped helper: the depreciation period end
-must land on a real month end, so it is derived rather than offset.
+`previousMonthEnd(anchor)` and `monthBack(anchor, n)` are the exception-shaped helpers:
+depreciation period ends, the 12 seeded `accountingPeriod` months and fixed-asset usage
+logs must land on real month boundaries, so they are derived rather than offset.
+
+Seeded periods are Closed at months −11/−10, Locked at −9 and Open after, so posting
+dates are constrained: `dates.ts` exports `NOT_CLOSED_MIN_OFFSET` (−273, never in a Closed
+month — the floor for Draft journals) and `OPEN_PERIOD_MIN_OFFSET` (−242, always in an
+Open month — the floor for posted journals, payments, memos and disposals), both proven
+for any anchor, and the validator enforces them.
 
 Never use JavaScript `Date` here, and never `CURRENT_DATE` in a tier's SQL — the anchor is
 the company's day, the database session's is UTC, and the two disagree for a slice of every
-day. Note there is NO automated guard: `@carbon/checks` scans `apps/mes/app/services`,
-`packages/jobs/src`, `packages/database/supabase/functions` and the ERP module/route files,
-none of which covers `packages/database/src/**`. This is convention only.
+day. The pure validator checks offset VALUES (planning horizon, period floors, document
+chronology) but nothing scans for `Date` / `CURRENT_DATE` usage: `@carbon/checks` covers
+`apps/mes/app/services`, `packages/jobs/src`, `packages/database/supabase/functions` and
+the ERP module/route files, none of which is `packages/database/src/**`. That part is
+convention only.
+
+## Posted documents carry their downstream rows
+
+Posted receipts and shipments, completed returns / transfers / picking lists / counts,
+Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
+posting edge functions cannot run inside the one seed transaction (and a post-commit call
+would break all-or-nothing apply and the drift check's rollback), so each posted state is
+**hand-authored together with the rows its posting path would have written** —
+`itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
+in the same tier. Conventions, each mirroring the real code path:
+
+- **Ledger rows copy the posting function's `entryType` / `documentType`**, not a guess:
+  posted shipment `Negative Adjmt.` / `Sales Shipment`; posted receipt `Positive Adjmt.` /
+  `Purchase Receipt`; completed RMA `Positive Adjmt.` / `Sales Return Receipt`; completed
+  purchase return `Negative Adjmt.` / `Purchase Return Shipment`; picking and stock
+  transfers `Transfer` / `Direct Transfer`; warehouse transfers `Transfer` /
+  `Transfer Shipment` + `Transfer Receipt`; maintenance spare-part issue `Consumption` / `Maintenance
+  Consumption`; scrapped lot `Negative Adjmt.` / `Scrap`. Inventory postings carry no GL.
+- **Payments are Posted with `journalId` NULL** — the shape `post-payment` leaves with
+  accounting disabled (USD, rate 1, `bankAccount` = `accountDefault.bankCashAccount`).
+  `invoiceSettlement` rows ARE the allocation; the invoice views re-derive status and
+  balance from them, so the validator pins Paid = fully settled, Partially Paid = strictly
+  between, every other status unsettled. Memos tie to their invoice through a zero-cash
+  Posted payment's credit settlement (`memoId` + `appliedViaPaymentId`).
+- **Journals keep `accountingPeriodId` NULL.** `journal` survives the wipe but
+  `accountingPeriod` does not, and nulling the FK would UPDATE a Posted journal, which
+  `journal_posted_immutable` rejects; `journal_check_period_open` resolves the period from
+  `postingDate` instead. A Reversed entry is inserted Posted then flipped with
+  `reversedById` (the one UPDATE the trigger allows).
+- **Company exchange rates go to `exchangeRateOverride`**, never the platform-global
+  `exchangeRate` table (a tenant template must not publish rates to every company). Rates
+  are foreign units per 1 base unit (EUR ≈ 0.92).
+
+The full decision log, with the code each convention was copied from, is
+`.ai/specs/2026-09-22-demo-data-completeness.md` → Autonomous Decisions.
 
 ## Part thumbnails ship with the app
 
@@ -234,7 +312,8 @@ The data is `ProductionData.assembly` (`AssemblySpec`), authored in `data/<key>/
 is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
 skipped. A step's `componentNodeIds` are real node ids read out of that exact `graph.json`; they
 are the frozen join key between the graph, the GLB node extras and the step rows, so a step
-naming an absent node renders but animates nothing. Regenerate them from the graph rather than
+naming an absent node would render but animate nothing — the pure validator now fails it
+(and a `componentCount` that disagrees with the graph) before commit. Regenerate them from the graph rather than
 hand-editing, and never re-bake a model without re-deriving them — `nodeId` is a hash of the
 tessellation, so ANY change to the mesh (including a different `linearDeflection`) invalidates
 every id in the dataset.
@@ -255,14 +334,25 @@ carries the paths across intact with nothing to re-upload.
 
 ## Adding an industry
 
-1. `data/<key>/` — one file per slice, mirroring `data/robotics/` (the newest and closest
-   model). All eleven slices are required; none may be empty.
+1. `data/<key>/` — one file per slice, mirroring `data/satellite/` (the canonical pattern;
+   the other three mirror its shape). All twelve slices, `ops` included, are required, and
+   the new-shape fields are non-optional, so the compiler enforces parity. The validator
+   additionally requires the listed arrays to be non-empty and every `REQUIRED_*` status set
+   exported from `validate.ts` (quote / sales-order / invoice / PO / receipt / job-op /
+   NCR / change-order / journal / dispatch / workflow-run statuses and more) to be exhibited
+   somewhere in the dataset — so a new dataset must cover the full status matrix, not just
+   type-check.
 2. Register it in `DATASETS` in `datasets/index.ts`.
 3. Add `"<key>"` to `DatasetKey` in `types.ts`.
 4. Set `industryId` on the dataset to the matching `industry` row id, and add that row in
    a migration if it does not exist yet (`aerospace_satellite` was added by
    `20260813023744_add-aerospace-industry.sql`; the other three shipped in
    `20260617100002_onboarding-and-backups.sql`).
+5. Add its workflow builder to `SEED_WORKFLOW_BUILDERS` (`tiers/workflow-definitions.ts`)
+   so `packages/ee/src/workflows/seed-workflows.test.ts` validates its definitions.
+6. Verify: `pnpm --filter @carbon/database test` (the validator suite loops over every
+   key in `DATASETS`) and `pnpm db:check:datasets -- --dataset <key>` (applies it and checks
+   the `coverage.ts` row-count floors).
 
 Volume is the coverage contract: match the existing datasets' row counts roughly, so every
 list screen in the ERP has rows and every detail screen opens.
@@ -274,14 +364,41 @@ than no card.
 
 ## The drift check
 
-The tiers build every INSERT from `information_schema` at runtime (`datasets/sql.ts`), so no
-typecheck knows a dataset references a column — a migration that drops one breaks the demo
-templates silently, and only when somebody seeds.
-
 ```bash
 pnpm db:check:datasets                       # all four
 pnpm db:check:datasets -- --dataset motor    # one
 ```
+
+`src/check-datasets.ts` runs two layers, in this order.
+
+### Layer 1 — the pure validator (no database)
+
+`validateDataset` (`datasets/validate.ts`) runs FIRST, before any connection is opened, and
+needs nothing but the dataset literals. So it blocks the commit even when the local stack is
+down — the DB-down skip below applies only to layer 2. It returns a list of violations, each
+naming the slice and the offending key (`purchasing.lifecycleRfqs "prfq:star-tracker":
+unknown item "ST-050-BOGUS"`), and on any violation the script prints them all, says "The demo
+datasets are internally inconsistent", and exits 1 without touching the database.
+
+What it checks, in summary: every string reference resolves inside the dataset (items,
+parties, processes, work centers, shelves, document refs, bootstrap names such as scrap /
+return reasons, NCR / change-order types, UoM codes, CoA account numbers); required arrays
+are non-empty; every `REQUIRED_*` status/enum set is exhibited; net on-hand per
+(item, shelf) stays ≥ 0 after every authored movement (opening stock, counts, transfers,
+posted receipts and shipments, returns, picks, scraps, maintenance issues); every journal
+balances; invoice status agrees with its settlements (Paid fully settled, Partially Paid
+strictly between, others unsettled); the EUR rate is in the "EUR per 1 USD" direction
+(0.5–1, "is it inverted?"); document chronology and the period-offset floors; planning
+horizon; assembly `componentNodeIds` exist in the bundled `graph.json`; inspection sample
+statuses equal what the engine's rules derive. The same function runs as a vitest suite
+(`validate.test.ts`: every dataset must return `[]`, plus negative cases), so
+`pnpm --filter @carbon/database test` covers it too.
+
+### Layer 2 — apply and roll back (needs the database)
+
+The tiers build every INSERT from `information_schema` at runtime (`datasets/sql.ts`), so no
+typecheck knows a dataset references a column — a migration that drops one breaks the demo
+templates silently, and only when somebody seeds.
 
 It applies each dataset to a throwaway company and **always rolls back**
 (`datasets/verify.ts` — there is no `COMMIT` in that file, and the `ROLLBACK` is in a
@@ -292,27 +409,51 @@ which is exactly what lets one caller commit and the other roll back.
 
 The scratch company is attributed to the `system` user, never a real developer's.
 
-It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
-(~3s for all four); `CARBON_SKIP_DATASET_CHECK=1` skips it. It exits 0 with a warning when
-the database is unreachable, has no `user` table, or has no users — a hook that fails for
-reasons you cannot fix is a hook you learn to bypass, and every one of those is the
-developer's environment rather than drift.
+After the tiers and before the rollback, `findCoverageShortfalls` (`verify.ts`) counts every
+table in `COVERAGE_FLOORS` (`datasets/coverage.ts` — 213 tables, measured across all four
+datasets: floor = the smallest count any dataset produced, ×0.8 for volume tables) in one
+`UNION ALL` query and fails the dataset with every shortfall listed as
+`table: expected ≥ N, got M`. That is what catches a tier that silently writes nothing. Most
+tables are counted by `companyId`; `COVERAGE_SCOPES` counts `dimension` / `dimensionValue`
+by the scratch company's `companyGroupId` and the three favorites tables through their parent
+document; the global `period` table is not counted. Removing data on purpose means lowering
+the floor in the same change; adding a table means measuring and adding it.
 
-Three honest limits. A hook is bypassable with `--no-verify`, so this is a safety net rather
-than a gate (CI was declined on cost). It proves only that the datasets still APPLY — not
-that they still produce the same rows; that is the baseline diff below. And it reads the
-LIVE schema, so a migration you have written but not yet applied is invisible to it — commit
-a column drop before `pnpm db:migrate` and the check passes green, which is exactly the state
-the migration's own author is most likely to be in.
+Tier `ctx.log` lines are buffered per dataset and printed (the last 12) only when that
+dataset fails, so the error is placed inside the tier sequence without drowning a green run.
+
+It runs from `.husky/pre-commit` whenever a staged file is under `packages/database/`
+(a few seconds for all four); `CARBON_SKIP_DATASET_CHECK=1` skips both layers. Layer 2 exits
+0 with a warning when the database is unreachable, has no `user` table, or has no users — a
+hook that fails for reasons you cannot fix is a hook you learn to bypass, and every one of
+those is the developer's environment rather than drift. Layer 1 never skips.
+
+Honest limits. A hook is bypassable with `--no-verify`, so this is a safety net rather than
+a gate (CI was declined on cost). With the database down only layer 1 runs, so schema drift
+and floor shortfalls go unnoticed until someone commits with the stack up. Layer 2 proves the
+datasets still APPLY and meet their floors — not that they produce the same rows; that is the
+baseline diff below. And it reads the LIVE schema, so a migration you have written but not
+yet applied is invisible to it — commit a column drop before `pnpm db:migrate` and the check
+passes green, which is exactly the state the migration's own author is most likely to be in.
+When layer 2 fails and migrations are pending on disk, the message says so first.
 
 ## Verifying a change to the tiers
 
 The tiers are shared, so a refactor that "looks fine" can silently drop rows. Seed, then
 diff the printed `Seeded row counts` block against a known-good run, and check the
 structural sums that counts alone would not catch (`methodMaterial` count + quantity sum,
-`methodOperation` count + time sums, `salesOrderLine` count + quantity sum). Baselines
-live in `.ai/runs/2026-08-13-seed-baseline.txt` (satellite, with structural sums in the
-sibling `-structural.txt`), plus `-robotics-`, `-precision-` and `-motor-baseline.txt`.
+`methodOperation` count + time sums, `salesOrderLine` count + quantity sum, `itemLedger`
+count + quantity sum per entry/document type, per-journal balance). Current baselines:
+`.ai/runs/2026-09-23-seed-baseline-{satellite,robotics,precision,motor}.txt`, with
+satellite's structural sums (and the exact queries) in
+`.ai/runs/2026-09-23-seed-baseline-satellite-structural.txt`. Journal amounts are signed by
+the account's natural balance, so a raw Σ`amount` is non-zero by design; the per-journal
+debit-minus-credit is what must be 0.
+
+The status matrix — every DISTINCT status per document table after a satellite seed, each
+absent value classified — is `.ai/runs/2026-09-23-demo-data-status-audit.txt`. Re-run the
+same query when you add or remove a status, and add the value to the matching `REQUIRED_*`
+set in `validate.ts` so it cannot silently disappear.
 
 ## What is NOT how this works
 

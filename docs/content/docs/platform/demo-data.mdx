@@ -3,7 +3,9 @@ title: Demo data
 description: Fill a company with a realistic industry story, so every screen has something in it, and put back exactly what was there before with one click.
 ---
 
-Demo data fills a company with a full, coherent industry story: items with BOMs and routings, customers and suppliers, quotes, orders, jobs, inspections, change orders and ledger entries. Every list screen has rows and every detail screen opens, which makes it the fastest way to explore Carbon, demo it, or test against realistic data. You apply it from **Settings → Demo Data**, or pick it at sign-up as **"Use a demo template"**.
+Demo data fills a company with a full, coherent industry story: items with BOMs and routings, customers and suppliers, quotes, orders and returns, jobs and picking lists, inspections, non-conformances and gauges, change orders, maintenance and training, timecards, and the accounting side with posted journals, payments and accounting periods.
+
+Every list screen has rows and every detail screen opens, which makes it the fastest way to explore Carbon, demo it, or test against realistic data. You apply it from **Settings → Demo Data**, or pick it at sign-up as **"Use a demo template"**.
 
 ## The templates
 
@@ -17,6 +19,10 @@ Each template tells one industry's story, end to end, across sales, purchasing, 
 </FieldTable>
 
 Every seeded date is relative to the day you apply the template, so the company always looks live: recent orders, jobs in progress, upcoming due dates. Parts come with real thumbnails, and each industry includes a 3D assembly you can open in the viewer.
+
+Records show up in the statuses you meet in daily work, not only the happy path. You get lost and expired quotes, partly shipped orders, paid and partially paid invoices, voided receipts, closed accounting periods, and workflows with succeeded, failed and skipped runs in their history.
+
+The stock movements and payment settlements behind those statuses are filled in too, so on-hand quantities and invoice balances agree. The templates add no uploaded files, so [Documents](/docs/reference/documents) starts empty.
 
 <Callout type="note" title="A template is not a backup">
 Demo data is seeded fresh from Carbon's own dataset definitions each time, not imported from a stored backup file. That's why it always matches the current version of the app. To stand a company up from another company's actual data, use a [backup](/docs/platform/backups) instead.
@@ -72,6 +78,9 @@ Only one demo-data change can be open per company. Resolve the pending one first
 
 ### Applying failed with an error
 Applying is all-or-nothing: a failure writes no rows and your data is unchanged. The card shows the job's error next to "Failed"; Dismiss clears it, and you can apply again.
+
+### The Documents list is empty after applying a template
+Expected. Templates seed records, not files: no uploads are added, so Documents and file attachments stay empty. Part thumbnails and the 3D assembly ship with the app rather than as uploaded files.
 
 ### The demo dates look recent — is that real activity?
 Yes, by design: every seeded date is relative to the day the template was applied, so the company always looks live with recent orders and jobs in progress.

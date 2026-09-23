@@ -14,7 +14,9 @@
 
 import type { PoolClient } from "pg";
 import { seedCompanyReferenceData } from "./bootstrap.ts";
+import { COVERAGE_FLOORS, COVERAGE_SCOPES } from "./coverage.ts";
 import { applyDatasetTiers } from "./index.ts";
+import { quote } from "./sql.ts";
 import { type Dataset, resolveCompanyTimeZone } from "./types.ts";
 
 const SCRATCH_COMPANY_NAME = "Dataset Drift Check";
@@ -57,6 +59,35 @@ export async function resolveCheckUserId(
   }
 }
 
+/** Tables below their COVERAGE_FLOORS count — a tier that inserts nothing raises no error on its own. */
+export async function findCoverageShortfalls(
+  client: PoolClient,
+  companyId: string
+): Promise<string[]> {
+  const tables = Object.keys(COVERAGE_FLOORS);
+  const union = tables
+    .map(
+      (t) =>
+        `SELECT '${t}' AS table_name, count(*)::int AS count FROM ${quote(t)} WHERE ${
+          COVERAGE_SCOPES[t] ?? `"companyId" = $1`
+        }`
+    )
+    .join(" UNION ALL ");
+  const res = await client.query<{ table_name: string; count: number }>(union, [
+    companyId
+  ]);
+  const counts = new Map(res.rows.map((r) => [r.table_name, r.count]));
+  const shortfalls: string[] = [];
+  for (const table of tables) {
+    const floor = COVERAGE_FLOORS[table]!;
+    const count = counts.get(table) ?? 0;
+    if (count < floor) {
+      shortfalls.push(`${table}: expected ≥ ${floor}, got ${count}`);
+    }
+  }
+  return shortfalls;
+}
+
 /**
  * Apply one dataset to a throwaway company and roll the whole thing back.
  * Returns the failure rather than throwing it, so one broken dataset does not
@@ -93,6 +124,16 @@ export async function verifyDataset(
       timeZone,
       log
     });
+
+    const shortfalls = await findCoverageShortfalls(client, companyId);
+    if (shortfalls.length > 0) {
+      return {
+        key,
+        ok: false,
+        error: `${shortfalls.length} table(s) below their row-count floor (datasets/coverage.ts):\n      ${shortfalls.join("\n      ")}`,
+        durationMs: performance.now() - startedAt
+      };
+    }
 
     return { key, ok: true, durationMs: performance.now() - startedAt };
   } catch (err) {

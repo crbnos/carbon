@@ -192,6 +192,7 @@
         "The apply or revert looks stuck",
         "Can't apply a second template",
         "Applying failed with an error",
+        "The Documents list is empty after applying a template",
         "The demo dates look recent — is that real activity?"
       ]
     },
