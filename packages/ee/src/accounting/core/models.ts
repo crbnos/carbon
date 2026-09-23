@@ -510,6 +510,19 @@ export const POSTING_POLICY: Record<
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
+  /**
+   * Employee reimbursement. `backingEntityType` is null UNTIL the reimbursement
+   * syncers land (plan Phase G) — until then a reimbursement journal genuinely
+   * has no document representation and parking it as DOC_SYNC_DISABLED is the
+   * honest answer, not a placeholder.
+   */
+  Reimbursement: {
+    representation: "document",
+    family: "ap",
+    backingEntityType: null,
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Purchase Return": {
     representation: "document",
     family: "ap",

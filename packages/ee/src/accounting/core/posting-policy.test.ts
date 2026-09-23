@@ -80,7 +80,13 @@ describe("POSTING_POLICY", () => {
         "Credit Memo",
         "Debit Memo",
         "Sales Return",
-        "Purchase Return"
+        "Purchase Return",
+        // Added post-v2 with the reimbursements work: a reimbursement is a
+        // document-represented AP posting. Its backingEntityType is still null
+        // until the reimbursement syncers land, so it parks DOC_SYNC_DISABLED
+        // rather than pushing — but it belongs in the excluded (document) list,
+        // not the journal-push one.
+        "Reimbursement"
       ].sort()
     );
   });

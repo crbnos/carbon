@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260922195151",
+  "schemaVersion": "20260923231244",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-23T00:28:49.233Z",
+  "exportedAt": "2026-09-23T23:28:01.805Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -52,6 +52,7 @@
         "costOfGoodsSoldAccount",
         "assetGainOnDisposalAccount",
         "customerWriteOffAccount",
+        "employeeReimbursementsPayableAccount",
         "assetAquisitionCostAccount",
         "supplierPrepaymentAccount",
         "interestAccount",
@@ -2019,6 +2020,68 @@
         "tags",
         "companyId",
         "createdBy"
+      ]
+    },
+    {
+      "name": "reimbursement",
+      "rows": 0,
+      "columns": [
+        "payableAccountId",
+        "createdBy",
+        "status",
+        "updatedBy",
+        "postedBy",
+        "journalId",
+        "createdAt",
+        "voidedAt",
+        "voidedBy",
+        "notes",
+        "reimbursementId",
+        "employeeId",
+        "reimbursementDate",
+        "updatedAt",
+        "amount",
+        "currencyCode",
+        "id",
+        "integration",
+        "companyId",
+        "reference",
+        "postedAt",
+        "exchangeRate",
+        "customFields",
+        "postingDate"
+      ]
+    },
+    {
+      "name": "reimbursementLine",
+      "rows": 0,
+      "columns": [
+        "projectId",
+        "sequence",
+        "id",
+        "createdAt",
+        "amount",
+        "createdBy",
+        "updatedAt",
+        "companyId",
+        "costCenterId",
+        "updatedBy",
+        "description",
+        "customFields",
+        "reimbursementId",
+        "accountId"
+      ]
+    },
+    {
+      "name": "reimbursementLineDimension",
+      "rows": 0,
+      "columns": [
+        "companyId",
+        "dimensionId",
+        "valueId",
+        "id",
+        "createdAt",
+        "reimbursementLineId"
       ]
     },
     {
@@ -5480,6 +5543,7 @@
         "bankAccount",
         "createdBy",
         "journalId",
+        "employeeId",
         "postedBy"
       ]
     },
@@ -6497,6 +6561,7 @@
         "targetPurchaseInvoiceId",
         "sourceAmount",
         "fxGainLossAmount",
+        "targetReimbursementId",
         "createdBy",
         "appliedViaPaymentId",
         "sourcePaymentId",

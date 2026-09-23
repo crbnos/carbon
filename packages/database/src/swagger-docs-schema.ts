@@ -1551,6 +1551,150 @@ export default {
         tags: ["salesOrderShipment"]
       }
     },
+    "/reimbursementLineDimension": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.reimbursementLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.createdAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/reimbursementLineDimension"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["reimbursementLineDimension"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.reimbursementLineDimension"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["reimbursementLineDimension"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.reimbursementLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.createdAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursementLineDimension"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.reimbursementLineId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.dimensionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.valueId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLineDimension.createdAt"
+          },
+          {
+            $ref: "#/parameters/body.reimbursementLineDimension"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursementLineDimension"]
+      }
+    },
     "/documentLabels": {
       get: {
         parameters: [
@@ -3601,6 +3745,222 @@ export default {
           }
         },
         tags: ["quoteShipment"]
+      }
+    },
+    "/reimbursementLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/reimbursementLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["reimbursementLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.reimbursementLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["reimbursementLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursementLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursementLine.customFields"
+          },
+          {
+            $ref: "#/parameters/body.reimbursementLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursementLine"]
       }
     },
     "/inspectionHistory": {
@@ -19444,6 +19804,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.employeeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -19578,6 +19941,9 @@ export default {
             $ref: "#/parameters/rowFilter.payment.customFields"
           },
           {
+            $ref: "#/parameters/rowFilter.payment.employeeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -19664,6 +20030,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.payment.customFields"
+          },
+          {
+            $ref: "#/parameters/rowFilter.payment.employeeId"
           },
           {
             $ref: "#/parameters/body.payment"
@@ -40108,6 +40477,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.employeeReimbursementsPayableAccount"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -40332,6 +40704,9 @@ export default {
             $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
           },
           {
+            $ref: "#/parameters/rowFilter.accountDefault.employeeReimbursementsPayableAccount"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -40508,6 +40883,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.accountDefault.salesReturnsAccount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.accountDefault.employeeReimbursementsPayableAccount"
           },
           {
             $ref: "#/parameters/body.accountDefault"
@@ -78577,6 +78955,9 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78696,6 +79077,9 @@ export default {
             $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
           },
           {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78767,6 +79151,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.invoiceSettlement.sourceAmount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.invoiceSettlement.targetReimbursementId"
           },
           {
             $ref: "#/parameters/body.invoiceSettlement"
@@ -91219,6 +91606,312 @@ export default {
           }
         },
         tags: ["salesInvoiceLine"]
+      }
+    },
+    "/reimbursement": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.payableAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/reimbursement"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["reimbursement"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.reimbursement"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["reimbursement"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.payableAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursement"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.employeeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reimbursementDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.payableAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.reference"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.reimbursement.customFields"
+          },
+          {
+            $ref: "#/parameters/body.reimbursement"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["reimbursement"]
       }
     },
     "/customFieldTables": {
@@ -106400,6 +107093,50 @@ export default {
       },
       type: "object"
     },
+    reimbursementLineDimension: {
+      required: [
+        "id",
+        "reimbursementLineId",
+        "dimensionId",
+        "valueId",
+        "companyId",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('reimbld'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        reimbursementLineId: {
+          format: "text",
+          type: "string"
+        },
+        dimensionId: {
+          description:
+            "Note:\nThis is a Foreign Key to `dimension.id`.<fk table='dimension' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        valueId: {
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     documentLabels: {
       properties: {
         label: {
@@ -107291,6 +108028,88 @@ export default {
         incotermLocation: {
           format: "text",
           type: "string"
+        }
+      },
+      type: "object"
+    },
+    reimbursementLine: {
+      required: [
+        "id",
+        "companyId",
+        "reimbursementId",
+        "accountId",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('reimbl'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reimbursementId: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        costCenterId: {
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        sequence: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -109826,7 +110645,8 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -114845,6 +115665,10 @@ export default {
         },
         customFields: {
           format: "jsonb"
+        },
+        employeeId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -121852,7 +122676,8 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -122478,7 +123303,8 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -124882,6 +125708,12 @@ export default {
           type: "string"
         },
         salesReturnsAccount: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        employeeReimbursementsPayableAccount: {
           description:
             "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
           format: "text",
@@ -135266,7 +136098,8 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -135379,7 +136212,8 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -135453,7 +136287,8 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Charge"
+            "Charge",
+            "Reimbursement"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -142879,6 +143714,10 @@ export default {
             "Principal consumed in the funding source document currency, stored independently of target-base appliedAmount.",
           format: "numeric",
           type: "number"
+        },
+        targetReimbursementId: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -148944,6 +149783,143 @@ export default {
       },
       type: "object"
     },
+    reimbursement: {
+      required: [
+        "id",
+        "companyId",
+        "reimbursementId",
+        "employeeId",
+        "status",
+        "integration",
+        "reimbursementDate",
+        "currencyCode",
+        "exchangeRate",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('reimb'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reimbursementId: {
+          format: "text",
+          type: "string"
+        },
+        employeeId: {
+          format: "text",
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Posted", "Voided"],
+          format: 'public."reimbursementStatus"',
+          type: "string"
+        },
+        integration: {
+          default: "ramp",
+          format: "text",
+          type: "string"
+        },
+        reimbursementDate: {
+          format: "date",
+          type: "string"
+        },
+        postingDate: {
+          format: "date",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        payableAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        reference: {
+          format: "text",
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        postedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        voidedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        voidedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     customFieldTables: {
       properties: {
         table: {
@@ -150874,6 +151850,51 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.reimbursementLineDimension": {
+      name: "reimbursementLineDimension",
+      description: "reimbursementLineDimension",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/reimbursementLineDimension"
+      }
+    },
+    "rowFilter.reimbursementLineDimension.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLineDimension.reimbursementLineId": {
+      name: "reimbursementLineId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLineDimension.dimensionId": {
+      name: "dimensionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLineDimension.valueId": {
+      name: "valueId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLineDimension.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLineDimension.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.documentLabels": {
       name: "documentLabels",
       description: "documentLabels",
@@ -151899,6 +152920,99 @@ export default {
     },
     "rowFilter.quoteShipment.incotermLocation": {
       name: "incotermLocation",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.reimbursementLine": {
+      name: "reimbursementLine",
+      description: "reimbursementLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/reimbursementLine"
+      }
+    },
+    "rowFilter.reimbursementLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.reimbursementId": {
+      name: "reimbursementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.costCenterId": {
+      name: "costCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursementLine.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"
@@ -160401,6 +161515,12 @@ export default {
     },
     "rowFilter.payment.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.payment.employeeId": {
+      name: "employeeId",
       required: false,
       in: "query",
       type: "string"
@@ -171612,6 +172732,12 @@ export default {
     },
     "rowFilter.accountDefault.salesReturnsAccount": {
       name: "salesReturnsAccount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.accountDefault.employeeReimbursementsPayableAccount": {
+      name: "employeeReimbursementsPayableAccount",
       required: false,
       in: "query",
       type: "string"
@@ -191676,6 +192802,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.invoiceSettlement.targetReimbursementId": {
+      name: "targetReimbursementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.printerRoute": {
       name: "printerRoute",
       description: "printerRoute",
@@ -198402,6 +199534,159 @@ export default {
     },
     "rowFilter.salesInvoiceLine.sortOrder": {
       name: "sortOrder",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.reimbursement": {
+      name: "reimbursement",
+      description: "reimbursement",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/reimbursement"
+      }
+    },
+    "rowFilter.reimbursement.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.reimbursementId": {
+      name: "reimbursementId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.employeeId": {
+      name: "employeeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.reimbursementDate": {
+      name: "reimbursementDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.payableAccountId": {
+      name: "payableAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.reference": {
+      name: "reference",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.postedBy": {
+      name: "postedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.voidedAt": {
+      name: "voidedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.voidedBy": {
+      name: "voidedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.reimbursement.customFields": {
+      name: "customFields",
       required: false,
       in: "query",
       type: "string"

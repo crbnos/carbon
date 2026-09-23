@@ -756,7 +756,8 @@ export const journalEntrySourceTypes = [
   "Debit Memo",
   "Non-Conformance",
   "Inbound Inspection",
-  "Charge"
+  "Charge",
+  "Reimbursement"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
