@@ -50,7 +50,7 @@ msgstr "(इस ग्राहक के लिए बाहर रखा ग�
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
-msgstr "{0, plural, one {# दिन की शिथिलता} other {# दिन की शिथिलता}}"
+msgstr "{0, plural, one {# दिन का अतिरिक्त समय} other {# दिन का अतिरिक्त समय}}"
 
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
@@ -15133,7 +15133,7 @@ msgid "Scheduled"
 msgstr "अनुसूचित"
 
 msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
-msgstr "आपकी दुकान के वर्तमान कार्यभार के विरुद्ध शेड्यूल किया गया। अपडेट करने तक कुछ भी सहेजा नहीं जाता है।"
+msgstr "आपकी दुकान के वर्तमान कार्यभार के विरुद्ध शेड्यूल किया गया। लागू करने तक कुछ भी सहेजा नहीं जाता है।"
 
 msgid "Scheduled Maintenance"
 msgstr "अनुसूचित रखरखाव"

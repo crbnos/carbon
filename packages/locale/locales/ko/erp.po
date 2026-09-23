@@ -8653,7 +8653,7 @@ msgid "If items already exist"
 msgstr "품목이 이미 존재하는 경우"
 
 msgid "If ordered today — placed behind everything already released."
-msgstr "오늘 발주됨되면 — 이미 릴리스됨된 모든 것 뒤에 배치됩니다."
+msgstr "오늘 발주하면 — 이미 릴리스된 모든 작업 뒤에 배치됩니다."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "주문할 경우, 향후 48주간 재고 부족이 예상되지 않습니다"

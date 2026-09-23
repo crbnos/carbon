@@ -2223,7 +2223,7 @@ is "missing"), and a French user reads "5 days", not "5 jours". The defect is
 invisible to the missing-translation gate because the placeholder IS filled.
 
 **Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
-`t\`\`` / `<Trans>` template. Use the ICU plural macro: `<Plural value={n}
+`t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
 one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
 non-JSX). The whole phrase with `#` goes in each branch
 (`one="# operation has no time standards"`), so the words are extracted and

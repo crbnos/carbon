@@ -50,7 +50,7 @@ msgstr "(wykluczone dla tego klienta)"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
-msgstr "{0, plural, one {# dzień luz} few {# dni luzu} many {# dni luzu} other {# dni luzu}}"
+msgstr "{0, plural, one {# dzień luzu} few {# dni luzu} many {# dni luzu} other {# dni luzu}}"
 
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
@@ -58,7 +58,7 @@ msgstr "{0, plural, one {# dzień za krótko} few {# dni za krótko} many {# dni
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
-msgstr "{0, plural, one {# operacja nie ma standardów czasu} few {# operacje nie mają standardów czasu} many {# operacji nie mają standardów czasu} other {# operacji nie mają standardów czasu}}"
+msgstr "{0, plural, one {# operacja nie ma standardów czasu} few {# operacje nie mają standardów czasu} many {# operacji nie ma standardów czasu} other {# operacji nie ma standardów czasu}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"

@@ -126,8 +126,8 @@ the capacity answer.
   what-if, returns `{ forecast }`.
 - `apps/erp/app/modules/sales/ui/Quotes/QuoteLeadTimeModal.tsx` — precedent
   `JobExpediteModal` in `JobHeader.tsx`; opened from a button on the "Lead Time"
-  row of `QuoteLinePricing.tsx`; applies a chosen value through the existing
-  `onUpdatePrice("leadTime", quantity, days)`.
+  row of `QuoteLinePricing.tsx`; applies the chosen constraint to every
+  quantity break through `onUpdateLeadTimes` (one state update, one write per row).
 
 ### Result shape
 
@@ -171,7 +171,7 @@ MRP v2 spec applies to its plan-based promise).
 | Material floor | Optional per-op `materialReadyAt` in the selector, unset for jobs | Floors belong on the consuming op, and the change is invisible to live scheduling. A separate "max material lead time" number would be wrong for any routing with work before the purchased part is needed. |
 | Unit of the answer | Calendar days from today, location timezone, minimum 1 | `convert` turns `leadTime` into `promisedDate = today + N`, so calendar days is the only unit that round-trips; finalize treats 0 as unfilled. |
 | Modes | End of queue + best case, plus a target-date verdict; no "infinite capacity" mode | Infinite capacity is what the manual guess already is. Best case is the expedite what-if the shop already trusts. |
-| Persistence | None from the sim; accept writes `leadTime` via `onUpdatePrice` | Zero migration, zero new preservation cases. A `leadTimeSource` column (mirroring `priceSource`) is a follow-up if provenance is wanted. |
+| Persistence | None from the sim; accept writes `leadTime` via `onUpdateLeadTimes` | Zero migration, zero new preservation cases. A `leadTimeSource` column (mirroring `priceSource`) is a follow-up if provenance is wanted. |
 | Apply granularity | One constraint, applied to every quantity break together; no per-cell accept | A quote's breaks must be promised on the same basis. Per-cell buttons invite mixing best case on one row with queued on another. (Brad, 2026-09-22) |
 | Trigger | Manual button on the Lead Time row, not auto-fill on price recalc | Recalc runs on every markup change; a sim per recalc would be wasted work and a moving number under the estimator's cursor. |
 | Location | `quote.locationId`, else the user's default location, else a clear error | The reservation snapshot, calendars and stock are per location; there is no company-wide answer. |

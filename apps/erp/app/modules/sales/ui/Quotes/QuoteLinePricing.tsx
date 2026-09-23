@@ -630,11 +630,29 @@ const QuoteLinePricing = ({
               .eq("quantity", quantity);
       });
       const results = await Promise.all(writes);
-      if (results.some((r) => r?.error)) {
+      const failed = Object.keys(leadTimeByQuantity)
+        .map(Number)
+        .filter((_, i) => results[i]?.error);
+      if (failed.length > 0) {
         logger.error("Failed to update quote line lead times", {
           errors: results.map((r) => r?.error).filter(Boolean)
         });
+        // Roll back only the rows that did not save, so the state matches the
+        // database and a retry updates saved rows instead of re-inserting them.
+        setEditableFields((prev) => {
+          const reconciled = { ...prev.prices };
+          for (const quantity of failed) {
+            if (editableFields.prices[quantity]) {
+              reconciled[quantity] = editableFields.prices[quantity];
+            } else {
+              delete reconciled[quantity];
+            }
+          }
+          return { ...prev, prices: reconciled };
+        });
         toast.error(t`Failed to update lead times`);
+        // Reject so the modal stays open instead of closing on a partial save.
+        throw new Error("Failed to update lead times");
       }
     },
     [editableFields.prices, carbon, lineId, quoteId, exchangeRate, userId, t]

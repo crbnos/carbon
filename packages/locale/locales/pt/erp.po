@@ -10681,7 +10681,7 @@ msgid "Needs a Business or Partner plan."
 msgstr "Requer um plano Business ou Partner."
 
 msgid "Needs expedite"
-msgstr "Necessita expedição"
+msgstr "Requer aceleração"
 
 msgid "Needs fixing"
 msgstr "Precisa de reparo"

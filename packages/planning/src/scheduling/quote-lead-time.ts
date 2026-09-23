@@ -749,7 +749,9 @@ export async function runQuoteLeadTimeWhatIf(params: {
   ): { finishMs: number | null; signals: QuoteScenarioSignals } => {
     selector.setFiniteContext(cloneFiniteContext(ctx));
     const selections = selector.selectWorkCentersForOperations(ops, {
-      jobDueDate: dueDate ?? null,
+      // The target verdict is computed from the finish dates below; a due date
+      // here would only add lateness conflicts that mask the real cause.
+      jobDueDate: null,
       batchPlacements
     });
     // Projected finish = the latest placed end across selections and the
@@ -761,11 +763,14 @@ export async function runQuoteLeadTimeWhatIf(params: {
     for (const s of selections.values()) {
       if (s.placedEnd) bump(toInstantMs(s.placedEnd));
     }
-    // The first placement conflict (unplaceable / past due), if any.
+    // The first placement conflict, if any. An op with no process or no work
+    // center at this location comes back as `error` with nothing placed, so it
+    // counts too — otherwise the finish silently omits it.
     let conflict: string | null = null;
     for (const s of selections.values()) {
-      if (s.conflict) {
-        conflict = s.conflict;
+      const reason = s.conflict ?? s.error ?? null;
+      if (reason) {
+        conflict = reason;
         break;
       }
     }

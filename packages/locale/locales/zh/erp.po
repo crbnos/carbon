@@ -3016,7 +3016,7 @@ msgid "Best case…"
 msgstr "最佳情况…"
 
 msgid "Best-case finish"
-msgstr "最快完成"
+msgstr "最佳情况完成日期"
 
 msgid "Beta"
 msgstr "测试版"
@@ -13646,7 +13646,7 @@ msgid "Queued"
 msgstr "排队中"
 
 msgid "Queued finish"
-msgstr "排队中的完成"
+msgstr "排队完成日期"
 
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今晚车间很安静，{name}。"

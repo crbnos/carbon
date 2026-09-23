@@ -100,10 +100,17 @@ const QuoteLeadTimeModal = ({
     constraint === "target" &&
     rows.some((row) => row.target?.verdict === "late");
 
+  // A break the scheduler could not place has no estimate; applying would
+  // silently update only the others.
+  const anyUnestimated =
+    constraint !== "target" &&
+    rows.some((row) => row[constraint].leadTimeDays === null);
+
   const applyDisabled =
     !isEditable ||
     loading ||
     !forecast ||
+    anyUnestimated ||
     (constraint === "target" && (!targetDate || anyLate));
 
   const handleApply = async () => {
@@ -121,6 +128,8 @@ const QuoteLeadTimeModal = ({
     try {
       await onApply(map);
       onClose();
+    } catch {
+      // onApply already reported the failure; stay open so it can be retried.
     } finally {
       setApplying(false);
     }

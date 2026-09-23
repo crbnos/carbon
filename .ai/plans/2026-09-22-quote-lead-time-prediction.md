@@ -521,7 +521,7 @@ pnpm run lint
 - Modify: `packages/locale/locales/*/*.po` via `/translate`
 - Modify: `.claude/rules/scheduling-data-structures.md` — under "Where it lives" add `finite-context.ts` and `quote-lead-time.ts` (`runQuoteLeadTimeWhatIf`: synthetic ops through the pure selector; two contexts, queued vs front-of-queue; `materialReadyAt` floor, unset for jobs); under "Gotchas" note the selector's reservation arrays must be cloned per simulation
 - Modify: `packages/planning/AGENTS.md` — list the new entry point next to `runExpediteWhatIf`
-- Modify: `apps/erp/app/modules/sales/AGENTS.md` — Quote Line Pricing concept: lead time can be predicted from the schedule (`QuoteLeadTimeModal`, route `$quoteId.$lineId.lead-time.tsx`); the write still goes through `onUpdatePrice`
+- Modify: `apps/erp/app/modules/sales/AGENTS.md` — Quote Line Pricing concept: lead time can be predicted from the schedule (`QuoteLeadTimeModal`, route `$quoteId.$lineId.lead-time.tsx`); the write goes through `onUpdateLeadTimes`
 
 **Steps:**
 1. Run `pnpm lingui:extract` (or the command `.claude/rules/i18n-lingui-system.md` names), then `/translate`.

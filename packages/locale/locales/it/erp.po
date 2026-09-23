@@ -54,7 +54,7 @@ msgstr "{0, plural, one {# giorno di margine} other {# giorni di margine}}"
 
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
-msgstr "{0, plural, one {# giorno in meno} other {# giorni in meno}}"
+msgstr "{0, plural, one {# giorno di ritardo} other {# giorni di ritardo}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"

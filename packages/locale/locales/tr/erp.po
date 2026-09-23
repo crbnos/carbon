@@ -50,15 +50,15 @@ msgstr "(bu müşteri için hariç tutulmuş)"
 
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
-msgstr "{0, plural, one {# gün esneklik} other {# gün esneklik}}"
+msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
 
 #. placeholder {0}: -target.slackDays
 msgid "{0, plural, one {# day short} other {# days short}}"
-msgstr "{0, plural, one {# gün kısa} other {# gün kısa}}"
+msgstr "{0, plural, one {# gün gecikme} other {# gün gecikme}}"
 
 #. placeholder {0}: forecast.zeroStandardOperationCount
 msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
-msgstr "{0, plural, one {# Operasyonun zaman standardı yok} other {# Operasyonların zaman standardı yok}}"
+msgstr "{0, plural, one {# operasyon için zaman standardı yok} other {# operasyon için zaman standardı yok}}"
 
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
@@ -8653,7 +8653,7 @@ msgid "If items already exist"
 msgstr "Eğer öğeler zaten varsa"
 
 msgid "If ordered today — placed behind everything already released."
-msgstr "Bugün sipariş edilirse — zaten serbest bırakıldı olanların arkasına konur."
+msgstr "Bugün sipariş edilirse — zaten serbest bırakılmış tüm işlerin arkasına alınır."
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Sipariş edildiyse, sonraki 48 haftada stoksuzluk projeksiyonu yoktur"

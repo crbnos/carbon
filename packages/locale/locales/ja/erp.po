@@ -6838,7 +6838,7 @@ msgid "End of Last Quarter"
 msgstr "前四半期末"
 
 msgid "End of queue"
-msgstr "キュー終了"
+msgstr "キューの末尾"
 
 msgid "End Time"
 msgstr "終了時刻"
