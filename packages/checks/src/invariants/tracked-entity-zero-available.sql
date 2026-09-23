@@ -24,6 +24,6 @@ SELECT
   "createdAt",
   "attributes"
 FROM "trackedEntity"
-WHERE "quantity" <= 0
+WHERE ROUND("quantity", 5) <= 0
   AND "status" NOT IN ('Consumed', 'Scrapped', 'Rejected')
 ORDER BY "createdAt" DESC;

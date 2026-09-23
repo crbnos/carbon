@@ -733,10 +733,16 @@ serve(async (req: Request) => {
         >((acc, trackedEntity) => {
           // Voiding restores the lot, but a lot with nothing in it must not
           // come back Available — that is the zero-quantity husk the drain
-          // rule forbids (Scrapped/Rejected are preserved by the helper).
+          // rule forbids. Scrapped/Rejected are terminal quality states and
+          // must survive a void, so keep them; everything else returns to
+          // Available (the helper then drains a zero-quantity lot to Consumed).
           acc[trackedEntity.id] = settleQuantity({
             quantity: Number(trackedEntity.quantity ?? 0),
-            status: "Available" as const,
+            status:
+              trackedEntity.status === "Scrapped" ||
+              trackedEntity.status === "Rejected"
+                ? trackedEntity.status
+                : ("Available" as const),
           });
           return acc;
         }, {}) ?? {};
