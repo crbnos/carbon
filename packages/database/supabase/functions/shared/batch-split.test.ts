@@ -5,7 +5,8 @@ import {
 import {
   type BatchSplitInput,
   buildBatchSplitRecords,
-  buildMergeRecords
+  buildMergeRecords,
+  isFullDraw
 } from "./batch-split.ts";
 
 const splitInput = (
@@ -230,4 +231,37 @@ Deno.test("merge: a 0.30000000000000004 child settles the parent to a clean quan
   assertEquals(r.parentUpdate, { quantity: 0.4 });
   // Draining the whole (rounded) child flips it Consumed via an exact === 0.
   assertEquals(r.childUpdate, { quantity: 0, status: "Consumed" });
+});
+
+Deno.test("isFullDraw: an exact whole draw is full", () => {
+  assertEquals(isFullDraw(10, 10), true);
+  assertEquals(isFullDraw(0.02, 0.02), true);
+});
+
+Deno.test("isFullDraw: a residue draw is full, and would otherwise throw", () => {
+  // The lot left after drawing 0.98 from 1 holds 0.020000000000000018. Drawing
+  // 0.02 of it is the whole lot — a raw !== reads it as partial, and the
+  // builder then refuses `draw >= parentQty` on a legitimate full pick.
+  const residue = 1 - 0.98;
+  assertEquals(residue === 0.02, false);
+  assertEquals(isFullDraw(residue, 0.02), true);
+  assertThrows(
+    () =>
+      buildBatchSplitRecords(splitInput({
+        parent: { ...splitInput().parent, quantity: residue },
+        drawQuantity: 0.02
+      })),
+    Error,
+    "a full draw is not a split"
+  );
+});
+
+Deno.test("isFullDraw: one minor unit of real stock is still a partial draw", () => {
+  // 1e-5 is a storable difference at internal scale, not float noise.
+  assertEquals(isFullDraw(1, 0.99999), false);
+  assertEquals(isFullDraw(10, 9.99999), false);
+});
+
+Deno.test("isFullDraw: an over-draw is not reported as full", () => {
+  assertEquals(isFullDraw(1, 1.5), false);
 });

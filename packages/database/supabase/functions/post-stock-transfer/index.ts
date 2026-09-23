@@ -13,7 +13,7 @@ import {
   assertEntityCoversPick,
   PickGuardError,
   resolvePick,
-} from "./pick-guards.ts";
+} from "../shared/pick-guards.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);

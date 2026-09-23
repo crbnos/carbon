@@ -263,3 +263,27 @@ Deno.test("sums parents at the persist boundary: 0.1 + 0.2 => exactly 0.3", () =
     true
   );
 });
+
+Deno.test("rounds received quantity PER PARENT so the bin rows net to zero", () => {
+  // Three parents sharing one bin, each holding a third of a unit. Rounding
+  // only the bin total gives 1 against negatives of 0.33333 × 3 = 0.99999 —
+  // the Batch Merge pair leaks a minor unit. Per-parent rounding nets exactly.
+  const third = 1 / 3;
+  const records = buildBatchMergeRecords({
+    ...base,
+    parents: [
+      parent({ id: "p1", quantity: third, receivedQuantity: third }),
+      parent({ id: "p2", readableId: "LOT-B", quantity: third, receivedQuantity: third }),
+      parent({ id: "p3", readableId: "LOT-C", quantity: third, receivedQuantity: third })
+    ]
+  });
+  const positives = records.ledgerInserts.filter((r) => r.quantity > 0);
+  const negatives = records.ledgerInserts.filter((r) => r.quantity < 0);
+  assertEquals(negatives.map((r) => r.quantity), [-0.33333, -0.33333, -0.33333]);
+  assertEquals(positives.length, 1);
+  assertEquals(positives[0].quantity, 0.99999);
+  assertEquals(
+    records.ledgerInserts.reduce((acc, r) => acc + r.quantity, 0) < 1e-9,
+    true
+  );
+});

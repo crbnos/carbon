@@ -13,7 +13,23 @@
 // exactly two net-zero Batch Split rows (−q parent, +q child) at the parent's
 // resolved bin. Returns MERGE quantity back into the parent (Merge activity).
 
-import { round } from "./precision.ts";
+import { equals, round } from "./precision.ts";
+
+/**
+ * The ONE split gate: is this draw the entity's whole quantity?
+ *
+ * Every caller decides "split or take the whole entity" with this, so the gate
+ * and `buildBatchSplitRecords`' own `draw < parentQty` guard can never
+ * disagree. A raw `===`/`<` on two float quantities can: a residue draw (an
+ * entity left holding 0.020000000000000018 after an earlier split, drawn for
+ * 0.02) reads as a PARTIAL draw, and the builder then throws `draw >= parentQty`
+ * on what the operator sees as a legitimate full pick — or mints a phantom
+ * child holding 1.8e-17. Both sides round to internal scale first, so two 5dp
+ * quantities that differ by real stock (one minor unit, 1e-5) still split.
+ */
+export function isFullDraw(entityQuantity: number, drawQuantity: number): boolean {
+  return equals(round(entityQuantity), round(drawQuantity));
+}
 
 export type BatchSplitInput = {
   parent: {
@@ -291,9 +307,12 @@ export function buildMergeRecords(input: {
       createdBy: userId
     },
     parentUpdate: { quantity: round(round(parent.quantity) + merge) },
+    // childRemaining is already rounded, so `=== 0` is exact here — but go
+    // through the shared drain rule so a merge that empties a lot settles the
+    // same way every other quantity writer does.
     childUpdate:
-      childRemaining === 0
-        ? { quantity: 0, status: "Consumed" }
+      childRemaining <= 0
+        ? { quantity: 0, status: "Consumed" as const }
         : { quantity: childRemaining }
   };
 }

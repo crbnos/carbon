@@ -99,3 +99,42 @@ Deno.test("assertEntityCoversPick: an exact (or equal-at-scale) full draw is all
   assertEntityCoversPick({ entityQuantity: 5, transferQuantity: 5 });
   assertEntityCoversPick({ entityQuantity: 1, transferQuantity: 0.98 + 0.02 });
 });
+
+Deno.test("resolvePick: refuses a pick that rounds to zero", () => {
+  // Below half a minor unit at internal scale — accumulating it flips the line
+  // to Picked and books a zero ledger pair for nothing.
+  const err = assertThrows(
+    () =>
+      resolvePick({
+        lineQuantity: 10,
+        pickedQuantity: 0,
+        transferQuantity: 0.000001
+      }),
+    PickGuardError,
+    "rounds to zero"
+  );
+  assertEquals((err as PickGuardError).kind, "empty-pick");
+  assertThrows(
+    () => resolvePick({ lineQuantity: 10, pickedQuantity: 0, transferQuantity: 0 }),
+    PickGuardError,
+    "rounds to zero"
+  );
+});
+
+Deno.test("resolvePick: an empty pick is refused before the already-picked check", () => {
+  // A fully picked line scanned with a zero quantity reports the ZERO, not
+  // "already fully picked" — the operator's input is what is wrong.
+  const err = assertThrows(
+    () =>
+      resolvePick({ lineQuantity: 10, pickedQuantity: 10, transferQuantity: 0 }),
+    PickGuardError
+  );
+  assertEquals((err as PickGuardError).kind, "empty-pick");
+});
+
+Deno.test("resolvePick: a smallest-storable pick is allowed", () => {
+  assertEquals(
+    resolvePick({ lineQuantity: 10, pickedQuantity: 0, transferQuantity: 0.00001 }),
+    0.00001
+  );
+});

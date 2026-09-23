@@ -1,16 +1,20 @@
-// Pure idempotency guards for stock-transfer picks. Compares at internal scale
+// Pure idempotency guards for a pick against a document line — shared by
+// post-stock-transfer and post-picking, so both accumulate the same way.
+// Compares at internal scale
 // (round/equals from the shared precision module) so a float-residue draw never
 // reads as an over-pick, and a line that is already fully picked is refused
 // before any ledger row is written — a repeat scan would otherwise double-post
 // the transfer. Dependency-free aside from the sibling precision module.
 
-import { equals, EPSILON, round } from "../shared/precision.ts";
+import { equals, EPSILON, round } from "./precision.ts";
+
+export type PickGuardKind = "over-pick" | "already-picked" | "empty-pick";
 
 /** A guard refusal the caller turns into a 400 (never a 500). `kind` lets the
  *  edge function's outer catch distinguish it from a data-layer error. */
 export class PickGuardError extends Error {
-  readonly kind: "over-pick" | "already-picked";
-  constructor(kind: "over-pick" | "already-picked", message: string) {
+  readonly kind: PickGuardKind;
+  constructor(kind: PickGuardKind, message: string) {
     super(message);
     this.name = "PickGuardError";
     this.kind = kind;
@@ -22,6 +26,7 @@ export class PickGuardError extends Error {
  * `pickedQuantity` (never a replacement), or throws a typed `PickGuardError`:
  *   - "already-picked" — the line has no outstanding quantity left.
  *   - "over-pick"      — this pick exceeds what is still outstanding.
+ *   - "empty-pick"     — the pick rounds to nothing at internal scale.
  * A serial pick (transferQuantity 1) is the same rule: it is refused once
  * pickedQuantity has reached the line quantity.
  */
@@ -35,6 +40,15 @@ export function resolvePick(input: {
   const pick = round(input.transferQuantity);
   const outstanding = round(line - already);
 
+  // A quantity below half a minor unit rounds to 0: accumulating it would
+  // write a "Picked" status and a zero ledger pair for nothing. Refuse it
+  // here rather than let the split builder throw its `draw > 0` guard as a 500.
+  if (pick <= 0) {
+    throw new PickGuardError(
+      "empty-pick",
+      `Pick of ${input.transferQuantity} rounds to zero — nothing to pick`
+    );
+  }
   if (equals(outstanding, 0) || outstanding < 0) {
     throw new PickGuardError(
       "already-picked",

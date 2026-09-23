@@ -5,22 +5,17 @@
 // below zero the two have genuinely diverged, so we refuse (recount) rather than
 // clamp, which would desync the entity from the already-booked ledger delta.
 
-import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
-import { round } from "../shared/precision.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 
 export function resolveCountedEntity<S extends string>(input: {
   currentQuantity: number;
   delta: number;
   currentStatus: S;
 }): { quantity: number; status: S | "Consumed" } {
-  const quantity = round(input.currentQuantity + input.delta);
-  if (quantity < 0) {
-    throw new Error(
-      "Stock moved since the count was taken; recount this line before posting"
-    );
-  }
-  return {
-    quantity,
-    status: statusAfterQuantityChange(quantity, input.currentStatus),
-  };
+  return settleQuantity({
+    quantity: input.currentQuantity + input.delta,
+    status: input.currentStatus,
+    refusal:
+      "Stock moved since the count was taken; recount this line before posting",
+  });
 }

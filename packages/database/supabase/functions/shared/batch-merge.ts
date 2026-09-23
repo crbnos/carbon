@@ -276,11 +276,15 @@ function receivedByBin(parents: BatchMergeParent[]) {
     if (p.receivedQuantity <= 0) continue;
     const key = `${p.bin.locationId}|${p.bin.storageUnitId}`;
     const entry = byBin.get(key) ?? { bin: p.bin, quantity: 0 };
-    entry.quantity += p.receivedQuantity;
+    // Round PER PARENT, the same way the negative rows above do — a bin total
+    // rounded only at the end can differ from the sum of the per-parent
+    // negatives by a minor unit, and the Batch Merge pair stops netting to
+    // zero. Each parent's received quantity is its own persist boundary.
+    entry.quantity += round(p.receivedQuantity);
     byBin.set(key, entry);
   }
-  // Round each bin's accumulated total once so the positive rows stay at scale
-  // and net exactly against the rounded negatives.
+  // Round the accumulated total too: summing already-rounded parts is exact in
+  // decimal but not in binary float (0.1 + 0.2).
   return [...byBin.values()].map((entry) => ({
     bin: entry.bin,
     quantity: round(entry.quantity)
