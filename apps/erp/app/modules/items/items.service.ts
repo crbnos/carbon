@@ -3279,6 +3279,66 @@ async function cascadeSourcingAndMethodTypeToMethodMaterials(
     .execute();
 }
 
+/**
+ * Resolves the item row that an update to a typed item (part, material, tool,
+ * consumable, service) addresses. `item` is keyed by uuid while the typed
+ * tables are keyed by the item's readable id plus companyId, so writing the
+ * pair needs both keys. Accepts either one: the uuid every read tool and
+ * route hands out, or the readable id a person types. A readable id shared by
+ * several revisions is refused rather than guessed.
+ */
+async function resolveTypedItemForUpdate(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    type: Database["public"]["Enums"]["itemType"];
+  }
+): Promise<
+  | { data: { id: string; readableId: string }; error: null }
+  | { data: null; error: PostgrestError | { message: string; code?: string } }
+> {
+  const byId = await client
+    .from("item")
+    .select("id, readableId")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type)
+    .maybeSingle();
+  if (byId.error) return { data: null, error: byId.error };
+  if (byId.data) return { data: byId.data, error: null };
+
+  const byReadableId = await client
+    .from("item")
+    .select("id, readableId")
+    .eq("readableId", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type);
+  if (byReadableId.error) return { data: null, error: byReadableId.error };
+  if (byReadableId.data.length === 1) {
+    return { data: byReadableId.data[0], error: null };
+  }
+  if (byReadableId.data.length > 1) {
+    return {
+      data: null,
+      error: {
+        message: `${args.type} ${args.id} has ${byReadableId.data.length} revisions; pass the item id of the revision to update`
+      }
+    };
+  }
+  // PGRST116 is what a `.single()` miss reports, so the API layer maps this to
+  // its "no matching record" message instead of the generic failure text.
+  return {
+    data: null,
+    error: { code: "PGRST116", message: `${args.type} ${args.id} not found` }
+  };
+}
+
+/**
+ * Creates a consumable (item row and consumable row) or updates one; on update
+ * `id` is the item id (uuid) or the consumable's readable id and the write is
+ * a full replace, so omitted optional fields are cleared.
+ */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
   consumable:
@@ -3288,6 +3348,7 @@ export async function upsertConsumable(
         customFields?: Json;
       })
     | (z.infer<typeof consumableValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3365,8 +3426,15 @@ export async function upsertConsumable(
     return newConsumable;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: consumable.id,
+    companyId: consumable.companyId,
+    type: "Consumable"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: consumable.name,
     description: consumable.description,
     replenishmentSystem: consumable.replenishmentSystem,
@@ -3380,35 +3448,47 @@ export async function upsertConsumable(
     customFields: consumable.customFields
   };
 
+  // item is keyed by uuid, consumable by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateConsumable] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: consumable.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", consumable.id),
+      .eq("id", itemId)
+      .eq("companyId", consumable.companyId)
+      .select("id")
+      .single(),
     client
       .from("consumable")
       .update({
         ...sanitize(consumableUpdate),
+        updatedBy: consumable.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", consumable.id)
+      .eq("id", readableId)
+      .eq("companyId", consumable.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updateConsumable.error) return updateConsumable;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
     storageUnitId: consumable.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
+    companyId: consumable.companyId,
     mode: consumable.shelfLifeMode,
     days: consumable.shelfLifeDays,
     triggerProcessId: consumable.shelfLifeTriggerProcessId,
@@ -3417,7 +3497,7 @@ export async function upsertConsumable(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateConsumable;
+  return updateItem;
 }
 
 /**
@@ -3563,6 +3643,11 @@ export async function resolveItemIdFromExtractedText(
   return matchItemIdByText(client, companyId, candidates);
 }
 
+/**
+ * Creates a part (item row and part row) or updates one; on update `id` is the
+ * item id (uuid) or the part's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
@@ -3572,6 +3657,7 @@ export async function upsertPart(
         customFields?: Json;
       })
     | (z.infer<typeof partValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3665,8 +3751,15 @@ export async function upsertPart(
     return newPart;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: part.id,
+    companyId: part.companyId,
+    type: "Part"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: part.name,
     description: part.description,
     replenishmentSystem: part.replenishmentSystem,
@@ -3680,35 +3773,47 @@ export async function upsertPart(
     customFields: part.customFields
   };
 
+  // item is keyed by uuid, part by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updatePart] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: part.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", part.id),
+      .eq("id", itemId)
+      .eq("companyId", part.companyId)
+      .select("id")
+      .single(),
     client
       .from("part")
       .update({
         ...sanitize(partUpdate),
+        updatedBy: part.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", part.id)
+      .eq("id", readableId)
+      .eq("companyId", part.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updatePart.error) return updatePart;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
     storageUnitId: part.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
+    companyId: part.companyId,
     mode: part.shelfLifeMode,
     days: part.shelfLifeDays,
     triggerProcessId: part.shelfLifeTriggerProcessId,
@@ -3717,7 +3822,7 @@ export async function upsertPart(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updatePart;
+  return updateItem;
 }
 
 export async function updateItem(
@@ -4763,6 +4868,11 @@ export async function setMethodOperationToolStepLink(
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 
+/**
+ * Creates a material (its item rows and material row) or updates one; on
+ * update `id` is the item id (uuid) or the material's readable id and the
+ * write is a full replace, so omitted optional fields are cleared.
+ */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
   material:
@@ -4773,6 +4883,7 @@ export async function upsertMaterial(
         sizes?: string[];
       })
     | (z.infer<typeof materialValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -4917,8 +5028,15 @@ export async function upsertMaterial(
     };
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: material.id,
+    companyId: material.companyId,
+    type: "Material"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: material.name,
     description: material.description,
     replenishmentSystem: material.replenishmentSystem,
@@ -4938,35 +5056,47 @@ export async function upsertMaterial(
     customFields: material.customFields
   };
 
+  // item is keyed by uuid, material by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateMaterial] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: material.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", material.id),
+      .eq("id", itemId)
+      .eq("companyId", material.companyId)
+      .select("id")
+      .single(),
     client
       .from("material")
       .update({
         ...sanitize(materialUpdate),
+        updatedBy: material.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", material.id)
+      .eq("id", readableId)
+      .eq("companyId", material.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updateMaterial.error) return updateMaterial;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: material.id,
+    itemId,
     userId: material.updatedBy,
     storageUnitId: material.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: material.id,
+    itemId,
     userId: material.updatedBy,
+    companyId: material.companyId,
     mode: material.shelfLifeMode,
     days: material.shelfLifeDays,
     triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -4975,7 +5105,7 @@ export async function upsertMaterial(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateMaterial;
+  return updateItem;
 }
 
 export async function upsertMaterialDimension(
@@ -5209,6 +5339,11 @@ export async function upsertMaterialSubstance(
   );
 }
 
+/**
+ * Creates a service (item row and service row) or updates one; on update `id`
+ * is the item id (uuid) or the service's readable id and the write is a full
+ * replace, so omitted optional fields are cleared.
+ */
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
@@ -5218,6 +5353,7 @@ export async function upsertService(
         customFields?: Json;
       })
     | (z.infer<typeof serviceValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5280,15 +5416,15 @@ export async function upsertService(
     return newService;
   }
 
-  const item = await client
-    .from("item")
-    .select("readableId, companyId")
-    .eq("id", service.id)
-    .single();
+  const item = await resolveTypedItemForUpdate(client, {
+    id: service.id,
+    companyId: service.companyId,
+    type: "Service"
+  });
   if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
 
   const itemUpdate = {
-    id: service.id,
     name: service.name,
     description: service.description,
     replenishmentSystem: service.replenishmentSystem,
@@ -5302,27 +5438,36 @@ export async function upsertService(
     customFields: service.customFields
   };
 
+  // item is keyed by uuid, service by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateService] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: service.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", service.id),
-    // service.id is the item uuid; the service row is keyed by readableId
+      .eq("id", itemId)
+      .eq("companyId", service.companyId)
+      .select("id")
+      .single(),
     client
       .from("service")
       .update({
         ...sanitize(serviceUpdate),
+        updatedBy: service.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", item.data.readableId ?? "")
-      .eq("companyId", item.data.companyId ?? "")
+      .eq("id", readableId)
+      .eq("companyId", service.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
-  return updateService;
+  if (updateService.error) return updateService;
+  return updateItem;
 }
 
 export async function upsertUnitOfMeasure(
@@ -5355,6 +5500,11 @@ export async function upsertUnitOfMeasure(
     .single();
 }
 
+/**
+ * Creates a tool (item row and tool row) or updates one; on update `id` is the
+ * item id (uuid) or the tool's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertTool(
   client: SupabaseClient<Database>,
   tool:
@@ -5364,6 +5514,7 @@ export async function upsertTool(
         customFields?: Json;
       })
     | (z.infer<typeof toolValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5443,8 +5594,15 @@ export async function upsertTool(
     return newTool;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: tool.id,
+    companyId: tool.companyId,
+    type: "Tool"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: tool.name,
     description: tool.description,
     replenishmentSystem: tool.replenishmentSystem,
@@ -5458,35 +5616,47 @@ export async function upsertTool(
     customFields: tool.customFields
   };
 
+  // item is keyed by uuid, tool by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateTool] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: tool.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", tool.id),
+      .eq("id", itemId)
+      .eq("companyId", tool.companyId)
+      .select("id")
+      .single(),
     client
       .from("tool")
       .update({
         ...sanitize(toolUpdate),
+        updatedBy: tool.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", tool.id)
+      .eq("id", readableId)
+      .eq("companyId", tool.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updateTool.error) return updateTool;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
     storageUnitId: tool.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
+    companyId: tool.companyId,
     mode: tool.shelfLifeMode,
     days: tool.shelfLifeDays,
     triggerProcessId: tool.shelfLifeTriggerProcessId,
@@ -5495,7 +5665,7 @@ export async function upsertTool(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateTool;
+  return updateItem;
 }
 
 /**
