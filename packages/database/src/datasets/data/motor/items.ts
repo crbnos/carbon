@@ -1,7 +1,13 @@
 import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  ConfigurationSpec,
+  CustomerPartSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
 
@@ -126,6 +132,17 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 2.25,
     unitSalePrice: 3.8,
     leadTime: 12
+  },
+  // Successor of BRG-6206-C3 (see SUPERSESSIONS). Deliberately absent from
+  // every BOM: job creation and picking redirect to it live.
+  {
+    readableId: "BRG-6206-HYB",
+    name: "Hybrid Ceramic Bearing 6206 (Si3N4 balls)",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 34,
+    unitSalePrice: 52,
+    leadTime: 28
   }
 ];
 
@@ -137,7 +154,16 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 1.85,
     unitOfMeasureCode: "LB",
-    leadTime: 28
+    leadTime: 28,
+    // Fully classified against the company taxonomy (foundation.ts).
+    material: {
+      substance: "Electrical Steel",
+      form: "Lamination Coil",
+      materialType: "Electrical Steel Lamination Coil",
+      grade: "M19",
+      finish: "C5 Insulation Coating",
+      dimension: "0.35mm x 200mm"
+    }
   },
   {
     readableId: "MAT-CU-18AWG",
@@ -147,7 +173,14 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 6.4,
     unitOfMeasureCode: "LB",
-    leadTime: 21
+    leadTime: 21,
+    // Partial classification: magnet wire is graded and coated, not dimensioned
+    // like a coil — the spool length varies by put-up.
+    material: {
+      substance: "Enameled Copper",
+      grade: "MW 35-C",
+      finish: "Polyamide-Imide Overcoat"
+    }
   },
   {
     readableId: "MAT-INS-NOMEX",
@@ -472,7 +505,12 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Motor Assembly Bench",
         description: "Press stack to shaft and bond magnet segments",
         order: 1,
-        laborTime: 2.5
+        laborTime: 2.5,
+        tools: [{ tool: "TL-ARBOR-PRESS", quantity: 1 }],
+        parameters: [
+          { key: "Press-Fit Force", value: "35 kN max" },
+          { key: "Epoxy Cure", value: "80 degC for 2 hours" }
+        ]
       },
       {
         process: "Rotor Balancing",
@@ -480,7 +518,14 @@ export const METHODS: MakeMethodSpec[] = [
         description: "Two-plane dynamic balance",
         order: 2,
         laborTime: 1,
-        procedure: "procedure:Rotor Balance Verification"
+        procedure: "procedure:Rotor Balance Verification",
+        parameters: [
+          { key: "Balance Grade", value: "ISO 21940 G2.5 at 3000 rpm" },
+          {
+            key: "Correction Method",
+            value: "Material removal, drive-end plane first"
+          }
+        ]
       },
       {
         process: "In-Process Inspection",
@@ -761,6 +806,94 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     item: "FST-M10-SS",
     price: 1.15,
     leadTime: 10
+  },
+  {
+    supplier: "Summit Bearing Supply",
+    item: "BRG-6206-HYB",
+    price: 34,
+    leadTime: 28
+  }
+];
+
+// MTR-4500 still names BRG-6206-C3 (60 on shelf A2-L1), so Consume First
+// keeps pulling the steel bearing until the shelf is empty, then swaps to
+// the hybrid ceramic.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "BRG-6206-C3",
+    successor: "BRG-6206-HYB",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "MTR-9000",
+    customer: "Ridgeline Drive Systems",
+    customerPartId: "RDS-MTR-9000",
+    customerRevision: "B"
+  },
+  {
+    item: "MTR-4500",
+    customer: "Cardinal Motorworks",
+    customerPartId: "CMW-SRV-4500"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "MTR-4500",
+    customer: "Cardinal Motorworks",
+    notes: "Blanket-order pricing for the CY conveyor retrofit program.",
+    breaks: [
+      { quantity: 10, overridePrice: 2900 },
+      { quantity: 50, overridePrice: 2760 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "Ridgeline OEM volume discount",
+    customer: "Ridgeline Drive Systems",
+    percent: 5,
+    minQuantity: 10
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "MTR-9000",
+  group: "Drive Configuration",
+  parameters: [
+    {
+      key: "shaft_extension_mm",
+      label: "Shaft Extension Length (mm)",
+      dataType: "numeric"
+    },
+    {
+      key: "mounting_flange",
+      label: "Mounting Flange",
+      dataType: "list",
+      listOptions: ["IEC B5", "IEC B14", "NEMA C-Face"]
+    },
+    {
+      key: "holding_brake",
+      label: "Include Holding Brake",
+      dataType: "boolean"
+    }
+  ]
+};
+
+// HSG-9000 rev 0 is the released (Production) revision; rev A was obsoleted
+// after casting porosity at the bearing bore, rev B adds the second gland boss
+// and is in prototype.
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "HSG-9000",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
   }
 ];
 
@@ -772,5 +905,11 @@ export const motorItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER
 };

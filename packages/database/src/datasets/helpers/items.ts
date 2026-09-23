@@ -1,5 +1,18 @@
-import { assertSingle, insertId, insertMaybe, maybeOne } from "../sql.ts";
+import { assertSingle, insertId, insertMaybe, maybeOne, need } from "../sql.ts";
 import type { Ctx, ItemRef, ItemType } from "../types.ts";
+
+/**
+ * Names resolve against the dataset's own taxonomy (tier 01's `mat*:<name>`
+ * refs in ctx.refs.misc), never the global bootstrap rows.
+ */
+export type MaterialClassificationSpec = {
+  substance?: string;
+  form?: string;
+  materialType?: string;
+  grade?: string;
+  finish?: string;
+  dimension?: string;
+};
 
 export type ItemSpec = {
   readableId: string;
@@ -17,6 +30,12 @@ export type ItemSpec = {
   unitSalePrice?: number;
   leadTime?: number;
   description?: string;
+  /** Revision ladders seed inactive rungs. */
+  active?: boolean;
+  /** Omitted = column default. */
+  revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
+  /** Material items only. */
+  material?: MaterialClassificationSpec;
 };
 
 /**
@@ -71,7 +90,9 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     thumbnailPath: ctx.dataset.industryId
       ? `_templates/${ctx.dataset.industryId}/${spec.readableId}.svg`
       : null,
-    active: true
+    active: spec.active ?? true,
+    // undefined is dropped by insertRow, keeping the column default.
+    revisionStatus: spec.revisionStatus
   });
 
   // The item interceptor creates itemCost, itemReplenishment, itemUnitSalePrice,
@@ -80,11 +101,60 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
 
   // Positional extension row (part.id = readableId). All revisions share one row.
   const extensionTable = extensionTableFor(spec.type);
+  const classification = spec.material;
+  const taxonomy =
+    spec.type === "Material" && classification
+      ? {
+          materialSubstanceId: classification.substance
+            ? need(
+                ctx.refs.misc,
+                `matsub:${classification.substance}`,
+                "material substance"
+              )
+            : undefined,
+          materialFormId: classification.form
+            ? need(
+                ctx.refs.misc,
+                `matform:${classification.form}`,
+                "material form"
+              )
+            : undefined,
+          materialTypeId: classification.materialType
+            ? need(
+                ctx.refs.misc,
+                `mattype:${classification.materialType}`,
+                "material type"
+              )
+            : undefined,
+          gradeId: classification.grade
+            ? need(
+                ctx.refs.misc,
+                `matgrade:${classification.grade}`,
+                "material grade"
+              )
+            : undefined,
+          finishId: classification.finish
+            ? need(
+                ctx.refs.misc,
+                `matfinish:${classification.finish}`,
+                "material finish"
+              )
+            : undefined,
+          dimensionId: classification.dimension
+            ? need(
+                ctx.refs.misc,
+                `matdim:${classification.dimension}`,
+                "material dimension"
+              )
+            : undefined
+        }
+      : {};
   await insertMaybe(ctx, extensionTable, {
     id: spec.readableId,
     approved: true,
     companyId,
-    createdBy: userId
+    createdBy: userId,
+    ...taxonomy
   });
 
   // Apply cost/price/lead-time by UPDATE (not insert).

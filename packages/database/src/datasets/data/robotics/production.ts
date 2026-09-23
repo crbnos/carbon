@@ -2,6 +2,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  PickingListSpec,
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
@@ -17,8 +18,31 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:lakeshore",
     salesOrderLine: "soline:lakeshore:rob",
     customer: "Lakeshore Automotive",
+    deadlineType: "Hard Deadline",
     dueDateOffset: -167,
-    releasedDateOffset: -297
+    releasedDateOffset: -297,
+    // The floor's real mixed state: integration done, burn-in running, final
+    // acceptance waiting on it.
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "In Progress" },
+      { order: 3, status: "Waiting" }
+    ],
+    quantities: [
+      { order: 1, type: "Production", quantity: 1 },
+      { order: 1, type: "Scrap", quantity: 2, scrapReason: "Damaged" },
+      { order: 2, type: "Rework", quantity: 1 }
+    ],
+    operationNotes: [
+      {
+        order: 1,
+        note: "Base-to-link dowels seated on the second press — torque-striped all J1 fasteners and logged the values in the Lakeshore acceptance packet."
+      },
+      {
+        order: 2,
+        note: "Burn-in hour 14 of 24. Repeatability holding at ±0.02 mm on the test cube, J2 drive temp steady at 41C."
+      }
+    ]
   },
   {
     key: "ready",
@@ -28,6 +52,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:northwind",
     salesOrderLine: "soline:northwind:rob",
     customer: "Northwind Electronics",
+    deadlineType: "ASAP",
     dueDateOffset: -153,
     releasedDateOffset: -251
   },
@@ -39,6 +64,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:planned",
     salesOrderLine: "soline:planned",
     customer: "Cascade Integration Group",
+    deadlineType: "Soft Deadline",
     dueDateOffset: -90
   },
   {
@@ -49,7 +75,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:draft",
     salesOrderLine: "soline:draft",
     customer: "Alpine Research Institute",
-    dueDateOffset: -125
+    deadlineType: "No Deadline"
   },
   {
     key: "paused",
@@ -188,6 +214,56 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
+// Material staging for the in-progress ROB-2000 job. The completed list moved
+// the base-joint hardware kit to the integration cell weeks ago; the open list
+// is today's pull for the next arm, short on gear grease.
+export const PICKING_LISTS: PickingListSpec[] = [
+  {
+    key: "rob-kit-1",
+    status: "Completed",
+    job: "in-progress",
+    dateOffset: -20,
+    lines: [
+      {
+        item: "FST-M8-SS",
+        quantityRequired: 24,
+        quantityPicked: 24,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      },
+      {
+        item: "MAT-CONN-M23",
+        quantityRequired: 6,
+        quantityPicked: 6,
+        status: "Picked",
+        fromShelf: "A1-L2"
+      }
+    ]
+  },
+  {
+    key: "rob-kit-2",
+    status: "In Progress",
+    job: "in-progress",
+    dateOffset: -2,
+    lines: [
+      {
+        item: "BRG-CRB-100",
+        quantityRequired: 4,
+        quantityPicked: 0,
+        status: "Pending",
+        fromShelf: "A2-L3"
+      },
+      {
+        item: "CN-GREASE-EP",
+        quantityRequired: 1,
+        quantityPicked: 0,
+        status: "Short",
+        fromShelf: "A1-L2"
+      }
+    ]
+  }
+];
+
 export const roboticsProduction: ProductionData = {
   assembly: roboticsAssembly,
   jobs: JOBS,
@@ -195,5 +271,16 @@ export const roboticsProduction: ProductionData = {
   genealogyInputs: GENEALOGY_INPUTS,
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
-  genealogyJobKey: "in-progress"
+  genealogyJobKey: "in-progress",
+  // The burn-in operation (position 2) is the one overridden to In Progress.
+  openEvent: { operationOrder: 2 },
+  batch: { operationOrder: 1 },
+  rework: {
+    quantity: 1,
+    reason:
+      "J4 wrist repeatability drifted past ±0.03 mm at burn-in hour 9 — return unit 2 to integration for wrist re-shim and encoder re-mate.",
+    targetOperationOrder: 1,
+    triggeredAtOperationOrder: 2
+  },
+  pickingLists: PICKING_LISTS
 };

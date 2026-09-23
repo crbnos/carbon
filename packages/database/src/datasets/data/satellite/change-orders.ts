@@ -63,6 +63,73 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         sortOrder: 1
       }
     ]
+  },
+  // ── Lifecycle-only notices: no affected items yet (every change type spins a
+  // method draft), so they exercise the stage flow + action tasks alone.
+  {
+    ref: "co:start",
+    name: "Relocate EPS connector bracket to clear harness bend radius",
+    type: "Engineering",
+    changeOrderType: "Design Improvement",
+    status: "Start",
+    priority: "Medium",
+    openDateOffset: -9,
+    dueDateOffset: 30,
+    reasonForChange:
+      "Integration found the EPS harness exceeds its minimum bend radius at the current bracket location.",
+    affectedItems: [],
+    actionTasks: [
+      { action: "Engineering Review", status: "In Progress", dueDateOffset: 5 },
+      { action: "Update Drawings / CAD", status: "Pending", dueDateOffset: 20 }
+    ]
+  },
+  {
+    ref: "co:eng-complete",
+    name: "Add girth-weld UT to the propellant tank receiving plan",
+    type: "Manufacturing",
+    changeOrderType: "Quality / Reliability Improvement",
+    status: "Engineering Complete",
+    priority: "High",
+    openDateOffset: -70,
+    dueDateOffset: 14,
+    reasonForChange:
+      "The PropTech tank escape showed visual weld inspection alone cannot catch sub-minimum wall thickness.",
+    nonConformance: "ncr:tank-wall",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Quality Review",
+        status: "Completed",
+        dueDateOffset: -45,
+        completedOffset: -48
+      },
+      {
+        action: "Notify Affected Parties",
+        status: "In Progress",
+        dueDateOffset: 7
+      }
+    ]
+  },
+  {
+    ref: "co:cancelled",
+    name: "Update star tracker ICD for the revised mounting pattern",
+    type: "Documentation",
+    changeOrderType: "Documentation Error / Correction",
+    status: "Cancelled",
+    priority: "Low",
+    openDateOffset: -120,
+    reasonForChange:
+      "Vendor proposed a new ST-050 bolt pattern; they later withdrew it and kept the heritage interface.",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Cost Impact Review",
+        status: "Completed",
+        dueDateOffset: -110,
+        completedOffset: -112
+      },
+      { action: "Update Drawings / CAD", status: "Skipped" }
+    ]
   }
 ];
 

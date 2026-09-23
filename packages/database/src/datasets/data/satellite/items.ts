@@ -1,7 +1,13 @@
 import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  ConfigurationSpec,
+  CustomerPartSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
 
@@ -121,6 +127,17 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 18,
     unitSalePrice: 27,
     leadTime: 10
+  },
+  // Successor of VLV-SOLENOID-LP (see SUPERSESSIONS). Deliberately absent
+  // from every BOM: job creation and picking redirect to it live.
+  {
+    readableId: "VLV-SOLENOID-LP2",
+    name: "Solenoid Valve Low-Pressure Gen2",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 1050,
+    unitSalePrice: 1575,
+    leadTime: 30
   }
 ];
 
@@ -140,7 +157,13 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 320,
     unitOfMeasureCode: "EA",
-    leadTime: 21
+    leadTime: 21,
+    // Partial classification: a laminate sheet has no honeycomb form/dim.
+    material: {
+      substance: "Carbon Fiber Composite",
+      grade: "M55J",
+      finish: "Low-Outgassing Coating"
+    }
   },
   {
     readableId: "MAT-GAAS-CELL",
@@ -156,7 +179,16 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 45,
     unitOfMeasureCode: "YD",
-    leadTime: 7
+    leadTime: 7,
+    // Fully classified against the company taxonomy (foundation.ts).
+    material: {
+      substance: "Polyimide Film",
+      form: "Film Roll",
+      materialType: "Polyimide Tape Roll",
+      grade: "Kapton HN",
+      finish: "Silicone Adhesive Backing",
+      dimension: "25mm x 33m"
+    }
   },
   {
     readableId: "MAT-SYLGARD",
@@ -333,7 +365,11 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Mill",
         description: "Machine structural panels",
         order: 1,
-        laborTime: 4
+        laborTime: 4,
+        parameters: [
+          { key: "Fixture", value: "FX-BUS-PANEL-01" },
+          { key: "Coolant", value: "Flood — water-soluble" }
+        ]
       },
       {
         process: "Welding",
@@ -361,7 +397,12 @@ export const METHODS: MakeMethodSpec[] = [
         order: 4,
         laborTime: 3,
         // Gives the MES operation screen an Instructions tab with real steps.
-        procedure: "procedure:Structural Frame Assembly"
+        procedure: "procedure:Structural Frame Assembly",
+        tools: [{ tool: "TL-TORQUE-J1", quantity: 1 }],
+        parameters: [
+          { key: "Torque Spec", value: "9 Nm, star pattern" },
+          { key: "Cleanliness Class", value: "ISO 7" }
+        ]
       }
     ]
   },
@@ -716,7 +757,90 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     leadTime: 45
   },
   { supplier: "Deep Space RF", item: "RW-010", price: 14500, leadTime: 90 },
-  { supplier: "Deep Space RF", item: "ST-050", price: 28000, leadTime: 120 }
+  { supplier: "Deep Space RF", item: "ST-050", price: 28000, leadTime: 120 },
+  {
+    supplier: "PropTech Solutions",
+    item: "VLV-SOLENOID-LP2",
+    price: 1050,
+    leadTime: 30
+  }
+];
+
+// PROP-001 still names VLV-SOLENOID-LP (8 on shelf A3-L2), so Consume First
+// keeps pulling the old valve until the shelf is empty, then swaps to Gen2.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "VLV-SOLENOID-LP",
+    successor: "VLV-SOLENOID-LP2",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "SAT-1000",
+    customer: "ORBSEC Defense",
+    customerPartId: "ORB-BUS-4400",
+    customerRevision: "C"
+  },
+  {
+    item: "EPS-001",
+    customer: "NovaSat Networks",
+    customerPartId: "NS-PWR-201"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "SAT-1000",
+    customer: "NovaSat Networks",
+    notes: "FY constellation block-buy pricing per MSA amendment 3.",
+    breaks: [
+      { quantity: 1, overridePrice: 1750000 },
+      { quantity: 3, overridePrice: 1690000 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "ORBSEC program discount",
+    customer: "ORBSEC Defense",
+    percent: 5,
+    minQuantity: 2
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "SAT-1000",
+  group: "Mission Configuration",
+  parameters: [
+    { key: "payload_mass_kg", label: "Payload Mass (kg)", dataType: "numeric" },
+    {
+      key: "orbit_regime",
+      label: "Orbit Regime",
+      dataType: "list",
+      listOptions: ["LEO", "SSO", "GTO"]
+    },
+    {
+      key: "propulsion_module",
+      label: "Include Propulsion Module",
+      dataType: "boolean"
+    }
+  ]
+};
+
+// ANT-PATCH-01 rev 0 is the released (Production) revision; rev A was
+// obsoleted after RF tuning issues, rev B is the wideband redesign, now in
+// prototype.
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "ANT-PATCH-01",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
+  }
 ];
 
 export const satelliteItems: ItemsData = {
@@ -727,5 +851,11 @@ export const satelliteItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER
 };

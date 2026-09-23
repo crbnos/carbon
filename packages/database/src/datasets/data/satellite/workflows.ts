@@ -508,4 +508,39 @@ export function buildSeedWorkflows(refs: {
   ];
 }
 
-export const satelliteWorkflows: WorkflowData = { build: buildSeedWorkflows };
+// Run history for "Assign new sales orders": one run that assigned the order,
+// one whose assignee was rejected, and one queued while the workflow was
+// briefly unpublished (skipped at load, so no steps).
+export const satelliteWorkflows: WorkflowData = {
+  build: buildSeedWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:apex-valves",
+      at: { offset: -14, time: "15:02:11" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:polar-fasteners",
+      at: { offset: -28, time: "10:47:33" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:orbsec-thrusters",
+      at: { offset: -21, time: "09:15:04" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
+};

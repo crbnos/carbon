@@ -4,6 +4,7 @@ import { precisionChangeOrders } from "./change-orders.ts";
 import { precisionFoundation } from "./foundation.ts";
 import { precisionInventory } from "./inventory.ts";
 import { precisionItems } from "./items.ts";
+import { precisionOps } from "./ops.ts";
 import { precisionPlanning } from "./planning.ts";
 import { precisionProduction } from "./production.ts";
 import { precisionPurchasing } from "./purchasing.ts";
@@ -29,6 +30,7 @@ export const precision: Dataset = {
   quality: precisionQuality,
   changeOrders: precisionChangeOrders,
   accounting: precisionAccounting,
+  ops: precisionOps,
   workflows: precisionWorkflows,
   planning: precisionPlanning
 };

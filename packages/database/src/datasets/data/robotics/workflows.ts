@@ -508,6 +508,39 @@ export function buildRoboticsWorkflows(refs: {
   ];
 }
 
+// Run history for "Assign new sales orders": one run that assigned the order,
+// one whose assignee was rejected, and one queued while the workflow was
+// briefly unpublished (skipped at load, so no steps).
 export const roboticsWorkflows: WorkflowData = {
-  build: buildRoboticsWorkflows
+  build: buildRoboticsWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:alpine-connectors",
+      at: { offset: -14, time: "13:41:27" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:northwind-fasteners",
+      at: { offset: -28, time: "09:12:05" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:lakeshore-gearsets",
+      at: { offset: -21, time: "16:30:48" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
 };

@@ -1,7 +1,13 @@
 import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  ConfigurationSpec,
+  CustomerPartSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
 
@@ -125,6 +131,17 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 0.55,
     unitSalePrice: 0.9,
     leadTime: 10
+  },
+  // Successor of DRV-SRV-400 (see SUPERSESSIONS). Deliberately absent from
+  // every BOM: job creation and picking redirect to it live.
+  {
+    readableId: "DRV-SRV-400G2",
+    name: "Servo Drive 400W EtherCAT Gen2",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 460,
+    unitSalePrice: 690,
+    leadTime: 30
   }
 ];
 
@@ -152,7 +169,16 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 2.4,
     unitOfMeasureCode: "FOOT",
-    leadTime: 14
+    leadTime: 14,
+    // Fully classified against the company taxonomy (foundation.ts).
+    material: {
+      substance: "Copper Conductor",
+      form: "Cable Spool",
+      materialType: "Shielded Servo Cable",
+      grade: "16 AWG Tinned",
+      finish: "PUR Jacket",
+      dimension: "16 AWG x 4 Core"
+    }
   },
   {
     readableId: "MAT-CONN-M23",
@@ -168,7 +194,13 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 78,
     unitOfMeasureCode: "EA",
-    leadTime: 7
+    leadTime: 7,
+    // Partial classification: a paste jar has no jacket finish or profile
+    // dimension.
+    material: {
+      substance: "Solder Alloy",
+      grade: "SAC305"
+    }
   },
   {
     readableId: "MAT-COAT-UV",
@@ -338,7 +370,11 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Mill Cell",
         description: "Machine base casting and column",
         order: 1,
-        laborTime: 4
+        laborTime: 4,
+        parameters: [
+          { key: "Fixture", value: "FX-BASE-CAST-01" },
+          { key: "Coolant", value: "Flood — water-soluble" }
+        ]
       },
       {
         process: "Sheet Metal Fabrication",
@@ -366,7 +402,12 @@ export const METHODS: MakeMethodSpec[] = [
         order: 4,
         laborTime: 3,
         // Gives the MES operation screen an Instructions tab with real steps.
-        procedure: "procedure:Arm Base Assembly"
+        procedure: "procedure:Arm Base Assembly",
+        tools: [{ tool: "TL-TORQUE-M1", quantity: 1 }],
+        parameters: [
+          { key: "Torque Spec", value: "24 Nm, star pattern" },
+          { key: "Gear Grease", value: "EP robot gear grease, 25 g fill" }
+        ]
       }
     ]
   },
@@ -731,6 +772,89 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     item: "FST-M5-SS",
     price: 0.55,
     leadTime: 10
+  },
+  {
+    supplier: "Kestrel Motion",
+    item: "DRV-SRV-400G2",
+    price: 460,
+    leadTime: 30
+  }
+];
+
+// CTRL-100 still names DRV-SRV-400 (18 in the ESD cage), so Consume First
+// keeps pulling the old drive until the cage is empty, then swaps to Gen2.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "DRV-SRV-400",
+    successor: "DRV-SRV-400G2",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "ROB-2000",
+    customer: "Lakeshore Automotive",
+    customerPartId: "LKS-ROB-001",
+    customerRevision: "B"
+  },
+  {
+    item: "CTRL-100",
+    customer: "Cascade Integration Group",
+    customerPartId: "CIG-CTL-4500"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "ROB-2000",
+    customer: "Cascade Integration Group",
+    notes: "Integrator program pricing per 2026 master supply agreement.",
+    breaks: [
+      { quantity: 1, overridePrice: 55000 },
+      { quantity: 10, overridePrice: 51500 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "Lakeshore fleet discount",
+    customer: "Lakeshore Automotive",
+    percent: 5,
+    minQuantity: 3
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "ROB-2000",
+  group: "Arm Configuration",
+  parameters: [
+    { key: "payload_kg", label: "Rated Payload (kg)", dataType: "numeric" },
+    {
+      key: "controller_voltage",
+      label: "Controller Supply Voltage",
+      dataType: "list",
+      listOptions: ["208V 3-Phase", "400V 3-Phase", "480V 3-Phase"]
+    },
+    {
+      key: "force_torque_sensor",
+      label: "Include Force/Torque Sensor",
+      dataType: "boolean"
+    }
+  ]
+};
+
+// GRP-JAW-80 rev 0 is the released (Production) revision; rev A was
+// obsoleted after jaw-face wear findings, rev B is the hardened-jaw redesign
+// still in prototype.
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "GRP-JAW-80",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
   }
 ];
 
@@ -742,5 +866,11 @@ export const roboticsItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER
 };

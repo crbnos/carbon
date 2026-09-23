@@ -2,6 +2,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  PickingListSpec,
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
@@ -17,8 +18,31 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:ridgeline",
     salesOrderLine: "soline:ridgeline:mtr",
     customer: "Ridgeline Drive Systems",
+    deadlineType: "Hard Deadline",
     dueDateOffset: -167,
-    releasedDateOffset: -297
+    releasedDateOffset: -297,
+    // The floor's real mixed state: the build is done, the dyno is running,
+    // the data-package review is waiting on it.
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "In Progress" },
+      { order: 3, status: "Waiting" }
+    ],
+    quantities: [
+      { order: 1, type: "Production", quantity: 1 },
+      { order: 1, type: "Scrap", quantity: 2, scrapReason: "Defective" },
+      { order: 2, type: "Rework", quantity: 1 }
+    ],
+    operationNotes: [
+      {
+        order: 1,
+        note: "Bearing fit measured at 12 microns interference on units 1-3 — arbor press logs attached to the traveler for the Ridgeline data package."
+      },
+      {
+        order: 2,
+        note: "Loaded dyno run at 75% torque holding steady. Winding temp plateaued at 96C, well inside the Class H limit — thermal soak continues overnight."
+      }
+    ]
   },
   {
     key: "ready",
@@ -28,6 +52,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:halcyon",
     salesOrderLine: "soline:halcyon:mtr",
     customer: "Halcyon Aerospace Actuation",
+    deadlineType: "ASAP",
     dueDateOffset: -153,
     releasedDateOffset: -251
   },
@@ -39,6 +64,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:planned",
     salesOrderLine: "soline:planned",
     customer: "Cardinal Motorworks",
+    deadlineType: "Soft Deadline",
     dueDateOffset: -90
   },
   {
@@ -49,7 +75,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:draft",
     salesOrderLine: "soline:draft",
     customer: "Wabash Industrial Supply",
-    dueDateOffset: -125
+    deadlineType: "No Deadline"
   },
   {
     key: "paused",
@@ -187,6 +213,56 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
+// Material staging for the in-progress MTR-9000 job. The completed list pulled
+// the terminal-box and housing hardware to the assembly bench weeks ago; the
+// open list is today's pull for the next motor, short on bearing grease.
+export const PICKING_LISTS: PickingListSpec[] = [
+  {
+    key: "mtr-kit-1",
+    status: "Completed",
+    job: "in-progress",
+    dateOffset: -20,
+    lines: [
+      {
+        item: "FST-M6-SS",
+        quantityRequired: 36,
+        quantityPicked: 36,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      },
+      {
+        item: "FST-M10-SS",
+        quantityRequired: 24,
+        quantityPicked: 24,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      }
+    ]
+  },
+  {
+    key: "mtr-kit-2",
+    status: "In Progress",
+    job: "in-progress",
+    dateOffset: -2,
+    lines: [
+      {
+        item: "BRG-6308-C3",
+        quantityRequired: 2,
+        quantityPicked: 0,
+        status: "Pending",
+        fromShelf: "A2-L1"
+      },
+      {
+        item: "CN-BRG-GREASE",
+        quantityRequired: 1,
+        quantityPicked: 0,
+        status: "Short",
+        fromShelf: "A2-L2"
+      }
+    ]
+  }
+];
+
 export const motorProduction: ProductionData = {
   assembly: motorAssembly,
   jobs: JOBS,
@@ -194,5 +270,16 @@ export const motorProduction: ProductionData = {
   genealogyInputs: GENEALOGY_INPUTS,
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
-  genealogyJobKey: "in-progress"
+  genealogyJobKey: "in-progress",
+  // The dyno operation (position 2) is the one overridden to In Progress.
+  openEvent: { operationOrder: 2 },
+  batch: { operationOrder: 1 },
+  rework: {
+    quantity: 1,
+    reason:
+      "Loaded dyno run flagged bearing noise on unit 3 — return it to the assembly bench for a drive-end bearing re-fit.",
+    targetOperationOrder: 1,
+    triggeredAtOperationOrder: 2
+  },
+  pickingLists: PICKING_LISTS
 };

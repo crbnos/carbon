@@ -1,3 +1,4 @@
+import { resolveDate } from "../dates.ts";
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
 import { insertId, insertRow, need } from "../sql.ts";
 import type { Ctx, ItemRef } from "../types.ts";
@@ -75,7 +76,7 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       );
     }
     for (const op of method.bop) {
-      await addBopOperation(
+      const operationId = await addBopOperation(
         ctx,
         mm,
         need(pr, op.process),
@@ -100,6 +101,20 @@ export async function runTier2(ctx: Ctx): Promise<void> {
             : undefined
         }
       );
+      for (const tool of op.tools ?? []) {
+        await insertRow(ctx, "methodOperationTool", {
+          operationId,
+          toolId: needItem(tool.tool).id,
+          quantity: tool.quantity
+        });
+      }
+      for (const parameter of op.parameters ?? []) {
+        await insertRow(ctx, "methodOperationParameter", {
+          operationId,
+          key: parameter.key,
+          value: parameter.value
+        });
+      }
     }
   }
 
@@ -122,6 +137,135 @@ export async function runTier2(ctx: Ctx): Promise<void> {
       leadTime: sl.leadTime,
       sourceType: "Manual Entry"
     });
+  }
+
+  // ── Revision ladder ────────────────────────────────────────────────────────
+  // The active revision is the released one, so it goes to Production (locking
+  // its BOM/BOP in the app). The rungs share its readableId and stay out of
+  // ctx.refs.items so later tiers keep resolving the active revision.
+  ctx.log("revision ladder");
+  const allItemSpecs = [
+    ...data.buyParts,
+    ...data.materials,
+    ...data.consumables,
+    ...data.tools,
+    ...data.services,
+    ...data.makeParts
+  ];
+  for (const ladder of data.revisionLadder) {
+    const baseSpec = allItemSpecs.find(
+      (spec) => spec.readableId === ladder.item
+    );
+    if (!baseSpec) {
+      throw new Error(
+        `Seed: revisionLadder item "${ladder.item}" is not a seeded item spec`
+      );
+    }
+    await ctx.client.query(
+      `UPDATE item SET "revisionStatus" = 'Production'
+       WHERE id = $1 AND "companyId" = $2`,
+      [needItem(ladder.item).id, ctx.companyId]
+    );
+    await createItem(ctx, {
+      ...baseSpec,
+      revision: ladder.obsoleteRevision,
+      active: false,
+      revisionStatus: "Obsolete",
+      description: `Rev ${ladder.obsoleteRevision} — superseded; kept for historical jobs`
+    });
+    await createItem(ctx, {
+      ...baseSpec,
+      revision: ladder.nextRevision,
+      active: false,
+      revisionStatus: ladder.nextStatus,
+      description: `Rev ${ladder.nextRevision} — in work, not yet released`
+    });
+  }
+
+  // ── Supersessions (live phase-out pairs) ──────────────────────────────────
+  // PK is itemId ALONE — the row lives on the predecessor.
+  ctx.log("supersessions");
+  for (const spec of data.supersessions) {
+    await insertRow(ctx, "itemSupersession", {
+      itemId: needItem(spec.predecessor).id,
+      successorItemId: needItem(spec.successor).id,
+      supersessionMode: spec.mode,
+      // undefined keys are dropped, keeping the column default (1).
+      conversionFactor: spec.conversionFactor,
+      successorEffectivityDate:
+        spec.successorEffectivityOffset !== undefined
+          ? resolveDate(ctx.anchor, spec.successorEffectivityOffset)
+          : undefined,
+      discontinuationDate:
+        spec.discontinuationOffset !== undefined
+          ? resolveDate(ctx.anchor, spec.discontinuationOffset)
+          : undefined
+    });
+  }
+
+  // ── Customer part numbers ──────────────────────────────────────────────────
+  ctx.log("customer part numbers");
+  for (const spec of data.customerParts) {
+    await insertRow(ctx, "customerPartToItem", {
+      itemId: needItem(spec.item).id,
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      customerPartId: spec.customerPartId,
+      customerPartRevision: spec.customerRevision ?? null
+    });
+  }
+
+  // ── Customer price overrides ───────────────────────────────────────────────
+  ctx.log("customer price overrides");
+  for (const spec of data.priceOverrides) {
+    const overrideId = await insertId(ctx, "customerItemPriceOverride", {
+      itemId: needItem(spec.item).id,
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      notes: spec.notes ?? null
+    });
+    for (const priceBreak of spec.breaks) {
+      await insertRow(ctx, "customerItemPriceOverrideBreak", {
+        customerItemPriceOverrideId: overrideId,
+        quantity: priceBreak.quantity,
+        overridePrice: priceBreak.overridePrice
+      });
+    }
+  }
+
+  // ── Pricing rules ──────────────────────────────────────────────────────────
+  ctx.log("pricing rules");
+  for (const spec of data.pricingRules) {
+    await insertRow(ctx, "pricingRule", {
+      name: spec.name,
+      ruleType: "Discount",
+      amountType: "Percentage",
+      amount: spec.percent,
+      customerIds: [need(ctx.refs.customers, spec.customer, "customer")],
+      minQuantity: spec.minQuantity
+    });
+  }
+
+  // ── Configurable item showcase ────────────────────────────────────────────
+  // Display-only depth: a parameter group + parameters, no configurationRule.
+  if (data.configuration) {
+    ctx.log("configuration parameters");
+    const cfg = data.configuration;
+    const itemId = needItem(cfg.item).id;
+    const groupId = await insertId(ctx, "configurationParameterGroup", {
+      itemId,
+      name: cfg.group,
+      sortOrder: 1
+    });
+    for (const [index, parameter] of cfg.parameters.entries()) {
+      await insertRow(ctx, "configurationParameter", {
+        itemId,
+        configurationParameterGroupId: groupId,
+        key: parameter.key,
+        label: parameter.label,
+        dataType: parameter.dataType,
+        listOptions: parameter.listOptions ?? null,
+        sortOrder: index + 1
+      });
+    }
   }
 }
 

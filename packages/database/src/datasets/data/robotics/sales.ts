@@ -6,6 +6,7 @@ import type {
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
+  SalesReturnSpec,
   SalesStatusOrderSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
@@ -194,6 +195,170 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
         }
       ]
     }
+  },
+
+  // ── Status showcase — one lightweight opportunity per remaining state ──────
+  {
+    log: "opportunity 5 — RFQ draft (Alpine, second test-rig base)",
+    ref: "opp:alpine-rig",
+    customer: "Alpine Research Institute",
+    rfq: {
+      ref: "rfq:alpine-rig",
+      status: "Draft",
+      rfqDateOffset: -3,
+      externalNotes:
+        "Inquiry being logged — second base assembly for a mobile manipulation rig.",
+      lines: [
+        {
+          item: "ARM-BASE-001",
+          customerPartId: "ALP-BASE-002",
+          quantity: [1],
+          order: 1
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 6 — no-quoted RFQ, lost quote (Lakeshore washdown wrist)",
+    ref: "opp:lakeshore-washdown",
+    customer: "Lakeshore Automotive",
+    rfq: {
+      ref: "rfq:lakeshore-washdown",
+      status: "Closed",
+      rfqDateOffset: -95,
+      expirationOffset: -50,
+      noQuoteReason: "Out of Scope",
+      externalNotes:
+        "IP69K washdown-rated wrist variant — outside our sealing qualification.",
+      lines: [
+        {
+          item: "ARM-WRIST-001",
+          customerPartId: "LKS-WRIST-WD1",
+          quantity: [2],
+          order: 1
+        }
+      ]
+    },
+    quote: {
+      ref: "quote:lakeshore-washdown",
+      status: "Lost",
+      externalNotes: "Declined to bid the washdown-rated line.",
+      lines: [
+        {
+          ref: "quoteline:lakeshore-washdown:wrist",
+          item: "ARM-WRIST-001",
+          status: "No Quote",
+          sortOrder: 1,
+          priceBreaks: []
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 7 — quote draft (Northwind pick-and-place arm)",
+    ref: "opp:northwind-pnp",
+    customer: "Northwind Electronics",
+    quote: {
+      ref: "quote:northwind-pnp",
+      status: "Draft",
+      externalNotes:
+        "Working draft — pick-and-place-optimized arm pricing in progress.",
+      lines: [
+        {
+          ref: "quoteline:northwind-pnp:rob",
+          item: "ROB-2000",
+          status: "Not Started",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 58500, leadTime: 125 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 8 — partial quote (Cascade cell retrofit)",
+    ref: "opp:cascade-retrofit",
+    customer: "Cascade Integration Group",
+    quote: {
+      ref: "quote:cascade-retrofit",
+      status: "Partial",
+      expirationOffset: 45,
+      externalNotes:
+        "Controller line released to the customer; gripper line still in engineering review.",
+      lines: [
+        {
+          ref: "quoteline:cascade-retrofit:ctrl",
+          item: "CTRL-100",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 2, unitPrice: 11200, leadTime: 70 }]
+        },
+        {
+          ref: "quoteline:cascade-retrofit:grp",
+          item: "GRP-2F-80",
+          status: "In Progress",
+          sortOrder: 2,
+          priceBreaks: [{ quantity: 2, unitPrice: 6700, leadTime: 85 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 9 — cancelled quote (Alpine teaching cell)",
+    ref: "opp:alpine-teaching",
+    customer: "Alpine Research Institute",
+    quote: {
+      ref: "quote:alpine-teaching",
+      status: "Cancelled",
+      externalNotes: "Program defunded before pricing was issued.",
+      lines: [
+        {
+          ref: "quoteline:alpine-teaching:ctrl",
+          item: "CTRL-100",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 11300, leadTime: 65 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 10 — expired quote (Northwind spare jaw set)",
+    ref: "opp:northwind-jaws",
+    customer: "Northwind Electronics",
+    quote: {
+      ref: "quote:northwind-jaws",
+      status: "Expired",
+      expirationOffset: -14,
+      externalNotes: "30-day pricing lapsed without a PO.",
+      lines: [
+        {
+          ref: "quoteline:northwind-jaws:jaw",
+          item: "GRP-JAW-80",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 330, leadTime: 45 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — Needs Approval (Lakeshore gearbox spares)",
+    ref: "opp:lakeshore-gbx",
+    customer: "Lakeshore Automotive",
+    order: {
+      ref: "so:lakeshore-gbx",
+      status: "Needs Approval",
+      orderDateOffset: -2,
+      lines: [
+        {
+          ref: "soline:lakeshore-gbx:gbx",
+          item: "GBX-HD-80",
+          saleQuantity: 2,
+          unitPrice: 1725,
+          status: "Ordered"
+        }
+      ]
+    }
   }
 ];
 
@@ -281,11 +446,329 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
         sortOrder: delivery.sortOrder
       }))
     }
+  },
+
+  // ── Fulfillment lifecycle — posted, partial and voided shipments ──────────
+  // Shipped items are well-stocked untracked buy parts (spares sold from the
+  // shelf), so the ledger rows never overdraw a bin.
+  {
+    log: "sales order — To Invoice (Cascade, posted spare-drive shipment)",
+    ref: "opp:cascade-drives",
+    customer: "Cascade Integration Group",
+    order: {
+      ref: "so:cascade-drives",
+      status: "To Invoice",
+      orderDateOffset: -30,
+      lines: [
+        {
+          ref: "soline:cascade-drives:drv",
+          item: "DRV-SRV-400",
+          saleQuantity: 2,
+          unitPrice: 630,
+          status: "Completed"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:cascade-drives",
+      status: "Posted",
+      postedOffset: -18,
+      lines: [
+        {
+          item: "DRV-SRV-400",
+          orderQuantity: 2,
+          outstandingQuantity: 0,
+          shippedQuantity: 2,
+          unitPrice: 630,
+          fromShelf: "ESD-Cage"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship and Invoice (Lakeshore, partial gear-set shipment)",
+    ref: "opp:lakeshore-gearsets",
+    customer: "Lakeshore Automotive",
+    order: {
+      ref: "so:lakeshore-gearsets",
+      status: "To Ship and Invoice",
+      orderDateOffset: -21,
+      lines: [
+        {
+          ref: "soline:lakeshore-gearsets:gbx",
+          item: "GBX-HD-50",
+          saleQuantity: 4,
+          unitPrice: 1170,
+          status: "In Progress"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:lakeshore-gearsets",
+      status: "Posted",
+      postedOffset: -9,
+      lines: [
+        {
+          item: "GBX-HD-50",
+          orderQuantity: 4,
+          outstandingQuantity: 2,
+          shippedQuantity: 2,
+          unitPrice: 1170,
+          fromShelf: "A2-L1"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship (Alpine, voided connector shipment)",
+    ref: "opp:alpine-connectors",
+    customer: "Alpine Research Institute",
+    order: {
+      ref: "so:alpine-connectors",
+      status: "To Ship",
+      orderDateOffset: -14,
+      lines: [
+        {
+          ref: "soline:alpine-connectors:conn",
+          item: "MAT-CONN-M23",
+          saleQuantity: 8,
+          unitPrice: 45,
+          status: "Ordered"
+        }
+      ]
+    },
+    // Wrong carrier account keyed in — voided before anything left the dock.
+    shipment: {
+      ref: "shp:alpine-connectors",
+      status: "Voided",
+      lines: [
+        {
+          item: "MAT-CONN-M23",
+          orderQuantity: 8,
+          outstandingQuantity: 8,
+          shippedQuantity: 0,
+          unitPrice: 45
+        }
+      ]
+    }
+  },
+
+  // ── Invoice lifecycle — one order+invoice per remaining status ────────────
+  // Modest spares invoices; accounting.ts settles "paid" and "partial" by their
+  // sinv keys.
+  {
+    log: "sales invoice — Submitted (Northwind bearing spares)",
+    ref: "opp:northwind-bearings",
+    customer: "Northwind Electronics",
+    order: {
+      ref: "so:northwind-bearings",
+      status: "Invoiced",
+      orderDateOffset: -35,
+      lines: [
+        {
+          ref: "soline:northwind-bearings:brg",
+          item: "BRG-CRB-100",
+          saleQuantity: 20,
+          unitPrice: 278,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:northwind-bearings",
+      key: "submitted",
+      status: "Submitted",
+      subtotal: 5560,
+      totalAmount: 5560,
+      dateIssuedOffset: -20,
+      dueDateOffset: 10,
+      lines: [{ item: "BRG-CRB-100", quantity: 20, unitPrice: 278 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue (Cascade spare axis motor)",
+    ref: "opp:cascade-motor",
+    customer: "Cascade Integration Group",
+    order: {
+      ref: "so:cascade-motor",
+      status: "Invoiced",
+      orderDateOffset: -60,
+      lines: [
+        {
+          ref: "soline:cascade-motor:mot",
+          item: "MOT-AC-200W",
+          saleQuantity: 1,
+          unitPrice: 465,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:cascade-motor",
+      key: "overdue",
+      status: "Overdue",
+      subtotal: 465,
+      totalAmount: 465,
+      dateIssuedOffset: -45,
+      dueDateOffset: -15,
+      lines: [{ item: "MOT-AC-200W", quantity: 1, unitPrice: 465 }]
+    }
+  },
+  {
+    log: "sales invoice — Paid (Lakeshore stainless fastener lot)",
+    ref: "opp:lakeshore-fasteners",
+    customer: "Lakeshore Automotive",
+    order: {
+      ref: "so:lakeshore-fasteners",
+      status: "Closed",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:lakeshore-fasteners:fst",
+          item: "FST-M8-SS",
+          saleQuantity: 500,
+          unitPrice: 1.4,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:lakeshore-fasteners",
+      key: "paid",
+      status: "Paid",
+      subtotal: 700,
+      totalAmount: 700,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "FST-M8-SS", quantity: 500, unitPrice: 1.4 }]
+    }
+  },
+  {
+    log: "sales invoice — Partially Paid (Alpine force/torque sensor)",
+    ref: "opp:alpine-sensor",
+    customer: "Alpine Research Institute",
+    order: {
+      ref: "so:alpine-sensor",
+      status: "Invoiced",
+      orderDateOffset: -50,
+      lines: [
+        {
+          ref: "soline:alpine-sensor:sns",
+          item: "SNS-FT-6AX",
+          saleQuantity: 1,
+          unitPrice: 5100,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:alpine-sensor",
+      key: "partial",
+      status: "Partially Paid",
+      subtotal: 5100,
+      totalAmount: 5100,
+      dateIssuedOffset: -38,
+      dueDateOffset: -8,
+      lines: [{ item: "SNS-FT-6AX", quantity: 1, unitPrice: 5100 }]
+    }
+  },
+  {
+    log: "sales invoice — Voided (Northwind M5 fasteners, wrong bill-to)",
+    ref: "opp:northwind-fasteners",
+    customer: "Northwind Electronics",
+    order: {
+      ref: "so:northwind-fasteners",
+      status: "To Invoice",
+      orderDateOffset: -28,
+      lines: [
+        {
+          ref: "soline:northwind-fasteners:fst",
+          item: "FST-M5-SS",
+          saleQuantity: 100,
+          unitPrice: 0.9,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:northwind-fasteners",
+      key: "voided",
+      status: "Voided",
+      subtotal: 90,
+      totalAmount: 90,
+      dateIssuedOffset: -25,
+      lines: [{ item: "FST-M5-SS", quantity: 100, unitPrice: 0.9 }]
+    }
+  },
+  {
+    log: "sales invoice — Credit Note Issued (Cascade gripper jaw sets)",
+    ref: "opp:cascade-jaws",
+    customer: "Cascade Integration Group",
+    order: {
+      ref: "so:cascade-jaws",
+      status: "Closed",
+      orderDateOffset: -70,
+      lines: [
+        {
+          ref: "soline:cascade-jaws:jaw",
+          item: "GRP-JAW-80",
+          saleQuantity: 2,
+          unitPrice: 300,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:cascade-jaws",
+      key: "credit",
+      status: "Credit Note Issued",
+      subtotal: 600,
+      totalAmount: 600,
+      dateIssuedOffset: -55,
+      dueDateOffset: -25,
+      lines: [{ item: "GRP-JAW-80", quantity: 2, unitPrice: 300 }]
+    }
+  }
+];
+
+// RMAs — one per modeled status, returning small quantities of the spares the
+// posted shipments above actually sent out. The Completed one books stock back
+// into the shelf it shipped from.
+export const SALES_RETURNS: SalesReturnSpec[] = [
+  {
+    key: "servodrive",
+    status: "Completed",
+    customer: "Cascade Integration Group",
+    returnReason: "Defective",
+    dateOffset: -12,
+    salesOrder: "so:cascade-drives",
+    lines: [
+      { item: "DRV-SRV-400", quantity: 1, unitPrice: 630, toShelf: "ESD-Cage" }
+    ]
+  },
+  {
+    key: "gearset",
+    status: "To Receive",
+    customer: "Lakeshore Automotive",
+    returnReason: "Damaged in Transit",
+    dateOffset: -5,
+    salesOrder: "so:lakeshore-gearsets",
+    lines: [{ item: "GBX-HD-50", quantity: 1, unitPrice: 1170 }]
+  },
+  {
+    key: "bearings",
+    status: "Draft",
+    customer: "Northwind Electronics",
+    returnReason: "No Longer Needed",
+    dateOffset: -1,
+    salesOrder: "so:northwind-bearings",
+    lines: [{ item: "BRG-CRB-100", quantity: 4, unitPrice: 278 }]
   }
 ];
 
 export const roboticsSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
-  releasedOrders: RELEASED_ORDERS
+  releasedOrders: RELEASED_ORDERS,
+  salesReturns: SALES_RETURNS
 };

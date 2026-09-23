@@ -37,11 +37,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ── 1. itemPlanning: Buy items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Buy items reorder policy");
   for (const readableId of data.buyItemIds) {
-    const item = refs.items[readableId];
-    if (!item) {
-      ctx.log(`  skip ${readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, readableId, "planning buy item");
     await client.query(
       `UPDATE "itemPlanning"
        SET "reorderingPolicy" = 'Fixed Reorder Quantity',
@@ -57,11 +53,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ── 2. itemPlanning: Make items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Make items reorder policy");
   for (const readableId of data.makeItemIds) {
-    const item = refs.items[readableId];
-    if (!item) {
-      ctx.log(`  skip ${readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, readableId, "planning make item");
     await client.query(
       `UPDATE "itemPlanning"
        SET "reorderingPolicy" = 'Fixed Reorder Quantity',
@@ -80,8 +72,12 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // promisedDate must fall inside the 48-week planning horizon.
   ctx.log("SO — open order for buy-item demand");
   const order = data.demandOrder;
-  const customerId = refs.customers[order.customer]!;
-  const customerLocationId = refs.misc[`cloc:${order.customer}`] ?? null;
+  const customerId = need(refs.customers, order.customer, "customer");
+  const customerLocationId = need(
+    refs.misc,
+    `cloc:${order.customer}`,
+    "customer location"
+  );
 
   const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
 
@@ -115,7 +111,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     companyId
   });
   for (const line of order.lines) {
-    const item = refs.items[line.item]!;
+    const item = need(refs.items, line.item, "demand order item");
     await insertId(ctx, "salesOrderLine", {
       salesOrderId: so,
       salesOrderLineType: line.salesOrderLineType,
@@ -175,11 +171,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
 
   ctx.log("demandProjection — weekly forecast for make parts");
   for (const spec of data.demandProjections) {
-    const item = refs.items[spec.readableId];
-    if (!item) {
-      ctx.log(`  skip ${spec.readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, spec.readableId, "demand projection item");
     for (let week = 0; week < spec.quantities.length; week++) {
       const periodId = periodIds[week];
       if (!periodId) break;

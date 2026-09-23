@@ -2,6 +2,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  PickingListSpec,
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
@@ -17,8 +18,31 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:cedarvalley",
     salesOrderLine: "soline:cedarvalley:hma",
     customer: "Cedar Valley Hydraulics",
+    deadlineType: "Hard Deadline",
     dueDateOffset: -96,
-    releasedDateOffset: -160
+    releasedDateOffset: -160,
+    // The floor's real mixed state: the manifold build is done, the hydro
+    // proof test is running, final inspection waits on it.
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "In Progress" },
+      { order: 3, status: "Waiting" }
+    ],
+    quantities: [
+      { order: 1, type: "Production", quantity: 1 },
+      { order: 1, type: "Scrap", quantity: 2, scrapReason: "Quality" },
+      { order: 2, type: "Rework", quantity: 1 }
+    ],
+    operationNotes: [
+      {
+        order: 1,
+        note: "Manifold torqued to spec on the base frame — witness marks on all M10s, torque wrench cal sticker photographed for the Cedar Valley book."
+      },
+      {
+        order: 2,
+        note: "Hydro proof at 1.5x rated running on unit 4. Held 10 minutes, no drop on the gauge yet — leaving it on the stand through lunch."
+      }
+    ]
   },
   {
     key: "ready",
@@ -28,6 +52,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:dominion",
     salesOrderLine: "soline:dominion:hma",
     customer: "Dominion Ag Equipment",
+    deadlineType: "ASAP",
     dueDateOffset: -60,
     releasedDateOffset: -92
   },
@@ -39,6 +64,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:planned",
     salesOrderLine: "soline:planned",
     customer: "Granite State Instruments",
+    deadlineType: "Soft Deadline",
     dueDateOffset: -30
   },
   {
@@ -49,7 +75,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:draft",
     salesOrderLine: "soline:draft",
     customer: "Solstice Medical Devices",
-    dueDateOffset: -24
+    deadlineType: "No Deadline"
   },
   {
     key: "paused",
@@ -189,6 +215,56 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
+// Material staging for the in-progress HMA-4000 job. The completed list kitted
+// the manifold hardware weeks ago; the open list is today's pull for the pump
+// housings, short on rod bushings.
+export const PICKING_LISTS: PickingListSpec[] = [
+  {
+    key: "hma-kit-1",
+    status: "Completed",
+    job: "in-progress",
+    dateOffset: -20,
+    lines: [
+      {
+        item: "INS-HELI-M6",
+        quantityRequired: 24,
+        quantityPicked: 24,
+        status: "Picked",
+        fromShelf: "B1-L2"
+      },
+      {
+        item: "SEAL-ORING-224",
+        quantityRequired: 16,
+        quantityPicked: 16,
+        status: "Picked",
+        fromShelf: "B2-L1"
+      }
+    ]
+  },
+  {
+    key: "hma-kit-2",
+    status: "In Progress",
+    job: "in-progress",
+    dateOffset: -2,
+    lines: [
+      {
+        item: "BRG-NDL-HK1512",
+        quantityRequired: 12,
+        quantityPicked: 0,
+        status: "Pending",
+        fromShelf: "B1-L3"
+      },
+      {
+        item: "BSH-BRZ-2012",
+        quantityRequired: 12,
+        quantityPicked: 0,
+        status: "Short",
+        fromShelf: "B2-L2"
+      }
+    ]
+  }
+];
+
 export const precisionProduction: ProductionData = {
   assembly: precisionAssembly,
   jobs: JOBS,
@@ -196,5 +272,16 @@ export const precisionProduction: ProductionData = {
   genealogyInputs: GENEALOGY_INPUTS,
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
-  genealogyJobKey: "in-progress"
+  genealogyJobKey: "in-progress",
+  // The hydro proof test (position 2) is the one overridden to In Progress.
+  openEvent: { operationOrder: 2 },
+  batch: { operationOrder: 1 },
+  rework: {
+    quantity: 1,
+    reason:
+      "Manifold-to-housing joint seeped at 1.5x proof — send unit 4 back to the bench to reseat the O-rings and retorque the joint.",
+    targetOperationOrder: 1,
+    triggeredAtOperationOrder: 2
+  },
+  pickingLists: PICKING_LISTS
 };

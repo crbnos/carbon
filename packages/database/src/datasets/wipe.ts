@@ -1,4 +1,5 @@
 import type { PoolClient } from "pg";
+import { getGroupId, groups } from "../../supabase/functions/lib/seed.data.ts";
 import { quote, resetSequences } from "./sql.ts";
 import type { Ctx } from "./types.ts";
 
@@ -224,6 +225,32 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
       (deleteSet.has(fk.child) || PRESERVED_TABLES.has(fk.child))
   );
 
+  // The prevent_posted_{sales,purchase}_invoice_deletion interceptors refuse
+  // DELETE for any status but Draft, even under app.sync_in_progress. This is a
+  // re-seed wipe, not an app delete of a posted document, so reset them to
+  // Draft first — otherwise re-applying over Paid / Voided invoices fails.
+  for (const t of ["salesInvoice", "purchaseInvoice"]) {
+    if (deleteSet.has(t)) {
+      await client.query(
+        `UPDATE ${quote(t)} SET status = 'Draft'
+         WHERE "companyId" = $1 AND status <> 'Draft'`,
+        [companyId]
+      );
+    }
+  }
+
+  // Settlements point at their target invoice/memo through ON DELETE RESTRICT
+  // foreign keys, so they must go before the invoice headers below. Payments
+  // and memos go with them: both carry a customer-XOR-supplier CHECK that the
+  // FK-nulling pass would violate when it nulls the party they point at.
+  for (const t of ["invoiceSettlement", "payment", "memo"]) {
+    if (deleteSet.has(t)) {
+      await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
+        companyId
+      ]);
+    }
+  }
+
   // Delete lines with check constraints that would block nulling their item FKs.
   // salesOrderLine.itemId can't be set NULL (check requires it for Part/Material/Tool/etc).
   // Cascade via the parent headers — the headers are in deleteSet and will be deleted again
@@ -255,6 +282,24 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
       companyId
     ]);
   }
+
+  // Customer/supplier interceptors mint an org group per partner (id = the
+  // partner's id) and per type, and nothing deletes them with the owner, so the
+  // previous story's partners linger in group pickers. Drop the orphans;
+  // bootstrap's roots are kept by id and employee-type groups are untouched.
+  await client.query(
+    `DELETE FROM "group" g
+     WHERE g."companyId" = $1 AND g.id <> ALL($2::text[]) AND (
+          (g."isCustomerOrgGroup" AND NOT EXISTS (
+            SELECT 1 FROM customer o WHERE o.id = g.id AND o."companyId" = $1))
+       OR (g."isSupplierOrgGroup" AND NOT EXISTS (
+            SELECT 1 FROM supplier o WHERE o.id = g.id AND o."companyId" = $1))
+       OR (g."isCustomerTypeGroup" AND NOT EXISTS (
+            SELECT 1 FROM "customerType" o WHERE o.id = g.id AND o."companyId" = $1))
+       OR (g."isSupplierTypeGroup" AND NOT EXISTS (
+            SELECT 1 FROM "supplierType" o WHERE o.id = g.id AND o."companyId" = $1)))`,
+    [companyId, groups.map((g) => getGroupId(g.idPrefix, companyId))]
+  );
 
   // location is preserved, but only the bootstrap one — the rest are seed data.
   // Re-point the employee at it first; employeeJob is preserved and NOT NULL.

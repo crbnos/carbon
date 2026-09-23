@@ -1,4 +1,5 @@
 import { resolveDate } from "../dates.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { addBomLine, createItem } from "../helpers/items.ts";
 import type { Row } from "../sql.ts";
 import {
@@ -8,6 +9,7 @@ import {
   nextSequence,
   one,
   quote,
+  RICH,
   rows,
   sharedColumns
 } from "../sql.ts";
@@ -119,8 +121,54 @@ export async function runTier8(ctx: Ctx): Promise<void> {
       name: spec.name,
       type: spec.type,
       status: spec.status,
-      openDate: resolveDate(ctx.anchor, spec.openDateOffset)
+      openDate: resolveDate(ctx.anchor, spec.openDateOffset),
+      changeOrderTypeId:
+        spec.changeOrderType === undefined
+          ? undefined
+          : await bootstrapIdByName(
+              ctx,
+              "changeOrderType",
+              spec.changeOrderType
+            ),
+      priority: spec.priority,
+      dueDate:
+        spec.dueDateOffset === undefined
+          ? undefined
+          : resolveDate(ctx.anchor, spec.dueDateOffset),
+      reasonForChange:
+        spec.reasonForChange === undefined
+          ? undefined
+          : RICH(spec.reasonForChange),
+      nonConformanceId:
+        spec.nonConformance === undefined
+          ? undefined
+          : need(ctx.refs.documents, spec.nonConformance, "NCR")
     });
+
+    // Action tasks as setChangeNoticeActionTasks instantiates them from the
+    // required-action templates: template id + name, 1-based sortOrder.
+    for (const [taskIndex, task] of (spec.actionTasks ?? []).entries()) {
+      await insertRow(ctx, "changeOrderActionTask", {
+        changeOrderId: changeOrder,
+        actionTypeId: await bootstrapIdByName(
+          ctx,
+          "changeOrderRequiredAction",
+          task.action
+        ),
+        name: task.action,
+        status: task.status,
+        sortOrder: taskIndex + 1,
+        assignee: task.status === "In Progress" ? ctx.userId : undefined,
+        dueDate:
+          task.dueDateOffset === undefined
+            ? undefined
+            : resolveDate(ctx.anchor, task.dueDateOffset),
+        completedDate:
+          task.completedOffset === undefined
+            ? undefined
+            : resolveDate(ctx.anchor, task.completedOffset)
+      });
+    }
 
     for (const affected of spec.affectedItems) {
       const item = need(ctx.refs.items, affected.item);

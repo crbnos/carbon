@@ -3,8 +3,21 @@ import {
   copyMethodToJob,
   type JobOperationStatus
 } from "../helpers/job-method.ts";
-import { insertId, insertRow, need, nextSequence, rows } from "../sql.ts";
-import type { AssemblySpec, Ctx, ProductionData } from "../types.ts";
+import {
+  insertId,
+  insertRow,
+  maybeOne,
+  need,
+  nextSequence,
+  rows
+} from "../sql.ts";
+import type {
+  AssemblySpec,
+  Ctx,
+  JobSpec,
+  PickingListSpec,
+  ProductionData
+} from "../types.ts";
 
 /**
  * Seeds an animated assembly instruction against a CAD model that ships with the
@@ -58,6 +71,63 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
   }
 }
 
+type RootOperation = {
+  id: string;
+  workCenterId: string | null;
+  processId: string;
+  order: number;
+};
+
+// Root operations in "order" order. Specs address them by 1-based position,
+// not raw order value, so 10/20/30 resolves the same as 1/2/3.
+async function rootOperations(
+  ctx: Ctx,
+  jobId: string
+): Promise<RootOperation[]> {
+  return rows<RootOperation>(
+    ctx.client,
+    `SELECT jo.id, jo."workCenterId", jo."processId", jo."order"
+     FROM "jobOperation" jo
+     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
+     WHERE jo."jobId" = $1 AND jmm."parentMaterialId" IS NULL
+       AND jo."companyId" = $2
+     ORDER BY jo."order"`,
+    [jobId, ctx.companyId]
+  );
+}
+
+function rootOperationAt(
+  operations: RootOperation[],
+  position: number,
+  what: string
+): RootOperation {
+  const operation = operations[position - 1];
+  if (!operation) {
+    throw new Error(
+      `Seed: ${what} names root operation position ${position}, but the job has only ${operations.length}`
+    );
+  }
+  return operation;
+}
+
+// Cached in ctx.refs.misc, not module scope — that would leak across the drift
+// check's four companies.
+async function scrapReasonIdByName(ctx: Ctx, name: string): Promise<string> {
+  const key = `scrapReason:${name}`;
+  const cached = ctx.refs.misc[key];
+  if (cached) return cached;
+  const row = await maybeOne<{ id: string }>(
+    ctx.client,
+    `SELECT id FROM "scrapReason" WHERE "companyId" = $1 AND name = $2`,
+    [ctx.companyId, name]
+  );
+  if (!row) {
+    throw new Error(`Seed: no bootstrap scrapReason named "${name}"`);
+  }
+  ctx.refs.misc[key] = row.id;
+  return row.id;
+}
+
 // A job's operations open in the state its own status implies — a Draft job's
 // work has not been handed to the floor, a released one's has.
 function operationStatusFor(jobStatus: string): JobOperationStatus {
@@ -103,8 +173,12 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       customerId: need(ctx.refs.customers, spec.customer),
       salesOrderId: need(ctx.refs.documents, spec.salesOrder),
       salesOrderLineId: need(ctx.refs.documents, spec.salesOrderLine),
-      deadlineType: "Hard Deadline",
-      dueDate: resolveDate(ctx.anchor, spec.dueDateOffset),
+      deadlineType: spec.deadlineType ?? "Hard Deadline",
+      // A "No Deadline" job has no due date; the UI renders none on that path.
+      dueDate:
+        spec.dueDateOffset === undefined
+          ? null
+          : resolveDate(ctx.anchor, spec.dueDateOffset),
       releasedDate:
         spec.releasedDateOffset === undefined
           ? null
@@ -129,6 +203,8 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       `  method: ${copied.operations} operations, ${copied.materials} materials, ${copied.levels} levels`
     );
 
+    await applyOperationDepth(ctx, id, spec);
+
     // The interceptor's reserved entity for the unit being built has no
     // readableId, so the MES assembly view labels the first serial with a raw
     // id. Name it after the job.
@@ -142,8 +218,73 @@ export async function runTier6(ctx: Ctx): Promise<void> {
     );
   }
 
+  // Job refs only exist from here on, so this favorite isn't tier 04's.
+  // jobFavorite has no companyId/createdBy, so audit injection no-ops.
+  await insertRow(ctx, "jobFavorite", {
+    jobId: need(ctx.refs.documents, `job:${data.eventsJobKey}`),
+    userId: ctx.userId
+  });
+
   await seedProductionEvents(ctx, data);
+  await seedOpenEvent(ctx, data);
+  await seedBatch(ctx, data);
+  await seedRework(ctx, data);
   await seedGenealogy(ctx, data);
+  await seedPickingLists(ctx, data);
+}
+
+/** Operation overrides, quantities and notes; all address root ops by 1-based position. */
+async function applyOperationDepth(
+  ctx: Ctx,
+  jobId: string,
+  spec: JobSpec
+): Promise<void> {
+  if (!spec.operationOverrides && !spec.quantities && !spec.operationNotes) {
+    return;
+  }
+  const operations = await rootOperations(ctx, jobId);
+
+  for (const override of spec.operationOverrides ?? []) {
+    const operation = rootOperationAt(
+      operations,
+      override.order,
+      `job "${spec.key}" operationOverrides`
+    );
+    await ctx.client.query(
+      `UPDATE "jobOperation" SET status = $1 WHERE id = $2 AND "companyId" = $3`,
+      [override.status, operation.id, ctx.companyId]
+    );
+  }
+
+  for (const quantity of spec.quantities ?? []) {
+    const operation = rootOperationAt(
+      operations,
+      quantity.order,
+      `job "${spec.key}" quantities`
+    );
+    await insertId(ctx, "productionQuantity", {
+      jobOperationId: operation.id,
+      type: quantity.type,
+      quantity: quantity.quantity,
+      scrapReasonId:
+        quantity.scrapReason === undefined
+          ? null
+          : await scrapReasonIdByName(ctx, quantity.scrapReason)
+    });
+  }
+
+  for (const note of spec.operationNotes ?? []) {
+    const operation = rootOperationAt(
+      operations,
+      note.order,
+      `job "${spec.key}" operationNotes`
+    );
+    // jobOperationNote.note is plain text (the MES operation chat), not TipTap.
+    await insertRow(ctx, "jobOperationNote", {
+      jobOperationId: operation.id,
+      note: note.note
+    });
+  }
 }
 
 /**
@@ -156,22 +297,9 @@ async function seedProductionEvents(
   data: ProductionData
 ): Promise<void> {
   const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+  const eventsJobSpec = data.jobs.find((job) => job.key === data.eventsJobKey);
 
-  const operations = await rows<{
-    id: string;
-    workCenterId: string | null;
-    order: number;
-  }>(
-    ctx.client,
-    `SELECT jo.id, jo."workCenterId", jo."order"
-     FROM "jobOperation" jo
-     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
-     WHERE jo."jobId" = $1 AND jmm."parentMaterialId" IS NULL
-       AND jo."companyId" = $2
-     ORDER BY jo."order"
-     LIMIT 2`,
-    [jobId, ctx.companyId]
-  );
+  const operations = (await rootOperations(ctx, jobId)).slice(0, 2);
   if (operations.length === 0) return;
 
   if (data.shifts.length === 0) return;
@@ -201,11 +329,192 @@ async function seedProductionEvents(
       });
     }
 
-    await insertId(ctx, "productionQuantity", {
-      jobOperationId: operation.id,
-      type: "Production",
-      quantity: 1
+    // A job that authors its own productionQuantity rows (JobSpec.quantities)
+    // replaces this legacy Production-1 default entirely.
+    if (!eventsJobSpec?.quantities) {
+      await insertId(ctx, "productionQuantity", {
+        jobOperationId: operation.id,
+        type: "Production",
+        quantity: 1
+      });
+    }
+  }
+}
+
+/** An open Setup event (no endTime) — what makes MES's active-operation UI render. */
+async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+  const operations = await rootOperations(ctx, jobId);
+  const operation = rootOperationAt(
+    operations,
+    data.openEvent.operationOrder,
+    "production.openEvent"
+  );
+
+  ctx.log("open production event");
+  await insertRow(ctx, "productionEvent", {
+    jobOperationId: operation.id,
+    type: "Setup",
+    startTime: resolveTimestamp(ctx.anchor, 0, "08:00:00"),
+    endTime: null,
+    employeeId: ctx.userId,
+    workCenterId: operation.workCenterId,
+    postedToGL: false
+  });
+}
+
+/** As the batch-operations edge function does: insert the header, then stamp the operation. */
+async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+  const operations = await rootOperations(ctx, jobId);
+  const operation = rootOperationAt(
+    operations,
+    data.batch.operationOrder,
+    "production.batch"
+  );
+
+  ctx.log("job operation batch");
+  const batchId = await insertId(ctx, "jobOperationBatch", {
+    readableId: await nextSequence(ctx, "jobOperationBatch"),
+    processId: operation.processId,
+    workCenterId: operation.workCenterId,
+    locationId: ctx.refs.locations.Plant ?? ctx.locationId,
+    status: "Active",
+    mergeOutput: false
+  });
+  await ctx.client.query(
+    `UPDATE "jobOperation" SET "jobOperationBatchId" = $1
+     WHERE id = $2 AND "companyId" = $3`,
+    [batchId, operation.id, ctx.companyId]
+  );
+}
+
+/** Mirrors trigger-rework; left open (no completedAt) since the job is still In Progress. */
+async function seedRework(ctx: Ctx, data: ProductionData): Promise<void> {
+  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
+  const operations = await rootOperations(ctx, jobId);
+  const target = rootOperationAt(
+    operations,
+    data.rework.targetOperationOrder,
+    "production.rework target"
+  );
+  const triggeredAt = rootOperationAt(
+    operations,
+    data.rework.triggeredAtOperationOrder,
+    "production.rework triggeredAt"
+  );
+
+  ctx.log("rework");
+  await insertRow(ctx, "rework", {
+    jobId,
+    quantity: data.rework.quantity,
+    reason: data.rework.reason,
+    requestedById: ctx.userId,
+    targetJobOperationId: target.id,
+    triggeredAtJobOperationId: triggeredAt.id
+  });
+}
+
+/**
+ * Header status is inserted directly: update_picking_list_status fires only on
+ * line UPDATE. Picked lines on a Completed list write post-picking's ledger pair.
+ */
+async function seedPickingLists(ctx: Ctx, data: ProductionData): Promise<void> {
+  for (const spec of data.pickingLists) {
+    await seedPickingList(ctx, spec);
+  }
+}
+
+async function seedPickingList(ctx: Ctx, spec: PickingListSpec): Promise<void> {
+  ctx.log(`picking list ${spec.key} — ${spec.status}`);
+  const plantId = ctx.refs.locations.Plant ?? ctx.locationId;
+  const jobId = need(ctx.refs.documents, `job:${spec.job}`);
+  const operations = await rootOperations(ctx, jobId);
+  const staffedOperation = operations.find((op) => op.workCenterId !== null);
+  if (!staffedOperation) {
+    throw new Error(
+      `Seed: picking list "${spec.key}": job "${spec.job}" has no root operation with a work center to stage material at`
+    );
+  }
+  const lineside = await maybeOne<{ id: string }>(
+    ctx.client,
+    `SELECT id FROM "storageUnit"
+     WHERE "workCenterId" = $1 AND "isWorkCenterDefault" = true AND "companyId" = $2
+     LIMIT 1`,
+    [staffedOperation.workCenterId, ctx.companyId]
+  );
+  if (!lineside) {
+    throw new Error(
+      `Seed: picking list "${spec.key}": no floor storage unit for the job's work center`
+    );
+  }
+
+  const pickingListId = await insertId(ctx, "pickingList", {
+    pickingListId: await nextSequence(ctx, "pickingList"),
+    locationId: plantId,
+    status: spec.status,
+    dueDate: resolveDate(ctx.anchor, spec.dateOffset),
+    assignee: ctx.userId
+  });
+
+  for (const line of spec.lines) {
+    const item = need(ctx.refs.items, line.item);
+    const fromShelfId = need(ctx.refs.shelves, line.fromShelf, "shelf");
+    const material = await maybeOne<{
+      id: string;
+      jobOperationId: string | null;
+    }>(
+      ctx.client,
+      `SELECT id, "jobOperationId" FROM "jobMaterial"
+       WHERE "jobId" = $1 AND "itemId" = $2 AND "companyId" = $3
+       ORDER BY "order", id
+       LIMIT 1`,
+      [jobId, item.id, ctx.companyId]
+    );
+    if (!material) {
+      throw new Error(
+        `Seed: picking list "${spec.key}": item "${line.item}" is not a jobMaterial of job "${spec.job}"`
+      );
+    }
+
+    await insertRow(ctx, "pickingListLine", {
+      pickingListId,
+      jobId,
+      jobMaterialId: material.id,
+      jobOperationId: material.jobOperationId,
+      itemId: item.id,
+      quantityToPick: line.quantityRequired,
+      quantityPicked: line.quantityPicked,
+      status: line.status,
+      storageUnitId: fromShelfId,
+      toStorageUnitId: lineside.id
     });
+
+    // Only a Picked line has moved stock; the paired Transfer rows mirror
+    // post-picking's writes exactly (same entryType/documentType/documentId).
+    if (line.status === "Picked" && line.quantityPicked > 0) {
+      const postingDate = resolveDate(ctx.anchor, spec.dateOffset);
+      await insertRow(ctx, "itemLedger", {
+        postingDate,
+        itemId: item.id,
+        quantity: -line.quantityPicked,
+        locationId: plantId,
+        storageUnitId: fromShelfId,
+        entryType: "Transfer",
+        documentType: "Direct Transfer",
+        documentId: pickingListId
+      });
+      await insertRow(ctx, "itemLedger", {
+        postingDate,
+        itemId: item.id,
+        quantity: line.quantityPicked,
+        locationId: plantId,
+        storageUnitId: lineside.id,
+        entryType: "Transfer",
+        documentType: "Direct Transfer",
+        documentId: pickingListId
+      });
+    }
   }
 }
 

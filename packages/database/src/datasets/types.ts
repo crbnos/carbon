@@ -16,12 +16,25 @@ export type { ItemSpec };
 
 export type ProcedureStepSpec = {
   name: string;
-  type: "Task" | "Checkbox" | "Measurement" | "Value" | "List" | "Person";
+  /** Timestamp / File / Inspection collect their payload in MES at runtime, so the row needs no upload. */
+  type:
+    | "Task"
+    | "Checkbox"
+    | "Measurement"
+    | "Value"
+    | "List"
+    | "Person"
+    | "Timestamp"
+    | "File"
+    | "Inspection";
   instruction: string;
   required?: boolean;
   unitOfMeasureCode?: string;
   minValue?: number;
   maxValue?: number;
+  listValues?: string[];
+  /** Accepted extensions for a "File" step. */
+  fileTypes?: string[];
 };
 
 export type ProcedureSpec = {
@@ -57,6 +70,10 @@ export type CustomerSpec = {
   status: string;
   phone: string;
   website: string;
+  /** A currency bootstrap seeds (seed.data.ts). Defaults to "USD". */
+  currencyCode?: string;
+  /** Bootstrap paymentTerm name (ctx.refs.misc `pterm:<name>`). Defaults to Net 30. */
+  paymentTerm?: string;
 };
 
 export type SupplierSpec = {
@@ -64,6 +81,12 @@ export type SupplierSpec = {
   type: string;
   phone: string;
   website: string;
+  /** Omitted = Active (column default). */
+  status?: "Active" | "Inactive" | "Pending" | "Rejected";
+  /** A currency bootstrap seeds (seed.data.ts). Defaults to "USD". */
+  currencyCode?: string;
+  /** Bootstrap paymentTerm name (ctx.refs.misc `pterm:<name>`). Defaults to Net 30. */
+  paymentTerm?: string;
 };
 
 export type ContactSpec = {
@@ -146,6 +169,31 @@ export type ContractorAgencySpec = {
   phone: string;
 };
 
+export type HolidaySpec = {
+  name: string;
+  /** Positive and distinct — holiday is UNIQUE (date, companyId). */
+  dateOffset: DayOffset;
+};
+
+export type TagSpec = {
+  name: string;
+  /** Entity list the tag is offered on, e.g. "operation", "material", "tool". */
+  table: string;
+};
+
+/**
+ * Company-scoped material taxonomy (bootstrap only seeds global rows). Children
+ * name parents in THIS spec, never global rows, so validation needs no database.
+ */
+export type MaterialTaxonomySpec = {
+  substances: { name: string; code: string }[];
+  forms: { name: string; code: string }[];
+  types: { name: string; code: string; substance: string; form: string }[];
+  grades: { name: string; substance: string }[];
+  finishes: { name: string; substance: string }[];
+  dimensions: { name: string; form: string; isMetric?: boolean }[];
+};
+
 export type FoundationData = {
   departments: string[];
   abilities: string[];
@@ -173,6 +221,9 @@ export type FoundationData = {
   /** Insertion order matters — a parent shelf must precede its children. */
   shelves: ShelfSpec[];
   printerRoute: PrinterRouteSpec | null;
+  holidays: HolidaySpec[];
+  tags: TagSpec[];
+  materialTaxonomy: MaterialTaxonomySpec;
   /** Must be one of shippingMethods; applied to every customer and supplier. */
   defaultShippingMethod: string;
   contractorAgency: ContractorAgencySpec | null;
@@ -217,6 +268,9 @@ export type BopOperationSpec = {
   operationUnitCost?: number;
   /** key into ctx.refs.misc, e.g. "procedure:TVAC Qualification Test" */
   procedure?: string;
+  /** `tool` is the readableId of a seeded Tool item. */
+  tools?: { tool: string; quantity: number }[];
+  parameters?: { key: string; value: string }[];
 };
 
 export type MakeMethodSpec = {
@@ -224,6 +278,73 @@ export type MakeMethodSpec = {
   readableId: string;
   bom: BomLineSpec[];
   bop: BopOperationSpec[];
+};
+
+/**
+ * One `itemSupersession` row (keyed on the predecessor). The predecessor needs
+ * opening stock so "Consume First" is demoable; the successor must stay out of
+ * every BOM — job creation and picking redirect to it live.
+ */
+export type SupersessionSpec = {
+  predecessor: string;
+  successor: string;
+  mode: "Consume First" | "Prefer New" | "Stock Only" | "No Stock";
+  /** 1 old = N new. Default 1. */
+  conversionFactor?: number;
+  successorEffectivityOffset?: DayOffset;
+  discontinuationOffset?: DayOffset;
+};
+
+export type CustomerPartSpec = {
+  item: string;
+  customer: string;
+  customerPartId: string;
+  customerRevision?: string;
+};
+
+export type PriceOverrideSpec = {
+  item: string;
+  customer: string;
+  breaks: { quantity: number; overridePrice: number }[];
+  notes?: string;
+};
+
+/** One Discount/Percentage `pricingRule` scoped to a single customer. */
+export type PricingRuleSpec = {
+  name: string;
+  customer: string;
+  /** Percent off, 0–100. */
+  percent: number;
+  minQuantity?: number;
+};
+
+export type ConfigurationParameterSpec = {
+  key: string;
+  label: string;
+  dataType: "numeric" | "list" | "boolean";
+  /** Required when dataType is "list". */
+  listOptions?: string[];
+};
+
+/** A parameter group on a make part; display-only — no configurationRule rows. */
+export type ConfigurationSpec = {
+  /** readableId of a makePart. */
+  item: string;
+  group: string;
+  parameters: ConfigurationParameterSpec[];
+};
+
+/**
+ * Promotes the item's active revision to Production and adds inactive Obsolete
+ * and next revisions, so every itemRevisionStatus shows. The new revisions are
+ * not registered in ctx.refs.items — later tiers keep the active one.
+ */
+export type RevisionLadderSpec = {
+  item: string;
+  /** Must differ from the active revision. */
+  obsoleteRevision: string;
+  nextRevision: string;
+  nextStatus: "Design" | "Prototype";
 };
 
 export type ItemsData = {
@@ -235,6 +356,13 @@ export type ItemsData = {
   makeParts: ItemSpec[];
   methods: MakeMethodSpec[];
   supplierLinks: SupplierLinkSpec[];
+  /** Exactly one Consume First pair between two BUY parts per dataset. */
+  supersessions: SupersessionSpec[];
+  customerParts: CustomerPartSpec[];
+  priceOverrides: PriceOverrideSpec[];
+  pricingRules: PricingRuleSpec[];
+  configuration?: ConfigurationSpec;
+  revisionLadder: RevisionLadderSpec[];
 };
 
 export type OpeningStockSpec = {
@@ -245,25 +373,117 @@ export type OpeningStockSpec = {
 
 export type TrackedStockSpec = {
   item: string;
-  entities: Array<{ readableId: string; quantity: number }>;
+  entities: Array<{
+    readableId: string;
+    quantity: number;
+    /** Omitted = "Available". */
+    status?: "Available" | "On Hold" | "Rejected" | "Scrapped";
+    /**
+     * Required iff "Scrapped": books a full-entity scrap (Scrap activity plus a
+     * Negative Adjmt. ledger row out of `shelf`); the entity keeps its quantity.
+     */
+    scrap?: {
+      /** Must hold the lot's opening stock. */
+      shelf: string;
+      /** Bootstrap scrapReason name. */
+      reason: string;
+      dateOffset: DayOffset;
+      comment: string;
+    };
+    /** Batch items with a shelfLives spec only (validator-enforced). */
+    expiresOffset?: DayOffset;
+  }>;
+};
+
+/** Fixed Duration itemShelfLife; the item must be Batch-tracked (expiry is per lot). */
+export type ShelfLifeSpec = {
+  item: string;
+  days: number;
 };
 
 export type KanbanItemSpec = {
   item: string;
   qty: number;
-  supplier: string;
+  /** Omitted = "Buy". */
+  replenishmentSystem?: "Buy" | "Make" | "Transfer";
+  /** Required when Buy. */
+  supplier?: string;
+  /** Transfer kanbans only, with toShelf. */
+  fromShelf?: string;
+  toShelf?: string;
+};
+
+export type InventoryCountLineSpec = {
+  item: string;
+  shelf: string;
+  /**
+   * inventoryCountLine.systemQuantity. On a Posted count it must equal the
+   * (item, shelf) openingStock — the snapshot IS the opening balance.
+   */
+  snapshotQuantity: number;
+  countedQuantity: number;
 };
 
 export type InventoryCountSpec = {
-  status: string;
+  /** Registered in ctx.refs.documents as `ic:<key>`. */
+  key: string;
+  status: "Draft" | "Posted";
   notes: string;
+  /**
+   * Required when Posted; dates the header and variance ledger rows. Must precede
+   * every completed transfer so the snapshot still equals opening stock.
+   */
+  postedOffset?: DayOffset;
+  /**
+   * Draft writes bare item/shelf lines (the app snapshots later); Posted writes
+   * full lines plus one adjustment ledger row per variance, as post-inventory-count.
+   */
+  lines: InventoryCountLineSpec[];
+};
+
+/**
+ * Shelf → shelf move; Completed writes the paired itemLedger rows. Untracked
+ * items only — tracked moves need per-entity splits the seed does not model.
+ */
+export type StockTransferSpec = {
+  /** Registered in ctx.refs.documents as `st:<key>`. */
+  key: string;
+  status: "Draft" | "Released" | "Completed";
+  fromShelf: string;
+  /** Must differ from fromShelf. */
+  toShelf: string;
+  dateOffset: DayOffset;
+  lines: { item: string; quantity: number }[];
+};
+
+/**
+ * Plant ⇄ HQ transfer. Completed writes a Transfer Shipment row out of each line's
+ * fromShelf and a shelfless Transfer Receipt (HQ has no bins; the app does the same).
+ */
+export type WarehouseTransferSpec = {
+  /** Registered in ctx.refs.documents as `wt:<key>`. */
+  key: string;
+  status: "Draft" | "To Ship" | "Completed";
+  fromLocation: "Plant" | "HQ";
+  toLocation: "Plant" | "HQ";
+  dateOffset: DayOffset;
+  lines: {
+    item: string;
+    quantity: number;
+    /** Required when Completed. */
+    fromShelf?: string;
+  }[];
 };
 
 export type InventoryData = {
   openingStock: OpeningStockSpec[];
   onHandTracked: TrackedStockSpec[];
   kanbanItems: KanbanItemSpec[];
-  inventoryCount: InventoryCountSpec;
+  inventoryCounts: InventoryCountSpec[];
+  /** One Fixed Duration shelf life per dataset, paired with an expiring lot. */
+  shelfLives: ShelfLifeSpec[];
+  stockTransfers: StockTransferSpec[];
+  warehouseTransfers: WarehouseTransferSpec[];
 };
 
 // The stored columns on quoteLinePrice — every net* and converted* column is
@@ -291,6 +511,8 @@ export type SalesRfqSpec = {
   rfqDateOffset: DayOffset;
   expirationOffset?: DayOffset;
   externalNotes: string;
+  /** foundation.noQuoteReasons name; the column lives on the RFQ. Pair with "Closed". */
+  noQuoteReason?: string;
   lines: SalesRfqLineSpec[];
 };
 
@@ -345,6 +567,11 @@ export type ShipmentSpec = {
   /** ctx.refs.documents key this shipment is stored under. */
   ref: string;
   status: string;
+  /**
+   * Required when Posted; dates the header and ledger. Posted mirrors post-shipment:
+   * one Sales Shipment ledger row per line from its fromShelf. Voided writes none.
+   */
+  postedOffset?: DayOffset;
   lines: {
     /** ctx.refs.items key — also selects which order line the shipment covers. */
     item: string;
@@ -352,16 +579,22 @@ export type ShipmentSpec = {
     outstandingQuantity: number;
     shippedQuantity: number;
     unitPrice: number;
+    /** Required (untracked, stocked item) on a Posted line with shippedQuantity > 0. */
+    fromShelf?: string;
   }[];
 };
 
 export type SalesInvoiceSpec = {
   /** ctx.refs.documents key this invoice is stored under. */
   ref: string;
+  /** Registered in ctx.refs.misc as `sinv:<key>` so payments can settle it. */
+  key?: string;
   status: string;
   subtotal: number;
   totalAmount: number;
   dateIssuedOffset: DayOffset;
+  /** In the past on an Overdue invoice. */
+  dueDateOffset?: DayOffset;
   lines: {
     /** ctx.refs.items key — also selects which order line the invoice covers. */
     item: string;
@@ -399,11 +632,39 @@ export type StaggeredDeliverySpec = {
   sortOrder: number;
 };
 
+export type SalesReturnLineSpec = {
+  /** An untracked item. */
+  item: string;
+  quantity: number;
+  unitPrice: number;
+  /** Required when Completed — the receipt books stock back onto it. */
+  toShelf?: string;
+};
+
+/**
+ * RMA. Completed mirrors post-receipt's Sales Return Order branch (Posted receipt
+ * plus one ledger row per line). No credit lines: their memoId is NOT NULL.
+ */
+export type SalesReturnSpec = {
+  /** Registered in ctx.refs.documents as `rma:<key>`. */
+  key: string;
+  status: "Draft" | "To Receive" | "Completed";
+  customer: string;
+  /** Bootstrap returnReason name, applied to every line (the column is per-line). */
+  returnReason: string;
+  /** Order date; also the receipt date when Completed. */
+  dateOffset: DayOffset;
+  /** ctx.refs.documents key of the sales order the return trades against. */
+  salesOrder?: string;
+  lines: SalesReturnLineSpec[];
+};
+
 export type SalesData = {
   opportunities: SalesOpportunitySpec[];
   statusOrders: SalesStatusOrderSpec[];
   // Written AFTER the status orders — salesOrder readable ids depend on it.
   releasedOrders: SalesOpportunitySpec[];
+  salesReturns: SalesReturnSpec[];
 };
 
 export type RfqLineSpec = {
@@ -416,11 +677,33 @@ export type RfqQuoteSpec = {
   supplier: string;
   supplierReference: string;
   shippingCost: number;
+  /** Omitted = "Active", which keeps the RFQ trio open for Compare Quotes. */
+  status?: "Draft" | "Active" | "Expired" | "Declined";
   lines: {
     item: string;
     supplierPartId: string;
     // [supplier unit price, lead time in days] per rfqQuantityBreaks entry
     breaks: [number, number][];
+  }[];
+};
+
+/**
+ * Supplier quote with no RFQ. The supplier needs a supplierContact — the quote
+ * row takes the contact and location refs foundation seeds from it.
+ */
+export type StandaloneSupplierQuoteSpec = {
+  /** Registered in ctx.refs.documents as `sq:<key>` (shared with RfqQuoteSpec keys). */
+  key: string;
+  supplier: string;
+  status: "Draft" | "Active" | "Expired" | "Declined";
+  supplierReference: string;
+  quotedOffset: DayOffset;
+  /** Negative on an Expired quote (validator-enforced). */
+  expirationOffset: DayOffset;
+  lines: {
+    item: string;
+    supplierPartId: string;
+    prices: { quantity: number; unitPrice: number; leadTime: number }[];
   }[];
 };
 
@@ -434,6 +717,25 @@ export type RfqHeaderSpec = {
   internalNotes: string;
 };
 
+/**
+ * Purchasing RFQ with no supplier quotes. Closed mirrors the app's Cancel RFQ
+ * action taken before quotes were requested.
+ */
+export type LifecycleRfqSpec = {
+  /** ctx.refs.documents key this RFQ is stored under. */
+  ref: string;
+  status: "Draft" | "Closed";
+  rfqDateOffset: DayOffset;
+  expirationOffset: DayOffset;
+  notes: string;
+  internalNotes: string;
+  /** Quantity breaks suppliers are asked to price. */
+  quantities: number[];
+  lines: RfqLineSpec[];
+  /** Active suppliers the RFQ is addressed to. */
+  suppliers: string[];
+};
+
 export type PurchaseOrderLineSpec = {
   /** ctx.refs.items key. */
   item: string;
@@ -445,6 +747,11 @@ export type ReceiptSpec = {
   /** ctx.refs.documents key this receipt is stored under. */
   ref: string;
   status: string;
+  /**
+   * Required when Posted; dates the header and ledger. Posted mirrors post-receipt:
+   * one Purchase Receipt ledger row per line into its toShelf. Voided writes none.
+   */
+  postedOffset?: DayOffset;
   lines: {
     /** ctx.refs.items key — also selects which PO line the receipt line covers. */
     item: string;
@@ -453,17 +760,29 @@ export type ReceiptSpec = {
     receivedQuantity: number;
     unitPrice: number;
     requiresBatchTracking?: boolean;
+    /** Required on a Posted line with receivedQuantity > 0. */
+    toShelf?: string;
+    /**
+     * Lot minted for a Posted batch-tracked line, as update_receipt_line_batch_tracking
+     * does. Must not collide with any onHandTracked or genealogy readableId.
+     */
+    lotNumber?: string;
+    lotExpiresOffset?: DayOffset;
   }[];
 };
 
 export type PurchaseInvoiceSpec = {
   /** ctx.refs.documents key this invoice is stored under. */
   ref: string;
+  /** Registered in ctx.refs.misc as `pinv:<key>` so payments can settle it. */
+  key?: string;
   status: string;
   currencyCode: string;
   subtotal: number;
   totalAmount: number;
   dateIssuedOffset: DayOffset;
+  /** In the past on an Overdue invoice. */
+  dueDateOffset?: DayOffset;
   lines: {
     item: string;
     quantity: number;
@@ -483,6 +802,10 @@ export type PurchaseOrderSpec =
       purchaseOrderType: string;
       status: string;
       orderDateOffset: DayOffset;
+      /** Omitted = base. EUR is pinned to exactly one direct, childless, unpaid PO. */
+      currencyCode?: string;
+      /** Foreign units per base unit; required when currencyCode is set. */
+      exchangeRate?: number;
       lines: PurchaseOrderLineSpec[];
       receipt?: ReceiptSpec;
       invoice?: PurchaseInvoiceSpec;
@@ -497,6 +820,27 @@ export type PurchaseOrderSpec =
       exchangeRate: number;
     };
 
+/**
+ * Return to vendor. Completed mirrors post-shipment's Purchase Return Order
+ * branch (Posted shipment plus one ledger row per line out of its fromShelf).
+ */
+export type PurchaseReturnSpec = {
+  /** Registered in ctx.refs.documents as `pret:<key>`. */
+  key: string;
+  status: "Draft" | "To Ship" | "Completed";
+  supplier: string;
+  /** Order date; also the shipment date when Completed. */
+  dateOffset: DayOffset;
+  lines: {
+    /** An untracked item with stock to send back. */
+    item: string;
+    quantity: number;
+    unitPrice: number;
+    /** Required when Completed. */
+    fromShelf?: string;
+  }[];
+};
+
 export type PurchasingData = {
   rfqQuantityBreaks: number[];
   rfqLines: RfqLineSpec[];
@@ -504,13 +848,53 @@ export type PurchasingData = {
   rfqWinningQuote: string;
   rfqOrderQuantity: number;
   rfqHeader: RfqHeaderSpec;
+  lifecycleRfqs: LifecycleRfqSpec[];
   purchaseOrders: PurchaseOrderSpec[];
+  standaloneSupplierQuotes: StandaloneSupplierQuoteSpec[];
+  purchaseReturns: PurchaseReturnSpec[];
 };
 
 // Every non-deprecated jobStatus, each one hanging off a real salesOrderLine, so
 // the sales order → job link is exercised at every stage of the lifecycle.
 // "Overdue" / "Due Today" are deliberately absent: they are deprecated stored
 // statuses that the UI derives from dueDate instead.
+export type JobDeadlineType =
+  | "No Deadline"
+  | "ASAP"
+  | "Soft Deadline"
+  | "Hard Deadline";
+
+/**
+ * Applied after copyMethodToJob. `order` is the 1-based POSITION among root
+ * operations sorted by "order" — not the raw value (methods number 10/20/30).
+ */
+export type JobOperationOverrideSpec = {
+  order: number;
+  status:
+    | "Todo"
+    | "Ready"
+    | "Waiting"
+    | "In Progress"
+    | "Paused"
+    | "Done"
+    | "Canceled";
+};
+
+/** Authoring any of these on a job replaces the tier's default Production-1 rows. */
+export type ProductionQuantitySpec = {
+  order: number;
+  type: "Production" | "Scrap" | "Rework";
+  quantity: number;
+  /** Bootstrap scrapReason name; required on Scrap rows. */
+  scrapReason?: string;
+};
+
+/** Operator chat message on a root operation (plain text, not TipTap). */
+export type OperationNoteSpec = {
+  order: number;
+  note: string;
+};
+
 export type JobSpec = {
   key: string;
   item: string;
@@ -521,9 +905,15 @@ export type JobSpec = {
   salesOrder: string;
   salesOrderLine: string;
   customer: string;
-  dueDateOffset: DayOffset;
+  /** Omitted = "Hard Deadline". */
+  deadlineType?: JobDeadlineType;
+  /** Required unless "No Deadline", where it must be absent. */
+  dueDateOffset?: DayOffset;
   releasedDateOffset?: DayOffset;
   completedDateOffset?: DayOffset;
+  operationOverrides?: JobOperationOverrideSpec[];
+  quantities?: ProductionQuantitySpec[];
+  operationNotes?: OperationNoteSpec[];
 };
 
 export type ShiftEventSpec = {
@@ -601,6 +991,37 @@ export type AssemblySpec = {
   steps: AssemblyStepSpec[];
 };
 
+/** Orders are 1-based root-operation positions (see JobOperationOverrideSpec). */
+export type ReworkSpec = {
+  quantity: number;
+  reason: string;
+  targetOperationOrder: number;
+  triggeredAtOperationOrder: number;
+};
+
+export type PickingListLineSpec = {
+  /** Must be a component somewhere on the picked job's BOM tree. */
+  item: string;
+  quantityRequired: number;
+  quantityPicked: number;
+  status: "Pending" | "Picked" | "Short";
+  fromShelf: string;
+};
+
+/**
+ * Completed lists write paired Direct Transfer ledger rows fromShelf → the floor
+ * storage unit of the job's first root operation's work center.
+ */
+export type PickingListSpec = {
+  key: string;
+  status: "In Progress" | "Completed";
+  /** JobSpec.key. */
+  job: string;
+  /** Due date of the list, and posting date of the Completed ledger pairs. */
+  dateOffset: DayOffset;
+  lines: PickingListLineSpec[];
+};
+
 export type ProductionData = {
   jobs: JobSpec[];
   /**
@@ -616,6 +1037,27 @@ export type ProductionData = {
   eventsJobKey: string;
   /** JobSpec.key the as-built genealogy hangs off. */
   genealogyJobKey: string;
+  /** Open Setup event (null endTime) on the events job; use the op overridden to "In Progress". */
+  openEvent: { operationOrder: number };
+  batch: { operationOrder: number };
+  rework: ReworkSpec;
+  pickingLists: PickingListSpec[];
+};
+
+export type NonConformanceTaskStatus =
+  | "Pending"
+  | "In Progress"
+  | "Completed"
+  | "Skipped";
+
+/** Mirrors the `create` edge function's nonConformanceTasks case; In Progress goes to the applying user. */
+export type NonConformanceActionTaskSpec = {
+  /** Bootstrap nonConformanceRequiredAction name, e.g. "Containment Action". */
+  action: string;
+  status: NonConformanceTaskStatus;
+  dueDateOffset?: DayOffset;
+  /** Required when Completed. */
+  completedOffset?: DayOffset;
 };
 
 export type NonConformanceSpec = {
@@ -627,14 +1069,181 @@ export type NonConformanceSpec = {
   openDateOffset: DayOffset;
   quantity: number;
   priority: string;
+  /** Bootstrap nonConformanceType name. Omitted = the first row the DB returns. */
+  type?: string;
+  /** Also written as the TipTap `content` body. */
+  description?: string;
+  dueDateOffset?: DayOffset;
+  /** Required when "Closed", forbidden otherwise. */
+  closeDateOffset?: DayOffset;
   /** `job` is a ctx.refs.documents key; the operation itself is resolved by query. */
   jobOperation?: { job: string };
   /** `item` is a ctx.refs.items key. */
   items?: { item: string; quantity: number }[];
+  /** An externalLink is minted by the sync interceptor. */
+  supplier?: string;
+  /** Direct PO ref + the item selecting its line; the PO's supplier must be `supplier`. */
+  purchaseOrderLine?: { po: string; item: string };
+  customer?: string;
+  /** A `soline:` ref; its order's customer must be `customer`. */
+  salesOrderLine?: string;
+  /** Lot/serial readableId (onHandTracked or a receipt lotNumber). */
+  trackedEntity?: string;
+  /** quality.inspection ref. */
+  inspection?: string;
+  /** In `requiredActionIds` order. */
+  actionTasks?: NonConformanceActionTaskSpec[];
+  /** One approval task plus Engineering and Quality reviewers, as the edge function seeds. */
+  mrb?: {
+    status: NonConformanceTaskStatus;
+    dueDateOffset?: DayOffset;
+    completedOffset?: DayOffset;
+    reviewers: {
+      title: "Engineering" | "Quality";
+      status: NonConformanceTaskStatus;
+      /** Required when Completed. */
+      completedOffset?: DayOffset;
+    }[];
+  };
 };
+
+/**
+ * One receipt inspection lot, mirroring post-receipt's inspection branch (plan
+ * document with no drawing file, AQL ANSI Z1.4 level II Normal).
+ */
+export type InspectionSpec = {
+  /** ctx.refs.documents key the inspection lot is stored under. */
+  ref: string;
+  /** Ref of a Posted receipt. */
+  receipt: string;
+  /** An untracked line item on that receipt. */
+  item: string;
+  drawingNumber: string;
+  /** Resolved sample size must be ≤ 5 so every sample is authored. */
+  aql: number;
+  features: {
+    /** Balloon number shown in the grid ("1", "2"). */
+    label: string;
+    description: string;
+    nominalValue: string;
+    tolerancePlus: string;
+    toleranceMinus: string;
+    unit: string;
+  }[];
+  /** "Partial" = some samples passed, some failed. */
+  status: "Passed" | "Failed" | "Partial";
+  /** On/after every sample's inspectedOffset. */
+  dispositionOffset: DayOffset;
+  notes: string;
+  /** Exactly the resolved sample size; each status must match the engine's derivation. */
+  samples: {
+    status: "Passed" | "Failed";
+    inspectedOffset: DayOffset;
+    /** One reading per measured feature (by label). */
+    measurements: { feature: string; value: number }[];
+  }[];
+};
+
+export type QualityDocumentStepType =
+  | "Value"
+  | "Measurement"
+  | "Checkbox"
+  | "Timestamp"
+  | "Person"
+  | "List"
+  | "Task";
+
+export type QualityDocumentSpec = {
+  name: string;
+  /** (name, version) is unique — same-name rows are versions of one document. */
+  version: number;
+  status: "Draft" | "Active" | "Archived";
+  description: string;
+  steps: {
+    name: string;
+    description?: string;
+    type: QualityDocumentStepType;
+    required?: boolean;
+    /** Bootstrap unitOfMeasure code — required for (and only for) Measurement steps. */
+    unitOfMeasureCode?: string;
+    minValue?: number;
+    maxValue?: number;
+    listValues?: string[];
+  }[];
+};
+
+/**
+ * Calibration status is derived as upsertGaugeCalibrationRecord does: none ⇒
+ * Pending; latest Pass ⇒ In-Calibration; latest Fail ⇒ Out-of-Calibration.
+ */
+export type GaugeSpec = {
+  key: string;
+  /** Bootstrap gaugeType name. */
+  gaugeType: string;
+  description: string;
+  modelNumber?: string;
+  serialNumber?: string;
+  supplier?: string;
+  role: "Master" | "Standard";
+  status: "Active" | "Inactive";
+  calibrationIntervalInMonths: number;
+  acquiredOffset: DayOffset;
+  shelf?: string;
+  /** Oldest first; every dateOffset on/after acquiredOffset and ≤ 0. */
+  calibrations: {
+    dateOffset: DayOffset;
+    result: "Pass" | "Fail";
+    requiresAction?: boolean;
+    requiresAdjustment?: boolean;
+    requiresRepair?: boolean;
+    temperature?: number;
+    humidity?: number;
+    measurementStandard?: string;
+    notes?: string;
+  }[];
+};
+
+export type RiskStatus =
+  | "Open"
+  | "In Review"
+  | "Mitigating"
+  | "Closed"
+  | "Accepted";
+
+/**
+ * `source` picks the entity card; Item/Job risks also carry itemId (a Job's is its
+ * item), as each RiskRegisterCard writes them.
+ */
+export type RiskSpec = {
+  title: string;
+  description: string;
+  type: "Risk" | "Opportunity";
+  status: RiskStatus;
+  /** 1–5 */
+  severity: number;
+  /** 1–5 */
+  likelihood: number;
+} & (
+  | { source: "General" }
+  | { source: "Customer"; customer: string }
+  | { source: "Supplier"; supplier: string }
+  | { source: "Item"; item: string }
+  | { source: "Job" /** `job:<key>` ref. */; job: string }
+  | {
+      source: "Work Center";
+      workCenter: string;
+    }
+);
 
 export type QualityData = {
   nonConformances: NonConformanceSpec[];
+  /** Inserted before NCRs so one can link it. */
+  inspection: InspectionSpec;
+  qualityDocuments: QualityDocumentSpec[];
+  /** Together they cover all three calibration statuses. */
+  gauges: GaugeSpec[];
+  /** ≥ 5 — every risk status, one Opportunity, sources spread. */
+  risks: RiskSpec[];
 };
 
 // The change type drives what the tier does to the item's methods, so it is a
@@ -674,14 +1283,41 @@ export type AffectedItemSpec = {
   revision?: RevisionSpec;
 };
 
+export type ChangeOrderTaskStatus =
+  | "Pending"
+  | "In Progress"
+  | "Completed"
+  | "Skipped";
+
+/** Instantiated as setChangeNoticeActionTasks does; In Progress goes to the applying user. */
+export type ChangeOrderActionTaskSpec = {
+  /** Bootstrap changeOrderRequiredAction name. */
+  action: string;
+  status: ChangeOrderTaskStatus;
+  dueDateOffset?: DayOffset;
+  /** Required when Completed. */
+  completedOffset?: DayOffset;
+};
+
 export type ChangeOrderSpec = {
   /** ctx.refs.documents key this change order is stored under. */
   ref: string;
   name: string;
+  /** Engineering / Manufacturing / Documentation. */
   type: string;
   status: string;
   openDateOffset: DayOffset;
+  /** Empty on lifecycle-only notices — every change type spins a method draft. */
   affectedItems: AffectedItemSpec[];
+  /** Bootstrap changeOrderType name. */
+  changeOrderType?: string;
+  priority?: "Low" | "Medium" | "High" | "Critical";
+  dueDateOffset?: DayOffset;
+  /** Plain text → TipTap body. */
+  reasonForChange?: string;
+  /** Quality NCR ref that raised it. */
+  nonConformance?: string;
+  actionTasks?: ChangeOrderActionTaskSpec[];
 };
 
 export type ChangeOrderData = {
@@ -699,8 +1335,11 @@ export type FixedAssetSpec = {
   name: string;
   description: string;
   serialNumber: string;
-  status: "Draft" | "Active" | "Fully Depreciated";
-  depreciationMethod: "Straight Line" | "Declining Balance";
+  status: "Draft" | "Active" | "Fully Depreciated" | "Disposed";
+  depreciationMethod:
+    | "Straight Line"
+    | "Declining Balance"
+    | "Units of Production";
   usefulLifeMonths: number;
   // Whole percent — the app reads residual as cost * (percent / 100).
   residualValuePercent: number;
@@ -713,36 +1352,311 @@ export type FixedAssetSpec = {
   // (cost - residual) / usefulLifeMonths * months since depreciationStartDate.
   // Both dates move with the anchor, so the elapsed month count is stable.
   // Omit to leave the asset out of the seeded run.
+  // Units of Production instead uses the run month's usage log:
+  // (cost - residual) / assetLifetimeUsage * unitsProduced.
   depreciationCharge?: number;
+  /** Required for "Units of Production". */
+  assetLifetimeUsage?: number;
+  /** One per month; monthsBack 1 is the seeded run's period, the only log it reads. */
+  usageLogs?: { monthsBack: number; unitsProduced: number }[];
+  /** Required iff "Disposed"; the tier derives NBV and gainLoss as post-sales-invoice does. */
+  disposal?: { dateOffset: DayOffset; method: "Sale"; saleProceeds: number };
 };
 
-// The tier resolves one GL account per class, so a line names its class rather
-// than an account id.
-export type JournalLineSpec = {
-  accountClass: "Asset" | "Revenue";
+export type AccountClass =
+  | "Asset"
+  | "Liability"
+  | "Equity"
+  | "Revenue"
+  | "Expense";
+
+/**
+ * GL account by class (the group's first posting account of that class) OR by a
+ * bootstrap chart-of-accounts number, e.g. "6060".
+ */
+export type JournalLineAccount =
+  | { accountClass: AccountClass; account?: never }
+  | { account: string; accountClass?: never };
+
+export type JournalLineDimensionSpec = {
+  /**
+   * "Project" = the bootstrap Project dimension (`value` is a projects key);
+   * otherwise accounting.customDimension.name, `value` one of its values.
+   */
+  dimension: string;
+  value: string;
+};
+
+// amount is the class-signed natural balance the journalEntries view decodes:
+// positive on a debit-normal class (Asset/Expense) is a debit, positive on a
+// credit-normal class (Liability/Equity/Revenue) is a credit.
+export type JournalLineSpec = JournalLineAccount & {
   description: string;
   amount: number;
   quantity: number;
   journalLineReference: string;
+  /** journalLineDimension tags; the line must carry a unique journalLineReference. */
+  dimensions?: JournalLineDimensionSpec[];
 };
 
 export type JournalEntrySpec = {
   ref: string;
   journalEntryId: string;
   description: string;
-  status: "Draft" | "Posted";
+  status: "Draft" | "Posted" | "Reversed";
   postingOffset: DayOffset;
   lines: JournalLineSpec[];
+  /** Required iff "Reversed": the tier writes a negated Posted reversal, as reverseJournalEntry does. */
+  reversal?: { ref: string; journalEntryId: string; postingOffset: DayOffset };
+};
+
+/** Shaped as post-payment leaves it with accounting off; all USD at rate 1. */
+export type PaymentSpec = {
+  /** Registered in ctx.refs.documents as `payment:<key>`. */
+  key: string;
+  /** Receipt = customer pays an AR invoice; Disbursement = we pay an AP invoice. */
+  type: "Receipt" | "Disbursement";
+  /** Required for a Receipt. */
+  customer?: string;
+  /** Required for a Disbursement. */
+  supplier?: string;
+  dateOffset: DayOffset;
+  /** Cash total; 0 = a pure credit application. */
+  amount: number;
+  reference: string;
+  /** Cash applications; Σ amount must equal `amount`. invoiceKey → `sinv:`/`pinv:` by type. */
+  applies: { invoiceKey: string; amount: number }[];
+  /** Memo applications, applyCreditsToInvoices shape; memoKey → accounting.memos key. */
+  credits?: { memoKey: string; invoiceKey: string; amount: number }[];
+};
+
+/**
+ * Posted credit/debit memo. The memo table has no invoice column, so the tie is
+ * `reference` = the invoice's readable id plus a PaymentSpec.credits application.
+ */
+export type MemoSpec = {
+  /** Registered in ctx.refs.documents as `memo:<key>`. */
+  key: string;
+  direction: "Credit" | "Debit";
+  customer?: string;
+  supplier?: string;
+  /** Credit → a `sinv:` key; Debit → a `pinv:` key. */
+  invoiceKey: string;
+  dateOffset: DayOffset;
+  amount: number;
+  notes: string;
+};
+
+export type ProjectSpec = {
+  /** Registered in ctx.refs.misc as `project:<key>`. */
+  key: string;
+  name: string;
+  description: string;
+  /** job has no projectId, so project coding lives on purchaseInvoiceLine. */
+  purchaseInvoiceLine?: { invoiceKey: string; item: string };
+};
+
+export type CustomDimensionSpec = {
+  name: string;
+  values: string[];
+};
+
+/** Snapshotted from the bootstrap periodCloseTaskDefinition named `definition`. */
+export type PeriodCloseTaskSpec = {
+  definition: string;
+  status: "Open" | "Done" | "Skipped";
+  /** Required iff Skipped (the app's close checklist demands a reason). */
+  skippedReason?: string;
+  notes?: string;
+};
+
+/**
+ * Company-scoped rate pin, foreign units per base unit. Never write the global
+ * "exchangeRate" table from a tenant template.
+ */
+export type ExchangeRateOverrideSpec = {
+  currencyCode: string;
+  rate: number;
 };
 
 export type AccountingData = {
   fixedAssets: FixedAssetSpec[];
   journalEntries: JournalEntrySpec[];
+  payments: PaymentSpec[];
+  memos: MemoSpec[];
+  projects: ProjectSpec[];
+  customDimension: CustomDimensionSpec;
+  closeTasks: PeriodCloseTaskSpec[];
+  exchangeRateOverrides: ExchangeRateOverrideSpec[];
+};
+
+/** A TIMESTAMPTZ as a day offset plus a UTC "HH:MM:SS" (resolveTimestamp). */
+export type InstantSpec = { offset: DayOffset; time: string };
+
+export type MaintenanceFrequency =
+  | "Daily"
+  | "Weekly"
+  | "Monthly"
+  | "Quarterly"
+  | "Annual";
+export type MaintenancePriority = "Low" | "Medium" | "High" | "Critical";
+
+/** Shaped as scheduled-maintenance.new writes it (location = the Plant). */
+export type MaintenanceScheduleSpec = {
+  /** Registered in ctx.refs.misc as `maintenanceSchedule:<key>`. */
+  key: string;
+  name: string;
+  description: string;
+  workCenter: string;
+  frequency: MaintenanceFrequency;
+  priority: MaintenancePriority;
+  /** Minutes; > 0 when it takes the work center offline. */
+  estimatedDuration: number;
+  /** Stored at midnight UTC; must not be in the past. */
+  nextDueOffset: DayOffset;
+  takesWorkCenterOffline?: boolean;
+  /** Daily only: false leaves Saturday/Sunday off. Default true. */
+  weekends?: boolean;
+  /** Kit the generator copies onto each dispatch it creates. */
+  spareParts?: { item: string; quantity: number }[];
+};
+
+export type MaintenanceDispatchStatus =
+  | "Open"
+  | "Assigned"
+  | "In Progress"
+  | "Completed"
+  | "Cancelled";
+export type MaintenanceSeverity =
+  | "Preventive"
+  | "Operator Performed"
+  | "Support Required"
+  | "OEM Required";
+export type MaintenanceSource = "Scheduled" | "Reactive" | "Non-Conformance";
+export type OeeImpact = "Down" | "Planned" | "Impact" | "No Impact";
+
+/** The tier assigns ctx.userId for Assigned / In Progress / Completed, no one otherwise. */
+export type MaintenanceDispatchSpec = {
+  /** Registered in ctx.refs.misc as `maintenanceDispatch:<key>`. */
+  key: string;
+  status: MaintenanceDispatchStatus;
+  priority: MaintenancePriority;
+  severity: MaintenanceSeverity;
+  source: MaintenanceSource;
+  oeeImpact: OeeImpact;
+  workCenter: string;
+  /** Required iff source is "Scheduled": an ops.maintenanceSchedules key on the same work center. */
+  schedule?: string;
+  /** Required iff source is "Non-Conformance": a quality NCR ref → nonConformanceId. */
+  nonConformance?: string;
+  /** Bootstrap maintenanceFailureMode name. */
+  suspectedFailureMode?: string;
+  /** Completed only. */
+  actualFailureMode?: string;
+  /** Plain text → TipTap body. */
+  content: string;
+  created: InstantSpec;
+  plannedStart: InstantSpec;
+  plannedEnd: InstantSpec;
+  /** Required iff In Progress or Completed (the Start action stamps it). */
+  actualStart?: InstantSpec;
+  /** Required iff Completed (also completedAt, as the MES Complete action writes both). */
+  actualEnd?: InstantSpec;
+  takesWorkCenterOffline?: boolean;
+  /** Completed only, untracked items: issued via add-and-issue with a ledger draw from `shelf`. */
+  spareParts?: { item: string; quantity: number; shelf: string }[];
+  comments?: string[];
+};
+
+type TrainingQuestionBase = { question: string };
+
+/** Mirrors what the training question editor saves per type. */
+export type TrainingQuestionSpec = TrainingQuestionBase &
+  (
+    | { type: "MultipleChoice"; options: string[]; correct: string }
+    | { type: "MultipleAnswers"; options: string[]; correct: string[] }
+    | { type: "TrueFalse"; answer: boolean }
+    | { type: "MatchingPairs"; pairs: { left: string; right: string }[] }
+    | { type: "Numerical"; answer: number; tolerance?: number }
+  );
+
+/** `assignment` targets ctx.userId's group (a user id is its own group id). */
+export type TrainingSpec = {
+  name: string;
+  description: string;
+  status: "Draft" | "Active" | "Archived";
+  frequency: "Once" | "Quarterly" | "Annual";
+  type: "Mandatory" | "Optional";
+  /** Free text, e.g. "45m". */
+  estimatedDuration: string;
+  /** Paragraphs → TipTap body. */
+  content: string[];
+  questions: TrainingQuestionSpec[];
+  /**
+   * Active trainings only. completedOffset only on "Once": a recurring one's
+   * completion must match the current period, which an offset can't guarantee.
+   */
+  assignment?: { completedOffset?: DayOffset };
+};
+
+/** A closed timeCardEntry for ctx.userId: clock-in and clock-out on the same day. */
+export type TimecardSpec = {
+  dayOffset: DayOffset;
+  /** UTC "HH:MM:SS". */
+  clockIn: string;
+  /** UTC "HH:MM:SS", after clockIn. */
+  clockOut: string;
+  note?: string;
+};
+
+/** suggestion — the Topbar widget's row (path = the page it was sent from). */
+export type SuggestionSpec = {
+  suggestion: string;
+  emoji: string;
+  path: string;
+  tags?: string[];
+};
+
+/** Hangs on ctx.userId — only /x/person/:personId/notes reads the table. */
+export type NoteSpec = { text: string };
+
+export type OpsData = {
+  maintenanceSchedules: MaintenanceScheduleSpec[];
+  maintenanceDispatches: MaintenanceDispatchSpec[];
+  trainings: TrainingSpec[];
+  timecards: TimecardSpec[];
+  suggestions: SuggestionSpec[];
+  notes: NoteSpec[];
+};
+
+/**
+ * A finished run in the engine's shape: a Succeeded trigger step (sequence 0),
+ * then `steps`. Skipped runs stop at `load` — no steps, startedAt null.
+ */
+export type WorkflowRunSpec = {
+  /** Name of a `published: true` workflow from `build`. */
+  workflow: string;
+  status: "Succeeded" | "Failed" | "Skipped";
+  /** ctx.refs.documents key of the triggering record. */
+  triggerRef: string;
+  /** When the event fired (createdAt); on or after the triggering record's date. */
+  at: InstantSpec;
+  /** Required iff Skipped: the engine's statusReason. */
+  statusReason?: string;
+  /** Non-trigger steps, in walk order. Empty iff Skipped. */
+  steps: {
+    /** A non-trigger node id of the workflow's definition. */
+    nodeId: string;
+    status: "Succeeded" | "Failed";
+    /** Required iff Failed — the executor's error string (detail stays null). */
+    error?: string;
+  }[];
 };
 
 // A factory, not a constant: the definitions name ids that only exist once the seed has run.
 export type WorkflowData = {
   build: (refs: { ownerId: string; issueTypeId: string }) => SeedWorkflow[];
+  runs: WorkflowRunSpec[];
 };
 
 export type DemandProjectionSpec = {
@@ -797,6 +1711,7 @@ export type Dataset = {
   quality: QualityData;
   changeOrders: ChangeOrderData;
   accounting: AccountingData;
+  ops: OpsData;
   workflows: WorkflowData;
   planning: PlanningData;
 };

@@ -6,6 +6,7 @@ import type {
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
+  SalesReturnSpec,
   SalesStatusOrderSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
@@ -193,6 +194,170 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
         }
       ]
     }
+  },
+
+  // ── Status showcase — one lightweight opportunity per remaining state ──────
+  {
+    log: "opportunity 5 — RFQ draft (Apex, radiation test frame)",
+    ref: "opp:apex-frame",
+    customer: "Apex Space Research",
+    rfq: {
+      ref: "rfq:apex-frame",
+      status: "Draft",
+      rfqDateOffset: -3,
+      externalNotes:
+        "Inquiry being logged — second structural frame for radiation test rig.",
+      lines: [
+        {
+          item: "BUS-STR-001",
+          customerPartId: "APX-STR-002",
+          quantity: [1],
+          order: 1
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 6 — no-quoted RFQ, lost quote (ORBSEC crewed-rating)",
+    ref: "opp:orbsec-crewed",
+    customer: "ORBSEC Defense",
+    rfq: {
+      ref: "rfq:orbsec-crewed",
+      status: "Closed",
+      rfqDateOffset: -95,
+      expirationOffset: -50,
+      noQuoteReason: "Out of Scope",
+      externalNotes:
+        "Crewed-rated avionics variant — outside our qualification envelope.",
+      lines: [
+        {
+          item: "ADCS-001",
+          customerPartId: "ORBSEC-ADCS-CR1",
+          quantity: [2],
+          order: 1
+        }
+      ]
+    },
+    quote: {
+      ref: "quote:orbsec-crewed",
+      status: "Lost",
+      externalNotes: "Declined to bid the crewed-rating line.",
+      lines: [
+        {
+          ref: "quoteline:orbsec-crewed:adcs",
+          item: "ADCS-001",
+          status: "No Quote",
+          sortOrder: 1,
+          priceBreaks: []
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 7 — quote draft (PolarView imager bus)",
+    ref: "opp:polar-imager",
+    customer: "PolarView Earth",
+    quote: {
+      ref: "quote:polar-imager",
+      status: "Draft",
+      externalNotes:
+        "Working draft — imager-optimized bus pricing in progress.",
+      lines: [
+        {
+          ref: "quoteline:polar-imager:sat",
+          item: "SAT-1000",
+          status: "Not Started",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 1850000, leadTime: 250 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 8 — partial quote (NovaSat gateway subsystems)",
+    ref: "opp:novasat-gateway",
+    customer: "NovaSat Networks",
+    quote: {
+      ref: "quote:novasat-gateway",
+      status: "Partial",
+      expirationOffset: 45,
+      externalNotes:
+        "EPS line released to the customer; comms line still in engineering review.",
+      lines: [
+        {
+          ref: "quoteline:novasat-gateway:eps",
+          item: "EPS-001",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 2, unitPrice: 122000, leadTime: 140 }]
+        },
+        {
+          ref: "quoteline:novasat-gateway:comms",
+          item: "COMMS-001",
+          status: "In Progress",
+          sortOrder: 2,
+          priceBreaks: [{ quantity: 2, unitPrice: 112000, leadTime: 160 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 9 — cancelled quote (Apex cubesat pathfinder)",
+    ref: "opp:apex-pathfinder",
+    customer: "Apex Space Research",
+    quote: {
+      ref: "quote:apex-pathfinder",
+      status: "Cancelled",
+      externalNotes: "Program defunded before pricing was issued.",
+      lines: [
+        {
+          ref: "quoteline:apex-pathfinder:eps",
+          item: "EPS-001",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 126000, leadTime: 130 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 10 — expired quote (PolarView spare wing)",
+    ref: "opp:polar-wing",
+    customer: "PolarView Earth",
+    quote: {
+      ref: "quote:polar-wing",
+      status: "Expired",
+      expirationOffset: -14,
+      externalNotes: "30-day pricing lapsed without a PO.",
+      lines: [
+        {
+          ref: "quoteline:polar-wing:saw",
+          item: "SAW-001",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 1, unitPrice: 36500, leadTime: 90 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — Needs Approval (ORBSEC propulsion spares)",
+    ref: "opp:orbsec-prop",
+    customer: "ORBSEC Defense",
+    order: {
+      ref: "so:orbsec-prop",
+      status: "Needs Approval",
+      orderDateOffset: -2,
+      lines: [
+        {
+          ref: "soline:orbsec-prop:tank",
+          item: "TANK-TI-4L",
+          saleQuantity: 2,
+          unitPrice: 4800,
+          status: "Ordered"
+        }
+      ]
+    }
   }
 ];
 
@@ -280,11 +445,329 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
         sortOrder: delivery.sortOrder
       }))
     }
+  },
+
+  // ── Fulfillment lifecycle — posted, partial and voided shipments ──────────
+  // Shipped items are well-stocked untracked buy parts (spares sold from the
+  // shelf), so the ledger rows never overdraw a bin.
+  {
+    log: "sales order — To Invoice (NovaSat, posted spare-transponder shipment)",
+    ref: "opp:novasat-spares",
+    customer: "NovaSat Networks",
+    order: {
+      ref: "so:novasat-spares",
+      status: "To Invoice",
+      orderDateOffset: -30,
+      lines: [
+        {
+          ref: "soline:novasat-spares:txrx",
+          item: "TXRX-SBAND",
+          saleQuantity: 2,
+          unitPrice: 15900,
+          status: "Completed"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:novasat-spares",
+      status: "Posted",
+      postedOffset: -18,
+      lines: [
+        {
+          item: "TXRX-SBAND",
+          orderQuantity: 2,
+          outstandingQuantity: 0,
+          shippedQuantity: 2,
+          unitPrice: 15900,
+          fromShelf: "A2-L2"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship and Invoice (ORBSEC, partial thruster shipment)",
+    ref: "opp:orbsec-thrusters",
+    customer: "ORBSEC Defense",
+    order: {
+      ref: "so:orbsec-thrusters",
+      status: "To Ship and Invoice",
+      orderDateOffset: -21,
+      lines: [
+        {
+          ref: "soline:orbsec-thrusters:thr",
+          item: "THR-HYDRA-1N",
+          saleQuantity: 4,
+          unitPrice: 11400,
+          status: "In Progress"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:orbsec-thrusters",
+      status: "Posted",
+      postedOffset: -9,
+      lines: [
+        {
+          item: "THR-HYDRA-1N",
+          orderQuantity: 4,
+          outstandingQuantity: 2,
+          shippedQuantity: 2,
+          unitPrice: 11400,
+          fromShelf: "A3-L1"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship (Apex, voided valve shipment)",
+    ref: "opp:apex-valves",
+    customer: "Apex Space Research",
+    order: {
+      ref: "so:apex-valves",
+      status: "To Ship",
+      orderDateOffset: -14,
+      lines: [
+        {
+          ref: "soline:apex-valves:vlv",
+          item: "VLV-SOLENOID-LP",
+          saleQuantity: 8,
+          unitPrice: 1550,
+          status: "Ordered"
+        }
+      ]
+    },
+    // Wrong carrier account keyed in — voided before anything left the dock.
+    shipment: {
+      ref: "shp:apex-valves",
+      status: "Voided",
+      lines: [
+        {
+          item: "VLV-SOLENOID-LP",
+          orderQuantity: 8,
+          outstandingQuantity: 8,
+          shippedQuantity: 0,
+          unitPrice: 1550
+        }
+      ]
+    }
+  },
+
+  // ── Invoice lifecycle — one order+invoice per remaining status ────────────
+  // Modest spares invoices; accounting.ts settles "paid" and "partial" by their
+  // sinv keys.
+  {
+    log: "sales invoice — Submitted (PolarView bearing spares)",
+    ref: "opp:polar-bearings",
+    customer: "PolarView Earth",
+    order: {
+      ref: "so:polar-bearings",
+      status: "Invoiced",
+      orderDateOffset: -35,
+      lines: [
+        {
+          ref: "soline:polar-bearings:brg",
+          item: "BRG-6201",
+          saleQuantity: 20,
+          unitPrice: 27,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:polar-bearings",
+      key: "submitted",
+      status: "Submitted",
+      subtotal: 540,
+      totalAmount: 540,
+      dateIssuedOffset: -20,
+      dueDateOffset: 10,
+      lines: [{ item: "BRG-6201", quantity: 20, unitPrice: 27 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue (NovaSat propellant tank)",
+    ref: "opp:novasat-tank",
+    customer: "NovaSat Networks",
+    order: {
+      ref: "so:novasat-tank",
+      status: "Invoiced",
+      orderDateOffset: -60,
+      lines: [
+        {
+          ref: "soline:novasat-tank:tank",
+          item: "TANK-TI-4L",
+          saleQuantity: 1,
+          unitPrice: 4800,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:novasat-tank",
+      key: "overdue",
+      status: "Overdue",
+      subtotal: 4800,
+      totalAmount: 4800,
+      dateIssuedOffset: -45,
+      dueDateOffset: -15,
+      lines: [{ item: "TANK-TI-4L", quantity: 1, unitPrice: 4800 }]
+    }
+  },
+  {
+    log: "sales invoice — Paid (ORBSEC titanium fastener lot)",
+    ref: "opp:orbsec-fasteners",
+    customer: "ORBSEC Defense",
+    order: {
+      ref: "so:orbsec-fasteners",
+      status: "Closed",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:orbsec-fasteners:fst",
+          item: "FST-M4-TI",
+          saleQuantity: 500,
+          unitPrice: 4,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:orbsec-fasteners",
+      key: "paid",
+      status: "Paid",
+      subtotal: 2000,
+      totalAmount: 2000,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "FST-M4-TI", quantity: 500, unitPrice: 4 }]
+    }
+  },
+  {
+    log: "sales invoice — Partially Paid (Apex star tracker)",
+    ref: "opp:apex-tracker",
+    customer: "Apex Space Research",
+    order: {
+      ref: "so:apex-tracker",
+      status: "Invoiced",
+      orderDateOffset: -50,
+      lines: [
+        {
+          ref: "soline:apex-tracker:st",
+          item: "ST-050",
+          saleQuantity: 1,
+          unitPrice: 42000,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:apex-tracker",
+      key: "partial",
+      status: "Partially Paid",
+      subtotal: 42000,
+      totalAmount: 42000,
+      dateIssuedOffset: -38,
+      dueDateOffset: -8,
+      lines: [{ item: "ST-050", quantity: 1, unitPrice: 42000 }]
+    }
+  },
+  {
+    log: "sales invoice — Voided (PolarView A286 fasteners, wrong bill-to)",
+    ref: "opp:polar-fasteners",
+    customer: "PolarView Earth",
+    order: {
+      ref: "so:polar-fasteners",
+      status: "To Invoice",
+      orderDateOffset: -28,
+      lines: [
+        {
+          ref: "soline:polar-fasteners:fst",
+          item: "FST-M6-A286",
+          saleQuantity: 100,
+          unitPrice: 8,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:polar-fasteners",
+      key: "voided",
+      status: "Voided",
+      subtotal: 800,
+      totalAmount: 800,
+      dateIssuedOffset: -25,
+      lines: [{ item: "FST-M6-A286", quantity: 100, unitPrice: 8 }]
+    }
+  },
+  {
+    log: "sales invoice — Credit Note Issued (NovaSat solenoid valves)",
+    ref: "opp:novasat-valves",
+    customer: "NovaSat Networks",
+    order: {
+      ref: "so:novasat-valves",
+      status: "Closed",
+      orderDateOffset: -70,
+      lines: [
+        {
+          ref: "soline:novasat-valves:vlv",
+          item: "VLV-SOLENOID-LP",
+          saleQuantity: 2,
+          unitPrice: 1425,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:novasat-valves",
+      key: "credit",
+      status: "Credit Note Issued",
+      subtotal: 2850,
+      totalAmount: 2850,
+      dateIssuedOffset: -55,
+      dueDateOffset: -25,
+      lines: [{ item: "VLV-SOLENOID-LP", quantity: 2, unitPrice: 1425 }]
+    }
+  }
+];
+
+// RMAs — one per modeled status, returning small quantities of the spares the
+// posted shipments above actually sent out. The Completed one books stock back
+// into the shelf it shipped from.
+export const SALES_RETURNS: SalesReturnSpec[] = [
+  {
+    key: "transponder",
+    status: "Completed",
+    customer: "NovaSat Networks",
+    returnReason: "Defective",
+    dateOffset: -12,
+    salesOrder: "so:novasat-spares",
+    lines: [
+      { item: "TXRX-SBAND", quantity: 1, unitPrice: 15900, toShelf: "A2-L2" }
+    ]
+  },
+  {
+    key: "thruster",
+    status: "To Receive",
+    customer: "ORBSEC Defense",
+    returnReason: "Damaged in Transit",
+    dateOffset: -5,
+    salesOrder: "so:orbsec-thrusters",
+    lines: [{ item: "THR-HYDRA-1N", quantity: 1, unitPrice: 11400 }]
+  },
+  {
+    key: "bearings",
+    status: "Draft",
+    customer: "PolarView Earth",
+    returnReason: "No Longer Needed",
+    dateOffset: -1,
+    salesOrder: "so:polar-bearings",
+    lines: [{ item: "BRG-6201", quantity: 4, unitPrice: 27 }]
   }
 ];
 
 export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
-  releasedOrders: RELEASED_ORDERS
+  releasedOrders: RELEASED_ORDERS,
+  salesReturns: SALES_RETURNS
 };

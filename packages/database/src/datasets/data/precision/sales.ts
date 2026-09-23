@@ -6,6 +6,7 @@ import type {
   PriceBreak,
   SalesData,
   SalesOpportunitySpec,
+  SalesReturnSpec,
   SalesStatusOrderSpec,
   StaggeredDeliverySpec
 } from "../../types.ts";
@@ -195,6 +196,170 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
         }
       ]
     }
+  },
+
+  // ── Status showcase — one lightweight opportunity per remaining state ──────
+  {
+    log: "opportunity 5 — RFQ draft (Solstice, second flange variant)",
+    ref: "opp:solstice-flange",
+    customer: "Solstice Medical Devices",
+    rfq: {
+      ref: "rfq:solstice-flange",
+      status: "Draft",
+      rfqDateOffset: -3,
+      externalNotes:
+        "Inquiry being logged — thin-profile flange variant for the next device rev.",
+      lines: [
+        {
+          item: "MCH-FLANGE-SS",
+          customerPartId: "SMD-FLG-0330",
+          quantity: [100],
+          order: 1
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 6 — no-quoted RFQ, lost quote (Cedar Valley mirror rod)",
+    ref: "opp:cedarvalley-rod",
+    customer: "Cedar Valley Hydraulics",
+    rfq: {
+      ref: "rfq:cedarvalley-rod",
+      status: "Closed",
+      rfqDateOffset: -95,
+      expirationOffset: -50,
+      noQuoteReason: "Tolerance Beyond Capability",
+      externalNotes:
+        "Mirror-finish piston rod with sub-micron straightness call-out — beyond our grinding capability.",
+      lines: [
+        {
+          item: "MCH-PISTON-ROD",
+          customerPartId: "CVH-ROD-7710",
+          quantity: [12],
+          order: 1
+        }
+      ]
+    },
+    quote: {
+      ref: "quote:cedarvalley-rod",
+      status: "Lost",
+      externalNotes: "Declined to bid the mirror-finish rod line.",
+      lines: [
+        {
+          ref: "quoteline:cedarvalley-rod:rod",
+          item: "MCH-PISTON-ROD",
+          status: "No Quote",
+          sortOrder: 1,
+          priceBreaks: []
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 7 — quote draft (Dominion drive shaft)",
+    ref: "opp:dominion-shaft",
+    customer: "Dominion Ag Equipment",
+    quote: {
+      ref: "quote:dominion-shaft",
+      status: "Draft",
+      externalNotes:
+        "Working draft — drive shaft pricing pending the heat-treat quote.",
+      lines: [
+        {
+          ref: "quoteline:dominion-shaft:shaft",
+          item: "MCH-SHAFT-DR",
+          status: "Not Started",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 25, unitPrice: 305, leadTime: 30 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 8 — partial quote (Granite State retrofit kit)",
+    ref: "opp:granite-retrofit",
+    customer: "Granite State Instruments",
+    quote: {
+      ref: "quote:granite-retrofit",
+      status: "Partial",
+      expirationOffset: 45,
+      externalNotes:
+        "End-cap line released to the customer; base frame still in engineering review.",
+      lines: [
+        {
+          ref: "quoteline:granite-retrofit:cap",
+          item: "MCH-END-CAP",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 40, unitPrice: 232, leadTime: 35 }]
+        },
+        {
+          ref: "quoteline:granite-retrofit:base",
+          item: "FAB-BASE-WLD",
+          status: "In Progress",
+          sortOrder: 2,
+          priceBreaks: [{ quantity: 4, unitPrice: 1450, leadTime: 40 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 9 — cancelled quote (Solstice enclosure panels)",
+    ref: "opp:solstice-encl",
+    customer: "Solstice Medical Devices",
+    quote: {
+      ref: "quote:solstice-encl",
+      status: "Cancelled",
+      externalNotes: "Program defunded before pricing was issued.",
+      lines: [
+        {
+          ref: "quoteline:solstice-encl:pnl",
+          item: "FAB-ENCL-PNL",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 4, unitPrice: 660, leadTime: 25 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "opportunity 10 — expired quote (Dominion spacer sets)",
+    ref: "opp:dominion-spacers",
+    customer: "Dominion Ag Equipment",
+    quote: {
+      ref: "quote:dominion-spacers",
+      status: "Expired",
+      expirationOffset: -14,
+      externalNotes: "30-day pricing lapsed without a PO.",
+      lines: [
+        {
+          ref: "quoteline:dominion-spacers:kit",
+          item: "MCH-SPACER-KIT",
+          status: "Complete",
+          sortOrder: 1,
+          priceBreaks: [{ quantity: 20, unitPrice: 112, leadTime: 20 }]
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — Needs Approval (Cedar Valley die-spring spares)",
+    ref: "opp:cedarvalley-springs",
+    customer: "Cedar Valley Hydraulics",
+    order: {
+      ref: "so:cedarvalley-springs",
+      status: "Needs Approval",
+      orderDateOffset: -2,
+      lines: [
+        {
+          ref: "soline:cedarvalley-springs:spr",
+          item: "SPR-DIE-25",
+          saleQuantity: 40,
+          unitPrice: 7,
+          status: "Ordered"
+        }
+      ]
+    }
   }
 ];
 
@@ -282,11 +447,329 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
         sortOrder: delivery.sortOrder
       }))
     }
+  },
+
+  // ── Fulfillment lifecycle — posted, partial and voided shipments ──────────
+  // Shipped items are well-stocked untracked buy parts (spares sold from the
+  // shelf), so the ledger rows never overdraw a bin.
+  {
+    log: "sales order — To Invoice (Granite State, posted needle-bearing shipment)",
+    ref: "opp:granite-bearings",
+    customer: "Granite State Instruments",
+    order: {
+      ref: "so:granite-bearings",
+      status: "To Invoice",
+      orderDateOffset: -30,
+      lines: [
+        {
+          ref: "soline:granite-bearings:brg",
+          item: "BRG-NDL-HK1512",
+          saleQuantity: 6,
+          unitPrice: 10.5,
+          status: "Completed"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:granite-bearings",
+      status: "Posted",
+      postedOffset: -18,
+      lines: [
+        {
+          item: "BRG-NDL-HK1512",
+          orderQuantity: 6,
+          outstandingQuantity: 0,
+          shippedQuantity: 6,
+          unitPrice: 10.5,
+          fromShelf: "B1-L3"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship and Invoice (Cedar Valley, partial clevis-pin shipment)",
+    ref: "opp:cedarvalley-pins",
+    customer: "Cedar Valley Hydraulics",
+    order: {
+      ref: "so:cedarvalley-pins",
+      status: "To Ship and Invoice",
+      orderDateOffset: -21,
+      lines: [
+        {
+          ref: "soline:cedarvalley-pins:pin",
+          item: "PIN-CLEVIS-12",
+          saleQuantity: 24,
+          unitPrice: 4,
+          status: "In Progress"
+        }
+      ]
+    },
+    shipment: {
+      ref: "shp:cedarvalley-pins",
+      status: "Posted",
+      postedOffset: -9,
+      lines: [
+        {
+          item: "PIN-CLEVIS-12",
+          orderQuantity: 24,
+          outstandingQuantity: 12,
+          shippedQuantity: 12,
+          unitPrice: 4,
+          fromShelf: "B2-L2"
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — To Ship (Dominion, voided dowel-pin shipment)",
+    ref: "opp:dominion-dowels",
+    customer: "Dominion Ag Equipment",
+    order: {
+      ref: "so:dominion-dowels",
+      status: "To Ship",
+      orderDateOffset: -14,
+      lines: [
+        {
+          ref: "soline:dominion-dowels:dwl",
+          item: "HW-DOWEL-8",
+          saleQuantity: 50,
+          unitPrice: 1.6,
+          status: "Ordered"
+        }
+      ]
+    },
+    // Wrong carrier account keyed in — voided before anything left the dock.
+    shipment: {
+      ref: "shp:dominion-dowels",
+      status: "Voided",
+      lines: [
+        {
+          item: "HW-DOWEL-8",
+          orderQuantity: 50,
+          outstandingQuantity: 50,
+          shippedQuantity: 0,
+          unitPrice: 1.6
+        }
+      ]
+    }
+  },
+
+  // ── Invoice lifecycle — one order+invoice per remaining status ────────────
+  // Modest spares invoices; accounting.ts settles "paid" and "partial" by their
+  // sinv keys.
+  {
+    log: "sales invoice — Submitted (Solstice cap-screw spares)",
+    ref: "opp:solstice-screws",
+    customer: "Solstice Medical Devices",
+    order: {
+      ref: "so:solstice-screws",
+      status: "Invoiced",
+      orderDateOffset: -35,
+      lines: [
+        {
+          ref: "soline:solstice-screws:hw",
+          item: "HW-SHCS-M6",
+          saleQuantity: 200,
+          unitPrice: 0.75,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:solstice-screws",
+      key: "submitted",
+      status: "Submitted",
+      subtotal: 150,
+      totalAmount: 150,
+      dateIssuedOffset: -20,
+      dueDateOffset: 10,
+      lines: [{ item: "HW-SHCS-M6", quantity: 200, unitPrice: 0.75 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue (Granite State 316L plate remnant)",
+    ref: "opp:granite-plate",
+    customer: "Granite State Instruments",
+    order: {
+      ref: "so:granite-plate",
+      status: "Invoiced",
+      orderDateOffset: -60,
+      lines: [
+        {
+          ref: "soline:granite-plate:plt",
+          item: "MAT-SS316-PLT",
+          saleQuantity: 40,
+          unitPrice: 9,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:granite-plate",
+      key: "overdue",
+      status: "Overdue",
+      subtotal: 360,
+      totalAmount: 360,
+      dateIssuedOffset: -45,
+      dueDateOffset: -15,
+      lines: [{ item: "MAT-SS316-PLT", quantity: 40, unitPrice: 9 }]
+    }
+  },
+  {
+    log: "sales invoice — Paid (Cedar Valley threaded-insert lot)",
+    ref: "opp:cedarvalley-inserts",
+    customer: "Cedar Valley Hydraulics",
+    order: {
+      ref: "so:cedarvalley-inserts",
+      status: "Closed",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:cedarvalley-inserts:ins",
+          item: "INS-HELI-M6",
+          saleQuantity: 300,
+          unitPrice: 1.15,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:cedarvalley-inserts",
+      key: "paid",
+      status: "Paid",
+      subtotal: 345,
+      totalAmount: 345,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "INS-HELI-M6", quantity: 300, unitPrice: 1.15 }]
+    }
+  },
+  {
+    log: "sales invoice — Partially Paid (Dominion bronze bushings)",
+    ref: "opp:dominion-bushings",
+    customer: "Dominion Ag Equipment",
+    order: {
+      ref: "so:dominion-bushings",
+      status: "Invoiced",
+      orderDateOffset: -50,
+      lines: [
+        {
+          ref: "soline:dominion-bushings:bsh",
+          item: "BSH-BRZ-2012",
+          saleQuantity: 24,
+          unitPrice: 6.5,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:dominion-bushings",
+      key: "partial",
+      status: "Partially Paid",
+      subtotal: 156,
+      totalAmount: 156,
+      dateIssuedOffset: -38,
+      dueDateOffset: -8,
+      lines: [{ item: "BSH-BRZ-2012", quantity: 24, unitPrice: 6.5 }]
+    }
+  },
+  {
+    log: "sales invoice — Voided (Solstice M10 cap screws, wrong bill-to)",
+    ref: "opp:solstice-capscrews",
+    customer: "Solstice Medical Devices",
+    order: {
+      ref: "so:solstice-capscrews",
+      status: "To Invoice",
+      orderDateOffset: -28,
+      lines: [
+        {
+          ref: "soline:solstice-capscrews:hw",
+          item: "HW-SHCS-M10",
+          saleQuantity: 100,
+          unitPrice: 1.85,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:solstice-capscrews",
+      key: "voided",
+      status: "Voided",
+      subtotal: 185,
+      totalAmount: 185,
+      dateIssuedOffset: -25,
+      lines: [{ item: "HW-SHCS-M10", quantity: 100, unitPrice: 1.85 }]
+    }
+  },
+  {
+    log: "sales invoice — Credit Note Issued (Granite State 5052 sheet remnant)",
+    ref: "opp:granite-sheet",
+    customer: "Granite State Instruments",
+    order: {
+      ref: "so:granite-sheet",
+      status: "Closed",
+      orderDateOffset: -70,
+      lines: [
+        {
+          ref: "soline:granite-sheet:sht",
+          item: "MAT-AL5052-SHT",
+          saleQuantity: 50,
+          unitPrice: 4.5,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:granite-sheet",
+      key: "credit",
+      status: "Credit Note Issued",
+      subtotal: 225,
+      totalAmount: 225,
+      dateIssuedOffset: -55,
+      dueDateOffset: -25,
+      lines: [{ item: "MAT-AL5052-SHT", quantity: 50, unitPrice: 4.5 }]
+    }
+  }
+];
+
+// RMAs — one per modeled status, returning small quantities of the spares the
+// posted shipments above actually sent out. The Completed one books stock back
+// into the bin it shipped from.
+export const SALES_RETURNS: SalesReturnSpec[] = [
+  {
+    key: "needle-bearing",
+    status: "Completed",
+    customer: "Granite State Instruments",
+    returnReason: "Defective",
+    dateOffset: -12,
+    salesOrder: "so:granite-bearings",
+    lines: [
+      { item: "BRG-NDL-HK1512", quantity: 1, unitPrice: 10.5, toShelf: "B1-L3" }
+    ]
+  },
+  {
+    key: "clevis-pins",
+    status: "To Receive",
+    customer: "Cedar Valley Hydraulics",
+    returnReason: "Damaged in Transit",
+    dateOffset: -5,
+    salesOrder: "so:cedarvalley-pins",
+    lines: [{ item: "PIN-CLEVIS-12", quantity: 2, unitPrice: 4 }]
+  },
+  {
+    key: "cap-screws",
+    status: "Draft",
+    customer: "Solstice Medical Devices",
+    returnReason: "No Longer Needed",
+    dateOffset: -1,
+    salesOrder: "so:solstice-screws",
+    lines: [{ item: "HW-SHCS-M6", quantity: 40, unitPrice: 0.75 }]
   }
 ];
 
 export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
-  releasedOrders: RELEASED_ORDERS
+  releasedOrders: RELEASED_ORDERS,
+  salesReturns: SALES_RETURNS
 };

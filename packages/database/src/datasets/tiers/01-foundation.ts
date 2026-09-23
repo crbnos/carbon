@@ -1,5 +1,30 @@
-import { insertId, insertRow, need, one, RICH, rows } from "../sql.ts";
+import { resolveDate } from "../dates.ts";
+import {
+  insertId,
+  insertMaybe,
+  insertRow,
+  maybeOne,
+  need,
+  one,
+  RICH,
+  rows
+} from "../sql.ts";
 import type { Ctx } from "../types.ts";
+
+// The currency codes a dataset references must exist for the company group —
+// bootstrap seeds the full ISO set, so a miss is a typo'd code, not a gap.
+async function assertCurrencyExists(ctx: Ctx, code: string): Promise<void> {
+  const row = await maybeOne(
+    ctx.client,
+    `SELECT code FROM currency WHERE "companyGroupId" = $1 AND code = $2`,
+    [ctx.companyGroupId, code]
+  );
+  if (!row) {
+    throw new Error(
+      `Seed: currency "${code}" does not exist for this company group`
+    );
+  }
+}
 
 export async function runTier1(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.foundation;
@@ -172,7 +197,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     const suId = await insertId(ctx, "storageUnit", {
       name: `${wc.name} Floor`,
       locationId: plantId,
-      workCenterId: ctx.refs.workCenters[wc.name],
+      workCenterId: need(ctx.refs.workCenters, wc.name, "work center"),
       isWorkCenterDefault: true
     });
     ctx.refs.shelves[`wc:${wc.name}`] = suId;
@@ -216,13 +241,34 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Payment term id ───────────────────────────────────────────────────────
+  // ── Payment term ids ──────────────────────────────────────────────────────
+  // Every bootstrap term goes into refs (pterm:<name>); Net 30 is the default.
+  const paymentTermRows = await rows<{ id: string; name: string }>(
+    client,
+    `SELECT id, name FROM "paymentTerm" WHERE "companyId" = $1`,
+    [companyId]
+  );
+  for (const pt of paymentTermRows) {
+    ctx.refs.misc[`pterm:${pt.name}`] = pt.id;
+  }
   const netThirty = await one<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
     [companyId]
   );
   ctx.refs.misc.paymentTermId = netThirty.id;
+
+  const paymentTermFor = (spec: { paymentTerm?: string }): string =>
+    spec.paymentTerm
+      ? need(ctx.refs.misc, `pterm:${spec.paymentTerm}`, "payment term")
+      : netThirty.id;
+
+  // Currency codes referenced by any party must exist before the inserts.
+  const currencyCodes = new Set<string>();
+  for (const party of [...data.customers, ...data.suppliers]) {
+    if (party.currencyCode) currencyCodes.add(party.currencyCode);
+  }
+  for (const code of currencyCodes) await assertCurrencyExists(ctx, code);
 
   // ── Customer status ids ───────────────────────────────────────────────────
   const statuses = await rows<{ id: string; name: string }>(
@@ -247,14 +293,14 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       customerStatusId: statusId,
       phone: c.phone,
       website: c.website,
-      currencyCode: "USD"
+      currencyCode: c.currencyCode ?? "USD"
     });
     ctx.refs.customers[c.name] = custId;
 
     // Interceptor created customerPayment/Shipping/Tax — just update payment term
     await client.query(
       `UPDATE "customerPayment" SET "paymentTermId" = $1 WHERE "customerId" = $2`,
-      [netThirty.id, custId]
+      [paymentTermFor(c), custId]
     );
     await client.query(
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
@@ -304,13 +350,15 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       supplierTypeId: typeId,
       phone: s.phone,
       website: s.website,
-      currencyCode: "USD"
+      currencyCode: s.currencyCode ?? "USD",
+      // undefined is dropped by insertRow, keeping the column default (Active).
+      supplierStatus: s.status
     });
     ctx.refs.suppliers[s.name] = supId;
 
     await client.query(
       `UPDATE "supplierPayment" SET "paymentTermId" = $1 WHERE "supplierId" = $2`,
-      [netThirty.id, supId]
+      [paymentTermFor(s), supId]
     );
     await client.query(
       `UPDATE "supplierShipping" SET "shippingMethodId" = $1 WHERE "supplierId" = $2`,
@@ -443,6 +491,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
           unitOfMeasureCode: step.unitOfMeasureCode ?? null,
           minValue: step.minValue ?? null,
           maxValue: step.maxValue ?? null,
+          listValues: step.listValues ?? null,
+          fileTypes: step.fileTypes ?? null,
           description: RICH(step.instruction)
         });
       }
@@ -458,6 +508,143 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   // ── No-quote reasons ──────────────────────────────────────────────────────
   ctx.log("no-quote reasons");
   for (const name of data.noQuoteReasons) {
-    await insertId(ctx, "noQuoteReason", { name });
+    ctx.refs.misc[`nqr:${name}`] = await insertId(ctx, "noQuoteReason", {
+      name
+    });
+  }
+
+  // ── Holidays ──────────────────────────────────────────────────────────────
+  // insertMaybe: holiday is UNIQUE (date, companyId).
+  ctx.log("holidays");
+  for (const holiday of data.holidays) {
+    // holiday.year is GENERATED ALWAYS from date — never insert it.
+    await insertMaybe(ctx, "holiday", {
+      name: holiday.name,
+      date: resolveDate(ctx.anchor, holiday.dateOffset)
+    });
+  }
+
+  // ── Tags ──────────────────────────────────────────────────────────────────
+  // tag's PK is (name, table, companyId) — insertMaybe keeps re-seeds clean.
+  ctx.log("tags");
+  for (const tag of data.tags) {
+    await insertMaybe(ctx, "tag", { name: tag.name, table: tag.table });
+  }
+
+  // ── Material taxonomy ─────────────────────────────────────────────────────
+  // Company-scoped rows only (unique keys treat global rows as distinct), so
+  // insertMaybe + re-select is idempotent. Parents land before children (FKs).
+  ctx.log("material taxonomy");
+  const taxonomy = data.materialTaxonomy;
+  const taxonomyId = async (table: string, name: string): Promise<string> => {
+    const row = await one<{ id: string }>(
+      client,
+      `SELECT id FROM "${table}" WHERE "companyId" = $1 AND name = $2`,
+      [companyId, name]
+    );
+    return row.id;
+  };
+
+  for (const substance of taxonomy.substances) {
+    await insertMaybe(ctx, "materialSubstance", {
+      name: substance.name,
+      code: substance.code
+    });
+    ctx.refs.misc[`matsub:${substance.name}`] = await taxonomyId(
+      "materialSubstance",
+      substance.name
+    );
+  }
+  for (const form of taxonomy.forms) {
+    await insertMaybe(ctx, "materialForm", {
+      name: form.name,
+      code: form.code
+    });
+    ctx.refs.misc[`matform:${form.name}`] = await taxonomyId(
+      "materialForm",
+      form.name
+    );
+  }
+  for (const type of taxonomy.types) {
+    await insertMaybe(ctx, "materialType", {
+      name: type.name,
+      code: type.code,
+      materialSubstanceId: need(
+        ctx.refs.misc,
+        `matsub:${type.substance}`,
+        "material substance"
+      ),
+      materialFormId: need(
+        ctx.refs.misc,
+        `matform:${type.form}`,
+        "material form"
+      )
+    });
+    ctx.refs.misc[`mattype:${type.name}`] = await taxonomyId(
+      "materialType",
+      type.name
+    );
+  }
+  for (const grade of taxonomy.grades) {
+    await insertMaybe(ctx, "materialGrade", {
+      name: grade.name,
+      materialSubstanceId: need(
+        ctx.refs.misc,
+        `matsub:${grade.substance}`,
+        "material substance"
+      )
+    });
+    ctx.refs.misc[`matgrade:${grade.name}`] = await taxonomyId(
+      "materialGrade",
+      grade.name
+    );
+  }
+  for (const finish of taxonomy.finishes) {
+    await insertMaybe(ctx, "materialFinish", {
+      name: finish.name,
+      materialSubstanceId: need(
+        ctx.refs.misc,
+        `matsub:${finish.substance}`,
+        "material substance"
+      )
+    });
+    ctx.refs.misc[`matfinish:${finish.name}`] = await taxonomyId(
+      "materialFinish",
+      finish.name
+    );
+  }
+  for (const dimension of taxonomy.dimensions) {
+    await insertMaybe(ctx, "materialDimension", {
+      name: dimension.name,
+      materialFormId: need(
+        ctx.refs.misc,
+        `matform:${dimension.form}`,
+        "material form"
+      ),
+      isMetric: dimension.isMetric ?? true
+    });
+    ctx.refs.misc[`matdim:${dimension.name}`] = await taxonomyId(
+      "materialDimension",
+      dimension.name
+    );
+  }
+
+  // ── Employee resource links ───────────────────────────────────────────────
+  // The seeded user gets two abilities and a shift so the People screens have a
+  // real member. insertMaybe: both are UNIQUE (employeeId, <resource>Id).
+  ctx.log("employee links");
+  for (const abilityName of data.abilities.slice(0, 2)) {
+    await insertMaybe(ctx, "employeeAbility", {
+      employeeId: ctx.userId,
+      abilityId: need(ctx.refs.abilities, abilityName, "ability"),
+      lastTrainingDate: resolveDate(ctx.anchor, -30)
+    });
+  }
+  const firstShift = data.shifts[0];
+  if (firstShift) {
+    await insertMaybe(ctx, "employeeShift", {
+      employeeId: ctx.userId,
+      shiftId: need(ctx.refs.shifts, firstShift.name, "shift")
+    });
   }
 }

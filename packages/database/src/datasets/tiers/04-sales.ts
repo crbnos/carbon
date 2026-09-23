@@ -1,5 +1,5 @@
-import { resolveDate } from "../dates.ts";
-import { insertId, insertRow, need, nextSequence, RICH } from "../sql.ts";
+import { resolveDate, resolveTimestamp } from "../dates.ts";
+import { insertId, insertRow, need, nextSequence, RICH, rows } from "../sql.ts";
 import type { Ctx, PriceBreak, SalesOpportunitySpec } from "../types.ts";
 
 async function insertPriceBreaks(
@@ -58,7 +58,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   async function insertOpportunity(spec: SalesOpportunitySpec): Promise<void> {
     ctx.log(spec.log);
     const customerId = need(ctx.refs.customers, spec.customer);
-    const customerLocationId = ctx.refs.misc[`cloc:${spec.customer}`] ?? null;
+    const customerLocationId = need(
+      ctx.refs.misc,
+      `cloc:${spec.customer}`,
+      "customer location"
+    );
 
     const opportunityId = await insertId(ctx, "opportunity", { customerId });
     ctx.refs.documents[spec.ref] = opportunityId;
@@ -72,6 +76,15 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         customerLocationId,
         locationId: plantId,
         opportunityId,
+        // The no-quote reason lives on the RFQ, as updateSalesRFQStatus writes it.
+        noQuoteReasonId:
+          spec.rfq.noQuoteReason === undefined
+            ? undefined
+            : need(
+                ctx.refs.misc,
+                `nqr:${spec.rfq.noQuoteReason}`,
+                "no-quote reason"
+              ),
         rfqDate: resolveDate(ctx.anchor, spec.rfq.rfqDateOffset),
         expirationDate:
           spec.rfq.expirationOffset === undefined
@@ -231,12 +244,22 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       ctx.refs.documents[spec.order.ref] = orderId;
     }
 
-    // Shipment (Draft — Posted shipments need the edge function)
+    // Shipment. Draft/Voided are header+lines only; Posted mirrors post-shipment's
+    // untracked branch: one Sales Shipment ledger row per line out of its fromShelf.
     let shipmentId: string | null = null;
     if (spec.shipment) {
       if (!orderId || !orderReadableId) {
         throw new Error(`Seed: shipment on "${spec.ref}" has no sales order`);
       }
+      const posted = spec.shipment.status === "Posted";
+      if (posted && spec.shipment.postedOffset === undefined) {
+        throw new Error(
+          `Seed: shipment "${spec.shipment.ref}" is Posted but has no postedOffset`
+        );
+      }
+      const postingDate = posted
+        ? resolveDate(ctx.anchor, spec.shipment.postedOffset ?? 0)
+        : undefined;
       const shipmentReadableId = await nextSequence(ctx, "shipment");
       shipmentId = await insertId(ctx, "shipment", {
         shipmentId: shipmentReadableId,
@@ -247,10 +270,21 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         sourceDocumentReadableId: orderReadableId,
         shippingMethodId,
         customerId,
-        opportunityId
+        opportunityId,
+        postingDate,
+        postedBy: posted ? userId : undefined
       });
       for (const line of spec.shipment.lines) {
         const item = need(ctx.refs.items, line.item);
+        const shelfId =
+          line.fromShelf === undefined
+            ? undefined
+            : need(ctx.refs.shelves, line.fromShelf);
+        if (posted && line.shippedQuantity > 0 && shelfId === undefined) {
+          throw new Error(
+            `Seed: posted shipment "${spec.shipment.ref}" line "${line.item}" has no fromShelf`
+          );
+        }
         await insertId(ctx, "shipmentLine", {
           shipmentId,
           lineId: need(orderLineIdByItem, line.item),
@@ -259,9 +293,24 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           outstandingQuantity: line.outstandingQuantity,
           shippedQuantity: line.shippedQuantity,
           locationId: plantId,
+          storageUnitId: shelfId,
           unitOfMeasure: "EA",
           unitPrice: line.unitPrice
         });
+        if (posted && line.shippedQuantity > 0) {
+          await insertRow(ctx, "itemLedger", {
+            entryType: "Negative Adjmt.",
+            documentType: "Sales Shipment",
+            documentId: shipmentId,
+            itemId: item.id,
+            locationId: plantId,
+            storageUnitId: shelfId,
+            quantity: -line.shippedQuantity,
+            postingDate,
+            companyId,
+            createdBy: userId
+          });
+        }
       }
       ctx.refs.documents[spec.shipment.ref] = shipmentId;
     }
@@ -280,8 +329,16 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         totalAmount: spec.invoice.totalAmount,
         invoiceCustomerId: customerId,
         shipmentId: shipmentId ?? undefined,
-        dateIssued: resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset)
+        dateIssued: resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset),
+        dateDue:
+          spec.invoice.dueDateOffset === undefined
+            ? undefined
+            : resolveDate(ctx.anchor, spec.invoice.dueDateOffset)
       });
+      // Payments settle Paid / Partially Paid invoices by this key.
+      if (spec.invoice.key !== undefined) {
+        ctx.refs.misc[`sinv:${spec.invoice.key}`] = invoiceId;
+      }
       // salesInvoiceShipment — id = invoice.id (INNER JOINed by the salesInvoices view)
       await insertRow(ctx, "salesInvoiceShipment", {
         id: invoiceId,
@@ -317,7 +374,11 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   for (const spec of data.statusOrders) {
     ctx.log(`sales order — ${spec.status} (job ${spec.key})`);
     const customerId = need(ctx.refs.customers, spec.customer);
-    const customerLocationId = ctx.refs.misc[`cloc:${spec.customer}`] ?? null;
+    const customerLocationId = need(
+      ctx.refs.misc,
+      `cloc:${spec.customer}`,
+      "customer location"
+    );
     const item = need(ctx.refs.items, spec.item);
     const oppId = await insertId(ctx, "opportunity", { customerId });
     const readableId = await nextSequence(ctx, "salesOrder");
@@ -365,4 +426,165 @@ export async function runTier4(ctx: Ctx): Promise<void> {
   for (const spec of data.releasedOrders) {
     await insertOpportunity(spec);
   }
+
+  // ── Sales returns (RMAs) ───────────────────────────────────────────────────
+  // Completed mirrors post-receipt's Sales Return Order branch: a Posted receipt
+  // plus a Sales Return Receipt ledger row per line. No credit lines — their
+  // memoId is NOT NULL and memos come later (tier 09).
+  if (data.salesReturns.length > 0) {
+    ctx.log("sales returns");
+    const reasonRows = await rows<{ id: string; name: string }>(
+      ctx.client,
+      `SELECT id, name FROM "returnReason" WHERE "companyId" = $1`,
+      [companyId]
+    );
+    for (const reason of reasonRows) {
+      ctx.refs.misc[`rreason:${reason.name}`] = reason.id;
+    }
+
+    for (const spec of data.salesReturns) {
+      ctx.log(`  rma ${spec.key} — ${spec.status}`);
+      const customerId = need(ctx.refs.customers, spec.customer);
+      const customerLocationId = need(
+        ctx.refs.misc,
+        `cloc:${spec.customer}`,
+        "customer location"
+      );
+      const returnReasonId = need(
+        ctx.refs.misc,
+        `rreason:${spec.returnReason}`,
+        "return reason"
+      );
+      const completed = spec.status === "Completed";
+      const orderDate = resolveDate(ctx.anchor, spec.dateOffset);
+      const rmaReadableId = await nextSequence(ctx, "salesReturnOrder");
+      const rmaId = await insertId(ctx, "salesReturnOrder", {
+        salesReturnOrderId: rmaReadableId,
+        status: spec.status,
+        customerId,
+        customerLocationId,
+        locationId: plantId,
+        currencyCode: "USD",
+        orderDate,
+        salesOrderId:
+          spec.salesOrder === undefined
+            ? undefined
+            : need(ctx.refs.documents, spec.salesOrder, "sales order ref")
+      });
+
+      const lineIds: string[] = [];
+      for (const [index, line] of spec.lines.entries()) {
+        const item = need(ctx.refs.items, line.item);
+        lineIds.push(
+          await insertId(ctx, "salesReturnOrderLine", {
+            salesReturnOrderId: rmaId,
+            itemId: item.id,
+            lineNumber: index + 1,
+            quantity: line.quantity,
+            quantityReceived: completed ? line.quantity : 0,
+            returnReasonId,
+            unitOfMeasureCode: "EA",
+            unitPrice: line.unitPrice
+          })
+        );
+      }
+
+      if (completed) {
+        const receiptReadableId = await nextSequence(ctx, "receipt");
+        const receiptId = await insertId(ctx, "receipt", {
+          receiptId: receiptReadableId,
+          status: "Posted",
+          locationId: plantId,
+          sourceDocument: "Sales Return Order",
+          sourceDocumentId: rmaId,
+          sourceDocumentReadableId: rmaReadableId,
+          postingDate: orderDate,
+          postedBy: userId
+        });
+        for (const [index, line] of spec.lines.entries()) {
+          const item = need(ctx.refs.items, line.item);
+          if (line.toShelf === undefined) {
+            throw new Error(
+              `Seed: completed return "${spec.key}" line "${line.item}" has no toShelf`
+            );
+          }
+          const shelfId = need(ctx.refs.shelves, line.toShelf);
+          await insertId(ctx, "receiptLine", {
+            receiptId,
+            lineId: lineIds[index],
+            itemId: item.id,
+            orderQuantity: line.quantity,
+            outstandingQuantity: 0,
+            receivedQuantity: line.quantity,
+            locationId: plantId,
+            storageUnitId: shelfId,
+            unitOfMeasure: "EA",
+            unitPrice: line.unitPrice
+          });
+          await insertRow(ctx, "itemLedger", {
+            entryType: "Positive Adjmt.",
+            documentType: "Sales Return Receipt",
+            documentId: receiptId,
+            itemId: item.id,
+            locationId: plantId,
+            storageUnitId: shelfId,
+            quantity: line.quantity,
+            postingDate: orderDate,
+            companyId,
+            createdBy: userId
+          });
+        }
+        ctx.refs.documents[`rma-receipt:${spec.key}`] = receiptId;
+      }
+
+      ctx.refs.documents[`rma:${spec.key}`] = rmaId;
+    }
+  }
+
+  // ── Status history — Draft → Confirmed → In Progress on one live order ─────
+  // The first opportunity whose order is In Progress; timestamps are staggered
+  // so the timeline reads as a real approval trail.
+  const inProgress = [...data.opportunities, ...data.releasedOrders].find(
+    (spec) => spec.order?.status === "In Progress"
+  );
+  if (inProgress?.order) {
+    ctx.log(`status history — ${inProgress.order.ref}`);
+    const salesOrderId = need(ctx.refs.documents, inProgress.order.ref);
+    const base = inProgress.order.orderDateOffset;
+    const trail: Array<[string, number, string]> = [
+      ["Draft", base, "09:12:00"],
+      ["Confirmed", base + 1, "15:41:00"],
+      ["In Progress", base + 6, "10:05:00"]
+    ];
+    for (const [status, offset, timeOfDay] of trail) {
+      await insertRow(ctx, "salesOrderStatusHistory", {
+        salesOrderId,
+        status,
+        createdAt: resolveTimestamp(ctx.anchor, offset, timeOfDay)
+      });
+    }
+  }
+
+  // ── Favorites — star the docs a demo user would have pinned ───────────────
+  // The Sent quote and the first released order. The job favorite is tier 06's
+  // — job refs do not exist yet.
+  const sentQuote = data.opportunities.find(
+    (spec) => spec.quote?.status === "Sent"
+  );
+  if (!sentQuote?.quote) {
+    throw new Error(`Seed: no Sent quote to favorite`);
+  }
+  await insertRow(ctx, "quoteFavorite", {
+    quoteId: need(ctx.refs.documents, sentQuote.quote.ref),
+    userId
+  });
+
+  const firstReleased = data.releasedOrders[0];
+  if (!firstReleased?.order) {
+    throw new Error(`Seed: no released order to favorite`);
+  }
+  await insertRow(ctx, "salesOrderFavorite", {
+    salesOrderId: need(ctx.refs.documents, firstReleased.order.ref),
+    userId
+  });
 }

@@ -508,6 +508,39 @@ export function buildPrecisionWorkflows(refs: {
   ];
 }
 
+// Run history for "Assign new sales orders": one run that assigned the order,
+// one whose assignee was rejected, and one queued while the workflow was
+// briefly unpublished (skipped at load, so no steps).
 export const precisionWorkflows: WorkflowData = {
-  build: buildPrecisionWorkflows
+  build: buildPrecisionWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:dominion-dowels",
+      at: { offset: -14, time: "10:05:39" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:solstice-capscrews",
+      at: { offset: -28, time: "14:22:17" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:cedarvalley-pins",
+      at: { offset: -21, time: "08:48:52" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
 };

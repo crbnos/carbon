@@ -1,7 +1,13 @@
 import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  ConfigurationSpec,
+  CustomerPartSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
 
@@ -123,6 +129,17 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 285,
     unitSalePrice: 430,
     leadTime: 35
+  },
+  // Successor of BSH-BRZ-2012 (see SUPERSESSIONS). Deliberately absent from
+  // every BOM: job creation and picking redirect to it live.
+  {
+    readableId: "BSH-PTFE-2012",
+    name: "PTFE-Lined Composite Bushing 20 x 12",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 4.6,
+    unitSalePrice: 7.5,
+    leadTime: 10
   }
 ];
 
@@ -134,7 +151,13 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 3.85,
     unitOfMeasureCode: "LB",
-    leadTime: 10
+    leadTime: 10,
+    // Partial classification: extruded bar carries no company form/dimension.
+    material: {
+      substance: "Extruded Aluminum",
+      grade: "6061-T6",
+      finish: "Mill Finish"
+    }
   },
   {
     readableId: "MAT-AL5052-SHT",
@@ -168,7 +191,16 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 2.75,
     unitOfMeasureCode: "LB",
-    leadTime: 14
+    leadTime: 14,
+    // Fully classified against the company taxonomy (foundation.ts).
+    material: {
+      substance: "Chromoly Steel",
+      form: "Turned & Polished Bar",
+      materialType: "Chromoly TG&P Bar",
+      grade: "4140 Pre-Hard",
+      finish: "Rust-Preventive Oil",
+      dimension: '2.500" dia'
+    }
   },
   {
     readableId: "MAT-CRS-TUBE",
@@ -386,7 +418,11 @@ export const METHODS: MakeMethodSpec[] = [
         order: 1,
         laborTime: 1.5,
         setupTime: 0.75,
-        machineTime: 1.25
+        machineTime: 1.25,
+        parameters: [
+          { key: "Workholding", value: "6 in vise, hard jaws on parallels" },
+          { key: "Coolant", value: "Flood — semi-synthetic" }
+        ]
       },
       {
         process: "CNC Milling",
@@ -396,7 +432,13 @@ export const METHODS: MakeMethodSpec[] = [
         laborTime: 2,
         machineTime: 1.75,
         // Gives the MES operation screen an Instructions tab with real steps.
-        procedure: "procedure:Pump Housing Second Operation"
+        procedure: "procedure:Pump Housing Second Operation",
+        tools: [{ tool: "TL-FIXT-HSG", quantity: 1 }],
+        parameters: [
+          { key: "Fixture", value: "TL-FIXT-HSG soft jaws, bored in place" },
+          { key: "Finish Bore Speed/Feed", value: "6200 RPM, 18 in/min" },
+          { key: "Coolant", value: "Flood — semi-synthetic" }
+        ]
       },
       {
         process: "Outside Processing",
@@ -776,6 +818,94 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     item: "SEAL-ORING-224",
     price: 0.35,
     leadTime: 10
+  },
+  {
+    supplier: "Midway Bearing & Seal",
+    item: "BSH-PTFE-2012",
+    price: 4.6,
+    leadTime: 10
+  }
+];
+
+// MCH-PISTON-ROD still names BSH-BRZ-2012 (140 in bin B2-L2), so Consume First
+// keeps pulling the bronze bushing until the bin is empty, then swaps to the
+// PTFE-lined replacement.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "BSH-BRZ-2012",
+    successor: "BSH-PTFE-2012",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "HMA-4000",
+    customer: "Cedar Valley Hydraulics",
+    customerPartId: "CVH-HPU-4000",
+    customerRevision: "C"
+  },
+  {
+    item: "MCH-HSG-PUMP",
+    customer: "Granite State Instruments",
+    customerPartId: "GSI-PMP-118"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "HMA-4000",
+    customer: "Dominion Ag Equipment",
+    notes: "Season-build blanket pricing per the 2026 supply agreement.",
+    breaks: [
+      { quantity: 2, overridePrice: 4100 },
+      { quantity: 10, overridePrice: 3950 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "Cedar Valley volume discount",
+    customer: "Cedar Valley Hydraulics",
+    percent: 5,
+    minQuantity: 10
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "HMA-4000",
+  group: "Power Unit Configuration",
+  parameters: [
+    {
+      key: "rated_pressure_psi",
+      label: "Rated Pressure (psi)",
+      dataType: "numeric"
+    },
+    {
+      key: "port_thread",
+      label: "Port Thread Standard",
+      dataType: "list",
+      listOptions: ["SAE ORB", "BSPP", "NPT"]
+    },
+    {
+      key: "hydro_test_cert",
+      label: "Include Hydrostatic Test Certificate",
+      dataType: "boolean"
+    }
+  ]
+};
+
+// MCH-FLANGE-SS rev 0 is the released (Production) revision; rev A was
+// obsoleted after the bolt-pattern print change, rev B is the thin-profile
+// redesign, now in prototype.
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "MCH-FLANGE-SS",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
   }
 ];
 
@@ -787,5 +917,11 @@ export const precisionItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER
 };

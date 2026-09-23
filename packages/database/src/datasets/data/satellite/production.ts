@@ -2,6 +2,7 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  PickingListSpec,
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
@@ -17,8 +18,31 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:orbsec",
     salesOrderLine: "soline:orbsec:sat",
     customer: "ORBSEC Defense",
+    deadlineType: "Hard Deadline",
     dueDateOffset: -167,
-    releasedDateOffset: -297
+    releasedDateOffset: -297,
+    // The floor's real mixed state: integration done, TVAC running, final
+    // inspection waiting on it.
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "In Progress" },
+      { order: 3, status: "Waiting" }
+    ],
+    quantities: [
+      { order: 1, type: "Production", quantity: 1 },
+      { order: 1, type: "Scrap", quantity: 2, scrapReason: "Defective" },
+      { order: 2, type: "Rework", quantity: 1 }
+    ],
+    operationNotes: [
+      {
+        order: 1,
+        note: "Torque-striped all M6 bus fasteners after the second pass — witness marks photographed for the ORBSEC data package."
+      },
+      {
+        order: 2,
+        note: "TVAC cycle 3 of 8 running. Cold soak plateau holding at -25C, no anomalies on the battery heater loop."
+      }
+    ]
   },
   {
     key: "ready",
@@ -28,6 +52,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:polar",
     salesOrderLine: "soline:polar:sat",
     customer: "PolarView Earth",
+    deadlineType: "ASAP",
     dueDateOffset: -153,
     releasedDateOffset: -251
   },
@@ -39,6 +64,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:planned",
     salesOrderLine: "soline:planned",
     customer: "NovaSat Networks",
+    deadlineType: "Soft Deadline",
     dueDateOffset: -90
   },
   {
@@ -49,7 +75,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:draft",
     salesOrderLine: "soline:draft",
     customer: "Apex Space Research",
-    dueDateOffset: -125
+    deadlineType: "No Deadline"
   },
   {
     key: "paused",
@@ -188,6 +214,56 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
+// Material staging for the in-progress SAT-1000 job. The completed list moved
+// the structure kit's fasteners to the clean-room floor weeks ago; the open
+// list is today's pull for the next bus, short on bearing grease.
+export const PICKING_LISTS: PickingListSpec[] = [
+  {
+    key: "sat-kit-1",
+    status: "Completed",
+    job: "in-progress",
+    dateOffset: -20,
+    lines: [
+      {
+        item: "FST-M4-TI",
+        quantityRequired: 48,
+        quantityPicked: 48,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      },
+      {
+        item: "FST-M6-A286",
+        quantityRequired: 24,
+        quantityPicked: 24,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      }
+    ]
+  },
+  {
+    key: "sat-kit-2",
+    status: "In Progress",
+    job: "in-progress",
+    dateOffset: -2,
+    lines: [
+      {
+        item: "BRG-6201",
+        quantityRequired: 4,
+        quantityPicked: 0,
+        status: "Pending",
+        fromShelf: "A1-L3"
+      },
+      {
+        item: "CN-GREASE-001",
+        quantityRequired: 1,
+        quantityPicked: 0,
+        status: "Short",
+        fromShelf: "A1-L3"
+      }
+    ]
+  }
+];
+
 export const satelliteProduction: ProductionData = {
   assembly: satelliteAssembly,
   jobs: JOBS,
@@ -195,5 +271,16 @@ export const satelliteProduction: ProductionData = {
   genealogyInputs: GENEALOGY_INPUTS,
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
-  genealogyJobKey: "in-progress"
+  genealogyJobKey: "in-progress",
+  // The TVAC operation (position 2) is the one overridden to In Progress.
+  openEvent: { operationOrder: 2 },
+  batch: { operationOrder: 1 },
+  rework: {
+    quantity: 1,
+    reason:
+      "Battery heater harness continuity failed at cold soak — return unit 2 to systems integration for connector rework.",
+    targetOperationOrder: 1,
+    triggeredAtOperationOrder: 2
+  },
+  pickingLists: PICKING_LISTS
 };
