@@ -219,6 +219,11 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-charge/index.ts"
 
+[functions.post-reimbursement]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-reimbursement/index.ts"
+
 [functions.batch-operations]
 enabled = true
 verify_jwt = true

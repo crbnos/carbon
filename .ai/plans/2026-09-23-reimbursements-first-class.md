@@ -91,9 +91,9 @@
 - [x] Task 5: `invoicing.service.ts` — readers + `updateReimbursement` header write
 - [x] Task 6: `invoicing.service.ts` — Kysely line writers
 - [x] Task 7: Accounting defaults — Employee Reimbursements Payable picker
-- [ ] Task 8: `build-reimbursement-journal.ts` (pure) + its Deno test
-- [ ] Task 9: `post-reimbursement` edge function driver + `config.toml`
-- [ ] Task 10: `post-reimbursement` handler + transaction Deno tests
+- [x] Task 8: `build-reimbursement-journal.ts` (pure) + its Deno test
+- [x] Task 9: `post-reimbursement` edge function driver + `config.toml`
+- [x] Task 10: `post-reimbursement` handler + transaction Deno tests
 - [ ] Task 11: Dimension data plumbing for the line editor
 - [ ] Task 12: Shared `DocumentSourceBadge` component
 - [ ] Task 13: Shared `DocumentLineEditor` component
