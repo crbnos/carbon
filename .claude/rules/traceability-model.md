@@ -261,6 +261,19 @@ both read "not on this transfer" and both post a Transfer pair).
 pre-check that mirrors the same rounding so the two cannot disagree; the lock
 is what makes the edge function authoritative.
 
+**The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
+upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`
+and never touched `status`, so editing a batch line down to 0 on a receipt whose lot
+had already gone Available left `0` + `Available` — the exact husk this rule forbids
+(fixed in `20260923220000_receipt-batch-tracking-settle-status.sql`, which drains to
+`Consumed` and revives a re-entered quantity to `On Hold`). Neither `settleQuantity`
+nor the `no-unrounded-tracked-quantity` check could see it: the check scans TypeScript
+only. The net that DOES cover SQL functions and triggers is the data-driven invariant
+`packages/checks/src/invariants/tracked-entity-zero-available.sql` — run it after
+touching any tracked-entity writer, in either language. The serial twin
+(`update_receipt_line_serial_tracking`) is unaffected: it always inserts quantity 1 and
+its UPDATE branch never writes quantity.
+
 The DB backstop is `trackedEntity_quantity_nonnegative`
 (`20260922191138_tracked-entity-quantity-nonnegative.sql`), a CHECK added
 **`NOT VALID`** so existing negative prod rows would not fail the deploy — so it
