@@ -233,6 +233,74 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
       journalEntryId: "JE-SEED-005",
       postingOffset: -33
     }
+  },
+  {
+    // The chart's opening position, so the balance sheet has cash, stock,
+    // plant and equity before the first posted document.
+    ref: "journal:opening-balance",
+    journalEntryId: "JE-SEED-006",
+    description: "Opening balances — cutover from the legacy ledger",
+    status: "Posted",
+    sourceType: "Opening Balance",
+    postingOffset: -242,
+    lines: [
+      {
+        account: "1010",
+        description: "Operating cash",
+        amount: 850000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-1"
+      },
+      {
+        account: "1210",
+        description: "Raw materials on hand",
+        amount: 210000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-2"
+      },
+      {
+        account: "1220",
+        description: "Finished goods on hand",
+        amount: 160000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-3"
+      },
+      {
+        account: "1350",
+        description: "Machinery & equipment at cost",
+        amount: 940000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-4"
+      },
+      {
+        account: "1330",
+        description: "Accumulated depreciation to date",
+        amount: -230000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-5"
+      },
+      {
+        account: "2410",
+        description: "Equipment term loan",
+        amount: 600000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-6"
+      },
+      {
+        account: "3010",
+        description: "Paid-in capital",
+        amount: 750000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-7"
+      },
+      {
+        account: "3100",
+        description: "Retained earnings brought forward",
+        amount: 580000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-8"
+      }
+    ]
   }
 ];
 
@@ -297,6 +365,27 @@ export const PAYMENTS: PaymentSpec[] = [
     credits: [
       { memoKey: "torqline-gears", invoiceKey: "debit-note", amount: 2300 }
     ]
+  },
+  // Entered but not yet applied or posted — the payment's apply table.
+  {
+    key: "draft-receipt",
+    type: "Receipt",
+    status: "Draft",
+    customer: "Cascade Integration Group",
+    dateOffset: -1,
+    amount: 465,
+    reference: "ACH advice 2217 — servo motor",
+    applies: []
+  },
+  {
+    key: "draft-disbursement",
+    type: "Disbursement",
+    status: "Draft",
+    supplier: "Ironbark Metals",
+    dateOffset: 0,
+    amount: 195,
+    reference: "ACH batch 0930 — billet",
+    applies: []
   }
 ];
 
@@ -365,5 +454,25 @@ export const roboticsAccounting: AccountingData = {
   },
   closeTasks: CLOSE_TASKS,
   // EUR per 1 USD (foreign units per base unit), the same direction as the EUR purchase order's 0.92 snapshot.
-  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }]
+  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }],
+  billingAddresses: {
+    receivable: {
+      addressLine1: "2200 Technology Drive",
+      city: "Pittsburgh",
+      state: "PA",
+      postalCode: "15219",
+      countryCode: "US",
+      phone: "+1-412-555-0184",
+      email: "ar@helixrobotics.example"
+    },
+    payable: {
+      addressLine1: "2200 Technology Drive",
+      city: "Pittsburgh",
+      state: "PA",
+      postalCode: "15219",
+      countryCode: "US",
+      phone: "+1-412-555-0185",
+      email: "ap@helixrobotics.example"
+    }
+  }
 };

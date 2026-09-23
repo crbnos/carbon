@@ -1,4 +1,5 @@
 import { resolveDate } from "../dates.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
   insertId,
   insertMaybe,
@@ -6,8 +7,7 @@ import {
   maybeOne,
   need,
   one,
-  RICH,
-  rows
+  RICH
 } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
@@ -35,24 +35,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   for (const name of data.departments) {
     const id = await insertId(ctx, "department", { name });
     ctx.refs.departments[name] = id;
-  }
-
-  // ── Shifts ────────────────────────────────────────────────────────────────
-  ctx.log("shifts");
-  for (const shift of data.shifts) {
-    ctx.refs.shifts[shift.name] = await insertId(ctx, "shift", {
-      name: shift.name,
-      startTime: shift.startTime,
-      endTime: shift.endTime,
-      locationId,
-      monday: shift.monday ?? false,
-      tuesday: shift.tuesday ?? false,
-      wednesday: shift.wednesday ?? false,
-      thursday: shift.thursday ?? false,
-      friday: shift.friday ?? false,
-      saturday: shift.saturday ?? false,
-      sunday: shift.sunday ?? false
-    });
   }
 
   // ── Processes ─────────────────────────────────────────────────────────────
@@ -113,14 +95,62 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.refs.locations.Plant = plantId;
   ctx.refs.locations.HQ = locationId;
 
+  // ── Shifts ────────────────────────────────────────────────────────────────
+  // At the plant: the work-center shift picker, the scheduler and Resource
+  // Planning all read the shifts of the work centers' own location.
+  ctx.log("shifts");
+  for (const shift of data.shifts) {
+    ctx.refs.shifts[shift.name] = await insertId(ctx, "shift", {
+      name: shift.name,
+      startTime: shift.startTime,
+      endTime: shift.endTime,
+      locationId: plantId,
+      monday: shift.monday ?? false,
+      tuesday: shift.tuesday ?? false,
+      wednesday: shift.wednesday ?? false,
+      thursday: shift.thursday ?? false,
+      friday: shift.friday ?? false,
+      saturday: shift.saturday ?? false,
+      sunday: shift.sunday ?? false
+    });
+  }
+
   // Every job and work center lives at the plant, and both the MES board and
-  // the ERP's location-scoped pages read the signed-in user's default location.
-  // Leave that at HQ and the shop floor renders empty.
+  // the ERP's location-scoped pages read the signed-in user's default location
+  // (`userDefaults` is a view over employeeJob). Leave that at HQ and the shop
+  // floor renders empty. Other employees move with the applying user.
   await ctx.client.query(
     `UPDATE "employeeJob" SET "locationId" = $2 WHERE "companyId" = $1`,
     [ctx.companyId, plantId]
   );
-  // (`userDefaults` is a view over employeeJob — the UPDATE above is what moves it.)
+  // Upsert, not UPDATE: a company created outside bootstrap has no row for the
+  // applying user, and the MES would then fall back to an arbitrary location.
+  const job = data.employeeJob;
+  ctx.log("employee job");
+  await insertRow(
+    ctx,
+    "employeeJob",
+    {
+      id: ctx.userId,
+      locationId: plantId,
+      title: job.title,
+      departmentId: need(ctx.refs.departments, job.department, "department"),
+      shiftId: need(ctx.refs.shifts, job.shift, "shift"),
+      startDate: resolveDate(ctx.anchor, job.startDateOffset),
+      managerId: null,
+      updatedBy: ctx.userId
+    },
+    {
+      onConflict: `("id", "companyId") DO UPDATE SET
+        "locationId" = EXCLUDED."locationId",
+        "title" = EXCLUDED."title",
+        "departmentId" = EXCLUDED."departmentId",
+        "shiftId" = EXCLUDED."shiftId",
+        "startDate" = EXCLUDED."startDate",
+        "managerId" = NULL,
+        "updatedBy" = EXCLUDED."updatedBy"`
+    }
+  );
 
   // ── Warehouses ────────────────────────────────────────────────────────────
   ctx.log("warehouses");
@@ -138,7 +168,9 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.log("storage types + units");
   const storageTypeIdByName = new Map<string, string>();
   for (const name of data.storageTypes) {
-    storageTypeIdByName.set(name, await insertId(ctx, "storageType", { name }));
+    const storageTypeId = await insertId(ctx, "storageType", { name });
+    storageTypeIdByName.set(name, storageTypeId);
+    ctx.refs.misc[`storagetype:${name}`] = storageTypeId;
   }
 
   // Array order is the contract: a parent shelf must be inserted before its
@@ -183,12 +215,30 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
     ctx.refs.workCenters[wc.name] = id;
   }
+  // The ERP's maintenance lists open on the first location by name (HQ), so
+  // one work center there carries a schedule and a dispatch.
+  const hq = data.hqWorkCenter;
+  ctx.refs.workCenters[hq.name] = await insertId(ctx, "workCenter", {
+    name: hq.name,
+    departmentId: need(ctx.refs.departments, hq.dept, "department"),
+    requiredAbilityId: need(ctx.refs.abilities, hq.ability, "ability"),
+    locationId,
+    laborRate: hq.laborRate,
+    machineRate: hq.machineRate
+  });
 
   // Link work centers to processes
   for (const [wc, proc] of data.workCenterProcessLinks) {
     await insertRow(ctx, "workCenterProcess", {
       workCenterId: need(ctx.refs.workCenters, wc, "work center"),
       processId: need(ctx.refs.processes, proc, "process")
+    });
+  }
+
+  for (const [wc, shift] of data.workCenterShifts) {
+    await insertRow(ctx, "workCenterShift", {
+      workCenterId: need(ctx.refs.workCenters, wc, "work center"),
+      shiftId: need(ctx.refs.shifts, shift, "shift")
     });
   }
 
@@ -242,15 +292,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
 
   // ── Payment term ids ──────────────────────────────────────────────────────
-  // Every bootstrap term goes into refs (pterm:<name>); Net 30 is the default.
-  const paymentTermRows = await rows<{ id: string; name: string }>(
-    client,
-    `SELECT id, name FROM "paymentTerm" WHERE "companyId" = $1`,
-    [companyId]
-  );
-  for (const pt of paymentTermRows) {
-    ctx.refs.misc[`pterm:${pt.name}`] = pt.id;
-  }
+  // A party names a bootstrap term; Net 30 is the default.
   const netThirty = await one<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
@@ -258,10 +300,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   );
   ctx.refs.misc.paymentTermId = netThirty.id;
 
-  const paymentTermFor = (spec: { paymentTerm?: string }): string =>
+  const paymentTermFor = (spec: { paymentTerm?: string }): Promise<string> =>
     spec.paymentTerm
-      ? need(ctx.refs.misc, `pterm:${spec.paymentTerm}`, "payment term")
-      : netThirty.id;
+      ? bootstrapIdByName(ctx, "paymentTerm", spec.paymentTerm)
+      : Promise.resolve(netThirty.id);
 
   // Currency codes referenced by any party must exist before the inserts.
   const currencyCodes = new Set<string>();
@@ -270,22 +312,10 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   }
   for (const code of currencyCodes) await assertCurrencyExists(ctx, code);
 
-  // ── Customer status ids ───────────────────────────────────────────────────
-  const statuses = await rows<{ id: string; name: string }>(
-    client,
-    `SELECT id, name FROM "customerStatus" WHERE "companyId" = $1`,
-    [companyId]
-  );
-  for (const s of statuses) ctx.refs.misc[`cstatus:${s.name}`] = s.id;
-
   // ── Customers ─────────────────────────────────────────────────────────────
   ctx.log("customers");
   for (const c of data.customers) {
-    const statusId = need(
-      ctx.refs.misc,
-      `cstatus:${c.status}`,
-      "customer status"
-    );
+    const statusId = await bootstrapIdByName(ctx, "customerStatus", c.status);
     const typeId = need(ctx.refs.misc, `ctype:${c.type}`, "customer type");
     const custId = await insertId(ctx, "customer", {
       name: c.name,
@@ -300,7 +330,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     // Interceptor created customerPayment/Shipping/Tax — just update payment term
     await client.query(
       `UPDATE "customerPayment" SET "paymentTermId" = $1 WHERE "customerId" = $2`,
-      [paymentTermFor(c), custId]
+      [await paymentTermFor(c), custId]
     );
     await client.query(
       `UPDATE "customerShipping" SET "shippingMethodId" = $1 WHERE "customerId" = $2`,
@@ -351,14 +381,13 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       phone: s.phone,
       website: s.website,
       currencyCode: s.currencyCode ?? "USD",
-      // undefined is dropped by insertRow, keeping the column default (Active).
-      supplierStatus: s.status
+      supplierStatus: s.status ?? "Active"
     });
     ctx.refs.suppliers[s.name] = supId;
 
     await client.query(
       `UPDATE "supplierPayment" SET "paymentTermId" = $1 WHERE "supplierId" = $2`,
-      [paymentTermFor(s), supId]
+      [await paymentTermFor(s), supId]
     );
     await client.query(
       `UPDATE "supplierShipping" SET "shippingMethodId" = $1 WHERE "supplierId" = $2`,
@@ -400,6 +429,17 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     ctx.refs.contacts[`sc:${sc.supplier}`] = scId;
   }
 
+  // ── Partners: a supplier location qualified for an ability ──────────────────
+  ctx.log("partners");
+  for (const partner of data.partners) {
+    await insertRow(ctx, "partner", {
+      id: need(ctx.refs.misc, `sloc:${partner.supplier}`, "supplier location"),
+      abilityId: need(ctx.refs.abilities, partner.ability, "ability"),
+      hoursPerWeek: partner.hoursPerWeek,
+      active: true
+    });
+  }
+
   // ── Supplier processes (contract manufacturer) ────────────────────────────
   ctx.log("supplier processes");
   for (const sp of data.supplierProcesses) {
@@ -423,7 +463,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       name: agency.name,
       supplierTypeId: need(ctx.refs.misc, `stype:${agency.type}`),
       phone: agency.phone,
-      currencyCode: "USD"
+      currencyCode: "USD",
+      supplierStatus: "Active"
     });
     ctx.refs.suppliers[agency.name] = staffAgencyId;
 
@@ -464,8 +505,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
   // Two versions of the same name: the version menu groups on `name`, so the
-  // second version is what gives a procedure a readable history. Every version
-  // seeds as Draft so a demo company can edit its steps without a new version.
+  // second version is what gives a procedure a readable history. Each version
+  // carries its authored status (Draft / Active / Archived).
   ctx.log("procedures");
   for (const spec of data.procedures) {
     const processId = need(ctx.refs.processes, spec.process, "process");
@@ -480,6 +521,13 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       });
       if (version.version === latestVersion) {
         ctx.refs.misc[`procedure:${spec.name}`] = procedureId;
+      }
+      for (const parameter of spec.parameters ?? []) {
+        await insertRow(ctx, "procedureParameter", {
+          procedureId,
+          key: parameter.key,
+          value: parameter.value
+        });
       }
       for (const [index, step] of version.steps.entries()) {
         await insertId(ctx, "procedureStep", {
@@ -533,105 +581,70 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Material taxonomy ─────────────────────────────────────────────────────
   // Company-scoped rows only (unique keys treat global rows as distinct), so
-  // insertMaybe + re-select is idempotent. Parents land before children (FKs).
+  // insertMaybe + a lookup by name is idempotent. Parents land before children
+  // (FKs); helpers/items.ts resolves an item's classification the same way.
   ctx.log("material taxonomy");
   const taxonomy = data.materialTaxonomy;
-  const taxonomyId = async (table: string, name: string): Promise<string> => {
-    const row = await one<{ id: string }>(
-      client,
-      `SELECT id FROM "${table}" WHERE "companyId" = $1 AND name = $2`,
-      [companyId, name]
-    );
-    return row.id;
-  };
 
   for (const substance of taxonomy.substances) {
     await insertMaybe(ctx, "materialSubstance", {
       name: substance.name,
       code: substance.code
     });
-    ctx.refs.misc[`matsub:${substance.name}`] = await taxonomyId(
-      "materialSubstance",
-      substance.name
-    );
   }
   for (const form of taxonomy.forms) {
     await insertMaybe(ctx, "materialForm", {
       name: form.name,
       code: form.code
     });
-    ctx.refs.misc[`matform:${form.name}`] = await taxonomyId(
-      "materialForm",
-      form.name
-    );
   }
   for (const type of taxonomy.types) {
     await insertMaybe(ctx, "materialType", {
       name: type.name,
       code: type.code,
-      materialSubstanceId: need(
-        ctx.refs.misc,
-        `matsub:${type.substance}`,
-        "material substance"
+      materialSubstanceId: await bootstrapIdByName(
+        ctx,
+        "materialSubstance",
+        type.substance
       ),
-      materialFormId: need(
-        ctx.refs.misc,
-        `matform:${type.form}`,
-        "material form"
-      )
+      materialFormId: await bootstrapIdByName(ctx, "materialForm", type.form)
     });
-    ctx.refs.misc[`mattype:${type.name}`] = await taxonomyId(
-      "materialType",
-      type.name
-    );
   }
   for (const grade of taxonomy.grades) {
     await insertMaybe(ctx, "materialGrade", {
       name: grade.name,
-      materialSubstanceId: need(
-        ctx.refs.misc,
-        `matsub:${grade.substance}`,
-        "material substance"
+      materialSubstanceId: await bootstrapIdByName(
+        ctx,
+        "materialSubstance",
+        grade.substance
       )
     });
-    ctx.refs.misc[`matgrade:${grade.name}`] = await taxonomyId(
-      "materialGrade",
-      grade.name
-    );
   }
   for (const finish of taxonomy.finishes) {
     await insertMaybe(ctx, "materialFinish", {
       name: finish.name,
-      materialSubstanceId: need(
-        ctx.refs.misc,
-        `matsub:${finish.substance}`,
-        "material substance"
+      materialSubstanceId: await bootstrapIdByName(
+        ctx,
+        "materialSubstance",
+        finish.substance
       )
     });
-    ctx.refs.misc[`matfinish:${finish.name}`] = await taxonomyId(
-      "materialFinish",
-      finish.name
-    );
   }
   for (const dimension of taxonomy.dimensions) {
     await insertMaybe(ctx, "materialDimension", {
       name: dimension.name,
-      materialFormId: need(
-        ctx.refs.misc,
-        `matform:${dimension.form}`,
-        "material form"
+      materialFormId: await bootstrapIdByName(
+        ctx,
+        "materialForm",
+        dimension.form
       ),
       isMetric: dimension.isMetric ?? true
     });
-    ctx.refs.misc[`matdim:${dimension.name}`] = await taxonomyId(
-      "materialDimension",
-      dimension.name
-    );
   }
 
   // ── Employee resource links ───────────────────────────────────────────────
-  // The seeded user gets two abilities and a shift so the People screens have a
-  // real member. insertMaybe: both are UNIQUE (employeeId, <resource>Id).
+  // The seeded user gets two abilities and their job's shift so the People
+  // screens have a real member. insertMaybe: both are UNIQUE (employeeId, <resource>Id).
   ctx.log("employee links");
   for (const abilityName of data.abilities.slice(0, 2)) {
     await insertMaybe(ctx, "employeeAbility", {
@@ -640,11 +653,8 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       lastTrainingDate: resolveDate(ctx.anchor, -30)
     });
   }
-  const firstShift = data.shifts[0];
-  if (firstShift) {
-    await insertMaybe(ctx, "employeeShift", {
-      employeeId: ctx.userId,
-      shiftId: need(ctx.refs.shifts, firstShift.name, "shift")
-    });
-  }
+  await insertMaybe(ctx, "employeeShift", {
+    employeeId: ctx.userId,
+    shiftId: need(ctx.refs.shifts, data.employeeJob.shift, "shift")
+  });
 }

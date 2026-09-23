@@ -1,11 +1,19 @@
 import type {
+  CustomFieldSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
+  OpenTimecardSpec,
   OpsData,
+  PeopleAbsenceSpec,
+  PeopleAssignmentSpec,
+  PrintJobSpec,
+  ReplacementPartSpec,
+  SerialSequenceSpec,
   SuggestionSpec,
   TimecardSpec,
-  TrainingSpec
+  TrainingSpec,
+  UserAttributeCategorySpec
 } from "../../types.ts";
 
 // One preventive schedule per frequency, spread over the shop's work centers.
@@ -19,8 +27,8 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     frequency: "Daily",
     priority: "Medium",
     estimatedDuration: 30,
-    nextDueOffset: 1,
-    weekends: false
+    // Today's count is already dispatched; the clean room is monitored every day.
+    nextDueOffset: 1
   },
   {
     key: "cnc-way-lube",
@@ -68,11 +76,23 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     estimatedDuration: 480,
     nextDueOffset: 145,
     takesWorkCenterOffline: true
+  },
+  {
+    key: "flatsat-psu-cal",
+    name: "Flatsat bench power supply calibration check",
+    description:
+      "Verify the flatsat's 28 V bench supplies and electronic load against the lab DMM; log drift and re-trim if over 0.5%.",
+    workCenter: "Flatsat Test Lab",
+    frequency: "Quarterly",
+    priority: "Medium",
+    estimatedDuration: 90,
+    nextDueOffset: 27
   }
 ];
 
-// Exactly one dispatch per status, spanning every severity, priority, source
-// and OEE impact.
+// Every status, severity, priority, source and OEE impact, plus the shapes the
+// maintenance KPIs and boards read: a failure on a production day, back-dated
+// completions, today's scheduled task, a machine down now, and one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "potting-needle",
@@ -163,7 +183,118 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     created: { offset: -6, time: "06:00:00" },
     plannedStart: { offset: -5, time: "12:00:00" },
     plannedEnd: { offset: -5, time: "12:45:00" }
+  },
+  {
+    key: "cleanroom-particles-today",
+    status: "Assigned",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "Clean Room Bay A",
+    schedule: "cleanroom-particles",
+    content:
+      "Daily particle count at the four ISO 7 sample points, then IPA wipe-down of benches and glove ports.",
+    created: { offset: -1, time: "06:00:00" },
+    plannedStart: { offset: 0, time: "14:00:00" },
+    plannedEnd: { offset: 0, time: "14:30:00" }
+  },
+  {
+    key: "tig-gas-solenoid",
+    status: "In Progress",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "TIG Welder Cell",
+    suspectedFailureMode: "Electrical Fault",
+    content:
+      "Shield-gas solenoid on the TIG power supply is sticking open — argon flow alarm on every arc start. Cell locked out while the valve is swapped and the purge re-verified.",
+    created: { offset: -1, time: "15:40:00" },
+    plannedStart: { offset: -1, time: "16:00:00" },
+    plannedEnd: { offset: 1, time: "12:00:00" },
+    actualStart: { offset: -1, time: "16:05:00" },
+    takesWorkCenterOffline: true,
+    comments: ["Replacement valve pulled from the cell's spares kit."]
+  },
+  {
+    key: "cleanroom-ionizer",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Clean Room Bay A",
+    suspectedFailureMode: "Electrical Fault",
+    actualFailureMode: "Electrical Fault",
+    content:
+      "Ionizer bar over the integration bench threw a balance alarm mid-shift. Emitter pins cleaned and the bar re-balanced to ±15 V.",
+    created: { offset: -9, time: "14:20:00" },
+    plannedStart: { offset: -9, time: "14:30:00" },
+    plannedEnd: { offset: -9, time: "15:30:00" },
+    actualStart: { offset: -9, time: "14:35:00" },
+    actualEnd: { offset: -9, time: "15:20:00" }
+  },
+  {
+    key: "tvac-cryopump-prior",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "TVAC Chamber 1",
+    schedule: "tvac-cryopump",
+    content:
+      "Monthly cryopump regeneration and door O-ring re-grease. Leak check passed first time.",
+    created: { offset: -41, time: "06:00:00" },
+    plannedStart: { offset: -40, time: "12:00:00" },
+    plannedEnd: { offset: -40, time: "16:00:00" },
+    actualStart: { offset: -40, time: "12:10:00" },
+    actualEnd: { offset: -40, time: "15:50:00" },
+    takesWorkCenterOffline: true,
+    spareParts: [{ item: "CN-GREASE-001", quantity: 1, shelf: "A1-L3" }]
+  },
+  {
+    key: "cnc-drawbar",
+    status: "Completed",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "CNC Mill",
+    suspectedFailureMode: "Excessive Wear",
+    actualFailureMode: "Excessive Wear",
+    content:
+      "Spindle drawbar lost clamp force — tool pulled out during a roughing pass on a bus panel. Belleville stack replaced and clamp force re-measured.",
+    created: { offset: -50, time: "09:15:00" },
+    plannedStart: { offset: -50, time: "10:00:00" },
+    plannedEnd: { offset: -50, time: "16:00:00" },
+    actualStart: { offset: -50, time: "10:20:00" },
+    actualEnd: { offset: -49, time: "11:30:00" },
+    takesWorkCenterOffline: true
+  },
+  {
+    key: "flatsat-breakout",
+    status: "Open",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Flatsat Test Lab",
+    suspectedFailureMode: "Electrical Fault",
+    content:
+      "Intermittent open on pin 14 of the flatsat harness breakout box — the EPS telemetry channel drops out when the cable is flexed.",
+    created: { offset: -2, time: "10:30:00" },
+    plannedStart: { offset: 2, time: "09:00:00" },
+    plannedEnd: { offset: 2, time: "11:00:00" }
   }
+];
+
+// The spares the MES dispatch page offers per work center.
+export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
+  { workCenter: "TVAC Chamber 1", item: "CN-GREASE-001", quantity: 1 },
+  { workCenter: "TIG Welder Cell", item: "VLV-SOLENOID-LP2", quantity: 1 },
+  { workCenter: "CNC Mill", item: "BRG-6201", quantity: 2 }
 ];
 
 export const TRAININGS: TrainingSpec[] = [
@@ -293,6 +424,38 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "12:01:00", clockOut: "15:34:00" }
 ];
 
+// Clocked in before the first timer on the floor started this morning.
+export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:31:00" };
+
+// The supervisor's stations for the week around today — none on today itself,
+// so the MES schedule opens on every work center instead of one station.
+export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
+  { dayOffset: -2, workCenter: "CNC Mill", shift: "Day Shift" },
+  { dayOffset: -1, workCenter: "TIG Welder Cell", shift: "Day Shift" },
+  {
+    dayOffset: 1,
+    workCenter: "Clean Room Bay A",
+    shift: "Day Shift",
+    note: "Solar array substrate layup — cover for the bay lead."
+  },
+  { dayOffset: 2, workCenter: "CNC Mill", shift: "Day Shift" },
+  {
+    dayOffset: 3,
+    workCenter: "TVAC Chamber 1",
+    shift: "Day Shift",
+    overtimeHours: 2,
+    note: "Stay through the TVAC hot-soak handover."
+  },
+  { dayOffset: 4, workCenter: "TIG Welder Cell", shift: "Day Shift" }
+];
+
+export const PEOPLE_ABSENCES: PeopleAbsenceSpec[] = [
+  {
+    dayOffset: 9,
+    note: "ITAR export-compliance refresher at the Houston office."
+  }
+];
+
 export const SUGGESTIONS: SuggestionSpec[] = [
   {
     suggestion:
@@ -318,11 +481,105 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
+// People › Attributes — the applying user's own profile values.
+export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
+  {
+    name: "Flight Hardware Qualifications",
+    emoji: "🛰️",
+    public: true,
+    attributes: [
+      {
+        name: "J-STD-001 space addendum expires",
+        dataType: "Date",
+        valueOffset: 142
+      },
+      {
+        name: "Clean room gown size",
+        dataType: "List",
+        listOptions: ["XS", "S", "M", "L", "XL", "XXL"],
+        value: "L",
+        canSelfManage: true
+      },
+      { name: "Qualification records owner", dataType: "User" },
+      {
+        name: "Cleared for flight-unit handling",
+        dataType: "Yes/No",
+        value: true
+      }
+    ]
+  }
+];
+
+export const CUSTOM_FIELDS: CustomFieldSpec[] = [
+  { table: "part", name: "Export classification (ECCN)", dataType: "Text" },
+  { table: "customer", name: "Program manager", dataType: "User" },
+  { table: "job", name: "Flight hardware", dataType: "Yes/No" }
+];
+
+export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
+  // Continues the supplier's numbering already on the shelf (…-0054).
+  { item: "RW-010", prefix: "RW010-SN-", size: 4, next: 54 },
+  { item: "SAT-1000", prefix: "SAT1000-SN-", size: 4, next: 1 }
+];
+
+// Label history on the plant's printer route: auto and manual prints, a
+// delivery failure, and its reprint waiting in the queue.
+export const PRINT_JOBS: PrintJobSpec[] = [
+  {
+    source: { kind: "Receipt", receipt: "receipt:bare-boards" },
+    item: "PCB-BARE-REV3",
+    status: "completed",
+    origin: "auto",
+    at: { offset: -1, time: "15:12:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "done-bus" },
+    item: "BUS-STR-001",
+    status: "completed",
+    origin: "manual",
+    at: { offset: -2, time: "19:40:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "StorageUnit", shelf: "A1-L1" },
+    status: "completed",
+    origin: "manual",
+    at: { offset: -6, time: "16:20:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "floor-bus" },
+    item: "BUS-STR-001",
+    status: "failed",
+    origin: "auto",
+    at: { offset: -1, time: "13:05:00" },
+    attempts: 3,
+    error: "Printer did not respond after 3 attempts (connection timed out)"
+  },
+  {
+    source: { kind: "Job", job: "floor-bus" },
+    item: "BUS-STR-001",
+    status: "queued",
+    origin: "reprint",
+    at: { offset: 0, time: "06:52:00" },
+    attempts: 0
+  }
+];
+
 export const satelliteOps: OpsData = {
+  userAttributeCategories: USER_ATTRIBUTE_CATEGORIES,
+  customFields: CUSTOM_FIELDS,
+  serialSequences: SERIAL_SEQUENCES,
+  printJobs: PRINT_JOBS,
   maintenanceSchedules: MAINTENANCE_SCHEDULES,
   maintenanceDispatches: MAINTENANCE_DISPATCHES,
+  replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
+  openTimecard: OPEN_TIMECARD,
+  peopleAssignments: PEOPLE_ASSIGNMENTS,
+  peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,
   notes: NOTES
 };

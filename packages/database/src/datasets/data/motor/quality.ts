@@ -1,15 +1,59 @@
 import type {
   GaugeSpec,
+  InspectionFeatureSpec,
   InspectionSpec,
   NonConformanceSpec,
+  NonConformanceWorkflowSpec,
   QualityData,
   QualityDocumentSpec,
   RiskSpec
 } from "../../types.ts";
 
+// The templates the issues below were raised from (the new-issue form copies
+// source, required actions and MRB onto the issue).
+export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
+  {
+    key: "supplier-escape",
+    name: "Supplier Escape — Winding Materials",
+    description:
+      "A purchased material failed receiving inspection. Quarantine the roll or lot, work the root cause with the supplier, and record their corrective action before MRB closes it out.",
+    priority: "High",
+    source: "External",
+    requiredActions: [
+      "Containment Action",
+      "Root Cause Analysis",
+      "Corrective Action"
+    ],
+    mrb: true
+  },
+  {
+    key: "customer-return",
+    name: "Customer Complaint — Returned Spare",
+    description:
+      "A customer reported a fault on a delivered motor or spare. Acknowledge within one business day, contain sister units, and verify the fix before closing.",
+    priority: "Medium",
+    source: "External",
+    requiredActions: [
+      "Customer Communication",
+      "Containment Action",
+      "Verification"
+    ]
+  },
+  {
+    key: "magnet-hold",
+    name: "Magnet Lot Hold",
+    description:
+      "A magnet lot arrived without its flux report or read low on a spot check. Hold it in the vault and run the incoming-materials test before any rotor bonding.",
+    priority: "Medium",
+    source: "Internal",
+    requiredActions: ["Containment Action", "Incoming Materials"]
+  }
+];
+
 export const NON_CONFORMANCES: NonConformanceSpec[] = [
   {
     ref: "ncr:insulation",
+    assignee: "self",
     name: "Stator insulation resistance below spec after impregnation",
     source: "Internal",
     status: "In Progress",
@@ -25,6 +69,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   },
   {
     ref: "ncr:magnet",
+    items: [{ item: "MAG-NDFB-45", quantity: 36 }],
     name: "Magnet lot received with chipped nickel plating",
     source: "External",
     status: "Registered",
@@ -36,6 +81,14 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // Nomex delivery. Linked to Copperline, the exact PO line, and the lot.
   {
     ref: "ncr:nomex-thin",
+    items: [
+      { item: "MAT-INS-NOMEX", quantity: 4, disposition: "Return to Supplier" },
+      // Coils being wound with slot liner cut from the same Nomex roll.
+      { item: "COIL-9000", quantity: 6 }
+    ],
+    assignee: "self",
+    workflow: "supplier-escape",
+    purchaseReturnLine: { purchaseReturn: "nomex-rtv", line: 1, quantity: 4 },
     name: "Nomex 410 slot liner under minimum thickness on incoming roll",
     description:
       "Receiving inspection on the Copperline wire-and-insulation delivery measured 0.21 mm on one sample of MAT-INS-NOMEX against a 0.22 mm minimum. Thin liner cuts the slot-to-winding creepage margin and risks hipot failure after impregnation. Roll quarantined at the winding crib; MRB to decide return-to-vendor vs. restricted use on the 4500 frame.",
@@ -59,7 +112,8 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       {
         action: "Root Cause Analysis",
         status: "In Progress",
-        dueDateOffset: 7
+        dueDateOffset: 7,
+        processes: ["Coil Winding"]
       },
       { action: "Corrective Action", status: "Pending", dueDateOffset: 21 }
     ],
@@ -75,6 +129,9 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── Customer complaint on shipped spares, worked to closure.
   {
     ref: "ncr:fan-noise",
+    items: [{ item: "FAN-AX-160", quantity: 1, disposition: "Rework" }],
+    workflow: "customer-return",
+    salesReturnLine: { salesReturn: "fan", line: 1 },
     name: "Customer-reported axial cooling fan spare noisy at start-up",
     description:
       "Cardinal Motorworks reported one of two FAN-AX-160 spares ticking at start-up once fitted to a TD-9000 non-drive end. Unit returned for evaluation; a blade tip was rubbing the shroud after a dropped carton bent the guard ring in transit.",
@@ -112,6 +169,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── A quarantined magnet lot waiting on disposition.
   {
     ref: "ncr:mag-lot",
+    items: [{ item: "MAG-NDFB-45", quantity: 3 }],
+    // Meridian shipped the lot — the supplier-quality KPI's issue this month.
+    supplier: "Meridian Magnetics",
+    workflow: "magnet-hold",
     name: "N45SH magnet lot on hold — flux report missing, low remanence on spot check",
     description:
       "Lot LOT-MAG45-2609 arrived without the vendor's magnetization flux report, and a Gaussmeter spot check read surface flux 4% below the other N45SH lots. Lot held in the magnet vault pending the report and a sample demagnetization-curve test before any rotor bonding.",
@@ -133,10 +194,8 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 // Receiving inspection of the 20 lb of Nomex 410 Copperline shipped with the
 // magnet wire. Lot of 20 at AQL 1.0 / level II resolves to code letter C,
 // n = 5 — five cut coupons, one from each spool layer.
-export const INSPECTION: InspectionSpec = {
-  ref: "insp:nomex",
-  receipt: "receipt:wire-paid",
-  item: "MAT-INS-NOMEX",
+// The Nomex 410 Receipt-usage plan, shared by every lot of the material.
+const NOMEX_PLAN = {
   drawingNumber: "SPEC-INS-410 Rev B",
   aql: 1.0,
   features: [
@@ -156,54 +215,155 @@ export const INSPECTION: InspectionSpec = {
       toleranceMinus: "0.3",
       unit: "mm"
     }
-  ],
-  status: "Partial",
-  dispositionOffset: -66,
-  notes:
-    "Four coupons in tolerance. Coupon 3 measured 0.21 mm — under the 0.22 mm minimum. Roll quarantined and raised to MRB.",
-  samples: [
-    {
-      status: "Passed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 0.25 },
-        { feature: "2", value: 38.1 }
-      ]
-    },
-    {
-      status: "Passed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 0.24 },
-        { feature: "2", value: 37.9 }
-      ]
-    },
-    {
-      status: "Failed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 0.21 },
-        { feature: "2", value: 38.0 }
-      ]
-    },
-    {
-      status: "Passed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 0.26 },
-        { feature: "2", value: 38.2 }
-      ]
-    },
-    {
-      status: "Passed",
-      inspectedOffset: -66,
-      measurements: [
-        { feature: "1", value: 0.25 },
-        { feature: "2", value: 37.8 }
-      ]
-    }
-  ]
+  ] satisfies InspectionFeatureSpec[]
 };
+
+export const INSPECTIONS: InspectionSpec[] = [
+  {
+    source: "Receipt",
+    ref: "insp:nomex",
+    receipt: "receipt:wire-paid",
+    item: "MAT-INS-NOMEX",
+    ...NOMEX_PLAN,
+    status: "Partial",
+    dispositionOffset: -66,
+    notes:
+      "Four coupons in tolerance. Coupon 3 measured 0.21 mm — under the 0.22 mm minimum. Roll quarantined and raised to MRB.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 0.25 },
+          { feature: "2", value: 38.1 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 0.24 },
+          { feature: "2", value: 37.9 }
+        ]
+      },
+      {
+        status: "Failed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 0.21 },
+          { feature: "2", value: 38.0 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 0.26 },
+          { feature: "2", value: 38.2 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -66,
+        measurements: [
+          { feature: "1", value: 0.25 },
+          { feature: "2", value: 37.8 }
+        ]
+      }
+    ]
+  },
+  // Receiving inspection of the terminal blocks: 20 pieces, AQL 1.0 → n = 5, all good.
+  {
+    source: "Receipt",
+    ref: "insp:terminal-blocks",
+    receipt: "receipt:copperline-restock",
+    item: "TRM-BLK-6P",
+    drawingNumber: "CW-TB6-35 Rev C",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "Stud pitch, M5 studs",
+        nominalValue: "12.0",
+        tolerancePlus: "0.2",
+        toleranceMinus: "0.2",
+        unit: "mm"
+      },
+      {
+        label: "2",
+        description: "Mounting hole centers",
+        nominalValue: "70.0",
+        tolerancePlus: "0.3",
+        toleranceMinus: "0.3",
+        unit: "mm"
+      }
+    ],
+    status: "Passed",
+    dispositionOffset: -1,
+    notes: "Five blocks measured; stud pitch and mounting holes nominal.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 12.05 },
+          { feature: "2", value: 70.1 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 11.96 },
+          { feature: "2", value: 69.9 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 12.02 },
+          { feature: "2", value: 70.0 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 12.1 },
+          { feature: "2", value: 70.2 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 11.98 },
+          { feature: "2", value: 69.8 }
+        ]
+      }
+    ]
+  },
+  // The replacement Nomex roll from the same delivery, waiting on its coupons.
+  {
+    source: "Receipt",
+    ref: "insp:nomex-restock",
+    receipt: "receipt:copperline-restock",
+    item: "MAT-INS-NOMEX",
+    ...NOMEX_PLAN,
+    status: "Pending",
+    samples: []
+  },
+  // The rotor-shaft job's journal inspection, opened ahead of the shafts
+  // returning from grinding.
+  {
+    source: "Job Operation",
+    ref: "insp:shaft-journal",
+    job: "floor-shaft",
+    status: "Pending",
+    samples: []
+  }
+];
 
 export const QUALITY_DOCUMENTS: QualityDocumentSpec[] = [
   {
@@ -380,8 +540,9 @@ export const RISKS: RiskSpec[] = [
 ];
 
 export const motorQuality: QualityData = {
+  workflows: WORKFLOWS,
   nonConformances: NON_CONFORMANCES,
-  inspection: INSPECTION,
+  inspections: INSPECTIONS,
   qualityDocuments: QUALITY_DOCUMENTS,
   gauges: GAUGES,
   risks: RISKS

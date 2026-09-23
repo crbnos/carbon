@@ -1,15 +1,59 @@
 import type {
   GaugeSpec,
+  InspectionFeatureSpec,
   InspectionSpec,
   NonConformanceSpec,
+  NonConformanceWorkflowSpec,
   QualityData,
   QualityDocumentSpec,
   RiskSpec
 } from "../../types.ts";
 
+// The templates the issues below were raised from (the new-issue form copies
+// source, required actions and MRB onto the issue).
+export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
+  {
+    key: "supplier-escape",
+    name: "Supplier Escape — Purchased Components",
+    description:
+      "A purchased component failed receiving inspection. Quarantine it, work the root cause with the supplier, and record their corrective action before MRB closes it out.",
+    priority: "High",
+    source: "External",
+    requiredActions: [
+      "Containment Action",
+      "Root Cause Analysis",
+      "Corrective Action"
+    ],
+    mrb: true
+  },
+  {
+    key: "customer-complaint",
+    name: "Customer Complaint — Delivered Parts",
+    description:
+      "A customer reported a defect on delivered parts. Acknowledge the same day, contain stock and WIP, and put the corrective action on record before closing.",
+    priority: "Medium",
+    source: "External",
+    requiredActions: [
+      "Customer Communication",
+      "Containment Action",
+      "Corrective Action"
+    ]
+  },
+  {
+    key: "incoming-hold",
+    name: "Incoming Lot Hold",
+    description:
+      "An incoming lot is missing a certificate or failed a visual check. Hold it, then verify it before release.",
+    priority: "Medium",
+    source: "Internal",
+    requiredActions: ["Containment Action", "Verification"]
+  }
+];
+
 export const NON_CONFORMANCES: NonConformanceSpec[] = [
   {
     ref: "ncr:anodize",
+    assignee: "self",
     name: "Hard anodize thickness below print on manifold blocks",
     source: "Internal",
     status: "In Progress",
@@ -25,6 +69,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   },
   {
     ref: "ncr:bore",
+    items: [{ item: "MCH-HSG-PUMP", quantity: 3 }],
     name: "Pump housing bearing bore oversize at second operation",
     source: "Internal",
     status: "Registered",
@@ -36,6 +81,22 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // needle-bearing delivery. Linked to Midway, the exact PO line, and the lot.
   {
     ref: "ncr:needle-od",
+    items: [
+      {
+        item: "BRG-NDL-HK1512",
+        quantity: 1,
+        disposition: "Return to Supplier"
+      },
+      // Pump housings being machined to take bearings from the same lot.
+      { item: "MCH-HSG-PUMP", quantity: 4 }
+    ],
+    assignee: "self",
+    workflow: "supplier-escape",
+    purchaseReturnLine: {
+      purchaseReturn: "needle-od-rtv",
+      line: 1,
+      quantity: 1
+    },
     name: "HK1512 needle bearing cup OD oversize — press fit out of range",
     description:
       "Receiving inspection on the Midway needle-bearing delivery measured one HK1512 drawn cup at 21.016 mm OD against a 21.000 ±0.010 mm limit. An oversize cup over-closes the rollers when pressed into the pump housing bore. Bearing tagged and quarantined; MRB to decide return-to-vendor vs. 100% ring-gauge sort of the remaining stock.",
@@ -59,7 +120,8 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       {
         action: "Root Cause Analysis",
         status: "In Progress",
-        dueDateOffset: 7
+        dueDateOffset: 7,
+        processes: ["CNC Milling"]
       },
       { action: "Corrective Action", status: "Pending", dueDateOffset: 21 }
     ],
@@ -75,6 +137,9 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── Customer complaint on a posted spares shipment, worked to closure.
   {
     ref: "ncr:clevis-pins",
+    items: [{ item: "PIN-CLEVIS-12", quantity: 12, disposition: "Rework" }],
+    workflow: "customer-complaint",
+    salesReturnLine: { salesReturn: "clevis-pins", line: 1 },
     name: "Customer-reported clevis pins with scuffed zinc plating and cross-hole burrs",
     description:
       "Cedar Valley Hydraulics reported that several of the 12 PIN-CLEVIS-12 shipped on the partial delivery arrived with the zinc plating scuffed through at the shank and a burr left in the cotter-pin cross hole. Root cause: pins packed loose in one carton with no dividers. Now bagged in tens with a divider insert.",
@@ -112,6 +177,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── A held bearing lot waiting on disposition.
   {
     ref: "ncr:brg-lot",
+    items: [{ item: "BRG-DBL-6205", quantity: 2 }],
+    // Midway shipped the lot — the supplier-quality KPI's issue this month.
+    supplier: "Midway Bearing & Seal",
+    workflow: "incoming-hold",
     name: "6205-2RS bearing lot on hold — grease-fill certificate missing, seal lip rolled",
     description:
       "Lot LOT-BRG-2613 arrived without the vendor's grease-fill certificate, and one of the two bearings shows a rolled seal lip on visual. Lot placed on hold in B1-L3 pending the certificate and a spin-torque check.",
@@ -132,10 +201,8 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Receiving inspection of the ten HK1512 needle bearings Midway delivered. Lot
 // of 10 at AQL 1.0 / level II resolves to code letter B, n = 3.
-export const INSPECTION: InspectionSpec = {
-  ref: "insp:needle",
-  receipt: "receipt:midway-paid",
-  item: "BRG-NDL-HK1512",
+// The HK1512 Receipt-usage plan, shared by every lot of the bearing.
+const NEEDLE_PLAN = {
   drawingNumber: "MW-HK1512 Rev B",
   aql: 1.0,
   features: [
@@ -155,38 +222,139 @@ export const INSPECTION: InspectionSpec = {
       toleranceMinus: "0.30",
       unit: "mm"
     }
-  ],
-  status: "Partial",
-  dispositionOffset: -66,
-  notes:
-    "Samples 1 and 3 accepted. Sample 2 cup OD 21.016 mm, over the 21.010 mm upper limit — tagged, quarantined and raised to MRB.",
-  samples: [
-    {
-      status: "Passed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 21.004 },
-        { feature: "2", value: 11.88 }
-      ]
-    },
-    {
-      status: "Failed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 21.016 },
-        { feature: "2", value: 11.91 }
-      ]
-    },
-    {
-      status: "Passed",
-      inspectedOffset: -67,
-      measurements: [
-        { feature: "1", value: 20.997 },
-        { feature: "2", value: 11.85 }
-      ]
-    }
-  ]
+  ] satisfies InspectionFeatureSpec[]
 };
+
+export const INSPECTIONS: InspectionSpec[] = [
+  {
+    source: "Receipt",
+    ref: "insp:needle",
+    receipt: "receipt:midway-paid",
+    item: "BRG-NDL-HK1512",
+    ...NEEDLE_PLAN,
+    status: "Partial",
+    dispositionOffset: -66,
+    notes:
+      "Samples 1 and 3 accepted. Sample 2 cup OD 21.016 mm, over the 21.010 mm upper limit — tagged, quarantined and raised to MRB.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 21.004 },
+          { feature: "2", value: 11.88 }
+        ]
+      },
+      {
+        status: "Failed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 21.016 },
+          { feature: "2", value: 11.91 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 20.997 },
+          { feature: "2", value: 11.85 }
+        ]
+      }
+    ]
+  },
+  // Receiving inspection of the PTFE bushings: 20 pieces, AQL 1.0 → n = 5, all good.
+  {
+    source: "Receipt",
+    ref: "insp:ptfe-bushings",
+    receipt: "receipt:midway-restock",
+    item: "BSH-PTFE-2012",
+    drawingNumber: "MW-PTFE-2012 Rev A",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "Outside diameter",
+        nominalValue: "23.000",
+        tolerancePlus: "0.020",
+        toleranceMinus: "0.020",
+        unit: "mm"
+      },
+      {
+        label: "2",
+        description: "Overall length",
+        nominalValue: "12.00",
+        tolerancePlus: "0.25",
+        toleranceMinus: "0.25",
+        unit: "mm"
+      }
+    ],
+    status: "Passed",
+    dispositionOffset: -1,
+    notes: "Five bushings measured; OD and length well inside print.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 23.004 },
+          { feature: "2", value: 12.02 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 22.998 },
+          { feature: "2", value: 11.97 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 23.009 },
+          { feature: "2", value: 12.05 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 23.001 },
+          { feature: "2", value: 11.99 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 22.995 },
+          { feature: "2", value: 12.01 }
+        ]
+      }
+    ]
+  },
+  // The replacement needle bearings from the same delivery, waiting on the
+  // ring-gauge check the MRB asked for.
+  {
+    source: "Receipt",
+    ref: "insp:needle-restock",
+    receipt: "receipt:midway-restock",
+    item: "BRG-NDL-HK1512",
+    ...NEEDLE_PLAN,
+    status: "Pending",
+    samples: []
+  },
+  // The drive-shaft job's CMM lot, opened ahead of the shafts returning from heat treat.
+  {
+    source: "Job Operation",
+    ref: "insp:shaft-runout",
+    job: "floor-shaft",
+    status: "Pending",
+    samples: []
+  }
+];
 
 export const QUALITY_DOCUMENTS: QualityDocumentSpec[] = [
   {
@@ -368,8 +536,9 @@ export const RISKS: RiskSpec[] = [
 ];
 
 export const precisionQuality: QualityData = {
+  workflows: WORKFLOWS,
   nonConformances: NON_CONFORMANCES,
-  inspection: INSPECTION,
+  inspections: INSPECTIONS,
   qualityDocuments: QUALITY_DOCUMENTS,
   gauges: GAUGES,
   risks: RISKS

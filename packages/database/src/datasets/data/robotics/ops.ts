@@ -1,11 +1,19 @@
 import type {
+  CustomFieldSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
+  OpenTimecardSpec,
   OpsData,
+  PeopleAbsenceSpec,
+  PeopleAssignmentSpec,
+  PrintJobSpec,
+  ReplacementPartSpec,
+  SerialSequenceSpec,
   SuggestionSpec,
   TimecardSpec,
-  TrainingSpec
+  TrainingSpec,
+  UserAttributeCategorySpec
 } from "../../types.ts";
 
 // One preventive schedule per frequency, spread over the cell's work centers.
@@ -19,8 +27,7 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     frequency: "Daily",
     priority: "Medium",
     estimatedDuration: 25,
-    nextDueOffset: 1,
-    weekends: false
+    nextDueOffset: 1
   },
   {
     key: "cnc-coolant-check",
@@ -69,11 +76,23 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     estimatedDuration: 360,
     nextDueOffset: 150,
     takesWorkCenterOffline: true
+  },
+  {
+    key: "demo-cell-scanner",
+    name: "Demo cell safety scanner functional test",
+    description:
+      "Walk-test every protective and warning field of the demo cell's laser scanner and log the stop times against the risk assessment.",
+    workCenter: "Customer Demo Cell",
+    frequency: "Monthly",
+    priority: "High",
+    estimatedDuration: 45,
+    nextDueOffset: 12
   }
 ];
 
-// Exactly one dispatch per status, spanning every severity, priority, source
-// and OEE impact.
+// Every status, severity, priority, source and OEE impact, plus the shapes the
+// maintenance KPIs and boards read: a failure on a production day, back-dated
+// completions, today's scheduled task, a machine down now, and one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "smt-feeder-jam",
@@ -163,7 +182,118 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     created: { offset: -7, time: "06:00:00" },
     plannedStart: { offset: -6, time: "12:00:00" },
     plannedEnd: { offset: -6, time: "12:30:00" }
+  },
+  {
+    key: "smt-nozzle-today",
+    status: "Assigned",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "SMT Line",
+    schedule: "smt-nozzle-clean",
+    content:
+      "Daily nozzle and feeder clean: ultrasonic bath for the nozzles, blow out the feeder tracks, vacuum check at each head.",
+    created: { offset: -1, time: "06:00:00" },
+    plannedStart: { offset: 0, time: "14:00:00" },
+    plannedEnd: { offset: 0, time: "14:25:00" }
+  },
+  {
+    key: "harness-tester-down",
+    status: "In Progress",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "Harness Bench",
+    suspectedFailureMode: "Electrical Fault",
+    content:
+      "The cable continuity tester fails its self-test on the 37-pin fixture — every harness reads open on J12. Bench locked out until the fixture relay board is replaced.",
+    created: { offset: -1, time: "15:30:00" },
+    plannedStart: { offset: -1, time: "15:45:00" },
+    plannedEnd: { offset: 1, time: "11:00:00" },
+    actualStart: { offset: -1, time: "15:50:00" },
+    takesWorkCenterOffline: true,
+    comments: ["Relay board ordered from the tester OEM; ships overnight."]
+  },
+  {
+    key: "integration-light-curtain",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Integration Cell 1",
+    suspectedFailureMode: "Misalignment",
+    actualFailureMode: "Misalignment",
+    content:
+      "Light curtain on the cell door kept tripping with the door closed. Receiver bracket had been knocked out of line by a pallet; re-aligned and the muting test re-run.",
+    created: { offset: -9, time: "14:10:00" },
+    plannedStart: { offset: -9, time: "14:15:00" },
+    plannedEnd: { offset: -9, time: "15:00:00" },
+    actualStart: { offset: -9, time: "14:20:00" },
+    actualEnd: { offset: -9, time: "14:55:00" }
+  },
+  {
+    key: "gearbox-regrease-prior",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "Gearbox Bench",
+    schedule: "gearbox-press-regrease",
+    content:
+      "Monthly re-grease of the gear-press guides and ball screw. Nothing out of the ordinary.",
+    created: { offset: -43, time: "06:00:00" },
+    plannedStart: { offset: -42, time: "12:00:00" },
+    plannedEnd: { offset: -42, time: "15:00:00" },
+    actualStart: { offset: -42, time: "12:05:00" },
+    actualEnd: { offset: -42, time: "14:40:00" },
+    takesWorkCenterOffline: true,
+    spareParts: [{ item: "CN-GREASE-EP", quantity: 1, shelf: "A1-L2" }]
+  },
+  {
+    key: "cnc-spindle-chiller",
+    status: "Completed",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "CNC Mill Cell",
+    suspectedFailureMode: "Overheating",
+    actualFailureMode: "Overheating",
+    content:
+      "Spindle chiller tripped on high refrigerant pressure mid-cycle — condenser coil packed with chips and mist. Coil cleaned, filter replaced, spindle warm-up re-run.",
+    created: { offset: -48, time: "08:40:00" },
+    plannedStart: { offset: -48, time: "09:00:00" },
+    plannedEnd: { offset: -48, time: "15:00:00" },
+    actualStart: { offset: -48, time: "09:10:00" },
+    actualEnd: { offset: -47, time: "10:30:00" },
+    takesWorkCenterOffline: true
+  },
+  {
+    key: "demo-arm-brake",
+    status: "Open",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Customer Demo Cell",
+    suspectedFailureMode: "Excessive Wear",
+    content:
+      "The demo arm's J3 brake chatters when it re-engages after an e-stop recovery. Customer visit on Thursday — needs a look before then.",
+    created: { offset: -2, time: "11:00:00" },
+    plannedStart: { offset: 3, time: "09:00:00" },
+    plannedEnd: { offset: 3, time: "11:00:00" }
   }
+];
+
+// The spares the MES dispatch page offers per work center.
+export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
+  { workCenter: "Gearbox Bench", item: "CN-GREASE-EP", quantity: 2 },
+  { workCenter: "Gearbox Bench", item: "BRG-CRB-100", quantity: 1 },
+  { workCenter: "Integration Cell 1", item: "DRV-SRV-400", quantity: 1 }
 ];
 
 export const TRAININGS: TrainingSpec[] = [
@@ -303,6 +433,38 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "12:02:00", clockOut: "15:36:00" }
 ];
 
+// Clocked in before the first timer on the floor started this morning.
+export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:33:00" };
+
+// The cell lead's stations for the week around today — none on today itself,
+// so the MES schedule opens on every work center instead of one station.
+export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
+  { dayOffset: -2, workCenter: "CNC Mill Cell", shift: "First Shift" },
+  { dayOffset: -1, workCenter: "Gearbox Bench", shift: "First Shift" },
+  {
+    dayOffset: 1,
+    workCenter: "Integration Cell 1",
+    shift: "First Shift",
+    note: "ROB-2000 arm-to-controller integration for Lakeshore."
+  },
+  { dayOffset: 2, workCenter: "Gearbox Bench", shift: "First Shift" },
+  {
+    dayOffset: 3,
+    workCenter: "Integration Cell 1",
+    shift: "First Shift",
+    overtimeHours: 2,
+    note: "Stay for the FAT dry run."
+  },
+  { dayOffset: 4, workCenter: "CNC Mill Cell", shift: "First Shift" }
+];
+
+export const PEOPLE_ABSENCES: PeopleAbsenceSpec[] = [
+  {
+    dayOffset: 8,
+    note: "Robot safety (ISO 10218) recertification course."
+  }
+];
+
 export const SUGGESTIONS: SuggestionSpec[] = [
   {
     suggestion:
@@ -328,11 +490,105 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
+// People › Attributes — the applying user's own profile values.
+export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
+  {
+    name: "Robot Cell Safety",
+    emoji: "🤖",
+    public: true,
+    attributes: [
+      {
+        name: "R15.06 safeguarding training expires",
+        dataType: "Date",
+        valueOffset: 96
+      },
+      {
+        name: "Teach-pendant access level",
+        dataType: "List",
+        listOptions: ["Operator", "Programmer", "Integrator"],
+        value: "Programmer"
+      },
+      { name: "LOTO authorizer", dataType: "User" },
+      {
+        name: "Collaborative-mode sign-off",
+        dataType: "Yes/No",
+        value: true,
+        canSelfManage: true
+      }
+    ]
+  }
+];
+
+export const CUSTOM_FIELDS: CustomFieldSpec[] = [
+  { table: "part", name: "CE declaration reference", dataType: "Text" },
+  { table: "customer", name: "Applications engineer", dataType: "User" },
+  { table: "job", name: "Customer witness test", dataType: "Yes/No" }
+];
+
+export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
+  // Continues the supplier's numbering already on the shelf (…-0054).
+  { item: "MOT-AC-750W", prefix: "MOT750-SN-", size: 4, next: 54 },
+  { item: "ROB-2000", prefix: "ROB2000-SN-", size: 4, next: 1 }
+];
+
+// Label history on the plant's printer route: auto and manual prints, a
+// delivery failure, and its reprint waiting in the queue.
+export const PRINT_JOBS: PrintJobSpec[] = [
+  {
+    source: { kind: "Receipt", receipt: "receipt:bare-boards" },
+    item: "PCB-BARE-4L",
+    status: "completed",
+    origin: "auto",
+    at: { offset: -1, time: "15:18:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "done-base" },
+    item: "ARM-BASE-001",
+    status: "completed",
+    origin: "manual",
+    at: { offset: -2, time: "19:25:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "StorageUnit", shelf: "A1-L1" },
+    status: "completed",
+    origin: "manual",
+    at: { offset: -6, time: "16:05:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "floor-drive" },
+    item: "DRV-J2-MOD",
+    status: "failed",
+    origin: "auto",
+    at: { offset: -1, time: "13:40:00" },
+    attempts: 3,
+    error: "Printer did not respond after 3 attempts (connection timed out)"
+  },
+  {
+    source: { kind: "Job", job: "floor-drive" },
+    item: "DRV-J2-MOD",
+    status: "queued",
+    origin: "reprint",
+    at: { offset: 0, time: "06:54:00" },
+    attempts: 0
+  }
+];
+
 export const roboticsOps: OpsData = {
+  userAttributeCategories: USER_ATTRIBUTE_CATEGORIES,
+  customFields: CUSTOM_FIELDS,
+  serialSequences: SERIAL_SEQUENCES,
+  printJobs: PRINT_JOBS,
   maintenanceSchedules: MAINTENANCE_SCHEDULES,
   maintenanceDispatches: MAINTENANCE_DISPATCHES,
+  replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
+  openTimecard: OPEN_TIMECARD,
+  peopleAssignments: PEOPLE_ASSIGNMENTS,
+  peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,
   notes: NOTES
 };

@@ -1,8 +1,10 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
   HolidaySpec,
   MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
@@ -10,7 +12,8 @@ import type {
   ShelfSpec,
   ShiftSpec,
   TagSpec,
-  WarehouseSpec
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -139,6 +142,31 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CMM Inspection Bench", "Incoming Inspection"],
   ["CMM Inspection Bench", "Final Test & Inspection"]
 ];
+
+// A and B shifts on the winding and machining lines; the Saturday shift
+// catches up on dyno testing and final assembly.
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Turning Cell", "A Shift"],
+  ["CNC Turning Cell", "B Shift"],
+  ["Lamination Press", "A Shift"],
+  ["Winding Line 1", "A Shift"],
+  ["Winding Line 1", "B Shift"],
+  ["Impregnation Oven", "A Shift"],
+  ["Impregnation Oven", "B Shift"],
+  ["Balancing Cell", "A Shift"],
+  ["Motor Assembly Bench", "A Shift"],
+  ["Motor Assembly Bench", "Saturday Shift"],
+  ["Dyno Test Cell", "A Shift"],
+  ["Dyno Test Cell", "Saturday Shift"],
+  ["CMM Inspection Bench", "A Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Production Supervisor",
+  department: "Assembly",
+  shift: "A Shift",
+  startDateOffset: -1250
+};
 
 export const PLANT: PlantSpec = {
   name: "Motor Assembly Plant",
@@ -466,6 +494,34 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Maumee Contract Machining", process: "Outside Processing" }
 ];
 
+// Outside shops the planner can load like an in-house cell.
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Maumee Contract Machining",
+    ability: "CNC Machining",
+    hoursPerWeek: 40
+  },
+  {
+    supplier: "Anchor Metrology Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  },
+  {
+    supplier: "Amperon Winding Works",
+    ability: "Coil Winding",
+    hoursPerWeek: 24
+  }
+];
+
+// Headquarters' own work center — maintained like the plant's.
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Prototype Winding Lab",
+  dept: "Engineering",
+  ability: "Coil Winding",
+  laborRate: 82,
+  machineRate: 30
+};
+
 export const CONTRACTORS = [
   {
     firstName: "Elena",
@@ -526,10 +582,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Coil Winding",
     description:
       "Coil insertion, lacing and Class H varnish impregnation for a 9000-frame stator.",
+    parameters: [
+      { key: "Varnish", value: "Class H polyester, VPI" },
+      { key: "Cure profile", value: "4 h at 160 °C" },
+      { key: "Hipot after cure", value: "2,000 V for 60 s" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify slot liner installation",
@@ -547,7 +608,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: STATOR_WINDING_STEPS_V2 }
+      { version: 2, status: "Active", steps: STATOR_WINDING_STEPS_V2 }
     ]
   },
   {
@@ -558,7 +619,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Measure bore diameter after impregnation",
@@ -714,6 +775,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Final Test & Inspection",
     description:
       "No-load, loaded and thermal acceptance run on the dyno before the motor is released to stock.",
+    parameters: [
+      { key: "Rated load", value: "90 kW at 3,000 rpm" },
+      { key: "Thermal run", value: "Until ΔT < 1 °C over 30 min" },
+      { key: "Vibration limit", value: "1.8 mm/s RMS" }
+    ],
     versions: [
       {
         version: 1,
@@ -875,6 +941,7 @@ export const motorFoundation: FoundationData = {
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -890,8 +957,11 @@ export const motorFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,

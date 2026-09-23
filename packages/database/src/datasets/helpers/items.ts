@@ -1,42 +1,13 @@
-import { assertSingle, insertId, insertMaybe, maybeOne, need } from "../sql.ts";
-import type { Ctx, ItemRef, ItemType } from "../types.ts";
-
-/**
- * Names resolve against the dataset's own taxonomy (tier 01's `mat*:<name>`
- * refs in ctx.refs.misc), never the global bootstrap rows.
- */
-export type MaterialClassificationSpec = {
-  substance?: string;
-  form?: string;
-  materialType?: string;
-  grade?: string;
-  finish?: string;
-  dimension?: string;
-};
-
-export type ItemSpec = {
-  readableId: string;
-  revision?: string;
-  name: string;
-  type: ItemType;
-  replenishment?: "Buy" | "Make" | "Buy and Make";
-  defaultMethodType?:
-    | "Pull from Inventory"
-    | "Purchase to Order"
-    | "Make to Order";
-  trackingType?: "Inventory" | "Non-Inventory" | "Serial" | "Batch";
-  unitOfMeasureCode?: string;
-  standardCost?: number;
-  unitSalePrice?: number;
-  leadTime?: number;
-  description?: string;
-  /** Revision ladders seed inactive rungs. */
-  active?: boolean;
-  /** Omitted = column default. */
-  revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
-  /** Material items only. */
-  material?: MaterialClassificationSpec;
-};
+import { assertSingle, insertId, insertMaybe, maybeOne } from "../sql.ts";
+import type {
+  Ctx,
+  ItemRef,
+  ItemSpec,
+  ItemType,
+  MethodType,
+  OperationType
+} from "../types.ts";
+import { bootstrapIdByName } from "./bootstrap-lookup.ts";
 
 /**
  * Inserts an item and its positional extension row, then activates the
@@ -102,51 +73,26 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
   // Positional extension row (part.id = readableId). All revisions share one row.
   const extensionTable = extensionTableFor(spec.type);
   const classification = spec.material;
+  const lookup = (table: string, name: string | undefined) =>
+    name ? bootstrapIdByName(ctx, table, name) : undefined;
   const taxonomy =
     spec.type === "Material" && classification
       ? {
-          materialSubstanceId: classification.substance
-            ? need(
-                ctx.refs.misc,
-                `matsub:${classification.substance}`,
-                "material substance"
-              )
-            : undefined,
-          materialFormId: classification.form
-            ? need(
-                ctx.refs.misc,
-                `matform:${classification.form}`,
-                "material form"
-              )
-            : undefined,
-          materialTypeId: classification.materialType
-            ? need(
-                ctx.refs.misc,
-                `mattype:${classification.materialType}`,
-                "material type"
-              )
-            : undefined,
-          gradeId: classification.grade
-            ? need(
-                ctx.refs.misc,
-                `matgrade:${classification.grade}`,
-                "material grade"
-              )
-            : undefined,
-          finishId: classification.finish
-            ? need(
-                ctx.refs.misc,
-                `matfinish:${classification.finish}`,
-                "material finish"
-              )
-            : undefined,
-          dimensionId: classification.dimension
-            ? need(
-                ctx.refs.misc,
-                `matdim:${classification.dimension}`,
-                "material dimension"
-              )
-            : undefined
+          materialSubstanceId: await lookup(
+            "materialSubstance",
+            classification.substance
+          ),
+          materialFormId: await lookup("materialForm", classification.form),
+          materialTypeId: await lookup(
+            "materialType",
+            classification.materialType
+          ),
+          gradeId: await lookup("materialGrade", classification.grade),
+          finishId: await lookup("materialFinish", classification.finish),
+          dimensionId: await lookup(
+            "materialDimension",
+            classification.dimension
+          )
         }
       : {};
   await insertMaybe(ctx, extensionTable, {
@@ -158,10 +104,13 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
   });
 
   // Apply cost/price/lead-time by UPDATE (not insert).
+  // unitCost too: FIFO valuation and calculateCOGS fall back to it for stock no
+  // cost layer covers (opening stock, job output).
   if (spec.standardCost !== undefined) {
     await client.query(
-      `UPDATE "itemCost" SET "standardCost" = $1 WHERE "itemId" = $2`,
-      [spec.standardCost, itemId]
+      `UPDATE "itemCost" SET "standardCost" = $1, "unitCost" = $1
+       WHERE "itemId" = $2 AND "companyId" = $3`,
+      [spec.standardCost, itemId, companyId]
     );
   }
   if (spec.unitSalePrice !== undefined) {
@@ -177,9 +126,8 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     );
   }
 
-  // For Part / Tool / Service the interceptor created a Draft makeMethod. Leave
-  // it Draft — Active freezes the BOM and BOP, and a demo company should be able
-  // to edit them without first cutting a new version.
+  // For Part / Tool / Service the interceptor created a Draft makeMethod; tier 02
+  // releases the authored ones (Active) once their BOM and BOP are written.
   let makeMethodId: string | null = null;
   if (["Part", "Tool", "Service"].includes(spec.type)) {
     const mmRow = await maybeOne<{ id: string }>(
@@ -255,17 +203,6 @@ export async function addBomLine(
   });
 }
 
-export type MethodType =
-  | "Make to Order"
-  | "Pull from Inventory"
-  | "Purchase to Order";
-
-export type OperationType =
-  | "Process"
-  | "Assembly"
-  | "Inspection"
-  | "Outside Processing";
-
 export async function addBopOperation(
   ctx: Ctx,
   makeMethodId: string,
@@ -285,6 +222,7 @@ export async function addBopOperation(
     operationLeadTime?: number;
     operationUnitCost?: number;
     procedureId?: string;
+    inspectionDocumentId?: string;
   } = {}
 ): Promise<string> {
   return insertId(ctx, "methodOperation", {
@@ -301,6 +239,7 @@ export async function addBopOperation(
     operationSupplierProcessId: opts.operationSupplierProcessId ?? null,
     operationLeadTime: opts.operationLeadTime ?? 0,
     operationUnitCost: opts.operationUnitCost ?? 0,
-    procedureId: opts.procedureId ?? null
+    procedureId: opts.procedureId ?? null,
+    inspectionDocumentId: opts.inspectionDocumentId ?? null
   });
 }

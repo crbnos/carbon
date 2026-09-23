@@ -13,9 +13,7 @@ import {
   startOfMonth,
   startOfWeek
 } from "@internationalized/date";
-
-/** Signed days relative to the dataset anchor. Negative = in the past. */
-export type DayOffset = number;
+import type { DayOffset } from "./types.ts";
 
 /** "YYYY-MM-DD" for a DATE column. */
 export function resolveDate(anchor: CalendarDate, offset: DayOffset): string {

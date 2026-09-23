@@ -1,11 +1,7 @@
 import { resolveDate } from "../dates.ts";
 import { insertId, insertRow, need, one } from "../sql.ts";
-import type { Ctx, WorkflowRunSpec } from "../types.ts";
-import {
-  EVENT_SOURCES,
-  FORMAT_VERSION,
-  type Node
-} from "./workflow-definitions.ts";
+import type { Ctx, Node, WorkflowRunSpec } from "../types.ts";
+import { EVENT_SOURCES, FORMAT_VERSION } from "./workflow-definitions.ts";
 
 // Wired exactly as the publish and activate routes do it, so a later change in the app
 // really fires them. Definitions must pass `validateDefinition` in @carbon/workflows —

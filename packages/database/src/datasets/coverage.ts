@@ -11,19 +11,31 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   ability: 6,
   accountingPeriod: 12,
   address: 14,
+  approvalRequest: 2,
+  approvalRule: 3,
+  assemblyComponentMapping: 3,
   assemblyInstruction: 1,
   assemblyInstructionStep: 5,
+  assemblyInstructionStepMaterial: 3,
+  assemblyInstructionStepTool: 2,
+  batchProperty: 4,
   changeOrder: 6,
   changeOrderActionTask: 6,
   changeOrderAffectedItem: 3,
+  companyAccountsPayableBillingAddress: 1,
+  companyAccountsReceivableBillingAddress: 1,
   configurationParameter: 3,
   configurationParameterGroup: 1,
+  configurationRule: 2,
   consumable: 2,
   contact: 16,
   contractor: 2,
   contractorAbility: 2,
   costCenter: 4,
+  costLedger: 7,
+  customField: 3,
   customer: 4,
+  customerBankAccount: 4,
   customerContact: 4,
   customerItemPriceOverride: 1,
   customerItemPriceOverrideBreak: 2,
@@ -33,17 +45,21 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   customerShipping: 4,
   customerTax: 4,
   customerType: 4,
-  demandProjection: 19, // min 24
+  demandProjection: 22, // min 28
   department: 4,
   depreciationRun: 1,
   depreciationRunLine: 3,
   dimension: 16,
   dimensionValue: 2,
   employeeAbility: 2,
+  employeeJob: 1,
   employeeShift: 1,
+  enforcementRule: 5,
+  enforcementRuleItemAssignment: 5,
+  enforcementRuleWorkCenterAssignment: 1,
   eventSystemSubscription: 18,
   exchangeRateOverride: 1,
-  externalLink: 5,
+  externalLink: 7,
   fixedAsset: 6,
   fixedAssetDisposal: 1,
   fixedAssetUsageLog: 2,
@@ -51,46 +67,50 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   gaugeCalibrationRecord: 4,
   group: 23, // min 29
   holiday: 3,
-  inspection: 1,
-  inspectionDocument: 1,
-  inspectionFeature: 2,
-  inspectionHistory: 1,
-  inspectionMeasurement: 4,
-  inspectionSample: 2,
-  inspectionSamplingPlan: 2,
+  inspection: 4,
+  inspectionDocument: 3,
+  inspectionFeature: 6,
+  inspectionHistory: 2,
+  inspectionMeasurement: 12,
+  inspectionSample: 6,
+  inspectionSamplingPlan: 8,
   inventoryCount: 2,
   inventoryCountLine: 11,
   invoiceSettlement: 6,
   item: 29, // min 37
   itemCost: 29, // min 37
-  itemInspectionDocumentAssignment: 1,
-  itemLedger: 30, // min 38
+  itemInspectionDocumentAssignment: 2,
+  itemLedger: 32, // min 40
   itemPlanning: 59, // min 74
   itemPostingGroup: 5,
   itemReplenishment: 29, // min 37
+  itemSerialSequence: 2,
   itemShelfLife: 1,
   itemStockQuantities: 16, // min 20
   itemSupersession: 1,
   itemUnitSalePrice: 29, // min 37
-  job: 8,
+  job: 16, // min 21
   jobFavorite: 1,
-  jobMakeMethod: 16, // min 21
-  jobMaterial: 50, // min 63
-  jobOperation: 43, // min 54
+  jobMakeMethod: 30, // min 38
+  jobMaterial: 77, // min 97
+  jobOperation: 76, // min 96
   jobOperationBatch: 1,
   jobOperationNote: 2,
-  jobOperationStep: 31, // min 39
-  journal: 5,
-  journalLine: 10,
+  jobOperationParameter: 16,
+  jobOperationStep: 35, // min 44
+  jobOperationStepRecord: 10,
+  jobOperationTool: 4,
+  journal: 29, // min 37
+  journalLine: 64, // min 80
   journalLineDimension: 2,
   kanban: 5,
   location: 2,
-  maintenanceDispatch: 5,
-  maintenanceDispatchComment: 3,
-  maintenanceDispatchEvent: 2,
-  maintenanceDispatchItem: 1,
-  maintenanceDispatchWorkCenter: 2,
-  maintenanceSchedule: 5,
+  maintenanceDispatch: 11,
+  maintenanceDispatchComment: 4,
+  maintenanceDispatchEvent: 6,
+  maintenanceDispatchItem: 2,
+  maintenanceDispatchWorkCenter: 4,
+  maintenanceSchedule: 6,
   maintenanceScheduleItem: 1,
   makeMethod: 24, // min 30
   material: 6,
@@ -100,50 +120,61 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   materialGrade: 3,
   materialSubstance: 2,
   materialType: 1,
-  memo: 2,
+  memo: 4,
   methodMaterial: 40, // min 51
   methodOperation: 26, // min 33
   methodOperationParameter: 4,
   methodOperationTool: 1,
   modelUpload: 1,
   nonConformance: 5,
+  nonConformanceActionProcess: 1,
   nonConformanceActionTask: 7,
   nonConformanceApprovalTask: 1,
   nonConformanceCustomer: 1,
   nonConformanceInspection: 1,
-  nonConformanceItem: 1,
+  nonConformanceItem: 6,
   nonConformanceJobOperation: 1,
   nonConformancePurchaseOrderLine: 1,
+  nonConformancePurchaseReturnOrderLine: 1,
   nonConformanceReviewer: 2,
   nonConformanceSalesOrderLine: 1,
-  nonConformanceSupplier: 1,
+  nonConformanceSalesReturnOrderLine: 1,
+  nonConformanceSupplier: 2,
   nonConformanceTrackedEntity: 1,
+  nonConformanceWorkflow: 3,
   noQuoteReason: 4,
   note: 2,
-  opportunity: 22, // min 28
+  opportunity: 25, // min 32
   part: 18, // min 23
-  payment: 6,
+  partner: 2,
+  payment: 8,
+  peopleAbsence: 1,
+  peopleAssignment: 6,
   periodCloseTask: 3,
+  pickMethod: 19,
   pickingList: 2,
   pickingListLine: 4,
-  pricingRule: 1,
+  pricingRule: 3,
+  printJob: 5,
   printerRoute: 1,
   procedure: 4,
+  procedureParameter: 9,
   procedureStep: 19,
   process: 11,
-  productionEvent: 7,
-  productionQuantity: 3,
+  productionEvent: 19, // min 24
+  productionQuantity: 11,
   project: 2,
   purchaseInvoice: 7,
   purchaseInvoiceDelivery: 7,
   purchaseInvoiceLine: 8,
-  purchaseOrder: 17,
-  purchaseOrderDelivery: 17,
-  purchaseOrderLine: 16, // min 20
-  purchaseOrderPayment: 17,
+  purchaseOrder: 18,
+  purchaseOrderDelivery: 18,
+  purchaseOrderLine: 16, // min 21
+  purchaseOrderPayment: 18,
   purchaseOrderStatusHistory: 3,
-  purchaseReturnOrder: 3,
-  purchaseReturnOrderLine: 3,
+  purchaseReturnOrder: 4,
+  purchaseReturnOrderCreditLine: 1,
+  purchaseReturnOrderLine: 4,
   purchasingRfq: 3,
   purchasingRfqLine: 5,
   purchasingRfqSupplier: 7,
@@ -155,23 +186,28 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   quoteFavorite: 1,
   quoteLine: 10,
   quoteLinePrice: 13,
-  quoteMakeMethod: 10,
+  quoteMakeMethod: 32, // min 40
+  quoteMaterial: 105, // min 132
+  quoteOperation: 85, // min 107
+  quoteOperationParameter: 8,
+  quoteOperationTool: 4,
   quotePayment: 8,
   quoteShipment: 8,
-  receipt: 5,
-  receiptLine: 6,
+  receipt: 6,
+  receiptLine: 7,
   rework: 1,
   riskRegister: 5,
-  salesInvoice: 7,
-  salesInvoiceLine: 7,
-  salesInvoiceShipment: 7,
-  salesOrder: 16, // min 20
+  salesInvoice: 9,
+  salesInvoiceLine: 9,
+  salesInvoiceShipment: 9,
+  salesOrder: 19, // min 24
   salesOrderFavorite: 1,
-  salesOrderLine: 18, // min 23
-  salesOrderPayment: 16, // min 20
-  salesOrderShipment: 16, // min 20
+  salesOrderLine: 28, // min 36
+  salesOrderPayment: 19, // min 24
+  salesOrderShipment: 19, // min 24
   salesOrderStatusHistory: 3,
   salesReturnOrder: 3,
+  salesReturnOrderCreditLine: 1,
   salesReturnOrderLine: 3,
   salesRfq: 4,
   salesRfqLine: 4,
@@ -187,6 +223,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   storageUnit: 18,
   suggestion: 2,
   supplier: 11,
+  supplierBankAccount: 4,
   supplierContact: 12,
   supplierInteraction: 17, // min 22
   supplierLocation: 10,
@@ -201,21 +238,26 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   supplierTax: 11,
   supplierType: 6,
   tag: 5,
-  timeCardEntry: 6,
+  timeCardEntry: 7,
   tool: 2,
   trackedActivity: 7,
   trackedActivityInput: 6,
   trackedActivityOutput: 6,
-  trackedEntity: 36, // min 45
+  trackedEntity: 49, // min 62
   training: 3,
   trainingAssignment: 2,
   trainingCompletion: 1,
   trainingQuestion: 8,
+  userAttribute: 4,
+  userAttributeCategory: 1,
+  userAttributeValue: 4,
   warehouse: 3,
   warehouseTransfer: 3,
   warehouseTransferLine: 3,
-  workCenter: 7,
+  workCenter: 8,
   workCenterProcess: 14,
+  workCenterReplacementPart: 3,
+  workCenterShift: 9,
   workflow: 7,
   workflowRun: 3,
   workflowStepRun: 4,
@@ -229,9 +271,13 @@ export const COVERAGE_FLOORS: Record<string, number> = {
  * a fresh group.
  */
 export const COVERAGE_SCOPES: Record<string, string> = {
+  companyAccountsPayableBillingAddress: `id = $1`,
+  companyAccountsReceivableBillingAddress: `id = $1`,
   dimension: `"companyGroupId" = (SELECT "companyGroupId" FROM company WHERE id = $1)`,
   dimensionValue: `"companyGroupId" = (SELECT "companyGroupId" FROM company WHERE id = $1)`,
   jobFavorite: `"jobId" IN (SELECT id FROM job WHERE "companyId" = $1)`,
   quoteFavorite: `"quoteId" IN (SELECT id FROM quote WHERE "companyId" = $1)`,
-  salesOrderFavorite: `"salesOrderId" IN (SELECT id FROM "salesOrder" WHERE "companyId" = $1)`
+  salesOrderFavorite: `"salesOrderId" IN (SELECT id FROM "salesOrder" WHERE "companyId" = $1)`,
+  userAttribute: `"userAttributeCategoryId" IN (SELECT id FROM "userAttributeCategory" WHERE "companyId" = $1)`,
+  userAttributeValue: `"userAttributeId" IN (SELECT ua.id FROM "userAttribute" ua JOIN "userAttributeCategory" c ON c.id = ua."userAttributeCategoryId" WHERE c."companyId" = $1)`
 };

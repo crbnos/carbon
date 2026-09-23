@@ -234,6 +234,74 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
       journalEntryId: "JE-SEED-005",
       postingOffset: -33
     }
+  },
+  {
+    // The chart's opening position, so the balance sheet has cash, stock,
+    // plant and equity before the first posted document.
+    ref: "journal:opening-balance",
+    journalEntryId: "JE-SEED-006",
+    description: "Opening balances — cutover from the legacy ledger",
+    status: "Posted",
+    sourceType: "Opening Balance",
+    postingOffset: -242,
+    lines: [
+      {
+        account: "1010",
+        description: "Operating cash",
+        amount: 420000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-1"
+      },
+      {
+        account: "1210",
+        description: "Raw materials on hand",
+        amount: 95000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-2"
+      },
+      {
+        account: "1220",
+        description: "Finished goods on hand",
+        amount: 70000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-3"
+      },
+      {
+        account: "1350",
+        description: "Machinery & equipment at cost",
+        amount: 1250000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-4"
+      },
+      {
+        account: "1330",
+        description: "Accumulated depreciation to date",
+        amount: -380000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-5"
+      },
+      {
+        account: "2410",
+        description: "Equipment term loan",
+        amount: 500000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-6"
+      },
+      {
+        account: "3010",
+        description: "Paid-in capital",
+        amount: 400000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-7"
+      },
+      {
+        account: "3100",
+        description: "Retained earnings brought forward",
+        amount: 555000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-8"
+      }
+    ]
   }
 ];
 
@@ -298,6 +366,27 @@ export const PAYMENTS: PaymentSpec[] = [
     credits: [
       { memoKey: "bluestem-plate", invoiceKey: "debit-note", amount: 500 }
     ]
+  },
+  // Entered but not yet applied or posted — the payment's apply table.
+  {
+    key: "draft-receipt",
+    type: "Receipt",
+    status: "Draft",
+    customer: "Granite State Instruments",
+    dateOffset: -1,
+    amount: 360,
+    reference: "Check 30912 — 316 plate",
+    applies: []
+  },
+  {
+    key: "draft-disbursement",
+    type: "Disbursement",
+    status: "Draft",
+    supplier: "Rock River Metals",
+    dateOffset: 0,
+    amount: 442.5,
+    reference: "ACH batch 0930 — bar stock",
+    applies: []
   }
 ];
 
@@ -364,5 +453,25 @@ export const precisionAccounting: AccountingData = {
   },
   closeTasks: CLOSE_TASKS,
   // EUR per 1 USD (foreign units per base unit), the same direction as the EUR purchase order's 0.92 snapshot.
-  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }]
+  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }],
+  billingAddresses: {
+    receivable: {
+      addressLine1: "1725 Kishwaukee Street",
+      city: "Rockford",
+      state: "IL",
+      postalCode: "61104",
+      countryCode: "US",
+      phone: "+1-815-555-0194",
+      email: "ar@meridianprecision.example"
+    },
+    payable: {
+      addressLine1: "1725 Kishwaukee Street",
+      city: "Rockford",
+      state: "IL",
+      postalCode: "61104",
+      countryCode: "US",
+      phone: "+1-815-555-0195",
+      email: "ap@meridianprecision.example"
+    }
+  }
 };

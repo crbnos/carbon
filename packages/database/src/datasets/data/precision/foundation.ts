@@ -1,8 +1,10 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
   HolidaySpec,
   MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
@@ -10,7 +12,8 @@ import type {
   ShelfSpec,
   ShiftSpec,
   TagSpec,
-  WarehouseSpec
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -123,6 +126,31 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Finish & Assembly Bench", "Mechanical Assembly"],
   ["CMM Lab", "Final Inspection"]
 ];
+
+// Two production shifts on the machining cells; Saturday overtime runs the
+// two VMCs and the CMM, which is where a job shop's backlog piles up.
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["VMC Cell 1", "First Shift"],
+  ["VMC Cell 1", "Second Shift"],
+  ["VMC Cell 1", "Saturday Overtime"],
+  ["VMC Cell 2", "First Shift"],
+  ["VMC Cell 2", "Second Shift"],
+  ["VMC Cell 2", "Saturday Overtime"],
+  ["Turning Cell", "First Shift"],
+  ["Turning Cell", "Second Shift"],
+  ["Wire EDM Cell", "First Shift"],
+  ["Fab & Weld Bay", "First Shift"],
+  ["Finish & Assembly Bench", "First Shift"],
+  ["CMM Lab", "First Shift"],
+  ["CMM Lab", "Saturday Overtime"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Machining Supervisor",
+  department: "Machining",
+  shift: "First Shift",
+  startDateOffset: -1460
+};
 
 export const PLANT: PlantSpec = {
   name: "Meridian Machining Plant",
@@ -455,6 +483,29 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Precision Gauge Services", process: "Final Inspection" }
 ];
 
+// Outside shops the planner can load like an in-house cell.
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Anvil Finishing Group",
+    ability: "Deburr & Finishing",
+    hoursPerWeek: 32
+  },
+  {
+    supplier: "Precision Gauge Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  }
+];
+
+// Headquarters' own work center — maintained like the plant's.
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Headquarters Toolroom",
+  dept: "Machining",
+  ability: "CNC Milling",
+  laborRate: 78,
+  machineRate: 35
+};
+
 export const CONTRACTORS = [
   {
     firstName: "Ramon",
@@ -521,10 +572,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "CNC Milling",
     description:
       "Second-operation milling of the 6061 pump housing, including the bearing bore.",
+    parameters: [
+      { key: "Bearing bore", value: "Ø 42.000 +0.016 / −0 mm" },
+      { key: "Spindle speed, finish bore", value: "3,200 rpm" },
+      { key: "Coolant concentration", value: "6–8 %" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify the first-operation part against the traveler",
@@ -543,7 +599,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: PUMP_HOUSING_OP2_STEPS_V2 }
+      { version: 2, status: "Active", steps: PUMP_HOUSING_OP2_STEPS_V2 }
     ]
   },
   {
@@ -554,7 +610,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage the kit at the assembly bench",
@@ -600,6 +656,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Final Inspection",
     description:
       "CMM report and certificate of conformance against the customer-supplied print.",
+    parameters: [
+      { key: "CMM program", value: "PRG-HSG-OP2 Rev D" },
+      { key: "Lab temperature", value: "20 ± 1 °C" },
+      { key: "Report format", value: "AS9102 FAI form 3" }
+    ],
     versions: [
       {
         version: 1,
@@ -765,6 +826,7 @@ export const precisionFoundation: FoundationData = {
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -780,8 +842,11 @@ export const precisionFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,

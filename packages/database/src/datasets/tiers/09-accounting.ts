@@ -8,6 +8,18 @@ import {
   resolveTimestamp,
   SEEDED_PERIOD_MONTHS
 } from "../dates.ts";
+import { insertMemo } from "../helpers/memo.ts";
+import {
+  type AccountingPeriodRange,
+  loadPostingContext,
+  type PostingContext,
+  periodFor,
+  postInventoryDocuments,
+  postMemos,
+  postPayment,
+  postPurchaseInvoices,
+  postSalesInvoices
+} from "../helpers/post-documents.ts";
 import {
   insertId,
   insertMaybe,
@@ -20,6 +32,7 @@ import {
 } from "../sql.ts";
 import type {
   AccountClass,
+  BillingAddressSpec,
   Ctx,
   JournalEntrySpec,
   JournalLineSpec
@@ -92,21 +105,17 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     return row.id;
   };
 
-  const defaults = await one<{
-    bankCashAccount: string | null;
-    salesDiscountAccount: string | null;
-    supplierPaymentDiscountAccount: string | null;
-  }>(
+  const defaults = await one<{ bankCashAccount: string | null }>(
     client,
-    `SELECT "bankCashAccount", "salesDiscountAccount", "supplierPaymentDiscountAccount"
-     FROM "accountDefault" WHERE "companyId" = $1`,
+    `SELECT "bankCashAccount" FROM "accountDefault" WHERE "companyId" = $1`,
     [companyId]
   );
 
   // ── Accounting periods: trailing months, oldest Closed → Locked → Open ────
   // Before the journals, so the journal_check_period_open trigger vets every
   // seeded posting date against the seeded close state.
-  await seedAccountingPeriods(ctx);
+  const periods = await seedAccountingPeriods(ctx);
+  const posting = await loadPostingContext(ctx, periods);
 
   // ── Projects (+ project coding on one purchase invoice line) ──────────────
   for (const spec of data.projects) {
@@ -202,12 +211,8 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   };
 
   // ── Journal entries ────────────────────────────────────────────────────────
-  // accountingPeriodId stays NULL on purpose: journal survives the dataset
-  // wipe while accountingPeriod does not, and the wipe would have to UPDATE a
-  // Posted journal to null the FK — which journal_posted_immutable forbids.
-  // journal_check_period_open resolves a NULL period from postingDate.
   for (const entry of data.journalEntries) {
-    const journalId = await seedJournal(ctx, entry, resolveAccount);
+    const journalId = await seedJournal(ctx, posting, entry, resolveAccount);
     for (const line of entry.lines) {
       if (!line.dimensions?.length) continue;
       const lineRow = await one<{ id: string }>(
@@ -225,7 +230,12 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Memos (Posted, accounting-disabled shape: journalId null) ─────────────
+  // ── GL of the posted documents tiers 04/05 seeded ─────────────────────────
+  await postInventoryDocuments(ctx, posting);
+  await postSalesInvoices(ctx, posting);
+  await postPurchaseInvoices(ctx, posting);
+
+  // ── Memos (Posted; post-memo's journal below) ──────────────────────────────
   for (const spec of data.memos) {
     const isCredit = spec.direction === "Credit";
     const invoice = await one<{
@@ -246,45 +256,36 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       ]
     );
     ctx.log(`${spec.direction.toLowerCase()} memo ${spec.key} — Posted`);
-    const memoDate = resolveDate(ctx.anchor, spec.dateOffset);
-    const memoId = await insertId(ctx, "memo", {
-      memoId: await nextSequence(ctx, isCredit ? "creditMemo" : "debitMemo"),
+    const memoId = await insertMemo(ctx, {
       direction: spec.direction,
-      customerId: isCredit
+      partyId: isCredit
         ? need(ctx.refs.customers, spec.customer ?? "", "customer")
-        : undefined,
-      supplierId: isCredit
-        ? undefined
         : need(ctx.refs.suppliers, spec.supplier ?? "", "supplier"),
+      status: "Posted",
+      dateOffset: spec.dateOffset,
+      amount: spec.amount,
       currencyCode: invoice.currencyCode,
       exchangeRate: 1,
-      amount: spec.amount,
-      memoDate,
-      postingDate: memoDate,
-      status: "Posted",
-      postedAt: resolveTimestamp(ctx.anchor, spec.dateOffset, "16:00:00"),
-      postedBy: ctx.userId,
-      // The reason account post-memo stamps for a memo with no return order.
-      reasonAccount:
-        (isCredit
-          ? defaults.salesDiscountAccount
-          : defaults.supplierPaymentDiscountAccount) ?? undefined,
       reference: invoice.invoiceId,
       notes: spec.notes
     });
     ctx.refs.documents[`memo:${spec.key}`] = memoId;
   }
+  // Also journals the Posted return credits tier 04 wrote.
+  await postMemos(ctx, posting);
 
-  // ── Payments + settlements (post-payment, accounting disabled) ────────────
+  // ── Payments + settlements + post-payment's journal ───────────────────────
   if (data.payments.length > 0 && !defaults.bankCashAccount) {
     throw new Error("Seed: accountDefault.bankCashAccount is not set");
   }
   for (const spec of data.payments) {
     const isReceipt = spec.type === "Receipt";
     const paymentDate = resolveDate(ctx.anchor, spec.dateOffset);
-    ctx.log(`payment ${spec.key} — ${spec.type} Posted`);
+    const posted = spec.status !== "Draft";
+    ctx.log(`payment ${spec.key} — ${spec.type} ${spec.status ?? "Posted"}`);
+    const paymentReadableId = await nextSequence(ctx, "payment");
     const paymentId = await insertId(ctx, "payment", {
-      paymentId: await nextSequence(ctx, "payment"),
+      paymentId: paymentReadableId,
       paymentType: spec.type,
       customerId: isReceipt
         ? need(ctx.refs.customers, spec.customer ?? "", "customer")
@@ -296,21 +297,33 @@ export async function runTier9(ctx: Ctx): Promise<void> {
       exchangeRate: 1,
       bankAccount: defaults.bankCashAccount,
       paymentDate,
-      postingDate: paymentDate,
+      postingDate: posted ? paymentDate : undefined,
       totalAmount: spec.amount,
       reference: spec.reference,
-      status: "Posted",
-      postedAt: resolveTimestamp(ctx.anchor, spec.dateOffset, "15:00:00"),
-      postedBy: ctx.userId
+      status: posted ? "Posted" : "Draft",
+      postedAt: posted
+        ? resolveTimestamp(ctx.anchor, spec.dateOffset, "15:00:00")
+        : undefined,
+      postedBy: posted ? ctx.userId : undefined
     });
     ctx.refs.documents[`payment:${spec.key}`] = paymentId;
+    if (!posted) {
+      if (spec.applies.length > 0 || spec.credits?.length) {
+        throw new Error(
+          `Seed: Draft payment "${spec.key}" must be unapplied (the apply table is the point)`
+        );
+      }
+      continue;
+    }
 
-    const target = (invoiceKey: string) => {
-      const id = need(
+    const invoiceIdFor = (invoiceKey: string) =>
+      need(
         ctx.refs.misc,
         `${isReceipt ? "sinv" : "pinv"}:${invoiceKey}`,
         "invoice"
       );
+    const target = (invoiceKey: string) => {
+      const id = invoiceIdFor(invoiceKey);
       return isReceipt
         ? { targetSalesInvoiceId: id }
         : { targetPurchaseInvoiceId: id };
@@ -346,6 +359,17 @@ export async function runTier9(ctx: Ctx): Promise<void> {
         appliedDate: paymentDate
       });
     }
+    await postPayment(ctx, posting, {
+      paymentId,
+      paymentReadableId,
+      type: spec.type,
+      amount: spec.amount,
+      postingDate: paymentDate,
+      applies: spec.applies.map((apply) => ({
+        targetId: invoiceIdFor(apply.invoiceKey),
+        amount: apply.amount
+      }))
+    });
   }
 
   // ── Exchange-rate overrides ──────────────────────────────────────────────────
@@ -441,6 +465,19 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     }
   }
 
+  // ── AR / AP billing addresses ──────────────────────────────────────────────
+  ctx.log("AR / AP billing addresses");
+  await upsertBillingAddress(
+    ctx,
+    "companyAccountsReceivableBillingAddress",
+    data.billingAddresses.receivable
+  );
+  await upsertBillingAddress(
+    ctx,
+    "companyAccountsPayableBillingAddress",
+    data.billingAddresses.payable
+  );
+
   // ── Depreciation run: unposted, one line per Active asset ────────────────
   // Mirrors what accounting+/depreciation-runs.new.tsx builds. taxAmount stays
   // NULL because companySettings.assetTaxDepreciationEnabled is off, which is
@@ -469,6 +506,7 @@ export async function runTier9(ctx: Ctx): Promise<void> {
 /** Inserts (or adopts — journal survives the wipe) one entry plus any reversal. */
 async function seedJournal(
   ctx: Ctx,
+  posting: PostingContext,
   entry: JournalEntrySpec,
   resolveAccount: (line: JournalLineSpec) => Promise<string>
 ): Promise<string> {
@@ -480,8 +518,18 @@ async function seedJournal(
       [journalEntryId, companyId]
     );
 
-  // journal is preserved across wipes — skip if already seeded
-  const existing = await findJournal(entry.journalEntryId);
+  // journal is preserved across wipes — skip if already seeded. A company holds
+  // one Posted Opening Balance (unique index), so an earlier one is adopted too.
+  const existing =
+    (await findJournal(entry.journalEntryId)) ??
+    (entry.sourceType === "Opening Balance"
+      ? await maybeOne<{ id: string }>(
+          client,
+          `SELECT id FROM journal
+           WHERE "companyId" = $1 AND "sourceType" = 'Opening Balance' AND status = 'Posted'`,
+          [companyId]
+        )
+      : null);
   if (existing) {
     ctx.log("journal entry — already exists, skipping");
     ctx.refs.documents[entry.ref] = existing.id;
@@ -496,15 +544,17 @@ async function seedJournal(
   // A Reversed entry was Posted first; reverseJournalEntry flips it below.
   const posted = entry.status !== "Draft";
   const postedStamp = (offset: number) => ({
-    sourceType: "Manual",
+    sourceType: entry.sourceType ?? "Manual",
     postedAt: resolveTimestamp(ctx.anchor, offset, "17:00:00"),
     postedBy: ctx.userId
   });
+  const postingDate = resolveDate(ctx.anchor, entry.postingOffset);
   const je = await insertId(ctx, "journal", {
     journalEntryId: entry.journalEntryId,
     description: entry.description,
     status: posted ? "Posted" : entry.status,
-    postingDate: resolveDate(ctx.anchor, entry.postingOffset),
+    postingDate,
+    accountingPeriodId: periodFor(posting, postingDate),
     ...(posted ? postedStamp(entry.postingOffset) : {})
   });
   for (const line of entry.lines) {
@@ -527,11 +577,13 @@ async function seedJournal(
       );
     }
     ctx.log(`journal entry ${spec.journalEntryId} — reversal, Posted`);
+    const reversalDate = resolveDate(ctx.anchor, spec.postingOffset);
     const reversal = await insertId(ctx, "journal", {
       journalEntryId: spec.journalEntryId,
       description: `Reversal of ${entry.journalEntryId}`,
       status: "Posted",
-      postingDate: resolveDate(ctx.anchor, spec.postingOffset),
+      postingDate: reversalDate,
+      accountingPeriodId: periodFor(posting, reversalDate),
       reversalOfId: je,
       ...postedStamp(spec.postingOffset)
     });
@@ -557,7 +609,9 @@ async function seedJournal(
 }
 
 /** Oldest months Closed (close is sequential), then one Locked, the rest Open. */
-async function seedAccountingPeriods(ctx: Ctx): Promise<void> {
+async function seedAccountingPeriods(
+  ctx: Ctx
+): Promise<AccountingPeriodRange[]> {
   const { client, companyId } = ctx;
   const fiscal = await maybeOne<{ startMonth: string | null }>(
     client,
@@ -575,6 +629,7 @@ async function seedAccountingPeriods(ctx: Ctx): Promise<void> {
   );
 
   const closed = new Set<number>(CLOSED_PERIOD_MONTHS_BACK);
+  const seeded: AccountingPeriodRange[] = [];
   let lockedPeriodId: string | null = null;
   let lockedPeriodEnd: string | null = null;
   ctx.log(`accounting periods — ${SEEDED_PERIOD_MONTHS} months`);
@@ -595,29 +650,65 @@ async function seedAccountingPeriods(ctx: Ctx): Promise<void> {
     const closedAt = isClosed
       ? `${end.add({ days: 9 }).toString()}T17:00:00Z`
       : null;
-    const periodId = await insertId(
-      ctx,
-      "accountingPeriod",
-      {
-        startDate: start.toString(),
-        endDate: end.toString(),
-        fiscalYear,
-        periodNumber,
-        status: back === 0 ? "Active" : "Inactive",
-        closeStatus: isClosed ? "Closed" : isLocked ? "Locked" : "Open",
-        lockedAt,
-        lockedBy: lockedAt ? ctx.userId : null,
-        closedAt,
-        closedBy: closedAt ? ctx.userId : null
-      },
-      {
-        onConflict: `("companyId", "fiscalYear", "periodNumber") DO UPDATE SET
-          "startDate" = EXCLUDED."startDate", "endDate" = EXCLUDED."endDate",
-          status = EXCLUDED.status, "closeStatus" = EXCLUDED."closeStatus",
-          "lockedAt" = EXCLUDED."lockedAt", "lockedBy" = EXCLUDED."lockedBy",
-          "closedAt" = EXCLUDED."closedAt", "closedBy" = EXCLUDED."closedBy"`
-      }
+    const period = {
+      startDate: start.toString(),
+      endDate: end.toString(),
+      fiscalYear,
+      periodNumber,
+      status: back === 0 ? "Active" : "Inactive",
+      closeStatus: isClosed ? "Closed" : isLocked ? "Locked" : "Open",
+      lockedAt,
+      lockedBy: lockedAt ? ctx.userId : null,
+      closedAt,
+      closedBy: closedAt ? ctx.userId : null
+    };
+    // accountingPeriod survives the wipe (posted journals reference it), and
+    // the app finds a period by date range — so adopt the month's existing
+    // row, which job-costing functions may have minted without fiscal numbers,
+    // rather than add an overlapping one.
+    const existing = await maybeOne<{ id: string }>(
+      client,
+      `SELECT id FROM "accountingPeriod"
+       WHERE "companyId" = $1
+         AND (("fiscalYear" = $2 AND "periodNumber" = $3) OR "startDate" = $4)
+       ORDER BY ("fiscalYear" = $2 AND "periodNumber" = $3) DESC NULLS LAST, id
+       LIMIT 1`,
+      [companyId, fiscalYear, periodNumber, period.startDate]
     );
+    let periodId: string;
+    if (existing) {
+      periodId = existing.id;
+      await client.query(
+        `UPDATE "accountingPeriod" SET
+           "startDate" = $3, "endDate" = $4, "fiscalYear" = $5,
+           "periodNumber" = $6, status = $7, "closeStatus" = $8,
+           "lockedAt" = $9, "lockedBy" = $10, "closedAt" = $11,
+           "closedBy" = $12, "updatedBy" = $13
+         WHERE id = $1 AND "companyId" = $2`,
+        [
+          periodId,
+          companyId,
+          period.startDate,
+          period.endDate,
+          period.fiscalYear,
+          period.periodNumber,
+          period.status,
+          period.closeStatus,
+          period.lockedAt,
+          period.lockedBy,
+          period.closedAt,
+          period.closedBy,
+          ctx.userId
+        ]
+      );
+    } else {
+      periodId = await insertId(ctx, "accountingPeriod", period);
+    }
+    seeded.push({
+      id: periodId,
+      startDate: period.startDate,
+      endDate: period.endDate
+    });
     if (isLocked) {
       lockedPeriodId = periodId;
       lockedPeriodEnd = end.toString();
@@ -628,7 +719,7 @@ async function seedAccountingPeriods(ctx: Ctx): Promise<void> {
   // Snapshot the bootstrap definitions the way getPeriodCloseChecklist
   // instantiates them; the rest of the checklist materializes on first view.
   const tasks = ctx.dataset.accounting.closeTasks;
-  if (tasks.length === 0) return;
+  if (tasks.length === 0) return seeded;
   if (!lockedPeriodId || !lockedPeriodEnd) {
     throw new Error("Seed: close tasks need a Locked period");
   }
@@ -670,4 +761,35 @@ async function seedAccountingPeriods(ctx: Ctx): Promise<void> {
       notes: task.notes
     });
   }
+  return seeded;
+}
+
+/** Settings › Sales / Purchasing billing addresses; keyed on the company id itself. */
+async function upsertBillingAddress(
+  ctx: Ctx,
+  table:
+    | "companyAccountsReceivableBillingAddress"
+    | "companyAccountsPayableBillingAddress",
+  address: BillingAddressSpec
+): Promise<void> {
+  const values = [
+    address.addressLine1,
+    address.city,
+    address.state,
+    address.postalCode,
+    address.countryCode,
+    address.phone,
+    address.email
+  ];
+  await ctx.client.query(
+    `INSERT INTO "${table}"
+       (id, "addressLine1", city, state, "postalCode", "countryCode", phone, email, "updatedBy")
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+     ON CONFLICT (id) DO UPDATE SET
+       "addressLine1" = EXCLUDED."addressLine1", city = EXCLUDED.city,
+       state = EXCLUDED.state, "postalCode" = EXCLUDED."postalCode",
+       "countryCode" = EXCLUDED."countryCode", phone = EXCLUDED.phone,
+       email = EXCLUDED.email, "updatedBy" = EXCLUDED."updatedBy"`,
+    [ctx.companyId, ...values, ctx.userId]
+  );
 }

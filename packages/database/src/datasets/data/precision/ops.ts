@@ -1,11 +1,19 @@
 import type {
+  CustomFieldSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
+  OpenTimecardSpec,
   OpsData,
+  PeopleAbsenceSpec,
+  PeopleAssignmentSpec,
+  PrintJobSpec,
+  ReplacementPartSpec,
+  SerialSequenceSpec,
   SuggestionSpec,
   TimecardSpec,
-  TrainingSpec
+  TrainingSpec,
+  UserAttributeCategorySpec
 } from "../../types.ts";
 
 // One preventive schedule per frequency, spread over the shop's machines.
@@ -19,8 +27,7 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     frequency: "Daily",
     priority: "Medium",
     estimatedDuration: 20,
-    nextDueOffset: 1,
-    weekends: false
+    nextDueOffset: 1
   },
   {
     key: "edm-filter",
@@ -69,11 +76,23 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     estimatedDuration: 480,
     nextDueOffset: 140,
     takesWorkCenterOffline: true
+  },
+  {
+    key: "toolroom-grinder",
+    name: "Toolroom surface grinder way-lube and wheel dress",
+    description:
+      "Top off the way-lube reservoir, dress the wheel with the diamond, and check the magnetic chuck for flatness with an indicator sweep.",
+    workCenter: "Headquarters Toolroom",
+    frequency: "Weekly",
+    priority: "Low",
+    estimatedDuration: 40,
+    nextDueOffset: 3
   }
 ];
 
-// Exactly one dispatch per status, spanning every severity, priority, source
-// and OEE impact.
+// Every status, severity, priority, source and OEE impact, plus the shapes the
+// maintenance KPIs and boards read: a failure on a production day, back-dated
+// completions, today's scheduled task, a machine down now, and one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "edm-wire-break",
@@ -162,7 +181,118 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     created: { offset: -6, time: "06:00:00" },
     plannedStart: { offset: -5, time: "11:00:00" },
     plannedEnd: { offset: -5, time: "11:40:00" }
+  },
+  {
+    key: "vmc1-chip-today",
+    status: "Assigned",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "VMC Cell 1",
+    schedule: "vmc1-chip-coolant",
+    content:
+      "Daily chip clean-out: clear the auger, skim tramp oil and bring the sump back to 6–8% on the refractometer.",
+    created: { offset: -1, time: "06:00:00" },
+    plannedStart: { offset: 0, time: "14:00:00" },
+    plannedEnd: { offset: 0, time: "14:20:00" }
+  },
+  {
+    key: "edm-dielectric-seal",
+    status: "In Progress",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "Wire EDM Cell",
+    suspectedFailureMode: "Leak",
+    content:
+      "Dielectric pump shaft seal weeping into the tank enclosure — machine down while the pump is pulled and the seal kit fitted.",
+    created: { offset: -1, time: "15:20:00" },
+    plannedStart: { offset: -1, time: "15:30:00" },
+    plannedEnd: { offset: 1, time: "12:00:00" },
+    actualStart: { offset: -1, time: "15:45:00" },
+    takesWorkCenterOffline: true,
+    comments: ["Pump is out; O-rings from the cell's spares kit are staged."]
+  },
+  {
+    key: "assembly-arbor-press",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Finish & Assembly Bench",
+    suspectedFailureMode: "Lubrication Failure",
+    actualFailureMode: "Lubrication Failure",
+    content:
+      "Arbor press ram sticking on the return stroke while pressing manifold dowels. Ram cleaned and re-oiled; stroke smooth again.",
+    created: { offset: -7, time: "14:30:00" },
+    plannedStart: { offset: -7, time: "14:40:00" },
+    plannedEnd: { offset: -7, time: "15:30:00" },
+    actualStart: { offset: -7, time: "14:45:00" },
+    actualEnd: { offset: -7, time: "15:15:00" }
+  },
+  {
+    key: "turning-sump-prior",
+    status: "Completed",
+    priority: "High",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "Turning Cell",
+    schedule: "turning-sump",
+    content:
+      "Monthly sump change on the turning cell: pumped out, lines flushed and recharged at 7%.",
+    created: { offset: -45, time: "06:00:00" },
+    plannedStart: { offset: -44, time: "11:00:00" },
+    plannedEnd: { offset: -44, time: "13:30:00" },
+    actualStart: { offset: -44, time: "11:05:00" },
+    actualEnd: { offset: -44, time: "13:20:00" },
+    takesWorkCenterOffline: true,
+    spareParts: [{ item: "CN-COOLANT-55", quantity: 1, shelf: "B3-L1" }]
+  },
+  {
+    key: "vmc1-way-cover",
+    status: "Completed",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "VMC Cell 1",
+    suspectedFailureMode: "Cracking/Fatigue",
+    actualFailureMode: "Cracking/Fatigue",
+    content:
+      "Y-axis telescoping way cover split at the second section — chips reaching the ways. Cover section replaced and the ways cleaned and inspected.",
+    created: { offset: -52, time: "10:00:00" },
+    plannedStart: { offset: -52, time: "10:30:00" },
+    plannedEnd: { offset: -52, time: "17:00:00" },
+    actualStart: { offset: -52, time: "10:40:00" },
+    actualEnd: { offset: -51, time: "12:10:00" },
+    takesWorkCenterOffline: true
+  },
+  {
+    key: "toolroom-presetter",
+    status: "Open",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Headquarters Toolroom",
+    suspectedFailureMode: "Misalignment",
+    content:
+      "Tool presetter camera reads 8 µm long on the reference master — offsets from it can't be trusted until it's re-zeroed.",
+    created: { offset: -2, time: "09:30:00" },
+    plannedStart: { offset: 1, time: "08:00:00" },
+    plannedEnd: { offset: 1, time: "09:30:00" }
   }
+];
+
+// The spares the MES dispatch page offers per work center.
+export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
+  { workCenter: "Wire EDM Cell", item: "SEAL-ORING-224", quantity: 4 },
+  { workCenter: "Turning Cell", item: "CN-COOLANT-55", quantity: 1 },
+  { workCenter: "VMC Cell 2", item: "SPR-DIE-25", quantity: 2 }
 ];
 
 export const TRAININGS: TrainingSpec[] = [
@@ -296,6 +426,38 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "11:02:00", clockOut: "14:33:00" }
 ];
 
+// Clocked in before the first timer on the floor started this morning.
+export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "05:57:00" };
+
+// The supervisor's stations for the week around today — none on today itself,
+// so the MES schedule opens on every work center instead of one station.
+export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
+  { dayOffset: -2, workCenter: "VMC Cell 1", shift: "First Shift" },
+  { dayOffset: -1, workCenter: "Turning Cell", shift: "First Shift" },
+  {
+    dayOffset: 1,
+    workCenter: "VMC Cell 2",
+    shift: "First Shift",
+    note: "Prove out the new manifold-block fixture."
+  },
+  { dayOffset: 2, workCenter: "VMC Cell 1", shift: "First Shift" },
+  {
+    dayOffset: 3,
+    workCenter: "CMM Lab",
+    shift: "First Shift",
+    overtimeHours: 1.5,
+    note: "First-article layout for Cedar Valley."
+  },
+  { dayOffset: 4, workCenter: "Turning Cell", shift: "First Shift" }
+];
+
+export const PEOPLE_ABSENCES: PeopleAbsenceSpec[] = [
+  {
+    dayOffset: 10,
+    note: "GD&T refresher at the Rockford technical college."
+  }
+];
+
 export const SUGGESTIONS: SuggestionSpec[] = [
   {
     suggestion:
@@ -321,11 +483,101 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
+// People › Attributes — the applying user's own profile values.
+export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
+  {
+    name: "Machinist Credentials",
+    emoji: "📐",
+    public: true,
+    attributes: [
+      {
+        name: "NIMS Level II credential expires",
+        dataType: "Date",
+        valueOffset: 210
+      },
+      {
+        name: "Primary machine family",
+        dataType: "List",
+        listOptions: ["VMC", "HMC", "Lathe", "Swiss", "EDM", "Grinder"],
+        value: "VMC",
+        canSelfManage: true
+      },
+      { name: "First-article approver", dataType: "User" },
+      { name: "Cleared for CMM programming", dataType: "Yes/No", value: true }
+    ]
+  }
+];
+
+export const CUSTOM_FIELDS: CustomFieldSpec[] = [
+  { table: "part", name: "Customer drawing number", dataType: "Text" },
+  { table: "customer", name: "Account manager", dataType: "User" },
+  { table: "job", name: "First article required", dataType: "Yes/No" }
+];
+
+export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
+  // Continues the supplier's numbering already on the shelf (…-0106).
+  { item: "CYL-HYD-40", prefix: "CYL40-SN-", size: 4, next: 106 },
+  { item: "HMA-4000", prefix: "HMA4000-SN-", size: 4, next: 1 }
+];
+
+// Label history on the plant's printer route: auto and manual prints, a
+// delivery failure, and its reprint waiting in the queue.
+export const PRINT_JOBS: PrintJobSpec[] = [
+  {
+    source: { kind: "Receipt", receipt: "receipt:midway-restock" },
+    item: "BSH-PTFE-2012",
+    status: "completed",
+    origin: "auto",
+    at: { offset: -2, time: "15:02:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "done-housing" },
+    item: "MCH-HSG-PUMP",
+    status: "completed",
+    origin: "manual",
+    at: { offset: -3, time: "20:10:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "StorageUnit", shelf: "B1-L1" },
+    status: "completed",
+    origin: "manual",
+    at: { offset: -7, time: "16:45:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "floor-flange" },
+    item: "MCH-FLANGE-SS",
+    status: "failed",
+    origin: "auto",
+    at: { offset: -1, time: "14:15:00" },
+    attempts: 3,
+    error: "Printer did not respond after 3 attempts (connection timed out)"
+  },
+  {
+    source: { kind: "Job", job: "floor-flange" },
+    item: "MCH-FLANGE-SS",
+    status: "queued",
+    origin: "reprint",
+    at: { offset: 0, time: "06:10:00" },
+    attempts: 0
+  }
+];
+
 export const precisionOps: OpsData = {
+  userAttributeCategories: USER_ATTRIBUTE_CATEGORIES,
+  customFields: CUSTOM_FIELDS,
+  serialSequences: SERIAL_SEQUENCES,
+  printJobs: PRINT_JOBS,
   maintenanceSchedules: MAINTENANCE_SCHEDULES,
   maintenanceDispatches: MAINTENANCE_DISPATCHES,
+  replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
+  openTimecard: OPEN_TIMECARD,
+  peopleAssignments: PEOPLE_ASSIGNMENTS,
+  peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,
   notes: NOTES
 };

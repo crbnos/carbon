@@ -29,6 +29,7 @@ export const RFQ_LINES: RfqLineSpec[] = [
 export const RFQ_QUOTES: RfqQuoteSpec[] = [
   {
     key: "northgate",
+    assignee: "self",
     supplier: "Northgate Electronics",
     supplierReference: "NGE-Q-4471",
     shippingCost: 250,
@@ -113,6 +114,7 @@ export const RFQ_ORDER_QUANTITY = 25;
 // 2 lines, finalized (Requested), fanned out to 3 suppliers.
 export const RFQ_HEADER: RfqHeaderSpec = {
   ref: "prfq:controls",
+  assignee: "self",
   status: "Requested",
   rfqDateOffset: -24,
   expirationOffset: 48,
@@ -209,6 +211,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     source: "direct",
     log: "purchase order 3 — Draft (Torqline)",
     ref: "po:torqline",
+    assignee: "self",
     supplier: "Torqline Gearing",
     purchaseOrderType: "Purchase",
     status: "Draft",
@@ -240,6 +243,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — To Review (Northgate control boards)",
+    assignee: "self",
     supplier: "Northgate Electronics",
     purchaseOrderType: "Purchase",
     status: "To Review",
@@ -251,12 +255,18 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Needs Approval (Ironbark billet buy)",
+    ref: "po:needs-approval",
     supplier: "Ironbark Metals",
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -1,
     lines: [
-      { item: "MAT-AL6061-BIL", purchaseQuantity: 120, supplierUnitPrice: 4.35 }
+      // A quarter's billet for the arm bases — over the $5,000 approval tier.
+      {
+        item: "MAT-AL6061-BIL",
+        purchaseQuantity: 1200,
+        supplierUnitPrice: 4.35
+      }
     ]
   },
   {
@@ -483,6 +493,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Outside Processing, hard anodize at Kappa",
+    assignee: "self",
     supplier: "Kappa Contract Machining",
     purchaseOrderType: "Outside Processing",
     status: "To Receive",
@@ -504,6 +515,33 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     currencyCode: "EUR",
     exchangeRate: 0.92,
     lines: [{ item: "GBX-HD-50", purchaseQuantity: 3, supplierUnitPrice: 720 }]
+  },
+  {
+    source: "direct",
+    log: "purchase order — To Invoice, bare boards received yesterday, awaiting incoming inspection (Northgate)",
+    ref: "po:bare-boards",
+    supplier: "Northgate Electronics",
+    purchaseOrderType: "Purchase",
+    status: "To Invoice",
+    orderDateOffset: -16,
+    lines: [
+      { item: "PCB-BARE-4L", purchaseQuantity: 20, supplierUnitPrice: 21.5 }
+    ],
+    receipt: {
+      ref: "receipt:bare-boards",
+      status: "Posted",
+      postedOffset: -1,
+      lines: [
+        {
+          item: "PCB-BARE-4L",
+          orderQuantity: 20,
+          outstandingQuantity: 0,
+          receivedQuantity: 20,
+          unitPrice: 21.5,
+          toShelf: "ESD-Cage"
+        }
+      ]
+    }
   }
 ];
 
@@ -511,6 +549,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "pfc-annual-hardware",
+    assignee: "self",
     supplier: "Precision Fasteners Co",
     status: "Draft",
     supplierReference: "PFC-2026-1044",
@@ -565,6 +604,11 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "pcb-warpage",
+    credit: {
+      status: "Draft",
+      dateOffset: -4,
+      lines: [{ line: 1, quantity: 12 }]
+    },
     status: "Completed",
     supplier: "Northgate Electronics",
     dateOffset: -6,
@@ -590,6 +634,14 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     supplier: "Kestrel Motion",
     dateOffset: 0,
     lines: [{ item: "DRV-SRV-400", quantity: 1, unitPrice: 420 }]
+  },
+  // Drafted while MRB weighs return-to-vendor for the lost-motion gearbox (quality's ncr:gear-lost-motion links this line).
+  {
+    key: "gearbox-rtv",
+    status: "Draft",
+    supplier: "Torqline Gearing",
+    dateOffset: -3,
+    lines: [{ item: "GBX-HD-80", quantity: 1, unitPrice: 1150 }]
   }
 ];
 
@@ -603,5 +655,62 @@ export const roboticsPurchasing: PurchasingData = {
   lifecycleRfqs: LIFECYCLE_RFQS,
   purchaseOrders: PURCHASE_ORDERS,
   standaloneSupplierQuotes: STANDALONE_SUPPLIER_QUOTES,
-  purchaseReturns: PURCHASE_RETURNS
+  purchaseReturns: PURCHASE_RETURNS,
+  approvalRules: [
+    { documentType: "purchaseOrder", lowerBoundAmount: 5000 },
+    {
+      documentType: "purchaseOrder",
+      lowerBoundAmount: 25000,
+      escalationDays: 3
+    },
+    { documentType: "supplier", lowerBoundAmount: 0 }
+  ],
+  approvalRequests: [
+    { purchaseOrder: "po:needs-approval", requestedOffset: -1 },
+    { supplier: "Voltaic Drive Systems", requestedOffset: -4 }
+  ],
+  supplierBankAccounts: [
+    {
+      supplier: "Kestrel Motion",
+      name: "Kestrel remittance",
+      bankName: "Allegheny Commerce Bank (demo)",
+      accountHolderName: "Kestrel Motion Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-1188-4402",
+      bankCode: "DEMO-043000",
+      isPrimary: true
+    },
+    {
+      supplier: "Torqline Gearing",
+      name: "Torqline operating",
+      bankName: "Ohio Valley Savings (demo)",
+      accountHolderName: "Torqline Gearing LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-2299-5513",
+      isPrimary: true
+    },
+    {
+      supplier: "Northgate Electronics",
+      name: "Northgate remittance",
+      bankName: "Keystone Trust (demo)",
+      accountHolderName: "Northgate Electronics Corp.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-3301-6624",
+      isPrimary: true
+    },
+    {
+      supplier: "Schwarzwald Antriebstechnik GmbH",
+      name: "Schwarzwald EUR account",
+      bankName: "Schwarzwald Handelsbank (demo)",
+      accountHolderName: "Schwarzwald Antriebstechnik GmbH",
+      countryCode: "DE",
+      currencyCode: "EUR",
+      accountNumber: "DEMO-DE00-0000-4412",
+      swiftBic: "DEMODEXX",
+      isPrimary: true
+    }
+  ]
 };

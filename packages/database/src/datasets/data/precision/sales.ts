@@ -66,6 +66,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:cedarvalley",
+      createdOffset: -190,
       status: "Ordered",
       externalNotes:
         "Quote for 6 hydraulic power unit manifold assemblies, prints supplied by the customer.",
@@ -121,11 +122,18 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Granite State Instruments",
     quote: {
       ref: "quote:granite",
+      createdOffset: -18,
+      assignee: "self",
       status: "Sent",
       expirationOffset: GRANITE_QUOTE_EXPIRATION_OFFSET,
       lines: [
         {
           ref: "quoteline:granite:hma",
+          configuration: {
+            rated_pressure_psi: 3000,
+            port_thread: "SAE ORB",
+            hydro_test_cert: false
+          },
           item: "HMA-4000",
           status: "Complete",
           sortOrder: 1,
@@ -151,6 +159,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Solstice Medical Devices",
     rfq: {
       ref: "rfq:solstice",
+      assignee: "self",
       status: "Ready for Quote",
       rfqDateOffset: -42,
       externalNotes:
@@ -171,6 +180,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Dominion Ag Equipment",
     quote: {
       ref: "quote:dominion",
+      createdOffset: -110,
       status: "Ordered",
       lines: [
         {
@@ -205,6 +215,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Solstice Medical Devices",
     rfq: {
       ref: "rfq:solstice-flange",
+      assignee: "self",
       status: "Draft",
       rfqDateOffset: -3,
       externalNotes:
@@ -242,6 +253,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:cedarvalley-rod",
+      createdOffset: -80,
       status: "Lost",
       externalNotes: "Declined to bid the mirror-finish rod line.",
       lines: [
@@ -261,6 +273,8 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Dominion Ag Equipment",
     quote: {
       ref: "quote:dominion-shaft",
+      createdOffset: -5,
+      assignee: "self",
       status: "Draft",
       externalNotes:
         "Working draft — drive shaft pricing pending the heat-treat quote.",
@@ -281,6 +295,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Granite State Instruments",
     quote: {
       ref: "quote:granite-retrofit",
+      createdOffset: -11,
       status: "Partial",
       expirationOffset: 45,
       externalNotes:
@@ -309,6 +324,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Solstice Medical Devices",
     quote: {
       ref: "quote:solstice-encl",
+      createdOffset: -120,
       status: "Cancelled",
       externalNotes: "Program defunded before pricing was issued.",
       lines: [
@@ -328,6 +344,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Dominion Ag Equipment",
     quote: {
       ref: "quote:dominion-spacers",
+      createdOffset: -40,
       status: "Expired",
       expirationOffset: -14,
       externalNotes: "30-day pricing lapsed without a PO.",
@@ -348,6 +365,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Cedar Valley Hydraulics",
     order: {
       ref: "so:cedarvalley-springs",
+      assignee: "self",
       status: "Needs Approval",
       orderDateOffset: -2,
       lines: [
@@ -433,6 +451,7 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     customer: "Cedar Valley Hydraulics",
     order: {
       ref: "so:toshipinvoice",
+      assignee: "self",
       status: "To Ship and Invoice",
       orderDateOffset: -8,
       lines: STAGGERED_DELIVERIES.map((delivery) => ({
@@ -729,6 +748,180 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
       dueDateOffset: -25,
       lines: [{ item: "MAT-AL5052-SHT", quantity: 50, unitPrice: 4.5 }]
     }
+  },
+
+  // Older overdue invoices, so receivables aging fills every bucket to 61–90.
+  {
+    log: "sales invoice — Overdue 31–60 days (Dominion helical inserts)",
+    ref: "opp:dominion-inserts",
+    customer: "Dominion Ag Equipment",
+    order: {
+      ref: "so:dominion-inserts",
+      status: "Invoiced",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:dominion-inserts:ins",
+          item: "INS-HELI-M6",
+          saleQuantity: 400,
+          unitPrice: 1.15,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:dominion-inserts",
+      status: "Overdue",
+      subtotal: 460,
+      totalAmount: 460,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "INS-HELI-M6", quantity: 400, unitPrice: 1.15 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue 61–90 days (Solstice 316 plate)",
+    ref: "opp:solstice-plate",
+    customer: "Solstice Medical Devices",
+    order: {
+      ref: "so:solstice-plate",
+      status: "Invoiced",
+      orderDateOffset: -120,
+      lines: [
+        {
+          ref: "soline:solstice-plate:plt",
+          item: "MAT-SS316-PLT",
+          saleQuantity: 30,
+          unitPrice: 9,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:solstice-plate",
+      status: "Overdue",
+      subtotal: 270,
+      totalAmount: 270,
+      dateIssuedOffset: -105,
+      dueDateOffset: -75,
+      lines: [{ item: "MAT-SS316-PLT", quantity: 30, unitPrice: 9 }]
+    }
+  },
+
+  // ── Floor load — the machined and fabricated parts the floor is building ──
+  // Each line has a job of its own in production.ts (open or just completed).
+  {
+    log: "sales order — In Progress (Cedar Valley machined spares, floor load)",
+    ref: "opp:floor-cedar",
+    customer: "Cedar Valley Hydraulics",
+    order: {
+      ref: "so:floor-cedar",
+      status: "In Progress",
+      orderDateOffset: -30,
+      lines: [
+        {
+          ref: "soline:floor-cedar:flange",
+          item: "MCH-FLANGE-SS",
+          saleQuantity: 8,
+          unitPrice: 185,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-cedar:panel",
+          item: "FAB-ENCL-PNL",
+          saleQuantity: 6,
+          unitPrice: 640,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-cedar:housing",
+          item: "MCH-HSG-PUMP",
+          saleQuantity: 2,
+          unitPrice: 1150,
+          status: "In Progress",
+          promisedDateOffset: 4
+        },
+        {
+          ref: "soline:floor-cedar:endcap",
+          item: "MCH-END-CAP",
+          saleQuantity: 10,
+          unitPrice: 240,
+          status: "In Progress",
+          promisedDateOffset: 2
+        },
+        {
+          ref: "soline:floor-cedar:shaft",
+          item: "MCH-SHAFT-DR",
+          saleQuantity: 6,
+          unitPrice: 320,
+          status: "In Progress",
+          promisedDateOffset: 15
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — In Progress (Dominion loader hydraulics kit, floor load)",
+    ref: "opp:floor-dominion",
+    customer: "Dominion Ag Equipment",
+    order: {
+      ref: "so:floor-dominion",
+      assignee: "self",
+      status: "In Progress",
+      orderDateOffset: -15,
+      lines: [
+        {
+          ref: "soline:floor-dominion:flange",
+          item: "MCH-FLANGE-SS",
+          saleQuantity: 12,
+          unitPrice: 185,
+          status: "In Progress",
+          promisedDateOffset: 5
+        },
+        {
+          ref: "soline:floor-dominion:spacer",
+          item: "MCH-SPACER-KIT",
+          saleQuantity: 20,
+          unitPrice: 105,
+          status: "In Progress",
+          promisedDateOffset: 8
+        },
+        {
+          ref: "soline:floor-dominion:panel",
+          item: "FAB-ENCL-PNL",
+          saleQuantity: 8,
+          unitPrice: 640,
+          status: "In Progress",
+          promisedDateOffset: 10
+        },
+        {
+          ref: "soline:floor-dominion:rod",
+          item: "MCH-PISTON-ROD",
+          saleQuantity: 4,
+          unitPrice: 420,
+          status: "In Progress",
+          promisedDateOffset: 24
+        },
+        {
+          ref: "soline:floor-dominion:valve",
+          item: "ASM-VALVE-SUB",
+          saleQuantity: 3,
+          unitPrice: 890,
+          status: "In Progress",
+          promisedDateOffset: 19
+        },
+        {
+          ref: "soline:floor-dominion:manifold",
+          item: "MCH-MANI-BLK",
+          saleQuantity: 2,
+          unitPrice: 980,
+          status: "In Progress",
+          promisedDateOffset: 30
+        }
+      ]
+    }
   }
 ];
 
@@ -738,6 +931,11 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
 export const SALES_RETURNS: SalesReturnSpec[] = [
   {
     key: "needle-bearing",
+    credit: {
+      status: "Posted",
+      dateOffset: -8,
+      lines: [{ line: 1, quantity: 1 }]
+    },
     status: "Completed",
     customer: "Granite State Instruments",
     returnReason: "Defective",
@@ -771,5 +969,50 @@ export const precisionSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
-  salesReturns: SALES_RETURNS
+  salesReturns: SALES_RETURNS,
+  customerPortals: ["Cedar Valley Hydraulics", "Dominion Ag Equipment"],
+  customerBankAccounts: [
+    {
+      customer: "Cedar Valley Hydraulics",
+      name: "Cedar Valley remittance",
+      bankName: "Prairie State Bank (demo)",
+      accountHolderName: "Cedar Valley Hydraulics Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-5521-8804",
+      bankCode: "DEMO-071000",
+      isPrimary: true
+    },
+    {
+      customer: "Granite State Instruments",
+      name: "Granite State operating",
+      bankName: "Merrimack Trust (demo)",
+      accountHolderName: "Granite State Instruments LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-6640-2217",
+      isPrimary: true
+    },
+    {
+      customer: "Dominion Ag Equipment",
+      name: "Dominion payables",
+      bankName: "Heartland Farm Credit (demo)",
+      accountHolderName: "Dominion Ag Equipment Co.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-7719-3358",
+      bankCode: "DEMO-051000",
+      isPrimary: true
+    },
+    {
+      customer: "Solstice Medical Devices",
+      name: "Solstice treasury",
+      bankName: "Twin Cities Commerce (demo)",
+      accountHolderName: "Solstice Medical Devices Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-9034-4471",
+      isPrimary: true
+    }
+  ]
 };

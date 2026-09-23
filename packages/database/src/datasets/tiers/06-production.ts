@@ -1,8 +1,10 @@
+import { Time, toCalendarDateTime } from "@internationalized/date";
 import { resolveDate, resolveTimestamp } from "../dates.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import {
   copyMethodToJob,
   type JobOperationStatus
-} from "../helpers/job-method.ts";
+} from "../helpers/method-copy.ts";
 import {
   insertId,
   insertRow,
@@ -12,64 +14,12 @@ import {
   rows
 } from "../sql.ts";
 import type {
-  AssemblySpec,
   Ctx,
+  DayOffset,
   JobSpec,
   PickingListSpec,
   ProductionData
 } from "../types.ts";
-
-/**
- * Seeds an animated assembly instruction against a CAD model that ships with the
- * app. The `_templates/` paths are resolved by getDatasetAssetUrl rather than the
- * storage proxy, so there are no objects to upload and nothing to clean up — the
- * modelUpload row is a pointer at a bundled file, and the assembler never runs.
- */
-async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
-  const { industryId } = ctx.dataset;
-  if (!industryId) return;
-
-  const base = `_templates/${industryId}/models/${spec.model}`;
-  const modelUploadId = await insertId(ctx, "modelUpload", {
-    name: `${spec.name}.glb`,
-    // Already converted, so the source and the render artifact are the same file.
-    modelPath: `${base}.glb`,
-    glbPath: `${base}.glb`,
-    graphPath: `${base}.graph.json`,
-    componentCount: spec.componentCount,
-    processingStatus: "Success",
-    processedAt: resolveTimestamp(ctx.anchor, 0, "09:00")
-  });
-
-  const itemId = spec.item ? ctx.refs.items[spec.item]?.id : undefined;
-  const instructionId = await insertId(ctx, "assemblyInstruction", {
-    name: spec.name,
-    modelUploadId,
-    itemId: itemId ?? null,
-    // Draft, not Published: Published makes the 3D assembly editor read-only.
-    status: "Draft",
-    version: 1,
-    publishedAt: null
-  });
-
-  let sortOrder = 1;
-  for (const step of spec.steps) {
-    await insertRow(ctx, "assemblyInstructionStep", {
-      assemblyInstructionId: instructionId,
-      title: step.title,
-      instructionText: step.instruction ?? step.title,
-      componentNodeIds: step.componentNodeIds,
-      sortOrder: sortOrder++
-    });
-  }
-
-  if (itemId) {
-    await ctx.client.query(
-      `UPDATE "item" SET "modelUploadId" = $1 WHERE "id" = $2`,
-      [modelUploadId, itemId]
-    );
-  }
-}
 
 type RootOperation = {
   id: string;
@@ -110,24 +60,6 @@ function rootOperationAt(
   return operation;
 }
 
-// Cached in ctx.refs.misc, not module scope — that would leak across the drift
-// check's four companies.
-async function scrapReasonIdByName(ctx: Ctx, name: string): Promise<string> {
-  const key = `scrapReason:${name}`;
-  const cached = ctx.refs.misc[key];
-  if (cached) return cached;
-  const row = await maybeOne<{ id: string }>(
-    ctx.client,
-    `SELECT id FROM "scrapReason" WHERE "companyId" = $1 AND name = $2`,
-    [ctx.companyId, name]
-  );
-  if (!row) {
-    throw new Error(`Seed: no bootstrap scrapReason named "${name}"`);
-  }
-  ctx.refs.misc[key] = row.id;
-  return row.id;
-}
-
 // A job's operations open in the state its own status implies — a Draft job's
 // work has not been handed to the floor, a released one's has.
 function operationStatusFor(jobStatus: string): JobOperationStatus {
@@ -152,11 +84,6 @@ export async function runTier6(ctx: Ctx): Promise<void> {
   const { locationId } = ctx;
   const plantId = ctx.refs.locations.Plant ?? locationId;
 
-  if (data.assembly) {
-    ctx.log(`assembly ${data.assembly.name}`);
-    await seedAssembly(ctx, data.assembly);
-  }
-
   for (const spec of data.jobs) {
     ctx.log(`job ${spec.item} — ${spec.status}`);
     const item = need(ctx.refs.items, spec.item);
@@ -170,9 +97,12 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       quantity: spec.quantity,
       quantityComplete: spec.quantityComplete ?? 0,
       scrapQuantity: 0,
-      customerId: need(ctx.refs.customers, spec.customer),
-      salesOrderId: need(ctx.refs.documents, spec.salesOrder),
-      salesOrderLineId: need(ctx.refs.documents, spec.salesOrderLine),
+      // Make-to-stock jobs carry none of the three.
+      customerId: optionalRef(ctx.refs.customers, spec.customer),
+      salesOrderId: optionalRef(ctx.refs.documents, spec.salesOrder),
+      salesOrderLineId: optionalRef(ctx.refs.documents, spec.salesOrderLine),
+      priority: spec.priority,
+      assignee: spec.assignee === "self" ? ctx.userId : null,
       deadlineType: spec.deadlineType ?? "Hard Deadline",
       // A "No Deadline" job has no due date; the UI renders none on that path.
       dueDate:
@@ -204,6 +134,7 @@ export async function runTier6(ctx: Ctx): Promise<void> {
     );
 
     await applyOperationDepth(ctx, id, spec);
+    if (spec.loggedTime) await seedLoggedTime(ctx, id, spec);
 
     // The interceptor's reserved entity for the unit being built has no
     // readableId, so the MES assembly view labels the first serial with a raw
@@ -227,6 +158,7 @@ export async function runTier6(ctx: Ctx): Promise<void> {
 
   await seedProductionEvents(ctx, data);
   await seedOpenEvent(ctx, data);
+  await seedStepRecords(ctx);
   await seedBatch(ctx, data);
   await seedRework(ctx, data);
   await seedGenealogy(ctx, data);
@@ -250,10 +182,40 @@ async function applyOperationDepth(
       override.order,
       `job "${spec.key}" operationOverrides`
     );
-    await ctx.client.query(
-      `UPDATE "jobOperation" SET status = $1 WHERE id = $2 AND "companyId" = $3`,
-      [override.status, operation.id, ctx.companyId]
-    );
+    if (override.status) {
+      await ctx.client.query(
+        `UPDATE "jobOperation" SET status = $1 WHERE id = $2 AND "companyId" = $3`,
+        [override.status, operation.id, ctx.companyId]
+      );
+    }
+    if (override.assignee === "self") {
+      await ctx.client.query(
+        `UPDATE "jobOperation" SET assignee = $1 WHERE id = $2 AND "companyId" = $3`,
+        [ctx.userId, operation.id, ctx.companyId]
+      );
+    }
+    if (override.running) {
+      if (override.status !== "In Progress" || !operation.workCenterId) {
+        throw new Error(
+          `Seed: job "${spec.key}" operation ${override.order} is running, so it must be "In Progress" at a work center`
+        );
+      }
+      // The open timer MES's Active list, the work-center display and the
+      // board's running dot all read.
+      await insertRow(ctx, "productionEvent", {
+        jobOperationId: operation.id,
+        type: override.running.type,
+        startTime: resolveTimestamp(
+          ctx.anchor,
+          0,
+          override.running.startTimeOfDay
+        ),
+        endTime: null,
+        employeeId: ctx.userId,
+        workCenterId: operation.workCenterId,
+        postedToGL: false
+      });
+    }
   }
 
   for (const quantity of spec.quantities ?? []) {
@@ -269,7 +231,7 @@ async function applyOperationDepth(
       scrapReasonId:
         quantity.scrapReason === undefined
           ? null
-          : await scrapReasonIdByName(ctx, quantity.scrapReason)
+          : await bootstrapIdByName(ctx, "scrapReason", quantity.scrapReason)
     });
   }
 
@@ -363,30 +325,254 @@ async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
   });
 }
 
-/** As the batch-operations edge function does: insert the header, then stamp the operation. */
+/**
+ * As batch-operations' "create" with release: the process must be batchable,
+ * the header adopts the members' shared work center, then the members are
+ * stamped and the batch timer started.
+ */
 async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
-  const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
-  const operations = await rootOperations(ctx, jobId);
-  const operation = rootOperationAt(
-    operations,
-    data.batch.operationOrder,
-    "production.batch"
-  );
+  const members: RootOperation[] = [];
+  for (const member of data.batch.members) {
+    const jobId = need(ctx.refs.documents, `job:${member.job}`);
+    members.push(
+      rootOperationAt(
+        await rootOperations(ctx, jobId),
+        member.order,
+        `production.batch member "${member.job}"`
+      )
+    );
+  }
+  const processId = members[0]?.processId;
+  if (!processId || members.some((op) => op.processId !== processId)) {
+    throw new Error(`Seed: production.batch members must share one process`);
+  }
+  const workCenters = new Set(members.map((op) => op.workCenterId));
 
-  ctx.log("job operation batch");
+  ctx.log(`job operation batch — ${members.length} members`);
+  await ctx.client.query(
+    `UPDATE process SET batchable = true WHERE id = $1 AND "companyId" = $2`,
+    [processId, ctx.companyId]
+  );
   const batchId = await insertId(ctx, "jobOperationBatch", {
     readableId: await nextSequence(ctx, "jobOperationBatch"),
-    processId: operation.processId,
-    workCenterId: operation.workCenterId,
+    processId,
+    workCenterId: workCenters.size === 1 ? [...workCenters][0] : null,
     locationId: ctx.refs.locations.Plant ?? ctx.locationId,
     status: "Active",
     mergeOutput: false
   });
   await ctx.client.query(
-    `UPDATE "jobOperation" SET "jobOperationBatchId" = $1
-     WHERE id = $2 AND "companyId" = $3`,
-    [batchId, operation.id, ctx.companyId]
+    `UPDATE "jobOperation" SET "jobOperationBatchId" = $1, status = 'In Progress'
+     WHERE id = ANY($2) AND "companyId" = $3`,
+    [batchId, members.map((op) => op.id), ctx.companyId]
   );
+  // The batch timer: one event tagged with the batch, on the operation the
+  // operator opened (batch-operations slices it per member at completion).
+  const lead = members[0]!;
+  if (!lead.workCenterId) {
+    throw new Error(`Seed: production.batch's first member has no work center`);
+  }
+  await insertRow(ctx, "productionEvent", {
+    jobOperationId: lead.id,
+    jobOperationBatchId: batchId,
+    type: data.batch.running.type,
+    startTime: resolveTimestamp(
+      ctx.anchor,
+      0,
+      data.batch.running.startTimeOfDay
+    ),
+    endTime: null,
+    employeeId: ctx.userId,
+    workCenterId: lead.workCenterId,
+    postedToGL: false
+  });
+}
+
+function optionalRef(
+  map: Record<string, string>,
+  key: string | undefined
+): string | null {
+  return key === undefined ? null : need(map, key);
+}
+
+// makeDurations (ERP utils/duration.ts): milliseconds one time/unit pair adds.
+const MS_PER_PIECE: Record<string, number> = {
+  "Hours/Piece": 3_600_000,
+  "Hours/100 Pieces": 36_000,
+  "Hours/1000 Pieces": 3_600,
+  "Minutes/Piece": 60_000,
+  "Minutes/100 Pieces": 600,
+  "Minutes/1000 Pieces": 60,
+  "Seconds/Piece": 1_000
+};
+function estimateMs(time: number, unit: string, quantity: number): number {
+  switch (unit) {
+    case "Total Hours":
+      return time * 3_600_000;
+    case "Total Minutes":
+      return time * 60_000;
+    case "Pieces/Hour":
+      return time > 0 ? (quantity / time) * 3_600_000 : 0;
+    case "Pieces/Minute":
+      return time > 0 ? (quantity / time) * 60_000 : 0;
+    default:
+      return time * quantity * (MS_PER_PIECE[unit] ?? 0);
+  }
+}
+
+/**
+ * A completed job's actuals: Setup, then Labor and Machine side by side, on
+ * every staffed operation (subassemblies first), back to back from 07:00 UTC,
+ * each closed by a Production quantity for the full operation quantity.
+ */
+async function seedLoggedTime(
+  ctx: Ctx,
+  jobId: string,
+  spec: JobSpec
+): Promise<void> {
+  const logged = spec.loggedTime;
+  if (!logged) return;
+  if (spec.completedDateOffset === undefined) {
+    throw new Error(
+      `Seed: job "${spec.key}" logs time but has no completedDate`
+    );
+  }
+  const operations = await rows<{
+    id: string;
+    workCenterId: string;
+    setupTime: string;
+    setupUnit: string;
+    laborTime: string;
+    laborUnit: string;
+    machineTime: string;
+    machineUnit: string;
+    operationQuantity: string | null;
+  }>(
+    ctx.client,
+    `SELECT jo.id, jo."workCenterId", jo."setupTime", jo."setupUnit"::text,
+            jo."laborTime", jo."laborUnit"::text, jo."machineTime",
+            jo."machineUnit"::text, jo."operationQuantity"
+     FROM "jobOperation" jo
+     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
+     WHERE jo."jobId" = $1 AND jo."companyId" = $2 AND jo."workCenterId" IS NOT NULL
+     ORDER BY (jmm."parentMaterialId" IS NULL), jmm.id, jo."order"`,
+    [jobId, ctx.companyId]
+  );
+
+  ctx.log(`  logged time on ${operations.length} operations`);
+  const at = (offset: DayOffset) =>
+    toCalendarDateTime(ctx.anchor.add({ days: offset }), new Time(7));
+  const stamp = (moment: ReturnType<typeof at>) => `${moment.toString()}Z`;
+  let cursor = at(logged.startOffset);
+  for (const op of operations) {
+    const quantity = Number(op.operationQuantity ?? 0);
+    const seconds = (time: string, unit: string) =>
+      Math.round(
+        (estimateMs(Number(time), unit, quantity) * logged.efficiency) / 1000
+      );
+    const setup = seconds(op.setupTime, op.setupUnit);
+    const labor = seconds(op.laborTime, op.laborUnit);
+    const machine = seconds(op.machineTime, op.machineUnit);
+    const runStart = cursor.add({ seconds: setup });
+    const events: Array<[string, typeof cursor, number]> = [
+      ["Setup", cursor, setup],
+      ["Labor", runStart, labor],
+      ["Machine", runStart, machine]
+    ];
+    for (const [type, start, duration] of events) {
+      if (duration <= 0) continue;
+      await insertRow(ctx, "productionEvent", {
+        jobOperationId: op.id,
+        type,
+        startTime: stamp(start),
+        endTime: stamp(start.add({ seconds: duration })),
+        employeeId: ctx.userId,
+        workCenterId: op.workCenterId,
+        postedToGL: false
+      });
+    }
+    cursor = runStart.add({ seconds: Math.max(labor, machine) });
+    // What the operator records at the end of the run (the job's Quantities tab).
+    if (quantity > 0) {
+      await insertId(ctx, "productionQuantity", {
+        jobOperationId: op.id,
+        type: "Production",
+        quantity,
+        createdAt: stamp(cursor)
+      });
+    }
+  }
+
+  // completedDate is midnight of its day; the work has to be done by then.
+  if (cursor.compare(at(spec.completedDateOffset).set({ hour: 0 })) > 0) {
+    throw new Error(
+      `Seed: job "${spec.key}" logged time runs to ${stamp(cursor)}, past its completedDate — start it earlier`
+    );
+  }
+}
+
+/**
+ * What an operator typing through the Instructions tab leaves behind, on every
+ * Done operation with steps. File steps need an upload, so they stay empty.
+ */
+async function seedStepRecords(ctx: Ctx): Promise<void> {
+  const steps = await rows<{
+    id: string;
+    type: string;
+    minValue: string | null;
+    maxValue: string | null;
+    listValues: string[] | null;
+    recordedAt: string | null;
+  }>(
+    ctx.client,
+    `SELECT s.id, s.type::text, s."minValue", s."maxValue", s."listValues",
+            to_char(COALESCE(
+              (SELECT max(pe."endTime") FROM "productionEvent" pe
+               WHERE pe."jobOperationId" = jo.id AND pe."companyId" = $1),
+              j."completedDate", j."releasedDate"
+            ) AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS"Z"') AS "recordedAt"
+     FROM "jobOperationStep" s
+     JOIN "jobOperation" jo ON jo.id = s."operationId" AND jo."companyId" = $1
+     JOIN job j ON j.id = jo."jobId" AND j."companyId" = $1
+     WHERE s."companyId" = $1 AND jo.status = 'Done' AND s.type <> 'File'
+     ORDER BY jo.id, s."sortOrder"`,
+    [ctx.companyId]
+  );
+  if (steps.length === 0) return;
+
+  ctx.log(`step records — ${steps.length}`);
+  for (const step of steps) {
+    const record: Record<string, unknown> = {
+      jobOperationStepId: step.id,
+      index: 0
+    };
+    switch (step.type) {
+      case "Measurement": {
+        const min = step.minValue === null ? null : Number(step.minValue);
+        const max = step.maxValue === null ? null : Number(step.maxValue);
+        record.numericValue =
+          min !== null && max !== null ? (min + max) / 2 : (min ?? max ?? 1);
+        break;
+      }
+      case "Value":
+        record.value = "OK";
+        break;
+      case "List":
+        record.value = step.listValues?.[0] ?? "OK";
+        break;
+      case "Person":
+        record.userValue = ctx.userId;
+        break;
+      case "Timestamp":
+        record.value =
+          step.recordedAt ?? resolveTimestamp(ctx.anchor, -1, "15:00:00");
+        break;
+      default:
+        // Task, Checkbox, Inspection: ticked.
+        record.booleanValue = true;
+    }
+    await insertRow(ctx, "jobOperationStepRecord", record);
+  }
 }
 
 /** Mirrors trigger-rework; left open (no completedAt) since the job is still In Progress. */

@@ -7,12 +7,16 @@ export const precisionAssembly: AssemblySpec = {
   name: "Extruder Toolhead — Final Assembly",
   item: "HMA-4000",
   componentCount: 70,
+  // Build the manifold assembly — the Assembly operation of the HMA-4000 method.
+  operation: 1,
   steps: [
     {
       title: "Clamp the tool plate in the build fixture",
       instruction:
         "Set the tool plate in the fixture with the groovemount facing up. Wipe both mating faces with IPA and inspect under light — a single chip trapped under this plate throws the nozzle out of square and shows up as a first-layer defect, not as an assembly fault.",
-      componentNodeIds: ["650820861e3f30a9"]
+      componentNodeIds: ["650820861e3f30a9"],
+      materials: [{ item: "FAB-BASE-WLD", quantity: 1 }],
+      tools: [{ item: "TL-FIXT-HSG", quantity: 1 }]
     },
     {
       title: "Torque the four M3×10 plate screws",
@@ -29,13 +33,16 @@ export const precisionAssembly: AssemblySpec = {
       title: "Fit the Bondtech drive body",
       instruction:
         "Slide the extruder body onto the plate dowels until it bottoms — no rocking. Turn the drive gears by hand with no filament loaded; they must spin freely and re-mesh without a catch.",
-      componentNodeIds: ["7074c6c564d4c09d"]
+      componentNodeIds: ["7074c6c564d4c09d"],
+      materials: [{ item: "MCH-MANI-BLK", quantity: 1 }],
+      tools: [{ item: "TL-VISE-6IN", quantity: 1 }]
     },
     {
       title: "Install the 1.75mm bowden adaptor",
       instruction:
         "Thread the adaptor in until the collet shoulder meets the body, then a quarter turn more — no PTFE tape. Push a 100mm filament offcut through by hand to confirm a clear, straight path before moving on.",
-      componentNodeIds: ["aac8ae0dc80653bf"]
+      componentNodeIds: ["aac8ae0dc80653bf"],
+      materials: [{ item: "ASM-VALVE-SUB", quantity: 1 }]
     },
     {
       title: "Secure the fan bracket with two M3×8",
@@ -48,6 +55,23 @@ export const precisionAssembly: AssemblySpec = {
       instruction:
         "Seat the shroud so the outlet aims at the nozzle tip with roughly 2mm clearance. Route the fan lead through the strain relief before closing — a lead pinched at this joint survives the test print and fails in the first 50 hours.",
       componentNodeIds: ["b9d4cb1e0a50bacf"]
+    }
+  ],
+  componentMappings: [
+    // model part "tool plate"
+    {
+      geometryHash: "2923220f8a5630d23a966e0442e55145ed73c296",
+      item: "FAB-BASE-WLD"
+    },
+    // model part "drive body"
+    {
+      geometryHash: "dd8cec0c1daf1ec1de79960d564741193798274b",
+      item: "MCH-MANI-BLK"
+    },
+    // model part "hotend"
+    {
+      geometryHash: "2217620416b0fc5bdce8e2b865b3496ffcedaded",
+      item: "ASM-VALVE-SUB"
     }
   ]
 };

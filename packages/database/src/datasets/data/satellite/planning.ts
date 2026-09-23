@@ -1,6 +1,7 @@
 import type {
   DemandOrderSpec,
   DemandProjectionSpec,
+  HqPlanningSpec,
   PlanningData
 } from "../../types.ts";
 
@@ -62,9 +63,17 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
+// Houston HQ keeps a small spares stock of its own: one make part it builds
+// ahead, one bought part it reorders.
+export const HQ_PLANNING: HqPlanningSpec = {
+  reorderItemIds: ["EPS-001", "BAT-LIION-48V"],
+  demandProjections: [{ readableId: "EPS-001", quantities: [1, 1, 2, 2] }]
+};
+
 export const satellitePlanning: PlanningData = {
   buyItemIds: BUY_ITEM_IDS,
   makeItemIds: MAKE_ITEM_IDS,
   demandProjections: DEMAND_PROJECTIONS,
-  demandOrder: DEMAND_ORDER
+  demandOrder: DEMAND_ORDER,
+  hq: HQ_PLANNING
 };

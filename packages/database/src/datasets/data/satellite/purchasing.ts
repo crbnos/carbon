@@ -23,6 +23,7 @@ export const RFQ_LINES: RfqLineSpec[] = [
 export const RFQ_QUOTES: RfqQuoteSpec[] = [
   {
     key: "celex",
+    assignee: "self",
     supplier: "CelestialElex",
     supplierReference: "CEX-Q-4471",
     shippingCost: 250,
@@ -107,6 +108,7 @@ export const RFQ_ORDER_QUANTITY = 25;
 // 2 lines, finalized (Requested), fanned out to 3 suppliers.
 export const RFQ_HEADER: RfqHeaderSpec = {
   ref: "prfq:avionics",
+  assignee: "self",
   status: "Requested",
   rfqDateOffset: -24,
   expirationOffset: 48,
@@ -209,6 +211,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     source: "direct",
     log: "purchase order 3 — Draft (CelestialElex)",
     ref: "po:celex",
+    assignee: "self",
     supplier: "CelestialElex",
     purchaseOrderType: "Purchase",
     status: "Draft",
@@ -240,6 +243,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — To Review (CelestialElex EPS boards)",
+    assignee: "self",
     supplier: "CelestialElex",
     purchaseOrderType: "Purchase",
     status: "To Review",
@@ -251,11 +255,15 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Needs Approval (Orbital Composites laminate)",
+    ref: "po:needs-approval",
     supplier: "Orbital Composites",
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -1,
-    lines: [{ item: "MAT-CF-LAM", purchaseQuantity: 4, supplierUnitPrice: 315 }]
+    // A full laminate lot for the Block 2 buses — over the $5,000 approval tier.
+    lines: [
+      { item: "MAT-CF-LAM", purchaseQuantity: 20, supplierUnitPrice: 315 }
+    ]
   },
   {
     source: "direct",
@@ -481,6 +489,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Outside Processing, anodize at AstroMill",
+    assignee: "self",
     supplier: "AstroMill Machining",
     purchaseOrderType: "Outside Processing",
     status: "To Receive",
@@ -502,6 +511,33 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     currencyCode: "EUR",
     exchangeRate: 0.92,
     lines: [{ item: "BRG-6201", purchaseQuantity: 60, supplierUnitPrice: 16.4 }]
+  },
+  {
+    source: "direct",
+    log: "purchase order — To Invoice, bare boards received yesterday, awaiting incoming inspection (CelestialElex)",
+    ref: "po:bare-boards",
+    supplier: "CelestialElex",
+    purchaseOrderType: "Purchase",
+    status: "To Invoice",
+    orderDateOffset: -16,
+    lines: [
+      { item: "PCB-BARE-REV3", purchaseQuantity: 10, supplierUnitPrice: 85 }
+    ],
+    receipt: {
+      ref: "receipt:bare-boards",
+      status: "Posted",
+      postedOffset: -1,
+      lines: [
+        {
+          item: "PCB-BARE-REV3",
+          orderQuantity: 10,
+          outstandingQuantity: 0,
+          receivedQuantity: 10,
+          unitPrice: 85,
+          toShelf: "A1-L1"
+        }
+      ]
+    }
   }
 ];
 
@@ -509,6 +545,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "sgf-annual-fasteners",
+    assignee: "self",
     supplier: "SpaceGrade Fasteners",
     status: "Draft",
     supplierReference: "SGF-2026-1044",
@@ -563,6 +600,11 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "fastener-plating",
+    credit: {
+      status: "Draft",
+      dateOffset: -4,
+      lines: [{ line: 1, quantity: 40 }]
+    },
     status: "Completed",
     supplier: "SpaceGrade Fasteners",
     dateOffset: -6,
@@ -583,6 +625,15 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     supplier: "Orbital Composites",
     dateOffset: 0,
     lines: [{ item: "MAT-CF-LAM", quantity: 1, unitPrice: 320 }]
+  },
+  // Drafted while MRB weighs return-to-vendor for the thin-wall tank
+  // (quality's ncr:tank-wall links this line).
+  {
+    key: "tank-wall-rtv",
+    status: "Draft",
+    supplier: "PropTech Solutions",
+    dateOffset: -3,
+    lines: [{ item: "TANK-TI-4L", quantity: 1, unitPrice: 3200 }]
   }
 ];
 
@@ -596,5 +647,62 @@ export const satellitePurchasing: PurchasingData = {
   lifecycleRfqs: LIFECYCLE_RFQS,
   purchaseOrders: PURCHASE_ORDERS,
   standaloneSupplierQuotes: STANDALONE_SUPPLIER_QUOTES,
-  purchaseReturns: PURCHASE_RETURNS
+  purchaseReturns: PURCHASE_RETURNS,
+  approvalRules: [
+    { documentType: "purchaseOrder", lowerBoundAmount: 5000 },
+    {
+      documentType: "purchaseOrder",
+      lowerBoundAmount: 25000,
+      escalationDays: 3
+    },
+    { documentType: "supplier", lowerBoundAmount: 0 }
+  ],
+  approvalRequests: [
+    { purchaseOrder: "po:needs-approval", requestedOffset: -1 },
+    { supplier: "Ionix Thrusters", requestedOffset: -4 }
+  ],
+  supplierBankAccounts: [
+    {
+      supplier: "CelestialElex",
+      name: "CelestialElex remittance",
+      bankName: "Silicon Valley Commerce (demo)",
+      accountHolderName: "CelestialElex Corp.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-3301-8820",
+      bankCode: "DEMO-121140",
+      isPrimary: true
+    },
+    {
+      supplier: "PropTech Solutions",
+      name: "PropTech operating",
+      bankName: "South Bay Savings (demo)",
+      accountHolderName: "PropTech Solutions LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-6612-0457",
+      isPrimary: true
+    },
+    {
+      supplier: "Deep Space RF",
+      name: "Deep Space RF remittance",
+      bankName: "Front Range Bank (demo)",
+      accountHolderName: "Deep Space RF Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-5178-2093",
+      isPrimary: true
+    },
+    {
+      supplier: "Rheinland Precision Bearings GmbH",
+      name: "Rheinland EUR account",
+      bankName: "Neckar Handelsbank (demo)",
+      accountHolderName: "Rheinland Precision Bearings GmbH",
+      countryCode: "DE",
+      currencyCode: "EUR",
+      accountNumber: "DEMO-DE00-0000-7711",
+      swiftBic: "DEMODEXX",
+      isPrimary: true
+    }
+  ]
 };

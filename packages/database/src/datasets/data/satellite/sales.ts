@@ -65,6 +65,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:orbsec",
+      createdOffset: -330,
       status: "Ordered",
       externalNotes: "Quote for 3× ESPA-class satellite buses.",
       lines: [
@@ -119,6 +120,8 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "NovaSat Networks",
     quote: {
       ref: "quote:novasat",
+      createdOffset: -20,
+      assignee: "self",
       status: "Sent",
       expirationOffset: NOVASAT_QUOTE_EXPIRATION_OFFSET,
       lines: [
@@ -149,6 +152,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Apex Space Research",
     rfq: {
       ref: "rfq:apex",
+      assignee: "self",
       status: "Ready for Quote",
       rfqDateOffset: -285,
       externalNotes:
@@ -169,6 +173,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "PolarView Earth",
     quote: {
       ref: "quote:polar",
+      createdOffset: -270,
       status: "Ordered",
       lines: [
         {
@@ -203,6 +208,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Apex Space Research",
     rfq: {
       ref: "rfq:apex-frame",
+      assignee: "self",
       status: "Draft",
       rfqDateOffset: -3,
       externalNotes:
@@ -240,6 +246,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:orbsec-crewed",
+      createdOffset: -80,
       status: "Lost",
       externalNotes: "Declined to bid the crewed-rating line.",
       lines: [
@@ -259,12 +266,19 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "PolarView Earth",
     quote: {
       ref: "quote:polar-imager",
+      createdOffset: -4,
+      assignee: "self",
       status: "Draft",
       externalNotes:
         "Working draft — imager-optimized bus pricing in progress.",
       lines: [
         {
           ref: "quoteline:polar-imager:sat",
+          configuration: {
+            payload_mass_kg: 180,
+            orbit_regime: "SSO",
+            propulsion_module: true
+          },
           item: "SAT-1000",
           status: "Not Started",
           sortOrder: 1,
@@ -279,6 +293,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "NovaSat Networks",
     quote: {
       ref: "quote:novasat-gateway",
+      createdOffset: -9,
       status: "Partial",
       expirationOffset: 45,
       externalNotes:
@@ -307,6 +322,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Apex Space Research",
     quote: {
       ref: "quote:apex-pathfinder",
+      createdOffset: -150,
       status: "Cancelled",
       externalNotes: "Program defunded before pricing was issued.",
       lines: [
@@ -326,6 +342,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "PolarView Earth",
     quote: {
       ref: "quote:polar-wing",
+      createdOffset: -44,
       status: "Expired",
       expirationOffset: -14,
       externalNotes: "30-day pricing lapsed without a PO.",
@@ -346,6 +363,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "ORBSEC Defense",
     order: {
       ref: "so:orbsec-prop",
+      assignee: "self",
       status: "Needs Approval",
       orderDateOffset: -2,
       lines: [
@@ -431,6 +449,7 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     customer: "NovaSat Networks",
     order: {
       ref: "so:toshipinvoice",
+      assignee: "self",
       status: "To Ship and Invoice",
       orderDateOffset: -10,
       lines: STAGGERED_DELIVERIES.map((delivery) => ({
@@ -727,6 +746,180 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
       dueDateOffset: -25,
       lines: [{ item: "VLV-SOLENOID-LP", quantity: 2, unitPrice: 1425 }]
     }
+  },
+
+  // Older overdue invoices, so receivables aging fills every bucket to 61–90.
+  {
+    log: "sales invoice — Overdue 31–60 days (Apex solenoid valve spares)",
+    ref: "opp:apex-valve-spares",
+    customer: "Apex Space Research",
+    order: {
+      ref: "so:apex-valve-spares",
+      status: "Invoiced",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:apex-valve-spares:vlv",
+          item: "VLV-SOLENOID-LP",
+          saleQuantity: 4,
+          unitPrice: 1425,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:apex-valve-spares",
+      status: "Overdue",
+      subtotal: 5700,
+      totalAmount: 5700,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "VLV-SOLENOID-LP", quantity: 4, unitPrice: 1425 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue 61–90 days (PolarView propellant tank)",
+    ref: "opp:polar-tank",
+    customer: "PolarView Earth",
+    order: {
+      ref: "so:polar-tank",
+      status: "Invoiced",
+      orderDateOffset: -120,
+      lines: [
+        {
+          ref: "soline:polar-tank:tank",
+          item: "TANK-TI-4L",
+          saleQuantity: 1,
+          unitPrice: 4800,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:polar-tank",
+      status: "Overdue",
+      subtotal: 4800,
+      totalAmount: 4800,
+      dateIssuedOffset: -105,
+      dueDateOffset: -75,
+      lines: [{ item: "TANK-TI-4L", quantity: 1, unitPrice: 4800 }]
+    }
+  },
+
+  // ── Floor load — the subassembly spares the production floor is building ──
+  // Each line has a job of its own in production.ts (open or just completed).
+  {
+    log: "sales order — In Progress (NovaSat subsystem spares, floor load)",
+    ref: "opp:floor-novasat",
+    customer: "NovaSat Networks",
+    order: {
+      ref: "so:floor-novasat",
+      status: "In Progress",
+      orderDateOffset: -32,
+      lines: [
+        {
+          ref: "soline:floor-novasat:eps-pcb",
+          item: "PCB-EPS-R1",
+          saleQuantity: 4,
+          unitPrice: 4200,
+          status: "In Progress",
+          promisedDateOffset: 5
+        },
+        {
+          ref: "soline:floor-novasat:adcs-pcb",
+          item: "PCB-ADCS-R1",
+          saleQuantity: 2,
+          unitPrice: 5800,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-novasat:saw",
+          item: "SAW-001",
+          saleQuantity: 1,
+          unitPrice: 35000,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-novasat:bus",
+          item: "BUS-STR-001",
+          saleQuantity: 1,
+          unitPrice: 45000,
+          status: "In Progress",
+          promisedDateOffset: 4
+        },
+        {
+          ref: "soline:floor-novasat:antenna",
+          item: "ANT-PATCH-01",
+          saleQuantity: 4,
+          unitPrice: 1800,
+          status: "In Progress",
+          promisedDateOffset: 2
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — In Progress (PolarView constellation refit, floor load)",
+    ref: "opp:floor-polar",
+    customer: "PolarView Earth",
+    order: {
+      ref: "so:floor-polar",
+      assignee: "self",
+      status: "In Progress",
+      orderDateOffset: -14,
+      lines: [
+        {
+          ref: "soline:floor-polar:adcs-pcb",
+          item: "PCB-ADCS-R1",
+          saleQuantity: 3,
+          unitPrice: 5800,
+          status: "In Progress",
+          promisedDateOffset: 8
+        },
+        {
+          ref: "soline:floor-polar:bus",
+          item: "BUS-STR-001",
+          saleQuantity: 1,
+          unitPrice: 45000,
+          status: "In Progress",
+          promisedDateOffset: 15
+        },
+        {
+          ref: "soline:floor-polar:saw",
+          item: "SAW-001",
+          saleQuantity: 2,
+          unitPrice: 35000,
+          status: "In Progress",
+          promisedDateOffset: 10
+        },
+        {
+          ref: "soline:floor-polar:prop",
+          item: "PROP-001",
+          saleQuantity: 1,
+          unitPrice: 38000,
+          status: "In Progress",
+          promisedDateOffset: 24
+        },
+        {
+          ref: "soline:floor-polar:comms",
+          item: "COMMS-001",
+          saleQuantity: 1,
+          unitPrice: 28000,
+          status: "In Progress",
+          promisedDateOffset: 19
+        },
+        {
+          ref: "soline:floor-polar:harness",
+          item: "HARNESS-001",
+          saleQuantity: 2,
+          unitPrice: 12000,
+          status: "In Progress",
+          promisedDateOffset: 30
+        }
+      ]
+    }
   }
 ];
 
@@ -736,6 +929,12 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
 export const SALES_RETURNS: SalesReturnSpec[] = [
   {
     key: "transponder",
+    // Credited once the unit was back on the shelf.
+    credit: {
+      status: "Posted",
+      dateOffset: -8,
+      lines: [{ line: 1, quantity: 1 }]
+    },
     status: "Completed",
     customer: "NovaSat Networks",
     returnReason: "Defective",
@@ -769,5 +968,50 @@ export const satelliteSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
-  salesReturns: SALES_RETURNS
+  salesReturns: SALES_RETURNS,
+  customerPortals: ["NovaSat Networks", "ORBSEC Defense"],
+  customerBankAccounts: [
+    {
+      customer: "ORBSEC Defense",
+      name: "ORBSEC remittance",
+      bankName: "Potomac Federal Trust (demo)",
+      accountHolderName: "ORBSEC Defense Programs LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-4410-2291",
+      bankCode: "DEMO-054001",
+      isPrimary: true
+    },
+    {
+      customer: "NovaSat Networks",
+      name: "NovaSat operating account",
+      bankName: "Bay Commerce Bank (demo)",
+      accountHolderName: "NovaSat Networks Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-7730-1184",
+      bankCode: "DEMO-121000",
+      isPrimary: true
+    },
+    {
+      customer: "Apex Space Research",
+      name: "Apex grants account",
+      bankName: "Commonwealth Scholars Bank (demo)",
+      accountHolderName: "Apex Space Research Foundation",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-2208-5563",
+      isPrimary: true
+    },
+    {
+      customer: "PolarView Earth",
+      name: "PolarView payables",
+      bankName: "Hill Country Bank (demo)",
+      accountHolderName: "PolarView Earth Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-9051-3370",
+      isPrimary: true
+    }
+  ]
 };

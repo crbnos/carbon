@@ -29,6 +29,7 @@ export const RFQ_LINES: RfqLineSpec[] = [
 export const RFQ_QUOTES: RfqQuoteSpec[] = [
   {
     key: "bluestem",
+    assignee: "self",
     supplier: "Bluestem Alloys",
     supplierReference: "BSA-Q-8812",
     shippingCost: 320,
@@ -113,6 +114,7 @@ export const RFQ_ORDER_QUANTITY = 1000;
 // 2 lines, finalized (Requested), fanned out to 3 suppliers.
 export const RFQ_HEADER: RfqHeaderSpec = {
   ref: "prfq:barstock",
+  assignee: "self",
   status: "Requested",
   rfqDateOffset: -21,
   expirationOffset: 45,
@@ -213,6 +215,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     source: "direct",
     log: "purchase order 3 — Draft (Rock River Metals)",
     ref: "po:rockriver",
+    assignee: "self",
     supplier: "Rock River Metals",
     purchaseOrderType: "Purchase",
     status: "Draft",
@@ -246,6 +249,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — To Review (Bluestem 4140 bar, mill certs pending)",
+    assignee: "self",
     supplier: "Bluestem Alloys",
     purchaseOrderType: "Purchase",
     status: "To Review",
@@ -257,11 +261,15 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Needs Approval (Midway hydraulic cylinders over the buyer's limit)",
+    ref: "po:needs-approval",
     supplier: "Midway Bearing & Seal",
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -2,
-    lines: [{ item: "CYL-HYD-40", purchaseQuantity: 2, supplierUnitPrice: 289 }]
+    // A season of cylinders for the Dominion build — over the $5,000 approval tier.
+    lines: [
+      { item: "CYL-HYD-40", purchaseQuantity: 18, supplierUnitPrice: 289 }
+    ]
   },
   {
     source: "direct",
@@ -497,6 +505,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Outside Processing, induction harden at Forge",
+    assignee: "self",
     supplier: "Forge Heat Treating",
     purchaseOrderType: "Outside Processing",
     status: "To Receive",
@@ -520,6 +529,42 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "MAT-4140-BAR", purchaseQuantity: 250, supplierUnitPrice: 2.45 }
     ]
+  },
+  {
+    source: "direct",
+    log: "purchase order — To Invoice, bushings and replacement needle bearings received (Midway)",
+    ref: "po:midway-restock",
+    supplier: "Midway Bearing & Seal",
+    purchaseOrderType: "Purchase",
+    status: "To Invoice",
+    orderDateOffset: -14,
+    lines: [
+      { item: "BSH-PTFE-2012", purchaseQuantity: 20, supplierUnitPrice: 4.6 },
+      { item: "BRG-NDL-HK1512", purchaseQuantity: 10, supplierUnitPrice: 6.8 }
+    ],
+    receipt: {
+      ref: "receipt:midway-restock",
+      status: "Posted",
+      postedOffset: -2,
+      lines: [
+        {
+          item: "BSH-PTFE-2012",
+          orderQuantity: 20,
+          outstandingQuantity: 0,
+          receivedQuantity: 20,
+          unitPrice: 4.6,
+          toShelf: "B1-L3"
+        },
+        {
+          item: "BRG-NDL-HK1512",
+          orderQuantity: 10,
+          outstandingQuantity: 0,
+          receivedQuantity: 10,
+          unitPrice: 6.8,
+          toShelf: "B1-L3"
+        }
+      ]
+    }
   }
 ];
 
@@ -527,6 +572,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "fastline-hardware-annual",
+    assignee: "self",
     supplier: "Fastline Industrial Supply",
     status: "Draft",
     supplierReference: "FL-2026-2210",
@@ -581,6 +627,11 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "oring-cut-lips",
+    credit: {
+      status: "Draft",
+      dateOffset: -4,
+      lines: [{ line: 1, quantity: 30 }]
+    },
     status: "Completed",
     supplier: "Midway Bearing & Seal",
     dateOffset: -6,
@@ -606,6 +657,14 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     supplier: "Bluestem Alloys",
     dateOffset: 0,
     lines: [{ item: "MAT-SS316-PLT", quantity: 15, unitPrice: 6.2 }]
+  },
+  // Drafted while MRB weighs return-to-vendor for the oversize needle bearing (quality's ncr:needle-od links this line).
+  {
+    key: "needle-od-rtv",
+    status: "Draft",
+    supplier: "Midway Bearing & Seal",
+    dateOffset: -3,
+    lines: [{ item: "BRG-NDL-HK1512", quantity: 1, unitPrice: 6.8 }]
   }
 ];
 
@@ -619,5 +678,62 @@ export const precisionPurchasing: PurchasingData = {
   lifecycleRfqs: LIFECYCLE_RFQS,
   purchaseOrders: PURCHASE_ORDERS,
   standaloneSupplierQuotes: STANDALONE_SUPPLIER_QUOTES,
-  purchaseReturns: PURCHASE_RETURNS
+  purchaseReturns: PURCHASE_RETURNS,
+  approvalRules: [
+    { documentType: "purchaseOrder", lowerBoundAmount: 5000 },
+    {
+      documentType: "purchaseOrder",
+      lowerBoundAmount: 25000,
+      escalationDays: 3
+    },
+    { documentType: "supplier", lowerBoundAmount: 0 }
+  ],
+  approvalRequests: [
+    { purchaseOrder: "po:needs-approval", requestedOffset: -1 },
+    { supplier: "Prairie Anodizing", requestedOffset: -4 }
+  ],
+  supplierBankAccounts: [
+    {
+      supplier: "Midway Bearing & Seal",
+      name: "Midway remittance",
+      bankName: "Rock River Bank (demo)",
+      accountHolderName: "Midway Bearing & Seal Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-4412-7735",
+      bankCode: "DEMO-071100",
+      isPrimary: true
+    },
+    {
+      supplier: "Rock River Metals",
+      name: "Rock River operating",
+      bankName: "Stateline Savings (demo)",
+      accountHolderName: "Rock River Metals LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-5523-8846",
+      isPrimary: true
+    },
+    {
+      supplier: "Fastline Industrial Supply",
+      name: "Fastline remittance",
+      bankName: "Prairie Commerce (demo)",
+      accountHolderName: "Fastline Industrial Supply Co.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-6634-9957",
+      isPrimary: true
+    },
+    {
+      supplier: "Bavaria Werkzeugstahl GmbH",
+      name: "Bavaria EUR account",
+      bankName: "Isar Handelsbank (demo)",
+      accountHolderName: "Bavaria Werkzeugstahl GmbH",
+      countryCode: "DE",
+      currencyCode: "EUR",
+      accountNumber: "DEMO-DE00-0000-5523",
+      swiftBic: "DEMODEXX",
+      isPrimary: true
+    }
+  ]
 };

@@ -6,7 +6,6 @@ import type {
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
-import { satelliteAssembly } from "./assembly.ts";
 
 export const JOBS: JobSpec[] = [
   {
@@ -19,13 +18,15 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:orbsec:sat",
     customer: "ORBSEC Defense",
     deadlineType: "Hard Deadline",
-    dueDateOffset: -167,
+    dueDateOffset: 6,
     releasedDateOffset: -297,
+    priority: 3,
+    assignee: "self",
     // The floor's real mixed state: integration done, TVAC running, final
     // inspection waiting on it.
     operationOverrides: [
       { order: 1, status: "Done" },
-      { order: 2, status: "In Progress" },
+      { order: 2, status: "In Progress", assignee: "self" },
       { order: 3, status: "Waiting" }
     ],
     quantities: [
@@ -53,8 +54,9 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:polar:sat",
     customer: "PolarView Earth",
     deadlineType: "ASAP",
-    dueDateOffset: -153,
-    releasedDateOffset: -251
+    dueDateOffset: 14,
+    releasedDateOffset: -4,
+    priority: 10
   },
   {
     key: "planned",
@@ -65,7 +67,8 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:planned",
     customer: "NovaSat Networks",
     deadlineType: "Soft Deadline",
-    dueDateOffset: -90
+    dueDateOffset: 18,
+    priority: 12
   },
   {
     key: "draft",
@@ -85,8 +88,9 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:paused",
     salesOrderLine: "soline:paused",
     customer: "ORBSEC Defense",
-    dueDateOffset: -139,
-    releasedDateOffset: -266
+    dueDateOffset: 9,
+    releasedDateOffset: -266,
+    priority: 6
   },
   {
     key: "completed",
@@ -124,6 +128,208 @@ export const JOBS: JobSpec[] = [
     customer: "Apex Space Research",
     dueDateOffset: -314,
     releasedDateOffset: -337
+  },
+
+  // ── Floor load: short-routing subassembly jobs released over the last few
+  // weeks, so every work center has a queue and something running today.
+  {
+    key: "floor-eps-pcb",
+    item: "PCB-EPS-R1",
+    status: "In Progress",
+    quantity: 4,
+    salesOrder: "so:floor-novasat",
+    salesOrderLine: "soline:floor-novasat:eps-pcb",
+    customer: "NovaSat Networks",
+    dueDateOffset: 2,
+    releasedDateOffset: -6,
+    priority: 2,
+    assignee: "self",
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      {
+        order: 2,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Labor", startTimeOfDay: "07:30:00" }
+      },
+      // The first potted boards are already on the QC bench (quality.inspections).
+      { order: 3, status: "In Progress" }
+    ]
+  },
+  {
+    key: "floor-adcs-pcb",
+    item: "PCB-ADCS-R1",
+    status: "In Progress",
+    quantity: 3,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:adcs-pcb",
+    customer: "PolarView Earth",
+    dueDateOffset: 5,
+    releasedDateOffset: -2,
+    priority: 4,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-bus",
+    item: "BUS-STR-001",
+    status: "In Progress",
+    quantity: 1,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:bus",
+    customer: "PolarView Earth",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 12,
+    releasedDateOffset: -10,
+    priority: 8,
+    assignee: "self",
+    operationOverrides: [
+      {
+        order: 1,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Machine", startTimeOfDay: "06:45:00" }
+      },
+      { order: 2, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-saw",
+    item: "SAW-001",
+    status: "In Progress",
+    quantity: 2,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:saw",
+    customer: "PolarView Earth",
+    dueDateOffset: 7,
+    releasedDateOffset: -5,
+    priority: 5,
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      {
+        order: 2,
+        status: "In Progress",
+        running: { type: "Setup", startTimeOfDay: "08:15:00" }
+      },
+      { order: 3, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-antenna",
+    item: "ANT-PATCH-01",
+    status: "Ready",
+    quantity: 4,
+    salesOrder: "so:floor-novasat",
+    salesOrderLine: "soline:floor-novasat:antenna",
+    customer: "NovaSat Networks",
+    deadlineType: "ASAP",
+    dueDateOffset: 0,
+    releasedDateOffset: -1,
+    priority: 1,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-prop",
+    item: "PROP-001",
+    status: "Ready",
+    quantity: 1,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:prop",
+    customer: "PolarView Earth",
+    dueDateOffset: 21,
+    releasedDateOffset: -3,
+    priority: 13
+  },
+  {
+    key: "floor-comms",
+    item: "COMMS-001",
+    status: "Ready",
+    quantity: 1,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:comms",
+    customer: "PolarView Earth",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 16,
+    releasedDateOffset: -4,
+    priority: 11,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  // Released with no deadline — Priorities' Unscheduled column.
+  {
+    key: "floor-harness",
+    item: "HARNESS-001",
+    status: "Ready",
+    quantity: 2,
+    salesOrder: "so:floor-polar",
+    salesOrderLine: "soline:floor-polar:harness",
+    customer: "PolarView Earth",
+    deadlineType: "No Deadline",
+    releasedDateOffset: -1,
+    priority: 14
+  },
+  // Make-to-stock: building shelf stock for the next bus, no customer order.
+  {
+    key: "stock-eps-pcb",
+    item: "PCB-EPS-R1",
+    status: "In Progress",
+    quantity: 6,
+    dueDateOffset: 11,
+    releasedDateOffset: -2,
+    priority: 9
+  },
+  {
+    key: "stock-harness",
+    item: "HARNESS-001",
+    status: "Ready",
+    quantity: 4,
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 9,
+    releasedDateOffset: -3,
+    priority: 7,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+
+  // ── Recently completed — the completion-time and estimates-vs-actuals KPIs.
+  {
+    key: "done-adcs-pcb",
+    item: "PCB-ADCS-R1",
+    status: "Completed",
+    quantity: 2,
+    quantityComplete: 2,
+    salesOrder: "so:floor-novasat",
+    salesOrderLine: "soline:floor-novasat:adcs-pcb",
+    customer: "NovaSat Networks",
+    dueDateOffset: -8,
+    releasedDateOffset: -16,
+    completedDateOffset: -11,
+    loggedTime: { startOffset: -14, efficiency: 0.92 }
+  },
+  {
+    key: "done-saw",
+    item: "SAW-001",
+    status: "Completed",
+    quantity: 1,
+    quantityComplete: 1,
+    salesOrder: "so:floor-novasat",
+    salesOrderLine: "soline:floor-novasat:saw",
+    customer: "NovaSat Networks",
+    dueDateOffset: -20,
+    releasedDateOffset: -30,
+    completedDateOffset: -24,
+    loggedTime: { startOffset: -28, efficiency: 1.18 }
+  },
+  {
+    key: "done-bus",
+    item: "BUS-STR-001",
+    status: "Completed",
+    quantity: 1,
+    quantityComplete: 1,
+    salesOrder: "so:floor-novasat",
+    salesOrderLine: "soline:floor-novasat:bus",
+    customer: "NovaSat Networks",
+    dueDateOffset: -2,
+    releasedDateOffset: -12,
+    completedDateOffset: -4,
+    loggedTime: { startOffset: -9, efficiency: 1.07 }
   }
 ];
 
@@ -265,7 +471,6 @@ export const PICKING_LISTS: PickingListSpec[] = [
 ];
 
 export const satelliteProduction: ProductionData = {
-  assembly: satelliteAssembly,
   jobs: JOBS,
   shifts: SHIFTS,
   genealogyInputs: GENEALOGY_INPUTS,
@@ -274,7 +479,14 @@ export const satelliteProduction: ProductionData = {
   genealogyJobKey: "in-progress",
   // The TVAC operation (position 2) is the one overridden to In Progress.
   openEvent: { operationOrder: 2 },
-  batch: { operationOrder: 1 },
+  // Two boards' reflow run together — the oven takes a mixed panel load.
+  batch: {
+    members: [
+      { job: "floor-adcs-pcb", order: 1 },
+      { job: "stock-eps-pcb", order: 1 }
+    ],
+    running: { type: "Machine", startTimeOfDay: "07:10:00" }
+  },
   rework: {
     quantity: 1,
     reason:

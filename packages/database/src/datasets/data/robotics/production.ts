@@ -6,7 +6,6 @@ import type {
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
-import { roboticsAssembly } from "./assembly.ts";
 
 export const JOBS: JobSpec[] = [
   {
@@ -19,13 +18,15 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:lakeshore:rob",
     customer: "Lakeshore Automotive",
     deadlineType: "Hard Deadline",
-    dueDateOffset: -167,
+    dueDateOffset: 6,
     releasedDateOffset: -297,
+    priority: 3,
+    assignee: "self",
     // The floor's real mixed state: integration done, burn-in running, final
     // acceptance waiting on it.
     operationOverrides: [
       { order: 1, status: "Done" },
-      { order: 2, status: "In Progress" },
+      { order: 2, status: "In Progress", assignee: "self" },
       { order: 3, status: "Waiting" }
     ],
     quantities: [
@@ -53,8 +54,9 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:northwind:rob",
     customer: "Northwind Electronics",
     deadlineType: "ASAP",
-    dueDateOffset: -153,
-    releasedDateOffset: -251
+    dueDateOffset: 14,
+    releasedDateOffset: -4,
+    priority: 10
   },
   {
     key: "planned",
@@ -65,7 +67,8 @@ export const JOBS: JobSpec[] = [
     salesOrderLine: "soline:planned",
     customer: "Cascade Integration Group",
     deadlineType: "Soft Deadline",
-    dueDateOffset: -90
+    dueDateOffset: 18,
+    priority: 12
   },
   {
     key: "draft",
@@ -85,8 +88,9 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:paused",
     salesOrderLine: "soline:paused",
     customer: "Lakeshore Automotive",
-    dueDateOffset: -139,
-    releasedDateOffset: -266
+    dueDateOffset: 9,
+    releasedDateOffset: -266,
+    priority: 6
   },
   {
     key: "completed",
@@ -124,6 +128,206 @@ export const JOBS: JobSpec[] = [
     customer: "Alpine Research Institute",
     dueDateOffset: -314,
     releasedDateOffset: -337
+  },
+
+  // ── Floor load: short-routing subassembly jobs released over the last few
+  // weeks, so every work center has a queue and something running today.
+  {
+    key: "floor-ctrl-pcb",
+    item: "PCB-CTRL-R1",
+    status: "In Progress",
+    quantity: 6,
+    salesOrder: "so:floor-lakeshore",
+    salesOrderLine: "soline:floor-lakeshore:ctrl-pcb",
+    customer: "Lakeshore Automotive",
+    dueDateOffset: 2,
+    releasedDateOffset: -6,
+    priority: 2,
+    assignee: "self",
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      {
+        order: 2,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Labor", startTimeOfDay: "07:30:00" }
+      },
+      // The first boards are already on the inspection bench (quality.inspections).
+      { order: 3, status: "In Progress" }
+    ]
+  },
+  {
+    key: "floor-io-pcb",
+    item: "PCB-IO-R1",
+    status: "In Progress",
+    quantity: 6,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:io-pcb",
+    customer: "Northwind Electronics",
+    dueDateOffset: 5,
+    releasedDateOffset: -2,
+    priority: 4,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-drive",
+    item: "DRV-J2-MOD",
+    status: "In Progress",
+    quantity: 4,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:drive",
+    customer: "Northwind Electronics",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 12,
+    releasedDateOffset: -9,
+    priority: 8,
+    assignee: "self",
+    operationOverrides: [
+      {
+        order: 1,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Setup", startTimeOfDay: "06:45:00" }
+      },
+      { order: 2, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-jaw",
+    item: "GRP-JAW-80",
+    status: "In Progress",
+    quantity: 4,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:jaw",
+    customer: "Northwind Electronics",
+    dueDateOffset: 7,
+    releasedDateOffset: -5,
+    priority: 5,
+    operationOverrides: [
+      {
+        order: 1,
+        status: "In Progress",
+        running: { type: "Machine", startTimeOfDay: "08:15:00" }
+      },
+      { order: 2, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-harness",
+    item: "HRN-ARM-001",
+    status: "Ready",
+    quantity: 3,
+    salesOrder: "so:floor-lakeshore",
+    salesOrderLine: "soline:floor-lakeshore:harness",
+    customer: "Lakeshore Automotive",
+    deadlineType: "ASAP",
+    dueDateOffset: 0,
+    releasedDateOffset: -1,
+    priority: 1,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-wrist",
+    item: "ARM-WRIST-001",
+    status: "Ready",
+    quantity: 2,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:wrist",
+    customer: "Northwind Electronics",
+    dueDateOffset: 21,
+    releasedDateOffset: -3,
+    priority: 13
+  },
+  {
+    key: "floor-ctrl",
+    item: "CTRL-100",
+    status: "Ready",
+    quantity: 1,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:ctrl",
+    customer: "Northwind Electronics",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 16,
+    releasedDateOffset: -4,
+    priority: 11,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  // Released with no deadline — Priorities' Unscheduled column.
+  {
+    key: "floor-gripper",
+    item: "GRP-2F-80",
+    status: "Ready",
+    quantity: 2,
+    salesOrder: "so:floor-northwind",
+    salesOrderLine: "soline:floor-northwind:gripper",
+    customer: "Northwind Electronics",
+    deadlineType: "No Deadline",
+    releasedDateOffset: -1,
+    priority: 14
+  },
+  // Make-to-stock: controller boards and harnesses for the next arm builds.
+  {
+    key: "stock-ctrl-pcb",
+    item: "PCB-CTRL-R1",
+    status: "In Progress",
+    quantity: 10,
+    dueDateOffset: 11,
+    releasedDateOffset: -2,
+    priority: 9
+  },
+  {
+    key: "stock-harness",
+    item: "HRN-ARM-001",
+    status: "Ready",
+    quantity: 6,
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 9,
+    releasedDateOffset: -3,
+    priority: 7,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  // ── Recently completed — the completion-time and estimates-vs-actuals KPIs.
+  {
+    key: "done-io-pcb",
+    item: "PCB-IO-R1",
+    status: "Completed",
+    quantity: 4,
+    quantityComplete: 4,
+    salesOrder: "so:floor-lakeshore",
+    salesOrderLine: "soline:floor-lakeshore:io-pcb",
+    customer: "Lakeshore Automotive",
+    dueDateOffset: -8,
+    releasedDateOffset: -16,
+    completedDateOffset: -11,
+    loggedTime: { startOffset: -14, efficiency: 0.92 }
+  },
+  {
+    key: "done-jaw",
+    item: "GRP-JAW-80",
+    status: "Completed",
+    quantity: 2,
+    quantityComplete: 2,
+    salesOrder: "so:floor-lakeshore",
+    salesOrderLine: "soline:floor-lakeshore:jaw",
+    customer: "Lakeshore Automotive",
+    dueDateOffset: -20,
+    releasedDateOffset: -28,
+    completedDateOffset: -24,
+    loggedTime: { startOffset: -27, efficiency: 1.18 }
+  },
+  {
+    key: "done-base",
+    item: "ARM-BASE-001",
+    status: "Completed",
+    quantity: 1,
+    quantityComplete: 1,
+    salesOrder: "so:floor-lakeshore",
+    salesOrderLine: "soline:floor-lakeshore:base",
+    customer: "Lakeshore Automotive",
+    dueDateOffset: -2,
+    releasedDateOffset: -12,
+    completedDateOffset: -4,
+    loggedTime: { startOffset: -9, efficiency: 1.07 }
   }
 ];
 
@@ -265,7 +469,6 @@ export const PICKING_LISTS: PickingListSpec[] = [
 ];
 
 export const roboticsProduction: ProductionData = {
-  assembly: roboticsAssembly,
   jobs: JOBS,
   shifts: SHIFTS,
   genealogyInputs: GENEALOGY_INPUTS,
@@ -274,7 +477,14 @@ export const roboticsProduction: ProductionData = {
   genealogyJobKey: "in-progress",
   // The burn-in operation (position 2) is the one overridden to In Progress.
   openEvent: { operationOrder: 2 },
-  batch: { operationOrder: 1 },
+  // Two boards' reflow run together — the oven takes a mixed panel load.
+  batch: {
+    members: [
+      { job: "floor-io-pcb", order: 1 },
+      { job: "stock-ctrl-pcb", order: 1 }
+    ],
+    running: { type: "Machine", startTimeOfDay: "07:05:00" }
+  },
   rework: {
     quantity: 1,
     reason:

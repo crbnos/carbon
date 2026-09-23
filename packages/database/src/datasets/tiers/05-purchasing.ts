@@ -1,5 +1,6 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
-import { insertId, insertRow, need, nextSequence, RICH } from "../sql.ts";
+import { seedReturnCredit } from "../helpers/return-credit.ts";
+import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 // Supplier quotes come back shortly before the RFQ closes and stay open well
@@ -46,7 +47,8 @@ export async function runTier5(ctx: Ctx): Promise<void> {
         spec.exchangeRate === undefined
           ? undefined
           : resolveTimestamp(ctx.anchor, spec.orderDateOffset, "08:00:00"),
-      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset)
+      orderDate: resolveDate(ctx.anchor, spec.orderDateOffset),
+      assignee: spec.assignee === "self" ? userId : undefined
     });
     await insertRow(ctx, "purchaseOrderDelivery", {
       id: poId,
@@ -191,6 +193,7 @@ export async function runTier5(ctx: Ctx): Promise<void> {
 
     if (spec.invoice) {
       const invoiceReadableId = await nextSequence(ctx, "purchaseInvoice");
+      const dateIssued = resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset);
       const invoiceId = await insertId(ctx, "purchaseInvoice", {
         invoiceId: invoiceReadableId,
         status: spec.invoice.status,
@@ -200,7 +203,9 @@ export async function runTier5(ctx: Ctx): Promise<void> {
         paymentTermId,
         subtotal: spec.invoice.subtotal,
         totalAmount: spec.invoice.totalAmount,
-        dateIssued: resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset),
+        dateIssued,
+        // post-purchase-invoice stamps it; the AP aging and open-balance RPCs filter on it.
+        postingDate: spec.invoice.status === "Draft" ? undefined : dateIssued,
         dateDue:
           spec.invoice.dueDateOffset === undefined
             ? undefined
@@ -222,6 +227,7 @@ export async function runTier5(ctx: Ctx): Promise<void> {
           invoiceId,
           invoiceLineType: "Part",
           purchaseOrderId: poId,
+          purchaseOrderLineId: need(lineIdByItem, line.item),
           itemId: item.id,
           description: item.name,
           quantity: line.quantity,
@@ -241,8 +247,15 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     rfqId: rfqReadableId,
     status: data.rfqHeader.status,
     employeeId: ctx.userId,
+    assignee: data.rfqHeader.assignee === "self" ? userId : undefined,
     locationId: plantId,
     rfqDate: resolveDate(ctx.anchor, data.rfqHeader.rfqDateOffset),
+    // The KPI chart and list sort on createdAt; a seed-time stamp is one spike.
+    createdAt: resolveTimestamp(
+      ctx.anchor,
+      data.rfqHeader.rfqDateOffset,
+      "09:00:00"
+    ),
     expirationDate: resolveDate(ctx.anchor, data.rfqHeader.expirationOffset),
     notes: RICH(data.rfqHeader.notes),
     internalNotes: RICH(data.rfqHeader.internalNotes)
@@ -289,7 +302,13 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       supplierLocationId: need(ctx.refs.misc, `sloc:${spec.supplier}`),
       supplierReference: spec.supplierReference,
       supplierInteractionId: interactionId,
+      assignee: spec.assignee === "self" ? userId : undefined,
       quotedDate: resolveDate(ctx.anchor, SUPPLIER_QUOTE_QUOTED_OFFSET),
+      createdAt: resolveTimestamp(
+        ctx.anchor,
+        SUPPLIER_QUOTE_QUOTED_OFFSET,
+        "10:00:00"
+      ),
       expirationDate: resolveDate(ctx.anchor, SUPPLIER_QUOTE_EXPIRATION_OFFSET),
       currencyCode: "USD",
       exchangeRate: 1,
@@ -381,7 +400,9 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       supplierLocationId: need(ctx.refs.misc, `sloc:${spec.supplier}`),
       supplierReference: spec.supplierReference,
       supplierInteractionId: interactionId,
+      assignee: spec.assignee === "self" ? userId : undefined,
       quotedDate: resolveDate(ctx.anchor, spec.quotedOffset),
+      createdAt: resolveTimestamp(ctx.anchor, spec.quotedOffset, "10:00:00"),
       expirationDate: resolveDate(ctx.anchor, spec.expirationOffset),
       currencyCode: "USD",
       exchangeRate: 1
@@ -503,6 +524,7 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       assignee: spec.status === "Draft" ? ctx.userId : null,
       locationId: plantId,
       rfqDate: resolveDate(ctx.anchor, spec.rfqDateOffset),
+      createdAt: resolveTimestamp(ctx.anchor, spec.rfqDateOffset, "09:00:00"),
       expirationDate: resolveDate(ctx.anchor, spec.expirationOffset),
       notes: RICH(spec.notes),
       internalNotes: RICH(spec.internalNotes)
@@ -552,17 +574,17 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       const lineIds: string[] = [];
       for (const [index, line] of spec.lines.entries()) {
         const item = need(ctx.refs.items, line.item);
-        lineIds.push(
-          await insertId(ctx, "purchaseReturnOrderLine", {
-            purchaseReturnOrderId: returnId,
-            itemId: item.id,
-            lineNumber: index + 1,
-            quantity: line.quantity,
-            quantityShipped: completed ? line.quantity : 0,
-            unitOfMeasureCode: "EA",
-            unitPrice: line.unitPrice
-          })
-        );
+        const lineId = await insertId(ctx, "purchaseReturnOrderLine", {
+          purchaseReturnOrderId: returnId,
+          itemId: item.id,
+          lineNumber: index + 1,
+          quantity: line.quantity,
+          quantityShipped: completed ? line.quantity : 0,
+          unitOfMeasureCode: "EA",
+          unitPrice: line.unitPrice
+        });
+        lineIds.push(lineId);
+        ctx.refs.documents[`pretline:${spec.key}:${index + 1}`] = lineId;
       }
 
       if (completed) {
@@ -615,8 +637,37 @@ export async function runTier5(ctx: Ctx): Promise<void> {
         ctx.refs.documents[`pret-shipment:${spec.key}`] = shipmentId;
       }
 
+      if (spec.credit) {
+        ctx.log(`  return ${spec.key} — debit memo (${spec.credit.status})`);
+        await seedReturnCredit(ctx, {
+          spec: spec.credit,
+          kind: "purchase",
+          partyId: supplierId,
+          returnOrderId: returnId
+        });
+      }
+
       ctx.refs.documents[`pret:${spec.key}`] = returnId;
     }
+  }
+
+  await seedApprovals(ctx);
+
+  // ── Supplier bank accounts ────────────────────────────────────────────────
+  for (const spec of data.supplierBankAccounts) {
+    await insertRow(ctx, "supplierBankAccount", {
+      supplierId: need(ctx.refs.suppliers, spec.supplier, "supplier"),
+      name: spec.name,
+      accountHolderName: spec.accountHolderName,
+      bankName: spec.bankName,
+      countryCode: spec.countryCode,
+      currencyCode: spec.currencyCode,
+      accountNumber: spec.accountNumber,
+      bankCode: spec.bankCode,
+      swiftBic: spec.swiftBic,
+      isPrimary: spec.isPrimary,
+      active: true
+    });
   }
 
   // ── Status history — Draft → To Review → To Receive on the received PO ─────
@@ -633,6 +684,71 @@ export async function runTier5(ctx: Ctx): Promise<void> {
         purchaseOrderId: historyPoId,
         status,
         createdAt: resolveTimestamp(ctx.anchor, offset, timeOfDay)
+      });
+    }
+  }
+}
+
+// Approval tiers approved by the company's Admin employee-type group (plus the
+// applying user as default approver), and the Pending requests PO finalize and
+// supplier "Request approval" leave behind — what "Needs my approval", the PO
+// banner and the supplier Approval tab read.
+async function seedApprovals(ctx: Ctx): Promise<void> {
+  const data = ctx.dataset.purchasing;
+  ctx.log("approval rules + requests");
+  const admin = await one<{ id: string }>(
+    ctx.client,
+    `SELECT g.id FROM "group" g
+     JOIN "employeeType" et ON et.id = g.id AND et."companyId" = g."companyId"
+     WHERE g."companyId" = $1 AND g."isEmployeeTypeGroup" AND et."systemType" = 'Admin'
+     ORDER BY et."createdAt" LIMIT 1`,
+    [ctx.companyId]
+  );
+  for (const rule of data.approvalRules) {
+    await insertRow(ctx, "approvalRule", {
+      documentType: rule.documentType,
+      enabled: true,
+      approverGroupIds: [admin.id],
+      defaultApproverId: ctx.userId,
+      lowerBoundAmount: rule.lowerBoundAmount,
+      escalationDays: rule.escalationDays
+    });
+  }
+
+  for (const request of data.approvalRequests) {
+    const requestedAt = resolveTimestamp(
+      ctx.anchor,
+      request.requestedOffset,
+      "15:00:00"
+    );
+    if ("purchaseOrder" in request) {
+      const purchaseOrderId = need(
+        ctx.refs.documents,
+        request.purchaseOrder,
+        "purchase order"
+      );
+      const order = await one<{ orderTotal: string }>(
+        ctx.client,
+        `SELECT "orderTotal" FROM "purchaseOrders" WHERE id = $1 AND "companyId" = $2`,
+        [purchaseOrderId, ctx.companyId]
+      );
+      await insertRow(ctx, "approvalRequest", {
+        documentType: "purchaseOrder",
+        documentId: purchaseOrderId,
+        status: "Pending",
+        amount: order.orderTotal,
+        requestedBy: ctx.userId,
+        requestedAt,
+        createdAt: requestedAt
+      });
+    } else {
+      await insertRow(ctx, "approvalRequest", {
+        documentType: "supplier",
+        documentId: need(ctx.refs.suppliers, request.supplier, "supplier"),
+        status: "Pending",
+        requestedBy: ctx.userId,
+        requestedAt,
+        createdAt: requestedAt
       });
     }
   }

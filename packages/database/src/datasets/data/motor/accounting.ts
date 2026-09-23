@@ -234,6 +234,74 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
       journalEntryId: "JE-SEED-005",
       postingOffset: -33
     }
+  },
+  {
+    // The chart's opening position, so the balance sheet has cash, stock,
+    // plant and equity before the first posted document.
+    ref: "journal:opening-balance",
+    journalEntryId: "JE-SEED-006",
+    description: "Opening balances — cutover from the legacy ledger",
+    status: "Posted",
+    sourceType: "Opening Balance",
+    postingOffset: -242,
+    lines: [
+      {
+        account: "1010",
+        description: "Operating cash",
+        amount: 610000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-1"
+      },
+      {
+        account: "1210",
+        description: "Raw materials on hand",
+        amount: 180000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-2"
+      },
+      {
+        account: "1220",
+        description: "Finished goods on hand",
+        amount: 140000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-3"
+      },
+      {
+        account: "1350",
+        description: "Machinery & equipment at cost",
+        amount: 1120000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-4"
+      },
+      {
+        account: "1330",
+        description: "Accumulated depreciation to date",
+        amount: -290000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-5"
+      },
+      {
+        account: "2410",
+        description: "Equipment term loan",
+        amount: 650000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-6"
+      },
+      {
+        account: "3010",
+        description: "Paid-in capital",
+        amount: 600000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-7"
+      },
+      {
+        account: "3100",
+        description: "Retained earnings brought forward",
+        amount: 510000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-8"
+      }
+    ]
   }
 ];
 
@@ -298,6 +366,27 @@ export const PAYMENTS: PaymentSpec[] = [
     credits: [
       { memoKey: "lakeland-bar", invoiceKey: "debit-note", amount: 975 }
     ]
+  },
+  // Entered but not yet applied or posted — the payment's apply table.
+  {
+    key: "draft-receipt",
+    type: "Receipt",
+    status: "Draft",
+    customer: "Cardinal Motorworks",
+    dateOffset: -1,
+    amount: 780,
+    reference: "ACH advice 5580 — 4500 stator",
+    applies: []
+  },
+  {
+    key: "draft-disbursement",
+    type: "Disbursement",
+    status: "Draft",
+    supplier: "Lakeland Electrical Steel",
+    dateOffset: 0,
+    amount: 540,
+    reference: "ACH batch 0930 — lamination steel",
+    applies: []
   }
 ];
 
@@ -365,5 +454,25 @@ export const motorAccounting: AccountingData = {
   },
   closeTasks: CLOSE_TASKS,
   // EUR per 1 USD (foreign units per base unit), the same direction as the EUR purchase order's 0.92 snapshot.
-  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }]
+  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }],
+  billingAddresses: {
+    receivable: {
+      addressLine1: "1450 Meyer Industrial Road",
+      city: "Fort Wayne",
+      state: "IN",
+      postalCode: "46803",
+      countryCode: "US",
+      phone: "+1-260-555-0174",
+      email: "ar@torquedynamics.example"
+    },
+    payable: {
+      addressLine1: "1450 Meyer Industrial Road",
+      city: "Fort Wayne",
+      state: "IN",
+      postalCode: "46803",
+      countryCode: "US",
+      phone: "+1-260-555-0175",
+      email: "ap@torquedynamics.example"
+    }
+  }
 };

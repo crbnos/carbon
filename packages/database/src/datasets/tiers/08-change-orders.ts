@@ -1,35 +1,9 @@
 import { resolveDate } from "../dates.ts";
 import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { addBomLine, createItem } from "../helpers/items.ts";
-import type { Row } from "../sql.ts";
-import {
-  insertId,
-  insertRow,
-  need,
-  nextSequence,
-  one,
-  quote,
-  RICH,
-  rows,
-  sharedColumns
-} from "../sql.ts";
+import { copyMethodToMethod } from "../helpers/method-copy.ts";
+import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
 import type { Ctx, ItemRef } from "../types.ts";
-
-// Columns never copied verbatim when a change notice clones a method's BoM/BoP:
-// the row's own identity, its parent method (the clone's whole point), tenancy +
-// audit (re-stamped by insertRow) and methodMaterial's generated
-// productionQuantity. Everything else comes from sharedColumns, so a migration
-// that adds a column can't silently drop it from the clone.
-const CLONE_EXCLUDE = [
-  "id",
-  "makeMethodId",
-  "companyId",
-  "createdAt",
-  "createdBy",
-  "updatedAt",
-  "updatedBy",
-  "productionQuantity"
-];
 
 // The item's current (highest-version) make method — what a change notice clones
 // its draft from, and what the release diff reads as the base.
@@ -45,69 +19,6 @@ async function baseMakeMethod(
      LIMIT 1`,
     [item.id, ctx.companyId]
   );
-}
-
-/**
- * Copy one method's BoM/BoP onto another (what `copyMakeMethod` does in the app).
- * Operations are cloned first so each material's methodOperationId can be remapped
- * onto the cloned operation. Operation children (steps / parameters / tools) are
- * not copied — no tier writes any.
- */
-async function cloneMethodRows(
-  ctx: Ctx,
-  sourceMakeMethodId: string,
-  targetMakeMethodId: string
-): Promise<void> {
-  const operationColumns = await sharedColumns(
-    ctx.client,
-    "methodOperation",
-    "methodOperation",
-    CLONE_EXCLUDE
-  );
-  const sourceOperations = await rows<Row>(
-    ctx.client,
-    `SELECT "id", ${operationColumns.map(quote).join(", ")}
-     FROM "methodOperation"
-     WHERE "makeMethodId" = $1 AND "companyId" = $2
-     ORDER BY "order"`,
-    [sourceMakeMethodId, ctx.companyId]
-  );
-
-  const operationIds = new Map<string, string>();
-  for (const { id, ...operation } of sourceOperations) {
-    const cloned = await insertId(ctx, "methodOperation", {
-      ...operation,
-      makeMethodId: targetMakeMethodId
-    });
-    operationIds.set(id as string, cloned);
-  }
-
-  const materialColumns = await sharedColumns(
-    ctx.client,
-    "methodMaterial",
-    "methodMaterial",
-    CLONE_EXCLUDE
-  );
-  const sourceMaterials = await rows<Row>(
-    ctx.client,
-    `SELECT ${materialColumns.map(quote).join(", ")}
-     FROM "methodMaterial"
-     WHERE "makeMethodId" = $1 AND "companyId" = $2
-     ORDER BY "order"`,
-    [sourceMakeMethodId, ctx.companyId]
-  );
-
-  for (const material of sourceMaterials) {
-    const operationId = material.methodOperationId;
-    await insertRow(ctx, "methodMaterial", {
-      ...material,
-      makeMethodId: targetMakeMethodId,
-      methodOperationId:
-        typeof operationId === "string"
-          ? (operationIds.get(operationId) ?? null)
-          : null
-    });
-  }
 }
 
 export async function runTier8(ctx: Ctx): Promise<void> {
@@ -190,7 +101,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
             status: "Draft",
             changeOrderId: changeOrder
           });
-          await cloneMethodRows(ctx, base.id, draft);
+          await copyMethodToMethod(ctx, base.id, draft);
           ctx.log(`  ${item.readableId} draft method v${draftVersion}`);
           draftMakeMethodId = draft;
           baseMakeMethodId = base.id;
@@ -212,7 +123,8 @@ export async function runTier8(ctx: Ctx): Promise<void> {
             name: item.name,
             type: "Part",
             replenishment: "Make",
-            standardCost: 0,
+            // A new revision starts at its predecessor's cost.
+            standardCost: item.unitCost,
             unitSalePrice: revisionSpec.unitSalePrice,
             description: revisionSpec.description
           });
@@ -232,7 +144,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
      WHERE id = $1`,
             [draft, changeOrder, ctx.userId]
           );
-          await cloneMethodRows(ctx, base.id, draft);
+          await copyMethodToMethod(ctx, base.id, draft);
           ctx.log(
             `  ${revisionItem.readableId}.${revisionItem.revision} draft method`
           );

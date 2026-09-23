@@ -1,11 +1,19 @@
 import type {
+  CustomFieldSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
   NoteSpec,
+  OpenTimecardSpec,
   OpsData,
+  PeopleAbsenceSpec,
+  PeopleAssignmentSpec,
+  PrintJobSpec,
+  ReplacementPartSpec,
+  SerialSequenceSpec,
   SuggestionSpec,
   TimecardSpec,
-  TrainingSpec
+  TrainingSpec,
+  UserAttributeCategorySpec
 } from "../../types.ts";
 
 // One preventive schedule per frequency, spread over the plant's work centers.
@@ -19,8 +27,7 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     frequency: "Daily",
     priority: "Medium",
     estimatedDuration: 20,
-    nextDueOffset: 1,
-    weekends: false
+    nextDueOffset: 1
   },
   {
     key: "oven-profile",
@@ -69,11 +76,23 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     estimatedDuration: 420,
     nextDueOffset: 155,
     takesWorkCenterOffline: true
+  },
+  {
+    key: "proto-winder-cal",
+    name: "Prototype winder tension calibration",
+    description:
+      "Check the lab winder's tensioner against the reference spring gauge at three setpoints and log the correction.",
+    workCenter: "Prototype Winding Lab",
+    frequency: "Monthly",
+    priority: "Medium",
+    estimatedDuration: 45,
+    nextDueOffset: 9
   }
 ];
 
-// Exactly one dispatch per status, spanning every severity, priority, source
-// and OEE impact.
+// Every status, severity, priority, source and OEE impact, plus the shapes the
+// maintenance KPIs and boards read: a failure on a production day, back-dated
+// completions, today's scheduled task, a machine down now, and one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "winding-nozzle",
@@ -163,7 +182,120 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     created: { offset: -7, time: "06:00:00" },
     plannedStart: { offset: -6, time: "10:00:00" },
     plannedEnd: { offset: -6, time: "10:45:00" }
+  },
+  {
+    key: "winding-tension-today",
+    status: "Assigned",
+    priority: "Medium",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "Winding Line 1",
+    schedule: "winding-tension",
+    content:
+      "Daily tensioner and nozzle check: verify the setpoint with the gauge, inspect the needle nozzles for enamel scrape, clear the wire guides.",
+    created: { offset: -1, time: "06:00:00" },
+    plannedStart: { offset: 0, time: "14:00:00" },
+    plannedEnd: { offset: 0, time: "14:20:00" }
+  },
+  {
+    key: "press-lube-pump",
+    status: "In Progress",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "Lamination Press",
+    suspectedFailureMode: "Lubrication Failure",
+    content:
+      "Die lubrication pump lost prime — the press faulted on low lube pressure mid-run. Press locked out while the pump is primed and the check valve replaced.",
+    created: { offset: -1, time: "15:10:00" },
+    plannedStart: { offset: -1, time: "15:30:00" },
+    plannedEnd: { offset: 1, time: "10:00:00" },
+    actualStart: { offset: -1, time: "15:35:00" },
+    takesWorkCenterOffline: true,
+    comments: [
+      "Check valve on order; die clamp bolts re-torqued while the press is open."
+    ]
+  },
+  {
+    key: "assembly-bearing-heater",
+    status: "Completed",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Motor Assembly Bench",
+    suspectedFailureMode: "Electrical Fault",
+    actualFailureMode: "Electrical Fault",
+    content:
+      "Induction bearing heater stopped at 60 °C mid-cycle — thermocouple lead broken at the magnetic probe. Lead replaced; heater reaching 110 °C again.",
+    created: { offset: -9, time: "14:15:00" },
+    plannedStart: { offset: -9, time: "14:20:00" },
+    plannedEnd: { offset: -9, time: "15:00:00" },
+    actualStart: { offset: -9, time: "14:25:00" },
+    actualEnd: { offset: -9, time: "14:55:00" }
+  },
+  {
+    key: "balancer-regrease-prior",
+    status: "Completed",
+    priority: "High",
+    severity: "Preventive",
+    source: "Scheduled",
+    oeeImpact: "Planned",
+    workCenter: "Balancing Cell",
+    schedule: "balancer-spindle",
+    content:
+      "Monthly balancer spindle re-grease; reference rotor read 0.4 g·mm after the run-in.",
+    created: { offset: -44, time: "06:00:00" },
+    plannedStart: { offset: -43, time: "10:00:00" },
+    plannedEnd: { offset: -43, time: "11:00:00" },
+    actualStart: { offset: -43, time: "10:05:00" },
+    actualEnd: { offset: -43, time: "10:55:00" },
+    takesWorkCenterOffline: true,
+    spareParts: [{ item: "CN-BRG-GREASE", quantity: 1, shelf: "A2-L2" }]
+  },
+  {
+    key: "oven-door-seal",
+    status: "Completed",
+    priority: "High",
+    severity: "Support Required",
+    source: "Reactive",
+    oeeImpact: "Down",
+    workCenter: "Impregnation Oven",
+    suspectedFailureMode: "Leak",
+    actualFailureMode: "Leak",
+    content:
+      "Oven door gasket split along the hinge side — zone 2 could not hold 160 °C for the cure. Gasket replaced and the zone re-profiled before releasing the oven.",
+    created: { offset: -53, time: "08:30:00" },
+    plannedStart: { offset: -53, time: "09:00:00" },
+    plannedEnd: { offset: -53, time: "15:00:00" },
+    actualStart: { offset: -53, time: "09:10:00" },
+    actualEnd: { offset: -52, time: "09:40:00" },
+    takesWorkCenterOffline: true
+  },
+  {
+    key: "proto-winder-encoder",
+    status: "Open",
+    priority: "Medium",
+    severity: "Operator Performed",
+    source: "Reactive",
+    oeeImpact: "Impact",
+    workCenter: "Prototype Winding Lab",
+    suspectedFailureMode: "Electrical Fault",
+    content:
+      "The lab winder's turn counter skips counts above 600 rpm — encoder cable shield looks chafed at the drag chain.",
+    created: { offset: -2, time: "13:00:00" },
+    plannedStart: { offset: 2, time: "09:00:00" },
+    plannedEnd: { offset: 2, time: "10:30:00" }
   }
+];
+
+// The spares the MES dispatch page offers per work center.
+export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
+  { workCenter: "Balancing Cell", item: "BRG-6206-C3", quantity: 2 },
+  { workCenter: "Impregnation Oven", item: "FAN-AX-160", quantity: 1 },
+  { workCenter: "Lamination Press", item: "FST-M10-SS", quantity: 8 }
 ];
 
 export const TRAININGS: TrainingSpec[] = [
@@ -306,6 +438,38 @@ export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -1, clockIn: "11:30:00", clockOut: "15:03:00" }
 ];
 
+// Clocked in before the first timer on the floor started this morning.
+export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:29:00" };
+
+// The supervisor's stations for the week around today — none on today itself,
+// so the MES schedule opens on every work center instead of one station.
+export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
+  { dayOffset: -2, workCenter: "Winding Line 1", shift: "A Shift" },
+  { dayOffset: -1, workCenter: "Motor Assembly Bench", shift: "A Shift" },
+  {
+    dayOffset: 1,
+    workCenter: "CNC Turning Cell",
+    shift: "A Shift",
+    note: "Cover shaft turning while the setter is on leave."
+  },
+  { dayOffset: 2, workCenter: "Winding Line 1", shift: "A Shift" },
+  {
+    dayOffset: 3,
+    workCenter: "Dyno Test Cell",
+    shift: "A Shift",
+    overtimeHours: 2,
+    note: "Witness the Halcyon actuator dyno run."
+  },
+  { dayOffset: 4, workCenter: "Motor Assembly Bench", shift: "A Shift" }
+];
+
+export const PEOPLE_ABSENCES: PeopleAbsenceSpec[] = [
+  {
+    dayOffset: 9,
+    note: "NFPA 70E arc-flash safety training."
+  }
+];
+
 export const SUGGESTIONS: SuggestionSpec[] = [
   {
     suggestion:
@@ -331,11 +495,106 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
+// People › Attributes — the applying user's own profile values.
+export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
+  {
+    name: "Winding & Electrical Safety",
+    emoji: "⚡",
+    public: true,
+    attributes: [
+      {
+        name: "NFPA 70E arc-flash training expires",
+        dataType: "Date",
+        valueOffset: 61
+      },
+      {
+        name: "Hipot tester authorization",
+        dataType: "List",
+        listOptions: ["None", "Supervised", "Independent"],
+        value: "Independent"
+      },
+      { name: "Electrical work permit signer", dataType: "User" },
+      {
+        name: "Qualified electrical worker",
+        dataType: "Yes/No",
+        value: true,
+        canSelfManage: true
+      }
+    ]
+  }
+];
+
+export const CUSTOM_FIELDS: CustomFieldSpec[] = [
+  { table: "part", name: "NEMA frame", dataType: "Text" },
+  { table: "customer", name: "Application engineer", dataType: "User" },
+  { table: "job", name: "Hipot witness required", dataType: "Yes/No" }
+];
+
+export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
+  // Continues the supplier's numbering already on the shelf (…-0036).
+  { item: "ENC-INC-2048", prefix: "ENC2048-SN-", size: 4, next: 36 },
+  { item: "MTR-9000", prefix: "MTR9000-SN-", size: 4, next: 1 },
+  { item: "MTR-4500", prefix: "MTR4500-SN-", size: 4, next: 0 }
+];
+
+// Label history on the plant's printer route: auto and manual prints, a
+// delivery failure, and its reprint waiting in the queue.
+export const PRINT_JOBS: PrintJobSpec[] = [
+  {
+    source: { kind: "Receipt", receipt: "receipt:copperline-restock" },
+    item: "TRM-BLK-6P",
+    status: "completed",
+    origin: "auto",
+    at: { offset: -2, time: "15:26:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "done-rotor" },
+    item: "ROT-9000",
+    status: "completed",
+    origin: "manual",
+    at: { offset: -3, time: "19:55:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "StorageUnit", shelf: "A1-L1" },
+    status: "completed",
+    origin: "manual",
+    at: { offset: -6, time: "16:30:00" },
+    attempts: 1
+  },
+  {
+    source: { kind: "Job", job: "floor-stator" },
+    item: "STA-4500",
+    status: "failed",
+    origin: "auto",
+    at: { offset: -1, time: "13:50:00" },
+    attempts: 3,
+    error: "Printer did not respond after 3 attempts (connection timed out)"
+  },
+  {
+    source: { kind: "Job", job: "floor-stator" },
+    item: "STA-4500",
+    status: "queued",
+    origin: "reprint",
+    at: { offset: 0, time: "06:48:00" },
+    attempts: 0
+  }
+];
+
 export const motorOps: OpsData = {
+  userAttributeCategories: USER_ATTRIBUTE_CATEGORIES,
+  customFields: CUSTOM_FIELDS,
+  serialSequences: SERIAL_SEQUENCES,
+  printJobs: PRINT_JOBS,
   maintenanceSchedules: MAINTENANCE_SCHEDULES,
   maintenanceDispatches: MAINTENANCE_DISPATCHES,
+  replacementParts: REPLACEMENT_PARTS,
   trainings: TRAININGS,
   timecards: TIMECARDS,
+  openTimecard: OPEN_TIMECARD,
+  peopleAssignments: PEOPLE_ASSIGNMENTS,
+  peopleAbsences: PEOPLE_ABSENCES,
   suggestions: SUGGESTIONS,
   notes: NOTES
 };

@@ -29,6 +29,7 @@ export const RFQ_LINES: RfqLineSpec[] = [
 export const RFQ_QUOTES: RfqQuoteSpec[] = [
   {
     key: "meridian",
+    assignee: "self",
     supplier: "Meridian Magnetics",
     supplierReference: "MM-Q-8812",
     shippingCost: 320,
@@ -113,6 +114,7 @@ export const RFQ_ORDER_QUANTITY = 250;
 // 2 lines, finalized (Requested), fanned out to 3 suppliers.
 export const RFQ_HEADER: RfqHeaderSpec = {
   ref: "prfq:magnets",
+  assignee: "self",
   status: "Requested",
   rfqDateOffset: -24,
   expirationOffset: 48,
@@ -213,6 +215,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     source: "direct",
     log: "purchase order 3 — Draft (Summit Bearing)",
     ref: "po:summit",
+    assignee: "self",
     supplier: "Summit Bearing Supply",
     purchaseOrderType: "Purchase",
     status: "Draft",
@@ -246,6 +249,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — To Review (Copperline magnet wire)",
+    assignee: "self",
     supplier: "Copperline Wire Works",
     purchaseOrderType: "Purchase",
     status: "To Review",
@@ -257,12 +261,14 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Needs Approval (Summit hybrid ceramic bearings)",
+    ref: "po:needs-approval",
     supplier: "Summit Bearing Supply",
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -1,
     lines: [
-      { item: "BRG-6206-HYB", purchaseQuantity: 24, supplierUnitPrice: 34 }
+      // The full hybrid-bearing lot for the 4500 line — over the $5,000 approval tier.
+      { item: "BRG-6206-HYB", purchaseQuantity: 160, supplierUnitPrice: 34 }
     ]
   },
   {
@@ -491,6 +497,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   {
     source: "direct",
     log: "purchase order — Outside Processing, shaft nitride at Maumee",
+    assignee: "self",
     supplier: "Maumee Contract Machining",
     purchaseOrderType: "Outside Processing",
     status: "To Receive",
@@ -512,6 +519,42 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "MAG-NDFB-38", purchaseQuantity: 60, supplierUnitPrice: 13.2 }
     ]
+  },
+  {
+    source: "direct",
+    log: "purchase order — To Invoice, terminal blocks and a replacement Nomex roll received (Copperline)",
+    ref: "po:copperline-restock",
+    supplier: "Copperline Wire Works",
+    purchaseOrderType: "Purchase",
+    status: "To Invoice",
+    orderDateOffset: -12,
+    lines: [
+      { item: "TRM-BLK-6P", purchaseQuantity: 20, supplierUnitPrice: 8.9 },
+      { item: "MAT-INS-NOMEX", purchaseQuantity: 20, supplierUnitPrice: 12.5 }
+    ],
+    receipt: {
+      ref: "receipt:copperline-restock",
+      status: "Posted",
+      postedOffset: -2,
+      lines: [
+        {
+          item: "TRM-BLK-6P",
+          orderQuantity: 20,
+          outstandingQuantity: 0,
+          receivedQuantity: 20,
+          unitPrice: 8.9,
+          toShelf: "A1-L2"
+        },
+        {
+          item: "MAT-INS-NOMEX",
+          orderQuantity: 20,
+          outstandingQuantity: 0,
+          receivedQuantity: 20,
+          unitPrice: 12.5,
+          toShelf: "Winding-Crib"
+        }
+      ]
+    }
   }
 ];
 
@@ -519,6 +562,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "ironwood-hardware-blanket",
+    assignee: "self",
     supplier: "Ironwood Fasteners",
     status: "Draft",
     supplierReference: "IWF-2026-0781",
@@ -573,6 +617,11 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "bolt-plating",
+    credit: {
+      status: "Draft",
+      dateOffset: -4,
+      lines: [{ line: 1, quantity: 40 }]
+    },
     status: "Completed",
     supplier: "Ironwood Fasteners",
     dateOffset: -6,
@@ -593,6 +642,14 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     supplier: "Copperline Wire Works",
     dateOffset: 0,
     lines: [{ item: "TRM-BLK-6P", quantity: 3, unitPrice: 8.9 }]
+  },
+  // Drafted while MRB weighs return-to-vendor for the thin Nomex rolls (quality's ncr:nomex-thin links this line).
+  {
+    key: "nomex-rtv",
+    status: "Draft",
+    supplier: "Copperline Wire Works",
+    dateOffset: -3,
+    lines: [{ item: "MAT-INS-NOMEX", quantity: 4, unitPrice: 12.5 }]
   }
 ];
 
@@ -606,5 +663,62 @@ export const motorPurchasing: PurchasingData = {
   lifecycleRfqs: LIFECYCLE_RFQS,
   purchaseOrders: PURCHASE_ORDERS,
   standaloneSupplierQuotes: STANDALONE_SUPPLIER_QUOTES,
-  purchaseReturns: PURCHASE_RETURNS
+  purchaseReturns: PURCHASE_RETURNS,
+  approvalRules: [
+    { documentType: "purchaseOrder", lowerBoundAmount: 5000 },
+    {
+      documentType: "purchaseOrder",
+      lowerBoundAmount: 25000,
+      escalationDays: 3
+    },
+    { documentType: "supplier", lowerBoundAmount: 0 }
+  ],
+  approvalRequests: [
+    { purchaseOrder: "po:needs-approval", requestedOffset: -1 },
+    { supplier: "Amperon Winding Works", requestedOffset: -4 }
+  ],
+  supplierBankAccounts: [
+    {
+      supplier: "Meridian Magnetics",
+      name: "Meridian remittance",
+      bankName: "Summit City Bank (demo)",
+      accountHolderName: "Meridian Magnetics Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-7745-1068",
+      bankCode: "DEMO-074100",
+      isPrimary: true
+    },
+    {
+      supplier: "Copperline Wire Works",
+      name: "Copperline operating",
+      bankName: "Maumee Valley Savings (demo)",
+      accountHolderName: "Copperline Wire Works LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-8856-2179",
+      isPrimary: true
+    },
+    {
+      supplier: "Summit Bearing Supply",
+      name: "Summit remittance",
+      bankName: "Hoosier Commerce (demo)",
+      accountHolderName: "Summit Bearing Supply Co.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-9967-3280",
+      isPrimary: true
+    },
+    {
+      supplier: "Euromag Ferrite Werke GmbH",
+      name: "Euromag EUR account",
+      bankName: "Rhein-Ruhr Handelsbank (demo)",
+      accountHolderName: "Euromag Ferrite Werke GmbH",
+      countryCode: "DE",
+      currencyCode: "EUR",
+      accountNumber: "DEMO-DE00-0000-6634",
+      swiftBic: "DEMODEXX",
+      isPrimary: true
+    }
+  ]
 };

@@ -30,7 +30,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "MAT-SYLGARD", qty: 5, shelf: "A2-L1" },
   { item: "MAT-CONFCOAT", qty: 12, shelf: "A2-L1" },
   { item: "CN-MLI-001", qty: 4, shelf: "CleanRoom" },
-  { item: "CN-GREASE-001", qty: 2, shelf: "A1-L3" }
+  { item: "CN-GREASE-001", qty: 3, shelf: "A1-L3" }
 ];
 
 // Lots/serials that back the tracked slice of the opening stock above, plus

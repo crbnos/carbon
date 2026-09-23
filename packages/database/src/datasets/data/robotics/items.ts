@@ -1,7 +1,10 @@
-import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  BatchPropertySpec,
   ConfigurationSpec,
   CustomerPartSpec,
+  EnforcementRuleSpec,
+  InspectionPlanSpec,
+  ItemSpec,
   ItemsData,
   MakeMethodSpec,
   PriceOverrideSpec,
@@ -10,6 +13,7 @@ import type {
   SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
+import { roboticsAssembly } from "./assembly.ts";
 
 // ---------------------------------------------------------------------------
 // Robot item catalog for Helix Robotics Inc.
@@ -264,7 +268,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     replenishment: "Make",
     // Serial-tracked: each arm gets its own genealogy in traceability.
     trackingType: "Serial",
-    standardCost: 0,
+    standardCost: 31900,
     unitSalePrice: 58000
   },
   {
@@ -272,7 +276,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Base & Column Assembly (J1)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 3740,
     unitSalePrice: 6800
   },
   {
@@ -280,7 +284,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Upper & Lower Link Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 6820,
     unitSalePrice: 12400
   },
   {
@@ -288,7 +292,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Joint Drive Module (J2/J3)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 2140,
     unitSalePrice: 3900
   },
   {
@@ -296,7 +300,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Three-Axis Wrist Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 5280,
     unitSalePrice: 9600
   },
   {
@@ -304,7 +308,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Robot Controller Cabinet",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 6330,
     unitSalePrice: 11500
   },
   {
@@ -312,7 +316,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Motion Control PCB Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 539,
     unitSalePrice: 980
   },
   {
@@ -320,7 +324,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Safety I/O Board Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 341,
     unitSalePrice: 620
   },
   {
@@ -328,7 +332,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Arm Cable Harness",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 770,
     unitSalePrice: 1400
   },
   {
@@ -336,7 +340,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Two-Finger Parallel Gripper 80mm",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 3800,
     unitSalePrice: 6900
   },
   {
@@ -344,7 +348,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Gripper Jaw Set 80mm",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 176,
     unitSalePrice: 320
   }
 ];
@@ -370,6 +374,8 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Mill Cell",
         description: "Machine base casting and column",
         order: 1,
+        setupTime: 1,
+        machineTime: 3,
         laborTime: 4,
         parameters: [
           { key: "Fixture", value: "FX-BASE-CAST-01" },
@@ -469,7 +475,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Inspection Bench",
         description: "Flying probe test",
         order: 3,
-        laborTime: 1
+        laborTime: 1,
+        operationType: "Inspection",
+        inspectionPlan: "CTRL-PCB-FPT"
       }
     ]
   },
@@ -486,7 +494,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "SMT Line",
         description: "SMT placement & reflow",
         order: 1,
-        laborTime: 1.5
+        setupTime: 0.5,
+        laborTime: 1.5,
+        machineTime: 0.2
       },
       {
         process: "PCB Assembly",
@@ -565,7 +575,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Mill Cell",
         description: "Machine jaw pair and dowel features",
         order: 1,
-        laborTime: 1.25
+        setupTime: 0.5,
+        laborTime: 1.25,
+        machineTime: 0.75
       },
       {
         process: "Final Inspection",
@@ -623,6 +635,14 @@ export const METHODS: MakeMethodSpec[] = [
         description: "Mount drives, boards and wire the backplane",
         order: 2,
         laborTime: 5
+      },
+      // Powered up in the cell before it ships or joins an arm.
+      {
+        process: "Robot Integration",
+        workCenter: "Integration Cell 1",
+        description: "Cabinet power-up and safety I/O check",
+        order: 3,
+        laborTime: 1.5
       }
     ]
   },
@@ -821,9 +841,30 @@ export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
 export const PRICING_RULES: PricingRuleSpec[] = [
   {
     name: "Lakeshore fleet discount",
+    ruleType: "Discount",
+    amountType: "Percentage",
+    amount: 5,
     customer: "Lakeshore Automotive",
-    percent: 5,
-    minQuantity: 3
+    minQuantity: 3,
+    priority: 10
+  },
+  {
+    name: "Integrator drive-train markup",
+    ruleType: "Markup",
+    amountType: "Percentage",
+    amount: 10,
+    customerType: "System Integrator",
+    items: ["DRV-SRV-400", "MOT-AC-750W", "ENC-ABS-19"],
+    priority: 5
+  },
+  {
+    name: "Stainless fastener box break",
+    ruleType: "Discount",
+    amountType: "Fixed",
+    amount: 0.05,
+    items: ["FST-M8-SS", "FST-M5-SS"],
+    minQuantity: 500,
+    priority: 1
   }
 ];
 
@@ -843,6 +884,20 @@ export const CONFIGURATION: ConfigurationSpec = {
       label: "Include Force/Torque Sensor",
       dataType: "boolean"
     }
+  ],
+  rules: [
+    {
+      // Heavy-payload cells ship without the standard gripper; the
+      // integrator supplies its own end-of-arm tooling.
+      target: { component: "GRP-2F-80" },
+      field: "quantity",
+      code: "return params.payload_kg > 50 ? 0 : 1;"
+    },
+    {
+      target: { operation: 2 },
+      field: "laborTime",
+      code: "return params.force_torque_sensor ? 30 : 24;"
+    }
   ]
 };
 
@@ -858,7 +913,132 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   }
 ];
 
+// The motion board's flying-probe test is sampled against a plan of its own,
+// so the MES opens an inspection lot for it rather than a plain operation.
+export const INSPECTION_PLANS: InspectionPlanSpec[] = [
+  {
+    key: "CTRL-PCB-FPT",
+    item: "PCB-CTRL-R1",
+    drawingNumber: "HX-MC-410 Rev C",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "24 V logic rail under full I/O load",
+        nominalValue: "24.00",
+        tolerancePlus: "0.50",
+        toleranceMinus: "0.50",
+        unit: "V"
+      },
+      {
+        label: "2",
+        description: "Encoder interface differential swing",
+        nominalValue: "2.50",
+        tolerancePlus: "0.30",
+        toleranceMinus: "0.30",
+        unit: "V"
+      }
+    ]
+  }
+];
+
+// Collaborative arms are certified for North America only; research
+// institutes get the teaching license; ESD parts stay at the plant; bare
+// boards are binned; the SMT line has to be in service to start a run.
+export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
+  {
+    family: "sales",
+    name: "Cobot certification — US and Canada only",
+    description: "UL 1740 / CSA Z434 listing covers North America.",
+    message:
+      "The ROB-2000 listing covers US and Canadian installations only. Export orders need the CE-marked configuration.",
+    severity: "error",
+    surfaces: ["salesOrderLine", "salesInvoiceLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.location.countryCode",
+        op: "in",
+        value: ["US", "CA"]
+      }
+    ],
+    items: ["ROB-2000"]
+  },
+  {
+    family: "sales",
+    name: "Research orders ship with the teaching license",
+    message:
+      "Research institute orders ship with the academic teaching license — confirm the license terms with the customer.",
+    severity: "warn",
+    surfaces: ["quoteLine", "salesOrderLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.customerTypeId",
+        op: "notIn",
+        value: { customerTypes: ["Research"] }
+      }
+    ],
+    items: ["CTRL-100", "ARM-BASE-001"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "ESD components stay at the plant",
+    message:
+      "ESD-sensitive drives and encoders are stored at the Pittsburgh plant only — pick a plant bin.",
+    severity: "warn",
+    surfaces: ["receipt", "stockTransfer"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.locationId",
+        op: "eq",
+        value: { location: "Plant" }
+      }
+    ],
+    items: ["DRV-SRV-400", "ENC-ABS-19"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Bare boards in bins",
+    message: "Bare PCBs go into sealed bins, never open shelving.",
+    severity: "warn",
+    surfaces: ["place"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.storageTypeId",
+        op: "eq",
+        value: { storageType: "Bin" }
+      }
+    ],
+    items: ["PCB-BARE-4L"]
+  },
+  {
+    family: "storage",
+    targetType: "workCenter",
+    name: "SMT line in service",
+    message:
+      "The SMT line is out of service — hold the board run until maintenance releases it.",
+    severity: "error",
+    surfaces: ["operationStart"],
+    match: "all",
+    conditions: [{ field: "workCenter.active", op: "eq", value: true }],
+    workCenters: ["SMT Line"]
+  }
+];
+
+export const BATCH_PROPERTIES: BatchPropertySpec[] = [
+  { item: "ENC-ABS-19", label: "Firmware build", dataType: "text" },
+  { item: "ENC-ABS-19", label: "Calibration date", dataType: "date" },
+  { item: "MAT-AL6061-BIL", label: "Heat number", dataType: "text" },
+  { item: "MAT-AL6061-BIL", label: "Hardness (HRB)", dataType: "numeric" }
+];
+
 export const roboticsItems: ItemsData = {
+  assembly: roboticsAssembly,
   buyParts: BUY_PARTS,
   materials: MATERIALS,
   consumables: CONSUMABLES,
@@ -872,5 +1052,8 @@ export const roboticsItems: ItemsData = {
   priceOverrides: PRICE_OVERRIDES,
   pricingRules: PRICING_RULES,
   configuration: CONFIGURATION,
-  revisionLadder: REVISION_LADDER
+  revisionLadder: REVISION_LADDER,
+  inspectionPlans: INSPECTION_PLANS,
+  enforcementRules: ENFORCEMENT_RULES,
+  batchProperties: BATCH_PROPERTIES
 };

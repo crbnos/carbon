@@ -187,6 +187,44 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     }
   }
 
+  // ── 5. HQ: one reorder policy per planning screen + a projection ────────────
+  // Every other planning row is at the plant; without these the planning
+  // screens render empty whenever the location picker is on HQ.
+  ctx.log("itemPlanning + demandProjection — HQ");
+  const hqId = need(refs.locations, "HQ", "location");
+  for (const readableId of data.hq.reorderItemIds) {
+    const item = need(refs.items, readableId, "HQ planning item");
+    const updated = await client.query(
+      `UPDATE "itemPlanning"
+       SET "reorderingPolicy" = 'Fixed Reorder Quantity',
+           "reorderPoint"      = 2,
+           "reorderQuantity"   = 4,
+           "updatedBy"         = $1,
+           "updatedAt"         = NOW()
+       WHERE "itemId" = $2 AND "companyId" = $3 AND "locationId" = $4`,
+      [userId, item.id, companyId, hqId]
+    );
+    if (updated.rowCount !== 1) {
+      throw new Error(
+        `Seed: item "${readableId}" has no itemPlanning row at HQ to set a reorder policy on`
+      );
+    }
+  }
+  for (const spec of data.hq.demandProjections) {
+    const item = need(refs.items, spec.readableId, "HQ demand projection item");
+    for (let week = 0; week < spec.quantities.length; week++) {
+      const periodId = periodIds[week];
+      if (!periodId) break;
+      await insertMaybe(ctx, "demandProjection", {
+        itemId: item.id,
+        locationId: hqId,
+        periodId,
+        forecastQuantity: spec.quantities[week],
+        updatedBy: userId
+      });
+    }
+  }
+
   for (let week = 0; week < 8; week++) {
     const periodId = periodIds[week];
     if (periodId) ctx.refs.misc[`period:week${week + 1}`] = periodId;

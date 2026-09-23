@@ -1,5 +1,8 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
-import { insertId, insertRow, need, nextSequence, RICH, rows } from "../sql.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
+import { copyMethodToQuoteLine } from "../helpers/method-copy.ts";
+import { seedReturnCredit } from "../helpers/return-credit.ts";
+import { insertId, insertRow, need, nextSequence, RICH } from "../sql.ts";
 import type { Ctx, PriceBreak, SalesOpportunitySpec } from "../types.ts";
 
 async function insertPriceBreaks(
@@ -86,6 +89,13 @@ export async function runTier4(ctx: Ctx): Promise<void> {
                 "no-quote reason"
               ),
         rfqDate: resolveDate(ctx.anchor, spec.rfq.rfqDateOffset),
+        // The KPI chart counts RFQs by createdAt; a seed-time stamp is one spike.
+        createdAt: resolveTimestamp(
+          ctx.anchor,
+          spec.rfq.rfqDateOffset,
+          "09:00:00"
+        ),
+        assignee: spec.rfq.assignee === "self" ? ctx.userId : undefined,
         expirationDate:
           spec.rfq.expirationOffset === undefined
             ? undefined
@@ -117,6 +127,15 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         locationId: plantId,
         currencyCode: "USD",
         opportunityId,
+        createdAt:
+          spec.quote.createdOffset === undefined
+            ? undefined
+            : resolveTimestamp(
+                ctx.anchor,
+                spec.quote.createdOffset,
+                "09:30:00"
+              ),
+        assignee: spec.quote.assignee === "self" ? ctx.userId : undefined,
         expirationDate:
           spec.quote.expirationOffset === undefined
             ? undefined
@@ -151,9 +170,14 @@ export async function runTier4(ctx: Ctx): Promise<void> {
           // array, so a break that isn't in quoteLine.quantity is invisible.
           quantity: line.priceBreaks.map((brk) => brk.quantity),
           status: line.status,
-          sortOrder: line.sortOrder
+          sortOrder: line.sortOrder,
+          configuration:
+            line.configuration === undefined
+              ? undefined
+              : JSON.stringify(line.configuration)
         });
         await insertPriceBreaks(ctx, quoteId, quoteLineId, line.priceBreaks);
+        await copyMethodToQuoteLine(ctx, quoteId, quoteLineId);
         ctx.refs.documents[line.ref] = quoteLineId;
       }
 
@@ -197,7 +221,8 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         locationId: plantId,
         currencyCode: "USD",
         opportunityId,
-        orderDate: resolveDate(ctx.anchor, spec.order.orderDateOffset)
+        orderDate: resolveDate(ctx.anchor, spec.order.orderDateOffset),
+        assignee: spec.order.assignee === "self" ? ctx.userId : undefined
       });
       await insertRow(ctx, "salesOrderPayment", {
         id: orderId,
@@ -317,6 +342,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
 
     if (spec.invoice) {
       const invoiceReadableId = await nextSequence(ctx, "salesInvoice");
+      const dateIssued = resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset);
       const invoiceId = await insertId(ctx, "salesInvoice", {
         invoiceId: invoiceReadableId,
         status: spec.invoice.status,
@@ -329,7 +355,9 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         totalAmount: spec.invoice.totalAmount,
         invoiceCustomerId: customerId,
         shipmentId: shipmentId ?? undefined,
-        dateIssued: resolveDate(ctx.anchor, spec.invoice.dateIssuedOffset),
+        dateIssued,
+        // post-sales-invoice stamps it; the AR aging and open-balance RPCs filter on it.
+        postingDate: spec.invoice.status === "Draft" ? undefined : dateIssued,
         dateDue:
           spec.invoice.dueDateOffset === undefined
             ? undefined
@@ -429,19 +457,10 @@ export async function runTier4(ctx: Ctx): Promise<void> {
 
   // ── Sales returns (RMAs) ───────────────────────────────────────────────────
   // Completed mirrors post-receipt's Sales Return Order branch: a Posted receipt
-  // plus a Sales Return Receipt ledger row per line. No credit lines — their
-  // memoId is NOT NULL and memos come later (tier 09).
+  // plus a Sales Return Receipt ledger row per line. A `credit` adds Issue
+  // Credit's memo (helpers/return-credit.ts); tier 09 journals it if Posted.
   if (data.salesReturns.length > 0) {
     ctx.log("sales returns");
-    const reasonRows = await rows<{ id: string; name: string }>(
-      ctx.client,
-      `SELECT id, name FROM "returnReason" WHERE "companyId" = $1`,
-      [companyId]
-    );
-    for (const reason of reasonRows) {
-      ctx.refs.misc[`rreason:${reason.name}`] = reason.id;
-    }
-
     for (const spec of data.salesReturns) {
       ctx.log(`  rma ${spec.key} — ${spec.status}`);
       const customerId = need(ctx.refs.customers, spec.customer);
@@ -450,10 +469,10 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         `cloc:${spec.customer}`,
         "customer location"
       );
-      const returnReasonId = need(
-        ctx.refs.misc,
-        `rreason:${spec.returnReason}`,
-        "return reason"
+      const returnReasonId = await bootstrapIdByName(
+        ctx,
+        "returnReason",
+        spec.returnReason
       );
       const completed = spec.status === "Completed";
       const orderDate = resolveDate(ctx.anchor, spec.dateOffset);
@@ -475,18 +494,18 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       const lineIds: string[] = [];
       for (const [index, line] of spec.lines.entries()) {
         const item = need(ctx.refs.items, line.item);
-        lineIds.push(
-          await insertId(ctx, "salesReturnOrderLine", {
-            salesReturnOrderId: rmaId,
-            itemId: item.id,
-            lineNumber: index + 1,
-            quantity: line.quantity,
-            quantityReceived: completed ? line.quantity : 0,
-            returnReasonId,
-            unitOfMeasureCode: "EA",
-            unitPrice: line.unitPrice
-          })
-        );
+        const lineId = await insertId(ctx, "salesReturnOrderLine", {
+          salesReturnOrderId: rmaId,
+          itemId: item.id,
+          lineNumber: index + 1,
+          quantity: line.quantity,
+          quantityReceived: completed ? line.quantity : 0,
+          returnReasonId,
+          unitOfMeasureCode: "EA",
+          unitPrice: line.unitPrice
+        });
+        lineIds.push(lineId);
+        ctx.refs.documents[`rmaline:${spec.key}:${index + 1}`] = lineId;
       }
 
       if (completed) {
@@ -537,8 +556,48 @@ export async function runTier4(ctx: Ctx): Promise<void> {
         ctx.refs.documents[`rma-receipt:${spec.key}`] = receiptId;
       }
 
+      if (spec.credit) {
+        ctx.log(`  rma ${spec.key} — credit memo (${spec.credit.status})`);
+        await seedReturnCredit(ctx, {
+          spec: spec.credit,
+          kind: "sales",
+          partyId: customerId,
+          returnOrderId: rmaId
+        });
+      }
+
       ctx.refs.documents[`rma:${spec.key}`] = rmaId;
     }
+  }
+
+  // ── Customer portals ──────────────────────────────────────────────────────
+  // The portal form's insert: documentId = customerId. No fixed id —
+  // externalLink's PK is global.
+  ctx.log("customer portals");
+  for (const customer of data.customerPortals) {
+    const customerId = need(ctx.refs.customers, customer, "customer");
+    await insertId(ctx, "externalLink", {
+      documentType: "Customer",
+      documentId: customerId,
+      customerId
+    });
+  }
+
+  // ── Customer bank accounts ────────────────────────────────────────────────
+  for (const spec of data.customerBankAccounts) {
+    await insertRow(ctx, "customerBankAccount", {
+      customerId: need(ctx.refs.customers, spec.customer, "customer"),
+      name: spec.name,
+      accountHolderName: spec.accountHolderName,
+      bankName: spec.bankName,
+      countryCode: spec.countryCode,
+      currencyCode: spec.currencyCode,
+      accountNumber: spec.accountNumber,
+      bankCode: spec.bankCode,
+      swiftBic: spec.swiftBic,
+      isPrimary: spec.isPrimary,
+      active: true
+    });
   }
 
   // ── Status history — Draft → Confirmed → In Progress on one live order ─────

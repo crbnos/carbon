@@ -65,6 +65,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:lakeshore",
+      createdOffset: -330,
       status: "Ordered",
       externalNotes:
         "Quote for 3× Vertex 10 six-axis arms with two-finger grippers.",
@@ -120,6 +121,8 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Cascade Integration Group",
     quote: {
       ref: "quote:cascade",
+      createdOffset: -22,
+      assignee: "self",
       status: "Sent",
       expirationOffset: CASCADE_QUOTE_EXPIRATION_OFFSET,
       lines: [
@@ -150,6 +153,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Alpine Research Institute",
     rfq: {
       ref: "rfq:alpine",
+      assignee: "self",
       status: "Ready for Quote",
       rfqDateOffset: -285,
       externalNotes:
@@ -170,6 +174,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Northwind Electronics",
     quote: {
       ref: "quote:northwind",
+      createdOffset: -270,
       status: "Ordered",
       lines: [
         {
@@ -204,6 +209,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Alpine Research Institute",
     rfq: {
       ref: "rfq:alpine-rig",
+      assignee: "self",
       status: "Draft",
       rfqDateOffset: -3,
       externalNotes:
@@ -241,6 +247,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     },
     quote: {
       ref: "quote:lakeshore-washdown",
+      createdOffset: -80,
       status: "Lost",
       externalNotes: "Declined to bid the washdown-rated line.",
       lines: [
@@ -260,12 +267,19 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Northwind Electronics",
     quote: {
       ref: "quote:northwind-pnp",
+      createdOffset: -4,
+      assignee: "self",
       status: "Draft",
       externalNotes:
         "Working draft — pick-and-place-optimized arm pricing in progress.",
       lines: [
         {
           ref: "quoteline:northwind-pnp:rob",
+          configuration: {
+            payload_kg: 35,
+            controller_voltage: "480V 3-Phase",
+            force_torque_sensor: false
+          },
           item: "ROB-2000",
           status: "Not Started",
           sortOrder: 1,
@@ -280,6 +294,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Cascade Integration Group",
     quote: {
       ref: "quote:cascade-retrofit",
+      createdOffset: -8,
       status: "Partial",
       expirationOffset: 45,
       externalNotes:
@@ -308,6 +323,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Alpine Research Institute",
     quote: {
       ref: "quote:alpine-teaching",
+      createdOffset: -150,
       status: "Cancelled",
       externalNotes: "Program defunded before pricing was issued.",
       lines: [
@@ -327,6 +343,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Northwind Electronics",
     quote: {
       ref: "quote:northwind-jaws",
+      createdOffset: -44,
       status: "Expired",
       expirationOffset: -14,
       externalNotes: "30-day pricing lapsed without a PO.",
@@ -347,6 +364,7 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     customer: "Lakeshore Automotive",
     order: {
       ref: "so:lakeshore-gbx",
+      assignee: "self",
       status: "Needs Approval",
       orderDateOffset: -2,
       lines: [
@@ -432,6 +450,7 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     customer: "Cascade Integration Group",
     order: {
       ref: "so:toshipinvoice",
+      assignee: "self",
       status: "To Ship and Invoice",
       orderDateOffset: -10,
       lines: STAGGERED_DELIVERIES.map((delivery) => ({
@@ -728,6 +747,180 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
       dueDateOffset: -25,
       lines: [{ item: "GRP-JAW-80", quantity: 2, unitPrice: 300 }]
     }
+  },
+
+  // Older overdue invoices, so receivables aging fills every bucket to 61–90.
+  {
+    log: "sales invoice — Overdue 31–60 days (Alpine servo motors)",
+    ref: "opp:alpine-motors",
+    customer: "Alpine Research Institute",
+    order: {
+      ref: "so:alpine-motors",
+      status: "Invoiced",
+      orderDateOffset: -90,
+      lines: [
+        {
+          ref: "soline:alpine-motors:mot",
+          item: "MOT-AC-200W",
+          saleQuantity: 4,
+          unitPrice: 465,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:alpine-motors",
+      status: "Overdue",
+      subtotal: 1860,
+      totalAmount: 1860,
+      dateIssuedOffset: -75,
+      dueDateOffset: -45,
+      lines: [{ item: "MOT-AC-200W", quantity: 4, unitPrice: 465 }]
+    }
+  },
+  {
+    log: "sales invoice — Overdue 61–90 days (Northwind crossed-roller bearings)",
+    ref: "opp:northwind-crb",
+    customer: "Northwind Electronics",
+    order: {
+      ref: "so:northwind-crb",
+      status: "Invoiced",
+      orderDateOffset: -120,
+      lines: [
+        {
+          ref: "soline:northwind-crb:brg",
+          item: "BRG-CRB-100",
+          saleQuantity: 10,
+          unitPrice: 278,
+          status: "Completed"
+        }
+      ]
+    },
+    invoice: {
+      ref: "inv:northwind-crb",
+      status: "Overdue",
+      subtotal: 2780,
+      totalAmount: 2780,
+      dateIssuedOffset: -105,
+      dueDateOffset: -75,
+      lines: [{ item: "BRG-CRB-100", quantity: 10, unitPrice: 278 }]
+    }
+  },
+
+  // ── Floor load — the subassembly spares the production floor is building ──
+  // Each line has a job of its own in production.ts (open or just completed).
+  {
+    log: "sales order — In Progress (Lakeshore controller and harness spares, floor load)",
+    ref: "opp:floor-lakeshore",
+    customer: "Lakeshore Automotive",
+    order: {
+      ref: "so:floor-lakeshore",
+      status: "In Progress",
+      orderDateOffset: -30,
+      lines: [
+        {
+          ref: "soline:floor-lakeshore:ctrl-pcb",
+          item: "PCB-CTRL-R1",
+          saleQuantity: 6,
+          unitPrice: 980,
+          status: "In Progress",
+          promisedDateOffset: 5
+        },
+        {
+          ref: "soline:floor-lakeshore:io-pcb",
+          item: "PCB-IO-R1",
+          saleQuantity: 4,
+          unitPrice: 620,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-lakeshore:jaw",
+          item: "GRP-JAW-80",
+          saleQuantity: 2,
+          unitPrice: 320,
+          status: "In Progress",
+          promisedDateOffset: 3
+        },
+        {
+          ref: "soline:floor-lakeshore:base",
+          item: "ARM-BASE-001",
+          saleQuantity: 1,
+          unitPrice: 6800,
+          status: "In Progress",
+          promisedDateOffset: 4
+        },
+        {
+          ref: "soline:floor-lakeshore:harness",
+          item: "HRN-ARM-001",
+          saleQuantity: 3,
+          unitPrice: 1400,
+          status: "In Progress",
+          promisedDateOffset: 2
+        }
+      ]
+    }
+  },
+  {
+    log: "sales order — In Progress (Northwind cell retrofit kit, floor load)",
+    ref: "opp:floor-northwind",
+    customer: "Northwind Electronics",
+    order: {
+      ref: "so:floor-northwind",
+      assignee: "self",
+      status: "In Progress",
+      orderDateOffset: -15,
+      lines: [
+        {
+          ref: "soline:floor-northwind:io-pcb",
+          item: "PCB-IO-R1",
+          saleQuantity: 6,
+          unitPrice: 620,
+          status: "In Progress",
+          promisedDateOffset: 8
+        },
+        {
+          ref: "soline:floor-northwind:drive",
+          item: "DRV-J2-MOD",
+          saleQuantity: 4,
+          unitPrice: 3900,
+          status: "In Progress",
+          promisedDateOffset: 15
+        },
+        {
+          ref: "soline:floor-northwind:jaw",
+          item: "GRP-JAW-80",
+          saleQuantity: 4,
+          unitPrice: 320,
+          status: "In Progress",
+          promisedDateOffset: 10
+        },
+        {
+          ref: "soline:floor-northwind:wrist",
+          item: "ARM-WRIST-001",
+          saleQuantity: 2,
+          unitPrice: 9600,
+          status: "In Progress",
+          promisedDateOffset: 24
+        },
+        {
+          ref: "soline:floor-northwind:ctrl",
+          item: "CTRL-100",
+          saleQuantity: 1,
+          unitPrice: 11500,
+          status: "In Progress",
+          promisedDateOffset: 19
+        },
+        {
+          ref: "soline:floor-northwind:gripper",
+          item: "GRP-2F-80",
+          saleQuantity: 2,
+          unitPrice: 6900,
+          status: "In Progress",
+          promisedDateOffset: 30
+        }
+      ]
+    }
   }
 ];
 
@@ -737,6 +930,11 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
 export const SALES_RETURNS: SalesReturnSpec[] = [
   {
     key: "servodrive",
+    credit: {
+      status: "Posted",
+      dateOffset: -8,
+      lines: [{ line: 1, quantity: 1 }]
+    },
     status: "Completed",
     customer: "Cascade Integration Group",
     returnReason: "Defective",
@@ -770,5 +968,50 @@ export const roboticsSales: SalesData = {
   opportunities: OPPORTUNITIES,
   statusOrders: STATUS_ORDERS,
   releasedOrders: RELEASED_ORDERS,
-  salesReturns: SALES_RETURNS
+  salesReturns: SALES_RETURNS,
+  customerPortals: ["Cascade Integration Group", "Lakeshore Automotive"],
+  customerBankAccounts: [
+    {
+      customer: "Lakeshore Automotive",
+      name: "Lakeshore remittance",
+      bankName: "Great Lakes Commerce Bank (demo)",
+      accountHolderName: "Lakeshore Automotive Inc.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-4102-7781",
+      bankCode: "DEMO-072000",
+      isPrimary: true
+    },
+    {
+      customer: "Cascade Integration Group",
+      name: "Cascade operating account",
+      bankName: "Cascade Valley Bank (demo)",
+      accountHolderName: "Cascade Integration Group LLC",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-3390-1142",
+      bankCode: "DEMO-125000",
+      isPrimary: true
+    },
+    {
+      customer: "Northwind Electronics",
+      name: "Northwind payables",
+      bankName: "Northwind Savings (demo)",
+      accountHolderName: "Northwind Electronics Corp.",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-8813-0496",
+      isPrimary: true
+    },
+    {
+      customer: "Alpine Research Institute",
+      name: "Alpine grants account",
+      bankName: "Alpine Scholars Bank (demo)",
+      accountHolderName: "Alpine Research Institute",
+      countryCode: "US",
+      currencyCode: "USD",
+      accountNumber: "DEMO-2257-6630",
+      isPrimary: true
+    }
+  ]
 };

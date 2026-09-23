@@ -1,12 +1,25 @@
 import { resolveDate, resolveTimestamp } from "../dates.ts";
-import { insertId, insertRow, need, nextSequence, one, RICH } from "../sql.ts";
+import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
+import {
+  insertId,
+  insertRow,
+  maybeOne,
+  need,
+  nextSequence,
+  one,
+  RICH
+} from "../sql.ts";
 import type {
+  AttributeDataTypeLabel,
   Ctx,
+  CustomFieldSpec,
   InstantSpec,
   MaintenanceDispatchSpec,
   MaintenanceScheduleSpec,
+  PrintJobSpec,
   TrainingQuestionSpec,
-  TrainingSpec
+  TrainingSpec,
+  UserAttributeCategorySpec
 } from "../types.ts";
 
 // Every ops row is written in the shape the app's own create/transition paths
@@ -25,6 +38,17 @@ export async function runTier10(ctx: Ctx): Promise<void> {
     await seedDispatch(ctx, spec);
   }
 
+  ctx.log(`work-center replacement parts — ${data.replacementParts.length}`);
+  for (const spec of data.replacementParts) {
+    const item = need(ctx.refs.items, spec.item, "item");
+    await insertRow(ctx, "workCenterReplacementPart", {
+      workCenterId: need(ctx.refs.workCenters, spec.workCenter, "work center"),
+      itemId: item.id,
+      quantity: spec.quantity,
+      unitOfMeasureCode: item.unitOfMeasureCode
+    });
+  }
+
   ctx.log(`trainings — ${data.trainings.length}`);
   for (const spec of data.trainings) {
     await seedTraining(ctx, spec);
@@ -37,6 +61,47 @@ export async function runTier10(ctx: Ctx): Promise<void> {
       clockIn: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockIn),
       clockOut: resolveTimestamp(ctx.anchor, card.dayOffset, card.clockOut),
       note: card.note
+    });
+  }
+
+  // companySettings has no companyId, so the wipe keeps it; without the flag
+  // both apps hide the time clock and redirect away from the timecard pages.
+  ctx.log("time clock — enabled, clocked in today");
+  await insertRow(
+    ctx,
+    "companySettings",
+    { id: ctx.companyId, timeCardEnabled: true },
+    { onConflict: '("id") DO UPDATE SET "timeCardEnabled" = true' }
+  );
+  // The MES reads the open entry with maybeSingle, so there is exactly one.
+  await insertRow(ctx, "timeCardEntry", {
+    employeeId: ctx.userId,
+    clockIn: resolveTimestamp(ctx.anchor, 0, data.openTimecard.clockIn),
+    clockOut: null,
+    note: data.openTimecard.note
+  });
+
+  ctx.log(
+    `people assignments — ${data.peopleAssignments.length}, absences — ${data.peopleAbsences.length}`
+  );
+  const plantId = need(ctx.refs.locations, "Plant", "location");
+  for (const spec of data.peopleAssignments) {
+    await insertRow(ctx, "peopleAssignment", {
+      locationId: plantId,
+      workCenterId: need(ctx.refs.workCenters, spec.workCenter, "work center"),
+      employeeId: ctx.userId,
+      date: resolveDate(ctx.anchor, spec.dayOffset),
+      shiftId: need(ctx.refs.shifts, spec.shift, "shift"),
+      overtimeHours: spec.overtimeHours ?? 0,
+      note: spec.note
+    });
+  }
+  for (const spec of data.peopleAbsences) {
+    await insertRow(ctx, "peopleAbsence", {
+      employeeId: ctx.userId,
+      date: resolveDate(ctx.anchor, spec.dayOffset),
+      shiftId: spec.shift ? need(ctx.refs.shifts, spec.shift, "shift") : null,
+      note: spec.note
     });
   }
 
@@ -59,6 +124,246 @@ export async function runTier10(ctx: Ctx): Promise<void> {
       note: `<p>${escapeHtml(spec.text)}</p>`
     });
   }
+
+  ctx.log(
+    `user attributes — ${data.userAttributeCategories.length} categories, custom fields — ${data.customFields.length}`
+  );
+  for (const spec of data.userAttributeCategories) {
+    await seedAttributeCategory(ctx, spec);
+  }
+  await seedCustomFields(ctx, data.customFields);
+
+  ctx.log(`item serial sequences — ${data.serialSequences.length}`);
+  for (const spec of data.serialSequences) {
+    await insertRow(ctx, "itemSerialSequence", {
+      itemId: need(ctx.refs.items, spec.item, "item").id,
+      prefix: spec.prefix,
+      suffix: spec.suffix ?? null,
+      size: spec.size,
+      next: spec.next,
+      step: 1
+    });
+  }
+
+  ctx.log(`print jobs — ${data.printJobs.length}`);
+  for (const spec of data.printJobs) {
+    await seedPrintJob(ctx, spec);
+  }
+}
+
+// A global lookup (no companyId) — the label is its natural key.
+async function attributeDataTypeId(
+  ctx: Ctx,
+  label: AttributeDataTypeLabel
+): Promise<number> {
+  const key = `attributeDataType:${label}`;
+  const cached = ctx.refs.misc[key];
+  if (cached) return Number(cached);
+  const row = await maybeOne<{ id: number }>(
+    ctx.client,
+    `SELECT id FROM "attributeDataType" WHERE label = $1`,
+    [label]
+  );
+  if (!row) throw new Error(`Seed: no attributeDataType labelled "${label}"`);
+  ctx.refs.misc[key] = String(row.id);
+  return row.id;
+}
+
+// The wipe keeps userAttributeCategory (and userAttribute / userAttributeValue
+// have no companyId), so a re-apply adopts the category and attributes by name
+// and upserts the value instead of stacking duplicates.
+async function seedAttributeCategory(
+  ctx: Ctx,
+  spec: UserAttributeCategorySpec
+): Promise<void> {
+  const existing = await maybeOne<{ id: string }>(
+    ctx.client,
+    `SELECT id FROM "userAttributeCategory"
+     WHERE "companyId" = $1 AND name = $2 ORDER BY "createdAt" LIMIT 1`,
+    [ctx.companyId, spec.name]
+  );
+  let categoryId: string;
+  if (existing) {
+    categoryId = existing.id;
+    await ctx.client.query(
+      `UPDATE "userAttributeCategory"
+       SET emoji = $3, public = $4, active = true, "updatedBy" = $5
+       WHERE id = $1 AND "companyId" = $2`,
+      [categoryId, ctx.companyId, spec.emoji, spec.public, ctx.userId]
+    );
+  } else {
+    categoryId = await insertId(ctx, "userAttributeCategory", {
+      name: spec.name,
+      emoji: spec.emoji,
+      public: spec.public
+    });
+  }
+
+  for (const [index, attribute] of spec.attributes.entries()) {
+    const columns = {
+      sortOrder: index + 1,
+      attributeDataTypeId: await attributeDataTypeId(ctx, attribute.dataType),
+      listOptions: attribute.dataType === "List" ? attribute.listOptions : null,
+      canSelfManage: attribute.canSelfManage ?? false
+    };
+    const found = await maybeOne<{ id: string }>(
+      ctx.client,
+      `SELECT ua.id FROM "userAttribute" ua
+       JOIN "userAttributeCategory" c ON c.id = ua."userAttributeCategoryId"
+       WHERE c."companyId" = $1 AND ua."userAttributeCategoryId" = $2 AND ua.name = $3
+       ORDER BY ua."createdAt" LIMIT 1`,
+      [ctx.companyId, categoryId, attribute.name]
+    );
+    let attributeId: string;
+    if (found) {
+      attributeId = found.id;
+      await ctx.client.query(
+        `UPDATE "userAttribute"
+         SET "sortOrder" = $2, "attributeDataTypeId" = $3, "listOptions" = $4,
+             "canSelfManage" = $5, active = true, "updatedBy" = $6
+         WHERE id = $1`,
+        [
+          attributeId,
+          columns.sortOrder,
+          columns.attributeDataTypeId,
+          columns.listOptions,
+          columns.canSelfManage,
+          ctx.userId
+        ]
+      );
+    } else {
+      attributeId = await insertId(ctx, "userAttribute", {
+        name: attribute.name,
+        userAttributeCategoryId: categoryId,
+        ...columns
+      });
+    }
+
+    // Every value column is written, so a re-apply that changes an
+    // attribute's type still satisfies the single-value CHECK.
+    const value = {
+      valueBoolean: attribute.dataType === "Yes/No" ? attribute.value : null,
+      valueDate:
+        attribute.dataType === "Date"
+          ? resolveDate(ctx.anchor, attribute.valueOffset)
+          : null,
+      valueNumeric: attribute.dataType === "Numeric" ? attribute.value : null,
+      valueText:
+        attribute.dataType === "List" || attribute.dataType === "Text"
+          ? attribute.value
+          : null,
+      valueUser: attribute.dataType === "User" ? ctx.userId : null,
+      valueFile: null
+    };
+    await insertRow(
+      ctx,
+      "userAttributeValue",
+      { userAttributeId: attributeId, userId: ctx.userId, ...value },
+      {
+        onConflict: `("userAttributeId", "userId") DO UPDATE SET
+          "valueBoolean" = EXCLUDED."valueBoolean", "valueDate" = EXCLUDED."valueDate",
+          "valueNumeric" = EXCLUDED."valueNumeric", "valueText" = EXCLUDED."valueText",
+          "valueUser" = EXCLUDED."valueUser", "valueFile" = EXCLUDED."valueFile",
+          "updatedBy" = EXCLUDED."createdBy"`
+      }
+    );
+  }
+}
+
+// customField survives the wipe; UNIQUE (table, name, companyId) is the adopt key.
+async function seedCustomFields(
+  ctx: Ctx,
+  specs: CustomFieldSpec[]
+): Promise<void> {
+  const perTable = new Map<string, number>();
+  for (const spec of specs) {
+    const sortOrder = (perTable.get(spec.table) ?? 0) + 1;
+    perTable.set(spec.table, sortOrder);
+    await insertRow(
+      ctx,
+      "customField",
+      {
+        table: spec.table,
+        name: spec.name,
+        dataTypeId: await attributeDataTypeId(ctx, spec.dataType),
+        listOptions: spec.listOptions ?? null,
+        sortOrder
+      },
+      {
+        onConflict: `("table", name, "companyId") DO UPDATE SET
+          "dataTypeId" = EXCLUDED."dataTypeId", "listOptions" = EXCLUDED."listOptions",
+          "sortOrder" = EXCLUDED."sortOrder", active = true, "updatedBy" = EXCLUDED."createdBy"`
+      }
+    );
+  }
+}
+
+async function seedPrintJob(ctx: Ctx, spec: PrintJobSpec): Promise<void> {
+  const route = ctx.dataset.foundation.printerRoute;
+  if (!route) {
+    throw new Error("Seed: print jobs need foundation.printerRoute");
+  }
+  if (route.format !== "zpl") {
+    throw new Error(
+      `Seed: print jobs render ZPL; the route is "${route.format}"`
+    );
+  }
+
+  let sourceDocumentId: string;
+  let readableId: string;
+  const { source } = spec;
+  if (source.kind === "Receipt") {
+    sourceDocumentId = need(ctx.refs.documents, source.receipt, "receipt");
+    readableId = (
+      await one<{ readableId: string }>(
+        ctx.client,
+        `SELECT "receiptId" AS "readableId" FROM receipt WHERE id = $1 AND "companyId" = $2`,
+        [sourceDocumentId, ctx.companyId]
+      )
+    ).readableId;
+  } else if (source.kind === "Job") {
+    sourceDocumentId = need(ctx.refs.documents, `job:${source.job}`, "job");
+    readableId = (
+      await one<{ readableId: string }>(
+        ctx.client,
+        `SELECT "jobId" AS "readableId" FROM job WHERE id = $1 AND "companyId" = $2`,
+        [sourceDocumentId, ctx.companyId]
+      )
+    ).readableId;
+  } else {
+    sourceDocumentId = need(ctx.refs.shelves, source.shelf, "shelf");
+    readableId = source.shelf;
+  }
+
+  const label = spec.item ? [readableId, spec.item] : [readableId];
+  // What the built-in renderer hands the printer: text lines plus a Code 128 of the id.
+  const content = [
+    "^XA^CI28",
+    ...label.map(
+      (text, index) =>
+        `^FO40,${40 + index * 50}^A0N,${index === 0 ? 40 : 30},${index === 0 ? 40 : 30}^FD${text}^FS`
+    ),
+    `^FO40,${50 + label.length * 50}^BCN,80,Y,N,N^FD${readableId}^FS`,
+    "^XZ"
+  ].join("\n");
+
+  const createdAt = at(ctx, spec.at);
+  await insertRow(ctx, "printJob", {
+    status: spec.status,
+    contentType: route.format,
+    content,
+    printerUrl: route.printerUrl,
+    sourceDocument: source.kind,
+    sourceDocumentId,
+    sourceDocumentReadableId: readableId,
+    description: label.join(" — "),
+    origin: spec.origin,
+    error: spec.error ?? null,
+    attempts: spec.attempts,
+    createdAt,
+    updatedAt: spec.status === "queued" ? null : createdAt,
+    completedAt: spec.status === "completed" ? createdAt : null
+  });
 }
 
 function at(ctx: Ctx, instant: InstantSpec): string {
@@ -72,13 +377,18 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;");
 }
 
-async function failureModeId(ctx: Ctx, name: string): Promise<string> {
-  const row = await one<{ id: string }>(
+// Schedules and dispatches take their work center's location (the plant, or
+// HQ for its one work center), as the create forms default it.
+async function workCenterLocation(
+  ctx: Ctx,
+  workCenterId: string
+): Promise<string> {
+  const row = await one<{ locationId: string }>(
     ctx.client,
-    `SELECT id FROM "maintenanceFailureMode" WHERE "companyId" = $1 AND name = $2 LIMIT 1`,
-    [ctx.companyId, name]
+    `SELECT "locationId" FROM "workCenter" WHERE id = $1 AND "companyId" = $2`,
+    [workCenterId, ctx.companyId]
   );
-  return row.id;
+  return row.locationId;
 }
 
 async function seedSchedule(
@@ -86,11 +396,16 @@ async function seedSchedule(
   spec: MaintenanceScheduleSpec
 ): Promise<void> {
   const weekends = spec.weekends ?? true;
+  const workCenterId = need(
+    ctx.refs.workCenters,
+    spec.workCenter,
+    "work center"
+  );
   const scheduleId = await insertId(ctx, "maintenanceSchedule", {
     name: spec.name,
     description: spec.description,
-    workCenterId: need(ctx.refs.workCenters, spec.workCenter, "work center"),
-    locationId: need(ctx.refs.locations, "Plant", "location"),
+    workCenterId,
+    locationId: await workCenterLocation(ctx, workCenterId),
     frequency: spec.frequency,
     priority: spec.priority,
     estimatedDuration: spec.estimatedDuration,
@@ -119,12 +434,12 @@ async function seedDispatch(
   ctx: Ctx,
   spec: MaintenanceDispatchSpec
 ): Promise<void> {
-  const plantId = need(ctx.refs.locations, "Plant", "location");
   const workCenterId = need(
     ctx.refs.workCenters,
     spec.workCenter,
     "work center"
   );
+  const locationId = await workCenterLocation(ctx, workCenterId);
   const scheduleId = spec.schedule
     ? need(ctx.refs.misc, `maintenanceSchedule:${spec.schedule}`)
     : undefined;
@@ -143,16 +458,24 @@ async function seedDispatch(
     source: spec.source,
     oeeImpact: spec.oeeImpact,
     workCenterId,
-    locationId: plantId,
+    locationId,
     maintenanceScheduleId: scheduleId,
     nonConformanceId: spec.nonConformance
       ? need(ctx.refs.documents, spec.nonConformance, "NCR")
       : undefined,
     suspectedFailureModeId: spec.suspectedFailureMode
-      ? await failureModeId(ctx, spec.suspectedFailureMode)
+      ? await bootstrapIdByName(
+          ctx,
+          "maintenanceFailureMode",
+          spec.suspectedFailureMode
+        )
       : undefined,
     actualFailureModeId: spec.actualFailureMode
-      ? await failureModeId(ctx, spec.actualFailureMode)
+      ? await bootstrapIdByName(
+          ctx,
+          "maintenanceFailureMode",
+          spec.actualFailureMode
+        )
       : undefined,
     plannedStartTime: at(ctx, spec.plannedStart),
     plannedEndTime: at(ctx, spec.plannedEnd),
@@ -197,11 +520,17 @@ async function seedDispatch(
   // (totalCost is GENERATED) plus a negative Consumption ledger row.
   for (const part of spec.spareParts ?? []) {
     const item = need(ctx.refs.items, part.item, "item");
+    if (item.unitCost <= 0) {
+      throw new Error(
+        `Seed: dispatch "${spec.key}" spare part "${part.item}" has no standard cost`
+      );
+    }
     const dispatchItemId = await insertId(ctx, "maintenanceDispatchItem", {
       maintenanceDispatchId: dispatchId,
       itemId: item.id,
       quantity: part.quantity,
-      unitOfMeasureCode: item.unitOfMeasureCode
+      unitOfMeasureCode: item.unitOfMeasureCode,
+      unitCost: item.unitCost
     });
     await insertRow(ctx, "itemLedger", {
       postingDate: resolveDate(
@@ -214,7 +543,7 @@ async function seedDispatch(
       documentLineId: dispatchItemId,
       itemId: item.id,
       quantity: -part.quantity,
-      locationId: plantId,
+      locationId,
       storageUnitId: need(ctx.refs.shelves, part.shelf, "shelf")
     });
   }

@@ -234,6 +234,74 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
       journalEntryId: "JE-SEED-005",
       postingOffset: -33
     }
+  },
+  {
+    // The chart's opening position, so the balance sheet has cash, stock,
+    // plant and equity before the first posted document.
+    ref: "journal:opening-balance",
+    journalEntryId: "JE-SEED-006",
+    description: "Opening balances — cutover from the legacy ledger",
+    status: "Posted",
+    sourceType: "Opening Balance",
+    postingOffset: -242,
+    lines: [
+      {
+        account: "1010",
+        description: "Operating cash",
+        amount: 2400000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-1"
+      },
+      {
+        account: "1210",
+        description: "Raw materials on hand",
+        amount: 380000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-2"
+      },
+      {
+        account: "1220",
+        description: "Finished goods on hand",
+        amount: 520000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-3"
+      },
+      {
+        account: "1350",
+        description: "Machinery & equipment at cost",
+        amount: 1850000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-4"
+      },
+      {
+        account: "1330",
+        description: "Accumulated depreciation to date",
+        amount: -410000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-5"
+      },
+      {
+        account: "2410",
+        description: "Equipment term loan",
+        amount: 1200000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-6"
+      },
+      {
+        account: "3010",
+        description: "Paid-in capital",
+        amount: 2000000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-7"
+      },
+      {
+        account: "3100",
+        description: "Retained earnings brought forward",
+        amount: 1540000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-8"
+      }
+    ]
   }
 ];
 
@@ -298,6 +366,27 @@ export const PAYMENTS: PaymentSpec[] = [
     credits: [
       { memoKey: "proptech-tanks", invoiceKey: "debit-note", amount: 6400 }
     ]
+  },
+  // Entered but not yet applied or posted — the payment's apply table.
+  {
+    key: "draft-receipt",
+    type: "Receipt",
+    status: "Draft",
+    customer: "NovaSat Networks",
+    dateOffset: -1,
+    amount: 4800,
+    reference: "WIRE advice 4471 — propellant tank",
+    applies: []
+  },
+  {
+    key: "draft-disbursement",
+    type: "Disbursement",
+    status: "Draft",
+    supplier: "Orbital Composites",
+    dateOffset: 0,
+    amount: 640,
+    reference: "ACH batch 0930 — laminate",
+    applies: []
   }
 ];
 
@@ -363,5 +452,25 @@ export const satelliteAccounting: AccountingData = {
   },
   closeTasks: CLOSE_TASKS,
   // EUR per 1 USD (foreign units per base unit), the same direction as the EUR purchase order's 0.92 snapshot.
-  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }]
+  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }],
+  billingAddresses: {
+    receivable: {
+      addressLine1: "4500 Space Commerce Drive",
+      city: "Houston",
+      state: "TX",
+      postalCode: "77058",
+      countryCode: "US",
+      phone: "+1-281-555-1140",
+      email: "ar@orbitalsystems.example"
+    },
+    payable: {
+      addressLine1: "4500 Space Commerce Drive",
+      city: "Houston",
+      state: "TX",
+      postalCode: "77058",
+      countryCode: "US",
+      phone: "+1-281-555-1150",
+      email: "ap@orbitalsystems.example"
+    }
+  }
 };

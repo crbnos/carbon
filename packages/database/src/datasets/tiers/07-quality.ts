@@ -14,17 +14,47 @@ import {
   need,
   nextSequence,
   one,
-  RICH
+  RICH,
+  rows
 } from "../sql.ts";
-import type { Ctx, RiskSpec } from "../types.ts";
+import type {
+  Ctx,
+  InspectionFeatureSpec,
+  InspectionSpec,
+  JobOperationInspectionSpec,
+  ReceiptInspectionSpec,
+  RiskSpec
+} from "../types.ts";
 
 export async function runTier7(ctx: Ctx): Promise<void> {
   const { client, companyId, locationId } = ctx;
   const data = ctx.dataset.quality;
   const plantId = ctx.refs.locations.Plant ?? locationId;
 
-  // The inspection lot goes first so an NCR below can link it.
-  await seedInspection(ctx);
+  // Inspection lots go first so an NCR below can link one.
+  await seedInspections(ctx);
+
+  // Issue workflows are the templates the NCRs below were raised from.
+  const workflowIds: Record<string, string> = {};
+  for (const workflow of data.workflows) {
+    ctx.log(`issue workflow "${workflow.name}"`);
+    const requiredActionIds: string[] = [];
+    for (const action of workflow.requiredActions) {
+      requiredActionIds.push(
+        await bootstrapIdByName(ctx, "nonConformanceRequiredAction", action)
+      );
+    }
+    workflowIds[workflow.key] = await insertId(ctx, "nonConformanceWorkflow", {
+      name: workflow.name,
+      description: workflow.description,
+      content: RICH(workflow.description),
+      priority: workflow.priority,
+      source: workflow.source,
+      requiredActionIds,
+      approvalRequirements: workflow.mrb ? ["MRB"] : [],
+      active: true
+    });
+  }
 
   // Grab the first nonConformanceType available for this company
   const nct = await one<{ id: string }>(
@@ -76,13 +106,28 @@ export async function runTier7(ctx: Ctx): Promise<void> {
       requiredActionIds:
         requiredActionIds.length === 0 ? undefined : requiredActionIds,
       approvalRequirements: spec.mrb ? ["MRB"] : undefined,
+      nonConformanceWorkflowId:
+        spec.workflow === undefined
+          ? undefined
+          : need(workflowIds, spec.workflow, "issue workflow"),
+      assignee: spec.assignee === "self" ? ctx.userId : undefined,
       companyId
     });
     ctx.refs.documents[spec.ref] = ncr;
     ncrIds.push(ncr);
 
+    for (const line of spec.items) {
+      const item = need(ctx.refs.items, line.item, "item");
+      await insertRow(ctx, "nonConformanceItem", {
+        nonConformanceId: ncr,
+        itemId: item.id,
+        quantity: line.quantity,
+        disposition: line.disposition ?? "Pending"
+      });
+    }
+
     for (const [taskIndex, task] of (spec.actionTasks ?? []).entries()) {
-      await insertRow(ctx, "nonConformanceActionTask", {
+      const actionTaskId = await insertId(ctx, "nonConformanceActionTask", {
         nonConformanceId: ncr,
         actionTypeId: requiredActionIds[taskIndex],
         sortOrder: taskIndex + 1,
@@ -97,6 +142,12 @@ export async function runTier7(ctx: Ctx): Promise<void> {
             ? undefined
             : resolveDate(ctx.anchor, task.completedOffset)
       });
+      for (const process of task.processes ?? []) {
+        await insertRow(ctx, "nonConformanceActionProcess", {
+          actionTaskId,
+          processId: need(ctx.refs.processes, process, "process")
+        });
+      }
     }
 
     if (spec.mrb) {
@@ -164,15 +215,6 @@ export async function runTier7(ctx: Ctx): Promise<void> {
       jobId,
       jobReadableId: operation.jobReadableId
     });
-
-    for (const line of spec.items ?? []) {
-      const item = need(ctx.refs.items, line.item, "item");
-      await insertRow(ctx, "nonConformanceItem", {
-        nonConformanceId: ncrIds[index],
-        itemId: item.id,
-        quantity: line.quantity
-      });
-    }
   }
 
   // Associations, in the shapes insertIssue and the association modal write.
@@ -239,6 +281,53 @@ export async function runTier7(ctx: Ctx): Promise<void> {
         )
       });
     }
+    if (spec.salesReturnLine !== undefined) {
+      const { salesReturn, line } = spec.salesReturnLine;
+      const salesReturnOrderId = need(
+        ctx.refs.documents,
+        `rma:${salesReturn}`,
+        "sales return"
+      );
+      const order = await one<{ salesReturnOrderId: string }>(
+        client,
+        `SELECT "salesReturnOrderId" FROM "salesReturnOrder" WHERE id = $1 AND "companyId" = $2`,
+        [salesReturnOrderId, ctx.companyId]
+      );
+      await insertRow(ctx, "nonConformanceSalesReturnOrderLine", {
+        nonConformanceId,
+        salesReturnOrderLineId: need(
+          ctx.refs.documents,
+          `rmaline:${salesReturn}:${line}`,
+          "sales return line"
+        ),
+        salesReturnOrderId,
+        salesReturnOrderReadableId: order.salesReturnOrderId
+      });
+    }
+    if (spec.purchaseReturnLine !== undefined) {
+      const { purchaseReturn, line, quantity } = spec.purchaseReturnLine;
+      const purchaseReturnOrderId = need(
+        ctx.refs.documents,
+        `pret:${purchaseReturn}`,
+        "purchase return"
+      );
+      const order = await one<{ purchaseReturnOrderId: string }>(
+        client,
+        `SELECT "purchaseReturnOrderId" FROM "purchaseReturnOrder" WHERE id = $1 AND "companyId" = $2`,
+        [purchaseReturnOrderId, ctx.companyId]
+      );
+      await insertRow(ctx, "nonConformancePurchaseReturnOrderLine", {
+        nonConformanceId,
+        purchaseReturnOrderLineId: need(
+          ctx.refs.documents,
+          `pretline:${purchaseReturn}:${line}`,
+          "purchase return line"
+        ),
+        purchaseReturnOrderId,
+        purchaseReturnOrderReadableId: order.purchaseReturnOrderId,
+        quantity
+      });
+    }
     if (spec.inspection !== undefined) {
       await insertRow(ctx, "nonConformanceInspection", {
         nonConformanceId,
@@ -252,38 +341,43 @@ export async function runTier7(ctx: Ctx): Promise<void> {
   await seedRisks(ctx);
 }
 
-// Mirrors post-receipt's inspection branch (file-less plan document), then the
-// recorded grid and the disposition.
-async function seedInspection(ctx: Ctx): Promise<void> {
-  const spec = ctx.dataset.quality.inspection;
-  const item = need(ctx.refs.items, spec.item);
-  const receiptLineId = need(
-    ctx.refs.documents,
-    `rline:${spec.receipt}:${spec.item}`,
-    "receipt line"
-  );
-  const line = await one<{
-    receiptId: string;
-    receiptReadableId: string;
-    supplierId: string | null;
-    receivedQuantity: string;
-  }>(
-    ctx.client,
-    `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
-            r."supplierId", rl."receivedQuantity"
-     FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
-     WHERE rl.id = $1`,
-    [receiptLineId]
-  );
-  const lotSize = Number(line.receivedQuantity);
-  const rule = inspectionPlan(spec);
-  const plan = resolveInspectionPlan(spec, lotSize);
-  ctx.log(
-    `inspection — ${item.readableId} lot of ${lotSize}, n=${plan.sampleSize} (${spec.status})`
-  );
+async function seedInspections(ctx: Ctx): Promise<void> {
+  // One Receipt-usage plan per item (the assignment's PK is (itemId, usage)),
+  // shared by every lot of that item.
+  const receiptPlans: Record<string, LotPlan> = {};
+  for (const spec of ctx.dataset.quality.inspections) {
+    const lot =
+      spec.source === "Receipt"
+        ? await receiptLot(ctx, spec, receiptPlans)
+        : await jobOperationLot(ctx, spec);
+    await insertLot(ctx, spec, lot);
+  }
+}
 
+type LotPlan = {
+  documentId: string;
+  /** label → inspectionFeature id */
+  featureIds: Record<string, string>;
+  features: InspectionFeatureSpec[];
+  aql: number;
+};
+
+type LotSource = {
+  plan: LotPlan;
+  lotSize: number;
+  columns: Record<string, unknown>;
+  itemId: string;
+  supplierId?: string;
+};
+
+async function insertPlanDocument(
+  ctx: Ctx,
+  itemId: string,
+  spec: ReceiptInspectionSpec
+): Promise<LotPlan> {
+  const rule = inspectionPlan(spec);
   const documentId = await insertId(ctx, "inspectionDocument", {
-    partId: item.id,
+    partId: itemId,
     drawingNumber: spec.drawingNumber,
     samplingPlanType: rule.type,
     samplingAql: rule.aql,
@@ -305,20 +399,161 @@ async function seedInspection(ctx: Ctx): Promise<void> {
     });
   }
   await insertRow(ctx, "itemInspectionDocumentAssignment", {
-    itemId: item.id,
+    itemId,
     usage: "Receipt",
     inspectionDocumentId: documentId
   });
+  return {
+    documentId,
+    featureIds,
+    features: spec.features,
+    aql: spec.aql
+  };
+}
+
+// Mirrors post-receipt's inspection branch (file-less plan document).
+async function receiptLot(
+  ctx: Ctx,
+  spec: ReceiptInspectionSpec,
+  plans: Record<string, LotPlan>
+): Promise<LotSource> {
+  const item = need(ctx.refs.items, spec.item);
+  const receiptLineId = need(
+    ctx.refs.documents,
+    `rline:${spec.receipt}:${spec.item}`,
+    "receipt line"
+  );
+  const line = await one<{
+    receiptId: string;
+    receiptReadableId: string;
+    supplierId: string | null;
+    receivedQuantity: string;
+  }>(
+    ctx.client,
+    `SELECT r.id AS "receiptId", r."receiptId" AS "receiptReadableId",
+            r."supplierId", rl."receivedQuantity"
+     FROM "receiptLine" rl JOIN receipt r ON r.id = rl."receiptId"
+     WHERE rl.id = $1 AND rl."companyId" = $2`,
+    [receiptLineId, ctx.companyId]
+  );
+  plans[spec.item] ??= await insertPlanDocument(ctx, item.id, spec);
+  return {
+    plan: need(plans, spec.item, "receipt inspection plan"),
+    lotSize: Number(line.receivedQuantity),
+    itemId: item.id,
+    supplierId: line.supplierId ?? undefined,
+    columns: {
+      sourceDocument: "Receipt",
+      sourceDocumentId: line.receiptId,
+      sourceDocumentLineId: receiptLineId,
+      sourceDocumentReadableId: line.receiptReadableId,
+      itemId: item.id,
+      itemReadableId: item.readableId,
+      supplierId: line.supplierId ?? undefined
+    }
+  };
+}
+
+// Mirrors getOrCreateJobOperationInspection: the lot of the job's root
+// Inspection operation, under the operation's own plan document.
+async function jobOperationLot(
+  ctx: Ctx,
+  spec: JobOperationInspectionSpec
+): Promise<LotSource> {
+  const jobId = need(ctx.refs.documents, `job:${spec.job}`, "job");
+  const operation = await one<{
+    id: string;
+    jobReadableId: string;
+    operationQuantity: string | null;
+    inspectionDocumentId: string | null;
+    itemId: string;
+    itemReadableId: string;
+  }>(
+    ctx.client,
+    `SELECT jo.id, j."jobId" AS "jobReadableId", jo."operationQuantity",
+            jo."inspectionDocumentId", jmm."itemId",
+            i."readableIdWithRevision" AS "itemReadableId"
+     FROM "jobOperation" jo
+     JOIN job j ON j.id = jo."jobId"
+     JOIN "jobMakeMethod" jmm ON jmm.id = jo."jobMakeMethodId"
+     JOIN item i ON i.id = jmm."itemId"
+     WHERE jo."jobId" = $1 AND jo."companyId" = $2
+       AND jmm."parentMaterialId" IS NULL AND jo."operationType" = 'Inspection'
+     ORDER BY jo."order"
+     LIMIT 1`,
+    [jobId, ctx.companyId]
+  );
+  const documentId = operation.inspectionDocumentId;
+  if (!documentId) {
+    throw new Error(
+      `Seed: inspection "${spec.ref}": the Inspection operation of job "${spec.job}" has no plan document`
+    );
+  }
+  const job = need(
+    Object.fromEntries(ctx.dataset.production.jobs.map((j) => [j.key, j])),
+    spec.job,
+    "job spec"
+  );
+  const planKey = ctx.dataset.items.methods
+    .find((method) => method.readableId === job.item)
+    ?.bop.find((op) => op.inspectionPlan !== undefined)?.inspectionPlan;
+  const planSpec = ctx.dataset.items.inspectionPlans.find(
+    (plan) => plan.key === planKey
+  );
+  if (!planSpec) {
+    throw new Error(
+      `Seed: inspection "${spec.ref}": "${job.item}" has no inspection plan`
+    );
+  }
+  const features = await rows<{ id: string; label: string }>(
+    ctx.client,
+    `SELECT id, label FROM "inspectionFeature"
+     WHERE "inspectionDocumentId" = $1 AND "companyId" = $2`,
+    [documentId, ctx.companyId]
+  );
+  return {
+    plan: {
+      documentId,
+      featureIds: Object.fromEntries(features.map((f) => [f.label, f.id])),
+      features: planSpec.features,
+      aql: planSpec.aql
+    },
+    lotSize: Math.max(1, Math.floor(Number(operation.operationQuantity ?? 1))),
+    itemId: operation.itemId,
+    columns: {
+      sourceDocument: "Job Operation",
+      sourceDocumentId: jobId,
+      sourceDocumentLineId: operation.id,
+      sourceDocumentReadableId: operation.jobReadableId,
+      itemId: operation.itemId,
+      itemReadableId: operation.itemReadableId
+    }
+  };
+}
+
+// The lot row, its per-feature plans, the recorded grid and — once
+// dispositioned — the history row.
+async function insertLot(
+  ctx: Ctx,
+  spec: InspectionSpec,
+  source: LotSource
+): Promise<void> {
+  const { plan: lotPlan, lotSize } = source;
+  const rule = inspectionPlan(lotPlan);
+  const plan = resolveInspectionPlan(lotPlan, lotSize);
+  if (spec.samples.length > plan.sampleSize) {
+    throw new Error(
+      `Seed: inspection "${spec.ref}" authors ${spec.samples.length} samples for a plan of n=${plan.sampleSize}`
+    );
+  }
+  const dispositioned = spec.status === "Passed" || spec.status === "Partial";
+  ctx.log(
+    `inspection ${spec.ref} — ${spec.source} lot of ${lotSize}, n=${plan.sampleSize} (${spec.status})`
+  );
 
   const inspectionId = await insertId(ctx, "inspection", {
     inspectionId: await nextSequence(ctx, "inspection"),
-    sourceDocument: "Receipt",
-    sourceDocumentId: line.receiptId,
-    sourceDocumentLineId: receiptLineId,
-    sourceDocumentReadableId: line.receiptReadableId,
-    itemId: item.id,
-    itemReadableId: item.readableId,
-    supplierId: line.supplierId ?? undefined,
+    ...source.columns,
     lotSize,
     samplingStandard: SEED_SAMPLING_STANDARD,
     samplingPlanType: rule.type,
@@ -329,19 +564,18 @@ async function seedInspection(ctx: Ctx): Promise<void> {
     inspectionLevel: rule.inspectionLevel,
     severity: rule.severity,
     codeLetter: plan.codeLetter ?? undefined,
-    inspectionDocumentId: documentId,
+    inspectionDocumentId: lotPlan.documentId,
     status: spec.status,
     notes: spec.notes,
-    dispositionedBy: ctx.userId,
-    dispositionedAt: resolveTimestamp(
-      ctx.anchor,
-      spec.dispositionOffset,
-      "15:00:00"
-    )
+    dispositionedBy: dispositioned ? ctx.userId : undefined,
+    dispositionedAt:
+      dispositioned && spec.dispositionOffset !== undefined
+        ? resolveTimestamp(ctx.anchor, spec.dispositionOffset, "15:00:00")
+        : undefined
   });
   ctx.refs.documents[spec.ref] = inspectionId;
 
-  for (const featureId of Object.values(featureIds)) {
+  for (const featureId of Object.values(lotPlan.featureIds)) {
     await insertRow(ctx, "inspectionSamplingPlan", {
       inspectionId,
       inspectionFeatureId: featureId,
@@ -359,7 +593,7 @@ async function seedInspection(ctx: Ctx): Promise<void> {
       sample.inspectedOffset,
       `10:${String(10 + index * 5).padStart(2, "0")}:00`
     );
-    const status = deriveSampleStatus(spec, sample);
+    const status = deriveSampleStatus(lotPlan.features, sample);
     if (status === "Failed") defects += 1;
     const sampleId = await insertId(ctx, "inspectionSample", {
       inspectionId,
@@ -368,7 +602,7 @@ async function seedInspection(ctx: Ctx): Promise<void> {
       inspectedAt: status === "Pending" ? undefined : inspectedAt
     });
     for (const reading of sample.measurements) {
-      const feature = spec.features.find((f) => f.label === reading.feature);
+      const feature = lotPlan.features.find((f) => f.label === reading.feature);
       if (!feature) {
         throw new Error(
           `Seed: inspection sample reads unknown feature "${reading.feature}"`
@@ -377,7 +611,7 @@ async function seedInspection(ctx: Ctx): Promise<void> {
       await insertRow(ctx, "inspectionMeasurement", {
         inspectionId,
         inspectionSampleId: sampleId,
-        inspectionFeatureId: need(featureIds, feature.label, "feature"),
+        inspectionFeatureId: need(lotPlan.featureIds, feature.label, "feature"),
         value: reading.value,
         status: valuateReading(feature, reading.value),
         inspectedBy: ctx.userId,
@@ -386,10 +620,11 @@ async function seedInspection(ctx: Ctx): Promise<void> {
     }
   }
 
+  if (!dispositioned) return;
   await insertRow(ctx, "inspectionHistory", {
     inspectionId,
-    itemId: item.id,
-    supplierId: line.supplierId ?? undefined,
+    itemId: source.itemId,
+    supplierId: source.supplierId,
     samplingStandard: SEED_SAMPLING_STANDARD,
     severity: rule.severity,
     inspectionLevel: rule.inspectionLevel,
@@ -397,12 +632,7 @@ async function seedInspection(ctx: Ctx): Promise<void> {
     lotSize,
     sampleSize: plan.sampleSize,
     defectsFound: defects,
-    outcome:
-      spec.status === "Passed"
-        ? "Accepted"
-        : spec.status === "Failed"
-          ? "Rejected"
-          : "Partial"
+    outcome: spec.status === "Passed" ? "Accepted" : "Partial"
   });
 }
 

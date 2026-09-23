@@ -1,6 +1,7 @@
 import type { PoolClient } from "pg";
 import { getGroupId, groups } from "../../supabase/functions/lib/seed.data.ts";
-import { quote, resetSequences } from "./sql.ts";
+import { resolveDate } from "./dates.ts";
+import { insertId, nextJournalEntryId, quote, resetSequences } from "./sql.ts";
 import type { Ctx } from "./types.ts";
 
 /**
@@ -34,7 +35,9 @@ const PRESERVED_TABLES = new Set([
   "sequence",
   "unitOfMeasure",
   "userToCompany",
-  // Accounting records with trigger-enforced immutability (Posted journals cannot be deleted)
+  // Accounting records with trigger-enforced immutability (Posted journals
+  // cannot be deleted or updated — so neither can the periods they point at)
+  "accountingPeriod",
   "journal",
   "journalLine",
   // Infrastructure owned by the developer or the platform
@@ -69,6 +72,15 @@ const TRANSIENT_MRP_TABLES = [
   "demandActual",
   "supplyForecast",
   "supplyActual"
+];
+
+// Their content CHECK (imagePath OR modelUploadId) cannot survive the FK-nulling
+// pass, which nulls modelUploadId on a slide that shows a 3D model.
+const MODEL_SLIDE_TABLES = [
+  "assemblyInstructionStepSlide",
+  "methodOperationStepSlide",
+  "jobOperationStepSlide",
+  "quoteOperationStepSlide"
 ];
 
 type ForeignKey = {
@@ -198,8 +210,127 @@ async function nullNullableReferences(
   return count;
 }
 
+// Rows a trigger forbids deleting, which the wipe would otherwise hit halfway
+// through. Refusing before any write keeps the failure readable.
+async function assertWipeable(ctx: Ctx): Promise<void> {
+  const { client, companyId } = ctx;
+  const partners = await client.query<{ count: number }>(
+    `SELECT (SELECT count(*) FROM customer
+              WHERE "companyId" = $1 AND "intercompanyCompanyId" IS NOT NULL)
+          + (SELECT count(*) FROM supplier
+              WHERE "companyId" = $1 AND "intercompanyCompanyId" IS NOT NULL)
+            AS count`,
+    [companyId]
+  );
+  const partnerCount = Number(partners.rows[0]?.count ?? 0);
+  if (partnerCount > 0) {
+    throw new Error(
+      `Seed: this company trades with other companies in its group (${partnerCount} intercompany customer/supplier record(s)). Demo data can only be applied to a company without intercompany partners.`
+    );
+  }
+  const cards = await client.query<{ count: number }>(
+    `SELECT count(*) AS count FROM "cardTransaction"
+     WHERE "companyId" = $1 AND status <> 'Draft'`,
+    [companyId]
+  );
+  const cardCount = Number(cards.rows[0]?.count ?? 0);
+  if (cardCount > 0) {
+    throw new Error(
+      `Seed: this company has ${cardCount} posted or voided card transaction(s), which cannot be deleted. Demo data can only be applied to a company without posted card transactions.`
+    );
+  }
+}
+
+// The journal source types whose document the wipe deletes.
+const DOCUMENT_JOURNAL_SOURCES = [
+  "Sales Invoice",
+  "Purchase Invoice",
+  "Payment",
+  "Credit Memo",
+  "Debit Memo",
+  "Purchase Receipt",
+  "Sales Shipment",
+  "Inventory Adjustment"
+];
+
+/**
+ * Posted journals cannot be deleted (journal_posted_immutable: "reverse it
+ * instead"), but the documents they post are about to be. Void each one the
+ * way the posting functions void their own — a negated "VOID" entry today,
+ * the original left Posted (the tie-out and aging RPCs count Posted only) —
+ * so the GL never carries balances for documents that no longer exist. Once
+ * the documents are gone nothing links to either entry, so nothing is voided twice.
+ */
+async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
+  const { client, companyId } = ctx;
+  const journals = await client.query<{
+    id: string;
+    journalEntryId: string;
+    description: string | null;
+    sourceType: string;
+  }>(
+    `SELECT j.id, j."journalEntryId", j.description, j."sourceType"
+     FROM journal j
+     WHERE j."companyId" = $1 AND j.status = 'Posted'
+       AND j."sourceType"::text = ANY($2::text[])
+       AND (
+         EXISTS (
+           SELECT 1 FROM "journalLine" l
+           WHERE l."journalId" = j.id AND l."companyId" = $1 AND l."documentId" IN (
+             SELECT id FROM "salesInvoice" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "purchaseInvoice" WHERE "companyId" = $1
+             UNION ALL SELECT id FROM payment WHERE "companyId" = $1
+             UNION ALL SELECT id FROM memo WHERE "companyId" = $1
+             UNION ALL SELECT id FROM receipt WHERE "companyId" = $1
+             UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
+         -- a zero-cash payment's journal has no lines to match on
+         OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)
+         OR j.id IN (SELECT "journalId" FROM memo WHERE "companyId" = $1))
+     ORDER BY j."postingDate", j."journalEntryId"`,
+    [companyId, DOCUMENT_JOURNAL_SOURCES]
+  );
+  if (journals.rows.length === 0) return;
+  const today = resolveDate(ctx.anchor, 0);
+  const period = await client.query<{ id: string }>(
+    `SELECT id FROM "accountingPeriod"
+     WHERE "companyId" = $1 AND "startDate" <= $2 AND "endDate" >= $2
+     ORDER BY id LIMIT 1`,
+    [companyId, today]
+  );
+  for (const journal of journals.rows) {
+    const voidId = await insertId(ctx, "journal", {
+      journalEntryId: await nextJournalEntryId(ctx),
+      accountingPeriodId: period.rows[0]?.id,
+      description: `VOID ${journal.description ?? journal.journalEntryId}`,
+      postingDate: today,
+      sourceType: journal.sourceType,
+      status: "Posted",
+      postedAt: `${today}T12:00:00Z`,
+      postedBy: ctx.userId
+    });
+    // As the invoice voids: negated amount and quantity, same references (a
+    // payment or memo void keeps the quantity).
+    await client.query(
+      `INSERT INTO "journalLine"
+         ("journalId", "accountId", description, amount, quantity, "documentType",
+          "documentId", "documentLineReference", "journalLineReference", accrual,
+          "companyId", "createdBy")
+       SELECT $1, "accountId", 'VOID: ' || COALESCE(description, ''), -amount,
+              CASE WHEN "documentType" IN ('Payment', 'Memo') THEN quantity ELSE -quantity END,
+              "documentType", "documentId", "documentLineReference",
+              "journalLineReference", accrual, "companyId", $2
+       FROM "journalLine" WHERE "journalId" = $3 AND "companyId" = $4`,
+      [voidId, ctx.userId, journal.id, companyId]
+    );
+  }
+}
+
 export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   const { client, companyId } = ctx;
+
+  await assertWipeable(ctx);
+  await reverseDocumentJournals(ctx);
 
   const tables = await companyScopedTables(client);
   const deleteSet = new Set(tables.filter((t) => !PRESERVED_TABLES.has(t)));
@@ -212,7 +343,7 @@ export async function wipeCompanyBusinessData(ctx: Ctx): Promise<void> {
   // Deleting outright is safe and loses nothing: MRP regenerates these wholesale
   // on its next run, which is why the backup catalog also treats them as
   // transient (see TRANSIENT_TABLES in packages/jobs/src/backups/schema.ts).
-  for (const t of TRANSIENT_MRP_TABLES) {
+  for (const t of [...TRANSIENT_MRP_TABLES, ...MODEL_SLIDE_TABLES]) {
     if (deleteSet.has(t)) {
       await client.query(`DELETE FROM ${quote(t)} WHERE "companyId" = $1`, [
         companyId

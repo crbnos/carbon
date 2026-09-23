@@ -1,8 +1,10 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
   HolidaySpec,
   MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
@@ -10,7 +12,8 @@ import type {
   ShelfSpec,
   ShiftSpec,
   TagSpec,
-  WarehouseSpec
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -118,6 +121,27 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Potting Station", "Potting & Conformal Coat"],
   ["Potting Station", "Clean Room Assembly"]
 ];
+
+// Day shift staffs every cell; TVAC and the clean room run a swing shift too,
+// because a thermal cycle or a cure does not stop at 14:30.
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Mill", "Day Shift"],
+  ["TIG Welder Cell", "Day Shift"],
+  ["Clean Room Bay A", "Day Shift"],
+  ["Clean Room Bay A", "Swing Shift"],
+  ["PCB Lab", "Day Shift"],
+  ["TVAC Chamber 1", "Day Shift"],
+  ["TVAC Chamber 1", "Swing Shift"],
+  ["QC Bench", "Day Shift"],
+  ["Potting Station", "Day Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Production Supervisor",
+  department: "Manufacturing",
+  shift: "Day Shift",
+  startDateOffset: -1140
+};
 
 export const PLANT: PlantSpec = {
   name: "Manufacturing Plant",
@@ -425,6 +449,30 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "AstroMill Machining", process: "Outside Processing" }
 ];
 
+// Outside shops the planner can load like an in-house cell.
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "AstroMill Machining",
+    ability: "CNC Operation",
+    hoursPerWeek: 40
+  },
+  { supplier: "AstroMill Machining", ability: "Welding", hoursPerWeek: 16 },
+  {
+    supplier: "Orbital Composites",
+    ability: "Composite Layup",
+    hoursPerWeek: 24
+  }
+];
+
+// Headquarters' engineering lab — its bench equipment is maintained like the plant's.
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Flatsat Test Lab",
+  dept: "Engineering",
+  ability: "Inspection",
+  laborRate: 80,
+  machineRate: 25
+};
+
 export const CONTRACTORS = [
   {
     firstName: "Rafael",
@@ -485,10 +533,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Clean Room Assembly",
     description:
       "Assembly and torque procedure for the ESPA-class structural frame.",
+    parameters: [
+      { key: "Corner fastener torque", value: "9 N·m (M6 A286)" },
+      { key: "Diagonal squareness limit", value: "0.5 mm" },
+      { key: "Thread locker", value: "None — safety-wired per NASA-STD-5020" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify panel kit against the pick list",
@@ -506,7 +559,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: STRUCTURAL_STEPS_V2 }
+      { version: 2, status: "Active", steps: STRUCTURAL_STEPS_V2 }
     ]
   },
   {
@@ -517,7 +570,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage subsystems in the clean room",
@@ -561,6 +614,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Thermal Vacuum Test",
     description:
       "Thermal vacuum qualification cycle for an integrated satellite bus.",
+    parameters: [
+      { key: "Thermal cycles", value: "8" },
+      { key: "Chamber pressure", value: "≤ 1×10⁻⁵ Torr" },
+      { key: "Plateau dwell", value: "4 h hot / 4 h cold" }
+    ],
     versions: [
       {
         version: 1,
@@ -718,6 +776,7 @@ export const satelliteFoundation: FoundationData = {
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -733,8 +792,11 @@ export const satelliteFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,

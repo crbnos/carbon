@@ -40,7 +40,7 @@ pnpm db:migrate          # Apply pending migrations + regenerate types
 pnpm db:types            # Regenerate types only
 pnpm db:check:datasets   # Validate + dry-run every demo dataset against the schema (writes nothing)
 pnpm --filter @carbon/database typecheck
-pnpm --filter @carbon/database test   # includes the pure dataset validator
+pnpm --filter @carbon/database test
 ```
 
 ## Key Exports
@@ -58,12 +58,13 @@ pnpm --filter @carbon/database test   # includes the pure dataset validator
 | `./picked-consumption` | Node re-export of `supabase/functions/lib/picked-consumption.ts` (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
 | *(no subpath)* | `supabase/functions/shared/image-pipeline.ts` — the codebase-wide image pipeline (decode HEIC/JPEG/PNG/WebP → shape → encode), re-exported by `@carbon/files/media` (NOT by this package). Unlike `precision.ts` it has npm deps (`libheif-js`, `@jsquash/*`) which are pinned in BOTH this package.json and `functions/deno.json` `imports` — keep the versions identical. Its `.d.ts` sits beside it (`wasm-codecs.d.ts`, triple-slash referenced). Consumed by the `process-image`, `logo-resizer` and `thumbnail` edge functions |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
-| `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
+| `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`, re-exported from `supabase/functions/shared/inspection-verdict.ts`, which the dataset seed shares); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Node-side re-export of `supabase/functions/shared/sampling-engine.ts` (Z1.4 / ISO 2859-1 resolvers) |
 | `./audit.config` / `./audit.types` | `auditConfig`, `AuditEntityType`, `getAuditableTableNames`, and the audit type surface. The audit ENGINE (`getEntityAuditLog`, `enableAuditLog`, `insertAuditLogEntries`, …) MOVED to the commercial `@carbon/ee/audit.server`; config + types stay here (client-safe, generic schema types consumed by CE packages) |
 | `./ratelimit` | `checkApiKeyRateLimit` (Postgres RPC wrapper) |
 | `./datasets` | `applyDataset(pgClient, { companyId, userId, dataset, timeZone, wipeFirst? })` — the one entry point that fills a company with an industry dataset, in a single transaction; `wipeFirst` clears prior business data inside that same transaction while preserving bootstrap config. Plus `DATASETS`, `getDataset`, `datasetKeys`, `datasetForIndustry`. Consumed by onboarding (`industry.tsx`) and the `company-template` Inngest job. See Dev Seed below |
-| `./seed-workflows` | `buildSeedWorkflows` — the seeded workflow definitions (`datasets/tiers/workflow-definitions.ts`) |
+| `./seed-workflows` | `buildSeedWorkflows`, `SEED_WORKFLOW_BUILDERS`, `EVENT_SOURCES` — the seeded workflow definitions and tier 11's event→table map (`datasets/tiers/workflow-definitions.ts`); `@carbon/ee`'s `seed-workflows.test.ts` pins both to the workflow catalog |
+| `./dataset-rule-fields` | `RULE_FIELDS` — the rule-builder fields a seeded sales/storage rule may test (`datasets/rule-fields.ts`); `@carbon/utils`'s `field-registry.test.ts` pins it to `field-registry.ts` |
 | `.` (root, from `src/timezone.ts` + `src/utils.ts`) | `getCompanyTimeZone(db, companyId)` / `getLocationTimeZone(db, locationId, companyId)` — business-timezone resolvers, overloaded for Supabase client or Kysely handle (they throw on query failure rather than silently falling back); `AnyPostgresClient` + `isKysely` guard for writing such overloads. SQL siblings: `company_today(companyId)` / `location_today(locationId, companyId)` replace `CURRENT_DATE` for business dates in DB functions (SECURITY INVOKER — callers must be SECURITY DEFINER or service-role). ERP routes should prefer the Redis-cached wrappers in `~/modules/shared/timezone.server` |
 
 ## Dev Seed
@@ -92,11 +93,16 @@ are dev tooling (the dev CLI and the drift check), outside the `./datasets` expo
 reached from the shared engine via `applyDataset`'s `wipeFirst` option, which both the dev CLI
 and the `company-template` job use; it is not exported on its own.
 
+After its seed commits, `seed-dev.ts` spawns `pnpm --filter @carbon/jobs plan:company --
+--company <id> --user <id>` to run MRP + the scheduler (a spawn, not an import:
+`@carbon/planning` depends on this package). `--skip-plan` opts out; a failed run only prints
+a warning with the command to re-run. Under portless it passes
+`NODE_EXTRA_CA_CERTS=~/.portless/ca.pem` when that file exists and the variable is unset.
+
 `pnpm db:check:datasets` (`src/check-datasets.ts`) has two layers. First the pure
 `validateDataset` (`datasets/validate.ts`) cross-checks every dataset with no database —
 ref resolution, required status coverage, on-hand ≥ 0, journal balance, settlement
-consistency — so a broken dataset blocks the commit even when the stack is down (it also runs
-in `pnpm --filter @carbon/database test`). Then `datasets/verify.ts` applies every dataset to
+consistency — so a broken dataset blocks the commit even when the stack is down. Then `datasets/verify.ts` applies every dataset to
 a scratch company, asserts the `datasets/coverage.ts` row-count floors, and always rolls back,
 so it writes nothing; this layer skips with a warning when there is no database. The pre-commit
 hook runs it on any `packages/database/**` change.

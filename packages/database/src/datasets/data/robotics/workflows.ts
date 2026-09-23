@@ -1,5 +1,4 @@
-import type { Edge, SeedWorkflow } from "../../tiers/workflow-definitions.ts";
-import type { WorkflowData } from "../../types.ts";
+import type { Edge, SeedWorkflow, WorkflowData } from "../../types.ts";
 
 // A factory, not a constant: every definition names ids that only exist once the seed has run.
 

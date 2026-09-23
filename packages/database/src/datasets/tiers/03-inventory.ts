@@ -6,7 +6,7 @@ import type { Ctx, TrackedStockSpec } from "../types.ts";
 /**
  * Mirrors post-inventory-adjustment's full-entity Scrap: the entity keeps its
  * quantity, a Scrap activity consumes it and a Negative Adjmt. ledger row draws
- * it off the shelf. No GL, like every hand-authored ledger row in the seed.
+ * it off the shelf. Tier 09 posts its cost row and scrap-account journal.
  */
 async function scrapLot(
   ctx: Ctx,
@@ -74,6 +74,21 @@ export async function runTier3(ctx: Ctx): Promise<void> {
       companyId,
       createdBy: userId,
       comment: "Opening balance"
+    });
+  }
+
+  // Default shelf per stocked item at the plant: its first opening-stock bin.
+  ctx.log("pick methods");
+  const defaultShelf = new Map<string, string>();
+  for (const entry of data.openingStock) {
+    if (!defaultShelf.has(entry.item))
+      defaultShelf.set(entry.item, entry.shelf);
+  }
+  for (const [item, shelf] of defaultShelf) {
+    await insertRow(ctx, "pickMethod", {
+      itemId: need(ctx.refs.items, item).id,
+      locationId: plantId,
+      defaultStorageUnitId: need(ctx.refs.shelves, shelf)
     });
   }
 

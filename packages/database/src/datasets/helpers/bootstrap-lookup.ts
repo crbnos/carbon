@@ -2,9 +2,10 @@ import { maybeOne, quote } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 /**
- * Id of a per-company bootstrap lookup row (nonConformanceType, gaugeType,
- * changeOrderRequiredAction, …) by its name. Cached in ctx.refs.misc — never
- * module scope, which would leak across the drift check's four companies.
+ * Id of a company-scoped lookup row by its name: a bootstrap row
+ * (nonConformanceType, paymentTerm, scrapReason, …) or one tier 01 inserted
+ * (the material taxonomy). Cached in ctx.refs.misc — never module scope, which
+ * would leak across the drift check's four companies.
  */
 export async function bootstrapIdByName(
   ctx: Ctx,
@@ -20,7 +21,7 @@ export async function bootstrapIdByName(
     [ctx.companyId, name]
   );
   if (!row) {
-    throw new Error(`Seed: no bootstrap ${table} named "${name}"`);
+    throw new Error(`Seed: no ${table} named "${name}"`);
   }
   ctx.refs.misc[key] = row.id;
   return row.id;

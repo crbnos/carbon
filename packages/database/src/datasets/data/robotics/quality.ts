@@ -1,15 +1,59 @@
 import type {
   GaugeSpec,
+  InspectionFeatureSpec,
   InspectionSpec,
   NonConformanceSpec,
+  NonConformanceWorkflowSpec,
   QualityData,
   QualityDocumentSpec,
   RiskSpec
 } from "../../types.ts";
 
+// The templates the issues below were raised from (the new-issue form copies
+// source, required actions and MRB onto the issue).
+export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
+  {
+    key: "supplier-escape",
+    name: "Supplier Escape — Drivetrain Components",
+    description:
+      "A purchased drivetrain part failed receiving inspection. Quarantine it, work the root cause with the supplier, and record their corrective action before MRB closes it out.",
+    priority: "High",
+    source: "External",
+    requiredActions: [
+      "Containment Action",
+      "Root Cause Analysis",
+      "Corrective Action"
+    ],
+    mrb: true
+  },
+  {
+    key: "customer-return",
+    name: "Customer Complaint — Field Return",
+    description:
+      "A customer reported a fault on a delivered arm or spare. Acknowledge within one business day, contain sister units, and verify the fix before closing.",
+    priority: "Medium",
+    source: "External",
+    requiredActions: [
+      "Customer Communication",
+      "Containment Action",
+      "Verification"
+    ]
+  },
+  {
+    key: "incoming-hold",
+    name: "Incoming Lot Hold",
+    description:
+      "An incoming lot is missing paperwork or failed a screening check. Hold the whole lot until it is released or dispositioned.",
+    priority: "Medium",
+    source: "Internal",
+    requiredActions: ["Containment Action"]
+  }
+];
+
 export const NON_CONFORMANCES: NonConformanceSpec[] = [
   {
     ref: "ncr:harness",
+    assignee: "self",
     name: "Arm harness short detected during continuity test",
     source: "Internal",
     status: "In Progress",
@@ -25,6 +69,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   },
   {
     ref: "ncr:torque",
+    items: [{ item: "FST-M8-SS", quantity: 12 }],
     name: "J1 gearbox fastener torque below spec on base assembly",
     source: "Internal",
     status: "Registered",
@@ -37,6 +82,14 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // inspection lot.
   {
     ref: "ncr:gear-lost-motion",
+    items: [
+      { item: "GBX-HD-80", quantity: 1, disposition: "Return to Supplier" },
+      // J2 drive modules on the floor built from the same Torqline lot.
+      { item: "DRV-J2-MOD", quantity: 2 }
+    ],
+    assignee: "self",
+    workflow: "supplier-escape",
+    purchaseReturnLine: { purchaseReturn: "gearbox-rtv", line: 1, quantity: 1 },
     name: "Harmonic gear set lost motion over limit on incoming bench test",
     description:
       "Receiving inspection on the Torqline short delivery measured 1.6 arc-min lost motion at ±4% rated torque on one GBX-HD-80 against a 1.0 arc-min limit. Gear set quarantined in QC hold; MRB to decide return-to-vendor vs. regrade for a J6 wrist application.",
@@ -60,7 +113,8 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       {
         action: "Root Cause Analysis",
         status: "In Progress",
-        dueDateOffset: 7
+        dueDateOffset: 7,
+        processes: ["Gearbox Assembly"]
       },
       { action: "Corrective Action", status: "Pending", dueDateOffset: 21 }
     ],
@@ -76,6 +130,9 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── Customer complaint on a shipped spare drive, worked to closure.
   {
     ref: "ncr:drive-fault",
+    items: [{ item: "DRV-SRV-400", quantity: 1, disposition: "Rework" }],
+    workflow: "customer-return",
+    salesReturnLine: { salesReturn: "servodrive", line: 1 },
     name: "Customer-reported servo drive spare faults on first power-up",
     description:
       "Cascade Integration Group reported one of two DRV-SRV-400 spares throwing an encoder-communication fault the first time it was enabled on their cell. Unit returned for evaluation; root cause traced to the drive shipping on a superseded firmware build that predates the 19-bit encoder protocol.",
@@ -113,6 +170,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   // ── A quarantined encoder lot waiting on disposition.
   {
     ref: "ncr:enc-lot",
+    items: [{ item: "ENC-ABS-19", quantity: 2 }],
+    // Northgate shipped the lot — the supplier-quality KPI's issue this month.
+    supplier: "Northgate Electronics",
+    workflow: "incoming-hold",
     name: "Absolute encoder lot on hold — factory calibration certificate missing",
     description:
       "Lot LOT-ENC-2609 arrived without the vendor's factory calibration certificate, so its accuracy cannot be traced for the arm's positional-repeatability claim. Lot placed on hold pending the certificate or an in-house accuracy check.",
@@ -132,53 +193,162 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
 
 // Receiving inspection of the two gear sets Torqline delivered short. Lot of 2
 // at AQL 1.0 / level II resolves to code letter A, n = 2 — every set inspected.
-export const INSPECTION: InspectionSpec = {
-  ref: "insp:gear-set",
-  receipt: "receipt:short",
-  item: "GBX-HD-80",
-  drawingNumber: "TQ-HD80-100 Rev B",
+// One Receipt-usage plan for the bare controller boards, shared by both of its lots.
+const BARE_BOARD_PLAN = {
+  drawingNumber: "PCB-BARE-4L Fab Dwg Rev B",
   aql: 1.0,
   features: [
     {
       label: "1",
-      description: "Wave generator input bore diameter (Ø14 H7)",
-      nominalValue: "14.000",
-      tolerancePlus: "0.018",
-      toleranceMinus: "0.000",
+      description: "Board thickness over copper",
+      nominalValue: "1.60",
+      tolerancePlus: "0.16",
+      toleranceMinus: "0.16",
       unit: "mm"
     },
     {
       label: "2",
-      description: "Lost motion at ±4% rated torque",
-      nominalValue: "0.6",
-      tolerancePlus: "0.4",
-      toleranceMinus: "0.6",
-      unit: "arcmin"
+      description: "Plated through-hole diameter, M12 connector pattern",
+      nominalValue: "1.10",
+      tolerancePlus: "0.05",
+      toleranceMinus: "0.05",
+      unit: "mm"
     }
-  ],
-  status: "Partial",
-  dispositionOffset: -78,
-  notes:
-    "S/N HD80-2231 accepted. S/N HD80-2232 lost motion over limit — quarantined in QC hold and raised to MRB.",
-  samples: [
-    {
-      status: "Passed",
-      inspectedOffset: -79,
-      measurements: [
-        { feature: "1", value: 14.008 },
-        { feature: "2", value: 0.7 }
-      ]
-    },
-    {
-      status: "Failed",
-      inspectedOffset: -79,
-      measurements: [
-        { feature: "1", value: 14.011 },
-        { feature: "2", value: 1.6 }
-      ]
-    }
-  ]
+  ] satisfies InspectionFeatureSpec[]
 };
+
+export const INSPECTIONS: InspectionSpec[] = [
+  {
+    source: "Receipt",
+    ref: "insp:gear-set",
+    receipt: "receipt:short",
+    item: "GBX-HD-80",
+    drawingNumber: "TQ-HD80-100 Rev B",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "Wave generator input bore diameter (Ø14 H7)",
+        nominalValue: "14.000",
+        tolerancePlus: "0.018",
+        toleranceMinus: "0.000",
+        unit: "mm"
+      },
+      {
+        label: "2",
+        description: "Lost motion at ±4% rated torque",
+        nominalValue: "0.6",
+        tolerancePlus: "0.4",
+        toleranceMinus: "0.6",
+        unit: "arcmin"
+      }
+    ],
+    status: "Partial",
+    dispositionOffset: -78,
+    notes:
+      "S/N HD80-2231 accepted. S/N HD80-2232 lost motion over limit — quarantined in QC hold and raised to MRB.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -79,
+        measurements: [
+          { feature: "1", value: 14.008 },
+          { feature: "2", value: 0.7 }
+        ]
+      },
+      {
+        status: "Failed",
+        inspectedOffset: -79,
+        measurements: [
+          { feature: "1", value: 14.011 },
+          { feature: "2", value: 1.6 }
+        ]
+      }
+    ]
+  },
+  // Receiving inspection of the paid bare-board lot: 20 boards, AQL 1.0 → n = 5, all good.
+  {
+    source: "Receipt",
+    ref: "insp:bare-boards",
+    receipt: "receipt:paid",
+    item: "PCB-BARE-4L",
+    ...BARE_BOARD_PLAN,
+    status: "Passed",
+    dispositionOffset: -67,
+    notes: "Five boards measured; thickness and connector holes nominal.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 1.62 },
+          { feature: "2", value: 1.11 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 1.57 },
+          { feature: "2", value: 1.09 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 1.6 },
+          { feature: "2", value: 1.12 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 1.64 },
+          { feature: "2", value: 1.1 }
+        ]
+      },
+      {
+        status: "Passed",
+        inspectedOffset: -67,
+        measurements: [
+          { feature: "1", value: 1.59 },
+          { feature: "2", value: 1.08 }
+        ]
+      }
+    ]
+  },
+  // Yesterday's delivery of the same board, still in the receiving queue.
+  {
+    source: "Receipt",
+    ref: "insp:bare-boards-queue",
+    receipt: "receipt:bare-boards",
+    item: "PCB-BARE-4L",
+    ...BARE_BOARD_PLAN,
+    status: "Pending",
+    samples: []
+  },
+  // Final inspection has measured the first controller board of the floor job.
+  {
+    source: "Job Operation",
+    ref: "insp:ctrl-fpt",
+    job: "floor-ctrl-pcb",
+    status: "In Progress",
+    notes:
+      "Board 1 of 6 on the bed-of-nails; the rest are still on the SMT line.",
+    samples: [
+      {
+        status: "Passed",
+        inspectedOffset: -1,
+        measurements: [
+          { feature: "1", value: 24.1 },
+          { feature: "2", value: 2.45 }
+        ]
+      }
+    ]
+  }
+];
 
 export const QUALITY_DOCUMENTS: QualityDocumentSpec[] = [
   {
@@ -353,8 +523,9 @@ export const RISKS: RiskSpec[] = [
 ];
 
 export const roboticsQuality: QualityData = {
+  workflows: WORKFLOWS,
   nonConformances: NON_CONFORMANCES,
-  inspection: INSPECTION,
+  inspections: INSPECTIONS,
   qualityDocuments: QUALITY_DOCUMENTS,
   gauges: GAUGES,
   risks: RISKS

@@ -1,8 +1,10 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
   HolidaySpec,
   MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
@@ -10,7 +12,8 @@ import type {
   ShelfSpec,
   ShiftSpec,
   TagSpec,
-  WarehouseSpec
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -118,6 +121,28 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Inspection Bench", "Final Inspection"],
   ["Inspection Bench", "Burn-In Test"]
 ];
+
+// First shift staffs every cell; the SMT line and burn-in run a second shift,
+// and integration keeps a weekend crew for customer FAT slots.
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Mill Cell", "First Shift"],
+  ["Gearbox Bench", "First Shift"],
+  ["SMT Line", "First Shift"],
+  ["SMT Line", "Second Shift"],
+  ["Harness Bench", "First Shift"],
+  ["Integration Cell 1", "First Shift"],
+  ["Integration Cell 1", "Weekend Shift"],
+  ["Burn-In Rack", "First Shift"],
+  ["Burn-In Rack", "Second Shift"],
+  ["Inspection Bench", "First Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Cell Lead",
+  department: "Assembly & Integration",
+  shift: "First Shift",
+  startDateOffset: -910
+};
 
 export const PLANT: PlantSpec = {
   name: "Robotics Assembly Plant",
@@ -451,6 +476,29 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Kappa Contract Machining", process: "Outside Processing" }
 ];
 
+// Outside shops the planner can load like an in-house cell.
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Kappa Contract Machining",
+    ability: "CNC Machining",
+    hoursPerWeek: 40
+  },
+  {
+    supplier: "Vertex Calibration Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  }
+];
+
+// Headquarters' own work center — maintained like the plant's.
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Customer Demo Cell",
+  dept: "Engineering",
+  ability: "Robot Programming",
+  laborRate: 85,
+  machineRate: 40
+};
+
 export const CONTRACTORS = [
   {
     firstName: "Victor",
@@ -511,10 +559,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Gearbox Assembly",
     description:
       "Assembly and torque procedure for the J1 base and column of the Vertex 10 arm.",
+    parameters: [
+      { key: "J1 bolt torque", value: "45 N·m (M8 A2-70)" },
+      { key: "Gearbox grease fill", value: "12 g EP-2 per joint" },
+      { key: "Thread locker", value: "Loctite 243 on base bolts" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify base kit against the pick list",
@@ -533,7 +586,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: ARM_BASE_STEPS_V2 }
+      { version: 2, status: "Active", steps: ARM_BASE_STEPS_V2 }
     ]
   },
   {
@@ -544,7 +597,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage subassemblies at the integration cell",
@@ -588,6 +641,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Burn-In Test",
     description:
       "Twenty-four hour duty-cycle burn-in and repeatability check for an integrated arm.",
+    parameters: [
+      { key: "Burn-in duration", value: "24 h" },
+      { key: "Chamber ambient", value: "40 °C" },
+      { key: "Repeatability limit", value: "±0.02 mm" }
+    ],
     versions: [
       {
         version: 1,
@@ -748,6 +806,7 @@ export const roboticsFoundation: FoundationData = {
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -763,8 +822,11 @@ export const roboticsFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,

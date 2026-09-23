@@ -1,14 +1,19 @@
 // Pure inspection math shared by tier 07 and the validator, so the seeded
 // sample statuses are exactly what the engine would have derived.
 
+import {
+  deriveSampleStatus as deriveVerdict,
+  type InspectionVerdict,
+  valuateMeasurement
+} from "../../../supabase/functions/shared/inspection-verdict.ts";
 import { resolveSamplingPlan, type SamplingResult } from "../../sampling.ts";
-import type { InspectionSpec } from "../types.ts";
+import type { InspectionFeatureSpec, InspectionSampleSpec } from "../types.ts";
 
 /** The company default (companySettings.samplingStandard) every seed runs under. */
 export const SEED_SAMPLING_STANDARD = "ANSI_Z1_4" as const;
 
 /** The document default rule every seeded inspection plan carries. */
-export function inspectionPlan(spec: InspectionSpec) {
+export function inspectionPlan(spec: { aql: number }) {
   return {
     type: "AQL" as const,
     aql: spec.aql,
@@ -18,11 +23,11 @@ export function inspectionPlan(spec: InspectionSpec) {
 }
 
 /**
- * The lot plan post-receipt snapshots. Every feature inherits the document
- * default, so each feature's plan equals the lot plan.
+ * The lot plan post-receipt / getOrCreateJobOperationInspection snapshot. Every
+ * feature inherits the document default, so each feature's plan equals it.
  */
 export function resolveInspectionPlan(
-  spec: InspectionSpec,
+  spec: { aql: number },
   lotSize: number
 ): SamplingResult {
   return resolveSamplingPlan(
@@ -32,46 +37,31 @@ export function resolveInspectionPlan(
   );
 }
 
-function parseSpecNumber(value: string): number | null {
-  const trimmed = value.trim();
-  if (trimmed === "") return null;
-  const parsed = Number(trimmed.replace(/^\+/, ""));
-  return Number.isNaN(parsed) ? null : parsed;
-}
-
-/**
- * valuateMeasurement (`@carbon/database/quality`) for a numeric Measurement
- * feature: in [nominal − |tol−|, nominal + |tol+|] ⇒ Passed. Duplicated rather
- * than imported — that module pulls in kysely at runtime.
- */
+/** Tier 07 writes every feature as a numeric Measurement. */
 export function valuateReading(
-  feature: InspectionSpec["features"][number],
+  feature: InspectionFeatureSpec,
   value: number
-): "Passed" | "Failed" {
-  const nominal = parseSpecNumber(feature.nominalValue) ?? 0;
-  const plus = Math.abs(parseSpecNumber(feature.tolerancePlus) ?? 0);
-  const minus = Math.abs(parseSpecNumber(feature.toleranceMinus) ?? 0);
-  return value >= nominal - minus && value <= nominal + plus
-    ? "Passed"
-    : "Failed";
+): InspectionVerdict {
+  return valuateMeasurement({ type: "Measurement", ...feature }, value);
 }
 
-/**
- * upsertInspectionMeasurement's derivation: any failed reading ⇒ Failed;
- * every feature read and passed ⇒ Passed; otherwise Pending.
- */
+/** upsertInspectionMeasurement's derivation over the sample's readings. */
 export function deriveSampleStatus(
-  spec: InspectionSpec,
-  sample: InspectionSpec["samples"][number]
-): "Pending" | "Passed" | "Failed" {
-  const statuses = new Map<string, "Passed" | "Failed">();
-  for (const reading of sample.measurements) {
-    const feature = spec.features.find((f) => f.label === reading.feature);
-    if (feature)
-      statuses.set(feature.label, valuateReading(feature, reading.value));
-  }
-  if ([...statuses.values()].includes("Failed")) return "Failed";
-  return spec.features.every((f) => statuses.get(f.label) === "Passed")
-    ? "Passed"
-    : "Pending";
+  features: InspectionFeatureSpec[],
+  sample: InspectionSampleSpec
+): InspectionVerdict {
+  return deriveVerdict(
+    features.map((f) => f.label),
+    sample.measurements.flatMap((reading) => {
+      const feature = features.find((f) => f.label === reading.feature);
+      return feature
+        ? [
+            {
+              inspectionFeatureId: feature.label,
+              status: valuateReading(feature, reading.value)
+            }
+          ]
+        : [];
+    })
+  );
 }

@@ -192,6 +192,10 @@
         "The apply or revert looks stuck",
         "Can't apply a second template",
         "Applying failed with an error",
+        "Applying failed with \"Seed: this company trades with other companies in its group\"",
+        "Applying failed with \"Seed: this company has N posted or voided card transaction(s)\"",
+        "Material Planning, Scheduling or Priorities are empty right after applying",
+        "The Webhooks, API keys or Audit log screens are empty after applying",
         "The Documents list is empty after applying a template",
         "The demo dates look recent — is that real activity?"
       ]
