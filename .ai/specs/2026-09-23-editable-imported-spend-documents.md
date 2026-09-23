@@ -83,24 +83,53 @@ settings page already renders (`packages/ee` `integrations[]`), so a new provide
 badge with no extra work. An **Activity** entry records `"{Document} imported from {Provider}"`
 with the import timestamp.
 
-### Line fields (v1)
-
-`chargeLine` already has the columns, so **v1 needs no migration**:
+### Line fields, and dimensions via the existing selector
 
 | Field | Required | Notes |
 |---|---|---|
 | Account | yes | the GL account the line codes to |
 | Amount | yes | lines must sum to the header |
 | Description | no | |
-| Cost Center | no | already a column; becomes a `journalLineDimension` at post |
-| Project | no | already a column; becomes a `journalLineDimension` at post |
+| **Dimensions** | no | rendered by the existing `DimensionSelector` |
 
-The reference UI exposes a much wider dimension set (Department, Location, Asset Class,
-Supplier, Item, Customer, Supplier Type, Employee, Work Center, Process, Item Posting Group,
-Service Period). Those are **deliberately out of v1**: Carbon models analytical dimensions
-through its own `dimension` / `journalLineDimension` system rather than a column per concept,
-so the right way to reach that breadth is to render the company's configured dimensions
-generically — not to add fourteen columns to `chargeLine`. Recorded as the follow-up below.
+The reference UI exposes a wide dimension set (Department, Location, Asset Class, Supplier,
+Item, Customer, Supplier Type, Employee, Work Center, Process, Item Posting Group). Carbon
+does **not** add a column per concept to reach that — it already has the right component:
+**`apps/erp/app/modules/accounting/ui/JournalEntries/DimensionSelector.tsx`**, which renders
+the company's *configured* dimensions generically, colours each entity type, and serves the
+high-cardinality ones (Customer, Supplier, Item) from the client stores through a searchable,
+virtualized Combobox rather than eagerly loading them. Reuse it in the line editor rather than
+building pickers.
+
+That has one consequence worth stating plainly, because it reverses an earlier draft of this
+spec: **v1 therefore DOES need a migration.** `DimensionSelector` works in
+`{dimensionId, valueId}` pairs, and a charge line has nowhere to put them — `chargeLine` has
+only the two hard-coded columns `costCenterId` and `projectId`. So each document's line needs
+a generic child table mirroring `journalLineDimension`:
+
+```sql
+CREATE TABLE "chargeLineDimension" (
+    "id" TEXT NOT NULL DEFAULT id('chgld'),
+    "companyId" TEXT NOT NULL,
+    "chargeLineId" TEXT NOT NULL,
+    "dimensionId" TEXT NOT NULL,
+    "valueId" TEXT NOT NULL,
+    -- audit columns
+    CONSTRAINT "chargeLineDimension_pkey" PRIMARY KEY ("id", "companyId"),
+    CONSTRAINT "chargeLineDimension_line_fkey"
+      FOREIGN KEY ("chargeLineId", "companyId")
+      REFERENCES "chargeLine"("id", "companyId") ON DELETE CASCADE
+);
+```
+
+`post-charge` then writes `journalLineDimension` from these rows instead of from the two
+columns. `reimbursementLine` gets the identical child table.
+
+**The existing `costCenterId` / `projectId` columns stay for now** — the Ramp inbound sync
+writes them and `post-charge` reads them today, so removing them in the same change would
+couple a UI feature to an integration rewrite. Posting unions both sources, de-duplicating by
+`dimensionId`. Consolidating onto the generic table alone is the follow-up, and is recorded as
+an open question rather than assumed.
 
 ### Design Decisions
 
@@ -109,20 +138,22 @@ generically — not to add fourteen columns to `chargeLine`. Recorded as the fol
 | Authoring | **Still never created by hand** | These documents record something that happened in the spend tool; hand-entering one invents a transaction with no counterpart. Import-then-edit is a different thing from create. |
 | Sync auto-post | **Stop auto-posting; import as Draft** | Without a Draft window there is no editable moment at all. Draft becomes the review queue. |
 | Editable scope | Header + lines, **while Draft only** | Matches the existing lifecycle trigger exactly (Draft edits allowed, Posted immutable) — no trigger change, and posted history stays immutable. |
-| Line dimensions v1 | Account, Amount, Description, Cost Center, Project | Exactly the columns `chargeLine` already has, so v1 needs no migration. |
-| Wider dimensions | **Deferred**, and then via the generic `dimension` system | A column per Rillet concept would fight Carbon's dimension model and need a migration per concept. |
+| Line dimensions | The existing **`DimensionSelector`**, backed by a generic `chargeLineDimension` child table | Carbon already has the component that renders a company's configured dimensions generically, including searchable high-cardinality types. A column per Rillet concept would fight the dimension model and need a migration each. Cost: v1 gains one small table per document type. |
+| `costCenterId` / `projectId` columns | **Keep for now**; posting unions both sources | The Ramp sync writes them and `post-charge` reads them; removing them here would couple this UI feature to an integration rewrite. |
 | Source attribution | Provider logo + name + external id + Activity entry | `charge.integration` already stores the provider; the logo comes from the existing integration registry, so new providers are free. |
 | Totals guard | Header total must equal the line sum before Post | Surfaces the invariant `post-charge` already enforces, rather than failing at post time. |
 | Detail surface | **Full page, not the Drawer** | Carbon's convention is Drawer detail views, but a multi-line editor with expandable per-line forms does not fit a drawer. This is a deliberate, narrow exception — flagged rather than silently broken. |
 
 ## Data Model Changes
 
-**None for charges in v1.** `charge` and `chargeLine` already carry every field the editor
-writes, `charge.integration` already records the provider, and the lifecycle trigger already
-allows Draft edits.
+**One new table per document type**: `chargeLineDimension` (above) and the identical
+`reimbursementLineDimension`, so the existing `DimensionSelector` has somewhere to write.
+Everything else already exists — `charge`/`chargeLine` carry the header and line fields,
+`charge.integration` records the provider, and the lifecycle trigger already allows Draft
+edits and nothing else.
 
-Reimbursements get their tables from the sibling spec; they must mirror `chargeLine`'s shape
-(`accountId`, `costCenterId`, `projectId`, `description`, `amount`, `sequence`).
+Reimbursements get their tables from the sibling spec; `reimbursementLine` must mirror
+`chargeLine` so one line editor serves both.
 
 ## API / Service Changes
 
@@ -150,14 +181,18 @@ Reimbursements get their tables from the sibling spec; they must mirror `chargeL
       Draft.
 - [ ] Its detail page shows a **SOURCE** field with the Ramp **logo**, the provider name, and
       the provider's external id, plus an Activity entry "Charge imported from Ramp".
-- [ ] Edit mode allows changing header fields and editing an existing line's account, amount,
-      description, cost center and project; Save persists all of it.
+- [ ] Edit mode allows changing header fields and editing an existing line's account, amount
+      and description; Save persists all of it.
+- [ ] The line editor renders the company's configured dimensions through the existing
+      `DimensionSelector` (not bespoke pickers), and a dimension chosen on a line persists to
+      `chargeLineDimension`.
 - [ ] `+ Add line item` adds a second coding line; the running total in the header updates as
       amounts are typed; removing a line updates it too.
 - [ ] Post is refused (with a clear message, before any edge-function call) while the line sum
       does not equal the header amount.
-- [ ] Posting a fully-coded Draft charge writes the journal with a `journalLineDimension` per
-      line carrying its cost center / project, and flips the row to Posted.
+- [ ] Posting a fully-coded Draft charge writes a `journalLineDimension` per line for every
+      dimension set on it — from the generic table AND the legacy columns, de-duplicated by
+      `dimensionId` — and flips the row to Posted.
 - [ ] A **Posted** charge is not editable — edit controls are absent and a direct action is
       refused (the lifecycle trigger is the backstop, not the only guard).
 - [ ] Browser-verified end to end via `/test`: import → edit → add line → post.
@@ -179,12 +214,21 @@ Reimbursements get their tables from the sibling spec; they must mirror `chargeL
       Draft queue and may experience it as a regression. Recommended: stop auto-posting
       unconditionally for v1 (simplest, one behaviour), and revisit if a customer wants
       auto-post-when-fully-coded.
+- [ ] **Do the `costCenterId` / `projectId` columns get consolidated into the generic
+      dimension table, and when?** Why it matters: two sources of truth for the same concept is
+      exactly the kind of drift that rots. Recommended: leave both in v1 (posting unions them),
+      then migrate the Ramp inbound path onto the generic table and drop the columns as a
+      follow-up — not in the same change as the UI.
 - [ ] **Full page vs Drawer for the detail surface** — recommended full page, since the line
       editor does not fit a Drawer, but it is a deliberate break from the house convention and
       worth an explicit yes.
 
 ## Changelog
 
+- 2026-09-23: Line dimensions use the existing `DimensionSelector` rather than deferring the
+  wider set. This reverses the "v1 needs no migration" claim: the selector works in
+  `{dimensionId, valueId}` pairs, so each document's line needs a generic child table
+  mirroring `journalLineDimension`.
 - 2026-09-23: Created, from a review of Rillet's Charge/Reimbursement UI. Supersedes the
   "read and sync only" narrowing recorded earlier the same day in the reimbursements spec:
   these documents are still never hand-created, but they ARE editable after import.

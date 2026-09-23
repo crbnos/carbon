@@ -173,9 +173,23 @@ New `journalEntrySourceType` value `Reimbursement`, with `POSTING_POLICY`
 `defaultEnabled: false`. Cost-center and project dimensions write `journalLineDimension` rows
 exactly as `post-charge` does.
 
-### Payout
+### Payout — the "Pay expense" modal
 
-A reimbursement is settled by the existing **payment** machinery rather than a bespoke payout:
+A **Pay expense** action on an unpaid reimbursement opens a small modal (reference UI reviewed
+2026-09-23) with exactly three inputs over a `Total Due` display:
+
+| Field | Notes |
+|---|---|
+| Amount | defaults to the full amount due, but is editable — **partial payment is supported** |
+| Date | the payment date |
+| Account | the bank/cash account the payout is drawn from |
+
+That set is a 1:1 match for Rillet's `POST /reimbursements/{id}/payments`
+(`{amount, date, account_code}`), so the Carbon modal and the provider call take the same three
+values with no impedance — which is what closes the stale
+`UNSUPPORTED_REIMBURSEMENT_PAYMENT` parking.
+
+Underneath, it is settled by the existing **payment** machinery rather than a bespoke payout:
 `invoiceSettlement` already generalises its target (`targetSalesInvoiceId` XOR
 `targetPurchaseInvoiceId` XOR `targetMemoId`) and gains `targetReimbursementId`. This reuses
 posting, FX, and void handling rather than forking a second settlement dialect.
@@ -252,6 +266,8 @@ retained only for the provider-side vendor mapping on QBO/Xero.
   route. The detail header carries the **SOURCE** badge (Ramp logo + external id) and an
   Activity entry. `path.to.reimbursements` / `path.to.reimbursement(id)` follow the `charges`
   precedent, which gains the same treatment.
+- A **Pay expense** modal (amount / date / bank account, amount defaulted to the balance and
+  editable for partial payment), opened from the detail page of an unpaid reimbursement.
 - Accounting settings gains the Employee Reimbursements Payable account picker.
 
 ## Acceptance Criteria
@@ -274,8 +290,11 @@ retained only for the provider-side vendor mapping on QBO/Xero.
       coding line with the running total updating as amounts change.
 - [ ] A **Posted** reimbursement is not editable.
 - [ ] With Rillet connected, a posted reimbursement creates a Rillet `/reimbursements` record,
-      and paying it in Carbon issues `POST /reimbursements/{id}/payments` — the operation closes
-      `Completed`, **not** `UNSUPPORTED_REIMBURSEMENT_PAYMENT`.
+      and paying it in Carbon via the **Pay expense** modal issues
+      `POST /reimbursements/{id}/payments` carrying that modal's amount, date and account —
+      the operation closes `Completed`, **not** `UNSUPPORTED_REIMBURSEMENT_PAYMENT`.
+- [ ] A **partial** payout (amount less than the balance) settles part of the reimbursement and
+      leaves the remainder outstanding, rather than closing it.
 - [ ] With QBO connected, the same reimbursement creates a `Bill` against the employee vendor.
 - [ ] A `Reimbursements` entry appears under **Accounts Payable** in the invoicing nav
       (after Vendor Credits) and opens the reimbursements list.
@@ -328,6 +347,9 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## Changelog
 
+- 2026-09-23: Specified the **Pay expense** modal (amount / date / bank account, partial
+  payment allowed) from the reference UI — its three fields map 1:1 onto Rillet's
+  `POST /reimbursements/{id}/payments`.
 - 2026-09-23: Reversed the "read and sync only" narrowing after reviewing Rillet's UI.
   Reimbursements are still never hand-created, but an imported one IS editable while Draft —
   header and lines. The shared editing model, line editor and provider attribution moved to
