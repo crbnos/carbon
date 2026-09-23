@@ -67,6 +67,7 @@ type SweepSummary = {
     invoices: number;
     payments: number;
     charges: number;
+    memos: number;
     parkedBills: number;
   };
   skippedReasons: string[];
@@ -88,7 +89,13 @@ type SweepContext = {
 
 async function pageIds(args: {
   ctx: SweepContext;
-  table: "journal" | "purchaseInvoice" | "salesInvoice" | "payment" | "charge";
+  table:
+    | "journal"
+    | "purchaseInvoice"
+    | "salesInvoice"
+    | "payment"
+    | "charge"
+    | "memo";
   statuses: readonly string[];
   dateColumn: string;
   floor: string;
@@ -197,6 +204,7 @@ async function sweepCompanyProvider(args: {
     invoices: 0,
     payments: 0,
     charges: 0,
+    memos: 0,
     parkedBills: 0
   };
 
@@ -356,6 +364,62 @@ async function sweepCompanyProvider(args: {
     );
   } else {
     skippedReasons.push("charges: charge sync is disabled");
+  }
+
+  // Credit memos / vendor credits — ONE table, TWO entity types. The memo's
+  // PARTY decides which, so each side is paged separately with a party filter
+  // and emits its own entity type. Same two-page shape as charges:
+  // `memoDate` for the window (postingDate is nullable) plus `voidedAt` for
+  // late voids.
+  for (const side of [
+    {
+      entityType: "creditMemo" as const,
+      label: "credit memos",
+      partyColumn: "customerId"
+    },
+    {
+      entityType: "vendorCredit" as const,
+      label: "vendor credits",
+      partyColumn: "supplierId"
+    }
+  ]) {
+    const memoConfig = provider.getSyncConfig(side.entityType);
+    if (
+      !memoConfig?.enabled ||
+      memoConfig.direction === "pull-from-accounting"
+    ) {
+      skippedReasons.push(`${side.label}: sync is disabled`);
+      continue;
+    }
+
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: memoConfig.syncFromDate
+    });
+    const ofParty = (query: any) => query.not(side.partyColumn, "is", null);
+    const memoIds = await pageIds({
+      ctx,
+      table: "memo",
+      statuses: SWEPT_CHARGE_STATUSES,
+      dateColumn: "memoDate",
+      floor,
+      extraFilter: ofParty
+    });
+    const lateVoidedMemoIds = await pageIds({
+      ctx,
+      table: "memo",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor,
+      extraFilter: ofParty
+    });
+    const sweptMemoIds = [...new Set([...memoIds, ...lateVoidedMemoIds])];
+    scanned.memos += sweptMemoIds.length;
+    refs.push(
+      ...sweptMemoIds.map(
+        (id): ReconcileRef => ({ entityType: side.entityType, entityId: id })
+      )
+    );
   }
 
   // 3. Reconcile — the same executor the event path calls.

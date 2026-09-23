@@ -28,8 +28,8 @@ API surveys and Rillet sandbox probe recorded in the spec.
 - [x] Task 9: QBO syncers — credit memo + vendor credit
 - [x] Task 10: Rillet client — credit memos, vendor credits, products, applications
 - [x] Task 11: Rillet syncers — credit memo + vendor credit
-- [ ] Task 12: Event subscriptions + party-resolved table mapping
-- [ ] Task 13: Outbound sweep picks up posted memos
+- [x] Task 12: Event subscriptions + party-resolved table mapping
+- [x] Task 13: Outbound sweep picks up posted memos
 - [ ] Task 14: Posting-sync settings UI — two family selectors
 - [ ] Task 15: Rillet sandbox end-to-end verification
 - [ ] Task 16: Browser verification of the settings UI

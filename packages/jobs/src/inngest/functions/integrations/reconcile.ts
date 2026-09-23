@@ -47,7 +47,9 @@ export type ReconcileEntityType =
   | "vendor"
   | "item"
   | "purchaseOrder"
-  | "salesOrder";
+  | "salesOrder"
+  | "creditMemo"
+  | "vendorCredit";
 
 export type ReconcileRef = {
   entityType: ReconcileEntityType;

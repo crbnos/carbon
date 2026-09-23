@@ -58,7 +58,17 @@ const SNAPSHOT_TABLES: Record<
   vendor: { table: "supplier", columns: "id, updatedAt" },
   item: { table: "item", columns: "id, updatedAt" },
   purchaseOrder: { table: "purchaseOrder", columns: "id, updatedAt" },
-  salesOrder: { table: "salesOrder", columns: "id, updatedAt" }
+  salesOrder: { table: "salesOrder", columns: "id, updatedAt" },
+  // Both memo entity types read the SAME table; the party is carried so the
+  // policy can resolve the family without a second read.
+  creditMemo: {
+    table: "memo",
+    columns: "id, status, direction, customerId, supplierId, updatedAt"
+  },
+  vendorCredit: {
+    table: "memo",
+    columns: "id, status, direction, customerId, supplierId, updatedAt"
+  }
 };
 
 /** Entity types whose decision consults the push mapping. */
