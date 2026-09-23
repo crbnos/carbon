@@ -539,7 +539,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Una regla \"debe coincidir\" en este proceso impide que estos compartan un lote de producción"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "Un lote de producción necesita al menos una operación. Para dividir el lote de producción completo, use Disolver en su lugar."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Una migración de datos ejecutada por Carbon — usted carga sus propios datos"
@@ -4885,10 +4885,10 @@ msgid "Credit Memos"
 msgstr "Notas de crédito"
 
 msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr ""
+msgstr "Las notas de crédito y los créditos de proveedores se controlan por separado de las facturas de venta y compra, de modo que las cuentas por pagar se puedan manejar fuera de la sincronización mientras que las notas de crédito aún llegan al libro mayor. Habilitar una desplaza las notas de crédito desde la fecha de habilitación hacia adelante — el historial existente se deja sin cambios, y su importación requiere un relleno explícito."
 
 msgid "Credit representation"
-msgstr ""
+msgstr "Representación de notas de crédito"
 
 msgid "Credit total"
 msgstr "Total de Crédito"
@@ -14130,7 +14130,7 @@ msgstr "Quitar {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "Quitar {0} del lote de producción"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14139,7 @@ msgstr "¿Quitar {0} de este lote? Su operación vuelve al programa para ejecuta
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "¿Quitar {0} de {memberCount} operaciones de {1}?"
 
 msgid "Remove {label}"
 msgstr "Quitar {label}"

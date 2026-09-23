@@ -539,7 +539,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Reguła \"muszą się zgadzać\" w tym procesie blokuje wspólne tworzenie partii produkcyjnej"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby podzielić całą partię produkcyjną, użyj opcji Rozpuść."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Migracja danych prowadzona przez Carbon — ty ładujesz swoje dane"
@@ -4885,10 +4885,10 @@ msgid "Credit Memos"
 msgstr "Faktury korygujące"
 
 msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr ""
+msgstr "Faktury korygujące i kredyty dostawcy są zarządzane oddzielnie od faktur sprzedaży i faktur zakupu, dzięki czemu zobowiązania mogą być obsługiwane poza synchronizacją, podczas gdy faktury korygujące nadal docierają do księgi głównej. Włączenie jednej z nich przesuwa faktury korygujące od daty włączenia — istniejąca historia pozostaje niezmieniona, a jej importowanie wymaga jawnego uzupełnienia."
 
 msgid "Credit representation"
-msgstr ""
+msgstr "Reprezentacja faktur korygujących"
 
 msgid "Credit total"
 msgstr "Razem kredyt"
@@ -14130,7 +14130,7 @@ msgstr "Usuń z listy {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "Usuń {0} z partii produkcyjnej"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14139,7 @@ msgstr "Usunąć {0} z tej partii produkcyjnej? Jej operacja wraca do harmonogra
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "Usunąć {0} z {memberCount} operacji z {1}?"
 
 msgid "Remove {label}"
 msgstr "Usuń z listy {label}"

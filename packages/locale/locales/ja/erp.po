@@ -539,7 +539,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "このプロセスの\"一致必須\"ルールにより、これらはバッチを共有できません"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "バッチには少なくとも1つの工程が必要です。バッチ全体を分割するには、代わりに溶解を使用してください。"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
@@ -4885,10 +4885,10 @@ msgid "Credit Memos"
 msgstr "クレジットメモ"
 
 msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr ""
+msgstr "クレジットメモと仕入先クレジットは請求書から個別にゲートされているため、買掛金は同期の外で処理でき、クレジットメモは依然として帳簿に反映されます。1つを有効にすると、有効日からクレジットが先に進みます。既存の履歴はそのままにされ、その取り込みには明示的なバックフィルが必要です。"
 
 msgid "Credit representation"
-msgstr ""
+msgstr "クレジット・メモの表示"
 
 msgid "Credit total"
 msgstr "クレジット合計"
@@ -14130,7 +14130,7 @@ msgstr "{0}を除去"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "バッチから{0}を除去"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14139,7 @@ msgstr "{0}をこのバッチから除去しますか？その工程はスケジ
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "バッチ{1}から{memberCount}個の工程のうち{0}を除去しますか？"
 
 msgid "Remove {label}"
 msgstr "{label}を除去"

@@ -539,7 +539,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "이 공정의 \"일치해야 함\" 규칙이 이들을 배치 공유에서 차단합니다"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분해하려면 대신 해산을 사용하세요."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
@@ -4885,10 +4885,10 @@ msgid "Credit Memos"
 msgstr "대변전표"
 
 msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr ""
+msgstr "대변전표와 공급업체 대변은 송장 및 청구서와 별도로 제어되므로 매입채무는 동기화 외부에서 처리할 수 있으며 대변은 여전히 원장에 도달합니다. 하나를 활성화하면 활성화 날짜부터 대변이 앞으로 밀립니다. 기존 이력은 그대로 유지되며, 이를 가져오려면 명시적 역채우기가 필요합니다."
 
 msgid "Credit representation"
-msgstr ""
+msgstr "신용 메모의 표시"
 
 msgid "Credit total"
 msgstr "크레딧 합계"
@@ -14130,7 +14130,7 @@ msgstr "{0} 제거"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "배치에서 {0} 제거"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14139,7 @@ msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "{1}에서 {memberCount} 공정 중 {0} 제거?"
 
 msgid "Remove {label}"
 msgstr "제거 {label}"

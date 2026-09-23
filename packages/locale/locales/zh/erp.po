@@ -539,7 +539,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "生产批次需要至少一道工序。要分解整个生产批次，请改用\"分解\"。"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
@@ -4885,10 +4885,10 @@ msgid "Credit Memos"
 msgstr "贷项凭证"
 
 msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr ""
+msgstr "贷项凭证和供应商贷项与发票和账单分开控制，因此应付款项可以在同步之外处理，同时贷方仍然到达总分类账。启用其中一个会从启用日期起推送贷方——现有历史记录保持不变，跨越它需要明确的回填。"
 
 msgid "Credit representation"
-msgstr ""
+msgstr "信用备忘录的表示"
 
 msgid "Credit total"
 msgstr "贷项总额"
@@ -14130,7 +14130,7 @@ msgstr "移除{0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "从生产批次中移除 {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14139,7 @@ msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行�
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "从 {1} 中移除 {memberCount} 道工序中的 {0} 道？"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
