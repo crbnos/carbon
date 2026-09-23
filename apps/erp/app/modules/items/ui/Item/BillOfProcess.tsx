@@ -3577,15 +3577,27 @@ function OperationPreview({
   // Pins are image-only and the overlay draws just the number, so surface each
   // pin's label (and the tool it links to, when set) as a legend under the image —
   // otherwise an annotation's meaning is only visible inside the annotator.
-  const pinLegend = (slide?.imagePath ? (slide.annotations ?? []) : [])
-    .map((pin, index) => ({
-      pin,
-      index,
-      toolName: pin.toolId
-        ? allTools.find((x) => x.id === pin.toolId)?.readableIdWithRevision
-        : undefined
-    }))
-    .filter(({ pin, toolName }) => Boolean(pin.label || toolName));
+  // The content CHECK is `imagePath IS NOT NULL OR modelUploadId IS NOT NULL`, so a
+  // row may carry both; the panel renders the model then, and no pins are drawn — so
+  // match that precedence here rather than listing labels for invisible pins.
+  const pinLegend = (
+    slide?.imagePath && !slide.modelUploadId ? (slide.annotations ?? []) : []
+  )
+    .map((pin, index) => {
+      const tool = pin.toolId
+        ? allTools.find((x) => x.id === pin.toolId)
+        : undefined;
+      return {
+        pin,
+        index,
+        toolId: tool?.readableIdWithRevision,
+        // MES names a pin's tool by item name; keep the preview reading the same.
+        toolName: tool?.name
+      };
+    })
+    .filter(({ pin, toolId, toolName }) =>
+      Boolean(pin.label || toolId || toolName)
+    );
 
   const descriptionHtml =
     step.description && typeof step.description === "object"
@@ -3667,7 +3679,7 @@ function OperationPreview({
 
       {pinLegend.length > 0 && (
         <div className="flex flex-col gap-1">
-          {pinLegend.map(({ pin, index, toolName }) => (
+          {pinLegend.map(({ pin, index, toolId, toolName }) => (
             <div key={pin.id} className="flex items-start gap-2">
               <span
                 className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
@@ -3676,10 +3688,14 @@ function OperationPreview({
                 {index + 1}
               </span>
               <span className="min-w-0 flex-1 text-xs">
+                {toolId ? <span className="font-medium">{toolId}</span> : null}
                 {toolName ? (
-                  <span className="font-medium">{toolName}</span>
+                  <span className="text-muted-foreground">
+                    {toolId ? " " : null}
+                    {toolName}
+                  </span>
                 ) : null}
-                {toolName && pin.label ? " · " : null}
+                {(toolId || toolName) && pin.label ? " · " : null}
                 {pin.label ? (
                   <span className="text-muted-foreground">{pin.label}</span>
                 ) : null}
