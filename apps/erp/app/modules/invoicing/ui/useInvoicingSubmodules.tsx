@@ -10,7 +10,6 @@ import {
   BanknoteArrowUp
 } from "~/assets/icons/BanknoteArrows";
 import { usePermissions } from "~/hooks";
-import { useIntegrations } from "~/hooks/useIntegrations";
 import { useSavedViews } from "~/hooks/useSavedViews";
 import type { AuthenticatedRouteGroup } from "~/types";
 import { path } from "~/utils/path";
@@ -18,20 +17,13 @@ import { path } from "~/utils/path";
 export default function useInvoicingSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const integrations = useIntegrations();
   const { addSavedViewsToRoutes } = useSavedViews();
 
-  const hasRamp = integrations.has("ramp");
-
-  // Routes that only make sense with an active integration; hidden otherwise.
-  const integrationRoutes = new Map<string, boolean>([
-    [path.to.charges, hasRamp]
-  ]);
-
+  // Charges are a first-class Carbon document with their own posting path, so
+  // the nav entry is NOT gated on a spend integration being connected — an
+  // empty list is discoverable, a missing nav entry is not. Permission is the
+  // only gate (as it is for every other invoicing route).
   const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
-    if (integrationRoutes.has(route.to) && !integrationRoutes.get(route.to)) {
-      return false;
-    }
     if (route.role) {
       return permissions.is(route.role);
     } else if (route.permission) {
@@ -62,6 +54,13 @@ export default function useInvoicingSubmodules() {
           to: path.to.vendorCredits,
           icon: <LuCreditCard />,
           table: "memo",
+          permission: "invoicing"
+        },
+        {
+          name: t`Charges`,
+          to: path.to.charges,
+          icon: <LuReceipt />,
+          table: "charge",
           permission: "invoicing"
         }
       ]
@@ -100,13 +99,6 @@ export default function useInvoicingSubmodules() {
           to: path.to.payments,
           icon: <LuBanknote />,
           table: "payment",
-          permission: "invoicing"
-        },
-        {
-          name: t`Charges`,
-          to: path.to.charges,
-          icon: <LuReceipt />,
-          table: "charge",
           permission: "invoicing"
         }
       ]

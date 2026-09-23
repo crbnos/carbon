@@ -215,9 +215,10 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## UI Changes
 
-- **Navigation: a `Reimbursements` entry under Accounts Payable**, after `Vendor Credits`
-  (`ui/useInvoicingSubmodules.tsx`). The AP section today is Payables / Purchase Invoices /
-  Vendor Credits; a reimbursement is an employee payable, so AP is where a user looks for it.
+- **Navigation: a `Reimbursements` entry under Accounts Payable**, after `Charges`
+  (`ui/useInvoicingSubmodules.tsx`). The AP section is Payables / Purchase Invoices /
+  Vendor Credits / Charges; a reimbursement is an employee payable, so AP is where a user
+  looks for it.
   This is also the visible symptom of the overload being fixed: until the object exists there
   is nothing to link to, and reimbursements sit **inside the Purchase Invoices list** mixed
   with real vendor bills.
