@@ -49,3 +49,59 @@ Spec corrections found in audit:
 - [x] `models.ts`: delete stale INTEGER comment; `round()` at parse.
 - [x] `batch-operations/index.ts`: drop `.int()`, `round()` members.
 - [x] Tests: `display.test.ts` decimal cases; `models.batch.test.ts` decimal/round cases.
+
+---
+
+## Follow-up (2026-09-23) — review sweep on top of the four PRs
+
+CodeRabbit's five findings plus a sweep of the PR head for the same defect
+classes, and the shared seams the four PRs had created but not reused.
+Commits: `refactor(database): share the tracked-entity quantity rules as three
+functions`, `fix(inventory): round tracked-entity quantity arithmetic at every
+persist boundary`, `feat(checks): add no-unrounded-tracked-quantity conformance
+rule`, `fix(inventory): surface a pick guard's reason instead of the wrapper
+text`.
+
+- [x] Shared: `pick-guards.ts` → `shared/`; `settleQuantity()` in
+      `shared/entity-drain.ts` (round + refuse negative + drain rule, with
+      `resolveCountedEntity` delegating); `isFullDraw()` in
+      `shared/batch-split.ts` as the one split gate; `resolvePick` refuses an
+      `empty-pick`; `receivedByBin` rounds per parent.
+- [x] Rounding + split gates: `issue` (both children loops, every
+      `quantityIssued` write, the dispatch-item quantity), `post-picking` (line
+      locks in all seven handlers, entity lock + `resolvePick` in the three
+      accumulate paths, `settleQuantity` for the unpick child), 
+      `post-stock-transfer` (serial entity lock, split operands, unpick),
+      `post-shipment` (all three split decisions), `post-inventory-adjustment`
+      (three drain flips → `settleQuantity`), `correct-stock-movement`,
+      `create`, ERP `quality-disposition`, ERP `shipment+/lines.tracking.tsx`.
+- [x] `@carbon/checks`: `no-unrounded-tracked-quantity`, zero findings over the
+      current tree (no baseline entries), six over the pre-fix tree.
+- [x] `db:check:datasets` skips instead of crashing when `SUPABASE_DB_URL` is
+      unset — it blocked commits in a worktree with no `.env.local` on
+      "Cannot read properties of undefined (reading 'includes')".
+
+### Still open
+
+- [ ] **`VALIDATE CONSTRAINT "trackedEntity_quantity_nonnegative"`.** The CHECK
+      shipped `NOT VALID` in `20260922191138_tracked-entity-quantity-nonnegative.sql`
+      so the existing prod husks (the ZeroFarms −20) would not fail the deploy.
+      Nothing enforces the invariant on those historical rows until a later
+      migration validates it. The order is: repair the negative rows in prod
+      (a one-off script under `scripts/one-off/` — `ci/src/migrations.ts` runs
+      those after `supabase db push` and records them in `scriptRun` — or manual
+      corrections through `correct-stock-movement`), confirm
+      `SELECT count(*) FROM "trackedEntity" WHERE quantity < 0` is 0, then add
+      a migration with
+      `ALTER TABLE "trackedEntity" VALIDATE CONSTRAINT "trackedEntity_quantity_nonnegative";`
+      (same two-step convention as `20260805152353_timezone-validity-check.sql`).
+      Until then the constraint only guards NEW and UPDATED rows.
+- [ ] **Should `Rejected` be preserved at zero like `Scrapped`?**
+      `statusAfterQuantityChange` preserves only `Scrapped`. `Rejected` is the
+      other quality marker excluded from on-hand, and `correct-stock-movement`
+      can drive a Rejected lot to zero (it excludes only `Consumed`), which
+      would flip it to `Consumed` and lose the disposition. Left as-is
+      deliberately — it is a quality-semantics call, not a rounding one.
+- [ ] `post-picking`'s serial case still has no repeat-scan guard (the same
+      serial can be scanned twice on one list; `resolvePick` stops it only once
+      `quantityPicked` reaches `quantityToPick`). `post-stock-transfer` has one.
