@@ -194,6 +194,20 @@ Underneath, it is settled by the existing **payment** machinery rather than a be
 `targetPurchaseInvoiceId` XOR `targetMemoId`) and gains `targetReimbursementId`. This reuses
 posting, FX, and void handling rather than forking a second settlement dialect.
 
+**The payee is an employee, so `payment` gains `employeeId`.** `payment` is currently customer
+XOR supplier; a reimbursement is owed to neither. The check widens to exactly-one-of-three
+(customer XOR supplier XOR employee) and an employee arm is threaded through `post-payment`,
+`build-payment-journal` and `payment-funding`. This is the same shape `memo` already uses for
+its two-party XOR, and it is what keeps employee payables out of the vendor master — the whole
+point of the segregated control account. Note this modifies `payment`, a production-critical
+table, so the migration must be idempotent and additive (nullable column, widened CHECK).
+
+**A Ramp-PAID reimbursement still imports as Draft.** Ramp will not accept a `REIMBURSED`
+confirmation without a posted settlement, and a Draft cannot be settled — so the two are
+decoupled: the import **confirms to Ramp at import time**, and the payout is recorded when the
+document is Posted. The editable window exists for **coding**, not for deciding whether the
+employee was paid, so importing an already-paid reimbursement as Draft stays coherent.
+
 ### Provider representation (per-provider, as with credits)
 
 | Provider | Reimbursement | Payout |
@@ -222,6 +236,8 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 | Account FK | `REFERENCES "account"("id")` | Current convention (`salesReturnsAccount`, 2026-09-08); `accountNumber` is legacy. |
 | Posting | New `post-reimbursement` edge function | Mirrors `post-charge` exactly; keeps posting in the privileged edge path with the rest. |
 | Payout | Reuse `payment` + `invoiceSettlement` with a new `targetReimbursementId` | Avoids forking a second settlement dialect; inherits FX, void and period handling. |
+| Payee | **`payment.employeeId`**, check widened to customer XOR supplier XOR employee | A reimbursement is owed to an employee, not a party in the vendor master — which is the point of the segregated control account. Same XOR shape `memo` uses. Touches a production-critical table, so additive + idempotent. |
+| Ramp-paid imports | Confirm to Ramp **at import**; record the payout **at Post** | Ramp needs a posted settlement to accept `REIMBURSED`, and a Draft has none. Decoupling them preserves the Draft coding window without stranding the confirmation. |
 | Provider representation | Per-provider: Rillet native; QBO/Xero employee-vendor bill | Only Rillet has a native object. Mirrors the credit spec's per-provider reality. |
 | Rillet payout | Implement `POST /reimbursements/{id}/payments` | The endpoint now exists; `UNSUPPORTED_REIMBURSEMENT_PAYMENT` is stale. |
 | Authoring | **Never created by hand; editable after import.** No create form and no `new` route, but header + lines ARE editable while Draft | A reimbursement records something that happened in Ramp, so creating one would invent a transaction. Editing an imported one is a different thing: it is how Carbon improves coding it owns (cost centers, projects). Shared model: `2026-09-23-editable-imported-spend-documents.md`. |
@@ -284,7 +300,9 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 - [ ] A Ramp reimbursement syncs into Carbon as a **`reimbursement`** row (not a
       `purchaseInvoice`) with no synthetic "Employee" supplier created, and lands **Draft**.
 - [ ] Its detail page shows a SOURCE field with the **Ramp logo**, the provider name and the
-      external id, plus an Activity entry "Reimbursement imported from Ramp".
+      external id.
+- [ ] Editing a Draft reimbursement's lines and then re-running the Ramp sync leaves those
+      edits intact.
 - [ ] An imported Draft reimbursement can be edited: header fields, an existing line's
       account/amount/description/cost center/project, and `+ Add line item` adds a second
       coding line with the running total updating as amounts change.
@@ -347,6 +365,10 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## Changelog
 
+- 2026-09-23: Resolved three gaps the plan surfaced — `payment.employeeId` for the employee
+  payee (check widened to one-of-three), Ramp-paid reimbursements confirm at import with the
+  payout recorded at Post, and the sync never re-writes an existing document so a reviewer's
+  coding survives the next sweep. Dropped the Activity/timeline surface.
 - 2026-09-23: Specified the **Pay expense** modal (amount / date / bank account, partial
   payment allowed) from the reference UI — its three fields map 1:1 onto Rillet's
   `POST /reimbursements/{id}/payments`.

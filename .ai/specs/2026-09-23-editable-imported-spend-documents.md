@@ -60,6 +60,22 @@ This is the one behavioural change to the existing flow: **the sync no longer au
 Draft is the review queue. The lifecycle trigger already permits exactly this (Draft edits
 allowed, Posted immutable), so no trigger change is needed.
 
+### The sync CREATES; it never re-writes an existing document
+
+A document that already exists in Carbon is **never updated by a later sync run**. The sync
+creates the row and its lines once; from then on Carbon's copy is authoritative and the
+provider cannot overwrite it.
+
+This is load-bearing, not housekeeping. The existing resume path replaces a Draft's lines on
+re-sync, which was harmless when nobody could edit them — but under an editable model it means
+a reviewer codes a Draft, the hourly sweep re-runs, and their work is silently gone with no
+error and no way to tell it happened. "Provider owns it until it lands; Carbon owns it after"
+is the rule, and it is easy to reason about.
+
+The accepted cost: a provider-side correction made *after* import (Ramp re-codes the charge,
+say) will not flow through — the reviewer sees what arrived originally. That is the right
+trade, because the alternative silently destroys human work, and a human can always re-edit.
+
 ### Editing
 
 Cloning the reference UI's two-mode shape:
@@ -80,8 +96,14 @@ that invariant rather than inventing one.
 On the detail header, a labelled **SOURCE** field showing the provider's **logo** and name,
 plus the provider's external id beneath it. The logo comes from the integration registry the
 settings page already renders (`packages/ee` `integrations[]`), so a new provider gets its
-badge with no extra work. An **Activity** entry records `"{Document} imported from {Provider}"`
-with the import timestamp.
+badge with no extra work.
+
+**No activity/timeline surface.** The reference UI shows an Activity rail ("Charge imported
+from BREX"), but Carbon has no generic activity table — the audit log is the real history and
+`Activity.tsx` is only a row primitive. Building one to match the reference would be inventing
+a subsystem for a decoration, so the SOURCE badge carries the provenance and no `importedAt`
+column is added. The reference screenshots are a direction, not a specification to match
+pixel-for-pixel.
 
 ### Line fields, and dimensions via the existing selector
 
@@ -140,7 +162,9 @@ an open question rather than assumed.
 | Editable scope | Header + lines, **while Draft only** | Matches the existing lifecycle trigger exactly (Draft edits allowed, Posted immutable) — no trigger change, and posted history stays immutable. |
 | Line dimensions | The existing **`DimensionSelector`**, backed by a generic `chargeLineDimension` child table | Carbon already has the component that renders a company's configured dimensions generically, including searchable high-cardinality types. A column per Rillet concept would fight the dimension model and need a migration each. Cost: v1 gains one small table per document type. |
 | `costCenterId` / `projectId` columns | **Keep for now**; posting unions both sources | The Ramp sync writes them and `post-charge` reads them; removing them here would couple this UI feature to an integration rewrite. |
-| Source attribution | Provider logo + name + external id + Activity entry | `charge.integration` already stores the provider; the logo comes from the existing integration registry, so new providers are free. |
+| Sync re-write | **Create only — never update an existing document's lines** | The resume path replacing lines was harmless when nothing was editable; under an editable model it silently destroys a reviewer's coding. Cost: a provider-side correction after import doesn't flow through. |
+| Activity/timeline | **Not built** | Carbon has no generic activity table; the audit log is the real history. Inventing a subsystem for a decoration is the wrong trade — the SOURCE badge carries provenance. |
+| Source attribution | Provider logo + name + external id | `charge.integration` already stores the provider; the logo comes from the existing integration registry, so new providers are free. |
 | Totals guard | Header total must equal the line sum before Post | Surfaces the invariant `post-charge` already enforces, rather than failing at post time. |
 | Detail surface | **Full page, not the Drawer** | Carbon's convention is Drawer detail views, but a multi-line editor with expandable per-line forms does not fit a drawer. This is a deliberate, narrow exception — flagged rather than silently broken. |
 
@@ -180,7 +204,9 @@ Reimbursements get their tables from the sibling spec; `reimbursementLine` must 
 - [ ] A Ramp-imported charge lands **Draft**, not Posted, and appears in the charges list as
       Draft.
 - [ ] Its detail page shows a **SOURCE** field with the Ramp **logo**, the provider name, and
-      the provider's external id, plus an Activity entry "Charge imported from Ramp".
+      the provider's external id.
+- [ ] After a human edits a Draft's lines, re-running the sync leaves those edits intact —
+      the sync does not re-write an existing document.
 - [ ] Edit mode allows changing header fields and editing an existing line's account, amount
       and description; Save persists all of it.
 - [ ] The line editor renders the company's configured dimensions through the existing
@@ -225,6 +251,10 @@ Reimbursements get their tables from the sibling spec; `reimbursementLine` must 
 
 ## Changelog
 
+- 2026-09-23: The sync creates but never re-writes an existing document, so a reviewer's
+  coding cannot be silently destroyed by the next sweep. Dropped the Activity/timeline
+  surface — Carbon has no generic activity table and the reference UI is a direction, not a
+  pixel specification; the SOURCE badge carries provenance.
 - 2026-09-23: Line dimensions use the existing `DimensionSelector` rather than deferring the
   wider set. This reverses the "v1 needs no migration" claim: the selector works in
   `{dimensionId, valueId}` pairs, so each document's line needs a generic child table
