@@ -215,11 +215,18 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## UI Changes
 
+- **Navigation: a `Reimbursements` entry under Accounts Payable**, after `Vendor Credits`
+  (`ui/useInvoicingSubmodules.tsx`). The AP section today is Payables / Purchase Invoices /
+  Vendor Credits; a reimbursement is an employee payable, so AP is where a user looks for it.
+  This is also the visible symptom of the overload being fixed: until the object exists there
+  is nothing to link to, and reimbursements sit **inside the Purchase Invoices list** mixed
+  with real vendor bills.
 - `apps/erp/app/modules/invoicing/ui/Reimbursement/` — `ReimbursementsTable`,
   `ReimbursementStatus`, `ReimbursementForm` (lines with account + cost center + project),
   cloned from the `Charge` components per the copy-precedent convention.
 - Routes `x+/invoicing+/reimbursements*.tsx` with a Drawer detail (Carbon's detail-view
-  convention), plus a **Void** action for Posted rows.
+  convention), plus a **Void** action for Posted rows. `path.to.reimbursements` /
+  `path.to.reimbursement(id)` follow the `charges` precedent.
 - Accounting settings gains the Employee Reimbursements Payable account picker.
 
 ## Acceptance Criteria
@@ -239,6 +246,10 @@ retained only for the provider-side vendor mapping on QBO/Xero.
       and paying it in Carbon issues `POST /reimbursements/{id}/payments` — the operation closes
       `Completed`, **not** `UNSUPPORTED_REIMBURSEMENT_PAYMENT`.
 - [ ] With QBO connected, the same reimbursement creates a `Bill` against the employee vendor.
+- [ ] A `Reimbursements` entry appears under **Accounts Payable** in the invoicing nav
+      (after Vendor Credits) and opens the reimbursements list.
+- [ ] A reimbursement no longer appears in the **Purchase Invoices** list — the two documents
+      are separate everywhere in the UI.
 - [ ] An employee's reimbursements do **not** appear in supplier/AP aging reports.
 - [ ] Existing employee-supplier `purchaseInvoice` rows still load and post unchanged.
 - [ ] `pnpm run generate:types` after the migration, then
