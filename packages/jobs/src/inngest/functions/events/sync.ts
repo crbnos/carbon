@@ -144,7 +144,13 @@ export const syncFunction = inngest.createFunction(
             const seen = new Set<string>();
             const refs: ReconcileRef[] = [];
             for (const r of records) {
-              const entityType = getEntityTypeFromTable(r.event.table);
+              const entityType = getEntityTypeFromTable(
+                r.event.table,
+                (r.event.new ?? r.event.old ?? null) as Record<
+                  string,
+                  unknown
+                > | null
+              );
               if (!entityType) {
                 stepSummary.skipped.push({
                   recordId: r.event.recordId,

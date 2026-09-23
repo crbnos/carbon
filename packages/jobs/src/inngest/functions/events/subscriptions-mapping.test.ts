@@ -6,7 +6,7 @@ import {
   xeroSyncerRegistry
 } from "@carbon/ee/accounting";
 import { describe, expect, it } from "vitest";
-import { TABLE_TO_ENTITY_MAP } from "./sync-tables";
+import { getEntityTypesForTable } from "./sync-tables";
 
 /**
  * Pillar A invariant (v4 spec): every table a provider subscribes to must
@@ -33,16 +33,21 @@ describe("REQUIRED_SYNC_SUBSCRIPTIONS ↔ TABLE_TO_ENTITY_MAP ↔ syncer registr
 
       for (const subscription of REQUIRED_SYNC_SUBSCRIPTIONS[providerId]) {
         it(`routes '${subscription.table}' to a registered syncer`, () => {
-          const entityType = TABLE_TO_ENTITY_MAP[subscription.table];
+          // A table may route to several entity types (memo → creditMemo +
+          // vendorCredit, resolved per row by party). EVERY one must be
+          // registered, or that side is a dead letter.
+          const entityTypes = getEntityTypesForTable(subscription.table);
           expect(
-            entityType,
-            `table '${subscription.table}' has no TABLE_TO_ENTITY_MAP entry`
-          ).toBeDefined();
+            entityTypes.length,
+            `table '${subscription.table}' routes to no entity type`
+          ).toBeGreaterThan(0);
 
-          expect(
-            registry[entityType!],
-            `${providerId} registers no syncer for '${entityType}'`
-          ).toBeDefined();
+          for (const entityType of entityTypes) {
+            expect(
+              registry[entityType],
+              `${providerId} registers no syncer for '${entityType}'`
+            ).toBeDefined();
+          }
         });
       }
     });
