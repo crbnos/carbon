@@ -1,5 +1,6 @@
 export * from "./core/account-mapping";
 export * from "./core/account-mapping-ai";
+export * from "./core/credit-reason-item";
 export * from "./core/dimension-mapping";
 export * from "./core/document-costing";
 export * from "./core/external-mapping";

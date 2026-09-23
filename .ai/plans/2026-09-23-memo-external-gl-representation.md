@@ -21,7 +21,7 @@ API surveys and Rillet sandbox probe recorded in the spec.
 - [x] Task 2: Add `creditMemo` / `vendorCredit` accounting entity types
 - [x] Task 3: Per-party policy resolution + the family-misclassification fix
 - [x] Task 4: Resolve a memo journal's party at the call site
-- [ ] Task 5: Shared credit-reason-item resolver
+- [x] Task 5: Shared credit-reason-item resolver
 - [ ] Task 6: Xero client — credit notes + allocations
 - [ ] Task 7: Xero syncers — credit memo + vendor credit
 - [ ] Task 8: QBO client — CreditMemo, VendorCredit, Service item, applications
