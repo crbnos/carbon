@@ -6753,6 +6753,9 @@ msgstr "Pracownik"
 msgid "Employee Accounts"
 msgstr "Konta pracowników"
 
+msgid "Employee Reimbursements Payable"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "Typ pracownika"
 
@@ -9644,6 +9647,9 @@ msgstr "Skonfigurujmy Twoje konto"
 
 msgid "Letter"
 msgstr "Litera"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr ""
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Konto zobowiązań dla podatków odroczonych z przyspieszonych amortyzacji"

@@ -6753,6 +6753,9 @@ msgstr "Dipendente"
 msgid "Employee Accounts"
 msgstr "Account Dipendenti"
 
+msgid "Employee Reimbursements Payable"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "Tipo di Dipendente"
 
@@ -9644,6 +9647,9 @@ msgstr "Configuriamo il tuo account"
 
 msgid "Letter"
 msgstr "Lettera"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr ""
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Conto passività per imposte differite da ammortamento accelerato"

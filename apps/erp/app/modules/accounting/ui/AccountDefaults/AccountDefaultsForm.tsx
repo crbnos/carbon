@@ -223,6 +223,12 @@ const AccountDefaultsForm = ({
             label: t`Vendor Write-Off Income`,
             description: t`Other Income account for vendor balances cleared without full payment on AP settlement`,
             badgeType: "Revenue"
+          },
+          {
+            name: "employeeReimbursementsPayableAccount",
+            label: t`Employee Reimbursements Payable`,
+            description: t`Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset`,
+            badgeType: "Liability"
           }
         ]
       },

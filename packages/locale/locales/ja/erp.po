@@ -6753,6 +6753,9 @@ msgstr "従業員"
 msgid "Employee Accounts"
 msgstr "従業員アカウント"
 
+msgid "Employee Reimbursements Payable"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "従業員タイプ"
 
@@ -9644,6 +9647,9 @@ msgstr "アカウントをセットアップしましょう"
 
 msgid "Letter"
 msgstr "文字"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr ""
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"

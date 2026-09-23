@@ -6753,6 +6753,9 @@ msgstr "Employee"
 msgid "Employee Accounts"
 msgstr "Employee Accounts"
 
+msgid "Employee Reimbursements Payable"
+msgstr "Employee Reimbursements Payable"
+
 msgid "Employee Type"
 msgstr "Employee Type"
 
@@ -9644,6 +9647,9 @@ msgstr "Let's setup your account"
 
 msgid "Letter"
 msgstr "Letter"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Liability account for deferred taxes from accelerated depreciation"

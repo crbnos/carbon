@@ -6753,6 +6753,9 @@ msgstr "员工"
 msgid "Employee Accounts"
 msgstr "员工账户"
 
+msgid "Employee Reimbursements Payable"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "员工类型"
 
@@ -9644,6 +9647,9 @@ msgstr "让我们设置您的账户"
 
 msgid "Letter"
 msgstr "字母"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr ""
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速折旧产生的递延所得税的负债账户"

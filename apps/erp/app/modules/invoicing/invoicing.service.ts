@@ -51,6 +51,9 @@ import type {
   purchaseInvoiceLineValidator,
   purchaseInvoiceStatusType,
   purchaseInvoiceValidator,
+  ReimbursementStatusType,
+  reimbursementLineValidator,
+  reimbursementUpdateValidator,
   salesInvoiceLineValidator,
   salesInvoiceShipmentValidator,
   salesInvoiceStatusType,
@@ -1476,6 +1479,174 @@ export async function getCharges(
     { column: "chargeId", ascending: false }
   ]);
   return query;
+}
+
+export async function getReimbursement(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  id: string
+) {
+  // Embed the generic dimension rows with the lines — the editor and the
+  // read-mode badges both need them, and a per-line query would be an N+1.
+  return client
+    .from("reimbursement")
+    .select("*, reimbursementLine(*, reimbursementLineDimension(*))")
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getReimbursements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    status: ReimbursementStatusType | null;
+    employeeId: string | null;
+  }
+) {
+  let query = client
+    .from("reimbursement")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `reimbursementId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
+    );
+  }
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+  if (args.employeeId) {
+    query = query.eq("employeeId", args.employeeId);
+  }
+
+  // Newest first by the sequential reimbursementId (REIMB-yyyy-mm-NNNNNN),
+  // mirroring getCharges' chargeId desc default.
+  query = setGenericQueryFilters(query, args, [
+    { column: "reimbursementId", ascending: false }
+  ]);
+  return query;
+}
+
+/**
+ * Header edit. `.eq("status", "Draft")` is defence in depth alongside the
+ * RLS UPDATE policy and the reimbursement_draft_guard trigger — a Posted
+ * document is immutable, and a caller that tries gets zero rows rather than
+ * a silent partial write. There is deliberately no insert branch: the Ramp
+ * sync is the only thing that creates a reimbursement.
+ */
+export async function updateReimbursement(
+  client: SupabaseClient<Database>,
+  reimbursement: z.infer<typeof reimbursementUpdateValidator> & {
+    companyId: string;
+    updatedBy: string;
+    customFields?: Json;
+  }
+) {
+  const { id, companyId, ...update } = reimbursement;
+  return client
+    .from("reimbursement")
+    .update({
+      ...sanitize(update),
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id, reimbursementId")
+    .single();
+}
+
+/**
+ * Replace every coding line of a Draft reimbursement, transactionally.
+ *
+ * Kysely BYPASSES RLS, so the parent is re-read `forUpdate()` and its status
+ * re-asserted inside the transaction — exactly as replaceInvoiceSettlements
+ * does. The reimbursementLine_draft_guard trigger is the final backstop, but
+ * it raises a raw 55000; this throws a message the route can flash.
+ *
+ * Delete-all-then-reinsert rather than a diff: the editor submits the whole
+ * line set as one field, so a diff would be more code for the same result.
+ */
+export async function upsertReimbursementLines(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    reimbursementId: string;
+    companyId: string;
+    createdBy: string;
+    lines: z.infer<typeof reimbursementLineValidator>[];
+  }
+) {
+  return db.transaction().execute(async (trx) => {
+    const reimbursement = await trx
+      .selectFrom("reimbursement")
+      .select(["id", "status"])
+      .where("id", "=", args.reimbursementId)
+      .where("companyId", "=", args.companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!reimbursement) throw new Error("Reimbursement not found");
+    if (reimbursement.status !== "Draft")
+      throw new Error(
+        "Coding lines can only be edited while the reimbursement is Draft"
+      );
+
+    // The reimbursementLineDimension rows need no explicit delete — the line
+    // delete cascades them (ON DELETE CASCADE on the line FK), so the replace
+    // is one delete and two inserts.
+    await trx
+      .deleteFrom("reimbursementLine")
+      .where("reimbursementId", "=", args.reimbursementId)
+      .where("companyId", "=", args.companyId)
+      .execute();
+
+    if (args.lines.length === 0) return 0;
+
+    // RETURNING id, so the dimension rows can be bound to the line they
+    // belong to without relying on PostgreSQL's unspecified INSERT row
+    // order — the same reason post-charge allocates journal line ids up
+    // front. Insert order is preserved by `sequence`, but do NOT zip the
+    // returned rows by position; key them by `sequence`.
+    const inserted = await trx
+      .insertInto("reimbursementLine")
+      .values(
+        args.lines.map((line, index) => ({
+          reimbursementId: args.reimbursementId,
+          companyId: args.companyId,
+          accountId: line.accountId,
+          costCenterId: line.costCenterId ?? null,
+          projectId: line.projectId ?? null,
+          description: line.description ?? null,
+          amount: line.amount,
+          sequence: index,
+          createdBy: args.createdBy
+        }))
+      )
+      .returning(["id", "sequence"])
+      .execute();
+
+    const idBySequence = new Map(inserted.map((r) => [r.sequence, r.id]));
+    const dimensionRows = args.lines.flatMap((line, index) => {
+      const lineId = idBySequence.get(index);
+      if (!lineId) throw new Error("Failed to map reimbursement line");
+      return (line.dimensions ?? []).map((d) => ({
+        reimbursementLineId: lineId,
+        companyId: args.companyId,
+        dimensionId: d.dimensionId,
+        valueId: d.valueId
+      }));
+    });
+    if (dimensionRows.length) {
+      await trx
+        .insertInto("reimbursementLineDimension")
+        .values(dimensionRows)
+        .execute();
+    }
+
+    return args.lines.length;
+  });
 }
 
 export async function getInvoiceSettlements(

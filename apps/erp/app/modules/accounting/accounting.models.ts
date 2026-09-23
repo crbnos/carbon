@@ -457,6 +457,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   payablesAccount: z.string().min(1, {
     message: "Payables account is required"
   }),
+  // Optional BY DESIGN: the column is nullable with a runtime fallback to
+  // `payablesAccount`, and a required field would break saves on every company
+  // whose chart has no Employee Reimbursements Payable account.
+  employeeReimbursementsPayableAccount: z.string().optional(),
   salesTaxPayableAccount: z.string().min(1, {
     message: "Sales tax payable account is required"
   }),

@@ -6753,6 +6753,9 @@ msgstr "Сотрудник"
 msgid "Employee Accounts"
 msgstr "Учетные записи сотрудников"
 
+msgid "Employee Reimbursements Payable"
+msgstr ""
+
 msgid "Employee Type"
 msgstr "Тип сотрудника"
 
@@ -9644,6 +9647,9 @@ msgstr "Давайте настроим вашу учетную запись"
 
 msgid "Letter"
 msgstr "Буква"
+
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr ""
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Счет обязательств по отложенным налогам от ускоренной амортизации"

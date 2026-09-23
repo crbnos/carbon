@@ -87,10 +87,10 @@
 - [x] Task 1: Migration — reimbursement schema, control account, settlement + payment payee
 - [x] Task 2: Regenerate database types
 - [x] Task 3: Seed data — 2180 account, account default, sequence row
-- [ ] Task 4: `invoicing.models.ts` — status constants + EDIT validators
-- [ ] Task 5: `invoicing.service.ts` — readers + `updateReimbursement` header write
-- [ ] Task 6: `invoicing.service.ts` — Kysely line writers
-- [ ] Task 7: Accounting defaults — Employee Reimbursements Payable picker
+- [x] Task 4: `invoicing.models.ts` — status constants + EDIT validators
+- [x] Task 5: `invoicing.service.ts` — readers + `updateReimbursement` header write
+- [x] Task 6: `invoicing.service.ts` — Kysely line writers
+- [x] Task 7: Accounting defaults — Employee Reimbursements Payable picker
 - [ ] Task 8: `build-reimbursement-journal.ts` (pure) + its Deno test
 - [ ] Task 9: `post-reimbursement` edge function driver + `config.toml`
 - [ ] Task 10: `post-reimbursement` handler + transaction Deno tests

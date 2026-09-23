@@ -440,6 +440,66 @@ export const chargeStatus = ["Draft", "Posted", "Voided"] as const;
 export type ChargeType = (typeof chargeType)[number];
 export type ChargeStatusType = (typeof chargeStatus)[number];
 
+// ----------------------------------------------------------------------
+// Reimbursements (employee expense payables — imported from a spend tool,
+// then editable in Carbon while Draft; never hand-created)
+// ----------------------------------------------------------------------
+
+export const reimbursementStatus = ["Draft", "Posted", "Voided"] as const;
+export type ReimbursementStatusType = (typeof reimbursementStatus)[number];
+
+export function isReimbursementLocked(
+  status: string | null | undefined
+): boolean {
+  return status !== null && status !== undefined && status !== "Draft";
+}
+
+// Header edit. No create counterpart by design.
+export const reimbursementUpdateValidator = z.object({
+  id: z.string().min(1),
+  reimbursementDate: z
+    .string()
+    .min(1, { message: "Reimbursement date is required" }),
+  currencyCode: z.string().min(1, { message: "Currency is required" }),
+  exchangeRate: zfd.numeric(z.number().positive().default(1)),
+  amount: zfd.numeric(
+    z.number().finite().positive({ message: "Amount must be positive" })
+  ),
+  reference: zfd.text(z.string().optional()),
+  notes: zfd.text(z.string().optional())
+});
+
+// One coding line. The five stored columns mirror chargeLine, plus the
+// generic dimension pairs DimensionSelector works in. Do NOT add a field per
+// dimension concept — that is what `dimensions` is.
+//
+// These lines arrive as parsed JSON from a hidden field, not as form data,
+// so this validator is plain zod (no zfd coercion) — zfd.numeric expects a
+// FormData string and would reject an already-numeric amount.
+export const reimbursementLineDimensionValidator = z.object({
+  dimensionId: z.string().min(1),
+  valueId: z.string().min(1)
+});
+
+export const reimbursementLineValidator = z.object({
+  id: z.string().optional(),
+  accountId: z.string().min(1, { message: "Account is required" }),
+  costCenterId: z.string().nullish(),
+  projectId: z.string().nullish(),
+  description: z.string().nullish(),
+  amount: z
+    .number()
+    .finite()
+    .positive({ message: "Line amount must be positive" }),
+  dimensions: z.array(reimbursementLineDimensionValidator).default([])
+});
+
+// The editor submits the whole line set as ONE hidden JSON field, so the
+// route parses that string and runs it through this array.
+export const reimbursementLinesValidator = z
+  .array(reimbursementLineValidator)
+  .min(1, { message: "A reimbursement needs at least one line" });
+
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
 // the refined validator below with `.innerType()` is brittle (it breaks whenever
