@@ -1,11 +1,11 @@
 import { Status } from "@carbon/react";
-import type { cardTransactionStatus } from "~/modules/invoicing";
+import type { chargeStatus } from "~/modules/invoicing";
 
-type CardTransactionStatusProps = {
-  status?: (typeof cardTransactionStatus)[number] | null;
+type ChargeStatusProps = {
+  status?: (typeof chargeStatus)[number] | null;
 };
 
-const CardTransactionStatus = ({ status }: CardTransactionStatusProps) => {
+const ChargeStatus = ({ status }: ChargeStatusProps) => {
   switch (status) {
     case "Draft":
       return <Status color="gray">{status}</Status>;
@@ -18,4 +18,4 @@ const CardTransactionStatus = ({ status }: CardTransactionStatusProps) => {
   }
 };
 
-export default CardTransactionStatus;
+export default ChargeStatus;

@@ -5,23 +5,23 @@ import {
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { sql } from "kysely";
 import {
-  cardTransactionFixture,
+  chargeFixture,
   databaseTest,
-} from "./post-card-transaction-test-fixture.ts";
-import { postCardTransactionTransaction } from "./post-card-transaction-transaction.ts";
+} from "./post-charge-test-fixture.ts";
+import { postChargeTransaction } from "./post-charge-transaction.ts";
 import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
 databaseTest(
   "posting creates a missing month from the stored transaction date",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.deleteFrom("accountingPeriod").where(
         "companyId",
         "=",
         f.companyId,
       ).execute();
-      const result = await postCardTransactionTransaction(f.db, f.args);
+      const result = await postChargeTransaction(f.db, f.args);
       assertExists(result.journalId);
       const period = await f.db.selectFrom("accountingPeriod").select([
         sql<string>`"startDate"::text`.as("startDate"),
@@ -35,7 +35,7 @@ databaseTest(
 );
 
 databaseTest("journal line ids are allocated before a bulk insert", async () => {
-  const f = await cardTransactionFixture();
+  const f = await chargeFixture();
   try {
     const ids = await f.db.transaction().execute((trx) =>
       allocateJournalLineIds(trx, 3)
@@ -51,7 +51,7 @@ databaseTest("journal line ids are allocated before a bulk insert", async () => 
 databaseTest(
   "posting shifts a locked month to the next open period",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.updateTable("accountingPeriod").set({
         startDate: "2026-09-01",
@@ -68,7 +68,7 @@ databaseTest(
         status: "Inactive",
         createdBy: "system",
       }).returning("id").executeTakeFirstOrThrow();
-      const result = await postCardTransactionTransaction(f.db, f.args);
+      const result = await postChargeTransaction(f.db, f.args);
       assertExists(result.journalId);
       const journal = await f.db.selectFrom("journal").select([
         "accountingPeriodId",
@@ -78,7 +78,7 @@ databaseTest(
         accountingPeriodId: nextPeriod.id,
         postingDate: "2026-10-01",
       });
-      const header = await f.db.selectFrom("cardTransaction").select(
+      const header = await f.db.selectFrom("charge").select(
         sql<string>`"postingDate"::text`.as("postingDate"),
       ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow();
       assertEquals(header.postingDate, journal.postingDate);
@@ -91,18 +91,18 @@ databaseTest(
 databaseTest(
   "posting is atomic, dimension-complete, and idempotent",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
-      const first = await postCardTransactionTransaction(f.db, f.args);
-      const second = await postCardTransactionTransaction(f.db, f.args);
+      const first = await postChargeTransaction(f.db, f.args);
+      const second = await postChargeTransaction(f.db, f.args);
       assertEquals(second, first);
       assertExists(first.journalId);
-      const header = await f.db.selectFrom("cardTransaction").select([
+      const header = await f.db.selectFrom("charge").select([
         "status",
         "journalId",
         "postedAt",
         "postedBy",
-      ]).where("id", "=", f.cardTransactionId).where(
+      ]).where("id", "=", f.chargeId).where(
         "companyId",
         "=",
         f.companyId,
@@ -115,7 +115,7 @@ databaseTest(
         "companyId",
         "=",
         f.companyId,
-      ).where("sourceType", "=", "Card Transaction").execute();
+      ).where("sourceType", "=", "Charge").execute();
       assertEquals(journals.length, 1);
       const journalLines = await f.db.selectFrom("journalLine").select("id")
         .where("journalId", "=", first.journalId).where(
@@ -139,19 +139,19 @@ databaseTest(
 );
 
 databaseTest("a sequence failure rolls the entire post back", async () => {
-  const f = await cardTransactionFixture();
+  const f = await chargeFixture();
   try {
     await f.db.deleteFrom("sequence").where("table", "=", "journalEntry")
       .where("companyId", "=", f.companyId).execute();
     await assertRejects(
-      () => postCardTransactionTransaction(f.db, f.args),
+      () => postChargeTransaction(f.db, f.args),
       Error,
       "no result",
     );
-    const header = await f.db.selectFrom("cardTransaction").select([
+    const header = await f.db.selectFrom("charge").select([
       "status",
       "journalId",
-    ]).where("id", "=", f.cardTransactionId).where(
+    ]).where("id", "=", f.chargeId).where(
       "companyId",
       "=",
       f.companyId,
@@ -162,7 +162,7 @@ databaseTest("a sequence failure rolls the entire post back", async () => {
         "companyId",
         "=",
         f.companyId,
-      ).where("sourceType", "=", "Card Transaction").execute(),
+      ).where("sourceType", "=", "Charge").execute(),
       [],
     );
   } finally {
@@ -173,14 +173,14 @@ databaseTest("a sequence failure rolls the entire post back", async () => {
 databaseTest(
   "a failure after journal creation rolls the entire post back",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     let unrelated:
-      | Awaited<ReturnType<typeof cardTransactionFixture>>
+      | Awaited<ReturnType<typeof chargeFixture>>
       | undefined;
     const triggerName = `test_fail_post_${f.lineId.replaceAll("-", "_")}`;
     const functionName = triggerName;
     try {
-      unrelated = await cardTransactionFixture();
+      unrelated = await chargeFixture();
       await sql`
       CREATE FUNCTION ${sql.id("public", functionName)}()
       RETURNS trigger
@@ -196,24 +196,24 @@ databaseTest(
       END;
       $function$;
       CREATE TRIGGER ${sql.id(triggerName)}
-        BEFORE UPDATE ON public."cardTransaction"
+        BEFORE UPDATE ON public."charge"
         FOR EACH ROW
         EXECUTE FUNCTION ${sql.id("public", functionName)}(${
         sql.lit(f.companyId)
-      }, ${sql.lit(f.cardTransactionId)});
+      }, ${sql.lit(f.chargeId)});
     `.execute(f.db);
 
       // Failure injection must never affect other companies sharing this DB.
-      await postCardTransactionTransaction(unrelated.db, unrelated.args);
+      await postChargeTransaction(unrelated.db, unrelated.args);
       await assertRejects(
-        () => postCardTransactionTransaction(f.db, f.args),
+        () => postChargeTransaction(f.db, f.args),
         Error,
         "forced mid-transaction failure",
       );
-      const header = await f.db.selectFrom("cardTransaction").select([
+      const header = await f.db.selectFrom("charge").select([
         "status",
         "journalId",
-      ]).where("id", "=", f.cardTransactionId).where(
+      ]).where("id", "=", f.chargeId).where(
         "companyId",
         "=",
         f.companyId,
@@ -224,7 +224,7 @@ databaseTest(
           "companyId",
           "=",
           f.companyId,
-        ).where("sourceType", "=", "Card Transaction").execute(),
+        ).where("sourceType", "=", "Charge").execute(),
         [],
       );
       assertEquals(
@@ -232,7 +232,7 @@ databaseTest(
           "companyId",
           "=",
           f.companyId,
-        ).where("documentType", "=", "Card Transaction").execute(),
+        ).where("documentType", "=", "Charge").execute(),
         [],
       );
     } finally {
@@ -240,7 +240,7 @@ databaseTest(
         await sql`
           DROP TRIGGER IF EXISTS ${
           sql.id(triggerName)
-        } ON public."cardTransaction";
+        } ON public."charge";
           DROP FUNCTION IF EXISTS ${sql.id("public", functionName)}();
         `.execute(f.db);
       } finally {
@@ -257,23 +257,23 @@ databaseTest(
 databaseTest(
   "posting only changes the matching company when ids overlap",
   async () => {
-    const cardTransactionId = `shared-${crypto.randomUUID()}`;
-    const left = await cardTransactionFixture({ cardTransactionId });
-    const right = await cardTransactionFixture({ cardTransactionId });
+    const chargeId = `shared-${crypto.randomUUID()}`;
+    const left = await chargeFixture({ chargeId });
+    const right = await chargeFixture({ chargeId });
     try {
-      await postCardTransactionTransaction(right.db, right.args);
-      const leftHeader = await left.db.selectFrom("cardTransaction").select([
+      await postChargeTransaction(right.db, right.args);
+      const leftHeader = await left.db.selectFrom("charge").select([
         "status",
         "journalId",
-      ]).where("id", "=", cardTransactionId).where(
+      ]).where("id", "=", chargeId).where(
         "companyId",
         "=",
         left.companyId,
       ).executeTakeFirstOrThrow();
-      const rightHeader = await right.db.selectFrom("cardTransaction").select([
+      const rightHeader = await right.db.selectFrom("charge").select([
         "status",
         "journalId",
-      ]).where("id", "=", cardTransactionId).where(
+      ]).where("id", "=", chargeId).where(
         "companyId",
         "=",
         right.companyId,
@@ -291,20 +291,20 @@ databaseTest(
 databaseTest(
   "posting fails closed when company settings are missing",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.deleteFrom("companySettings").where("id", "=", f.companyId)
         .execute();
       await assertRejects(
-        () => postCardTransactionTransaction(f.db, f.args),
+        () => postChargeTransaction(f.db, f.args),
         Error,
         "settings",
       );
       assertEquals(
-        (await f.db.selectFrom("cardTransaction").select("status").where(
+        (await f.db.selectFrom("charge").select("status").where(
           "id",
           "=",
-          f.cardTransactionId,
+          f.chargeId,
         ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
           .status,
         "Draft",
@@ -318,7 +318,7 @@ databaseTest(
 databaseTest(
   "posting rejects an account whose class contradicts its role",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.updateTable("account").set({ class: "Asset" }).where(
         "id",
@@ -326,15 +326,15 @@ databaseTest(
         f.account("card"),
       ).execute();
       await assertRejects(
-        () => postCardTransactionTransaction(f.db, f.args),
+        () => postChargeTransaction(f.db, f.args),
         Error,
         "account",
       );
       assertEquals(
-        (await f.db.selectFrom("cardTransaction").select("status").where(
+        (await f.db.selectFrom("charge").select("status").where(
           "id",
           "=",
-          f.cardTransactionId,
+          f.chargeId,
         ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
           .status,
         "Draft",
@@ -348,20 +348,20 @@ databaseTest(
 databaseTest(
   "posting rejects a locked period without an open successor",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.updateTable("accountingPeriod").set({ closeStatus: "Locked" })
         .where("companyId", "=", f.companyId).execute();
       await assertRejects(
-        () => postCardTransactionTransaction(f.db, f.args),
+        () => postChargeTransaction(f.db, f.args),
         Error,
         "locked",
       );
       assertEquals(
-        (await f.db.selectFrom("cardTransaction").select("status").where(
+        (await f.db.selectFrom("charge").select("status").where(
           "id",
           "=",
-          f.cardTransactionId,
+          f.chargeId,
         ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
           .status,
         "Draft",
@@ -375,9 +375,9 @@ databaseTest(
 databaseTest(
   "void validates provenance, reverses once, and is idempotent",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
-      const posted = await postCardTransactionTransaction(f.db, f.args);
+      const posted = await postChargeTransaction(f.db, f.args);
       const voidArgs = { ...f.args, type: "void" as const };
       // PostgreSQL does not promise INSERT ... RETURNING order. Simulate a
       // driver returning the two inserted ids in reverse; explicit preallocated
@@ -405,11 +405,11 @@ databaseTest(
           return result;
         },
       });
-      const first = await postCardTransactionTransaction(
+      const first = await postChargeTransaction(
         reverseBulkIdResults,
         voidArgs,
       );
-      const second = await postCardTransactionTransaction(
+      const second = await postChargeTransaction(
         reverseBulkIdResults,
         voidArgs,
       );
@@ -417,10 +417,10 @@ databaseTest(
       assertEquals(first, posted);
       assertEquals(second, posted);
       assertEquals(
-        (await f.db.selectFrom("cardTransaction").select("status").where(
+        (await f.db.selectFrom("charge").select("status").where(
           "id",
           "=",
-          f.cardTransactionId,
+          f.chargeId,
         ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
           .status,
         "Voided",
@@ -429,13 +429,13 @@ databaseTest(
         "companyId",
         "=",
         f.companyId,
-      ).where("sourceType", "=", "Card Transaction").execute();
+      ).where("sourceType", "=", "Charge").execute();
       assertEquals(journals.length, 2);
       const lines = await f.db.selectFrom("journalLine").select("amount").where(
         "companyId",
         "=",
         f.companyId,
-      ).where("documentType", "=", "Card Transaction").execute();
+      ).where("documentType", "=", "Charge").execute();
       assertEquals(lines.reduce((total, line) => total + line.amount, 0), 0);
       const dimensions = await f.db
         .selectFrom("journalLineDimension as dimension")
@@ -457,14 +457,14 @@ databaseTest(
       assertEquals(dimensions, [
         {
           journalDescription:
-            `Card Transaction cardtest-${f.cardTransactionId.split("-")[1]}-readable`,
+            `Charge cardtest-${f.chargeId.split("-")[1]}-readable`,
           accountId: f.account("expense"),
           dimensionId: f.dimensionId,
           valueId: f.costCenterId,
         },
         {
           journalDescription:
-            `VOID Card Transaction cardtest-${f.cardTransactionId.split("-")[1]}-readable`,
+            `VOID Charge cardtest-${f.chargeId.split("-")[1]}-readable`,
           accountId: f.account("expense"),
           dimensionId: f.dimensionId,
           valueId: f.costCenterId,
@@ -477,9 +477,9 @@ databaseTest(
 );
 
 databaseTest("void refuses a forged original journal", async () => {
-  const f = await cardTransactionFixture();
+  const f = await chargeFixture();
   try {
-    const posted = await postCardTransactionTransaction(f.db, f.args);
+    const posted = await postChargeTransaction(f.db, f.args);
     assertExists(posted.journalId);
     await f.db.transaction().execute(async (trx) => {
       await sql`SET LOCAL session_replication_role = replica`.execute(trx);
@@ -491,18 +491,18 @@ databaseTest("void refuses a forged original journal", async () => {
     });
     await assertRejects(
       () =>
-        postCardTransactionTransaction(f.db, {
+        postChargeTransaction(f.db, {
           ...f.args,
           type: "void",
         }),
       Error,
-      "Original card transaction journal",
+      "Original charge journal",
     );
     assertEquals(
-      (await f.db.selectFrom("cardTransaction").select("status").where(
+      (await f.db.selectFrom("charge").select("status").where(
         "id",
         "=",
-        f.cardTransactionId,
+        f.chargeId,
       ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow()).status,
       "Posted",
     );

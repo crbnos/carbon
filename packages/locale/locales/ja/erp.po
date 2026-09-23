@@ -2538,7 +2538,7 @@ msgstr "これらのユーザーに招待を送信してもよろしいですか
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "このユーザーに招待を送信してもよろしいですか?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "{0}を取消してもよろしいですか？これにより逆仕訳行が転記され、元に戻すことはできません。"
 
@@ -3460,9 +3460,6 @@ msgstr "Carbonの単一レコード。部品番号を持つあらゆるもの（
 msgid "Card Holder"
 msgstr "カードホルダー"
 
-msgid "Card Transactions"
-msgstr "カード取引"
-
 msgid "Cards"
 msgstr "カード"
 
@@ -3573,6 +3570,9 @@ msgstr "これを変更するとパーツIDが更新されます"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "タイプを変更すると、この品目の下書き編集がリセットされます。"
+
+msgid "Charges"
+msgstr "カード請求"
 
 msgid "Chart"
 msgstr "チャート"
@@ -4863,9 +4863,6 @@ msgstr "クレジット ({0})"
 msgid "Credit / debit memo"
 msgstr "貸方/借方メモ"
 
-msgid "Credit / Debit Memos"
-msgstr "貸方/借方メモ"
-
 msgid "Credit Account"
 msgstr "クレジット勘定"
 
@@ -4884,6 +4881,9 @@ msgstr "クレジット金額は会社の基本通貨（{currency}）で表示�
 msgid "Credit Memo"
 msgstr "クレジットメモ"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "クレジット合計"
 
@@ -4892,9 +4892,6 @@ msgstr "クレジット済み"
 
 msgid "Credits"
 msgstr "クレジット"
-
-msgid "Credits & Debits"
-msgstr "貸方と借方"
 
 msgid "Credits applied"
 msgstr "適用されたクレジット"
@@ -10767,8 +10764,8 @@ msgstr "新規外部作業者"
 msgid "New Cost Center"
 msgstr "新規原価センター"
 
-msgid "New Credit / Debit Memo"
-msgstr "新しい貸方/借方メモ"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "新規通貨"
@@ -11015,6 +11012,9 @@ msgstr "新規転送明細"
 
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "新しいバージョン"
@@ -12490,9 +12490,6 @@ msgstr "部品が単一の負荷でまとめて実行されます。例：炉、
 msgid "Parts, materials, and how you classify them."
 msgstr "部品、材料、およびそれらの分類方法。"
 
-msgid "Party Type"
-msgstr "取引先タイプ"
-
 msgid "Pass"
 msgstr "合格"
 
@@ -13949,8 +13946,11 @@ msgstr "発注書を受け取られたものと請求済のものと照合する
 msgid "Record"
 msgstr "記録"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "得意先または仕入先に対して貸方メモまたは借方メモを記録する。特定の請求書への適用はメモ作成後に追加される。"
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
@@ -19245,6 +19245,12 @@ msgstr "差異のみ"
 msgid "VAT Number"
 msgstr "VAT番号"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "仕入先償却収益"
 
@@ -19503,8 +19509,8 @@ msgstr "取消"
 msgid "Void {0}"
 msgstr "取消 {0}"
 
-msgid "Void Card Transaction"
-msgstr "カード取引を取消"
+msgid "Void Charge"
+msgstr "カード請求を取消"
 
 msgid "Void Invoice"
 msgstr "請求書を取消"

@@ -2538,7 +2538,7 @@ msgstr "क्या आप सुनिश्चित हैं कि आप 
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "क्या आप सुनिश्चित हैं कि आप इस उपयोगकर्ता को आमंत्रण भेजना चाहते हैं?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "क्या आप सुनिश्चित हैं कि आप {0} को अमान्य करना चाहते हैं? यह एक उलट जर्नल प्रविष्टि पोस्ट करता है और इसे पूर्ववत नहीं किया जा सकता।"
 
@@ -3460,9 +3460,6 @@ msgstr "Carbon का एकल रिकॉर्ड किसी भी ची
 msgid "Card Holder"
 msgstr "कार्ड धारक"
 
-msgid "Card Transactions"
-msgstr "कार्ड लेनदेन"
-
 msgid "Cards"
 msgstr "कार्ड"
 
@@ -3573,6 +3570,9 @@ msgstr "इसे बदलने से पार्ट ID अपडेट ह�
 
 msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम की ड्राफ्ट संपादन रीसेट हो जाती है।"
+
+msgid "Charges"
+msgstr "शुल्क"
 
 msgid "Chart"
 msgstr "चार्ट"
@@ -4863,9 +4863,6 @@ msgstr "जमा ({0})"
 msgid "Credit / debit memo"
 msgstr "क्रेडिट / डेबिट नोट"
 
-msgid "Credit / Debit Memos"
-msgstr "क्रेडिट / डेबिट नोट"
-
 msgid "Credit Account"
 msgstr "क्रेडिट खाता"
 
@@ -4884,6 +4881,9 @@ msgstr "क्रेडिट राशियाँ कंपनी की आ�
 msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "क्रेडिट कुल"
 
@@ -4892,9 +4892,6 @@ msgstr "क्रेडिट किया गया"
 
 msgid "Credits"
 msgstr "जमा"
-
-msgid "Credits & Debits"
-msgstr "जमा और नामे"
 
 msgid "Credits applied"
 msgstr "क्रेडिट लागू किए गए"
@@ -10767,8 +10764,8 @@ msgstr "नया ठेकेदार"
 msgid "New Cost Center"
 msgstr "नया लागत केंद्र"
 
-msgid "New Credit / Debit Memo"
-msgstr "नया जमा / नामे मेमो"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "नई मुद्रा"
@@ -11015,6 +11012,9 @@ msgstr "नई स्थानांतरण पंक्ति"
 
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "नया संस्करण"
@@ -12490,9 +12490,6 @@ msgstr "पार्ट्स एक ही लोड में एक साथ
 msgid "Parts, materials, and how you classify them."
 msgstr "पार्ट्स, सामग्री, और आप उन्हें कैसे वर्गीकृत करते हैं।"
 
-msgid "Party Type"
-msgstr "पक्ष प्रकार"
-
 msgid "Pass"
 msgstr "पास"
 
@@ -13949,8 +13946,11 @@ msgstr "एक क्रय आदेश को जो प्राप्त औ
 msgid "Record"
 msgstr "रिकॉर्ड करें"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "एक ग्राहक या आपूर्तिकर्ता के विरुद्ध एक जमा या नामे ज्ञापन दर्ज करें। विशिष्ट चालान के लिए आवेदन ज्ञापन बनाए जाने के बाद जोड़े जाते हैं।"
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, या धनवापसी दर्ज करें। भुगतान बनाने के बाद चालान या ज्ञापन में आवेदन जोड़े जाते हैं।"
@@ -19245,6 +19245,12 @@ msgstr "केवल विचलन"
 msgid "VAT Number"
 msgstr "वैट नंबर"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "विक्रेता बट्टे खाते आय"
 
@@ -19503,8 +19509,8 @@ msgstr "अमान्य करें"
 msgid "Void {0}"
 msgstr "अमान्य करें {0}"
 
-msgid "Void Card Transaction"
-msgstr "कार्ड लेनदेन को अमान्य करें"
+msgid "Void Charge"
+msgstr "शुल्क अमान्य करें"
 
 msgid "Void Invoice"
 msgstr "चालान अमान्य करें"

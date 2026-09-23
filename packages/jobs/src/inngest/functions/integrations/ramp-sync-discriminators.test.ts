@@ -117,11 +117,7 @@ describe("Ramp inbound accounting discriminators", () => {
       }
     } as unknown as RampClient;
     await syncRampRepayments(ctx, ramp, undefined, "card-1", null);
-    expect(getEntityId).toHaveBeenCalledWith(
-      "ramp",
-      "charge-1",
-      "cardTransaction"
-    );
+    expect(getEntityId).toHaveBeenCalledWith("ramp", "charge-1", "charge");
   });
 
   it.each([

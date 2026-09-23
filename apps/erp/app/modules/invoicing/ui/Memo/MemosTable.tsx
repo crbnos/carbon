@@ -50,9 +50,13 @@ type MemoRow = {
 type MemosTableProps = {
   data: MemoRow[];
   count: number;
+  // Which party this list is scoped to. "customer" → Credit Memos (AR),
+  // "supplier" → Vendor Credits (AP). Drives the counterparty column, the
+  // title, and the New-button label/default party.
+  party: "customer" | "supplier";
 };
 
-const MemosTable = memo(({ data, count }: MemosTableProps) => {
+const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
@@ -122,31 +126,27 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
       },
       {
         id: "counterparty",
-        header: t`Counterparty`,
+        header: party === "supplier" ? t`Supplier` : t`Customer`,
         cell: ({ row }) =>
-          row.original.customerId ? (
+          party === "supplier" ? (
+            row.original.supplierId ? (
+              <SupplierAvatar supplierId={row.original.supplierId} />
+            ) : null
+          ) : row.original.customerId ? (
             <CustomerAvatar customerId={row.original.customerId} />
-          ) : row.original.supplierId ? (
-            <SupplierAvatar supplierId={row.original.supplierId} />
           ) : null,
         meta: {
           icon: <LuUser />,
           filter: {
             type: "static",
-            // Combined customer + supplier options; the loader maps the chosen
-            // ids onto customerId OR supplierId.
-            options: [
-              ...(customers ?? []).map((c) => ({
-                value: c.id,
-                label: c.name
-              })),
-              ...(suppliers ?? []).map((s) => ({
-                value: s.id,
-                label: s.name
-              }))
-            ]
+            // Only this list's party; the loader maps the chosen ids onto the
+            // matching customerId / supplierId column.
+            options:
+              party === "supplier"
+                ? (suppliers ?? []).map((s) => ({ value: s.id, label: s.name }))
+                : (customers ?? []).map((c) => ({ value: c.id, label: c.name }))
           },
-          pluralHeader: t`Counterparties`
+          pluralHeader: party === "supplier" ? t`Suppliers` : t`Customers`
         }
       },
       {
@@ -215,7 +215,7 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         cell: ({ row }) => row.original.reference ?? null
       }
     ],
-    [t, currencyFormatter, customers, suppliers, accounts]
+    [t, currencyFormatter, customers, suppliers, accounts, party]
   );
 
   return (
@@ -230,11 +230,14 @@ const MemosTable = memo(({ data, count }: MemosTableProps) => {
         }}
         primaryAction={
           permissions.can("create", "invoicing") && (
-            <New label={t`Memo`} to={path.to.memoNew} />
+            <New
+              label={party === "supplier" ? t`Vendor Credit` : t`Credit Memo`}
+              to={`${path.to.memoNew}?party=${party}`}
+            />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={t`Credit / Debit Memos`}
+        title={party === "supplier" ? t`Vendor Credits` : t`Credit Memos`}
         table="memo"
         withSavedView
       />

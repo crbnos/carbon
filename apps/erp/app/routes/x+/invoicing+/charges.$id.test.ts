@@ -3,7 +3,7 @@ import { createClient } from "@supabase/supabase-js";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const requirePermissions = vi.hoisted(() => vi.fn());
-const getCardTransaction = vi.hoisted(() => vi.fn());
+const getCharge = vi.hoisted(() => vi.fn());
 const flash = vi.hoisted(() => vi.fn(async () => ({})));
 const EmptyComponent = vi.hoisted(() => () => null);
 
@@ -49,21 +49,20 @@ vi.mock("~/hooks", () => ({
   usePermissions: vi.fn()
 }));
 vi.mock("~/modules/invoicing", () => ({
-  CardTransactionStatus: EmptyComponent,
-  getCardTransaction
+  ChargeStatus: EmptyComponent,
+  getCharge
 }));
 vi.mock("~/utils/path", () => ({
   path: {
     to: {
-      cardTransactions: "/x/invoicing/card-transactions",
-      cardTransactionVoid: (id: string) =>
-        `/x/invoicing/card-transactions/${id}/void`,
+      charges: "/x/invoicing/charges",
+      chargeVoid: (id: string) => `/x/invoicing/charges/${id}/void`,
       file: { previewFile: (value: string) => value }
     }
   }
 }));
 
-import { loader } from "./card-transactions.$id";
+import { loader } from "./charges.$id";
 
 type FailingTable = "account" | "document" | null;
 
@@ -93,7 +92,7 @@ function clientFor(failingTable: FailingTable = null) {
             {
               id: "receipt-1",
               name: "receipt.pdf",
-              path: "company-a/card-transaction/card-1/receipt.pdf"
+              path: "company-a/charge/card-1/receipt.pdf"
             }
           ]);
         }
@@ -111,24 +110,22 @@ async function runLoader(client: ReturnType<typeof clientFor>["client"]) {
     companyGroupId: "group-a"
   });
   return loader({
-    request: new Request(
-      "http://localhost/x/invoicing/card-transactions/card-1"
-    ),
+    request: new Request("http://localhost/x/invoicing/charges/card-1"),
     params: { id: "card-1" },
     context: {}
   } as never);
 }
 
-describe("card transaction detail loader", () => {
+describe("charge detail loader", () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getCardTransaction.mockResolvedValue({
+    getCharge.mockResolvedValue({
       data: {
         id: "card-1",
         companyId: "company-a",
         cardAccountId: "card-account",
         offsetAccountId: null,
-        cardTransactionLine: [{ id: "line-1", accountId: "expense-account" }]
+        chargeLine: [{ id: "line-1", accountId: "expense-account" }]
       },
       error: null
     });
@@ -139,11 +136,7 @@ describe("card transaction detail loader", () => {
 
     const result = await runLoader(client);
 
-    expect(getCardTransaction).toHaveBeenCalledWith(
-      client,
-      "company-a",
-      "card-1"
-    );
+    expect(getCharge).toHaveBeenCalledWith(client, "company-a", "card-1");
     const accountRequest = requests.find((url) =>
       url.pathname.endsWith("/account")
     );
@@ -174,7 +167,7 @@ describe("card transaction detail loader", () => {
       expect.any(Request),
       expect.objectContaining({
         cause: expect.objectContaining({ message: `${table} lookup failed` }),
-        message: "Failed to load card transaction"
+        message: "Failed to load charge"
       })
     );
   });

@@ -2,7 +2,7 @@ import type { Database } from "@carbon/database";
 import {
   codeSelections,
   confirmSyncs,
-  normalizeRampCardTransactionAmount,
+  normalizeRampTransactionAmount,
   type RampCashback,
   type RampClient,
   type RampTransaction,
@@ -11,7 +11,7 @@ import {
   scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
-import { stageOrResumeRampCardTransaction } from "./ramp-sync-card-stage";
+import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
@@ -20,7 +20,7 @@ import {
   rampEntityQuery
 } from "./ramp-sync-policy";
 import {
-  cardTransactionsDeepLinkUrl,
+  chargesDeepLinkUrl,
   documentTypeForFile,
   type FailItem,
   type FamilyResult,
@@ -37,14 +37,14 @@ import {
 } from "./ramp-sync-shared";
 
 /**
- * Download and attach a card transaction's Ramp receipts to the private bucket
+ * Download and attach a charge's Ramp receipts to the private bucket
  * + a `document` row. Non-fatal by contract — any failure is logged and
  * skipped so a missing receipt never blocks the sync.
  */
 async function attachReceipts(
   ctx: RampSyncContext,
   args: {
-    cardTransactionId: string;
+    chargeId: string;
     receiptIds: string[];
     getReceipt: (id: string) => Promise<unknown>;
   }
@@ -73,7 +73,7 @@ async function attachReceipts(
       const name = stripSpecialCharacters(
         receipt.file_name ?? `receipt-${receiptId}`
       );
-      const path = `${ctx.companyId}/card-transaction/${args.cardTransactionId}/${name}`;
+      const path = `${ctx.companyId}/charge/${args.chargeId}/${name}`;
 
       const uploaded = await storage(ctx.client)
         .company(ctx.companyId)
@@ -91,7 +91,7 @@ async function attachReceipts(
         name,
         size: bytes.byteLength,
         type: documentTypeForFile(name),
-        sourceDocumentId: args.cardTransactionId,
+        sourceDocumentId: args.chargeId,
         companyId: ctx.companyId,
         createdBy: "system",
         readGroups: companyGroups,
@@ -121,7 +121,7 @@ type BuiltLine = {
 };
 
 /**
- * Build the Carbon `cardTransactionLine` rows from a Ramp transaction's coding.
+ * Build the Carbon `chargeLine` rows from a Ramp transaction's coding.
  * Returns an error message when any line is uncoded — the caller creates
  * nothing in that case.
  */
@@ -147,7 +147,7 @@ async function buildTransactionLines(
         ctx,
         item.amount,
         currencyCode,
-        "Card transaction line amount",
+        "Charge line amount",
         { allowDifferentCurrency: true }
       );
       if (!normalized.ok) return { error: normalized.error };
@@ -181,7 +181,7 @@ async function buildTransactionLines(
   // Ramp line-item amounts are in the MERCHANT currency; the header amount is
   // the SETTLEMENT amount (`entity_amount`). For a foreign transaction the two
   // differ, so the raw lines would not sum to the header and
-  // post-card-transaction (lines must sum to the header) would reject the whole
+  // post-charge (lines must sum to the header) would reject the whole
   // charge. Scale the lines to the settlement header, residual on the largest
   // line — a no-op for a same-currency transaction (ratio ≈ 1, residual 0).
   const settledLines = scaleLinesToTotal(lines, headerAmount, decimals);
@@ -189,7 +189,7 @@ async function buildTransactionLines(
   // Verify every coded account really exists in this company's group (one
   // query). `account` (chart of accounts) is scoped by companyGroupId, NOT
   // companyId — it has no companyId column, so filtering by it errored and made
-  // EVERY coded card transaction fail "Failed to verify accounts". The ids come
+  // EVERY coded charge fail "Failed to verify accounts". The ids come
   // from Ramp coding (the account.id Carbon pushed), so scoping to the group is
   // both correct and tenant-safe.
   const accountIds = [...new Set(settledLines.map((line) => line.accountId))];
@@ -219,7 +219,7 @@ async function buildTransactionLines(
 }
 
 /**
- * Atomically stage a Draft `cardTransaction` (+ lines + Ramp mapping), post it,
+ * Atomically stage a Draft `charge` (+ lines + Ramp mapping), post it,
  * and attach receipts. Ambiguous edge responses are accepted only when a
  * tenant-scoped reread proves the mapped document is Posted.
  */
@@ -227,7 +227,7 @@ export async function createAndPostTransaction(
   ctx: RampSyncContext,
   args: {
     rampId: string;
-    type: Database["public"]["Enums"]["cardTransactionType"];
+    type: Database["public"]["Enums"]["chargeType"];
     amount: number;
     currencyCode: string;
     transactionDate: string;
@@ -256,9 +256,9 @@ export async function createAndPostTransaction(
     };
   }
 
-  let staged: Awaited<ReturnType<typeof stageOrResumeRampCardTransaction>>;
+  let staged: Awaited<ReturnType<typeof stageOrResumeRampCharge>>;
   try {
-    staged = await stageOrResumeRampCardTransaction(ctx.db, {
+    staged = await stageOrResumeRampCharge(ctx.db, {
       ...args,
       companyId: ctx.companyId,
       actorId: "system",
@@ -276,17 +276,17 @@ export async function createAndPostTransaction(
     return {
       fail: {
         id: args.rampId,
-        message: "Mapped Ramp card transaction is Voided in Carbon"
+        message: "Mapped Ramp charge is Voided in Carbon"
       }
     };
   }
 
   let postError: unknown;
   if (staged.status === "Draft") {
-    const posted = await ctx.client.functions.invoke("post-card-transaction", {
+    const posted = await ctx.client.functions.invoke("post-charge", {
       body: {
         type: "post",
-        cardTransactionId: staged.cardTransactionId,
+        chargeId: staged.chargeId,
         userId: "system",
         companyId: ctx.companyId
       }
@@ -295,9 +295,9 @@ export async function createAndPostTransaction(
   }
 
   const observed = await ctx.client
-    .from("cardTransaction")
+    .from("charge")
     .select("status")
-    .eq("id", staged.cardTransactionId)
+    .eq("id", staged.chargeId)
     .eq("companyId", ctx.companyId)
     .maybeSingle();
   if (observed.error || observed.data?.status !== "Posted") {
@@ -306,12 +306,12 @@ export async function createAndPostTransaction(
         ? postError.message
         : String(postError)
       : (observed.error?.message ??
-        "Ramp card transaction is not observably Posted in Carbon");
+        "Ramp charge is not observably Posted in Carbon");
     return { fail: { id: args.rampId, message } };
   }
 
   await attachReceipts(ctx, {
-    cardTransactionId: staged.cardTransactionId,
+    chargeId: staged.chargeId,
     receiptIds: args.receiptIds,
     getReceipt: args.getReceipt
   });
@@ -320,7 +320,7 @@ export async function createAndPostTransaction(
     ok: {
       id: args.rampId,
       referenceId: staged.readableId,
-      deepLinkUrl: cardTransactionsDeepLinkUrl()
+      deepLinkUrl: chargesDeepLinkUrl()
     }
   };
 }
@@ -332,12 +332,12 @@ async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
       string,
       {
         entityId: string;
-        status: Database["public"]["Enums"]["cardTransactionStatus"] | null;
+        status: Database["public"]["Enums"]["chargeStatus"] | null;
       }
     >();
   const rows = await ctx.db
     .selectFrom("externalIntegrationMapping as mapping")
-    .leftJoin("cardTransaction as card", (join) =>
+    .leftJoin("charge as card", (join) =>
       join
         .onRef("card.id", "=", "mapping.entityId")
         .onRef("card.companyId", "=", "mapping.companyId")
@@ -345,7 +345,7 @@ async function loadCardMappings(ctx: RampSyncContext, rampIds: string[]) {
     .select(["mapping.externalId", "mapping.entityId", "card.status"])
     .where("mapping.companyId", "=", ctx.companyId)
     .where("mapping.integration", "=", "ramp")
-    .where("mapping.entityType", "=", "cardTransaction")
+    .where("mapping.entityType", "=", "charge")
     .where("mapping.externalId", "in", rampIds)
     .execute();
   return new Map(rows.map((row) => [row.externalId, row]));
@@ -359,8 +359,8 @@ async function reconfirmMapped(
   if (mapped.length === 0) return { successful: [], failed: [] };
   const entityIds = [...new Set(mapped.map((m) => m.entityId))];
   const { data, error } = await ctx.client
-    .from("cardTransaction")
-    .select("id, cardTransactionId, status")
+    .from("charge")
+    .select("id, chargeId, status")
     .eq("companyId", ctx.companyId)
     .in("id", entityIds);
   if (error) {
@@ -373,7 +373,7 @@ async function reconfirmMapped(
     };
   }
   const rowsById = new Map((data ?? []).map((row) => [row.id, row]));
-  const url = cardTransactionsDeepLinkUrl();
+  const url = chargesDeepLinkUrl();
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
   for (const item of mapped) {
@@ -381,20 +381,20 @@ async function reconfirmMapped(
     if (!row) {
       failed.push({
         id: item.rampId,
-        message: "Mapped Ramp card transaction no longer exists"
+        message: "Mapped Ramp charge no longer exists"
       });
       continue;
     }
     if (row.status !== "Posted") {
       failed.push({
         id: item.rampId,
-        message: `Mapped Ramp card transaction is ${row.status} in Carbon`
+        message: `Mapped Ramp charge is ${row.status} in Carbon`
       });
       continue;
     }
     successful.push({
       id: item.rampId,
-      referenceId: row.cardTransactionId,
+      referenceId: row.chargeId,
       deepLinkUrl: url
     });
   }
@@ -406,7 +406,7 @@ type RampCardListItem = { id: string; entity_id?: string | null };
 
 /**
  * Whether a family may run, plus the two accounts every produced
- * `cardTransaction` needs. `proceed: false` is a silent (or self-logged) skip.
+ * `charge` needs. `proceed: false` is a silent (or self-logged) skip.
  */
 type CardFamilyGate =
   | { proceed: false }
@@ -432,7 +432,7 @@ type CardFamilyConfig<TItem extends RampCardListItem> = {
     ramp: RampClient,
     entityId: string | undefined
   ) => AsyncIterable<unknown[]>;
-  /** Build (and post) one row into a `cardTransaction`. */
+  /** Build (and post) one row into a `charge`. */
   buildOutcome: (
     ctx: RampSyncContext,
     item: TItem,
@@ -547,7 +547,7 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
 }
 
 /**
- * Build one `cardTransaction` from a Ramp card transaction — the family with
+ * Build one `charge` from a Ramp charge — the family with
  * coded lines, a merchant supplier, and settlement-amount handling.
  */
 async function buildTransactionOutcome(
@@ -578,7 +578,7 @@ async function buildTransactionOutcome(
   // float, so reading it as minor units understated every charge 100×.
   // Fall back to it only when entity_amount is absent (rare: no valid
   // settlement currency). Verified 2026-08-28 against the spec.
-  const normalizedAmount = normalizeRampCardTransactionAmount({
+  const normalizedAmount = normalizeRampTransactionAmount({
     entityAmount: tx.entity_amount,
     deprecatedMajorAmount: tx.amount,
     currencyCode,
@@ -669,7 +669,7 @@ async function buildTransactionOutcome(
  */
 function buildSimpleCardOutcome(family: {
   label: string;
-  type: Database["public"]["Enums"]["cardTransactionType"];
+  type: Database["public"]["Enums"]["chargeType"];
 }) {
   return async (
     ctx: RampSyncContext,
@@ -715,7 +715,7 @@ function buildSimpleCardOutcome(family: {
   };
 }
 
-export async function syncRampCardTransactions(
+export async function syncRampCharges(
   ctx: RampSyncContext,
   ramp: RampClient,
   entityId: string | undefined,
@@ -728,13 +728,13 @@ export async function syncRampCardTransactions(
     cardLiabilityAccountId,
     {
       family: "transactions",
-      entityType: "cardTransaction",
-      label: "card transactions",
+      entityType: "charge",
+      label: "charges",
       syncType: "TRANSACTION_SYNC",
       gate: (ctx, cardLiabilityAccountId) => {
         if (!cardLiabilityAccountId) {
           console.warn(
-            `[RAMP SYNC] ${ctx.companyId}: no cardLiabilityAccountId configured — skipping card transactions`
+            `[RAMP SYNC] ${ctx.companyId}: no cardLiabilityAccountId configured — skipping charges`
           );
           return { proceed: false };
         }

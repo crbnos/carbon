@@ -2538,7 +2538,7 @@ msgstr "Êtes-vous sûr de vouloir envoyer une invitation à ces utilisateurs ?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Êtes-vous sûr de vouloir envoyer une invitation à cet utilisateur ?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Êtes-vous sûr de vouloir invalider {0} ? Ceci comptabilisera une contrepassation et ne pourra pas être annulé."
 
@@ -3460,9 +3460,6 @@ msgstr "L'enregistrement unique Carbon pour tout ce qui a un numéro de pièce �
 msgid "Card Holder"
 msgstr "Titulaire de carte"
 
-msgid "Card Transactions"
-msgstr "Transactions par carte"
-
 msgid "Cards"
 msgstr "Cartes"
 
@@ -3573,6 +3570,9 @@ msgstr "Modifier ceci mettra à jour l'ID de pièce"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Modifier le type réinitialise les brouillons de cet article."
+
+msgid "Charges"
+msgstr "Débits"
 
 msgid "Chart"
 msgstr "Graphique"
@@ -4863,9 +4863,6 @@ msgstr "Crédit ({0})"
 msgid "Credit / debit memo"
 msgstr "Note de crédit / débit"
 
-msgid "Credit / Debit Memos"
-msgstr "Mémos de crédit / débit"
-
 msgid "Credit Account"
 msgstr "Compte Créditeur"
 
@@ -4884,6 +4881,9 @@ msgstr "Les montants au crédit sont exprimés dans la devise de base de la soci
 msgid "Credit Memo"
 msgstr "Avoir"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Total du crédit"
 
@@ -4892,9 +4892,6 @@ msgstr "Crédité"
 
 msgid "Credits"
 msgstr "Crédits"
-
-msgid "Credits & Debits"
-msgstr "Crédits et débits"
 
 msgid "Credits applied"
 msgstr "Crédits appliqués"
@@ -10767,8 +10764,8 @@ msgstr "Nouveau prestataire"
 msgid "New Cost Center"
 msgstr "Nouveau centre de coûts"
 
-msgid "New Credit / Debit Memo"
-msgstr "Nouveau Mémo de Crédit / Débit"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Nouvelle devise"
@@ -11015,6 +11012,9 @@ msgstr "Nouvelle Ligne de Transfert"
 
 msgid "New Unit of Measure"
 msgstr "Nouvelle Unité de Mesure"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Nouvelle Version"
@@ -12490,9 +12490,6 @@ msgstr "Les pièces s'exécutent ensemble dans une charge unique — par ex. un 
 msgid "Parts, materials, and how you classify them."
 msgstr "Pièces, matériaux et comment vous les classez."
 
-msgid "Party Type"
-msgstr "Type de tiers"
-
 msgid "Pass"
 msgstr "Réussir"
 
@@ -13949,8 +13946,11 @@ msgstr "Rapprochement d'un bon de commande par rapport à ce qui a été reçu e
 msgid "Record"
 msgstr "Enregistrer"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Enregistrez un avoir ou un débit contre un client ou un fournisseur. Les applications à des factures spécifiques sont ajoutées après la création de l'avoir."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Enregistrer un paiement client, un paiement fournisseur ou un remboursement. Les applications aux factures ou aux mémos sont ajoutées après la création du paiement."
@@ -19245,6 +19245,12 @@ msgstr "Écarts uniquement"
 msgid "VAT Number"
 msgstr "Numéro de TVA"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Produits de passage en perte fournisseur"
 
@@ -19503,8 +19509,8 @@ msgstr "Invalider"
 msgid "Void {0}"
 msgstr "Invalider {0}"
 
-msgid "Void Card Transaction"
-msgstr "Invalider la transaction de carte"
+msgid "Void Charge"
+msgstr "Invalider le débit"
 
 msgid "Void Invoice"
 msgstr "Invalider la facture"

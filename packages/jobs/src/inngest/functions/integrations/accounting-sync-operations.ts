@@ -32,8 +32,8 @@ import {
   type AccountingEntityType,
   type AccountingProvider,
   type BatchSyncResult,
-  type CardTransactionPolicyInput,
   CHARGE_CREDIT_PROVIDERS,
+  type ChargePolicyInput,
   claimPendingOperations,
   completeOperation,
   enqueueSyncOperation,
@@ -301,24 +301,24 @@ export type JournalPostingOperationPlan =
   | { action: "terminal"; request: TerminalSyncOperationRequest };
 
 /**
- * The backing `cardTransaction` for each "Card Transaction" journal, keyed by
- * journal id, shaped for the posting policy (`isChargeBackedCardTransaction`).
+ * The backing `charge` for each "Charge" journal, keyed by
+ * journal id, shaped for the posting policy (`isDocBackedCharge`).
  *
- * Resolved through the journal LINES (`documentType = 'Card Transaction'`,
- * `documentId = cardTransaction.id`), which both the posting journal and the
- * VOID journal carry — `cardTransaction.journalId` only ever names the
+ * Resolved through the journal LINES (`documentType = 'Charge'`,
+ * `documentId = charge.id`), which both the posting journal and the
+ * VOID journal carry — `charge.journalId` only ever names the
  * original, so keying on it left the void journal of a charge-backed card
  * transaction looking like a plain journal: it pushed to the provider as a
  * journal entry on top of the charge DELETE, netting to minus one charge
- * (found live on the Rillet sandbox, 2026-09-10). `cardTransaction.journalId`
+ * (found live on the Rillet sandbox, 2026-09-10). `charge.journalId`
  * is still honoured as a fallback for journals whose lines carry no document
  * link. One query per concern for the whole batch, never per row.
  */
-export async function loadCardTransactionPolicyInputs(
+export async function loadChargePolicyInputs(
   client: SupabaseClient<Database>,
   args: { companyId: string; journalIds: string[] }
-): Promise<Map<string, CardTransactionPolicyInput>> {
-  const result = new Map<string, CardTransactionPolicyInput>();
+): Promise<Map<string, ChargePolicyInput>> {
+  const result = new Map<string, ChargePolicyInput>();
   if (args.journalIds.length === 0) return result;
 
   const lines = await fetchAllFromTable<{
@@ -327,7 +327,7 @@ export async function loadCardTransactionPolicyInputs(
   }>(client, "journalLine", "journalId, documentId", (query) =>
     query
       .eq("companyId", args.companyId)
-      .eq("documentType", "Card Transaction")
+      .eq("documentType", "Charge")
       .in("journalId", args.journalIds)
       .not("documentId", "is", null)
   );
@@ -358,35 +358,31 @@ export async function loadCardTransactionPolicyInputs(
   }> = [];
   if (cardIds.length > 0) {
     const byId = await client
-      .from("cardTransaction")
+      .from("charge")
       .select("id, journalId, type, supplierId")
       .eq("companyId", args.companyId)
       .in("id", cardIds);
     if (byId.error) {
-      throw new Error(
-        `Failed to load card transactions: ${byId.error.message}`
-      );
+      throw new Error(`Failed to load charges: ${byId.error.message}`);
     }
     rows.push(...(byId.data ?? []));
   }
   if (unlinkedJournalIds.length > 0) {
     const byJournal = await client
-      .from("cardTransaction")
+      .from("charge")
       .select("id, journalId, type, supplierId")
       .eq("companyId", args.companyId)
       .in("journalId", unlinkedJournalIds);
     if (byJournal.error) {
-      throw new Error(
-        `Failed to load card transactions: ${byJournal.error.message}`
-      );
+      throw new Error(`Failed to load charges: ${byJournal.error.message}`);
     }
     rows.push(...(byJournal.data ?? []));
   }
 
-  const inputById = new Map<string, CardTransactionPolicyInput>();
+  const inputById = new Map<string, ChargePolicyInput>();
   for (const row of rows) {
     inputById.set(row.id, {
-      type: row.type as CardTransactionPolicyInput["type"],
+      type: row.type as ChargePolicyInput["type"],
       hasSupplier: row.supplierId != null
     });
   }
@@ -441,15 +437,15 @@ export async function planJournalPostingOperation(args: {
         })
       : null;
 
-  // "Card Transaction" journals are DOC_BACKED per row (a Charge with a
-  // supplier only), so the policy needs the backing card transaction.
-  let cardTransaction: CardTransactionPolicyInput | null = null;
-  if (sourceType === "Card Transaction" && syncConfig.entities.charge.enabled) {
-    const byJournalId = await loadCardTransactionPolicyInputs(args.client, {
+  // "Charge" journals are DOC_BACKED per row (a Charge with a
+  // supplier only), so the policy needs the backing charge.
+  let charge: ChargePolicyInput | null = null;
+  if (sourceType === "Charge" && syncConfig.entities.charge.enabled) {
+    const byJournalId = await loadChargePolicyInputs(args.client, {
       companyId: args.companyId,
       journalIds: [args.event.recordId]
     });
-    cardTransaction = byJournalId.get(args.event.recordId) ?? null;
+    charge = byJournalId.get(args.event.recordId) ?? null;
   }
 
   return planJournalPostingFromState({
@@ -468,7 +464,7 @@ export async function planJournalPostingOperation(args: {
     paymentFamily,
     inventoryAdjustmentEntitySyncEnabled:
       syncConfig.entities.inventoryAdjustment.enabled,
-    cardTransaction
+    charge
   });
 }
 
@@ -494,8 +490,8 @@ export function planJournalPostingFromState(args: {
   };
   paymentFamily: "ar" | "ap" | null;
   inventoryAdjustmentEntitySyncEnabled: boolean;
-  /** "Card Transaction" journals only: the backing cardTransaction. */
-  cardTransaction?: CardTransactionPolicyInput | null;
+  /** "Charge" journals only: the backing charge. */
+  charge?: ChargePolicyInput | null;
 }): JournalPostingOperationPlan {
   const entityId = getJournalEntrySyncEntityId(args.journalId, args.reversal);
 
@@ -506,7 +502,7 @@ export function planJournalPostingFromState(args: {
     paymentFamily: args.paymentFamily,
     inventoryAdjustmentEntitySyncEnabled:
       args.inventoryAdjustmentEntitySyncEnabled,
-    cardTransaction: args.cardTransaction ?? null
+    charge: args.charge ?? null
   });
 
   const baseMetadata = {

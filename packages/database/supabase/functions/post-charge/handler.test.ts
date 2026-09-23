@@ -1,5 +1,5 @@
 import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { handlePostCardTransaction } from "./handler.ts";
+import { handlePostCharge } from "./handler.ts";
 
 const companyId = "card-auth-company";
 const serviceToken = `header.${
@@ -63,15 +63,15 @@ for (const type of ["post", "void"] as const) {
   Deno.test(`${type} refuses an API key without invoicing update before posting`, async () => {
     await withAuthTransport({ invoicing_view: [companyId] }, async () => {
       let posts = 0;
-      const response = await handlePostCardTransaction(
-        new Request("http://localhost/post-card-transaction", {
+      const response = await handlePostCharge(
+        new Request("http://localhost/post-charge", {
           method: "POST",
           headers: { "carbon-key": "read-only-key" },
           body: JSON.stringify({
             type,
             companyId,
             userId: "system",
-            cardTransactionId: "card-1",
+            chargeId: "card-1",
           }),
         }),
         () => {
@@ -96,14 +96,14 @@ Deno.test("service-role jobs and scoped invoicing API keys can post", async () =
         new Headers({ "carbon-key": "invoicing-key" }),
       ]
     ) {
-      const response = await handlePostCardTransaction(
-        new Request("http://localhost/post-card-transaction", {
+      const response = await handlePostCharge(
+        new Request("http://localhost/post-charge", {
           method: "POST",
           headers,
           body: JSON.stringify({
             companyId,
             userId: "system",
-            cardTransactionId: "card-1",
+            chargeId: "card-1",
           }),
         }),
         (args) => {
@@ -123,14 +123,14 @@ Deno.test("service-role jobs and scoped invoicing API keys can post", async () =
 Deno.test("authenticated callers cannot borrow another user's permissions", async () => {
   await withAuthTransport({}, async () => {
     let posts = 0;
-    const response = await handlePostCardTransaction(
-      new Request("http://localhost/post-card-transaction", {
+    const response = await handlePostCharge(
+      new Request("http://localhost/post-charge", {
         method: "POST",
         headers: { Authorization: `Bearer ${authenticatedToken}` },
         body: JSON.stringify({
           companyId,
           userId: "privileged-user",
-          cardTransactionId: "card-1",
+          chargeId: "card-1",
         }),
       }),
       () => {
@@ -149,14 +149,14 @@ Deno.test("authenticated callers cannot borrow another user's permissions", asyn
 
 Deno.test("authenticated callers can post as their JWT subject", async () => {
   await withAuthTransport({}, async () => {
-    const response = await handlePostCardTransaction(
-      new Request("http://localhost/post-card-transaction", {
+    const response = await handlePostCharge(
+      new Request("http://localhost/post-charge", {
         method: "POST",
         headers: { Authorization: `Bearer ${authenticatedToken}` },
         body: JSON.stringify({
           companyId,
           userId: "attacker-user",
-          cardTransactionId: "card-1",
+          chargeId: "card-1",
         }),
       }),
       (args) => {

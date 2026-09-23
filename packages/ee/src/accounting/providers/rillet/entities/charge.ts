@@ -7,9 +7,9 @@ import {
 } from "../../../core/card-charge-source";
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
-  type CardTransactionCostingResult,
+  type ChargeCostingResult,
   type CostingLine,
-  loadCardTransactionCostingLines,
+  loadChargeCostingLines,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { CHARGE_CREDIT_PROVIDERS } from "../../../core/posting";
@@ -32,22 +32,22 @@ import {
 } from "./shared";
 
 /**
- * RilletChargeSyncer — Carbon card transactions (Ramp card spend) → Rillet
+ * RilletChargeSyncer — Carbon charges (Ramp card spend) → Rillet
  * charges (push-only, create-only; entityType "charge").
  *
  * A Rillet charge is what a card charge IS: a vendor, a charge date, coded
  * items, and the credit-card liability account it settles against. Rillet
  * derives the posting itself — debit each item's account, credit the card
- * account — which is exactly what Carbon's "Card Transaction" journal booked,
+ * account — which is exactly what Carbon's "Charge" journal booked,
  * so the items are that journal's coded lines (shared
- * `loadCardTransactionCostingLines`, card-liability line excluded) and the
+ * `loadChargeCostingLines`, card-liability line excluded) and the
  * two ledgers cannot drift. While this syncer is enabled the journal itself is
  * DOC_BACKED-excluded per row (core/posting.ts), never pushed twice.
  *
  * Only a Posted `Charge` or `Credit` with a merchant supplier is pushed — a
  * `Credit` (merchant refund) is a charge whose items are NEGATIVE, which the
  * Rillet sandbox accepted 2026-09-10 (`CHARGE_CREDIT_PROVIDERS`, the mirror
- * guard below stays for a provider outside that set); the other three card-transaction types are
+ * guard below stays for a provider outside that set); the other three charge types are
  * money movements with no vendor and stay journal entries. Every skip here is
  * mirrored by the policy, so a skipped row's journal keeps pushing — the
  * spend always reaches Rillet as exactly one of the two.
@@ -56,7 +56,7 @@ import {
  * bills — never a silent fallback account.
  */
 
-/** The Carbon `cardTransaction` header as the syncer reads it. */
+/** The Carbon `charge` header as the syncer reads it. */
 export type CardCharge = CardChargeSource;
 
 /** Costing lines are the shared shape; aliased so the mapper's tests read against a stable name. */
@@ -64,7 +64,7 @@ export type ChargePostingJournalLine = CostingLine;
 
 /** The parts of the costing result the pure mapper consumes. */
 export type ChargeCosting = Pick<
-  CardTransactionCostingResult,
+  ChargeCostingResult,
   | "lines"
   | "documentTotal"
   | "decimalPlaces"
@@ -77,14 +77,14 @@ export type ChargeCosting = Pick<
 >;
 
 /**
- * Map a Carbon card transaction to the Rillet charge create payload. Pure —
+ * Map a Carbon charge to the Rillet charge create payload. Pure —
  * exported for tests. `costing.lines` are the posted journal's coded lines
  * (card-liability line already excluded), base-currency and debit-signed;
  * `costing.exchangeRate` converts them to the card's transaction currency
  * (rounded at the document currency boundary). Throws structured Warnings
  * when the journal is missing or an account (line or card) is unmapped.
  */
-export function mapCardTransactionToRilletCharge(args: {
+export function mapChargeToRilletCharge(args: {
   charge: CardCharge;
   costing: ChargeCosting;
   vendorRemoteId: string;
@@ -234,7 +234,7 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
   }
 
   // =================================================================
-  // 3. SHOULD SYNC — mirrors isChargeBackedCardTransaction exactly
+  // 3. SHOULD SYNC — mirrors isDocBackedCharge exactly
   // =================================================================
 
   protected shouldSync(
@@ -246,10 +246,10 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
     const local = context.localEntity;
     if (!local) return true;
     if (local.status !== "Posted") {
-      return `Card transaction must be posted before syncing (current status: ${local.status})`;
+      return `Charge must be posted before syncing (current status: ${local.status})`;
     }
     if (local.type !== "Charge" && local.type !== "Credit") {
-      return `Card transaction type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
+      return `Charge type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
     }
     if (
       local.type === "Credit" &&
@@ -282,9 +282,9 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
       );
     }
 
-    const costing = await loadCardTransactionCostingLines(this.database, {
+    const costing = await loadChargeCostingLines(this.database, {
       companyId: this.companyId,
-      cardTransactionId: local.id
+      chargeId: local.id
     });
 
     // Send ALL dimensions (the cost center / "project" above all): auto-
@@ -292,7 +292,7 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
     const { fieldIdByDimensionId, fieldValueIdsByValue } =
       await this.resolveLineDimensions(costing.lines);
 
-    return mapCardTransactionToRilletCharge({
+    return mapChargeToRilletCharge({
       charge: local,
       costing,
       vendorRemoteId,
@@ -328,7 +328,7 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
 
   /**
    * Attach the Ramp receipts the card sync stored (`document` rows with
-   * `sourceDocumentId` = the card transaction, in the `private` bucket) to
+   * `sourceDocumentId` = the charge, in the `private` bucket) to
    * the Rillet charge. Best-effort by contract: any failure is logged and
    * skipped — a missing receipt never fails the charge, whose mapping is
    * written by the caller right after this returns.
@@ -343,7 +343,7 @@ export class RilletChargeSyncer extends RilletTransactionSyncer<
         .select(["path", "name", "type"])
         .where("companyId", "=", this.companyId)
         .where("sourceDocumentId", "=", localId)
-        .where("path", "like", `%/card-transaction/${localId}/%`)
+        .where("path", "like", `%/charge/${localId}/%`)
         .execute();
       if (documents.length === 0) return;
 

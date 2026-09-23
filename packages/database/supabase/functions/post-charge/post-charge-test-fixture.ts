@@ -21,14 +21,14 @@ export function databaseTest(
   Deno.test({ name, ignore: !hasLocalDatabase, fn });
 }
 
-export async function connectCardTransactionTestDatabase() {
+export async function connectChargeTestDatabase() {
   const databaseUrl = Deno.env.get("SUPABASE_DB_URL");
   if (!databaseUrl) {
-    throw new Error("Card transaction regressions require SUPABASE_DB_URL");
+    throw new Error("Charge regressions require SUPABASE_DB_URL");
   }
   const url = new URL(databaseUrl);
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname)) {
-    throw new Error("Card transaction regressions require a local database");
+    throw new Error("Charge regressions require a local database");
   }
   const db = getDatabaseClient<DB>(
     new Pool(
@@ -50,17 +50,17 @@ export async function connectCardTransactionTestDatabase() {
   return db;
 }
 
-export async function cardTransactionFixture(
-  options: { cardTransactionId?: string } = {},
+export async function chargeFixture(
+  options: { chargeId?: string } = {},
 ) {
-  const db = await connectCardTransactionTestDatabase();
+  const db = await connectChargeTestDatabase();
   const prefix = `cardtest-${
     crypto.randomUUID().replaceAll("-", "").slice(0, 12)
   }`;
   const companyId = `${prefix}-company`;
   const groupId = `${prefix}-group`;
-  const cardTransactionId = options.cardTransactionId ??
-    `${prefix}-card-transaction`;
+  const chargeId = options.chargeId ??
+    `${prefix}-charge`;
   const lineId = `${prefix}-line`;
   const costCenterId = `${prefix}-cost-center`;
   const dimensionId = `${prefix}-dimension`;
@@ -139,7 +139,7 @@ export async function cardTransactionFixture(
     }).execute();
     await trx.insertInto("sequence").values({
       table: "journalEntry",
-      name: "Card transaction journals",
+      name: "Charge journals",
       prefix: "CARDTEST-",
       companyId,
     }).execute();
@@ -156,9 +156,9 @@ export async function cardTransactionFixture(
       companyId,
       createdBy: "system",
     }).execute();
-    await trx.insertInto("cardTransaction").values({
-      id: cardTransactionId,
-      cardTransactionId: `${prefix}-readable`,
+    await trx.insertInto("charge").values({
+      id: chargeId,
+      chargeId: `${prefix}-readable`,
       type: "Charge",
       status: "Draft",
       cardAccountId: account("card"),
@@ -169,9 +169,9 @@ export async function cardTransactionFixture(
       companyId,
       createdBy: "system",
     }).execute();
-    await trx.insertInto("cardTransactionLine").values({
+    await trx.insertInto("chargeLine").values({
       id: lineId,
-      cardTransactionId,
+      chargeId,
       accountId: account("expense"),
       costCenterId,
       description: "Card expense",
@@ -184,7 +184,7 @@ export async function cardTransactionFixture(
 
   const args = {
     type: "post" as const,
-    cardTransactionId,
+    chargeId,
     companyId,
     userId: "system",
   };
@@ -193,18 +193,18 @@ export async function cardTransactionFixture(
     db,
     args,
     account,
-    cardTransactionId,
+    chargeId,
     companyId,
     costCenterId,
     dimensionId,
     groupId,
     lineId,
-    connect: connectCardTransactionTestDatabase,
+    connect: connectChargeTestDatabase,
     async cleanup() {
       await db.transaction().execute(async (trx) => {
         await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
         await sql`SET LOCAL session_replication_role = replica`.execute(trx);
-        await trx.updateTable("cardTransaction").set({
+        await trx.updateTable("charge").set({
           status: "Draft",
           journalId: null,
           postedAt: null,

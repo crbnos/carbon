@@ -13,37 +13,34 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   const { id } = params;
   if (!id) {
-    return { success: false, message: "Missing card transaction id" };
+    return { success: false, message: "Missing charge id" };
   }
 
   const serviceRole = getCarbonServiceRole();
   try {
-    const result = await serviceRole.functions.invoke("post-card-transaction", {
+    const result = await serviceRole.functions.invoke("post-charge", {
       body: {
         type: "void",
-        cardTransactionId: id,
+        chargeId: id,
         userId,
         companyId
       }
     });
     if (result.error) {
       throw redirect(
-        path.to.cardTransaction(id),
-        await flash(
-          request,
-          error(result.error, "Failed to void card transaction")
-        )
+        path.to.charge(id),
+        await flash(request, error(result.error, "Failed to void charge"))
       );
     }
   } catch (err) {
     throw redirect(
-      path.to.cardTransaction(id),
-      await flash(request, error(err, "Failed to void card transaction"))
+      path.to.charge(id),
+      await flash(request, error(err, "Failed to void charge"))
     );
   }
 
   throw redirect(
-    path.to.cardTransaction(id),
-    await flash(request, success("Card transaction voided"))
+    path.to.charge(id),
+    await flash(request, success("Charge voided"))
   );
 }

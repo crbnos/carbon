@@ -1,14 +1,14 @@
 import { getNextSequence } from "../shared/get-next-sequence.ts";
-import type { CardTransactionContext } from "./post-card-transaction-post.ts";
+import type { ChargeContext } from "./post-charge-post.ts";
 import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
-export async function voidCardTransaction(
-  context: CardTransactionContext,
+export async function voidCharge(
+  context: ChargeContext,
 ): Promise<{ journalId: string | null }> {
   const {
     trx,
-    cardTransaction,
+    charge,
     accountingEnabled,
     companyId,
     userId,
@@ -16,26 +16,26 @@ export async function voidCardTransaction(
     today,
   } = context;
 
-  if (cardTransaction.journalId) {
+  if (charge.journalId) {
     if (!accountingEnabled) {
       throw new Error(
-        "Enable accounting before reversing a posted card transaction journal",
+        "Enable accounting before reversing a posted charge journal",
       );
     }
     const originalJournal = await trx.selectFrom("journal").select([
       "id",
       "status",
       "sourceType",
-    ]).where("id", "=", cardTransaction.journalId)
+    ]).where("id", "=", charge.journalId)
       .where("companyId", "=", companyId)
       .forShare()
       .executeTakeFirst();
     if (
       !originalJournal || originalJournal.status !== "Posted" ||
-      originalJournal.sourceType !== "Card Transaction"
+      originalJournal.sourceType !== "Charge"
     ) {
       throw new Error(
-        "Original card transaction journal has invalid provenance",
+        "Original charge journal has invalid provenance",
       );
     }
     const originalLines = await trx.selectFrom("journalLine").selectAll()
@@ -46,11 +46,11 @@ export async function voidCardTransaction(
     if (
       !originalLines.length ||
       originalLines.some((line) =>
-        line.documentType !== "Card Transaction" ||
-        line.documentId !== cardTransaction.id
+        line.documentType !== "Charge" ||
+        line.documentId !== charge.id
       )
     ) {
-      throw new Error("Original card transaction journal has invalid lines");
+      throw new Error("Original charge journal has invalid lines");
     }
     const period = await resolveAccountingPeriod(
       trx,
@@ -61,10 +61,10 @@ export async function voidCardTransaction(
     const reversal = await trx.insertInto("journal").values({
       journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
       accountingPeriodId: period.id,
-      description: `VOID Card Transaction ${cardTransaction.cardTransactionId}`,
+      description: `VOID Charge ${charge.chargeId}`,
       postingDate: period.postingDate,
       companyId,
-      sourceType: "Card Transaction",
+      sourceType: "Charge",
       status: "Posted",
       postedAt: timestamp,
       postedBy: userId,
@@ -82,8 +82,8 @@ export async function voidCardTransaction(
         amount: -Number(line.amount),
         quantity: line.quantity,
         description: `VOID: ${line.description ?? ""}`,
-        documentType: "Card Transaction" as const,
-        documentId: cardTransaction.id,
+        documentType: "Charge" as const,
+        documentId: charge.id,
         documentLineReference: line.documentLineReference,
         journalLineReference: line.journalLineReference,
         companyId,
@@ -116,14 +116,14 @@ export async function voidCardTransaction(
     }
   }
 
-  await trx.updateTable("cardTransaction").set({
+  await trx.updateTable("charge").set({
     status: "Voided",
     voidedAt: timestamp,
     voidedBy: userId,
     updatedAt: timestamp,
     updatedBy: userId,
-  }).where("id", "=", cardTransaction.id)
+  }).where("id", "=", charge.id)
     .where("companyId", "=", companyId)
     .execute();
-  return { journalId: cardTransaction.journalId };
+  return { journalId: charge.journalId };
 }

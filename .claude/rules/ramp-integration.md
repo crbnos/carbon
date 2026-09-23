@@ -3,16 +3,16 @@ paths:
   - packages/ee/src/ramp/**
   - packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts
   - packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts
-  - packages/database/supabase/functions/post-card-transaction/**
-  - apps/erp/app/modules/invoicing/ui/CardTransaction/**
-  - apps/erp/app/routes/x+/invoicing+/card-transactions*.tsx
+  - packages/database/supabase/functions/post-charge/**
+  - apps/erp/app/modules/invoicing/ui/Charge/**
+  - apps/erp/app/routes/x+/invoicing+/charges*.tsx
   - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
   - apps/erp/app/routes/api+/webhook.ramp.$companyId.ts
 ---
 
 # Ramp Integration
 
-Carbon acts as Ramp's **accounting provider**. Ramp pushes card transactions, bills,
+Carbon acts as Ramp's **accounting provider**. Ramp pushes charges, bills,
 and reimbursements into Carbon's general ledger; Carbon pushes its chart of accounts and
 cost centers to Ramp so spend gets coded there, and pushes purchase orders + vendor bills
 back for matching. EE package `@carbon/ee`, subpath `@carbon/ee/ramp.server` (server-only
@@ -30,7 +30,7 @@ providers, which own the data and mirror it out.
 >   `entity_amount.value` (signed integer minor-units/cents) instead. The old code read
 >   `amount` as cents and understated every card charge 100×. `RampSignedAmount` =
 >   `{ currency, value }`; `parseVerifiedRampMinorAmount` accepts the verified integer-minor
->   object shapes, while `normalizeRampCardTransactionAmount` handles that preferred field
+>   object shapes, while `normalizeRampTransactionAmount` handles that preferred field
 >   and the deprecated major-unit card fallback without conflating their units.
 > - Transaction **coding lives on `line_items[].accounting_field_selections[]`** (mirrored
 >   in `accounting_categories`), NOT top-level `accounting_field_selections` (which is `[]`).
@@ -38,7 +38,7 @@ providers, which own the data and mirror it out.
 >   `external_id` is the pushed Carbon `account.id`.
 > - **`account` (chart of accounts) is companyGroup-scoped — NO `companyId` column** (PK is
 >   `id` alone). Four sites had `.eq("companyId")` on `account` and all failed hard
->   (post-card-transaction, pushChartOfAccounts, ramp-sync account verification) — fixed to
+>   (post-charge, pushChartOfAccounts, ramp-sync account verification) — fixed to
 >   `id`-only / `companyGroupId`.
 > - `getJobDatabaseClient(5)` was poisoned by the accounting sweeps' `pool.end()` on the
 >   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `jobs/db.ts`.
@@ -213,9 +213,9 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   active `Project` dimension (seeded by the slice-2 migration; it FINDS, rarely
   creates). Runs in `convergeRamp` and the `ramp-projects` step of every `ramp-sync`.
   Inbound: `codeSelections` decodes a `carbon-project` selection to `projectId`, the
-  card/bill/reimbursement staging writes it to `cardTransactionLine.projectId` /
+  card/bill/reimbursement staging writes it to `chargeLine.projectId` /
   `purchaseInvoiceLine.projectId` (verified by `verifyProjects`), and
-  `post-card-transaction` / `post-purchase-invoice` write a Project
+  `post-charge` / `post-purchase-invoice` write a Project
   `journalLineDimension` per line — the same round-trip cost centers use.
   `buildLineCodingSelections` emits the project on outbound draft bills.
 - Every purchase invoice the sync creates (bill AND reimbursement) gets its required
@@ -276,18 +276,18 @@ total. Durable steps remain, in order:
 
 | Step | Family | Becomes | syncType (confirm) |
 |------|--------|---------|--------------------|
-| `ramp-card-transactions` | transactions `sync_status=SYNC_READY` | `cardTransaction` Charge/Credit | `TRANSACTION_SYNC` |
-| `ramp-transfers` | transfers `SYNC_READY` | `cardTransaction` Payment | `TRANSFER_SYNC` |
-| `ramp-cashbacks` | cashbacks `SYNC_READY` | `cardTransaction` Cashback | `STATEMENT_CREDIT_SYNC` |
+| `ramp-charges` | transactions `sync_status=SYNC_READY` | `charge` Charge/Credit | `TRANSACTION_SYNC` |
+| `ramp-transfers` | transfers `SYNC_READY` | `charge` Payment | `TRANSFER_SYNC` |
+| `ramp-cashbacks` | cashbacks `SYNC_READY` | `charge` Cashback | `STATEMENT_CREDIT_SYNC` |
 | `ramp-bills` | bills (`sync_ready`, not-synced) | posted `purchaseInvoice` | `BILL_SYNC` |
 | `ramp-bill-payments` | paid bills' `payment` | AP `payment` + `invoiceSettlement` | `BILL_PAYMENT_SYNC` |
 | `ramp-reimbursements` | reimbursements `SYNC_READY` | `purchaseInvoice` (Employee supplier) | `REIMBURSEMENT_SYNC` |
-| `ramp-repayments` | repayments (`from_repaid_at` cursor) | `cardTransaction` Repayment | *(no Ramp confirm)* |
+| `ramp-repayments` | repayments (`from_repaid_at` cursor) | `charge` Repayment | *(no Ramp confirm)* |
 | `ramp-outbound` | Carbon POs + posted invoices | Ramp POs (archived on Completed/Closed) + coded Ramp DRAFT bills (never submitted) | *(no confirm)* |
 
-Card families use `stageOrResumeRampCardTransaction` to advisory-lock the company/Ramp id
-and atomically create or resume the **Draft** `cardTransaction`, lines, and mapping before
-posting it through `post-card-transaction`. A missing or ambiguous edge response succeeds
+Card families use `stageOrResumeRampCharge` to advisory-lock the company/Ramp id
+and atomically create or resume the **Draft** `charge`, lines, and mapping before
+posting it through `post-charge`. A missing or ambiguous edge response succeeds
 only when a tenant-scoped reread observes `Posted`; Ramp receipts are then stored on the
 Carbon transaction best-effort. A mapped Draft is refreshed from the latest validated Ramp
 header and coding in that same transaction; a failed refresh rolls back, and Posted rows
@@ -307,7 +307,7 @@ every card family); `statementBankAccountId` (transfers, bill payments, repaymen
 `cashbackIncomeAccountId` (cashbacks). A configured `entityId` is enforced locally on
 every inbound row before mapping or writes; only endpoints with a verified query contract
 receive the remote `entity_id` filter. Amounts use their verified wire shape: signed and
-currency amounts are integer minor units, while the deprecated card-transaction fallback
+currency amounts are integer minor units, while the deprecated transaction `amount` fallback
 is a major-unit decimal. Missing, non-finite, fractional-minor, currency-mismatched, or
 ambiguous values fail that item instead of becoming zero. The currency's authoritative
 `decimalPlaces` is read once per code and cached.
@@ -317,7 +317,7 @@ ambiguous values fail that item instead of becoming zero. The currency's authori
 base → 1). A missing/invalid currency precision or exchange rate fails the affected
 item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
-(`build-card-transaction-journal.ts`) — NOT multiplying. Standalone inbound bill and
+(`build-charge-journal.ts`) — NOT multiplying. Standalone inbound bill and
 reimbursement lines use quantity one and write the document amount to
 `purchaseInvoiceLine.supplierUnitPrice`; a linked-PO bill preserves its covered quantity and
 stores `supplierUnitPrice = document amount / covered quantity`. Both forms store the
@@ -368,7 +368,7 @@ empty batch is skipped.
 An already-synced Ramp item is detected via its `externalIntegrationMapping` and
 re-confirmed only, never re-created. `mapping.link(...)` is written **before** the confirm,
 so a retry (SYNC_READY still lists the item until Ramp records the confirm) short-circuits
-on the mapping. Entity-type reuse per family: card families → `cardTransaction`
+on the mapping. Entity-type reuse per family: card families → `charge`
 (repayments key it as `repayment:<id>`); bills + reimbursements → `bill` (distinct id
 spaces); bill payments → `payment`.
 
@@ -383,7 +383,7 @@ spaces); bill payments → `payment`.
   invoices instead of guessing a conversion target.
 - **Bill payments** (`syncBillPayment`): a bill paid by a **Ramp card** (`payment_method`
   in `CARD_PAYMENT_METHODS`) is **confirmed WITHOUT posting an AP payment** — the card
-  spend already routes through the card-transaction sync, so posting a payment would
+  spend already routes through the charge sync, so posting a payment would
   double-count. Card methods include `ONE_TIME_CARD_DELIVERY`. Only the verified bank rails
   `ACH`, `CHECK`, `DIRECT_DEBIT`, `DOMESTIC_WIRE`, `FED_NOW`, `INTERNATIONAL`,
   `LOCAL_BANK_TRANSFER`, `RTP`, and `SWIFT` post an AP payment. Missing/unknown methods,
@@ -478,7 +478,7 @@ Every family records a **`Warning`** row on the shared `accountingSyncOperation`
 for each failed/skipped item, and clears it when that item later syncs — so a coded-but-
 unrecognized charge shows up in the integration's **Sync Activity** tab with its reason
 instead of vanishing into the Inngest logs. A successfully-synced item is NOT recorded (it
-already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab is a
+already appears as a `charge`/`purchaseInvoice`/`payment` row); the tab is a
 "what didn't come through, and why" inbox, not a full audit log.
 
 - `recordRampSyncFailures(ctx, {entityType, direction, failures})` and
@@ -487,7 +487,7 @@ already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab
   drain. Both are **strictly best-effort** — every error (thrown OR returned) is swallowed
   and logged; observability must never fail or pollute a family's sync result. `ctx` gained
   `createdBy` (`integration.updatedBy ?? "system"`) and `trigger` (`webhook` vs `event`).
-- entityType/direction per family: card charges `cardTransaction`, transfers `transfer`,
+- entityType/direction per family: card charges `charge`, transfers `transfer`,
   cashbacks `cashback`, bills `bill`, bill payments `billPayment`, reimbursements
   `reimbursement`, repayments `repayment` — all `pull-from-accounting`; PO push
   `purchaseOrder` and draft-bill push `purchaseInvoice` — `push-to-accounting`. entityId is
@@ -504,22 +504,22 @@ already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab
   needs nothing new — Ramp rows live in the same `accountingSyncOperation` table the nightly
   passes already sweep.
 
-## cardTransaction schema (migration `20260919152233_ramp-integration.sql`)
+## Charge schema (migration `20260919152233_ramp-integration.sql`)
 
 The forward, retry-safe reconciliation migration supersedes the three branch-only Ramp
-schema migrations. Both `cardTransaction` and `cardTransactionLine` use composite
+schema migrations. Both `charge` and `chargeLine` use composite
 `(id, companyId)` primary keys with `id()` defaults. The parent, supplier, and cost-center
 relationships are tenant-composite; account triggers require header and line accounts to
 belong to the company's `companyGroupId`. It also converges the Ramp registry row, journal
 enum values, document enums, indexes, RLS, event trigger, and the per-company
-`CARD-%{yyyy}-%{mm}-` sequence.
+`CHG-%{yyyy}-%{mm}-` sequence.
 
-- `cardTransaction`: `cardTransactionId` (readable, unique per company), `type`, `status`,
+- `charge`: `chargeId` (readable, unique per company), `type`, `status`,
   `integration` (default `'ramp'`), `cardAccountId` (NOT NULL FK `account`), `offsetAccountId`
   (nullable FK), merchant/holder/last4/memo, `transactionDate`/`postingDate` (DATE),
   `currencyCode`, `exchangeRate`, `amount` (`>= 0`), `journalId`, posted/voided audit.
   CHECK: Payment/Cashback/Repayment require an `offsetAccountId`; Charge/Credit use lines.
-- `cardTransactionLine`: codes an `amount` to an `accountId` (+ optional tenant-composite
+- `chargeLine`: codes an `amount` to an `accountId` (+ optional tenant-composite
   `costCenterId`), `sequence`, and a same-company parent with `ON DELETE CASCADE`.
 - RLS on both is gated by **invoicing** permissions. The lifecycle trigger allows only
   Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided audit fields. The line
@@ -531,11 +531,11 @@ enum values, document enums, indexes, RLS, event trigger, and the per-company
   Voided requires both posting and void audit fields. `journalId` remains optional for
   Posted/Voided because accounting-disabled companies do not create a journal.
 
-## Card transactions → the accounting provider
+## Charges → the accounting provider
 
-The forward reconciliation migration gives `cardTransaction` a tenant-composite
+The forward reconciliation migration gives `charge` a tenant-composite
 **`supplierId`** foreign key and an **event trigger**
-(`attach_event_trigger('cardTransaction', …)`). The card
+(`attach_event_trigger('charge', …)`). The card
 family resolves the Ramp merchant to a Carbon supplier before posting —
 `resolveMerchantSupplier` (`lib/suppliers.ts`) is **match-or-default, never one
 supplier per merchant** (that polluted the vendor master with hundreds of one-off
@@ -558,11 +558,11 @@ attached to the Carbon transaction; only the Rillet adapter currently uploads th
 provider. Full
 rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider objects".
 
-## post-card-transaction edge function
+## post-charge edge function
 
-`packages/database/supabase/functions/post-card-transaction/` (registered in
-`config.toml`, `verify_jwt = true`). `{ type: "post" | "void", cardTransactionId, userId,
-companyId }`. `postCardTransactionTransaction` opens one Kysely transaction and performs
+`packages/database/supabase/functions/post-charge/` (registered in
+`config.toml`, `verify_jwt = true`). `{ type: "post" | "void", chargeId, userId,
+companyId }`. `postChargeTransaction` opens one Kysely transaction and performs
 the tenant-scoped header `FOR UPDATE` as its first read; every settings, company, line,
 account, period, journal, dimension, and lifecycle write stays inside that transaction.
 Repeated post of Posted or void of Voided returns the stored journal id without another
@@ -578,25 +578,25 @@ permissions for that subject; a body-supplied privileged user cannot substitute 
   cashback offset, and company-scoped cost centers. Resolves the accounting period (shifts a Locked/Closed period
   forward to the next open period, writing the shifted `postingDate` back). When
   `companySettings.accountingEnabled`, builds the journal (`sourceType`/`documentType`
-  `'Card Transaction'`) and writes cost-center `journalLineDimension`s against the
+  `'Charge'`) and writes cost-center `journalLineDimension`s against the
   group's oldest active `CostCenter` `dimension` row; flips the row to Posted with
   `journalId`. Accounting-off = Posted with no journal. **A line carrying a
   `costCenterId` with no such dimension row REFUSES to post** ("Company group has no
   active Cost Center dimension") rather than posting a balanced journal that silently
   lost the tag — `pushCostCenters` creates the row for installed integrations, so this
-  only fires for a company posting card transactions without the Ramp converge.
+  only fires for a company posting charges without the Ramp converge.
   Payment/Cashback reject any coding lines; Charge/Credit/Repayment require finite,
   strictly positive line magnitudes summing to the header. Journal line ids are allocated
   before insertion and bound explicitly to dimensions, never inferred from RETURNING order.
 - **void**: only from Posted. When a journal exists, requires accounting enabled and proves
-  the original company-scoped journal is Posted, source type `Card Transaction`, and every
+  the original company-scoped journal is Posted, source type `Charge`, and every
   line points back to this document. It writes a new Posted reversal with negated amounts
   and copied dimensions, then flips the document to Voided. Documents posted while
   accounting was disabled have no journal and void without fabricating one.
   Reversal line ids are also allocated before insertion, preserving each original line's
   dimension identity even if a database returns inserted rows in another order.
 
-### The journal builder (`build-card-transaction-journal.ts`)
+### The journal builder (`build-charge-journal.ts`)
 
 Pure, unit-testable, golden-master-pinned. Amounts are **natural-balance-signed** via
 `credit()`/`debit()` (a balanced entry has debits == credits and does NOT sum to zero in
@@ -615,14 +615,14 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
 
 ## ERP UI (invoicing module)
 
-- Routes: `card-transactions.tsx` (list, loader `getCardTransactions`, filters
-  search/type/status), `card-transactions.$id.tsx` (read-only Drawer detail with lines +
+- Routes: `charges.tsx` (list, loader `getCharges`, filters
+  search/type/status), `charges.$id.tsx` (read-only Drawer detail with lines +
   receipts + a **Void** action for Posted rows, `update: "invoicing"`),
-  `card-transactions.$id.void.tsx` (action → service-role `functions.invoke(
-  "post-card-transaction", { type: "void" })`).
-- Components: `apps/erp/app/modules/invoicing/ui/CardTransaction/` —
-  `CardTransactionsTable.tsx`, `CardTransactionStatus.tsx`, `index.ts`. Service:
-  `getCardTransaction(client, companyId, id)` / `getCardTransactions` in
+  `charges.$id.void.tsx` (action → service-role `functions.invoke(
+  "post-charge", { type: "void" })`).
+- Components: `apps/erp/app/modules/invoicing/ui/Charge/` —
+  `ChargesTable.tsx`, `ChargeStatus.tsx`, `index.ts`. Service:
+  `getCharge(client, companyId, id)` / `getCharges` in
   `invoicing.service.ts`. Detail, line, document, and cost-center reads are company-scoped;
   account labels are resolved only from the authenticated company's group.
 

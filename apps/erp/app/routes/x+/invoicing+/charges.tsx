@@ -4,17 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import {
-  CardTransactionsTable,
-  getCardTransactions
-} from "~/modules/invoicing";
+import { ChargesTable, getCharges } from "~/modules/invoicing";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export const handle: Handle = {
-  breadcrumb: "Card Transactions",
-  to: path.to.cardTransactions,
+  breadcrumb: "Charges",
+  to: path.to.charges,
   module: "invoicing"
 };
 
@@ -42,7 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const cardTransactions = await getCardTransactions(client, companyId, {
+  const charges = await getCharges(client, companyId, {
     search,
     type,
     status,
@@ -52,27 +49,24 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters
   });
 
-  if (cardTransactions.error) {
+  if (charges.error) {
     throw redirect(
       path.to.invoicing,
-      await flash(
-        request,
-        error(cardTransactions.error, "Failed to fetch card transactions")
-      )
+      await flash(request, error(charges.error, "Failed to fetch charges"))
     );
   }
 
   return {
-    count: cardTransactions.count ?? 0,
-    data: cardTransactions.data ?? []
+    count: charges.count ?? 0,
+    data: charges.data ?? []
   };
 }
 
-export default function CardTransactionsRoute() {
+export default function ChargesRoute() {
   const { count, data } = useLoaderData<typeof loader>();
   return (
     <VStack spacing={0} className="h-full">
-      <CardTransactionsTable data={data} count={count} />
+      <ChargesTable data={data} count={count} />
       <Outlet />
     </VStack>
   );

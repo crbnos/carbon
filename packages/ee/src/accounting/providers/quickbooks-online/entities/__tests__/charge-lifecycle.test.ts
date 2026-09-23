@@ -57,7 +57,7 @@ function local(
   return {
     id,
     companyId: "company-1",
-    cardTransactionId: id,
+    chargeId: id,
     type: "Charge",
     status,
     supplierId: "vendor",

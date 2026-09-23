@@ -8,9 +8,11 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
+// Accounts Payable — supplier credit/debit memos. The customer side lives in
+// credit-memos.tsx; both read the same `memo` table, scoped by party.
 export const handle: Handle = {
-  breadcrumb: "Credit / Debit Memos",
-  to: path.to.memos,
+  breadcrumb: "Vendor Credits",
+  to: path.to.vendorCredits,
   module: "invoicing"
 };
 
@@ -36,9 +38,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters = []
   } = getGenericQueryFilters(searchParams);
 
-  // The "Counterparty" column filter spans two columns (customerId OR
-  // supplierId), so pull it out of the generic filters and hand it to getMemos,
-  // which applies it as an OR. The rest pass through normally.
+  // The "Supplier" column filter is keyed as "counterparty"; pull it out and
+  // hand it to getMemos, which applies it to supplierId. The rest pass through.
   const counterpartyIds = filters
     .filter((f) => f.column === "counterparty")
     .flatMap((f) => (f.value ?? "").split(","))
@@ -49,6 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     search,
     direction,
     status,
+    party: "supplier",
     counterpartyIds: counterpartyIds.length > 0 ? counterpartyIds : null,
     limit,
     offset,
@@ -59,7 +61,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (memos.error) {
     throw redirect(
       path.to.invoicing,
-      await flash(request, error(memos.error, "Failed to fetch memos"))
+      await flash(request, error(memos.error, "Failed to fetch vendor credits"))
     );
   }
 
@@ -69,7 +71,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export default function MemosRoute() {
+export default function VendorCreditsRoute() {
   const { count, memos } = useLoaderData<typeof loader>();
-  return <MemosTable data={memos} count={count} />;
+  return <MemosTable data={memos} count={count} party="supplier" />;
 }

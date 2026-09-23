@@ -51,9 +51,9 @@ export const Ramp = defineIntegration({
   logo: Logo,
   setupInstructions: SetupInstructions,
   description:
-    "Integrating Carbon with Ramp pulls your card transactions, bills, and employee reimbursements into Carbon's general ledger, pushes your chart of accounts and cost centers to Ramp for coding, and keeps purchase orders and vendor bills in sync.",
+    "Integrating Carbon with Ramp pulls your charges, bills, and employee reimbursements into Carbon's general ledger, pushes your chart of accounts and cost centers to Ramp for coding, and keeps purchase orders and vendor bills in sync.",
   shortDescription:
-    "Pull card transactions, bills, and reimbursements; push your chart of accounts.",
+    "Pull charges, bills, and reimbursements; push your chart of accounts.",
   images: [],
   // One-click "Connect to Ramp" (production OAuth). When present, Install opens
   // this authorize URL; the callback (`/api/integrations/ramp/oauth`) exchanges
@@ -93,7 +93,7 @@ export const Ramp = defineIntegration({
       name: "cardLiabilityAccountId",
       label: "Card liability account",
       description:
-        "Pick the Liability account that tracks what you owe on your Ramp cards — your outstanding Ramp balance. Each card charge Carbon pulls in credits this account; paying a statement debits it back down. Required — no card transactions sync until this is set.",
+        "Pick the Liability account that tracks what you owe on your Ramp cards — your outstanding Ramp balance. Each card charge Carbon pulls in credits this account; paying a statement debits it back down. Required — no charges sync until this is set.",
       group: "Accounts",
       type: "options" as const,
       listOptions: [],
@@ -135,8 +135,8 @@ export const Ramp = defineIntegration({
     },
     {
       name: "pullTransactions",
-      label: "Card transactions",
-      description: "Pull Ramp card transactions into Carbon.",
+      label: "Charges",
+      description: "Pull Ramp charges into Carbon.",
       group: "Sync",
       type: "switch" as const,
       required: false,
@@ -205,8 +205,8 @@ function SetupInstructions({ companyId }: { companyId: string }) {
         </li>
         <li>
           <span className="font-medium text-foreground">Choose what syncs</span>{" "}
-          under Sync — card transactions, bills, and reimbursements flow in;
-          purchase orders and invoices push out. All are on by default.
+          under Sync — charges, bills, and reimbursements flow in; purchase
+          orders and invoices push out. All are on by default.
         </li>
         <li>
           <span className="font-medium text-foreground">

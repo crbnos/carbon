@@ -25,7 +25,7 @@ export default function useInvoicingSubmodules() {
 
   // Routes that only make sense with an active integration; hidden otherwise.
   const integrationRoutes = new Map<string, boolean>([
-    [path.to.cardTransactions, hasRamp]
+    [path.to.charges, hasRamp]
   ]);
 
   const isRouteVisible = (route: AuthenticatedRouteGroup["routes"][number]) => {
@@ -56,6 +56,13 @@ export default function useInvoicingSubmodules() {
           icon: <LuReceiptText />,
           table: "purchaseInvoice",
           permission: "invoicing"
+        },
+        {
+          name: t`Vendor Credits`,
+          to: path.to.vendorCredits,
+          icon: <LuCreditCard />,
+          table: "memo",
+          permission: "invoicing"
         }
       ]
     },
@@ -74,6 +81,13 @@ export default function useInvoicingSubmodules() {
           icon: <LuCreditCard />,
           table: "salesInvoice",
           permission: "invoicing"
+        },
+        {
+          name: t`Credit Memos`,
+          to: path.to.creditMemos,
+          icon: <LuCreditCard />,
+          table: "memo",
+          permission: "invoicing"
         }
       ]
     },
@@ -89,17 +103,10 @@ export default function useInvoicingSubmodules() {
           permission: "invoicing"
         },
         {
-          name: t`Credits & Debits`,
-          to: path.to.memos,
-          icon: <LuCreditCard />,
-          table: "memo",
-          permission: "invoicing"
-        },
-        {
-          name: t`Card Transactions`,
-          to: path.to.cardTransactions,
+          name: t`Charges`,
+          to: path.to.charges,
           icon: <LuReceipt />,
-          table: "cardTransaction",
+          table: "charge",
           permission: "invoicing"
         }
       ]

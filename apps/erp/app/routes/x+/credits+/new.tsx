@@ -3,13 +3,31 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { datetime } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
 import { getCompany, getNextSequence } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { setCustomFields } from "~/utils/form";
+import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+// One create route, two presentations. ?party (from the originating list)
+// picks the type; Vendor Credit is a supplier Debit, Credit Memo a customer
+// Credit. The breadcrumb links back to the matching list.
+export const handle: Handle = {
+  breadcrumb: (_params: unknown, data: unknown) => {
+    const isVendor =
+      (data as { type?: string } | undefined)?.type === "vendorCredit";
+    return [
+      isVendor
+        ? { breadcrumb: msg`Vendor Credits`, to: path.to.vendorCredits }
+        : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos }
+    ];
+  },
+  module: "invoicing"
+};
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -19,10 +37,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const company = await getCompany(client, companyId);
   const currencyCode = company.data?.baseCurrencyCode ?? "";
 
+  const party = new URL(request.url).searchParams.get("party");
+  const type = party === "supplier" ? "vendorCredit" : "creditMemo";
+
   return {
+    type,
     initialValues: {
       memoId: "",
-      direction: "Credit" as const,
+      // Direction follows the type and is submitted hidden by the form.
+      direction:
+        type === "vendorCredit" ? ("Debit" as const) : ("Credit" as const),
       customerId: "",
       supplierId: "",
       memoDate: datetime
@@ -58,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
     if (next.error || !next.data) {
       throw redirect(
-        path.to.memos,
+        path.to.invoicing,
         await flash(request, error(next.error, "Failed to allocate memo id"))
       );
     }
@@ -78,7 +102,7 @@ export async function action({ request }: ActionFunctionArgs) {
   });
   if (insert.error || !insert.data) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(insert.error, "Failed to create memo"))
     );
   }
@@ -90,10 +114,13 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewMemoRoute() {
-  const { initialValues } = useLoaderData<typeof loader>();
+  const { initialValues, type } = useLoaderData<typeof loader>();
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <MemoForm initialValues={initialValues} />
+      <MemoForm
+        initialValues={initialValues}
+        type={type === "vendorCredit" ? "vendorCredit" : "creditMemo"}
+      />
     </div>
   );
 }

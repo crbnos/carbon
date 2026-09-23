@@ -298,7 +298,7 @@ export async function loadBillCostingLines(
   };
 }
 
-export type CardTransactionCostingResult = BillCostingResult & {
+export type ChargeCostingResult = BillCostingResult & {
   /** The card-liability account the charge is settled against. */
   cardAccountId: string;
   /** Charge (spend) or Credit (merchant refund). */
@@ -308,8 +308,8 @@ export type CardTransactionCostingResult = BillCostingResult & {
 };
 
 /**
- * Load a card transaction's account-costed replay lines from its posted
- * "Card Transaction" journal — the same contract as {@link loadBillCostingLines}
+ * Load a charge's account-costed replay lines from its posted
+ * "Charge" journal — the same contract as {@link loadBillCostingLines}
  * with a simpler control rule: the card-liability line is identified by the
  * header's `cardAccountId`, not by a description role. Everything else the
  * journal booked (the expense lines, with their cost-center dimensions) IS the
@@ -318,12 +318,12 @@ export type CardTransactionCostingResult = BillCostingResult & {
  * refund shape. `postingDate` falls back to `transactionDate` (nullable on the
  * header). No item labels: card lines have no item.
  */
-export async function loadCardTransactionCostingLines(
+export async function loadChargeCostingLines(
   db: Db,
-  args: { companyId: string; cardTransactionId: string }
-): Promise<CardTransactionCostingResult> {
-  const cardTransaction = await db
-    .selectFrom("cardTransaction")
+  args: { companyId: string; chargeId: string }
+): Promise<ChargeCostingResult> {
+  const charge = await db
+    .selectFrom("charge")
     .select([
       "type",
       "currencyCode",
@@ -333,7 +333,7 @@ export async function loadCardTransactionCostingLines(
       "cardAccountId",
       "amount"
     ])
-    .where("id", "=", args.cardTransactionId)
+    .where("id", "=", args.chargeId)
     .where("companyId", "=", args.companyId)
     .executeTakeFirst();
 
@@ -343,23 +343,21 @@ export async function loadCardTransactionCostingLines(
     .where("id", "=", args.companyId)
     .executeTakeFirst();
   if (
-    !cardTransaction?.currencyCode ||
-    !cardTransaction.transactionDate ||
+    !charge?.currencyCode ||
+    !charge.transactionDate ||
     !company?.baseCurrencyCode ||
     !company.companyGroupId
   ) {
     throw new Error(
-      "Card transaction currency, transaction date and company base currency are required"
+      "Charge currency, transaction date and company base currency are required"
     );
   }
-  if (cardTransaction.type !== "Charge" && cardTransaction.type !== "Credit") {
-    throw new Error(
-      `Card transaction type ${cardTransaction.type} has no charge representation`
-    );
+  if (charge.type !== "Charge" && charge.type !== "Credit") {
+    throw new Error(`Charge type ${charge.type} has no charge representation`);
   }
-  const currencyCode = cardTransaction.currencyCode;
+  const currencyCode = charge.currencyCode;
   const baseCurrencyCode = company.baseCurrencyCode;
-  const exchangeRate = Number(cardTransaction.exchangeRate);
+  const exchangeRate = Number(charge.exchangeRate);
   const currency = await db
     .selectFrom("currency")
     .select("decimalPlaces")
@@ -367,24 +365,21 @@ export async function loadCardTransactionCostingLines(
     .where("companyGroupId", "=", company.companyGroupId)
     .executeTakeFirst();
   if (!currency || currency.decimalPlaces == null)
-    throw new Error("Card transaction currency precision is required");
+    throw new Error("Charge currency precision is required");
   const decimalPlaces = currency.decimalPlaces;
   assertExchangeRate(exchangeRate);
   assertCurrencyDecimals(decimalPlaces);
   if (currencyCode === baseCurrencyCode && exchangeRate !== 1)
-    throw new Error(
-      "Base-currency card transaction requires identity exchange rate"
-    );
+    throw new Error("Base-currency charge requires identity exchange rate");
   // The header amount is the authoritative document total (post-card-
   // transaction asserts the lines sum to it); a Credit's total is negative in
   // charge terms.
   const documentTotal = round(
-    Number(cardTransaction.amount) *
-      (cardTransaction.type === "Credit" ? -1 : 1),
+    Number(charge.amount) * (charge.type === "Credit" ? -1 : 1),
     decimalPlaces
   );
   if (!Number.isFinite(documentTotal))
-    throw new Error("Card transaction document total must be finite");
+    throw new Error("Charge document total must be finite");
 
   const rows = await db
     .selectFrom("journalLine")
@@ -401,10 +396,10 @@ export async function loadCardTransactionCostingLines(
       "journalLine.description",
       "account.class as accountClass"
     ])
-    .where("journalLine.documentType", "=", "Card Transaction")
-    .where("journalLine.documentId", "=", args.cardTransactionId)
+    .where("journalLine.documentType", "=", "Charge")
+    .where("journalLine.documentId", "=", args.chargeId)
     .where("journalLine.companyId", "=", args.companyId)
-    .where("journal.sourceType", "=", "Card Transaction")
+    .where("journal.sourceType", "=", "Charge")
     .where("journal.status", "=", "Posted")
     .where("journal.companyId", "=", args.companyId)
     .orderBy("journalLine.journalLineReference", "asc")
@@ -415,14 +410,14 @@ export async function loadCardTransactionCostingLines(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync card charge: no posted Card Transaction journal found. Post the card transaction with accounting enabled, then retry.",
-      metadata: { cardTransactionId: args.cardTransactionId }
+        "Cannot sync card charge: no posted Charge journal found. Post the charge with accounting enabled, then retry.",
+      metadata: { chargeId: args.chargeId }
     });
   }
   // The provider books the card liability itself from `credit_card_account_code`
   // (or its equivalent); only the coded lines become items.
   const costingRows = rows.filter(
-    (row) => row.accountId !== cardTransaction.cardAccountId
+    (row) => row.accountId !== charge.cardAccountId
   );
   const missingAccountLines = costingRows.filter((row) => !row.accountId);
   if (!costingRows.length || missingAccountLines.length)
@@ -432,7 +427,7 @@ export async function loadCardTransactionCostingLines(
       message:
         "Cannot sync card charge: its posted lines have no account. Correct the posting, then retry.",
       metadata: {
-        cardTransactionId: args.cardTransactionId,
+        chargeId: args.chargeId,
         lineIdsWithoutAccount: missingAccountLines.map((row) => row.id)
       }
     });
@@ -461,11 +456,11 @@ export async function loadCardTransactionCostingLines(
     decimalPlaces,
     baseCurrencyCode,
     postingDate: toPostingDateString(
-      cardTransaction.postingDate ?? cardTransaction.transactionDate
+      charge.postingDate ?? charge.transactionDate
     ),
-    transactionDate: toPostingDateString(cardTransaction.transactionDate),
-    cardAccountId: cardTransaction.cardAccountId,
-    type: cardTransaction.type
+    transactionDate: toPostingDateString(charge.transactionDate),
+    cardAccountId: charge.cardAccountId,
+    type: charge.type
   };
 }
 

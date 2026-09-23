@@ -25395,6 +25395,348 @@ export default {
         tags: ["companies"]
       }
     },
+    "/charge": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.charge.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.merchantName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardLast4"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.memo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.transactionDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/charge"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["charge"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.charge"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["charge"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.charge.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.merchantName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardLast4"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.memo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.transactionDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["charge"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.charge.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.type"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.status"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.integration"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.offsetAccountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.supplierId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.merchantName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardHolderName"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.cardLast4"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.memo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.transactionDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postingDate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.exchangeRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.journalId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.postedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.voidedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.charge.customFields"
+          },
+          {
+            $ref: "#/parameters/body.charge"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["charge"]
+      }
+    },
     "/process": {
       get: {
         parameters: [
@@ -40776,348 +41118,6 @@ export default {
         tags: ["procedureStep"]
       }
     },
-    "/cardTransaction": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.integration"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardHolderName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardLast4"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.memo"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.transactionDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postingDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.exchangeRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.journalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/cardTransaction"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["cardTransaction"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.cardTransaction"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["cardTransaction"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.integration"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardHolderName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardLast4"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.memo"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.transactionDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postingDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.exchangeRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.journalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["cardTransaction"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.type"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.status"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.integration"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.offsetAccountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.supplierId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.merchantName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardHolderName"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.cardLast4"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.memo"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.transactionDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postingDate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.currencyCode"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.exchangeRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.journalId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.postedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.voidedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransaction.customFields"
-          },
-          {
-            $ref: "#/parameters/body.cardTransaction"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["cardTransaction"]
-      }
-    },
     "/documentFavorite": {
       get: {
         parameters: [
@@ -45861,6 +45861,222 @@ export default {
         tags: ["customerType"]
       }
     },
+    "/chargeLine": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.customFields"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/chargeLine"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["chargeLine"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.chargeLine"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["chargeLine"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.customFields"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["chargeLine"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.chargeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.accountId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.costCenterId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.projectId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.amount"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.sequence"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.chargeLine.customFields"
+          },
+          {
+            $ref: "#/parameters/body.chargeLine"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["chargeLine"]
+      }
+    },
     "/quoteMaterial": {
       get: {
         parameters: [
@@ -48379,222 +48595,6 @@ export default {
           }
         },
         tags: ["maintenanceDispatchEvent"]
-      }
-    },
-    "/cardTransactionLine": {
-      get: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.costCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.sequence"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/order"
-          },
-          {
-            $ref: "#/parameters/range"
-          },
-          {
-            $ref: "#/parameters/rangeUnit"
-          },
-          {
-            $ref: "#/parameters/offset"
-          },
-          {
-            $ref: "#/parameters/limit"
-          },
-          {
-            $ref: "#/parameters/preferCount"
-          }
-        ],
-        responses: {
-          "200": {
-            description: "OK",
-            schema: {
-              items: {
-                $ref: "#/definitions/cardTransactionLine"
-              },
-              type: "array"
-            }
-          },
-          "206": {
-            description: "Partial Content"
-          }
-        },
-        tags: ["cardTransactionLine"]
-      },
-      post: {
-        parameters: [
-          {
-            $ref: "#/parameters/body.cardTransactionLine"
-          },
-          {
-            $ref: "#/parameters/select"
-          },
-          {
-            $ref: "#/parameters/preferPost"
-          }
-        ],
-        responses: {
-          "201": {
-            description: "Created"
-          }
-        },
-        tags: ["cardTransactionLine"]
-      },
-      delete: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.costCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.sequence"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["cardTransactionLine"]
-      },
-      patch: {
-        parameters: [
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.id"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.companyId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.cardTransactionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.accountId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.costCenterId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.description"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.amount"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.sequence"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.createdAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedBy"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.updatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.customFields"
-          },
-          {
-            $ref: "#/parameters/rowFilter.cardTransactionLine.projectId"
-          },
-          {
-            $ref: "#/parameters/body.cardTransactionLine"
-          },
-          {
-            $ref: "#/parameters/preferReturn"
-          }
-        ],
-        responses: {
-          "204": {
-            description: "No Content"
-          }
-        },
-        tags: ["cardTransactionLine"]
       }
     },
     "/implementationFieldValue": {
@@ -109826,7 +109826,7 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -117713,6 +117713,164 @@ export default {
       },
       type: "object"
     },
+    charge: {
+      required: [
+        "id",
+        "companyId",
+        "chargeId",
+        "type",
+        "status",
+        "integration",
+        "cardAccountId",
+        "transactionDate",
+        "currencyCode",
+        "exchangeRate",
+        "amount",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        chargeId: {
+          format: "text",
+          type: "string"
+        },
+        type: {
+          default: "Charge",
+          enum: ["Charge", "Credit", "Payment", "Cashback", "Repayment"],
+          format: 'public."chargeType"',
+          type: "string"
+        },
+        status: {
+          default: "Draft",
+          enum: ["Draft", "Posted", "Voided"],
+          format: 'public."chargeStatus"',
+          type: "string"
+        },
+        integration: {
+          default: "ramp",
+          format: "text",
+          type: "string"
+        },
+        cardAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        offsetAccountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        supplierId: {
+          format: "text",
+          type: "string"
+        },
+        merchantName: {
+          format: "text",
+          type: "string"
+        },
+        cardHolderName: {
+          format: "text",
+          type: "string"
+        },
+        cardLast4: {
+          format: "text",
+          type: "string"
+        },
+        memo: {
+          format: "text",
+          type: "string"
+        },
+        transactionDate: {
+          format: "date",
+          type: "string"
+        },
+        postingDate: {
+          format: "date",
+          type: "string"
+        },
+        currencyCode: {
+          description:
+            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
+          format: "text",
+          type: "string"
+        },
+        exchangeRate: {
+          default: 1,
+          format: "numeric",
+          type: "number"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        journalId: {
+          description:
+            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        postedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        postedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        voidedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        voidedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     process: {
       required: [
         "id",
@@ -121694,7 +121852,7 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -122320,7 +122478,7 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -125019,164 +125177,6 @@ export default {
       },
       type: "object"
     },
-    cardTransaction: {
-      required: [
-        "id",
-        "companyId",
-        "cardTransactionId",
-        "type",
-        "status",
-        "integration",
-        "cardAccountId",
-        "transactionDate",
-        "currencyCode",
-        "exchangeRate",
-        "amount",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        cardTransactionId: {
-          format: "text",
-          type: "string"
-        },
-        type: {
-          default: "Charge",
-          enum: ["Charge", "Credit", "Payment", "Cashback", "Repayment"],
-          format: 'public."cardTransactionType"',
-          type: "string"
-        },
-        status: {
-          default: "Draft",
-          enum: ["Draft", "Posted", "Voided"],
-          format: 'public."cardTransactionStatus"',
-          type: "string"
-        },
-        integration: {
-          default: "ramp",
-          format: "text",
-          type: "string"
-        },
-        cardAccountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        offsetAccountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        supplierId: {
-          format: "text",
-          type: "string"
-        },
-        merchantName: {
-          format: "text",
-          type: "string"
-        },
-        cardHolderName: {
-          format: "text",
-          type: "string"
-        },
-        cardLast4: {
-          format: "text",
-          type: "string"
-        },
-        memo: {
-          format: "text",
-          type: "string"
-        },
-        transactionDate: {
-          format: "date",
-          type: "string"
-        },
-        postingDate: {
-          format: "date",
-          type: "string"
-        },
-        currencyCode: {
-          description:
-            "Note:\nThis is a Foreign Key to `currencyCode.code`.<fk table='currencyCode' column='code'/>",
-          format: "text",
-          type: "string"
-        },
-        exchangeRate: {
-          default: 1,
-          format: "numeric",
-          type: "number"
-        },
-        amount: {
-          format: "numeric",
-          type: "number"
-        },
-        journalId: {
-          description:
-            "Note:\nThis is a Foreign Key to `journal.id`.<fk table='journal' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        postedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        postedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        voidedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        voidedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        customFields: {
-          format: "jsonb"
-        }
-      },
-      type: "object"
-    },
     documentFavorite: {
       required: ["documentId", "userId"],
       properties: {
@@ -127426,6 +127426,88 @@ export default {
       },
       type: "object"
     },
+    chargeLine: {
+      required: [
+        "id",
+        "companyId",
+        "chargeId",
+        "accountId",
+        "amount",
+        "sequence",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id()",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        chargeId: {
+          format: "text",
+          type: "string"
+        },
+        accountId: {
+          description:
+            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        costCenterId: {
+          format: "text",
+          type: "string"
+        },
+        projectId: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        amount: {
+          format: "numeric",
+          type: "number"
+        },
+        sequence: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        customFields: {
+          format: "jsonb"
+        }
+      },
+      type: "object"
+    },
     quoteMaterial: {
       required: [
         "id",
@@ -128469,88 +128551,6 @@ export default {
         },
         updatedAt: {
           format: "timestamp with time zone",
-          type: "string"
-        }
-      },
-      type: "object"
-    },
-    cardTransactionLine: {
-      required: [
-        "id",
-        "companyId",
-        "cardTransactionId",
-        "accountId",
-        "amount",
-        "sequence",
-        "createdBy",
-        "createdAt"
-      ],
-      properties: {
-        id: {
-          default: "public.id()",
-          description: "Note:\nThis is a Primary Key.<pk/>",
-          format: "text",
-          type: "string"
-        },
-        companyId: {
-          description:
-            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        cardTransactionId: {
-          format: "text",
-          type: "string"
-        },
-        accountId: {
-          description:
-            "Note:\nThis is a Foreign Key to `account.id`.<fk table='account' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        costCenterId: {
-          format: "text",
-          type: "string"
-        },
-        description: {
-          format: "text",
-          type: "string"
-        },
-        amount: {
-          format: "numeric",
-          type: "number"
-        },
-        sequence: {
-          default: 0,
-          format: "integer",
-          type: "integer"
-        },
-        createdBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        createdAt: {
-          default: "now()",
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        updatedBy: {
-          description:
-            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
-          format: "text",
-          type: "string"
-        },
-        updatedAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
-        customFields: {
-          format: "jsonb"
-        },
-        projectId: {
-          format: "text",
           type: "string"
         }
       },
@@ -135266,7 +135266,7 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -135379,7 +135379,7 @@ export default {
             "Sales Return Receipt",
             "Sales Return Shipment",
             "Purchase Return Shipment",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -135453,7 +135453,7 @@ export default {
             "Inbound Inspection",
             "Scrap",
             "Batch Merge",
-            "Card Transaction"
+            "Charge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -163669,6 +163669,183 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.charge": {
+      name: "charge",
+      description: "charge",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/charge"
+      }
+    },
+    "rowFilter.charge.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.chargeId": {
+      name: "chargeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.type": {
+      name: "type",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.status": {
+      name: "status",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.integration": {
+      name: "integration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.cardAccountId": {
+      name: "cardAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.offsetAccountId": {
+      name: "offsetAccountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.supplierId": {
+      name: "supplierId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.merchantName": {
+      name: "merchantName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.cardHolderName": {
+      name: "cardHolderName",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.cardLast4": {
+      name: "cardLast4",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.memo": {
+      name: "memo",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.transactionDate": {
+      name: "transactionDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.postingDate": {
+      name: "postingDate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.exchangeRate": {
+      name: "exchangeRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.journalId": {
+      name: "journalId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.postedAt": {
+      name: "postedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.postedBy": {
+      name: "postedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.voidedAt": {
+      name: "voidedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.voidedBy": {
+      name: "voidedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.charge.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.process": {
       name: "process",
       description: "process",
@@ -171763,183 +171940,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "body.cardTransaction": {
-      name: "cardTransaction",
-      description: "cardTransaction",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/cardTransaction"
-      }
-    },
-    "rowFilter.cardTransaction.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.cardTransactionId": {
-      name: "cardTransactionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.type": {
-      name: "type",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.status": {
-      name: "status",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.integration": {
-      name: "integration",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.cardAccountId": {
-      name: "cardAccountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.offsetAccountId": {
-      name: "offsetAccountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.supplierId": {
-      name: "supplierId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.merchantName": {
-      name: "merchantName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.cardHolderName": {
-      name: "cardHolderName",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.cardLast4": {
-      name: "cardLast4",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.memo": {
-      name: "memo",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.transactionDate": {
-      name: "transactionDate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.postingDate": {
-      name: "postingDate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.currencyCode": {
-      name: "currencyCode",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.exchangeRate": {
-      name: "exchangeRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.amount": {
-      name: "amount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.journalId": {
-      name: "journalId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.postedAt": {
-      name: "postedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.postedBy": {
-      name: "postedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.voidedAt": {
-      name: "voidedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.voidedBy": {
-      name: "voidedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransaction.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "body.documentFavorite": {
       name: "documentFavorite",
       description: "documentFavorite",
@@ -174364,6 +174364,99 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.chargeLine": {
+      name: "chargeLine",
+      description: "chargeLine",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/chargeLine"
+      }
+    },
+    "rowFilter.chargeLine.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.chargeId": {
+      name: "chargeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.accountId": {
+      name: "accountId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.costCenterId": {
+      name: "costCenterId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.projectId": {
+      name: "projectId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.amount": {
+      name: "amount",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.sequence": {
+      name: "sequence",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.chargeLine.customFields": {
+      name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.quoteMaterial": {
       name: "quoteMaterial",
       description: "quoteMaterial",
@@ -175521,99 +175614,6 @@ export default {
     },
     "rowFilter.maintenanceDispatchEvent.updatedAt": {
       name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "body.cardTransactionLine": {
-      name: "cardTransactionLine",
-      description: "cardTransactionLine",
-      required: false,
-      in: "body",
-      schema: {
-        $ref: "#/definitions/cardTransactionLine"
-      }
-    },
-    "rowFilter.cardTransactionLine.id": {
-      name: "id",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.companyId": {
-      name: "companyId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.cardTransactionId": {
-      name: "cardTransactionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.accountId": {
-      name: "accountId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.costCenterId": {
-      name: "costCenterId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.description": {
-      name: "description",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.amount": {
-      name: "amount",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.sequence": {
-      name: "sequence",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.createdBy": {
-      name: "createdBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.createdAt": {
-      name: "createdAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.updatedBy": {
-      name: "updatedBy",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.updatedAt": {
-      name: "updatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.customFields": {
-      name: "customFields",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.cardTransactionLine.projectId": {
-      name: "projectId",
       required: false,
       in: "query",
       type: "string"

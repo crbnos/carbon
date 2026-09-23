@@ -75,7 +75,7 @@ Supplier Return lines do not have a disposition field: the material leaves inven
 
 **Issue Credit** is available after quantity ships. It creates a Draft supplier memo for shipped quantity not already reserved by a non-voided memo. Although the button uses the business phrase “Issue Credit,” Carbon stores this AP document as a **Debit** memo because it reduces what you owe the supplier.
 
-The memo amount is quantity × unit price, less the restock fee. Creating it does not post the memo or settle cash. Open it under Credit / Debit Memos and choose **Post**. A Draft memo already reserves the creditable quantity, while the Supplier Returns list counts only Posted credit in its **Credited** total.
+The memo amount is quantity × unit price, less the restock fee. Creating it does not post the memo or settle cash. Open it under Vendor Credits and choose **Post**. A Draft memo already reserves the creditable quantity, while the Supplier Returns list counts only Posted credit in its **Credited** total.
 
 <Callout type="warn">
 A non-Voided debit memo, including a Draft one, blocks voiding the supplier-return shipment. Void the memo first if the physical shipment must be reversed.

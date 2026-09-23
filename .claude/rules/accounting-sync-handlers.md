@@ -24,7 +24,7 @@ The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/acco
 
 ## Entity types & directions
 
-`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge`. `charge` is a Carbon `cardTransaction` pushed as the provider's native card-charge object (see "Card charges as provider objects"). `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
+`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge`. `charge` is a Carbon charge (the `charge` table) pushed as the provider's native card-charge object (see "Card charges as provider objects"). `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
 `SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. Rillet's `customer`/`vendor` are the one place a Carbon-owned entity has a working PULL path: the explicit contact import below enqueues `pull-from-accounting` operations by hand (see the Rillet contact import section) — the automatic direction is unchanged, and `owner: "carbon"` is exactly what keeps a re-import from overwriting a linked record. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
 
@@ -296,51 +296,51 @@ revenue, so it cannot mirror Carbon's posting. Spec:
 
 ## Card charges as provider objects (`charge` entity)
 
-A Carbon `cardTransaction` (Ramp card spend, `.claude/rules/ramp-integration.md`) is
+A Carbon `charge` (Ramp card spend, `.claude/rules/ramp-integration.md`) is
 pushed as each provider's **native card-charge object** instead of an opaque journal
 entry — Rillet `POST /charges`, QBO `Purchase` with `PaymentType: "CreditCard"`, Xero
 `BankTransactions` `Type: "SPEND"` on the `CREDITCARD` bank account. Every one of them
-derives the same posting Carbon's `Card Transaction` journal already books (debit the
+derives the same posting Carbon's `Charge` journal already books (debit the
 coded lines, credit the card liability), so the switch carries no GL-drift risk and
 recovers the merchant (vendor) and dimensions the journal path dropped. Ramp receipts stay
 on Carbon `document` rows; Rillet additionally uploads them best-effort after create, while
 the Xero and QBO charge adapters do not currently attach remote files. Entity type `charge`
 (`AccountingEntityType`, `ENTITY_DEFINITIONS`,
-`DEFAULT_SYNC_CONFIG`, `SyncConfigSchema`); table map `cardTransaction → charge`
-(`events/sync-tables.ts`); subscription `{ table: "cardTransaction", INSERT/UPDATE }`
+`DEFAULT_SYNC_CONFIG`, `SyncConfigSchema`); table map `charge → charge`
+(`events/sync-tables.ts`); subscription `{ table: "charge", INSERT/UPDATE }`
 in `COMMON_PUSH_TABLES` for all three providers; the event trigger and tenant-safe
 `supplierId` relationship are converged by
 `20260919152233_ramp-integration.sql` (no subscription backfill —
 runtime subscription convergence). Syncers:
 `providers/rillet/entities/charge.ts` (`RilletChargeSyncer`, reference), plus the Xero
 and QBO adapters cloned from their bill syncers. Costing lines come from the shared
-`loadCardTransactionCostingLines` (`core/document-costing.ts`): the posted journal's
+`loadChargeCostingLines` (`core/document-costing.ts`): the posted journal's
 coded lines minus the card-liability line (identified by the header's `cardAccountId`,
 not a description role), base-currency debit-signed, with dimensions.
 
-**Per-row policy, not per source type.** `POSTING_POLICY["Card Transaction"]` stays
+**Per-row policy, not per source type.** `POSTING_POLICY["Charge"]` stays
 `representation: "journal"`; `getJournalPostingPolicyDecision` (`core/posting.ts`)
 carries an additive carve-out beside the Inventory Adjustment one:
-`isChargeBackedCardTransaction({ type, hasSupplier }, docSync)` → `DOC_BACKED` with
+`isDocBackedCharge({ type, hasSupplier }, docSync)` → `DOC_BACKED` with
 `backingDocument: { entityType: "charge" }` only when the `charge` entity is enabled
 AND the row is a `Charge` with a supplier (or a `Credit` where the provider is in
 `CHARGE_CREDIT_PROVIDERS` — Xero, QBO and Rillet; Rillet posts a Credit as a charge with
 NEGATIVE items, which its sandbox accepted on 2026-09-10). `Payment` / `Cashback` / `Repayment` rows (card-liability ↔ bank movements, no
 vendor) and a Charge with no merchant supplier keep pushing as journal entries. The
 executor (`reconcile-executor.ts`) and the event planner (`planJournalPostingOperation`)
-resolve the backing row through the shared `loadCardTransactionPolicyInputs`
-(`accounting-sync-operations.ts`): **journal LINES → `documentType = 'Card Transaction'`,
-`documentId = cardTransaction.id`**, then one `cardTransaction` query per batch (`type,
-supplierId`), with `cardTransaction.journalId` only as a fallback for unlinked journals.
-The line link is what the posting journal AND the "VOID Card Transaction" journal share —
-the void is a NEW Posted journal (`post-card-transaction`, no `reversalOfId`), so keying on
-`cardTransaction.journalId` resolved only the original and the void pushed as a plain
+resolve the backing row through the shared `loadChargePolicyInputs`
+(`accounting-sync-operations.ts`): **journal LINES → `documentType = 'Charge'`,
+`documentId = charge.id`**, then one `charge` query per batch (`type,
+supplierId`), with `charge.journalId` only as a fallback for unlinked journals.
+The line link is what the posting journal AND the "VOID Charge" journal share —
+the void is a NEW Posted journal (`post-charge`, no `reversalOfId`), so keying on
+`charge.journalId` resolved only the original and the void pushed as a plain
 journal entry on top of the charge DELETE, netting Rillet to minus one charge (found live
 2026-09-10, fixed the same day). Each charge syncer's `shouldSync` mirrors the same rule, so
 the spend reaches the provider as exactly one of the two, never both and never neither. Already-
 synced journals are never re-planned (`reconcileJournal` skips covered rows).
 Statuses: `SWEPT_CHARGE_STATUSES = ["Posted", "Voided"]`; the sweep pages
-`cardTransaction` by `transactionDate` (+ `voidedAt` for late voids) filtered to
+`charge` by `transactionDate` (+ `voidedAt` for late voids) filtered to
 `type IN ('Charge','Credit')`. `ChargeSyncerBase` handles the lifecycle uniformly: a
 successful create is mapped before the batch advances; a mapped Void invokes the provider's
 native delete and tombstones the mapping only after the provider confirms it. Rillet uses
@@ -362,9 +362,9 @@ cannot lose the earlier remote identity.
 
 **Rillet charge — live-verified 2026-09-10 on the sandbox** (`.ai/plans/2026-09-19-ramp-integration.md` Part C): `POST /charges` lands with `vendor_id` (the merchant vendor, JIT-synced), one item per coded line (`account_code`, amount, `fields[]` = the auto-provisioned Cost Center Field + value), `charge_date` = transaction date, `impact_date` = posting date, both `external_references`. Two preconditions a customer must meet, both surfaced truthfully rather than guessed: (1) every account on the charge must be mapped (Account Mapping tab → "Match by code"), else Warning `UNMAPPED_ACCOUNTS` naming the ids; (2) **the Carbon account chosen as Ramp's card liability must map to a Rillet account of subtype "Credit Card"** — Rillet rejects anything else with `400 "Account <code> is not a credit card account"` (recorded as Failed with that message; remap and Retry). Rillet IS in `CHARGE_CREDIT_PROVIDERS`: a `Credit` (Delta refund) posts as a charge whose items are negative and its journal records `Excluded/DOC_BACKED/charge` — one representation, never both (before the flip it verifiably closed Skipped with the journal pushed instead, so the mirror holds both ways).
 The tie-out needs nothing new: `getBackingDocumentDelivery` is entity-type-generic and
-`journalLine.documentId` already carries the `cardTransaction.id`.
+`journalLine.documentId` already carries the `charge.id`.
 
-`cardTransaction.supplierId` (same migration) is the merchant resolved to a Carbon
+`charge.supplierId` (same migration) is the merchant resolved to a Carbon
 supplier by the Ramp sync (`resolveMerchantSupplier`: mapping under entityType
 `merchant` by Ramp `merchant_id` → exact-name match to an existing supplier → the
 single `"Card Merchant"` **house supplier** per company — never one supplier per
@@ -374,7 +374,7 @@ card spend collapses to that catch-all vendor, each charge adapter now sets the 
 **line description** to `charge.merchantName ?? line.description ?? charge.memo` so the
 pushed charge still shows which merchant the spend was at.
 
-**Ramp inbound financial records are staged transactionally.** Card transactions and bills
+**Ramp inbound financial records are staged transactionally.** Charges and bills
 advisory-lock a company/Ramp id and atomically stage their Draft header, lines, supporting
 rows, and mapping before calling the posting edge function; ambiguous responses require a
 tenant-scoped reread proving `Posted`. Single-PO bills preserve exact covered-line provenance

@@ -444,11 +444,6 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
-    cardTransaction: (id: string) =>
-      generatePath(`${x}/invoicing/card-transactions/${id}`),
-    cardTransactions: `${x}/invoicing/card-transactions`,
-    cardTransactionVoid: (id: string) =>
-      generatePath(`${x}/invoicing/card-transactions/${id}/void`),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>
@@ -504,6 +499,10 @@ export const path = {
     // Change Notice Types — a sibling of the CO list (not nested under it), so the
     // Items sidebar doesn't highlight both entries via prefix matching.
     changeNoticeTypes: `${x}/items/change-notice-types`,
+    charge: (id: string) => generatePath(`${x}/invoicing/charges/${id}`),
+    charges: `${x}/invoicing/charges`,
+    chargeVoid: (id: string) =>
+      generatePath(`${x}/invoicing/charges/${id}/void`),
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -562,6 +561,7 @@ export const path = {
     costCenter: (id: string) =>
       generatePath(`${x}/accounting/cost-centers/${id}`),
     costCenters: `${x}/accounting/cost-centers`,
+    creditMemos: `${x}/invoicing/credit-memos`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
@@ -1458,12 +1458,13 @@ export const path = {
     materialTypes: `${x}/items/types`,
     mcpDocs: withDocsHost("https://docs.carbon.ms/api/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
-    // list lives in the invoicing nav beside Payments; details mirror payments.
+    // detail/create/post/void routes live under `x/credits`; the LIST is split
+    // by party into two invoicing submodules — customer memos surface as
+    // `creditMemos` (AR), supplier memos as `vendorCredits` (AP).
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
     memoDelete: (id: string) => generatePath(`${x}/credits/${id}/delete`),
     memoNew: `${x}/credits/new`,
     memoPost: (id: string) => generatePath(`${x}/credits/${id}/post`),
-    memos: `${x}/invoicing/credits`,
     memoVoid: (id: string) => generatePath(`${x}/credits/${id}/void`),
     methodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/${id}`),
@@ -2331,6 +2332,7 @@ export const path = {
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
+    vendorCredits: `${x}/invoicing/vendor-credits`,
     warehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}`),
     warehouseTransferDetails: (id: string) =>

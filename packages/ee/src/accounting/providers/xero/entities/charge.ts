@@ -17,9 +17,9 @@ import {
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
 import {
-  type CardTransactionCostingResult,
+  type ChargeCostingResult,
   type CostingLine,
-  loadCardTransactionCostingLines,
+  loadChargeCostingLines,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import {
@@ -40,7 +40,7 @@ import { assertXeroMoneyPrecision } from "../serialize";
 import type { XeroJournalDimensionArgs } from "./journal-entry";
 
 /**
- * XeroChargeSyncer — Carbon card transactions (Ramp card spend) → Xero bank
+ * XeroChargeSyncer — Carbon charges (Ramp card spend) → Xero bank
  * transactions (push-only, create-only; entityType "charge").
  *
  * Xero has no charge object: a card charge IS a spend-money bank transaction
@@ -48,20 +48,20 @@ import type { XeroJournalDimensionArgs } from "./journal-entry";
  * BankAccountType CREDITCARD — and a merchant refund is receive-money on the
  * same account. Xero derives the posting itself (debit each line's account,
  * credit the card account for SPEND; the reverse for RECEIVE), which is
- * exactly what Carbon's "Card Transaction" journal booked, so the lines are
- * that journal's coded lines (shared `loadCardTransactionCostingLines`,
+ * exactly what Carbon's "Charge" journal booked, so the lines are
+ * that journal's coded lines (shared `loadChargeCostingLines`,
  * card-liability line excluded) and the two ledgers cannot drift. While this
  * syncer is enabled the journal itself is DOC_BACKED-excluded per row
  * (core/posting.ts), never pushed twice.
  *
  * Only a Posted `Charge` or `Credit` with a merchant supplier is pushed —
  * Xero is in `CHARGE_CREDIT_PROVIDERS`, so a refund is a RECEIVE rather than
- * a journal entry; the other three card-transaction types are money movements
+ * a journal entry; the other three charge types are money movements
  * with no vendor and stay journal entries. Every skip here is mirrored by the
  * policy, so a skipped row's journal keeps pushing — the spend always reaches
  * Xero as exactly one of the two.
  *
- * A Voided card transaction that was pushed is deleted remotely (Xero's
+ * A Voided charge that was pushed is deleted remotely (Xero's
  * delete is a POST carrying Status DELETED) and its mapping tombstoned —
  * the same contract as the Rillet transaction syncers.
  *
@@ -69,7 +69,7 @@ import type { XeroJournalDimensionArgs } from "./journal-entry";
  * bills — never a silent fallback account.
  */
 
-/** The Carbon `cardTransaction` header as the syncer reads it. */
+/** The Carbon `charge` header as the syncer reads it. */
 export type XeroCardCharge = CardChargeSource;
 
 /** Costing lines are the shared shape; aliased so the mapper's tests read against a stable name. */
@@ -77,7 +77,7 @@ export type XeroChargePostingJournalLine = CostingLine;
 
 /** The parts of the costing result the pure mapper consumes. */
 export type XeroChargeCosting = Pick<
-  CardTransactionCostingResult,
+  ChargeCostingResult,
   | "lines"
   | "documentTotal"
   | "decimalPlaces"
@@ -137,7 +137,7 @@ function buildXeroLineTracking(
 }
 
 /**
- * Map a Carbon card transaction to the Xero bank-transaction write payload.
+ * Map a Carbon charge to the Xero bank-transaction write payload.
  * Pure — exported for tests. `costing.lines` are the posted journal's coded
  * lines (card-liability line already excluded), base-currency and
  * debit-signed; `costing.exchangeRate` converts them to the card's
@@ -148,7 +148,7 @@ function buildXeroLineTracking(
  * card) is unmapped, and refuses principal Xero's two-decimal monetary
  * boundary cannot represent.
  */
-export function mapCardTransactionToXeroBankTransaction(args: {
+export function mapChargeToXeroBankTransaction(args: {
   charge: XeroCardCharge;
   costing: XeroChargeCosting;
   vendorRemoteId: string;
@@ -199,7 +199,7 @@ export function mapCardTransactionToXeroBankTransaction(args: {
     Contact: { ContactID: args.vendorRemoteId },
     BankAccount: { Code: cardAccountCode },
     Date: costing.postingDate,
-    Reference: `${charge.cardTransactionId} [carbon:${charge.companyId}:${charge.id}]`,
+    Reference: `${charge.chargeId} [carbon:${charge.companyId}:${charge.id}]`,
     Status: "AUTHORISED",
     // Tax-neutral replay: the card posting folds tax into cost, so the lines
     // already embed it; let Xero total the NONE-taxed lines.
@@ -407,7 +407,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
   }
 
   // =================================================================
-  // 5. SHOULD SYNC — mirrors isChargeBackedCardTransaction exactly
+  // 5. SHOULD SYNC — mirrors isDocBackedCharge exactly
   // =================================================================
 
   protected shouldSync(
@@ -419,10 +419,10 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
     const local = context.localEntity;
     if (!local) return true;
     if (local.status !== "Posted") {
-      return `Card transaction must be posted before syncing (current status: ${local.status})`;
+      return `Charge must be posted before syncing (current status: ${local.status})`;
     }
     if (local.type !== "Charge" && local.type !== "Credit") {
-      return `Card transaction type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
+      return `Charge type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
     }
     if (
       local.type === "Credit" &&
@@ -457,9 +457,9 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
       );
     }
 
-    const costing = await loadCardTransactionCostingLines(this.database, {
+    const costing = await loadChargeCostingLines(this.database, {
       companyId: this.companyId,
-      cardTransactionId: local.id
+      chargeId: local.id
     });
 
     const accountCodesById = await this.getAccountCodesById();
@@ -484,7 +484,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
           warning: true,
           message: `Cannot sync card charge: the card-liability account must map to a Xero bank-type account — a credit card account in Xero (mapped code ${cardAccountCode}). Map it under the integration's Accounts tab, then retry.`,
           metadata: {
-            cardTransactionId: local.id,
+            chargeId: local.id,
             cardAccountId: costing.cardAccountId,
             cardAccountCode
           }
@@ -506,7 +506,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
       );
     }
 
-    return mapCardTransactionToXeroBankTransaction({
+    return mapChargeToXeroBankTransaction({
       charge: local,
       costing,
       vendorRemoteId,
@@ -567,7 +567,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
     const matches = existing.data.BankTransactions;
     if (matches.length > 1)
       throw new Error(
-        "Multiple Xero card transactions match this Carbon charge; resolve duplicates before retrying"
+        "Multiple Xero charges match this Carbon charge; resolve duplicates before retrying"
       );
     const match = matches[0];
     if (match) {
@@ -639,7 +639,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
     const remote = current.data?.BankTransactions?.[0];
     if (remote?.BankTransactionID !== remoteId)
       throw new Error(
-        "Xero did not return the card transaction; deletion is unconfirmed"
+        "Xero did not return the charge; deletion is unconfirmed"
       );
     if (remote.Status === "DELETED") return;
     const {
@@ -657,7 +657,7 @@ export class XeroChargeSyncer extends ChargeSyncerBase<
     if (result.error) throwXeroApiError("delete bank transaction", result);
     const deleted = result.data?.BankTransactions?.[0];
     if (deleted?.BankTransactionID !== remoteId || deleted.Status !== "DELETED")
-      throw new Error("Xero did not confirm the card transaction was deleted");
+      throw new Error("Xero did not confirm the charge was deleted");
   }
 
   // =================================================================

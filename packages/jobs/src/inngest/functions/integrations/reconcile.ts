@@ -21,7 +21,7 @@
  * handled.
  */
 import type {
-  CardTransactionPolicyInput,
+  ChargePolicyInput,
   PostingSyncSettings
 } from "@carbon/ee/accounting";
 import {
@@ -94,12 +94,12 @@ export type ReconcileEntityInput = {
    */
   journalCoverage?: { normalCovered: boolean; reversalCovered: boolean };
   /**
-   * journalEntry only, "Card Transaction" source: the backing cardTransaction
+   * journalEntry only, "Charge" source: the backing charge
    * (`type` + whether it has a supplier). A Charge with a supplier is
    * DOC_BACKED by the synced charge object when the charge entity is enabled;
    * everything else keeps pushing as a journal entry.
    */
-  cardTransaction?: CardTransactionPolicyInput | null;
+  charge?: ChargePolicyInput | null;
   /**
    * bill only: a posted "Purchase Invoice" journal exists for this bill —
    * the input the account-costed replay needs (the re-drive condition).
@@ -227,7 +227,7 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
       paymentFamily: input.context.paymentFamily,
       inventoryAdjustmentEntitySyncEnabled:
         input.context.inventoryAdjustmentEnabled,
-      cardTransaction: input.cardTransaction ?? null
+      charge: input.charge ?? null
     });
     if (planned.action === "push") {
       actions.push({ kind: "enqueue", request: planned.request });

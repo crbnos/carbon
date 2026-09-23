@@ -2538,7 +2538,7 @@ msgstr "Bu kullanıcılara daveti göndermek istediğinizden emin misiniz?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Bu kullanıcıya daveti göndermek istediğinizden emin misiniz?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Hükümsüz kılmak istediğinize emin misiniz {0}? Bu, bir mahsup yevmiye kaydı muhasebeleştirir ve geri alınamaz."
 
@@ -3460,9 +3460,6 @@ msgstr "Carbon'ın bir parça numarası olan her şey için — Parça, Malzeme,
 msgid "Card Holder"
 msgstr "Kart Sahibi"
 
-msgid "Card Transactions"
-msgstr "Kart İşlemleri"
-
 msgid "Cards"
 msgstr "Kartlar"
 
@@ -3573,6 +3570,9 @@ msgstr "Bunu değiştirmek parça kimliğini güncelleyecektir"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
+
+msgid "Charges"
+msgstr "Harcamalar"
 
 msgid "Chart"
 msgstr "Grafik"
@@ -4863,9 +4863,6 @@ msgstr "Kredi ({0})"
 msgid "Credit / debit memo"
 msgstr "Alacak / Borç Muhasebe Defteri"
 
-msgid "Credit / Debit Memos"
-msgstr "Kredi / Borç Muhasebe Notları"
-
 msgid "Credit Account"
 msgstr "Kredi Hesabı"
 
@@ -4884,6 +4881,9 @@ msgstr "Alacak tutarları şirketin temel para birimi ({currency}) cinsindendir.
 msgid "Credit Memo"
 msgstr "Alacak dekontu"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Alacak toplamı"
 
@@ -4892,9 +4892,6 @@ msgstr "Alacaklandırılmış"
 
 msgid "Credits"
 msgstr "Krediler"
-
-msgid "Credits & Debits"
-msgstr "Krediler ve Borçlar"
 
 msgid "Credits applied"
 msgstr "Uygulanan krediler"
@@ -10767,8 +10764,8 @@ msgstr "Yeni taşeron"
 msgid "New Cost Center"
 msgstr "Yeni Maliyet Merkezi"
 
-msgid "New Credit / Debit Memo"
-msgstr "Yeni Kredi / Borç Notu"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Yeni Para Birimi"
@@ -11015,6 +11012,9 @@ msgstr "Yeni Transfer Satırı"
 
 msgid "New Unit of Measure"
 msgstr "Yeni Bir Ölçü Birimi"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Yeni Sürüm"
@@ -12490,9 +12490,6 @@ msgstr "Parçalar tek bir yükte birlikte çalışır — örneğin fırın, fı
 msgid "Parts, materials, and how you classify them."
 msgstr "Parçalar, malzemeler ve bunları nasıl sınıflandırdığınız."
 
-msgid "Party Type"
-msgstr "Taraf Türü"
-
 msgid "Pass"
 msgstr "Geçerli"
 
@@ -13949,8 +13946,11 @@ msgstr "Satın alma siparişinin alınan ve faturalandırılana karşı uzlaşt�
 msgid "Record"
 msgstr "Kayıt"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Bir müşteri veya tedarikçiye karşı kredi veya borç notu kaydedin. Belirli faturaların uygulamaları, not oluşturulduktan sonra eklenir."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Müşteri ödemesi, tedarikçi ödemesi veya iade kaydedin. Faturaların veya muhasebe notlarının uygulamaları, ödeme oluşturulduktan sonra eklenir."
@@ -19245,6 +19245,12 @@ msgstr "Yalnızca sapma"
 msgid "VAT Number"
 msgstr "Vergi numarası"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Tedarikçi Kayıttan Düşme Geliri"
 
@@ -19503,8 +19509,8 @@ msgstr "Hükümsüz kıl"
 msgid "Void {0}"
 msgstr "Hükümsüz Kıl {0}"
 
-msgid "Void Card Transaction"
-msgstr "Kart İşlemini Hükümsüz Kıl"
+msgid "Void Charge"
+msgstr "Harcamayı hükümsüz kıl"
 
 msgid "Void Invoice"
 msgstr "Faturayı hükümsüz kıl"

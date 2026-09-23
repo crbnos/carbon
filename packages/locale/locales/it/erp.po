@@ -2538,7 +2538,7 @@ msgstr "Sei sicuro di voler inviare un invito a questi utenti?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sei sicuro di voler inviare un invito a questo utente?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Sei sicuro di voler stornare {0}? Questo registra una riga di registrazione di storno e non può essere annullato."
 
@@ -3460,9 +3460,6 @@ msgstr "Il singolo record di Carbon per qualsiasi cosa con un numero di componen
 msgid "Card Holder"
 msgstr "Titolare della Carta"
 
-msgid "Card Transactions"
-msgstr "Transazioni della Carta"
-
 msgid "Cards"
 msgstr "Schede"
 
@@ -3573,6 +3570,9 @@ msgstr "Modificare questo aggiornerà l'ID della parte"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiare il tipo ripristina le modifiche in bozza di questo elemento."
+
+msgid "Charges"
+msgstr "Addebiti"
 
 msgid "Chart"
 msgstr "Grafico"
@@ -4863,9 +4863,6 @@ msgstr "Credito ({0})"
 msgid "Credit / debit memo"
 msgstr "Nota di credito / nota di debito"
 
-msgid "Credit / Debit Memos"
-msgstr "Note di credito / Note di debito"
-
 msgid "Credit Account"
 msgstr "Conto Credito"
 
@@ -4884,6 +4881,9 @@ msgstr "Gli importi dei crediti sono espressi nella valuta di base dell'azienda 
 msgid "Credit Memo"
 msgstr "Nota di Credito"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Totale credito"
 
@@ -4892,9 +4892,6 @@ msgstr "Accreditato"
 
 msgid "Credits"
 msgstr "Crediti"
-
-msgid "Credits & Debits"
-msgstr "Avere e Dare"
 
 msgid "Credits applied"
 msgstr "Crediti applicati"
@@ -10767,8 +10764,8 @@ msgstr "Nuovo collaboratore esterno"
 msgid "New Cost Center"
 msgstr "Nuovo Centro di Costo"
 
-msgid "New Credit / Debit Memo"
-msgstr "Nuova nota di credito / debito"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Nuova Valuta"
@@ -11015,6 +11012,9 @@ msgstr "Nuova Riga di Trasferimento"
 
 msgid "New Unit of Measure"
 msgstr "Nuova Unità di Misura"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Nuova Versione"
@@ -12490,9 +12490,6 @@ msgstr "I componenti vengono eseguiti insieme in un unico carico — ad esempio,
 msgid "Parts, materials, and how you classify them."
 msgstr "Componenti, materiali e come li classifichi."
 
-msgid "Party Type"
-msgstr "Tipo di Parte"
-
 msgid "Pass"
 msgstr "Passa"
 
@@ -13949,8 +13946,11 @@ msgstr "Riconciliazione di un ordine di acquisto rispetto a ciò che è stato ri
 msgid "Record"
 msgstr "Registra"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Registra una nota di credito o di debito contro un cliente o fornitore. Le applicazioni a fatture specifiche vengono aggiunte dopo la creazione della nota."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Registra un pagamento cliente, un pagamento fornitore o un rimborso. Le applicazioni alle fatture o ai memo vengono aggiunte dopo la creazione del pagamento."
@@ -19245,6 +19245,12 @@ msgstr "Solo scostamento"
 msgid "VAT Number"
 msgstr "Partita IVA"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Proventi da Stralcio"
 
@@ -19503,8 +19509,8 @@ msgstr "Storna"
 msgid "Void {0}"
 msgstr "Storna {0}"
 
-msgid "Void Card Transaction"
-msgstr "Storna Transazione Carta"
+msgid "Void Charge"
+msgstr "Storna addebito"
 
 msgid "Void Invoice"
 msgstr "Storna fattura"

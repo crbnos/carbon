@@ -639,7 +639,7 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuBuilding2 className={className} />;
     case "Payment":
       return <LuBanknote className={className} />;
-    case "Card Transaction":
+    case "Charge":
       return <LuCreditCard className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;

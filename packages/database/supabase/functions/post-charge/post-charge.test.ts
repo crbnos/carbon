@@ -4,12 +4,12 @@ import {
   assertThrows,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
-  buildCardTransactionJournal,
-  type BuildCardTransactionJournalInput,
+  buildChargeJournal,
+  type BuildChargeJournalInput,
   type GLAccountClass,
-} from "./build-card-transaction-journal.ts";
+} from "./build-charge-journal.ts";
 
-// Golden-master tests for the GL journal a card transaction posts. Each asserts
+// Golden-master tests for the GL journal a charge posts. Each asserts
 // the exact natural-balance-signed `amount` on each line (asset/expense debits
 // are +, credits −; liability/revenue/equity are the mirror — see lib/utils.ts)
 // AND that the entry balances (debits == credits). One case per transaction
@@ -45,8 +45,8 @@ const debitCreditBalance = (
   }, 0);
 
 const base = (
-  over: Partial<BuildCardTransactionJournalInput> = {},
-): BuildCardTransactionJournalInput => ({
+  over: Partial<BuildChargeJournalInput> = {},
+): BuildChargeJournalInput => ({
   transaction: {
     type: "Charge",
     amount: 100,
@@ -67,7 +67,7 @@ const base = (
 // ---------------------------------------------------------------------------
 
 Deno.test("Charge with two split lines: DR each expense / CR card liability", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Charge",
@@ -87,7 +87,7 @@ Deno.test("Charge with two split lines: DR each expense / CR card liability", ()
   assertEquals(journalLines.length, 3);
   assertEquals(line(journalLines, "exp1")!.amount, 60); // debit expense
   assertEquals(line(journalLines, "exp1")!.costCenterId, "cc_1");
-  assertEquals(line(journalLines, "exp1")!.documentType, "Card Transaction");
+  assertEquals(line(journalLines, "exp1")!.documentType, "Charge");
   assertEquals(line(journalLines, "exp1")!.documentId, "ct_1");
   assertEquals(line(journalLines, "exp2")!.amount, 40); // debit expense
   assertEquals(line(journalLines, "exp2")!.costCenterId, null);
@@ -100,7 +100,7 @@ Deno.test("Charge with two split lines: DR each expense / CR card liability", ()
 // ---------------------------------------------------------------------------
 
 Deno.test("Credit: CR expense line / DR card liability", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Credit",
@@ -125,7 +125,7 @@ Deno.test("Credit: CR expense line / DR card liability", () => {
 // ---------------------------------------------------------------------------
 
 Deno.test("Payment: DR card liability / CR bank asset", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Payment",
@@ -147,7 +147,7 @@ Deno.test("Payment: DR card liability / CR bank asset", () => {
 Deno.test("Payment rejects stored coding lines that would be ignored", () => {
   assertThrows(
     () =>
-      buildCardTransactionJournal(
+      buildChargeJournal(
         base({
           transaction: {
             type: "Payment",
@@ -170,7 +170,7 @@ Deno.test("Payment rejects stored coding lines that would be ignored", () => {
 // ---------------------------------------------------------------------------
 
 Deno.test("Cashback: DR card liability / CR revenue", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Cashback",
@@ -192,7 +192,7 @@ Deno.test("Cashback: DR card liability / CR revenue", () => {
 Deno.test("Cashback rejects stored coding lines that would be ignored", () => {
   assertThrows(
     () =>
-      buildCardTransactionJournal(
+      buildChargeJournal(
         base({
           transaction: {
             type: "Cashback",
@@ -215,7 +215,7 @@ Deno.test("Cashback rejects stored coding lines that would be ignored", () => {
 // ---------------------------------------------------------------------------
 
 Deno.test("Repayment: DR bank offset / CR card liability line", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Repayment",
@@ -242,7 +242,7 @@ Deno.test("Repayment: DR bank offset / CR card liability line", () => {
 Deno.test("throws when the line sum does not equal the header amount", () => {
   assertThrows(
     () =>
-      buildCardTransactionJournal(
+      buildChargeJournal(
         base({
           transaction: {
             type: "Charge",
@@ -267,7 +267,7 @@ for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
   Deno.test(`rejects invalid coding line amount ${invalidAmount}`, () => {
     assertThrows(
       () =>
-        buildCardTransactionJournal(
+        buildChargeJournal(
           base({
             transaction: {
               type: "Charge",
@@ -299,7 +299,7 @@ for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
 // ---------------------------------------------------------------------------
 
 Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert to base (÷ rate)", () => {
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Charge",
@@ -337,7 +337,7 @@ Deno.test("Charge with three rounding lines: card side = Σ rounded lines, balan
     exp2: { class: "Expense" },
     exp3: { class: "Expense" },
   };
-  const { journalLines } = buildCardTransactionJournal(
+  const { journalLines } = buildChargeJournal(
     base({
       transaction: {
         type: "Charge",

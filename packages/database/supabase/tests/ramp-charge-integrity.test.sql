@@ -1,8 +1,8 @@
--- Card-transaction tenant integrity, lifecycle immutability, and line/header
+-- Charge tenant integrity, lifecycle immutability, and line/header
 -- serialization contract.
 -- Run from the repository root against an existing migrated local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 \
---   -f packages/database/supabase/tests/ramp-card-transaction-integrity.test.sql
+--   -f packages/database/supabase/tests/ramp-charge-integrity.test.sql
 -- All data fixtures and mutations are rolled back.
 \set ON_ERROR_STOP on
 BEGIN;
@@ -51,91 +51,91 @@ DECLARE
   header_guard text;
   line_guard text;
 BEGIN
-  ASSERT pg_temp.constraint_columns('"cardTransaction"', 'cardTransaction_pkey')
+  ASSERT pg_temp.constraint_columns('"charge"', 'charge_pkey')
     = ARRAY['id', 'companyId'],
-    'cardTransaction must use the composite tenant primary key';
-  ASSERT pg_temp.constraint_columns('"cardTransactionLine"', 'cardTransactionLine_pkey')
+    'charge must use the composite tenant primary key';
+  ASSERT pg_temp.constraint_columns('"chargeLine"', 'chargeLine_pkey')
     = ARRAY['id', 'companyId'],
-    'cardTransactionLine must use the composite tenant primary key';
-  ASSERT pg_temp.column_default('"cardTransaction"', 'id') = 'id()',
-    'cardTransaction must use the canonical id() default';
-  ASSERT pg_temp.column_default('"cardTransactionLine"', 'id') = 'id()',
-    'cardTransactionLine must use the canonical id() default';
+    'chargeLine must use the composite tenant primary key';
+  ASSERT pg_temp.column_default('"charge"', 'id') = 'id()',
+    'charge must use the canonical id() default';
+  ASSERT pg_temp.column_default('"chargeLine"', 'id') = 'id()',
+    'chargeLine must use the canonical id() default';
 
-  ASSERT pg_temp.constraint_columns('"cardTransactionLine"', 'cardTransactionLine_cardTransactionId_fkey')
-    = ARRAY['cardTransactionId', 'companyId'],
-    'cardTransactionLine parent FK must include companyId';
-  ASSERT pg_temp.constraint_columns('"cardTransactionLine"', 'cardTransactionLine_cardTransactionId_fkey', true)
+  ASSERT pg_temp.constraint_columns('"chargeLine"', 'chargeLine_chargeId_fkey')
+    = ARRAY['chargeId', 'companyId'],
+    'chargeLine parent FK must include companyId';
+  ASSERT pg_temp.constraint_columns('"chargeLine"', 'chargeLine_chargeId_fkey', true)
     = ARRAY['id', 'companyId'],
-    'cardTransactionLine parent FK must target the composite parent key';
-  ASSERT pg_temp.constraint_columns('"cardTransaction"', 'cardTransaction_supplierId_fkey')
+    'chargeLine parent FK must target the composite parent key';
+  ASSERT pg_temp.constraint_columns('"charge"', 'charge_supplierId_fkey')
     = ARRAY['supplierId', 'companyId'],
-    'cardTransaction supplier FK must include companyId';
-  ASSERT pg_temp.constraint_columns('"cardTransaction"', 'cardTransaction_supplierId_fkey', true)
+    'charge supplier FK must include companyId';
+  ASSERT pg_temp.constraint_columns('"charge"', 'charge_supplierId_fkey', true)
     = ARRAY['id', 'companyId'],
-    'cardTransaction supplier FK must target the composite supplier key';
-  ASSERT pg_temp.constraint_columns('"cardTransactionLine"', 'cardTransactionLine_costCenterId_fkey')
+    'charge supplier FK must target the composite supplier key';
+  ASSERT pg_temp.constraint_columns('"chargeLine"', 'chargeLine_costCenterId_fkey')
     = ARRAY['costCenterId', 'companyId'],
-    'cardTransactionLine cost-center FK must include companyId';
-  ASSERT pg_temp.constraint_columns('"cardTransactionLine"', 'cardTransactionLine_costCenterId_fkey', true)
+    'chargeLine cost-center FK must include companyId';
+  ASSERT pg_temp.constraint_columns('"chargeLine"', 'chargeLine_costCenterId_fkey', true)
     = ARRAY['id', 'companyId'],
-    'cardTransactionLine cost-center FK must target the composite cost-center key';
+    'chargeLine cost-center FK must target the composite cost-center key';
 
-  ASSERT pg_temp.index_columns('"cardTransactionLine_cardTransactionId_companyId_idx"')
-    = ARRAY['cardTransactionId', 'companyId'],
-    'cardTransactionLine parent FK needs a matching index';
-  ASSERT pg_temp.index_columns('"cardTransactionLine_costCenterId_companyId_idx"')
+  ASSERT pg_temp.index_columns('"chargeLine_chargeId_companyId_idx"')
+    = ARRAY['chargeId', 'companyId'],
+    'chargeLine parent FK needs a matching index';
+  ASSERT pg_temp.index_columns('"chargeLine_costCenterId_companyId_idx"')
     = ARRAY['costCenterId', 'companyId'],
-    'cardTransactionLine cost-center FK needs a matching index';
-  ASSERT pg_temp.index_columns('"cardTransaction_companyId_supplierId_idx"')
+    'chargeLine cost-center FK needs a matching index';
+  ASSERT pg_temp.index_columns('"charge_companyId_supplierId_idx"')
     = ARRAY['companyId', 'supplierId'],
-    'cardTransaction supplier FK needs a supporting index';
-  ASSERT to_regclass('"cardTransaction_cardAccountId_idx"') IS NOT NULL,
-    'cardTransaction card-account FK needs an index';
-  ASSERT to_regclass('"cardTransaction_offsetAccountId_idx"') IS NOT NULL,
-    'cardTransaction offset-account FK needs an index';
-  ASSERT to_regclass('"cardTransaction_updatedBy_idx"') IS NOT NULL,
-    'cardTransaction updatedBy FK needs an index';
-  ASSERT to_regclass('"cardTransactionLine_updatedBy_idx"') IS NOT NULL,
-    'cardTransactionLine updatedBy FK needs an index';
+    'charge supplier FK needs a supporting index';
+  ASSERT to_regclass('"charge_cardAccountId_idx"') IS NOT NULL,
+    'charge card-account FK needs an index';
+  ASSERT to_regclass('"charge_offsetAccountId_idx"') IS NOT NULL,
+    'charge offset-account FK needs an index';
+  ASSERT to_regclass('"charge_updatedBy_idx"') IS NOT NULL,
+    'charge updatedBy FK needs an index';
+  ASSERT to_regclass('"chargeLine_updatedBy_idx"') IS NOT NULL,
+    'chargeLine updatedBy FK needs an index';
   ASSERT EXISTS (
     SELECT 1
     FROM pg_constraint
-    WHERE conrelid = '"cardTransaction"'::regclass
-      AND conname = 'cardTransaction_lifecycle_audit_check'
+    WHERE conrelid = '"charge"'::regclass
+      AND conname = 'charge_lifecycle_audit_check'
       AND contype = 'c'
       AND convalidated
-  ), 'cardTransaction must have a validated lifecycle audit constraint';
+  ), 'charge must have a validated lifecycle audit constraint';
 
   SELECT pg_get_functiondef(t.tgfoid) INTO header_guard
   FROM pg_trigger t
-  WHERE t.tgrelid = '"cardTransaction"'::regclass
-    AND t.tgname = 'cardTransaction_draft_guard'
+  WHERE t.tgrelid = '"charge"'::regclass
+    AND t.tgname = 'charge_draft_guard'
     AND NOT t.tgisinternal;
   ASSERT header_guard IS NOT NULL,
-    'cardTransaction must have a lifecycle mutation guard';
+    'charge must have a lifecycle mutation guard';
 
   SELECT pg_get_functiondef(t.tgfoid) INTO line_guard
   FROM pg_trigger t
-  WHERE t.tgrelid = '"cardTransactionLine"'::regclass
-    AND t.tgname = 'cardTransactionLine_draft_guard'
+  WHERE t.tgrelid = '"chargeLine"'::regclass
+    AND t.tgname = 'chargeLine_draft_guard'
     AND NOT t.tgisinternal;
   ASSERT line_guard IS NOT NULL,
-    'cardTransactionLine must have a Draft-only mutation guard';
+    'chargeLine must have a Draft-only mutation guard';
   ASSERT line_guard ~* 'FOR UPDATE',
-    'cardTransactionLine guard must lock its parent row';
+    'chargeLine guard must lock its parent row';
 
   ASSERT (
     SELECT count(*) = 3
     FROM pg_trigger
-    WHERE tgrelid = '"cardTransaction"'::regclass
+    WHERE tgrelid = '"charge"'::regclass
       AND tgname IN (
-        'trg_event_async_ins_cardTransaction',
-        'trg_event_async_upd_cardTransaction',
-        'trg_event_async_del_cardTransaction'
+        'trg_event_async_ins_charge',
+        'trg_event_async_upd_charge',
+        'trg_event_async_del_charge'
       )
       AND NOT tgisinternal
-  ), 'cardTransaction event-system triggers must be attached exactly once';
+  ), 'charge event-system triggers must be attached exactly once';
 
   RAISE NOTICE 'PASS composite keys, tenant FKs, indexes, and trigger wiring';
 END;
@@ -194,8 +194,8 @@ BEGIN
   a := pg_temp.seed_ramp_card_company('A');
   b := pg_temp.seed_ramp_card_company('B');
 
-  INSERT INTO "cardTransaction" (
-    id, "cardTransactionId", type, status, "cardAccountId",
+  INSERT INTO "charge" (
+    id, "chargeId", type, status, "cardAccountId",
     "transactionDate", "currencyCode", amount, "companyId", "createdBy"
   ) VALUES
     (shared_header_id, 'CARD-A-' || id(), 'Charge', 'Draft', a.account_id,
@@ -207,82 +207,82 @@ BEGIN
     (b_header_id, 'CARD-B-' || id(), 'Charge', 'Draft', b.account_id,
       DATE '2026-09-11', 'USD', 10, b.company_id, 'system');
   ASSERT (
-    SELECT count(*) = 2 FROM "cardTransaction" WHERE id = shared_header_id
+    SELECT count(*) = 2 FROM "charge" WHERE id = shared_header_id
   ), 'The same generated-style id must be legal in two companies';
 
-  INSERT INTO "cardTransactionLine" (
-    id, "cardTransactionId", "companyId", "accountId", amount, "createdBy"
+  INSERT INTO "chargeLine" (
+    id, "chargeId", "companyId", "accountId", amount, "createdBy"
   ) VALUES
     (shared_line_id, shared_header_id, a.company_id, a.account_id, 10, 'system'),
     (shared_line_id, shared_header_id, b.company_id, b.account_id, 10, 'system'),
     (a_line_id, a_header_id, a.company_id, a.account_id, 10, 'system');
   ASSERT (
-    SELECT count(*) = 2 FROM "cardTransactionLine" WHERE id = shared_line_id
+    SELECT count(*) = 2 FROM "chargeLine" WHERE id = shared_line_id
   ), 'The same line id must be legal in two companies';
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET "supplierId" = b.supplier_id
       WHERE id = a_header_id AND "companyId" = a.company_id;
     ASSERT false, 'Cross-company supplier was accepted';
   EXCEPTION WHEN foreign_key_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransaction_supplierId_fkey',
+    ASSERT constraint_name = 'charge_supplierId_fkey',
       'Expected the composite supplier constraint';
   END;
 
   BEGIN
-    INSERT INTO "cardTransactionLine" (
-      "cardTransactionId", "companyId", "accountId", amount, "createdBy"
+    INSERT INTO "chargeLine" (
+      "chargeId", "companyId", "accountId", amount, "createdBy"
     ) VALUES (b_header_id, a.company_id, a.account_id, 1, 'system');
-    ASSERT false, 'Cross-company card-transaction parent was accepted';
+    ASSERT false, 'Cross-company charge parent was accepted';
   EXCEPTION WHEN foreign_key_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransactionLine_cardTransactionId_fkey',
+    ASSERT constraint_name = 'chargeLine_chargeId_fkey',
       'Expected the composite parent constraint';
   END;
 
   BEGIN
-    UPDATE "cardTransactionLine"
+    UPDATE "chargeLine"
       SET "costCenterId" = b.cost_center_id
       WHERE id = a_line_id AND "companyId" = a.company_id;
     ASSERT false, 'Cross-company cost center was accepted';
   EXCEPTION WHEN foreign_key_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransactionLine_costCenterId_fkey',
+    ASSERT constraint_name = 'chargeLine_costCenterId_fkey',
       'Expected the composite cost-center constraint';
   END;
 
   BEGIN
-    UPDATE "cardTransactionLine"
+    UPDATE "chargeLine"
       SET "accountId" = b.account_id
       WHERE id = a_line_id AND "companyId" = a.company_id;
     ASSERT false, 'Cross-group line account was accepted';
   EXCEPTION WHEN check_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransactionLine_account_companyGroup_check',
+    ASSERT constraint_name = 'chargeLine_account_companyGroup_check',
       'Expected the line account company-group guard';
   END;
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET "cardAccountId" = b.account_id
       WHERE id = a_header_id AND "companyId" = a.company_id;
     ASSERT false, 'Cross-group card account was accepted';
   EXCEPTION WHEN check_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransaction_account_companyGroup_check',
+    ASSERT constraint_name = 'charge_account_companyGroup_check',
       'Expected the company-group account guard';
   END;
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET type = 'Payment', "offsetAccountId" = b.account_id
       WHERE id = a_header_id AND "companyId" = a.company_id;
     ASSERT false, 'Cross-group offset account was accepted';
   EXCEPTION WHEN check_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransaction_account_companyGroup_check',
+    ASSERT constraint_name = 'charge_account_companyGroup_check',
       'Expected the company-group account guard';
   END;
 
@@ -294,7 +294,7 @@ CREATE FUNCTION pg_temp.assert_card_lifecycle_rejected(
   p_label text,
   p_company_id text,
   p_account_id text,
-  p_status "cardTransactionStatus",
+  p_status "chargeStatus",
   p_posting_date date,
   p_journal_id text,
   p_posted_at timestamp with time zone,
@@ -307,8 +307,8 @@ DECLARE
   constraint_name text;
 BEGIN
   BEGIN
-    INSERT INTO "cardTransaction" (
-      "cardTransactionId", type, status, "cardAccountId",
+    INSERT INTO "charge" (
+      "chargeId", type, status, "cardAccountId",
       "transactionDate", "postingDate", "currencyCode", amount,
       "journalId", "postedAt", "postedBy", "voidedAt", "voidedBy",
       "companyId", "createdBy"
@@ -320,7 +320,7 @@ BEGIN
     );
   EXCEPTION WHEN check_violation THEN
     GET STACKED DIAGNOSTICS constraint_name = CONSTRAINT_NAME;
-    ASSERT constraint_name = 'cardTransaction_lifecycle_audit_check',
+    ASSERT constraint_name = 'charge_lifecycle_audit_check',
       p_label || ' hit the wrong CHECK constraint';
     RETURN;
   END;
@@ -339,7 +339,7 @@ BEGIN
 
   -- Bypass only the ordinary lifecycle trigger inside the outer rollback so
   -- every nullable operand is exercised directly against the stored CHECK.
-  EXECUTE 'ALTER TABLE "cardTransaction" DISABLE TRIGGER "cardTransaction_draft_guard"';
+  EXECUTE 'ALTER TABLE "charge" DISABLE TRIGGER "charge_draft_guard"';
   PERFORM pg_temp.assert_card_lifecycle_rejected(
     'Draft with journalId', f.company_id, f.account_id, 'Draft',
     DATE '2026-09-11', f.journal_id, NULL, NULL, NULL, NULL
@@ -400,40 +400,40 @@ BEGIN
     'Voided without voidedBy', f.company_id, f.account_id, 'Voided',
     DATE '2026-09-11', NULL, now(), 'system', now(), NULL
   );
-  EXECUTE 'ALTER TABLE "cardTransaction" ENABLE TRIGGER "cardTransaction_draft_guard"';
+  EXECUTE 'ALTER TABLE "charge" ENABLE TRIGGER "charge_draft_guard"';
 
   BEGIN
-    INSERT INTO "cardTransaction" (
-      "cardTransactionId", type, status, "cardAccountId",
+    INSERT INTO "charge" (
+      "chargeId", type, status, "cardAccountId",
       "transactionDate", "currencyCode", amount, "companyId", "createdBy"
     ) VALUES (
       'CARD-NONDRAFT-' || id(), 'Charge', 'Posted', f.account_id,
       DATE '2026-09-11', 'USD', 1, f.company_id, 'system'
     );
-    ASSERT false, 'A card transaction was created outside Draft';
+    ASSERT false, 'A charge was created outside Draft';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
 
-  INSERT INTO "cardTransaction" (
-    id, "cardTransactionId", type, status, "cardAccountId",
+  INSERT INTO "charge" (
+    id, "chargeId", type, status, "cardAccountId",
     "transactionDate", "postingDate", "currencyCode", amount, "companyId", "createdBy"
   ) VALUES (
     header_id, 'CARD-LIFE-' || id(), 'Charge', 'Draft', f.account_id,
     DATE '2026-09-11', DATE '2026-09-11', 'USD', 10, f.company_id, 'system'
   );
-  INSERT INTO "cardTransactionLine" (
-    id, "cardTransactionId", "companyId", "accountId", amount, "createdBy"
+  INSERT INTO "chargeLine" (
+    id, "chargeId", "companyId", "accountId", amount, "createdBy"
   ) VALUES (line_id, header_id, f.company_id, f.account_id, 10, 'system');
 
-  UPDATE "cardTransaction"
+  UPDATE "charge"
     SET memo = 'Draft edit'
     WHERE id = header_id AND "companyId" = f.company_id;
-  UPDATE "cardTransactionLine"
+  UPDATE "chargeLine"
     SET description = 'Draft edit'
     WHERE id = line_id AND "companyId" = f.company_id;
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET status = 'Voided', "voidedAt" = now(), "voidedBy" = 'system'
       WHERE id = header_id AND "companyId" = f.company_id;
     ASSERT false, 'Draft-to-Voided transition was accepted';
@@ -441,7 +441,7 @@ BEGIN
   END;
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET status = 'Posted', memo = 'content changed while posting',
           "postedAt" = now(), "postedBy" = 'system'
       WHERE id = header_id AND "companyId" = f.company_id;
@@ -449,46 +449,46 @@ BEGIN
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
 
-  UPDATE "cardTransaction"
+  UPDATE "charge"
     SET status = 'Posted', "postingDate" = DATE '2026-09-11',
         "postedAt" = now(), "postedBy" = 'system',
         "updatedAt" = now(), "updatedBy" = 'system'
     WHERE id = header_id AND "companyId" = f.company_id;
 
   BEGIN
-    UPDATE "cardTransaction" SET memo = 'illegal'
+    UPDATE "charge" SET memo = 'illegal'
       WHERE id = header_id AND "companyId" = f.company_id;
     ASSERT false, 'Posted header content was mutable';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
   BEGIN
-    UPDATE "cardTransaction" SET status = 'Draft'
+    UPDATE "charge" SET status = 'Draft'
       WHERE id = header_id AND "companyId" = f.company_id;
     ASSERT false, 'Posted header reopened directly';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
   BEGIN
-    UPDATE "cardTransactionLine" SET amount = 9
+    UPDATE "chargeLine" SET amount = 9
       WHERE id = line_id AND "companyId" = f.company_id;
     ASSERT false, 'Posted parent allowed a line update';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
   BEGIN
-    INSERT INTO "cardTransactionLine" (
-      "cardTransactionId", "companyId", "accountId", amount, "createdBy"
+    INSERT INTO "chargeLine" (
+      "chargeId", "companyId", "accountId", amount, "createdBy"
     ) VALUES (header_id, f.company_id, f.account_id, 1, 'system');
     ASSERT false, 'Posted parent allowed a line insert';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
   BEGIN
-    DELETE FROM "cardTransactionLine"
+    DELETE FROM "chargeLine"
       WHERE id = line_id AND "companyId" = f.company_id;
     ASSERT false, 'Posted parent allowed a line delete';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
 
   BEGIN
-    UPDATE "cardTransaction"
+    UPDATE "charge"
       SET status = 'Voided', memo = 'changed while voiding',
           "voidedAt" = now(), "voidedBy" = 'system'
       WHERE id = header_id AND "companyId" = f.company_id;
@@ -496,38 +496,38 @@ BEGIN
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
 
-  UPDATE "cardTransaction"
+  UPDATE "charge"
     SET status = 'Voided', "voidedAt" = now(), "voidedBy" = 'system',
         "updatedAt" = now(), "updatedBy" = 'system'
     WHERE id = header_id AND "companyId" = f.company_id;
 
   BEGIN
-    UPDATE "cardTransaction" SET memo = 'illegal'
+    UPDATE "charge" SET memo = 'illegal'
       WHERE id = header_id AND "companyId" = f.company_id;
     ASSERT false, 'Voided header content was mutable';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
   BEGIN
-    DELETE FROM "cardTransaction"
+    DELETE FROM "charge"
       WHERE id = header_id AND "companyId" = f.company_id;
     ASSERT false, 'Voided header was deletable';
   EXCEPTION WHEN object_not_in_prerequisite_state THEN NULL;
   END;
 
-  INSERT INTO "cardTransaction" (
-    id, "cardTransactionId", type, status, "cardAccountId",
+  INSERT INTO "charge" (
+    id, "chargeId", type, status, "cardAccountId",
     "transactionDate", "currencyCode", amount, "companyId", "createdBy"
   ) VALUES (
     disposable_id, 'CARD-DROP-' || id(), 'Charge', 'Draft', f.account_id,
     DATE '2026-09-11', 'USD', 1, f.company_id, 'system'
   );
-  INSERT INTO "cardTransactionLine" (
-    "cardTransactionId", "companyId", "accountId", amount, "createdBy"
+  INSERT INTO "chargeLine" (
+    "chargeId", "companyId", "accountId", amount, "createdBy"
   ) VALUES (disposable_id, f.company_id, f.account_id, 1, 'system');
-  DELETE FROM "cardTransaction"
+  DELETE FROM "charge"
     WHERE id = disposable_id AND "companyId" = f.company_id;
   ASSERT NOT EXISTS (
-    SELECT 1 FROM "cardTransaction"
+    SELECT 1 FROM "charge"
     WHERE id = disposable_id AND "companyId" = f.company_id
   ), 'Draft header delete must remain legal';
 

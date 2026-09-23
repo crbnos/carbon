@@ -19,7 +19,7 @@ import {
   isDailyConsolidationMarker,
   isJournalEntryPostingEnabled,
   type JournalPostingEventInput,
-  loadCardTransactionPolicyInputs,
+  loadChargePolicyInputs,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
   mergePostingSyncReconciliation,
   mergePullCursor,
@@ -1450,16 +1450,16 @@ describe("shouldEnqueueMissingDocument", () => {
   });
 });
 
-// ── loadCardTransactionPolicyInputs ─────────────────────────────────────────
-// The backing card transaction resolves through the journal LINES' document
+// ── loadChargePolicyInputs ─────────────────────────────────────────
+// The backing charge resolves through the journal LINES' document
 // link, which the posting journal AND the void journal both carry.
-// `cardTransaction.journalId` only names the posting journal, so keying on it
-// let the void journal of a charge-backed card transaction push as a plain
+// `charge.journalId` only names the posting journal, so keying on it
+// let the void journal of a charge-backed charge push as a plain
 // journal entry on top of the charge DELETE (live on the Rillet sandbox).
 
 function stubCardClient(args: {
   lines: Array<{ journalId: string; documentId: string }>;
-  cardTransactions: Array<{
+  charges: Array<{
     id: string;
     journalId: string | null;
     type: string;
@@ -1507,14 +1507,14 @@ function stubCardClient(args: {
           })
         };
       }
-      if (table === "cardTransaction") {
+      if (table === "charge") {
         return {
           select: () => ({
             eq: () => ({
               in: async (column: string, values: string[]) => {
-                queries.push(`cardTransaction.${column}:${values.join(",")}`);
+                queries.push(`charge.${column}:${values.join(",")}`);
                 return {
-                  data: args.cardTransactions.filter((row) =>
+                  data: args.charges.filter((row) =>
                     column === "id"
                       ? values.includes(row.id)
                       : row.journalId !== null && values.includes(row.journalId)
@@ -1532,7 +1532,7 @@ function stubCardClient(args: {
   return { client, queries, ranges };
 }
 
-describe("loadCardTransactionPolicyInputs", () => {
+describe("loadChargePolicyInputs", () => {
   const hertz = {
     id: "ct_hertz",
     journalId: "je_post",
@@ -1540,15 +1540,15 @@ describe("loadCardTransactionPolicyInputs", () => {
     supplierId: "sup_hertz"
   };
 
-  it("resolves the VOID journal to the same card transaction as the posting journal", async () => {
+  it("resolves the VOID journal to the same charge as the posting journal", async () => {
     const { client, queries } = stubCardClient({
       lines: [
         { journalId: "je_post", documentId: "ct_hertz" },
         { journalId: "je_void", documentId: "ct_hertz" }
       ],
-      cardTransactions: [hertz]
+      charges: [hertz]
     });
-    const result = await loadCardTransactionPolicyInputs(client, {
+    const result = await loadChargePolicyInputs(client, {
       companyId: "co_1",
       journalIds: ["je_post", "je_void"]
     });
@@ -1564,16 +1564,16 @@ describe("loadCardTransactionPolicyInputs", () => {
     // journalId fallback query when every journal carries the link.
     expect(queries).toEqual([
       "journalLine:je_post,je_void",
-      "cardTransaction.id:ct_hertz"
+      "charge.id:ct_hertz"
     ]);
   });
 
-  it("falls back to cardTransaction.journalId for a journal whose lines carry no link", async () => {
+  it("falls back to charge.journalId for a journal whose lines carry no link", async () => {
     const { client, queries } = stubCardClient({
       lines: [],
-      cardTransactions: [{ ...hertz, supplierId: null }]
+      charges: [{ ...hertz, supplierId: null }]
     });
-    const result = await loadCardTransactionPolicyInputs(client, {
+    const result = await loadChargePolicyInputs(client, {
       companyId: "co_1",
       journalIds: ["je_post", "je_other"]
     });
@@ -1584,7 +1584,7 @@ describe("loadCardTransactionPolicyInputs", () => {
     expect(result.has("je_other")).toBe(false);
     expect(queries).toEqual([
       "journalLine:je_post,je_other",
-      "cardTransaction.journalId:je_post,je_other"
+      "charge.journalId:je_post,je_other"
     ]);
   });
 
@@ -1595,7 +1595,7 @@ describe("loadCardTransactionPolicyInputs", () => {
     }));
     const { client, ranges } = stubCardClient({
       lines: [...padding, { journalId: "je_tail", documentId: "ct_tail" }],
-      cardTransactions: [
+      charges: [
         {
           id: "ct_padding_0",
           journalId: "je_padding",
@@ -1611,7 +1611,7 @@ describe("loadCardTransactionPolicyInputs", () => {
       ]
     });
 
-    const result = await loadCardTransactionPolicyInputs(client, {
+    const result = await loadChargePolicyInputs(client, {
       companyId: "co_1",
       journalIds: ["je_padding", "je_tail"]
     });
@@ -1634,9 +1634,9 @@ describe("loadCardTransactionPolicyInputs", () => {
   it("issues no queries for an empty batch", async () => {
     const { client, queries } = stubCardClient({
       lines: [],
-      cardTransactions: []
+      charges: []
     });
-    const result = await loadCardTransactionPolicyInputs(client, {
+    const result = await loadChargePolicyInputs(client, {
       companyId: "co_1",
       journalIds: []
     });

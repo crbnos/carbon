@@ -2538,7 +2538,7 @@ msgstr "Вы уверены, что хотите отправить пригла
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Вы уверены, что хотите отправить приглашение этому пользователю?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Вы уверены, что хотите аннулировать {0}? Это проведет обратную проводку и не может быть отменено."
 
@@ -3460,9 +3460,6 @@ msgstr "Единая запись Carbon для всего, что имеет н
 msgid "Card Holder"
 msgstr "Держатель карты"
 
-msgid "Card Transactions"
-msgstr "Транзакции карты"
-
 msgid "Cards"
 msgstr "Карточки"
 
@@ -3573,6 +3570,9 @@ msgstr "Изменение этого обновит ID детали"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Изменение типа сбрасывает черновые редактирования этого элемента."
+
+msgid "Charges"
+msgstr "Списания"
 
 msgid "Chart"
 msgstr "График"
@@ -4863,9 +4863,6 @@ msgstr "Кредит ({0})"
 msgid "Credit / debit memo"
 msgstr "Кредит-нота / Дебет-нота"
 
-msgid "Credit / Debit Memos"
-msgstr "Кредит-ноты / Дебет-ноты"
-
 msgid "Credit Account"
 msgstr "Счет кредита"
 
@@ -4884,6 +4881,9 @@ msgstr "Суммы зачётов указаны в базовой валюте 
 msgid "Credit Memo"
 msgstr "Кредит-нота"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Сумма кредита"
 
@@ -4892,9 +4892,6 @@ msgstr "Скредитовано"
 
 msgid "Credits"
 msgstr "Кредиты"
-
-msgid "Credits & Debits"
-msgstr "Кредиты и дебеты"
 
 msgid "Credits applied"
 msgstr "Применённые кредиты"
@@ -10767,8 +10764,8 @@ msgstr "Новый подрядчик"
 msgid "New Cost Center"
 msgstr "Новый центр затрат"
 
-msgid "New Credit / Debit Memo"
-msgstr "Новый кредит-нота / дебет-нота"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Новая валюта"
@@ -11015,6 +11012,9 @@ msgstr "Новая Строка перемещения"
 
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Новая версия"
@@ -12490,9 +12490,6 @@ msgstr "Детали работают вместе в одной загрузк�
 msgid "Parts, materials, and how you classify them."
 msgstr "Детали, материалы и способы их классификации."
 
-msgid "Party Type"
-msgstr "Тип контрагента"
-
 msgid "Pass"
 msgstr "Пройти"
 
@@ -13949,8 +13946,11 @@ msgstr "Сверка заказа поставщику с полученными
 msgid "Record"
 msgstr "Записать"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Зафиксировать кредит-ноту или дебет-ноту против покупателя или поставщика. Применение к конкретным счетам-фактурам добавляется после создания справки."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Зафиксировать платеж покупателя, платеж поставщику или возврат. Применение к счетам-фактурам или справкам добавляется после создания платежа."
@@ -19245,6 +19245,12 @@ msgstr "Только отклонения"
 msgid "VAT Number"
 msgstr "ИНН"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Доход от списания задолженности перед поставщиком"
 
@@ -19503,8 +19509,8 @@ msgstr "Аннулировать"
 msgid "Void {0}"
 msgstr "Аннулировать {0}"
 
-msgid "Void Card Transaction"
-msgstr "Аннулировать операцию по карте"
+msgid "Void Charge"
+msgstr "Аннулировать списание"
 
 msgid "Void Invoice"
 msgstr "Аннулировать счет-фактуру"

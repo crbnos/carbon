@@ -1,28 +1,28 @@
 import { type Kysely, sql } from "kysely";
 import type { DB } from "../lib/database.ts";
 import { datetime } from "../lib/datetime.ts";
-import { postCardTransaction } from "./post-card-transaction-post.ts";
-import { voidCardTransaction } from "./post-card-transaction-void.ts";
+import { postCharge } from "./post-charge-post.ts";
+import { voidCharge } from "./post-charge-void.ts";
 
-export type PostCardTransactionArgs = {
+export type PostChargeArgs = {
   type: "post" | "void";
-  cardTransactionId: string;
+  chargeId: string;
   companyId: string;
   userId: string;
 };
 
-export function postCardTransactionTransaction(
+export function postChargeTransaction(
   db: Kysely<DB>,
-  args: PostCardTransactionArgs,
+  args: PostChargeArgs,
 ): Promise<{ journalId: string | null }> {
-  const { type, cardTransactionId, companyId, userId } = args;
+  const { type, chargeId, companyId, userId } = args;
   return db.transaction().execute(async (trx) => {
     // This is deliberately the first database read. The line mutation trigger
     // takes the same parent lock, so every snapshot below is stable.
-    const cardTransaction = await trx.selectFrom("cardTransaction")
+    const charge = await trx.selectFrom("charge")
       .select([
         "id",
-        "cardTransactionId",
+        "chargeId",
         "type",
         "status",
         "amount",
@@ -34,22 +34,22 @@ export function postCardTransactionTransaction(
         sql<string>`"transactionDate"::text`.as("transactionDate"),
         sql<string | null>`"postingDate"::text`.as("postingDate"),
       ])
-      .where("id", "=", cardTransactionId)
+      .where("id", "=", chargeId)
       .where("companyId", "=", companyId)
       .forUpdate()
       .executeTakeFirst();
-    if (!cardTransaction) throw new Error("Card transaction not found");
+    if (!charge) throw new Error("Charge not found");
 
-    if (type === "post" && cardTransaction.status === "Posted") {
-      return { journalId: cardTransaction.journalId };
+    if (type === "post" && charge.status === "Posted") {
+      return { journalId: charge.journalId };
     }
-    if (type === "void" && cardTransaction.status === "Voided") {
-      return { journalId: cardTransaction.journalId };
+    if (type === "void" && charge.status === "Voided") {
+      return { journalId: charge.journalId };
     }
     const expectedStatus = type === "post" ? "Draft" : "Posted";
-    if (cardTransaction.status !== expectedStatus) {
+    if (charge.status !== expectedStatus) {
       throw new Error(
-        `Cannot ${type} card transaction in status ${cardTransaction.status}`,
+        `Cannot ${type} charge in status ${charge.status}`,
       );
     }
 
@@ -57,7 +57,7 @@ export function postCardTransactionTransaction(
       "accountingEnabled",
     ).where("id", "=", companyId).executeTakeFirst();
     if (!settings) {
-      throw new Error("Card transaction company settings not found");
+      throw new Error("Charge company settings not found");
     }
 
     const company = await trx.selectFrom("company").select([
@@ -66,14 +66,14 @@ export function postCardTransactionTransaction(
       "timezone",
     ]).where("id", "=", companyId).executeTakeFirst();
     if (!company?.companyGroupId) {
-      throw new Error("Card transaction company configuration not found");
+      throw new Error("Charge company configuration not found");
     }
 
     const timestamp = datetime.timestamp();
     const today = datetime.today(company.timezone).toString();
     const context = {
       trx,
-      cardTransaction,
+      charge,
       company,
       accountingEnabled: settings.accountingEnabled,
       companyId,
@@ -83,7 +83,7 @@ export function postCardTransactionTransaction(
     };
 
     return type === "post"
-      ? await postCardTransaction(context)
-      : await voidCardTransaction(context);
+      ? await postCharge(context)
+      : await voidCharge(context);
   });
 }

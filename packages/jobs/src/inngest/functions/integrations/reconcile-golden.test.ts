@@ -252,7 +252,7 @@ describe("golden: journals", () => {
 // ── Documents ───────────────────────────────────────────────────────────────
 
 describe("golden: charges", () => {
-  // A Charge/Credit cardTransaction as a provider charge object — the same
+  // A Charge/Credit charge as a provider charge object — the same
   // document rules as bills/invoices, with the card statuses.
   const postedCharge = { status: "Posted", updatedAt: "2026-08-12T01:00:00Z" };
 
@@ -333,10 +333,10 @@ describe("golden: charges", () => {
         entityType: "journalEntry",
         snapshot: {
           status: "Posted",
-          sourceType: "Card Transaction",
+          sourceType: "Charge",
           reversalOfId: null
         },
-        cardTransaction: { type: "Charge", hasSupplier: true }
+        charge: { type: "Charge", hasSupplier: true }
       })
     );
     expect(kinds(decision)).toEqual(["record-terminal"]);
@@ -348,10 +348,10 @@ describe("golden: charges", () => {
         entityType: "journalEntry",
         snapshot: {
           status: "Posted",
-          sourceType: "Card Transaction",
+          sourceType: "Charge",
           reversalOfId: null
         },
-        cardTransaction: { type: "Payment", hasSupplier: false }
+        charge: { type: "Payment", hasSupplier: false }
       })
     );
     expect(kinds(decision)).toEqual(["enqueue"]);

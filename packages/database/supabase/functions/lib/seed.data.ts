@@ -495,9 +495,9 @@ export const sequences = [
     step: 1
   },
   {
-    table: "cardTransaction",
-    name: "Card Transaction",
-    prefix: "CARD-%{yyyy}-%{mm}-",
+    table: "charge",
+    name: "Charge",
+    prefix: "CHG-%{yyyy}-%{mm}-",
     suffix: null,
     next: 0,
     size: 6,

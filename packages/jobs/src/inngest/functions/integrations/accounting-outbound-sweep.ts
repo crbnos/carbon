@@ -88,12 +88,7 @@ type SweepContext = {
 
 async function pageIds(args: {
   ctx: SweepContext;
-  table:
-    | "journal"
-    | "purchaseInvoice"
-    | "salesInvoice"
-    | "payment"
-    | "cardTransaction";
+  table: "journal" | "purchaseInvoice" | "salesInvoice" | "payment" | "charge";
   statuses: readonly string[];
   dateColumn: string;
   floor: string;
@@ -323,7 +318,7 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("payments: provider has no outbound payment push");
   }
 
-  // Card charges (Charge/Credit cardTransactions) — the provider's native
+  // Card charges (Charge/Credit charges) — the provider's native
   // card-charge object. Same two-page shape as payments: `transactionDate`
   // for the window (postingDate is nullable) plus `voidedAt` for late voids.
   const chargeConfig = provider.getSyncConfig("charge");
@@ -338,7 +333,7 @@ async function sweepCompanyProvider(args: {
     const chargeTypes = (query: any) => query.in("type", ["Charge", "Credit"]);
     const chargeIds = await pageIds({
       ctx,
-      table: "cardTransaction",
+      table: "charge",
       statuses: SWEPT_CHARGE_STATUSES,
       dateColumn: "transactionDate",
       floor,
@@ -346,7 +341,7 @@ async function sweepCompanyProvider(args: {
     });
     const lateVoidedChargeIds = await pageIds({
       ctx,
-      table: "cardTransaction",
+      table: "charge",
       statuses: ["Voided"],
       dateColumn: "voidedAt",
       floor,

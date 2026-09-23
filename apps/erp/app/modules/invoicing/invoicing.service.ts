@@ -41,8 +41,8 @@ import {
   getCustomerShipping
 } from "../sales/sales.service";
 import type {
-  CardTransactionStatusType,
-  CardTransactionType,
+  ChargeStatusType,
+  ChargeType,
   invoiceSettlementValidator,
   memoValidator,
   PaymentStatusType,
@@ -1431,36 +1431,36 @@ export async function getPayments(
   return query;
 }
 
-export async function getCardTransaction(
+export async function getCharge(
   client: SupabaseClient<Database>,
   companyId: string,
   id: string
 ) {
   return client
-    .from("cardTransaction")
-    .select("*, cardTransactionLine(*)")
+    .from("charge")
+    .select("*, chargeLine(*)")
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
 }
 
-export async function getCardTransactions(
+export async function getCharges(
   client: SupabaseClient<Database>,
   companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
-    type: CardTransactionType | null;
-    status: CardTransactionStatusType | null;
+    type: ChargeType | null;
+    status: ChargeStatusType | null;
   }
 ) {
   let query = client
-    .from("cardTransaction")
+    .from("charge")
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
   if (args.search) {
     query = query.or(
-      `cardTransactionId.ilike.%${args.search}%,merchantName.ilike.%${args.search}%`
+      `chargeId.ilike.%${args.search}%,merchantName.ilike.%${args.search}%`
     );
   }
   if (args.type) {
@@ -1470,10 +1470,10 @@ export async function getCardTransactions(
     query = query.eq("status", args.status);
   }
 
-  // Default to newest first by the sequential cardTransactionId
-  // (CARD-yyyy-mm-NNNNNN), mirroring getPayments' paymentId desc default.
+  // Default to newest first by the sequential chargeId
+  // (CHG-yyyy-mm-NNNNNN), mirroring getPayments' paymentId desc default.
   query = setGenericQueryFilters(query, args, [
-    { column: "cardTransactionId", ascending: false }
+    { column: "chargeId", ascending: false }
   ]);
   return query;
 }
@@ -2914,6 +2914,10 @@ export async function getMemos(
     direction: "Credit" | "Debit" | null;
     status: "Draft" | "Posted" | "Voided" | null;
     counterpartyIds: string[] | null;
+    // Restrict to one party. A memo carries exactly one of customerId /
+    // supplierId, so the two invoicing submodules pass "customer" (Credit Memos,
+    // AR) or "supplier" (Vendor Credits, AP); null returns both parties.
+    party: "customer" | "supplier" | null;
   }
 ) {
   let query = client
@@ -2923,6 +2927,11 @@ export async function getMemos(
 
   if (args.search) {
     query = query.ilike("memoId", `%${args.search}%`);
+  }
+  if (args.party === "customer") {
+    query = query.not("customerId", "is", null);
+  } else if (args.party === "supplier") {
+    query = query.not("supplierId", "is", null);
   }
   if (args.direction) {
     query = query.eq("direction", args.direction);

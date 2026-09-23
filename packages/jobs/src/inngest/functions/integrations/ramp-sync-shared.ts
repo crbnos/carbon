@@ -20,7 +20,7 @@ import type { getJobDatabaseClient } from "../../../db";
 
 type CarbonClient = SupabaseClient<Database>;
 
-const CARD_TRANSACTIONS_PATH = "/x/invoicing/card-transactions";
+const CHARGES_PATH = "/x/invoicing/charges";
 const PURCHASE_INVOICE_PATH = "/x/purchase-invoice";
 
 export type SyncItem = {
@@ -195,8 +195,8 @@ export async function verifyProjects(
   return null;
 }
 
-export function cardTransactionsDeepLinkUrl(): string {
-  return `${getAppUrl()}${CARD_TRANSACTIONS_PATH}`;
+export function chargesDeepLinkUrl(): string {
+  return `${getAppUrl()}${CHARGES_PATH}`;
 }
 
 export function invoiceDeepLinkUrl(invoiceRowId: string): string {

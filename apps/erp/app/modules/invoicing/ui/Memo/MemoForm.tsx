@@ -9,19 +9,11 @@ import {
   CardTitle,
   DropdownMenuIcon,
   DropdownMenuItem,
-  FormControl,
-  FormLabel,
-  Select as PartySelect,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -35,7 +27,6 @@ import {
   Hidden,
   Input,
   Number,
-  Select,
   SequenceOrCustomId,
   Submit,
   Supplier,
@@ -43,21 +34,25 @@ import {
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import {
-  isMemoLocked,
-  memoDirection,
-  memoValidator
-} from "~/modules/invoicing";
+import { isMemoLocked, memoValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import MemoStatus from "./MemoStatus";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
 
+// The one memo document is presented as two forms. `type` fixes both the party
+// and the internal Credit/Debit direction, so neither is a user choice:
+//   creditMemo  → customer, direction Credit (reduces what the customer owes)
+//   vendorCredit → supplier, direction Debit  (reduces what you owe the vendor)
+// The direction field is hidden and the type is announced in the header.
+export type MemoType = "creditMemo" | "vendorCredit";
+
 type MemoFormProps = {
   initialValues: MemoFormValues & { status?: string };
+  type: MemoType;
 };
 
-const MemoForm = ({ initialValues }: MemoFormProps) => {
+const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(
@@ -77,19 +72,9 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
   const deleteModal = useDisclosure();
   const voidModal = useDisclosure();
 
-  // Party type is a UI-only toggle — NOT a validator field. It switches which of
-  // customerId/supplierId is shown; the hidden one stays empty. A memo can be for
-  // a customer OR a supplier in either direction (all four combos are valid), so
-  // this is independent of the direction control below. When editing, derive the
-  // initial value from whichever party id is set.
-  const [partyType, setPartyType] = useState<"Customer" | "Supplier">(
-    initialValues.supplierId ? "Supplier" : "Customer"
-  );
-
-  const directionOptions = memoDirection.map((d) => ({
-    label: <Enumerable value={d} />,
-    value: d
-  }));
+  const isVendor = type === "vendorCredit";
+  const direction: "Credit" | "Debit" = isVendor ? "Debit" : "Credit";
+  const typeLabel = isVendor ? t`Vendor Credit` : t`Credit Memo`;
 
   return (
     <>
@@ -106,7 +91,7 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
               title={initialValues.memoId ?? ""}
               status={
                 <>
-                  <Enumerable value={initialValues.direction} />
+                  <Enumerable value={typeLabel} />
                   <MemoStatus status={status} />
                 </>
               }
@@ -150,19 +135,33 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
           ) : (
             <CardHeader>
               <CardTitle>
-                <Trans>New Credit / Debit Memo</Trans>
+                {isVendor ? (
+                  <Trans>New Vendor Credit</Trans>
+                ) : (
+                  <Trans>New Credit Memo</Trans>
+                )}
               </CardTitle>
               <CardDescription>
-                <Trans>
-                  Record a credit or debit memo against a customer or supplier.
-                  Applications to specific invoices are added after the memo is
-                  created.
-                </Trans>
+                {isVendor ? (
+                  <Trans>
+                    Record a credit from a supplier — it reduces what you owe
+                    them. Applications to specific invoices are added after it
+                    is created.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    Record a credit memo for a customer — it reduces what they
+                    owe. Applications to specific invoices are added after it is
+                    created.
+                  </Trans>
+                )}
               </CardDescription>
             </CardHeader>
           )}
           <CardContent>
             <Hidden name="id" />
+            {/* Direction is fixed by the memo type, never chosen. */}
+            <Hidden name="direction" value={direction} />
             {isEditing && <Hidden name="memoId" />}
             <VStack>
               <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
@@ -173,42 +172,10 @@ const MemoForm = ({ initialValues }: MemoFormProps) => {
                     table="memo"
                   />
                 )}
-                <Select
-                  name="direction"
-                  label={t`Direction`}
-                  options={directionOptions}
-                />
-                {/* UI-only party-type select; no validator field. It only
-                    controls which of customerId/supplierId is shown. */}
-                <FormControl>
-                  <FormLabel>
-                    <Trans>Party Type</Trans>
-                  </FormLabel>
-                  <PartySelect
-                    value={partyType}
-                    onValueChange={(value) => {
-                      if (value === "Customer" || value === "Supplier") {
-                        setPartyType(value);
-                      }
-                    }}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Customer">
-                        <Enumerable value="Customer" />
-                      </SelectItem>
-                      <SelectItem value="Supplier">
-                        <Enumerable value="Supplier" />
-                      </SelectItem>
-                    </SelectContent>
-                  </PartySelect>
-                </FormControl>
-                {partyType === "Customer" ? (
-                  <Customer name="customerId" label={t`Customer`} />
-                ) : (
+                {isVendor ? (
                   <Supplier name="supplierId" label={t`Supplier`} />
+                ) : (
+                  <Customer name="customerId" label={t`Customer`} />
                 )}
                 <DatePicker name="memoDate" label={t`Memo Date`} />
                 <Currency name="currencyCode" label={t`Currency`} />

@@ -2538,7 +2538,7 @@ msgstr "이 사용자들에게 초대를 보내시겠습니까?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "이 사용자에게 초대를 보내시겠습니까?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "{0}을(를) 무효 처리하시겠습니까? 역기입 분개가 전기되며 취소할 수 없습니다."
 
@@ -3460,9 +3460,6 @@ msgstr "Carbon의 부품 번호를 가진 모든 것에 대한 단일 레코드 
 msgid "Card Holder"
 msgstr "카드 소유자"
 
-msgid "Card Transactions"
-msgstr "카드 거래"
-
 msgid "Cards"
 msgstr "카드"
 
@@ -3573,6 +3570,9 @@ msgstr "이를 변경하면 품목 ID가 업데이트됩니다"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "유형을 변경하면 이 항목의 초안 편집이 재설정됩니다."
+
+msgid "Charges"
+msgstr "청구"
 
 msgid "Chart"
 msgstr "차트"
@@ -4863,9 +4863,6 @@ msgstr "대변 ({0})"
 msgid "Credit / debit memo"
 msgstr "신용 / 차변 메모"
 
-msgid "Credit / Debit Memos"
-msgstr "대변/차변 메모"
-
 msgid "Credit Account"
 msgstr "대변 계정"
 
@@ -4884,6 +4881,9 @@ msgstr "크레딧 금액은 회사 기본 통화({currency})로 표시됩니다.
 msgid "Credit Memo"
 msgstr "대변전표"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "크레딧 합계"
 
@@ -4892,9 +4892,6 @@ msgstr "크레딧됨"
 
 msgid "Credits"
 msgstr "대변"
-
-msgid "Credits & Debits"
-msgstr "대변 및 차변"
 
 msgid "Credits applied"
 msgstr "적용된 크레딧"
@@ -10767,8 +10764,8 @@ msgstr "신규 외주 인력"
 msgid "New Cost Center"
 msgstr "신규 원가 센터"
 
-msgid "New Credit / Debit Memo"
-msgstr "신규 대변/차변 메모"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "신규 통화"
@@ -11015,6 +11012,9 @@ msgstr "신규 이송 라인"
 
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "새 버전"
@@ -12490,9 +12490,6 @@ msgstr "부품은 한 로드에서 함께 실행됩니다 — 예: 용광로, �
 msgid "Parts, materials, and how you classify them."
 msgstr "부품, 자재 및 이를 분류하는 방법."
 
-msgid "Party Type"
-msgstr "당사자 유형"
-
 msgid "Pass"
 msgstr "합격"
 
@@ -13949,8 +13946,11 @@ msgstr "발주서를 입고 및 송장 발행된 내용과 대조하기 — Carb
 msgid "Record"
 msgstr "기록"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "고객 또는 공급업체에 대해 신용증 또는 차감증을 기록하세요. 특정 송장에 대한 적용은 메모가 생성된 후에 추가됩니다."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "고객 지불, 공급업체 지불 또는 환불을 기록합니다. 지불 생성 후 송장 또는 메모에 대한 적용이 추가됩니다."
@@ -19245,6 +19245,12 @@ msgstr "차이만"
 msgid "VAT Number"
 msgstr "사업자등록번호"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "공급업체 대손 처리 수익"
 
@@ -19503,8 +19509,8 @@ msgstr "무효 처리"
 msgid "Void {0}"
 msgstr "{0} 무효 처리"
 
-msgid "Void Card Transaction"
-msgstr "카드 거래 무효 처리"
+msgid "Void Charge"
+msgstr "청구 무효 처리"
 
 msgid "Void Invoice"
 msgstr "송장 무효 처리"

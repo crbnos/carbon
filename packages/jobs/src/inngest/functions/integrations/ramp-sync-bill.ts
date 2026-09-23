@@ -112,7 +112,7 @@ async function buildBillLines(
 
   // `account` (chart of accounts) is scoped by companyGroupId, NOT companyId —
   // it has no companyId column, so filtering by it errored and made every coded
-  // bill fail "Failed to verify accounts". Mirror the card-transaction builder:
+  // bill fail "Failed to verify accounts". Mirror the charge builder:
   // scope to the group (the ids are Carbon's pushed account.id, so group-scoping
   // is both correct and tenant-safe).
   const accountIds = [...new Set(lines.map((line) => line.accountId))];

@@ -4,17 +4,17 @@ import type { DB } from "../lib/database.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
 import {
-  buildCardTransactionJournal,
+  buildChargeJournal,
   type GLAccountClass,
-} from "./build-card-transaction-journal.ts";
+} from "./build-charge-journal.ts";
 import { allocateJournalLineIds } from "./journal-line-ids.ts";
 
-export type CardTransactionContext = {
+export type ChargeContext = {
   trx: Transaction<DB>;
-  cardTransaction: Pick<
-    Selectable<DB["cardTransaction"]>,
+  charge: Pick<
+    Selectable<DB["charge"]>,
     | "id"
-    | "cardTransactionId"
+    | "chargeId"
     | "type"
     | "status"
     | "amount"
@@ -42,12 +42,12 @@ function isAccountClass(value: string | null): value is GLAccountClass {
     value === "Revenue" || value === "Expense";
 }
 
-export async function postCardTransaction(
-  context: CardTransactionContext,
+export async function postCharge(
+  context: ChargeContext,
 ): Promise<{ journalId: string | null }> {
   const {
     trx,
-    cardTransaction,
+    charge,
     company,
     accountingEnabled,
     companyId,
@@ -56,17 +56,17 @@ export async function postCardTransaction(
   } = context;
   // The parent lock serializes line writes. Locking line tuples too would
   // deadlock with an UPDATE whose BEFORE trigger is waiting for that parent.
-  const lines = await trx.selectFrom("cardTransactionLine").selectAll()
-    .where("cardTransactionId", "=", cardTransaction.id)
+  const lines = await trx.selectFrom("chargeLine").selectAll()
+    .where("chargeId", "=", charge.id)
     .where("companyId", "=", companyId)
     .orderBy("sequence")
     .orderBy("id")
     .execute();
   const accountIds = [
     ...new Set([
-      cardTransaction.cardAccountId,
-      ...(cardTransaction.offsetAccountId
-        ? [cardTransaction.offsetAccountId]
+      charge.cardAccountId,
+      ...(charge.offsetAccountId
+        ? [charge.offsetAccountId]
         : []),
       ...lines.map((line) => line.accountId),
     ]),
@@ -84,30 +84,30 @@ export async function postCardTransaction(
     postingAccounts.some((account) => !isAccountClass(account.class))
   ) {
     throw new Error(
-      "Card transaction accounts must be active posting accounts in this company group",
+      "Charge accounts must be active posting accounts in this company group",
     );
   }
   const accounts: Record<string, { class: GLAccountClass }> = {};
   for (const account of postingAccounts) {
     if (!isAccountClass(account.class)) {
-      throw new Error("Card transaction account class is missing");
+      throw new Error("Charge account class is missing");
     }
     accounts[account.id] = { class: account.class };
   }
-  if (accounts[cardTransaction.cardAccountId]?.class !== "Liability") {
+  if (accounts[charge.cardAccountId]?.class !== "Liability") {
     throw new Error(
-      "Card transaction card account must be a Liability account",
+      "Charge card account must be a Liability account",
     );
   }
   if (
-    cardTransaction.type === "Payment" && cardTransaction.offsetAccountId &&
-    accounts[cardTransaction.offsetAccountId]?.class !== "Asset"
+    charge.type === "Payment" && charge.offsetAccountId &&
+    accounts[charge.offsetAccountId]?.class !== "Asset"
   ) {
     throw new Error("Card payment offset account must be an Asset account");
   }
   if (
-    cardTransaction.type === "Cashback" && cardTransaction.offsetAccountId &&
-    accounts[cardTransaction.offsetAccountId]?.class !== "Revenue"
+    charge.type === "Cashback" && charge.offsetAccountId &&
+    accounts[charge.offsetAccountId]?.class !== "Revenue"
   ) {
     throw new Error("Card cashback offset account must be a Revenue account");
   }
@@ -123,7 +123,7 @@ export async function postCardTransaction(
       .where("id", "in", costCenterIds)
       .execute();
     if (costCenters.length !== costCenterIds.length) {
-      throw new Error("Card transaction cost center not found in this company");
+      throw new Error("Charge cost center not found in this company");
     }
   }
 
@@ -138,12 +138,12 @@ export async function postCardTransaction(
       .where("id", "in", projectIds)
       .execute();
     if (projects.length !== projectIds.length) {
-      throw new Error("Card transaction project not found in this company");
+      throw new Error("Charge project not found in this company");
     }
   }
 
-  let postingDate = cardTransaction.postingDate ??
-    cardTransaction.transactionDate;
+  let postingDate = charge.postingDate ??
+    charge.transactionDate;
   let journalId: string | null = null;
   if (accountingEnabled) {
     const period = await resolveAccountingPeriod(
@@ -153,14 +153,14 @@ export async function postCardTransaction(
       "historical-with-shift",
     );
     postingDate = period.postingDate;
-    const built = buildCardTransactionJournal({
+    const built = buildChargeJournal({
       transaction: {
-        type: cardTransaction.type,
-        amount: Number(cardTransaction.amount),
-        cardAccountId: cardTransaction.cardAccountId,
-        offsetAccountId: cardTransaction.offsetAccountId,
-        currencyCode: cardTransaction.currencyCode,
-        exchangeRate: Number(cardTransaction.exchangeRate),
+        type: charge.type,
+        amount: Number(charge.amount),
+        cardAccountId: charge.cardAccountId,
+        offsetAccountId: charge.offsetAccountId,
+        currencyCode: charge.currencyCode,
+        exchangeRate: Number(charge.exchangeRate),
       },
       lines: lines.map((line) => ({
         accountId: line.accountId,
@@ -170,8 +170,8 @@ export async function postCardTransaction(
         description: line.description,
       })),
       accounts,
-      documentId: cardTransaction.id,
-      documentReadableId: cardTransaction.cardTransactionId,
+      documentId: charge.id,
+      documentReadableId: charge.chargeId,
     });
     const dimensions = costCenterIds.length
       ? await trx.selectFrom("dimension").select("id")
@@ -205,10 +205,10 @@ export async function postCardTransaction(
     const journal = await trx.insertInto("journal").values({
       journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
       accountingPeriodId: period.id,
-      description: `Card Transaction ${cardTransaction.cardTransactionId}`,
+      description: `Charge ${charge.chargeId}`,
       postingDate,
       companyId,
-      sourceType: "Card Transaction",
+      sourceType: "Charge",
       status: "Posted",
       postedAt: timestamp,
       postedBy: userId,
@@ -229,7 +229,7 @@ export async function postCardTransaction(
         amount: line.amount,
         quantity: 1,
         description: line.description,
-        documentType: "Card Transaction" as const,
+        documentType: "Charge" as const,
         documentId: line.documentId,
         journalLineReference,
         companyId,
@@ -274,7 +274,7 @@ export async function postCardTransaction(
     }
   }
 
-  await trx.updateTable("cardTransaction").set({
+  await trx.updateTable("charge").set({
     status: "Posted",
     journalId,
     postingDate,
@@ -282,7 +282,7 @@ export async function postCardTransaction(
     postedBy: userId,
     updatedAt: timestamp,
     updatedBy: userId,
-  }).where("id", "=", cardTransaction.id)
+  }).where("id", "=", charge.id)
     .where("companyId", "=", companyId)
     .execute();
   return { journalId };

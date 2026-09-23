@@ -11,7 +11,7 @@ integration is active, and exactly what ends up in Rillet. Grounded in
 
 Here's the full path a Ramp credit-card charge takes, and exactly what ends up in Rillet.
 
-### 1. Ramp → Carbon (inbound `ramp-sync`, `ramp-card-transactions` step)
+### 1. Ramp → Carbon (inbound `ramp-sync`, `ramp-charges` step)
 
 A cardholder codes the charge in Ramp (GL account + optionally a cost center) and marks it
 ready. The hourly sweep/webhook fires `ramp-sync`, which pulls transactions with
@@ -22,19 +22,19 @@ ready. The hourly sweep/webhook fires `ramp-sync`, which pulls transactions with
   `merchant_id` → name → auto-create tagged "Card Merchant"),
 - reads the coding off `line_items[].accounting_field_selections` (`codeSelections`): GL
   account (`account.id`) + cost center (`carbon-cost-center` option),
-- atomically stages a **Draft `cardTransaction`** (type `Charge`) + coded lines + the Ramp
-  mapping, then posts it via the `post-card-transaction` edge function.
+- atomically stages a **Draft `charge`** (type `Charge`) + coded lines + the Ramp
+  mapping, then posts it via the `post-charge` edge function.
 
 ### 2. Carbon posts the GL journal
 
-`post-card-transaction` books: **debit each coded line's account, credit the card-liability
+`post-charge` books: **debit each coded line's account, credit the card-liability
 account** (the one configured on the Ramp integration), in base currency. The row becomes a
 Posted `Charge` with a `supplierId` and a `journalId`.
 
 ### 3. Carbon → Rillet (as a native **charge**, not a journal entry)
 
 Because it's a Posted `Charge` with a supplier and the `charge` entity is enabled, the
-posting policy (`isChargeBackedCardTransaction` → `posting.ts:157`) marks the card-transaction
+posting policy (`isDocBackedCharge` → `posting.ts:157`) marks the charge
 journal **`DOC_BACKED`** — so the journal is **not** pushed as a journal entry. Instead
 `RilletChargeSyncer` pushes Rillet's native object via `POST /charges`
 (`providers/rillet/entities/charge.ts`), JIT-syncing the merchant as a Rillet vendor first.
@@ -75,7 +75,7 @@ represented once, never as charge *and* journal (that double-count was a real bu
   **no vendor**, so they stay **journal entries** (posting sync is always-on): the statement
   payment shows in Rillet as a JE that debits the credit-card account and credits the bank,
   paying down the liability the charge created.
-- **Void** — voiding the Carbon card transaction issues `DELETE /charges/{id}` in Rillet
+- **Void** — voiding the Carbon charge issues `DELETE /charges/{id}` in Rillet
   (tombstoned only after Rillet confirms).
 
 Net: in Rillet you get the coded credit-card **charge** (with vendor, cost center, receipt)
@@ -96,7 +96,7 @@ lands, and what's notable about this T&E case specifically.
    auto-attach; lunch is a photo), and it goes `SYNC_READY`.
 2. **Ramp → Carbon:** `ramp-sync` pulls it, resolves the **merchant → a Carbon supplier**
    ("Uber", "Sweetgreen" — auto-created, tagged *Card Merchant*), reads the coded expense
-   account + cost center, and posts a `cardTransaction` (`Charge`): **debit Travel/Meals,
+   account + cost center, and posts a `charge` (`Charge`): **debit Travel/Meals,
    credit the card-liability account**.
 3. **Carbon → Rillet:** it's a Posted `Charge` with a supplier, so it pushes as a Rillet
    **charge** (not a journal): `vendor_id` = Uber/Sweetgreen, one `item` coded to the

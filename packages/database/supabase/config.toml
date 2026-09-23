@@ -214,10 +214,10 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-nonconformance/index.ts"
 
-[functions.post-card-transaction]
+[functions.post-charge]
 enabled = true
 verify_jwt = true
-entrypoint = "./functions/post-card-transaction/index.ts"
+entrypoint = "./functions/post-charge/index.ts"
 
 [functions.batch-operations]
 enabled = true

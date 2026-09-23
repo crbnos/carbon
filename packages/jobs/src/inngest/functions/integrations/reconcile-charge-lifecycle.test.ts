@@ -73,9 +73,7 @@ describe.each([
           in: async () => ({
             error: null,
             data:
-              table === "cardTransaction"
-                ? [{ id: "charge-1", status: "Voided" }]
-                : []
+              table === "charge" ? [{ id: "charge-1", status: "Voided" }] : []
           })
         };
         return query;
@@ -149,7 +147,7 @@ describe.each([
     const localSource: CardChargeSource = {
       id: "charge-1",
       companyId: "company-1",
-      cardTransactionId: "CARD-1",
+      chargeId: "CARD-1",
       type: "Charge",
       status: "Voided",
       supplierId: "supplier",

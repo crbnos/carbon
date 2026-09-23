@@ -2538,7 +2538,7 @@ msgstr "Are you sure you want to send an invite to these users?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Are you sure you want to send an invite to this user?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 
@@ -3460,9 +3460,6 @@ msgstr "Carbon's single record for anything with a part number — Part, Materia
 msgid "Card Holder"
 msgstr "Card Holder"
 
-msgid "Card Transactions"
-msgstr "Card Transactions"
-
 msgid "Cards"
 msgstr "Cards"
 
@@ -3573,6 +3570,9 @@ msgstr "Changing this will update the part ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Changing type resets this item's draft edits."
+
+msgid "Charges"
+msgstr "Charges"
 
 msgid "Chart"
 msgstr "Chart"
@@ -4863,9 +4863,6 @@ msgstr "Credit ({0})"
 msgid "Credit / debit memo"
 msgstr "Credit / debit memo"
 
-msgid "Credit / Debit Memos"
-msgstr "Credit / Debit Memos"
-
 msgid "Credit Account"
 msgstr "Credit Account"
 
@@ -4884,6 +4881,9 @@ msgstr "Credit amounts are in company base currency ({currency}). Credits take e
 msgid "Credit Memo"
 msgstr "Credit Memo"
 
+msgid "Credit Memos"
+msgstr "Credit Memos"
+
 msgid "Credit total"
 msgstr "Credit total"
 
@@ -4892,9 +4892,6 @@ msgstr "Credited"
 
 msgid "Credits"
 msgstr "Credits"
-
-msgid "Credits & Debits"
-msgstr "Credits & Debits"
 
 msgid "Credits applied"
 msgstr "Credits applied"
@@ -10767,8 +10764,8 @@ msgstr "New Contractor"
 msgid "New Cost Center"
 msgstr "New Cost Center"
 
-msgid "New Credit / Debit Memo"
-msgstr "New Credit / Debit Memo"
+msgid "New Credit Memo"
+msgstr "New Credit Memo"
 
 msgid "New Currency"
 msgstr "New Currency"
@@ -11015,6 +11012,9 @@ msgstr "New Transfer Line"
 
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
+
+msgid "New Vendor Credit"
+msgstr "New Vendor Credit"
 
 msgid "New Version"
 msgstr "New Version"
@@ -12490,9 +12490,6 @@ msgstr "Parts run together in one load — e.g. a furnace, oven, or plating bath
 msgid "Parts, materials, and how you classify them."
 msgstr "Parts, materials, and how you classify them."
 
-msgid "Party Type"
-msgstr "Party Type"
-
 msgid "Pass"
 msgstr "Pass"
 
@@ -13949,8 +13946,11 @@ msgstr "Reconciling a purchase order against what was received and invoiced — 
 msgid "Record"
 msgstr "Record"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
@@ -19245,6 +19245,12 @@ msgstr "Variance only"
 msgid "VAT Number"
 msgstr "VAT Number"
 
+msgid "Vendor Credit"
+msgstr "Vendor Credit"
+
+msgid "Vendor Credits"
+msgstr "Vendor Credits"
+
 msgid "Vendor Write-Off Income"
 msgstr "Vendor Write-Off Income"
 
@@ -19503,8 +19509,8 @@ msgstr "Void"
 msgid "Void {0}"
 msgstr "Void {0}"
 
-msgid "Void Card Transaction"
-msgstr "Void Card Transaction"
+msgid "Void Charge"
+msgstr "Void Charge"
 
 msgid "Void Invoice"
 msgstr "Void Invoice"

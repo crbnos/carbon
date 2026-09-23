@@ -255,8 +255,8 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       owner: "carbon"
     },
     charge: {
-      // Card charges (Charge/Credit cardTransactions) push as the provider's
-      // native card-charge object; while enabled, their "Card Transaction"
+      // Card charges (Charge/Credit charges) push as the provider's
+      // native card-charge object; while enabled, their "Charge"
       // journals are DOC_BACKED-excluded per row (core/posting.ts) so the
       // same spend is never both a journal entry and a charge.
       enabled: true,
@@ -380,7 +380,7 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
-  "Card Transaction": {
+  Charge: {
     representation: "journal",
     defaultEnabled: true,
     defaultGranularity: "individual"

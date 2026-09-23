@@ -19,8 +19,8 @@ import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 import { syncRampBillPayments, syncRampBills } from "./ramp-sync-bill";
 import {
-  syncRampCardTransactions,
   syncRampCashbacks,
+  syncRampCharges,
   syncRampTransfers
 } from "./ramp-sync-card";
 import { countRampSyncFailures } from "./ramp-sync-observability";
@@ -147,8 +147,8 @@ export const rampSyncFunction = inngest.createFunction(
       }
     });
 
-    const cardResult = await step.run("ramp-card-transactions", () =>
-      syncRampCardTransactions(ctx, ramp, entityId, cardLiabilityAccountId)
+    const cardResult = await step.run("ramp-charges", () =>
+      syncRampCharges(ctx, ramp, entityId, cardLiabilityAccountId)
     );
     const transferResult = await step.run("ramp-transfers", () =>
       syncRampTransfers(ctx, ramp, entityId, cardLiabilityAccountId)

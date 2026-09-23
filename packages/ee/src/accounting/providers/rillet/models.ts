@@ -341,7 +341,7 @@ export namespace Rillet {
    * A credit-card charge (`/charges`, spec `ChargeRequest`): Rillet derives
    * the posting itself — debit each item's `account_code`, credit the
    * `credit_card_account_code` liability — which is exactly what Carbon's
-   * "Card Transaction" journal books, so the two ledgers cannot drift.
+   * "Charge" journal books, so the two ledgers cannot drift.
    */
   export const ChargeSchema = z.object({
     id: z.string(),

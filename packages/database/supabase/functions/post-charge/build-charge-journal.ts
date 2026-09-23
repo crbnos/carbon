@@ -1,4 +1,4 @@
-// Pure construction of the GL journal for posting a card transaction (Ramp and
+// Pure construction of the GL journal for posting a charge (Ramp and
 // other card integrations). No DB, no I/O, no clock — so it is unit-testable
 // with `deno test`. The posting transaction resolves the account classes,
 // accounting period, journalLineReference and cost-center dimensions (all
@@ -36,14 +36,14 @@ export type GLAccountClass =
 // The lowercase form the credit()/debit() helpers accept.
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
-export type CardTransactionType =
+export type ChargeType =
   | "Charge"
   | "Credit"
   | "Payment"
   | "Cashback"
   | "Repayment";
 
-export interface CardTransactionLineInput {
+export interface ChargeLineInput {
   accountId: string;
   amount: number;
   costCenterId?: string | null;
@@ -51,22 +51,22 @@ export interface CardTransactionLineInput {
   description?: string | null;
 }
 
-export interface BuildCardTransactionJournalInput {
+export interface BuildChargeJournalInput {
   transaction: {
-    type: CardTransactionType;
+    type: ChargeType;
     amount: number;
     cardAccountId: string;
     offsetAccountId: string | null;
     currencyCode: string;
     exchangeRate: number;
   };
-  lines: CardTransactionLineInput[];
+  lines: ChargeLineInput[];
   // Resolved account classes, keyed by accountId. Only the accounts this
   // transaction touches need be present.
   accounts: Record<string, { class: GLAccountClass }>;
-  // Internal cardTransaction record id — becomes `documentId` on every line.
+  // Internal charge record id — becomes `documentId` on every line.
   documentId: string;
-  // Human-readable id (cardTransactionId) — used only in error messages.
+  // Human-readable id (chargeId) — used only in error messages.
   documentReadableId: string;
 }
 
@@ -74,18 +74,18 @@ export interface BuildCardTransactionJournalInput {
 // shouldn't depend on the generated DB types. The driver adds `journalId`,
 // `journalLineReference`, `companyId` and `quantity` before the Kysely insert,
 // and consumes `costCenterId` to write the CostCenter journalLineDimension.
-export interface CardTransactionJournalLine {
+export interface ChargeJournalLine {
   accountId: string;
   amount: number;
   description: string;
-  documentType: "Card Transaction";
+  documentType: "Charge";
   documentId: string;
   costCenterId?: string | null;
   projectId?: string | null;
 }
 
-export interface BuildCardTransactionJournalResult {
-  journalLines: CardTransactionJournalLine[];
+export interface BuildChargeJournalResult {
+  journalLines: ChargeJournalLine[];
 }
 
 // Maximum residual (base ccy) tolerated before refusing to post. Above this a
@@ -94,9 +94,9 @@ export interface BuildCardTransactionJournalResult {
 // residuals), NOT the float-noise EPSILON.
 const BALANCE_TOLERANCE = 0.01;
 
-export function buildCardTransactionJournal(
-  input: BuildCardTransactionJournalInput,
-): BuildCardTransactionJournalResult {
+export function buildChargeJournal(
+  input: BuildChargeJournalInput,
+): BuildChargeJournalResult {
   const { transaction, lines, accounts, documentId, documentReadableId } =
     input;
   const { type, amount, cardAccountId, offsetAccountId, exchangeRate } =
@@ -118,13 +118,13 @@ export function buildCardTransactionJournal(
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
-        `Card transaction ${documentReadableId}: missing account class for ${accountId}`,
+        `Charge ${documentReadableId}: missing account class for ${accountId}`,
       );
     }
     return account.class.toLowerCase() as AccountType;
   };
 
-  const journalLines: CardTransactionJournalLine[] = [];
+  const journalLines: ChargeJournalLine[] = [];
   // True debit(+)/credit(−) space. A balanced double entry sums to ~0 here.
   let signedDebitTotal = 0;
 
@@ -146,7 +146,7 @@ export function buildCardTransactionJournal(
         ? debit(accountType, magnitude)
         : credit(accountType, magnitude),
       description: fields.description,
-      documentType: "Card Transaction",
+      documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
       projectId: fields.projectId ?? null,
@@ -158,18 +158,18 @@ export function buildCardTransactionJournal(
   const requireLineSum = () => {
     if (lines.length === 0) {
       throw new Error(
-        `Card transaction ${documentReadableId}: ${type} requires at least one line`,
+        `Charge ${documentReadableId}: ${type} requires at least one line`,
       );
     }
     if (lines.some((line) => !Number.isFinite(line.amount) || line.amount <= 0)) {
       throw new Error(
-        `Card transaction ${documentReadableId}: coding line amounts must be finite and greater than zero`,
+        `Charge ${documentReadableId}: coding line amounts must be finite and greater than zero`,
       );
     }
     const lineSum = lines.reduce((sum, l) => sum + l.amount, 0);
     if (Math.abs(lineSum - amount) > EPSILON) {
       throw new Error(
-        `Card transaction ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`,
+        `Charge ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`,
       );
     }
   };
@@ -180,7 +180,7 @@ export function buildCardTransactionJournal(
   const requireNoLines = () => {
     if (lines.length > 0) {
       throw new Error(
-        `Card transaction ${documentReadableId}: ${type} cannot have coding lines`,
+        `Charge ${documentReadableId}: ${type} cannot have coding lines`,
       );
     }
   };
@@ -188,7 +188,7 @@ export function buildCardTransactionJournal(
   const requireOffset = (): string => {
     if (!offsetAccountId) {
       throw new Error(
-        `Card transaction ${documentReadableId}: ${type} requires an offset account`,
+        `Charge ${documentReadableId}: ${type} requires an offset account`,
       );
     }
     return offsetAccountId;
@@ -293,9 +293,9 @@ export function buildCardTransactionJournal(
     }
 
     default: {
-      // Exhaustiveness guard — a new cardTransactionType must add a branch here.
+      // Exhaustiveness guard — a new chargeType must add a branch here.
       throw new Error(
-        `Card transaction ${documentReadableId}: unsupported type ${type as string}`,
+        `Charge ${documentReadableId}: unsupported type ${type as string}`,
       );
     }
   }
@@ -312,7 +312,7 @@ export function buildCardTransactionJournal(
     signedDebitTotal,
     0,
     BALANCE_TOLERANCE,
-    "Card transaction journal",
+    "Charge journal",
   );
 
   return { journalLines };

@@ -2538,7 +2538,7 @@ msgstr "¿Estás seguro de que deseas enviar una invitación a estos usuarios?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "¿Estás seguro de que deseas enviar una invitación a este usuario?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "¿Estás seguro de que deseas anular {0}? Esto contabilizará un apunte de reversión y no se puede deshacer."
 
@@ -3460,9 +3460,6 @@ msgstr "Registro único de Carbon para cualquier cosa con un número de pieza �
 msgid "Card Holder"
 msgstr "Titular de la Tarjeta"
 
-msgid "Card Transactions"
-msgstr "Transacciones de Tarjeta"
-
 msgid "Cards"
 msgstr "Tarjetas"
 
@@ -3573,6 +3570,9 @@ msgstr "Cambiar esto actualizará el ID de la pieza"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Cambiar el tipo restablece los borradores editados de este elemento."
+
+msgid "Charges"
+msgstr "Cargos"
 
 msgid "Chart"
 msgstr "Gráfico"
@@ -4863,9 +4863,6 @@ msgstr "Crédito ({0})"
 msgid "Credit / debit memo"
 msgstr "Nota de crédito / Nota de débito"
 
-msgid "Credit / Debit Memos"
-msgstr "Notas de crédito / Notas de débito"
-
 msgid "Credit Account"
 msgstr "Cuenta de Crédito"
 
@@ -4884,6 +4881,9 @@ msgstr "Los importes de crédito están expresados en la moneda base de la empre
 msgid "Credit Memo"
 msgstr "Nota de Crédito"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Total de Crédito"
 
@@ -4892,9 +4892,6 @@ msgstr "Acreditado"
 
 msgid "Credits"
 msgstr "Créditos"
-
-msgid "Credits & Debits"
-msgstr "Haberes y débitos"
 
 msgid "Credits applied"
 msgstr "Créditos aplicados"
@@ -10767,8 +10764,8 @@ msgstr "Nuevo Contratista"
 msgid "New Cost Center"
 msgstr "Nuevo Centro de Costos"
 
-msgid "New Credit / Debit Memo"
-msgstr "Nuevo memorando de crédito/débito"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Nueva Moneda"
@@ -11015,6 +11012,9 @@ msgstr "Nueva Línea de Transferencia"
 
 msgid "New Unit of Measure"
 msgstr "Nueva Unidad de Medida"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Nueva Versión"
@@ -12490,9 +12490,6 @@ msgstr "Las piezas se ejecutan juntas en una sola carga, por ejemplo en un horno
 msgid "Parts, materials, and how you classify them."
 msgstr "Piezas, materiales y cómo los clasificas."
 
-msgid "Party Type"
-msgstr "Tipo de Parte"
-
 msgid "Pass"
 msgstr "Aprobar"
 
@@ -13949,8 +13946,11 @@ msgstr "Conciliación de una orden de compra contra lo que se recibió y se fact
 msgid "Record"
 msgstr "Registro"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Registrar una nota de crédito o débito contra un cliente o proveedor. Las aplicaciones a facturas específicas se agregan después de que se crea la nota."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Registre un pago del cliente, un pago al proveedor, o un reembolso. Las aplicaciones a facturas o memorandos se agregan después de que se crea el pago."
@@ -19245,6 +19245,12 @@ msgstr "Solo desviación"
 msgid "VAT Number"
 msgstr "Número de IVA"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Ingresos por cancelación contable de proveedor"
 
@@ -19503,8 +19509,8 @@ msgstr "Anular"
 msgid "Void {0}"
 msgstr "Anular {0}"
 
-msgid "Void Card Transaction"
-msgstr "Anular Transacción de Tarjeta"
+msgid "Void Charge"
+msgstr "Anular cargo"
 
 msgid "Void Invoice"
 msgstr "Anular Factura"

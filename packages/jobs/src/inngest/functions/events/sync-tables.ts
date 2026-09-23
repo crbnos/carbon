@@ -22,7 +22,7 @@ export const TABLE_TO_ENTITY_MAP: Partial<
   salesOrder: "salesOrder",
   journal: "journalEntry",
   payment: "payment",
-  cardTransaction: "charge"
+  charge: "charge"
 };
 
 export function getEntityTypeFromTable(

@@ -2538,7 +2538,7 @@ msgstr "Czy na pewno chcesz wysłać zaproszenie do tych użytkowników?"
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Czy na pewno chcesz unieważnić {0}? To zaksięguje odwracający zapis księgowy i nie będzie możliwe do cofnięcia."
 
@@ -3460,9 +3460,6 @@ msgstr "Pojedynczy rekord Carbon dla wszystkiego z numerem części — Część
 msgid "Card Holder"
 msgstr "Posiadacz Karty"
 
-msgid "Card Transactions"
-msgstr "Transakcje Kartą"
-
 msgid "Cards"
 msgstr "Karty"
 
@@ -3573,6 +3570,9 @@ msgstr "Zmiana tego zaktualizuje identyfikator części"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Zmiana typu resetuje zmiany wersji roboczej tego artykułu."
+
+msgid "Charges"
+msgstr "Obciążenia"
 
 msgid "Chart"
 msgstr "Wykres"
@@ -4863,9 +4863,6 @@ msgstr "Kredyt ({0})"
 msgid "Credit / debit memo"
 msgstr "Faktura korygująca / Nota debetowa"
 
-msgid "Credit / Debit Memos"
-msgstr "Faktury korygujące / Noty debetowe"
-
 msgid "Credit Account"
 msgstr "Konto Kredytowe"
 
@@ -4884,6 +4881,9 @@ msgstr "Kwoty uznań są wyrażone w walucie bazowej firmy ({currency}). Uznania
 msgid "Credit Memo"
 msgstr "Faktura korygująca"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Razem kredyt"
 
@@ -4892,9 +4892,6 @@ msgstr "Zarachowany"
 
 msgid "Credits"
 msgstr "Kredyty"
-
-msgid "Credits & Debits"
-msgstr "Ma i Winien"
 
 msgid "Credits applied"
 msgstr "Zastosowane kredyty"
@@ -10767,8 +10764,8 @@ msgstr "Nowy pracownik zewnętrzny"
 msgid "New Cost Center"
 msgstr "Nowe miejsce powstawania kosztów"
 
-msgid "New Credit / Debit Memo"
-msgstr "Nowa Nota Kredytowa / Debetowa"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Nowa waluta"
@@ -11015,6 +11012,9 @@ msgstr "Nowa Pozycja przesunięcia"
 
 msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Nowa wersja"
@@ -12490,9 +12490,6 @@ msgstr "Części uruchamiane razem w jednym ładunku — np. piec, piekarnik lub
 msgid "Parts, materials, and how you classify them."
 msgstr "Części, materiały i sposób ich klasyfikacji."
 
-msgid "Party Type"
-msgstr "Typ strony"
-
 msgid "Pass"
 msgstr "Zatwierdź"
 
@@ -13949,8 +13946,11 @@ msgstr "Uzgadnianie zamówienia zakupu z tym, co zostało przyjęte i zafakturow
 msgid "Record"
 msgstr "Nagrywaj"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Zarejestruj notę kredytową lub debetową dla klienta lub dostawcy. Zastosowania do konkretnych faktur są dodawane po utworzeniu noty."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Zarejestruj płatność od klienta, płatność dla dostawcy lub zwrot. Zastosowania do faktur lub not są dodawane po utworzeniu płatności."
@@ -19245,6 +19245,12 @@ msgstr "Tylko odchylenie"
 msgid "VAT Number"
 msgstr "NIP"
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Przychody ze spisania od dostawcy"
 
@@ -19503,8 +19509,8 @@ msgstr "Unieważnij"
 msgid "Void {0}"
 msgstr "Unieważnij {0}"
 
-msgid "Void Card Transaction"
-msgstr "Unieważnij transakcję kartą"
+msgid "Void Charge"
+msgstr "Unieważnij obciążenie"
 
 msgid "Void Invoice"
 msgstr "Unieważnij fakturę"

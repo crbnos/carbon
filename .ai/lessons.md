@@ -1340,7 +1340,7 @@ any new `memo` writer.
 
 ---
 
-**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-card-transaction 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
+**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-charge 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
 
 **Problem:** The `account` (chart of accounts) table is scoped by **`companyGroupId`, not `companyId`** — it has **no `companyId` column** and its PK is `id` alone (globally unique). Four separate sites wrote `.from("account")…​.eq("companyId", companyId)`, which PostgREST rejects ("column companyId does not exist"). Each caller either 500'd or swallowed the error and behaved as if zero accounts existed. The bug was invisible to unit tests (they mock the data, never hit the query) and recurred because a well-meaning "add companyId scoping everywhere" self-review pass applied the standard multi-tenant pattern to a table that breaks it. Same class as `item` (single-column PK, globally unique).
 
@@ -1740,7 +1740,7 @@ full-screen ERP route.
 
 **Rule:** Identify a custom Ramp field by `category_info.external_id` (the `id` Carbon created it with), and keep that constant in one pure, unit-tested module (`packages/ee/src/ramp/lib/coding.ts`). Treat every Carbon → Ramp push as a converge (list, diff by fingerprint, create/PATCH/hide) and verify the *inbound* leg of a custom field on the sandbox separately from the native GL account. A tag the customer typed must fail loudly if it cannot be kept — never post a balanced journal that lost it.
 
-**Applies to:** `pushCostCenters` / `pushChartOfAccounts` and any future Ramp coding field (departments, locations); `codeSelections`; `post-card-transaction`'s dimension write; and, generally, any integration where a provider echoes an ERP-created object under a different classification than the ERP's own.
+**Applies to:** `pushCostCenters` / `pushChartOfAccounts` and any future Ramp coding field (departments, locations); `codeSelections`; `post-charge`'s dimension write; and, generally, any integration where a provider echoes an ERP-created object under a different classification than the ERP's own.
 
 ## A per-row document representation must be decided in ONE place the policy and the syncer both read
 
@@ -1748,7 +1748,7 @@ full-screen ERP route.
 
 **Problem:** If the two rules drift — the policy excludes the journal but the syncer skips the charge (no supplier, unsupported Credit), or the reverse — the spend reaches the provider as both a journal entry and a charge, or as neither. Neither failure is loud: DOC_BACKED is a terminal "handled" disposition and a syncer skip is a benign reason string.
 
-**Rule:** Put the eligibility rule in one pure function (`isChargeBackedCardTransaction(row, docSync)`) with explicit inputs (`type`, `hasSupplier`, provider capability set `CHARGE_CREDIT_PROVIDERS`), have the executor/planner resolve those inputs with one query per batch, and make every adapter's `shouldSync` restate the same conditions with the same constants. Pin both sides in tests (`posting-policy.test.ts`, the adapter's mapper tests, `reconcile-golden`).
+**Rule:** Put the eligibility rule in one pure function (`isDocBackedCharge(row, docSync)`) with explicit inputs (`type`, `hasSupplier`, provider capability set `CHARGE_CREDIT_PROVIDERS`), have the executor/planner resolve those inputs with one query per batch, and make every adapter's `shouldSync` restate the same conditions with the same constants. Pin both sides in tests (`posting-policy.test.ts`, the adapter's mapper tests, `reconcile-golden`).
 
 **Applies to:** any future "document instead of journal" family whose eligibility depends on the row rather than the source type (returns, memos, per-provider capabilities).
 
@@ -1764,23 +1764,23 @@ full-screen ERP route.
 
 ## A document-backed journal is found through its LINES' document link, never through the document's own journalId
 
-**Context:** Card charges as provider objects (2026-09-10). A `cardTransaction` books TWO journals over its life — the posting journal (`cardTransaction.journalId`) and, on void, a NEW Posted "VOID Card Transaction" journal with no `reversalOfId`. Both carry `journalLine.documentType = 'Card Transaction'` / `documentId = <card id>`.
+**Context:** Card charges as provider objects (2026-09-10). A `charge` books TWO journals over its life — the posting journal (`charge.journalId`) and, on void, a NEW Posted "VOID Charge" journal with no `reversalOfId`. Both carry `journalLine.documentType = 'Charge'` / `documentId = <card id>`.
 
-**Problem:** The reconciler resolved the backing card transaction by `cardTransaction.journalId`, so only the posting journal was DOC_BACKED. The void journal looked like a plain journal, pushed to Rillet as a journal entry on top of the charge DELETE, and Rillet netted to minus one charge — invisible in unit tests, found only by voiding on the live sandbox and reading Rillet's GL.
+**Problem:** The reconciler resolved the backing charge by `charge.journalId`, so only the posting journal was DOC_BACKED. The void journal looked like a plain journal, pushed to Rillet as a journal entry on top of the charge DELETE, and Rillet netted to minus one charge — invisible in unit tests, found only by voiding on the live sandbox and reading Rillet's GL.
 
 **Rule:** When a journal's disposition depends on a backing document, resolve journal → document through the journal lines' `documentType`/`documentId` (one batch query), which every journal the document produces shares; treat the document's own `journalId` column as a fallback for unlinked rows. And any DOC_BACKED carve-out must be exercised across the document's full lifecycle (post → void) on a real provider before it is called done.
 
-**Applies to:** `loadCardTransactionPolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
+**Applies to:** `loadChargePolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
 
 ## Integration money shapes are contracts, not interchangeable numbers
 
-**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated card-transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
+**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
 
 **Problem:** One generic converter treated every number as minor units, understating a `$123.45` fallback to `$1.23`; missing values became zero, unknown currency precision became two decimals, and unresolved foreign exchange rates became one. Those defaults turned malformed or incomplete provider payloads into apparently valid financial documents.
 
 **Rule:** Normalize each provider money field through a helper tied to its verified wire shape. Reject missing, non-finite, fractional-minor, currency-mismatched, or unverified bare-number values per item. Currency precision and exchange rates are required accounting facts; never guess them or silently post foreign currency at par.
 
-**Applies to:** Ramp card transactions, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
+**Applies to:** Ramp charges, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
 
 ## An external mapping must be committed with the Draft it makes idempotent
 
@@ -1844,13 +1844,13 @@ full-screen ERP route.
 
 ## Idempotent mappings do not make mutable Drafts immutable
 
-**Context:** Ramp retries find an existing external mapping before staging and posting a card transaction.
+**Context:** Ramp retries find an existing external mapping before staging and posting a charge.
 
 **Problem:** Treating every mapping as completed caused a corrected provider record to post the stale Carbon Draft left by an earlier failed attempt. The mapping proved identity, not finalization.
 
 **Rule:** Branch retry behavior on the mapped entity's lifecycle state. Refresh a mutable Draft and its lines atomically under the same lock used for posting; only a finalized, observably Posted entity may bypass source normalization and be reconfirmed unchanged.
 
-**Applies to:** Ramp card transactions, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
+**Applies to:** Ramp charges, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
 
 ## Never correlate bulk-insert results by RETURNING position
 
@@ -1880,7 +1880,7 @@ full-screen ERP route.
 
 **Rule:** Validate every document coding amount as finite and strictly positive before applying debit/credit semantics. A balanced journal is necessary but does not prove the document's line-level meaning is valid.
 
-**Applies to:** Card transaction coding lines and other financial document builders that assign journal direction separately from stored line magnitude.
+**Applies to:** Charge coding lines and other financial document builders that assign journal direction separately from stored line magnitude.
 
 ## Unverified write contracts need a code-level release gate
 
@@ -1924,13 +1924,13 @@ full-screen ERP route.
 
 ## Lifecycle transitions need a stored state invariant
 
-**Context:** Card transactions use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
+**Context:** Charges use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
 
 **Problem:** Transition guards constrained how a row could change but did not guarantee that every stored status had its required audit shape. A status-only write could leave a Posted or Voided row without its actor and timestamp evidence.
 
 **Rule:** Pair lifecycle transition guards with a validated database CHECK that defines every legal stored state. Fail migration preflight with row identities when existing data violates the invariant; never fabricate missing audit actors or timestamps.
 
-**Applies to:** Card transactions and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
+**Applies to:** Charges and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
 
 ## A RAISE in a completion RPC aborts the UPDATE that triggered it
 

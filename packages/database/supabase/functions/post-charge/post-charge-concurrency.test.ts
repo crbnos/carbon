@@ -5,15 +5,15 @@ import {
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { sql } from "kysely";
 import {
-  cardTransactionFixture,
+  chargeFixture,
   databaseTest,
-} from "./post-card-transaction-test-fixture.ts";
-import { postCardTransactionTransaction } from "./post-card-transaction-transaction.ts";
+} from "./post-charge-test-fixture.ts";
+import { postChargeTransaction } from "./post-charge-transaction.ts";
 
 databaseTest(
   "an edit started after posting's parent lock waits and then refuses",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     const poster = await f.connect();
     const writer = await f.connect();
     const posterPid =
@@ -33,7 +33,7 @@ databaseTest(
         if (
           !paused &&
           result.rows.some((row) =>
-            row.id === f.cardTransactionId && row.status === "Draft"
+            row.id === f.chargeId && row.status === "Draft"
           )
         ) {
           paused = true;
@@ -50,7 +50,7 @@ databaseTest(
     try {
       await sql`SET statement_timeout = '5s'`.execute(poster);
       await sql`SET statement_timeout = '5s'`.execute(writer);
-      posting = postCardTransactionTransaction(postingDb, f.args).then(
+      posting = postChargeTransaction(postingDb, f.args).then(
         (value) => ({ status: "fulfilled" as const, value }),
         (reason) => ({ status: "rejected" as const, reason }),
       );
@@ -63,7 +63,7 @@ databaseTest(
           );
         }),
       ]);
-      edit = writer.updateTable("cardTransactionLine").set({
+      edit = writer.updateTable("chargeLine").set({
         description: "Too late",
       })
         .where("id", "=", f.lineId).where("companyId", "=", f.companyId)
@@ -111,13 +111,13 @@ databaseTest(
 );
 
 databaseTest("concurrent posting retries create one journal", async () => {
-  const f = await cardTransactionFixture();
+  const f = await chargeFixture();
   const left = await f.connect();
   const right = await f.connect();
   try {
     const results = await Promise.all([
-      postCardTransactionTransaction(left, f.args),
-      postCardTransactionTransaction(right, f.args),
+      postChargeTransaction(left, f.args),
+      postChargeTransaction(right, f.args),
     ]);
     assertEquals(results[0], results[1]);
     assertEquals(
@@ -125,7 +125,7 @@ databaseTest("concurrent posting retries create one journal", async () => {
         "companyId",
         "=",
         f.companyId,
-      ).where("sourceType", "=", "Card Transaction").execute()).length,
+      ).where("sourceType", "=", "Charge").execute()).length,
       1,
     );
   } finally {
@@ -138,15 +138,15 @@ databaseTest("concurrent posting retries create one journal", async () => {
 databaseTest(
   "concurrent void retries create one reversal journal",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     const left = await f.connect();
     const right = await f.connect();
     try {
-      const posted = await postCardTransactionTransaction(f.db, f.args);
+      const posted = await postChargeTransaction(f.db, f.args);
       const args = { ...f.args, type: "void" as const };
       const results = await Promise.all([
-        postCardTransactionTransaction(left, args),
-        postCardTransactionTransaction(right, args),
+        postChargeTransaction(left, args),
+        postChargeTransaction(right, args),
       ]);
       assertEquals(results, [posted, posted]);
       assertEquals(
@@ -154,14 +154,14 @@ databaseTest(
           "companyId",
           "=",
           f.companyId,
-        ).where("sourceType", "=", "Card Transaction").execute()).length,
+        ).where("sourceType", "=", "Charge").execute()).length,
         2,
       );
       assertEquals(
-        (await f.db.selectFrom("cardTransaction").select("status").where(
+        (await f.db.selectFrom("charge").select("status").where(
           "id",
           "=",
-          f.cardTransactionId,
+          f.chargeId,
         ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
           .status,
         "Voided",
@@ -175,7 +175,7 @@ databaseTest(
 );
 
 databaseTest("a line mutation holds the parent lock until commit", async () => {
-  const f = await cardTransactionFixture();
+  const f = await chargeFixture();
   const writer = await f.connect();
   const poster = await f.connect();
   let releaseWriter!: () => void;
@@ -189,7 +189,7 @@ databaseTest("a line mutation holds the parent lock until commit", async () => {
   let heldMutation: Promise<void> | undefined;
   try {
     heldMutation = writer.transaction().execute(async (trx) => {
-      await trx.updateTable("cardTransactionLine").set({
+      await trx.updateTable("chargeLine").set({
         description: "Committed before posting",
       }).where("id", "=", f.lineId).where(
         "companyId",
@@ -202,14 +202,14 @@ databaseTest("a line mutation holds the parent lock until commit", async () => {
     await writerReady;
     await sql`SET lock_timeout = '250ms'`.execute(poster);
     await assertRejects(
-      () => postCardTransactionTransaction(poster, f.args),
+      () => postChargeTransaction(poster, f.args),
       Error,
       "lock timeout",
     );
     releaseWriter();
     await heldMutation;
     await sql`SET lock_timeout = '0'`.execute(poster);
-    const result = await postCardTransactionTransaction(poster, f.args);
+    const result = await postChargeTransaction(poster, f.args);
     const descriptions = await f.db.selectFrom("journalLine").select(
       "description",
     ).where("journalId", "=", result.journalId!).execute();

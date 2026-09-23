@@ -138,7 +138,7 @@ export const RampTransactionSchema = z
     // as a last-resort fallback. Verified 2026-08-28 against the OpenAPI spec.
     amount: z.number().optional(),
     // The settlement amount to the entity — signed integer in minor units
-    // (cents). This is the field ramp-sync should read for card transactions.
+    // (cents). This is the field ramp-sync should read for charges.
     entity_amount: RampSignedAmountSchema.nullish(),
     // The amount the merchant originally charged — signed integer minor units.
     merchant_amount: RampSignedAmountSchema.nullish(),

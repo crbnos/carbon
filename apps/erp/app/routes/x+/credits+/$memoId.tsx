@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -17,9 +18,24 @@ import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+// The memo detail page is one shared URL (so every inbound path.to.memo(id)
+// link keeps working), but its crumb is party-aware: supplier memos are Vendor
+// Credits (AP), customer memos are Credit Memos (AR), followed by the memo id.
 export const handle: Handle = {
-  breadcrumb: "Credit / Debit Memos",
-  to: path.to.memos
+  breadcrumb: (_params: unknown, data: unknown) => {
+    const memo = (
+      data as
+        | { memo?: { supplierId?: string | null; memoId?: string } }
+        | undefined
+    )?.memo;
+    return [
+      memo?.supplierId
+        ? { breadcrumb: msg`Vendor Credits`, to: path.to.vendorCredits }
+        : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos },
+      { breadcrumb: memo?.memoId }
+    ];
+  },
+  module: "invoicing"
 };
 
 // A memo is just the credit/debit document — create it, then post it. Applying
@@ -36,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const memo = await getMemo(client, memoId);
   if (memo.error || !memo.data) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(memo.error, "Failed to load memo"))
     );
   }
@@ -64,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const existing = await getMemo(client, memoId);
   if (existing.error || !existing.data) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(existing.error, "Failed to load memo"))
     );
   }
@@ -113,9 +129,11 @@ export default function MemoDetailRoute() {
     status: memo.status ?? undefined
   };
 
+  const type = memo.supplierId ? "vendorCredit" : "creditMemo";
+
   return (
     <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <MemoForm initialValues={initialValues} />
+      <MemoForm initialValues={initialValues} type={type} />
       <MemoApplicationsPanel
         rows={applications}
         currencyCode={memo.currencyCode ?? "USD"}

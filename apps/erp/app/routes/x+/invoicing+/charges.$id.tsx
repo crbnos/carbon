@@ -28,7 +28,7 @@ import { Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm } from "~/components/Modals";
 import { useCurrencyFormatter, usePermissions } from "~/hooks";
-import { CardTransactionStatus, getCardTransaction } from "~/modules/invoicing";
+import { ChargeStatus, getCharge } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -42,23 +42,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const cardTransaction = await getCardTransaction(client, companyId, id);
-  if (cardTransaction.error || !cardTransaction.data) {
+  const charge = await getCharge(client, companyId, id);
+  if (charge.error || !charge.data) {
     throw redirect(
-      path.to.cardTransactions,
-      await flash(
-        request,
-        error(cardTransaction.error, "Failed to load card transaction")
-      )
+      path.to.charges,
+      await flash(request, error(charge.error, "Failed to load charge"))
     );
   }
 
-  const lines = cardTransaction.data.cardTransactionLine ?? [];
+  const lines = charge.data.chargeLine ?? [];
 
   // One query for every referenced account (header + lines) instead of N+1.
   const accountIds = [
-    cardTransaction.data.cardAccountId,
-    cardTransaction.data.offsetAccountId,
+    charge.data.cardAccountId,
+    charge.data.offsetAccountId,
     ...lines.map((line) => line.accountId)
   ].filter((value): value is string => Boolean(value));
 
@@ -77,12 +74,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .from("document")
       .select("id, name, path")
       .eq("companyId", companyId)
-      .ilike("path", `${companyId}/card-transaction/${id}/%`),
-    cardTransaction.data.journalId
+      .ilike("path", `${companyId}/charge/${id}/%`),
+    charge.data.journalId
       ? client
           .from("journal")
           .select("id, journalEntryId")
-          .eq("id", cardTransaction.data.journalId)
+          .eq("id", charge.data.journalId)
           .eq("companyId", companyId)
           .maybeSingle()
       : Promise.resolve({
@@ -94,11 +91,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const auxiliaryError = accounts.error ?? receipts.error ?? journal.error;
   if (auxiliaryError) {
     throw redirect(
-      path.to.cardTransactions,
-      await flash(
-        request,
-        error(auxiliaryError, "Failed to load card transaction")
-      )
+      path.to.charges,
+      await flash(request, error(auxiliaryError, "Failed to load charge"))
     );
   }
 
@@ -107,7 +101,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   );
 
   return {
-    cardTransaction: cardTransaction.data,
+    charge: charge.data,
     lines,
     accountsById,
     receipts: receipts.data ?? [],
@@ -115,8 +109,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   };
 }
 
-export default function CardTransactionDetailRoute() {
-  const { cardTransaction, lines, accountsById, receipts, journal } =
+export default function ChargeDetailRoute() {
+  const { charge, lines, accountsById, receipts, journal } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -124,7 +118,7 @@ export default function CardTransactionDetailRoute() {
   const permissions = usePermissions();
   const voidModal = useDisclosure();
   const currencyFormatter = useCurrencyFormatter({
-    currency: cardTransaction.currencyCode
+    currency: charge.currencyCode
   });
 
   const accountLabel = (accountId: string | null) => {
@@ -134,53 +128,50 @@ export default function CardTransactionDetailRoute() {
   };
 
   const canVoid =
-    cardTransaction.status === "Posted" &&
-    permissions.can("update", "invoicing");
+    charge.status === "Posted" && permissions.can("update", "invoicing");
 
   return (
     <Drawer
       open
       onOpenChange={(open) => {
-        if (!open) navigate(path.to.cardTransactions);
+        if (!open) navigate(path.to.charges);
       }}
     >
       <DrawerContent size="lg">
         <DrawerHeader>
-          <DrawerTitle>{cardTransaction.cardTransactionId}</DrawerTitle>
+          <DrawerTitle>{charge.chargeId}</DrawerTitle>
         </DrawerHeader>
         <DrawerBody>
           <VStack spacing={4}>
             <HStack spacing={2}>
-              <Enumerable value={cardTransaction.type} />
-              <CardTransactionStatus status={cardTransaction.status} />
+              <Enumerable value={charge.type} />
+              <ChargeStatus status={charge.status} />
             </HStack>
 
             <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm w-full">
               <dt className="text-muted-foreground">
                 <Trans>Merchant</Trans>
               </dt>
-              <dd>{cardTransaction.merchantName ?? "—"}</dd>
+              <dd>{charge.merchantName ?? "—"}</dd>
 
               <dt className="text-muted-foreground">
                 <Trans>Card Holder</Trans>
               </dt>
-              <dd>{cardTransaction.cardHolderName ?? "—"}</dd>
+              <dd>{charge.cardHolderName ?? "—"}</dd>
 
               <dt className="text-muted-foreground">
                 <Trans>Transaction Date</Trans>
               </dt>
-              <dd>
-                {formatDate(cardTransaction.transactionDate, undefined, locale)}
-              </dd>
+              <dd>{formatDate(charge.transactionDate, undefined, locale)}</dd>
 
               <dt className="text-muted-foreground">
                 <Trans>Amount</Trans>
               </dt>
               <dd className="tabular-nums">
-                {currencyFormatter.format(Number(cardTransaction.amount))}
+                {currencyFormatter.format(Number(charge.amount))}
               </dd>
 
-              {cardTransaction.journalId && (
+              {charge.journalId && (
                 <>
                   <dt className="text-muted-foreground">
                     <Trans>Journal</Trans>
@@ -191,7 +182,7 @@ export default function CardTransactionDetailRoute() {
                         {journal.journalEntryId}
                       </Hyperlink>
                     ) : (
-                      cardTransaction.journalId
+                      charge.journalId
                     )}
                   </dd>
                 </>
@@ -271,7 +262,7 @@ export default function CardTransactionDetailRoute() {
             )}
             <Button
               variant="secondary"
-              onClick={() => navigate(path.to.cardTransactions)}
+              onClick={() => navigate(path.to.charges)}
             >
               {t`Close`}
             </Button>
@@ -280,9 +271,9 @@ export default function CardTransactionDetailRoute() {
       </DrawerContent>
       {canVoid && voidModal.isOpen && (
         <Confirm
-          action={path.to.cardTransactionVoid(cardTransaction.id)}
-          title={t`Void Card Transaction`}
-          text={t`Are you sure you want to void ${cardTransaction.cardTransactionId}? This posts a reversing journal entry and cannot be undone.`}
+          action={path.to.chargeVoid(charge.id)}
+          title={t`Void Charge`}
+          text={t`Are you sure you want to void ${charge.chargeId}? This posts a reversing journal entry and cannot be undone.`}
           confirmText={t`Void`}
           confirmVariant="destructive"
           onCancel={voidModal.onClose}

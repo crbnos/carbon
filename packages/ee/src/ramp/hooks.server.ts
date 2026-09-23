@@ -259,7 +259,7 @@ export async function rampHealthcheck(
 
   // A connected Ramp with no card liability account is not functional:
   // convergeRamp returns early (no chart-of-accounts push, no sync) and the
-  // card-transaction sync gate skips every family without it. Report it as
+  // charge sync gate skips every family without it. Report it as
   // unhealthy rather than showing a green badge over a sync that silently does
   // nothing — the required-field gap was invisible in the UI otherwise.
   // statementBankAccountId is intentionally NOT checked: it is optional (only

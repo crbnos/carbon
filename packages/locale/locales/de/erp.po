@@ -2538,7 +2538,7 @@ msgstr "Sind Sie sicher, dass Sie eine Einladung an diese Benutzer senden möcht
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sind Sie sicher, dass Sie eine Einladung an diesen Benutzer senden möchten?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Möchten Sie {0} wirklich stornieren? Dadurch wird eine Gegenbuchung gebucht und kann nicht rückgängig gemacht werden."
 
@@ -3460,9 +3460,6 @@ msgstr "Carbons einzelner Datensatz für alles mit einer Teilenummer – Teil, W
 msgid "Card Holder"
 msgstr "Karteninhaber"
 
-msgid "Card Transactions"
-msgstr "Kartentransaktionen"
-
 msgid "Cards"
 msgstr "Karten"
 
@@ -3573,6 +3570,9 @@ msgstr "Das Ändern aktualisiert die Teile-ID"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Das Ändern des Typs setzt die Entwurfsbearbeitungen dieses Elements zurück."
+
+msgid "Charges"
+msgstr "Belastungen"
 
 msgid "Chart"
 msgstr "Diagramm"
@@ -4863,9 +4863,6 @@ msgstr "Kredit ({0})"
 msgid "Credit / debit memo"
 msgstr "Gutschrift / Sollschrift"
 
-msgid "Credit / Debit Memos"
-msgstr "Gutschriften / Sollschriften"
-
 msgid "Credit Account"
 msgstr "Gutschriftkonto"
 
@@ -4884,6 +4881,9 @@ msgstr "Guthabenbeträge werden in der Basiswährung des Unternehmens ({currency
 msgid "Credit Memo"
 msgstr "Gutschrift"
 
+msgid "Credit Memos"
+msgstr ""
+
 msgid "Credit total"
 msgstr "Gutschriftsumme"
 
@@ -4892,9 +4892,6 @@ msgstr "Gutgeschrieben"
 
 msgid "Credits"
 msgstr "Guthaben"
-
-msgid "Credits & Debits"
-msgstr "Haben & Soll"
 
 msgid "Credits applied"
 msgstr "Angewendete Gutschriften"
@@ -10767,8 +10764,8 @@ msgstr "Neuer Externer Mitarbeiter"
 msgid "New Cost Center"
 msgstr "Neue Kostenstelle"
 
-msgid "New Credit / Debit Memo"
-msgstr "Neue Haben-/Soll-Buchung"
+msgid "New Credit Memo"
+msgstr ""
 
 msgid "New Currency"
 msgstr "Neue Währung"
@@ -11015,6 +11012,9 @@ msgstr "Neue Umlagerungsposition"
 
 msgid "New Unit of Measure"
 msgstr "Neue Mengeneinheit"
+
+msgid "New Vendor Credit"
+msgstr ""
 
 msgid "New Version"
 msgstr "Neue Version"
@@ -12490,9 +12490,6 @@ msgstr "Teile laufen zusammen in einer Charge — z. B. Ofen, Backofen oder Galv
 msgid "Parts, materials, and how you classify them."
 msgstr "Teile, Materialien und wie Sie diese klassifizieren."
 
-msgid "Party Type"
-msgstr "Parteityp"
-
 msgid "Pass"
 msgstr "Bestanden"
 
@@ -13949,8 +13946,11 @@ msgstr "Abstimmung einer Bestellung gegen das, was eingegangen und fakturiert wu
 msgid "Record"
 msgstr "Aufnahme"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "Erfassen Sie eine Gutschrift oder Lastschrift gegen einen Kunden oder Lieferanten. Anwendungen auf spezifische Rechnungen werden nach der Erstellung des Dokuments hinzugefügt."
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr ""
+
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr ""
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Erfassen Sie eine Kundenzahlung, Lieferantenzahlung oder Gutschrift. Anwendungen auf Rechnungen oder Notizen werden hinzugefügt, nachdem die Zahlung erstellt wurde."
@@ -19245,6 +19245,12 @@ msgstr "Nur Abweichung"
 msgid "VAT Number"
 msgstr "USt-IdNr."
 
+msgid "Vendor Credit"
+msgstr ""
+
+msgid "Vendor Credits"
+msgstr ""
+
 msgid "Vendor Write-Off Income"
 msgstr "Ausbuchungserträge von Lieferanten"
 
@@ -19503,8 +19509,8 @@ msgstr "Stornieren"
 msgid "Void {0}"
 msgstr "Stornieren {0}"
 
-msgid "Void Card Transaction"
-msgstr "Kartentransaktion stornieren"
+msgid "Void Charge"
+msgstr "Belastung stornieren"
 
 msgid "Void Invoice"
 msgstr "Rechnung stornieren"

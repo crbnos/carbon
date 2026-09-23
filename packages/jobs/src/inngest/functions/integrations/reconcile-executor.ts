@@ -11,9 +11,9 @@
  */
 import type { Database } from "@carbon/database";
 import {
-  type CardTransactionPolicyInput,
   CHARGE_CREDIT_PROVIDERS,
   CHARGE_NATIVE_VOID_PROVIDERS,
+  type ChargePolicyInput,
   PAYMENT_PUSH_PROVIDERS,
   type PostingSyncSettings,
   type ProviderID,
@@ -28,7 +28,7 @@ import {
   enqueueSyncOperations,
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
-  loadCardTransactionPolicyInputs,
+  loadChargePolicyInputs,
   resolvePaymentJournalFamily,
   type SyncOperationRequest,
   type TerminalSyncOperationRequest
@@ -51,7 +51,7 @@ const SNAPSHOT_TABLES: Record<
   },
   bill: { table: "purchaseInvoice", columns: "id, status, updatedAt" },
   invoice: { table: "salesInvoice", columns: "id, status, updatedAt" },
-  charge: { table: "cardTransaction", columns: "id, status, type, updatedAt" },
+  charge: { table: "charge", columns: "id, status, type, updatedAt" },
   payment: { table: "payment", columns: "id, status, updatedAt" },
   customer: { table: "customer", columns: "id, updatedAt" },
   vendor: { table: "supplier", columns: "id, updatedAt" },
@@ -172,24 +172,21 @@ export async function reconcileEntities(args: {
       ])
     );
 
-    // "Card Transaction" journals are DOC_BACKED per ROW (only a Charge with
+    // "Charge" journals are DOC_BACKED per ROW (only a Charge with
     // a supplier has a provider charge object), so the policy needs the
-    // backing cardTransaction — resolved through the journal lines so the
+    // backing charge — resolved through the journal lines so the
     // VOID journal resolves to the same row as the posting journal (one
     // batch of queries, keyed by journal id).
-    let cardTransactionByJournalId = new Map<
-      string,
-      CardTransactionPolicyInput
-    >();
+    let chargeByJournalId = new Map<string, ChargePolicyInput>();
     if (entityType === "journalEntry") {
       const cardJournalIds = ids.filter(
-        (id) => snapshotById.get(id)?.sourceType === "Card Transaction"
+        (id) => snapshotById.get(id)?.sourceType === "Charge"
       );
       if (cardJournalIds.length > 0) {
-        cardTransactionByJournalId = await loadCardTransactionPolicyInputs(
-          args.client,
-          { companyId: args.companyId, journalIds: cardJournalIds }
-        );
+        chargeByJournalId = await loadChargePolicyInputs(args.client, {
+          companyId: args.companyId,
+          journalIds: cardJournalIds
+        });
       }
     }
 
@@ -382,7 +379,7 @@ export async function reconcileEntities(args: {
                 normalCovered: coveredEntityIds.has(entityId),
                 reversalCovered: coveredEntityIds.has(`${entityId}:reversal`)
               },
-              cardTransaction: cardTransactionByJournalId.get(entityId) ?? null
+              charge: chargeByJournalId.get(entityId) ?? null
             }
           : {}),
         ...(entityType === "bill"
