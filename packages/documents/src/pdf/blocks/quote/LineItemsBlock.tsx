@@ -174,7 +174,7 @@ export function LineItemsBlock({
                               {opts.showThumbnails &&
                                 thumbnails &&
                                 line.id != null &&
-                                line.id in thumbnails && (
+                                thumbnails[line.id] && (
                                   <View style={tw("mt-2")}>
                                     <Image
                                       src={thumbnails[line.id]!}
