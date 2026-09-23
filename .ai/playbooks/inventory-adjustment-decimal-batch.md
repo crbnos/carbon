@@ -25,7 +25,10 @@ Route: `/x/inventory/quantities/<itemId>/details` → "Update Inventory" drawer
   `trackedEntityId` → a new entity is created).
 - Quantity → `2.5`, then **blur** (click another field) — the react-aria hidden
   input commits on blur; verify `input[name=quantity].value === "2.5"`.
-- Submit with `requestSubmit` (NOT a click) on the drawer's Save button.
+- Submit by calling `requestSubmit` on the drawer's FORM, passing the Save
+  button as the submitter — `form.requestSubmit(saveButton)` (or bare
+  `form.requestSubmit()`). `requestSubmit` is a form method, not a button
+  method, and a plain click on Save does nothing.
 - Verify: Quantity on Hand rises by 2.5 (e.g. 60 → 62.5); storage-unit table
   shows `A2-L1 | 2.5 | <batch>`.
 

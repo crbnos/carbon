@@ -174,3 +174,77 @@ describe("no-unrounded-tracked-quantity — shapes that only look like compares"
     ).toHaveLength(1);
   });
 });
+
+describe("no-unrounded-tracked-quantity — the exemption is operand-scoped", () => {
+  it("an unrelated round() elsewhere in the statement does not exempt the quantity", () => {
+    // The sibling property rounds; `quantity` does not. Must still flag.
+    const src = [
+      "await trx",
+      '  .updateTable("trackedEntity")',
+      "  .set({ quantity: parent.quantity - drawnQuantity, readableId: round(x) })",
+      "  .execute();"
+    ].join("\n");
+    const violations = scan(src);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.line).toBe(3);
+  });
+
+  it("an unrelated round() on a LATER line does not exempt the quantity", () => {
+    const src = [
+      "await trx",
+      '  .updateTable("trackedEntity")',
+      "  .set({",
+      "    quantity: parent.quantity - drawnQuantity,",
+      "    readableId: round(x)",
+      "  })",
+      "  .execute();"
+    ].join("\n");
+    expect(scan(src)).toHaveLength(1);
+    expect(scan(src)[0]?.line).toBe(4);
+  });
+
+  it("still exempts a quantity the settleQuantity wrapper encloses", () => {
+    const src = [
+      "await trx",
+      '  .updateTable("trackedEntity")',
+      "  .set(",
+      "    settleQuantity({",
+      "      quantity: targetQty - adjustmentQuantity,",
+      "      status: currentStatus",
+      "    })",
+      "  )",
+      "  .execute();"
+    ].join("\n");
+    expect(scan(src)).toHaveLength(0);
+  });
+
+  it("an unrelated round() on the other side of a compare does not exempt it", () => {
+    // `entity.quantity` itself is raw — the round() is on the other operand.
+    const src = "if (round(requested) < entity.quantity) {";
+    const violations = scan(src);
+    expect(violations).toHaveLength(1);
+    expect(violations[0]?.message).toMatch(/isFullDraw/);
+  });
+
+  it("still exempts a compare whose entity-quantity operand IS wrapped", () => {
+    const src = [
+      "if (round(onHand) <= round(Number(entity.quantity))) {",
+      "if (equals(Number(trackedEntity.quantity), quantity)) {"
+    ].join("\n");
+    expect(scan(src)).toHaveLength(0);
+  });
+
+  it("flags each offending quantity write once, not once per statement", () => {
+    const src = [
+      "await trx",
+      '  .updateTable("trackedEntity")',
+      "  .set({ quantity: a - b })",
+      "  .execute();",
+      "await trx",
+      '  .updateTable("trackedEntity")',
+      "  .set({ quantity: c - d })",
+      "  .execute();"
+    ].join("\n");
+    expect(scan(src).map((v) => v.line)).toEqual([3, 7]);
+  });
+});

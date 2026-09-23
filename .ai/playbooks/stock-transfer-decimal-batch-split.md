@@ -52,5 +52,9 @@ Route: `/x/inventory/stock-transfers` → transfer → `/x/stock-transfer/<id>/s
   Reopen → Add Line as above.
 - **Pick button "does nothing".** Use agent-browser's native `click @ref`, not a
   DOM `.click()` — the button navigates via React Router.
-- If the pick equals the whole lot (`lineQty ≥ lotAvailable`), it's a FULL draw
-  (no split) — set the line quantity BELOW the lot's available to force a split.
+- If the draw covers the whole lot it's a FULL draw (no split). The draw is
+  `min(lineQty − pickedQty, lotAvailable)`, so the test is
+  `lineQty − pickedQty ≥ lotAvailable` — the line TOTAL is not the right
+  comparison once something has already been picked (`lineQty=2.25`,
+  `pickedQty=1`, `lotAvailable=2` is a partial draw of `1.25`). To force a
+  split, keep the line's REMAINING quantity below the lot's available.

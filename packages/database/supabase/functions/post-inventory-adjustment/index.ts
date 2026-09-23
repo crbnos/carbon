@@ -21,6 +21,11 @@ import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 // (a Scrapped lot stays Scrapped at zero). get_item_quantities_by_tracking_id
 // doesn't carry status, so read it off the row — one PK lookup inside the open
 // transaction, next to the write it informs.
+//
+// LOCKED: the caller feeds this status straight back through settleQuantity, so
+// an unlocked read is a read-modify-write on `status`. Without the lock a
+// concurrent transaction that Scraps the lot between our read and our update is
+// silently overwritten with the stale `Available` we read.
 async function currentEntityStatus(
   trx: Transaction<DB>,
   trackedEntityId: string,
@@ -31,6 +36,7 @@ async function currentEntityStatus(
     .select("status")
     .where("id", "=", trackedEntityId)
     .where("companyId", "=", companyId)
+    .forUpdate()
     .executeTakeFirstOrThrow();
   return row.status;
 }

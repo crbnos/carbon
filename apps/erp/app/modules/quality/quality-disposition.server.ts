@@ -656,9 +656,13 @@ export async function splitIssueItem(args: {
       // (e.g. scrap N, use-as-is the rest). Create a new Pending row for the
       // split-off quantity and shrink the original — no entity subdivision.
       if (links.length === 0) {
-        const current = Number(item.quantity ?? 0);
-        const splitQty =
-          typeof splitQuantity === "number" ? splitQuantity : NaN;
+        // Compare at the SAME scale the writes below persist at. Raw operands
+        // let a 0.999996 split of a 1 pass this gate and then round to a full
+        // draw: the new row takes 1 and the original is set to 0.
+        const current = round(Number(item.quantity ?? 0));
+        const splitQty = round(
+          typeof splitQuantity === "number" ? splitQuantity : NaN
+        );
         if (!(splitQty > 0)) {
           throw new Error("Missing split parameters");
         }
@@ -740,7 +744,7 @@ export async function splitIssueItem(args: {
       const effectiveSplitQty = round(
         moves.reduce((acc, m) => acc + round(m.moveQty), 0)
       );
-      const current = Number(item.quantity ?? 0);
+      const current = round(Number(item.quantity ?? 0));
       if (effectiveSplitQty >= current) {
         throw new Error(
           `Split quantity (${effectiveSplitQty}) must be less than the current quantity (${current})`

@@ -706,20 +706,25 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
-          // Get stock transfer line details
+          // Lock the line AND the entity: an unpick read-modify-writes the
+          // entity's quantity/status and the line's pickedQuantity, so two
+          // concurrent unpicks of the same child would both credit the parent
+          // and both decrement the line off the same stale read. Same locks the
+          // pick paths take.
           const stockTransferLine = await trx
             .selectFrom("stockTransferLine")
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
-          // Get tracked entity details
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           // Find the transfer activity for this tracked entity
@@ -835,20 +840,25 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
-          // Get stock transfer line details
+          // Lock the line AND the entity: an unpick read-modify-writes the
+          // entity's quantity/status and the line's pickedQuantity, so two
+          // concurrent unpicks of the same child would both credit the parent
+          // and both decrement the line off the same stale read. Same locks the
+          // pick paths take.
           const stockTransferLine = await trx
             .selectFrom("stockTransferLine")
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
-          // Get tracked entity details
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
             .where("companyId", "=", companyId)
             .selectAll()
+            .forUpdate()
             .executeTakeFirstOrThrow();
 
           // Find the transfer activity for this tracked entity
@@ -871,6 +881,17 @@ serve(async (req: Request) => {
           // the parent increase, the ledger pair and the pickedQuantity
           // decrement all derive from the same value.
           const transferQuantity = round(Number(trackedEntity.quantity));
+
+          // Re-checked UNDER the lock: a lot holding nothing has either already
+          // been unpicked or been consumed at production. Either way there is
+          // nothing to return, and proceeding would delete the transfer
+          // activity and reset pickedQuantity for a no-op.
+          if (transferQuantity <= 0) {
+            throw new PickGuardError(
+              "already-picked",
+              `Lot ${trackedEntity.readableId ?? trackedEntityId} has no quantity left to unpick`
+            );
+          }
           const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
             [];
 
@@ -892,11 +913,13 @@ serve(async (req: Request) => {
           if (splitFromParentId) {
             // Merge the child fully back into its parent and delete the Split
             // — a clean undo, as if the partial transfer never happened.
+            // Locked too — its quantity is incremented from this read.
             const parent = await trx
               .selectFrom("trackedEntity")
               .where("id", "=", splitFromParentId)
               .where("companyId", "=", companyId)
               .selectAll()
+              .forUpdate()
               .executeTakeFirstOrThrow();
 
             await trx

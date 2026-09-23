@@ -23,14 +23,19 @@ import type { ConformanceCheck, Violation } from "../check";
  * Scope is deliberately what a single file can PROVE, not everything that could
  * be wrong:
  *
- * - The write rule looks at one `.updateTable("trackedEntity")` statement and
- *   asks whether the standard was used anywhere in it. A `quantity:` set from a
- *   variable rounded three lines up is fine and unflaggable either way; what it
- *   catches is the shape that actually shipped — arithmetic spelled out inline
- *   in the `.set`, with no `round` in sight.
+ * - The write rule asks whether THIS `quantity:` expression went through the
+ *   standard — either the value itself calls a sanctioned helper, or the
+ *   property sits inside one (the `settleQuantity({ quantity: a - b, … })`
+ *   shape, where the helper opens on an earlier line). A sanctioned call
+ *   elsewhere in the same statement does NOT exempt it: `quantity: a - b`
+ *   beside a `readableId: round(x)` is still a finding. A `quantity:` set from
+ *   a variable rounded three lines up is fine and unflaggable either way; what
+ *   it catches is arithmetic spelled out inline in the `.set`.
  * - The compare rule only fires on a `.quantity` read straight off a row, which
- *   is unrounded BY CONSTRUCTION. A comparison of two locals is presumed to have
- *   been rounded where they were defined; comparisons against a literal
+ *   is unrounded BY CONSTRUCTION, and only when THAT operand is not itself
+ *   wrapped in a sanctioned call — an unrelated `round()` on the other side of
+ *   the comparison does not exempt it. A comparison of two locals is presumed
+ *   to have been rounded where they were defined; comparisons against a literal
  *   (`> 0`, `!== 1`, `<= 0`) are "is there any stock" / "is this a serial"
  *   tests, not split gates, and are not flagged.
  *
@@ -46,7 +51,6 @@ const MESSAGE_COMPARE =
 /** The helpers that satisfy the standard. `equals`/`isFullDraw` are compare-side. */
 const SANCTIONED =
   /\bround\s*\(|\bsettleQuantity\s*\(|\bresolveCountedEntity\s*\(/;
-const SANCTIONED_COMPARE = /\bround\s*\(|\bequals\s*\(|\bisFullDraw\s*\(/;
 
 /** The modules that IMPLEMENT the standard; they are where the rounding lives. */
 const EXCLUDED_FILES = new Set([
@@ -67,6 +71,55 @@ const withoutStrings = (text: string) =>
     .replace(/`(?:[^`\\]|\\.)*`/g, "``");
 
 const hasArithmetic = (text: string) => /[-+*/]/.test(text);
+
+/** Helper NAMES (no trailing paren) used for the enclosure scan below. */
+const SANCTIONED_CALL = /(?:round|settleQuantity|resolveCountedEntity)$/;
+const SANCTIONED_COMPARE_CALL = /(?:round|equals|isFullDraw)$/;
+
+/**
+ * Is `index` lexically inside a still-open call to one of `names`?
+ *
+ * This is what scopes the exemption to the operand instead of the whole line:
+ * `round(Number(entity.quantity))` encloses its read, while
+ * `round(onHand) < entity.quantity` does not. Walks the (string-blanked) text
+ * keeping a stack of open parens, each tagged with whether the identifier
+ * immediately before it is a sanctioned helper.
+ */
+function enclosedBySanctioned(
+  text: string,
+  index: number,
+  names: RegExp
+): boolean {
+  const stack: boolean[] = [];
+  for (let i = 0; i < index && i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(") {
+      const before = text.slice(0, i).match(/[A-Za-z_$][\w$]*$/);
+      stack.push(before ? names.test(before[0]) : false);
+    } else if (ch === ")") {
+      stack.pop();
+    }
+  }
+  return stack.some(Boolean);
+}
+
+/**
+ * The value expression of an object property starting at `from` — up to the
+ * comma that ends it AT THE SAME paren/brace depth, or end of line. Bounding by
+ * depth is what stops a sibling property's `round()` from exempting this one.
+ */
+function propertyValue(text: string, from: number): string {
+  let depth = 0;
+  for (let i = from; i < text.length; i++) {
+    const ch = text[i];
+    if (ch === "(" || ch === "[" || ch === "{") depth++;
+    else if (ch === ")" || ch === "]" || ch === "}") {
+      if (depth === 0) return text.slice(from, i);
+      depth--;
+    } else if (ch === "," && depth === 0) return text.slice(from, i);
+  }
+  return text.slice(from);
+}
 
 /** `entity.quantity`, `trackedEntity.quantity`, `parentEntity.quantity` — a
  *  quantity read straight off a row. Bare `parent`/`child` are deliberately NOT
@@ -106,8 +159,8 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
     const lines = contents.split("\n");
 
     // --- Rule 1: the write. One `.updateTable("trackedEntity")` statement at a
-    // time, ending at its `.execute(`; a statement that used the standard
-    // anywhere is trusted (the rounding is often on the line above the `.set`).
+    // time, ending at its `.execute(`. Each `quantity:` property is judged on
+    // its OWN expression, not on whether the statement rounds something else.
     for (let i = 0; i < lines.length; i++) {
       if (!lines[i]!.includes('.updateTable("trackedEntity")')) continue;
       const stmt: { line: number; text: string }[] = [];
@@ -115,34 +168,61 @@ export const noUnroundedTrackedQuantity: ConformanceCheck = {
         stmt.push({ line: j + 1, text: lines[j]! });
         if (lines[j]!.includes(".execute(")) break;
       }
-      const sanctioned = stmt.some(({ text }) => SANCTIONED.test(text));
-      if (sanctioned) continue;
-      for (const { line, text } of stmt) {
-        if (isComment(text)) continue;
-        const bare = withoutStrings(text);
-        if (/\bquantity:/.test(bare) && hasArithmetic(bare)) {
+
+      // Statement text with strings blanked, so a helper that opens on an
+      // earlier line (`settleQuantity({` …) is still visible as an enclosure.
+      const bareLines = stmt.map(({ text }) =>
+        isComment(text) ? "" : withoutStrings(text)
+      );
+
+      for (let k = 0; k < stmt.length; k++) {
+        const bare = bareLines[k]!;
+        const prefix = bareLines.slice(0, k).join("\n");
+        for (const match of bare.matchAll(/\bquantity:/g)) {
+          const at = match.index ?? 0;
+          // Inside `settleQuantity({ … })` / `round( … )` opened earlier?
+          if (
+            enclosedBySanctioned(
+              prefix + "\n" + bare,
+              prefix.length + 1 + at,
+              SANCTIONED_CALL
+            )
+          ) {
+            continue;
+          }
+          const value = propertyValue(bare, at + match[0].length);
+          if (SANCTIONED.test(value)) continue;
+          if (!hasArithmetic(value)) continue;
           violations.push({
             file,
-            line,
-            snippet: text.trim(),
+            line: stmt[k]!.line,
+            snippet: stmt[k]!.text.trim(),
             message: MESSAGE_WRITE
           });
         }
       }
     }
 
-    // --- Rule 2: the compare.
+    // --- Rule 2: the compare. Judged per OPERAND: the entity-quantity read
+    // must itself be wrapped in a sanctioned call.
     lines.forEach((text, i) => {
       if (isComment(text)) return;
       const bare = withoutStrings(text);
-      if (SANCTIONED_COMPARE.test(bare)) return;
-      if (COMPARE_PATTERNS.some((pattern) => pattern.test(bare))) {
+      for (const pattern of COMPARE_PATTERNS) {
+        const match = pattern.exec(bare);
+        if (!match) continue;
+        // Locate the `.quantity` read inside the match and ask whether THAT
+        // operand is wrapped — not whether the line mentions a helper at all.
+        const local = match[0].search(/\.quantity/);
+        const at = (match.index ?? 0) + (local >= 0 ? local : 0);
+        if (enclosedBySanctioned(bare, at, SANCTIONED_COMPARE_CALL)) continue;
         violations.push({
           file,
           line: i + 1,
           snippet: text.trim(),
           message: MESSAGE_COMPARE
         });
+        return;
       }
     });
 

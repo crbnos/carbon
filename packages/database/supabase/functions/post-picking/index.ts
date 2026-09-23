@@ -13,7 +13,11 @@ import {
   isFullDraw
 } from "../shared/batch-split.ts";
 import { settleQuantity } from "../shared/entity-drain.ts";
-import { PickGuardError, resolvePick } from "../shared/pick-guards.ts";
+import {
+  assertEntityCoversPick,
+  PickGuardError,
+  resolvePick
+} from "../shared/pick-guards.ts";
 import { round } from "../shared/precision.ts";
 import { getPickedBudgets, orderOldFirst } from "../lib/picked-consumption.ts";
 
@@ -451,6 +455,15 @@ serve(async (req: Request) => {
           // all derive from these.
           const entityQuantity = round(Number(trackedEntity.quantity));
           const transferQuantity = round(quantity);
+
+          // resolvePick bounds the pick by the LINE's outstanding quantity, not
+          // by what this lot holds. A line outstanding larger than the lot would
+          // fall through isFullDraw into buildBatchSplitRecords, which throws a
+          // plain Error on `draw >= parentQty` — surfaced as a 500. This is the
+          // same guard post-stock-transfer's batch case takes, and it makes the
+          // refusal a 400 the scan UI can show.
+          assertEntityCoversPick({ entityQuantity, transferQuantity });
+
           const inserts: ItemLedgerInsert[] = [];
 
           // Split the batch when picking less than the whole entity: the shelf
