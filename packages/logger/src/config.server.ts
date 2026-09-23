@@ -24,7 +24,7 @@ export type ConfigureLoggingOptions = {
 /**
  * Configure LogTape for a Node server once per process.
  *
- * - dev  → `devFormatter` (colored terminal, unreferenced properties appended)
+ * - dev  → `devFormatter` (colored terminal)
  * - prod → `getJsonLinesFormatter()` (JSONL, no ANSI), field-redacted
  *
  * Idempotent: a `globalThis` flag survives Vite SSR module re-evaluation, and

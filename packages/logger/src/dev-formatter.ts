@@ -5,16 +5,14 @@ import {
   type TextFormatter
 } from "@logtape/logtape";
 
-// Stamped on every record inside a request (`requestIdMiddleware`). It is for
-// correlating prod JSON lines; repeating it on every dev line is noise.
+// On every in-request record; useful in prod JSON, noise on each dev line.
 const AMBIENT_KEYS = new Set(["requestId"]);
 
-/** Top-level property names a message template renders itself, or null for `{*}` (all of them). */
+// Returns null for `{*}`, which already renders every property.
 function referencedKeys(raw: LogRecord["rawMessage"]): Set<string> | null {
-  // A tagged-template message carries its values positionally, not as properties.
   if (typeof raw !== "string") return new Set();
   const keys = new Set<string>();
-  // `{key}` is a placeholder; `{{` / `}}` are escaped literal braces.
+  // `{{` / `}}` are escaped braces, not placeholders.
   for (const [, key = ""] of raw.matchAll(/(?<!\{)\{([^{}]+)\}(?!\})/g)) {
     const name = key.trim();
     if (name === "*") return null;
@@ -23,12 +21,7 @@ function referencedKeys(raw: LogRecord["rawMessage"]): Set<string> | null {
   return keys;
 }
 
-/**
- * LogTape's `ansiColorFormatter` prints only the message template, so any
- * property the message doesn't name — `log.error("Failed to finalize quote",
- * { error })` — never reached the dev terminal, stack and all. This prints the
- * same line and appends those properties. Prod JSON lines already carry them.
- */
+// `ansiColorFormatter` drops properties the message doesn't reference (e.g. `{ error }`).
 export const devFormatter: TextFormatter = (record) => {
   const line = ansiColorFormatter(record);
   const referenced = referencedKeys(record.rawMessage);
