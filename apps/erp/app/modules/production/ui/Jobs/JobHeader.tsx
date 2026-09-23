@@ -1323,6 +1323,11 @@ function JobCompleteModal({
     useState<number>(0);
 
   const makeToOrder = !!job?.salesOrderId && !!job?.salesOrderLineId;
+  // Make to Asset: the completion capitalises the job (class) or sweeps its
+  // cost onto an asset under construction, so nothing is received to a bin
+  // and the location pickers are meaningless. The hidden inputs stay so
+  // jobCompleteValidator still sees both fields.
+  const completesToFixedAsset = !!(job?.fixedAssetClassId || job?.fixedAssetId);
   const leftoverQuantity = Math.max(0, quantityComplete - (job?.quantity ?? 0));
   const hasLeftover = leftoverQuantity > 0;
   // Serial units are received one at a time; the database refuses a fraction.
@@ -1497,7 +1502,7 @@ function JobCompleteModal({
               name="leftoverReceiveQuantity"
               value={leftoverReceiveQuantity.toString()}
             />
-            {makeToOrder && (
+            {(makeToOrder || completesToFixedAsset) && (
               <>
                 <Hidden name="locationId" />
                 <Hidden name="storageUnitId" />
@@ -1505,19 +1510,27 @@ function JobCompleteModal({
             )}
             <ModalBody>
               <VStack spacing={4}>
-                {!makeToOrder && (
-                  <>
-                    <Location
-                      name="locationId"
-                      label={t`Location`}
-                      isReadOnly
-                    />
-                    <StorageUnit
-                      name="storageUnitId"
-                      locationId={job.locationId ?? undefined}
-                      label={t`Storage Unit`}
-                    />
-                  </>
+                {completesToFixedAsset ? (
+                  <p className="text-sm text-muted-foreground">
+                    {job.fixedAssetClassId
+                      ? t`Completes to fixed asset class ${job.fixedAssetClassId}`
+                      : t`Sweeps cost to asset ${job.fixedAssetId ?? ""}`}
+                  </p>
+                ) : (
+                  !makeToOrder && (
+                    <>
+                      <Location
+                        name="locationId"
+                        label={t`Location`}
+                        isReadOnly
+                      />
+                      <StorageUnit
+                        name="storageUnitId"
+                        locationId={job.locationId ?? undefined}
+                        label={t`Storage Unit`}
+                      />
+                    </>
+                  )
                 )}
                 <NumberControlled
                   name="quantityComplete"

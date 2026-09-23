@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import {
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
+  leaseCommencementPreview,
+  leaseTermMonths,
+  previewLeaseClassification,
+  readLeaseClassification,
   reconcileQuantityBreaks,
   resolvePreservedQuoteLinePriceFields
 } from "./sales.utils";
@@ -176,5 +180,128 @@ describe("decideRecalcPricing", () => {
         {}
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
+  });
+});
+
+describe("leaseTermMonths", () => {
+  it("counts whole months with both ends inclusive", () => {
+    // The same pins as post-rental-agreement's `wholeMonthsInTerm`.
+    expect(leaseTermMonths("2027-01-01", "2029-12-31")).toBe(36);
+    expect(leaseTermMonths("2027-01-15", "2028-01-14")).toBe(12);
+    expect(leaseTermMonths("2026-01-15", "2026-02-14")).toBe(1);
+    expect(leaseTermMonths("2026-01-15", "2026-02-13")).toBe(0);
+    expect(leaseTermMonths("2026-01-31", "2026-02-27")).toBe(0);
+  });
+
+  it("is null when open-ended", () => {
+    expect(leaseTermMonths("2026-01-01", null)).toBeNull();
+  });
+});
+
+describe("previewLeaseClassification", () => {
+  const agreement = {
+    startDate: "2026-01-01",
+    endDate: "2028-12-31",
+    billingCycle: "Calendar Month" as const,
+    billingTiming: "Arrears" as const,
+    discountRate: 6,
+    ownershipTransfers: false,
+    specializedAsset: false,
+    purchaseOptionAmount: 5000,
+    purchaseOptionReasonablyCertain: true
+  };
+  const line = {
+    rateMode: "Best Rate" as const,
+    rateUnit: null,
+    fairValue: 38000,
+    economicLifeMonths: 120,
+    guaranteedResidualValue: 0,
+    unguaranteedResidualValue: 0
+  };
+  const ladder = { dayRate: 100, weekRate: 400, monthRate: 1000 };
+  const policy = { majorPartPercent: 75, substantiallyAllPercent: 90 };
+
+  it("matches the shared math's pinned sales-type case", () => {
+    const record = previewLeaseClassification({
+      agreement,
+      line,
+      ladder,
+      policy
+    });
+    expect(record.classification).toBe("Sales-Type");
+    expect(record.periods).toBe(36);
+    expect(record.pv?.netInvestment).toBeCloseTo(37049.24, 2);
+    expect(record.tests).toEqual({
+      a: false,
+      b: true,
+      c: false,
+      d: true,
+      e: false
+    });
+  });
+
+  it("is operating when no test is met", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
+      line: { ...line, fairValue: 60000 },
+      ladder,
+      policy
+    });
+    expect(record.classification).toBe("Operating");
+  });
+
+  it("values a 28 Days line over whole 28-day periods at a scaled rate", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, billingCycle: "28 Days" },
+      line,
+      ladder,
+      policy
+    });
+    // 1,096 days → 39 whole periods; 28 days bill a month tier (1,000).
+    expect(record.periods).toBe(39);
+    expect(record.payment).toBe(1000);
+    expect(record.annualRate).toBeCloseTo((6 * 12 * 28) / 365, 5);
+  });
+
+  it("cannot price a line with no rates, and stays operating", () => {
+    const record = previewLeaseClassification({
+      agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
+      line,
+      ladder: null,
+      policy
+    });
+    expect(record.pv).toBeNull();
+    expect(record.classification).toBe("Operating");
+  });
+
+  it("round-trips through the stored JSON shape", () => {
+    const record = previewLeaseClassification({
+      agreement,
+      line,
+      ladder,
+      policy
+    });
+    const { classification: _, ...stored } = record;
+    expect(
+      readLeaseClassification(JSON.parse(JSON.stringify(stored)), "Sales-Type")
+    ).toEqual(record);
+    expect(readLeaseClassification(null, "Operating")).toBeNull();
+  });
+});
+
+describe("leaseCommencementPreview", () => {
+  it("balances: NI + (C − PVres) = PVpay + C", () => {
+    const pv = {
+      pvRent: 30000,
+      pvPayments: 34000,
+      pvResidual: 2000,
+      netInvestment: 36000
+    };
+    const preview = leaseCommencementPreview(pv, 25000);
+    expect(preview.costOfGoodsSold).toBe(23000);
+    expect(preview.netInvestment + preview.costOfGoodsSold).toBe(
+      preview.leaseRevenue + preview.carryingAmount
+    );
+    expect(preview.sellingProfit).toBe(11000);
   });
 });

@@ -99,6 +99,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Workflows (customer automation rules) | `.claude/rules/workflow-event-catalog.md` + `.claude/rules/workflow-matcher.md` + `.claude/rules/workflow-engine.md` + `packages/ee/src/workflows/AGENTS.md` |
 | Workflow run history + retention | `.claude/rules/workflow-run-history.md` |
 | Fixed assets | `.claude/rules/fixed-asset-lifecycle.md` |
+| Rental agreements / leases / revenue recognition | `apps/erp/app/modules/sales/AGENTS.md` (Rentals) + `apps/erp/app/modules/accounting/AGENTS.md` (Revenue recognition, Sales-type leases) + `.claude/rules/fixed-asset-lifecycle.md` + `.claude/rules/accounting-sync-handlers.md` |
 | Risk register | `.claude/rules/risk-register-module.md` |
 | **Infrastructure** | |
 | File uploads, images, HEIC, MIME types, CAD formats | `packages/files/AGENTS.md` |
@@ -131,7 +132,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Adding a new module | `.ai/docs/module-conventions.md` |
 | Creating/refreshing an AGENTS.md | `.claude/skills/create-agents-md/SKILL.md` |
 | **Design Specs** | |
-| Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` |
+| Check existing specs before building | `.ai/specs/` + `.ai/specs/implemented/` (superseded designs: `.ai/specs/archived/`, history only) |
 | Writing a new spec | `.claude/skills/spec-writing/SKILL.md` |
 | **Workflows** | |
 | Skills index — pipelines + all skills | `.claude/skills/README.md` |

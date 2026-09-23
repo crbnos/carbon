@@ -473,6 +473,7 @@ serve(async (req: Request) => {
             writeDownAccountId: accountIdByKey[fac.writeDownAccount]!,
             gainOnDisposalAccountId: accountIdByKey[fac.gainOnDisposalAccount]!,
             lossOnDisposalAccountId: accountIdByKey[fac.lossOnDisposalAccount]!,
+            isConstructionInProgress: fac.isConstructionInProgress,
             companyId,
             createdBy: userId,
           }))

@@ -5,14 +5,22 @@ import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
+import { useRouteData } from "~/hooks";
+import type { PartSummary } from "~/modules/items";
 import {
   getItemCustomerParts,
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
 } from "~/modules/items";
-import { ItemSalePriceForm } from "~/modules/items/ui/Item";
+import { ItemRentalRateForm, ItemSalePriceForm } from "~/modules/items/ui/Item";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
+import {
+  getItemRentalRate,
+  itemRentalRateValidator,
+  upsertItemRentalRate
+} from "~/modules/sales";
+import { getCompany } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -25,10 +33,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partUnitSalePrice, customerParts] = await Promise.all([
+  const [partUnitSalePrice, customerParts, company] = await Promise.all([
     getItemUnitSalePrice(client, itemId, companyId),
-    getItemCustomerParts(client, itemId, companyId)
+    getItemCustomerParts(client, itemId, companyId),
+    getCompany(client, companyId)
   ]);
+
+  // The rate ladder is kept per currency; the item page edits the company's
+  // base-currency ladder. A user without sales access reads no row (RLS), which
+  // renders as an empty ladder.
+  const baseCurrencyCode = company.data?.baseCurrencyCode ?? "";
+  const rentalRate = baseCurrencyCode
+    ? await getItemRentalRate(client, itemId, companyId, baseCurrencyCode)
+    : null;
 
   if (partUnitSalePrice.error) {
     throw redirect(
@@ -43,13 +60,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   return {
     partUnitSalePrice: partUnitSalePrice.data,
     customerParts: customerParts.data,
+    rentalRate: rentalRate?.data ?? null,
+    baseCurrencyCode,
     itemId
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -57,6 +76,38 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!itemId) throw new Error("Could not find itemId");
 
   const formData = await request.formData();
+
+  if (formData.get("intent") === "rentalRate") {
+    const rentalValidation = await validator(itemRentalRateValidator).validate(
+      formData
+    );
+    if (rentalValidation.error) {
+      return validationError(rentalValidation.error);
+    }
+
+    const { id: _id, ...rate } = rentalValidation.data;
+    const upsertRentalRate = await upsertItemRentalRate(client, {
+      ...rate,
+      itemId,
+      companyId,
+      userId
+    });
+    if (upsertRentalRate.error) {
+      throw redirect(
+        path.to.partSales(itemId),
+        await flash(
+          request,
+          error(upsertRentalRate.error, "Failed to update rental rates")
+        )
+      );
+    }
+
+    throw redirect(
+      path.to.partSales(itemId),
+      await flash(request, success("Updated rental rates"))
+    );
+  }
+
   const validation = await validator(itemUnitSalePriceValidator).validate(
     formData
   );
@@ -88,8 +139,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 export default function PartSalesRoute() {
-  const { customerParts, partUnitSalePrice, itemId } =
-    useLoaderData<typeof loader>();
+  const {
+    customerParts,
+    partUnitSalePrice,
+    rentalRate,
+    baseCurrencyCode,
+    itemId
+  } = useLoaderData<typeof loader>();
+
+  // v1 fleet units are serialized, so only a serial-tracked item can be rented.
+  const partData = useRouteData<{ partSummary: PartSummary }>(
+    path.to.part(itemId)
+  );
+  const isRentable = partData?.partSummary?.itemTrackingType === "Serial";
 
   const initialValues = {
     ...partUnitSalePrice,
@@ -104,6 +166,19 @@ export default function PartSalesRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
       />
+      {isRentable && baseCurrencyCode ? (
+        <ItemRentalRateForm
+          key={`${itemId}-rental`}
+          initialValues={{
+            id: rentalRate?.id ?? undefined,
+            itemId,
+            currencyCode: baseCurrencyCode,
+            dayRate: rentalRate?.dayRate ?? undefined,
+            weekRate: rentalRate?.weekRate ?? undefined,
+            monthRate: rentalRate?.monthRate ?? undefined
+          }}
+        />
+      ) : null}
       {customerParts ? (
         <CustomerParts customerParts={customerParts} itemId={itemId} />
       ) : null}

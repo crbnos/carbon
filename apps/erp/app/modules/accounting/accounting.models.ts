@@ -474,7 +474,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   }),
   deferredTaxLiabilityAccountId: z.string().min(1, {
     message: "Deferred tax liability account is required"
-  })
+  }),
+  deferredRevenueAccount: z.string().optional(),
+  contractAssetAccount: z.string().optional(),
+  netInvestmentInLeasesAccount: z.string().optional()
 });
 
 export const defaultIncomeAcountValidator = z.object({
@@ -561,7 +564,10 @@ export const defaultIncomeAcountValidator = z.object({
   }),
   deferredTaxExpenseAccountId: z.string().min(1, {
     message: "Deferred tax expense account is required"
-  })
+  }),
+  rentalIncomeAccount: z.string().optional(),
+  leaseRevenueAccount: z.string().optional(),
+  leaseInterestIncomeAccount: z.string().optional()
 });
 
 export const defaultAccountValidator =
@@ -751,17 +757,28 @@ export const journalEntrySourceTypes = [
   "Job Close",
   "Asset Depreciation",
   "Asset Disposal",
+  "Asset Transfer",
   "Payment",
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
   "Inbound Inspection",
-  "Card Transaction"
+  "Card Transaction",
+  "Revenue Recognition",
+  "Lease"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
 
 export const periodCloseStatuses = ["Open", "Locked", "Closed"] as const;
+
+export const revenueScheduleTypes = [
+  "Deferral",
+  "Accrual",
+  "Interest"
+] as const;
+
+export const revenueScheduleStatuses = ["Planned", "Posted"] as const;
 
 export const accountingPeriodTransitionValidator = z.object({
   intent: z.enum(["lock", "unlock", "close", "reopen"]),
@@ -883,7 +900,18 @@ export const fixedAssetStatuses = [
   "Draft",
   "Active",
   "Fully Depreciated",
-  "Disposed"
+  "Disposed",
+  "Under Construction"
+] as const;
+
+export const fleetStatuses = [
+  "Available",
+  "Reserved",
+  "On Rent",
+  "In Maintenance",
+  "Under Construction",
+  "Sold",
+  "Returned to Stock"
 ] as const;
 
 export const depreciationMethods = [
@@ -972,6 +1000,7 @@ export const fixedAssetValidator = z.object({
   ),
   assetLifetimeUsage: zfd.numeric(z.number().positive().optional()),
   locationId: zfd.text(z.string().optional()),
+  workCenterId: zfd.text(z.string().optional()),
   taxDepreciationMethod: z.preprocess(
     (val) => (val === "" ? null : val),
     z.enum(taxDepreciationMethods).nullable().optional()
@@ -1014,6 +1043,10 @@ export const depreciationRunValidator = z.object({
   periodEnd: z.string().min(1, { message: "Period end date is required" })
 });
 
+export const revenueRecognitionRunValidator = z.object({
+  periodEnd: z.string().min(1, { message: "Period end is required" })
+});
+
 export const fixedAssetUsageLogValidator = z.object({
   fixedAssetId: z.string().min(1, { message: "Asset is required" }),
   periodStart: z.string().min(1, { message: "Period start is required" }),
@@ -1025,4 +1058,33 @@ export const fixedAssetUsageLogValidator = z.object({
 
 export const fixedAssetDisposalValidator = z.object({
   disposalDate: z.string().min(1, { message: "Disposal date is required" })
+});
+
+export const fixedAssetCapitalizeValidator = z.object({
+  fixedAssetClassId: z.string().min(1, { message: "Asset class is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  trackedEntityId: z.string().min(1, { message: "Tracked entity is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional()),
+  transferDate: z.string().min(1, { message: "Transfer date is required" }),
+  name: zfd.text(z.string().optional())
+});
+
+export const fixedAssetReturnToInventoryValidator = z.object({
+  transferDate: z.string().min(1, { message: "Transfer date is required" }),
+  locationId: z.string().min(1, { message: "Location is required" }),
+  storageUnitId: zfd.text(z.string().optional())
+});
+
+export const fixedAssetAttachJobValidator = z.object({
+  jobId: z.string().min(1, { message: "Job is required" })
+});
+
+export const fixedAssetCapitalizeCipValidator = z.object({
+  toClassId: z.string().min(1, { message: "Asset class is required" }),
+  inServiceDate: z.string().min(1, { message: "In-service date is required" })
+});
+
+export const fixedAssetOutOfServiceValidator = z.object({
+  reason: z.string().trim().min(1, { message: "Reason is required" })
 });

@@ -179,6 +179,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     unitOfMeasureCode: validation.data.unitOfMeasureCode,
     customerId: validation.data.customerId || null,
     modelUploadId: validation.data.modelUploadId || null,
+    fixedAssetClassId: validation.data.fixedAssetClassId || null,
+    fixedAssetId: validation.data.fixedAssetId || null,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });

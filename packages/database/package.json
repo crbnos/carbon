@@ -32,6 +32,8 @@
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",
     "./sequence": "./src/sequence.ts",
+    "./revenue-recognition": "./src/revenue-recognition.ts",
+    "./rental-billing": "./src/rental-billing.ts",
     "./seed-workflows": "./src/datasets/tiers/workflow-definitions.ts",
     "./audit.config": "./src/audit.config.ts",
     "./audit.types": "./src/audit.types.ts",

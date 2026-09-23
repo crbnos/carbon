@@ -28,12 +28,14 @@ export const isKysely = (db: AnyPostgresClient): db is Kysely<DB> =>
 export interface TrackedEntityAttributes {
   "Batch Number"?: string;
   Customer?: string;
+  "Fixed Asset"?: string;
   "Job Operation"?: string;
   "Job Operation Index"?: number;
   "Purchase Order"?: string;
   "Receipt Line Index"?: number;
   "Receipt Line"?: string;
   Receipt?: string;
+  "Rental Agreement"?: string;
   Supplier?: string;
   "Serial Number"?: string;
   "Shipment Line Index"?: number;

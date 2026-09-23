@@ -37,6 +37,7 @@ Carbon tracks a fixed set of entities. Anything not on this list is not audited.
 | Maintenance Dispatch | Pricing Rule |
 | Price Override | Price Override Break |
 | Fixed Asset | Accounting Period |
+| Rental Agreement | |
 
 For each change, an entry captures the **operation** (`INSERT`, `UPDATE`, or `DELETE`), the **actor** (the user who made it — a system or service-role change shows as *System*), a **field-level diff** of what changed, request **metadata** (IP address, user agent, origin), and the **timestamp**. Fields that only reflect bookkeeping — `updatedAt`, `updatedBy`, and internal embeddings — are excluded from diffs, so the log stays focused on meaningful changes.
 

@@ -602,7 +602,13 @@ async function issueJobOperationMaterials(
 async function createMaterialWipEntries(
   trx: Transaction<DB>,
   args: {
-    consumptionLedgers: Array<{ itemId: string; quantity: number }>;
+    // trackedEntityId: the serial consumed, relieved from its own cost layer
+    // first (specific identification, shared/cost-layer-order.ts).
+    consumptionLedgers: Array<{
+      itemId: string;
+      quantity: number;
+      trackedEntityId?: string | null;
+    }>;
     jobId: string;
     operationId: string;
     description: string;
@@ -685,6 +691,9 @@ async function createMaterialWipEntries(
         itemId: ledger.itemId,
         quantity: absQty,
         companyId,
+        trackedEntityIds: ledger.trackedEntityId
+          ? [ledger.trackedEntityId]
+          : [],
       });
       cost = cogsResult.totalCost;
     } else {
@@ -1636,7 +1645,11 @@ async function consumeTrackedEntitiesIntoOperation(
           if (accountingEnabledTracked && accountDefaultsTracked?.data && itemLedgerInserts.length > 0) {
             const consumptionEntries = itemLedgerInserts
               .filter((l) => l.entryType === "Consumption")
-              .map((l) => ({ itemId: l.itemId as string, quantity: Number(l.quantity) }));
+              .map((l) => ({
+                itemId: l.itemId as string,
+                quantity: Number(l.quantity),
+                trackedEntityId: l.trackedEntityId,
+              }));
 
             if (consumptionEntries.length > 0) {
               await createMaterialWipEntries(trx, {
@@ -2981,6 +2994,7 @@ serve(async (req: Request) => {
               consumptionLedgers: itemLedgerInserts.map((l) => ({
                 itemId: l.itemId as string,
                 quantity: Number(l.quantity),
+                trackedEntityId: l.trackedEntityId,
               })),
               jobId: jobOperation?.jobId!,
               operationId: id,

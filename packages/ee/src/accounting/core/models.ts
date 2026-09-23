@@ -420,6 +420,28 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // Off by default like the returns types above: a new journal type must never
+  // start pushing to a customer's external ledger unasked (plan decision 1,
+  // .ai/plans/2026-09-22-revenue-recognition-and-rentals.md).
+  "Revenue Recognition": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // Inventory ↔ fixed-asset transfers and job completions to an asset. Off by
+  // default for the same reason as 'Revenue Recognition'.
+  "Asset Transfer": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // Sales-type lease commencement and end of term. Off by default for the
+  // same reason as 'Revenue Recognition'.
+  Lease: {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Non-Conformance": {
     representation: "journal",
     defaultEnabled: true,

@@ -8,6 +8,8 @@ export { mrpFunction } from "./mrp";
 export { nightlyReplanFunction } from "./nightly-replan";
 export { notificationDigestFunction } from "./notification-digest";
 export { notificationPurgeFunction } from "./notification-purge";
+export { rentalBillingFunction } from "./rental-billing";
+export { revenueRecognitionProposalFunction } from "./revenue-recognition-proposal";
 export {
   markScheduleStaleFunction,
   scheduleReplanWaveFunction

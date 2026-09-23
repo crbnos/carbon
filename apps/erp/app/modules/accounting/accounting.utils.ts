@@ -1,4 +1,5 @@
 import { credit, debit, round, toStoredAmount } from "@carbon/utils";
+import { endOfMonth, parseDate, today } from "@internationalized/date";
 
 /**
  * Gain/(loss) on disposal of a fixed asset = sale proceeds − net book value
@@ -372,15 +373,39 @@ export function getLastDayOfMonth(year: number, month: number): string {
   return d.toISOString().split("T")[0];
 }
 
-export function getNextPeriodEnd(lastPeriodEnd: string | null): string {
-  if (lastPeriodEnd) {
-    const last = new Date(lastPeriodEnd);
-    const nextMonth = last.getMonth() + 1;
-    const nextYear = last.getFullYear() + (nextMonth > 11 ? 1 : 0);
-    return getLastDayOfMonth(nextYear, nextMonth % 12);
-  }
-  const now = new Date();
-  return getLastDayOfMonth(now.getFullYear(), now.getMonth());
+/**
+ * The month end after `lastPeriodEnd`; with no prior run, the end of the
+ * current month of `todayIso` (a `YYYY-MM-DD` business date, default UTC
+ * today). Depreciation runs for the month in progress, so its first run is
+ * this month.
+ */
+export function getNextPeriodEnd(
+  lastPeriodEnd: string | null,
+  todayIso?: string
+): string {
+  const base = lastPeriodEnd
+    ? parseDate(lastPeriodEnd).add({ months: 1 })
+    : todayIso
+      ? parseDate(todayIso)
+      : today("UTC");
+  return endOfMonth(base).toString();
+}
+
+/**
+ * The month end after `lastPeriodEnd`; with no prior run, the end of the
+ * month BEFORE `todayIso`. Revenue is recognized for a month once it has
+ * closed (the monthly proposal job runs on the 1st for the prior month), so a
+ * first run proposed in November is for October. Defaulting to the current
+ * month would sweep the current month's rows into the same run a month early.
+ */
+export function getNextRevenueRecognitionPeriodEnd(
+  lastPeriodEnd: string | null,
+  todayIso: string
+): string {
+  const base = lastPeriodEnd
+    ? parseDate(lastPeriodEnd).add({ months: 1 })
+    : parseDate(todayIso).subtract({ months: 1 });
+  return endOfMonth(base).toString();
 }
 
 export function calculateDepreciation(

@@ -127,6 +127,27 @@ const AccountDefaultsForm = ({
             label: t`Customer Write-Off (Bad Debt)`,
             description: t`Expense account for customer balances written off as uncollectable on AR settlement`,
             badgeType: "Expense"
+          },
+          {
+            name: "deferredRevenueAccount",
+            label: t`Deferred Revenue`,
+            description: t`Liability credited when a service-dated or rental invoice line is billed before the revenue is earned; released by recognition runs`,
+            badgeType: "Liability",
+            termId: "account-default-deferred-revenue"
+          },
+          {
+            name: "contractAssetAccount",
+            label: t`Contract Assets`,
+            description: t`Unbilled receivable for rent earned before it is invoiced`,
+            badgeType: "Asset",
+            termId: "account-default-contract-assets"
+          },
+          {
+            name: "netInvestmentInLeasesAccount",
+            label: t`Net Investment in Leases`,
+            description: t`Receivable recognized at commencement of a sales-type lease, reduced by each rental payment`,
+            badgeType: "Asset",
+            termId: "account-default-net-investment-in-leases"
           }
         ]
       },
@@ -320,6 +341,27 @@ const AccountDefaultsForm = ({
             label: t`Realized Exchange Gain`,
             description: t`Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate`,
             badgeType: "Revenue"
+          },
+          {
+            name: "rentalIncomeAccount",
+            label: t`Rental Income`,
+            description: t`Revenue recognized straight-line for operating rentals and for variable rental charges`,
+            badgeType: "Revenue",
+            termId: "account-default-rental-income"
+          },
+          {
+            name: "leaseRevenueAccount",
+            label: t`Lease Revenue`,
+            description: t`Revenue recognized at commencement of a sales-type lease`,
+            badgeType: "Revenue",
+            termId: "account-default-lease-revenue"
+          },
+          {
+            name: "leaseInterestIncomeAccount",
+            label: t`Interest Income – Leases`,
+            description: t`Other Income account for the monthly interest earned on the net investment in sales-type leases`,
+            badgeType: "Revenue",
+            termId: "account-default-lease-interest-income"
           }
         ]
       },

@@ -34,9 +34,10 @@ An invoice line is one of a handful of types, most of which pull an item's detai
 | Part, Service, Material, Tool, Consumable | Yes | Yes |
 | Comment (a note, no charge) | Yes | Yes |
 | Fixed Asset | Yes | — |
+| Rental (drafted from a rental agreement, read-only) | Yes | — |
 | G/L Account (charge straight to an account) | — | Yes |
 
-A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description — freight, a fee, anything without an item behind it. Sales invoices don't offer it; they carry a **Fixed Asset** line instead, for billing a capitalized asset.
+A **G/L Account** line lets a purchase invoice book a cost directly to a ledger account with a description — freight, a fee, anything without an item behind it. Sales invoices don't offer it; they carry a **Fixed Asset** line instead, for billing a capitalized asset. A **Rental** line is never added by hand: `docs/reference/rental-agreements` billing writes one per billing period or charge, with no item, and it posts to lease accounts rather than to sales. On an operating unit, rent posts to contract assets and deferred revenue. On a sales-type unit, rent and the purchase option credit net investment in leases. A charge posts to rental income either way.
 
 ## Posting
 

@@ -52,7 +52,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (status === "Ready") {
     const { data } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select(
+        "quantity, salesOrderLineId, fixedAssetClassId, fixedAssetId, item(itemTrackingType, itemReplenishment(manufacturingBlocked))"
+      )
       .eq("id", id)
       .single();
 
@@ -61,6 +63,41 @@ export async function action({ request, params }: ActionFunctionArgs) {
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
       );
+    }
+
+    // Make to Asset gate, checked here so every path to Ready (the release
+    // dialog and the plain status post) refuses before releaseJobs runs. One
+    // job completes to one asset: a serialised item numbers each unit, so any
+    // quantity is fine; an unserialised item can only be a single unit. And a
+    // job on a sales order line is a sale, not a capitalisation.
+    if (data?.fixedAssetClassId || data?.fixedAssetId) {
+      if (
+        data.item?.itemTrackingType !== "Serial" &&
+        Number(data.quantity) > 1
+      ) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              "Make to Asset needs a serialized item or a quantity of one"
+            )
+          )
+        );
+      }
+      if (data.salesOrderLineId) {
+        throw redirect(
+          requestReferrer(request) ?? path.to.job(id),
+          await flash(
+            request,
+            error(
+              null,
+              "A job linked to a sales order line cannot complete to a fixed asset"
+            )
+          )
+        );
+      }
     }
   }
 

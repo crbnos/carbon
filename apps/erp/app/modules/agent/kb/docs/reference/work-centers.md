@@ -22,7 +22,7 @@ Routing operations are scheduled onto work centers, and a work center's rates pr
 
 A **process** is a capability a work center can perform; work centers and processes are many-to-many. A process is *Inside*, *Outside*, or both. **Outside** processes are subcontracted, and suppliers attach to them for outside-processing purchase orders.
 
-A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are independent records in Carbon. There's no link between them, even when they're the same physical machine.
+A work center is **not** a fixed asset. The machine you schedule production on (a work center) and the machine you depreciate (a fixed asset) are separate records in Carbon. An asset can name the work center it runs on (the asset's Work center field), which is how the work center's Capital cost panel lists the assets behind it with their net book value and monthly depreciation; scheduling and depreciation stay independent.
 
 ## Rates: estimate vs actual
 

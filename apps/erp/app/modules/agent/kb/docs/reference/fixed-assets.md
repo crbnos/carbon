@@ -1,28 +1,67 @@
 # Fixed assets
 
-> Capital equipment on the books: acquired, depreciated, and retired.
+> Capital equipment on the books: bought, built, or capitalized from stock, then depreciated and retired.
 
-A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense: a press, a CNC, a forklift. It's an accounting record of value over time, distinct from the work center that represents the same machine on the floor. Every asset belongs to an **asset class**, which supplies the general-ledger accounts it posts to.
+A **fixed asset** is a piece of capital equipment you capitalize and depreciate rather than expense: a press, a CNC, a forklift, or a unit you built to rent out. It's an accounting record of value over time, distinct from the work center that represents the same machine on the floor. Every asset belongs to an **asset class**, which supplies the general-ledger accounts it posts to.
 
 ## Lifecycle
 
   - **Draft**: Created, not yet on the books.
+  - **Under Construction**: In a construction in progress class, collecting cost. Not depreciating yet.
   - **Active**: Capitalized and depreciating.
   - **Fully Depreciated**: Written down to its residual value; no longer accruing.
-  - **Disposed**: Retired or sold off the books.
+  - **Disposed**: Retired, sold, or returned to stock. Off the books.
 
 ## Acquiring
 
-An asset comes onto the books two ways, both starting at **Draft**:
+An asset comes onto the books four ways, all starting at **Draft**:
 
-- **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No money posts; you're recording something you have.
+- **Register** one you already own: supply its acquisition cost and depreciation start date, and it moves to **Active**. No cash moves; with accounting enabled the entry offsets equity, since you're recording something you already have.
 - **Buy** one through purchasing: a purchase-order line of type *Fixed Asset* that, when the receipt posts, debits the asset account, **adds** the cost to the asset, and flips it to **Active**.
+- **Build** one on a job: set the job's **"Complete To"** to **"Fixed Asset Class"** and choose the class. When the job completes, each finished unit becomes its own asset priced at the WIP cost it absorbed, and the unit never enters stock. This is Make to Asset.
+- **Capitalize** a unit already in stock: on the item's inventory page, the storage-unit row action **"Capitalize as Fixed Asset"** moves one serialized unit out of stock at its carrying cost and creates the asset as **Active**. The serial number travels with it.
 
-The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft.
+It needs a serialized item, or a quantity of one, so that every finished unit maps to exactly one asset. And it cannot be linked to a sales order line, because that job is a sale. Carbon refuses to release a job that breaks either rule, so you find out at release rather than at completion.
+
+The purchase-receipt path activates the asset and posts its acquisition entry **only when accounting is enabled** for the company. Cost is added cumulatively, so an asset can accrue value across several receipts; with accounting off, the line is received but the asset is left in Draft. A job that builds an asset with accounting off still creates it, at a cost of zero.
+
+## Construction in progress
+
+A long build has an asset before it has a finished machine. Put the asset in a class flagged **Construction in Progress** (Carbon seeds one) and it sits at **"Under Construction"** while cost arrives from three directions:
+
+- **Purchase lines.** A *Fixed Asset* purchase-order line pointed at the asset adds its cost when the receipt or invoice posts, and leaves the status at Under Construction instead of flipping it to Active.
+- **Jobs.** **"Attach Job"** on the asset page points an open job at the asset and sweeps the WIP the job has absorbed so far onto it; the job's ordinary completion sweeps the rest. Creating the job with **"Complete To"** set to **"Asset Under Construction"** does the same from the job side.
+- **Registration.** Registering an asset directly into the class records its opening cost as construction cost.
+
+Every arrival is a row in the asset page's **Construction in Progress** ledger. When the build is done, **"Capitalize"** moves the asset into its in-service class at an in-service date: the summed rows become its acquisition cost, depreciation starts on that date, and the status becomes **Active**.
+
+Attaching posts the WIP a job has accumulated to the asset immediately, so the balance sheet shows the build in progress instead of a WIP balance that quietly grows for months. A job can be attached while it is open (Completed, Cancelled, and Closed jobs are refused), and no job can sweep cost onto an Active asset: that would restate a depreciating asset's basis.
+
+## Fleet register
+
+**Accounting → Fixed Assets → Fleet** lists every asset tied to an item, whether built on a job or capitalized from stock, with a status Carbon derives from the asset rather than stores:
+
+| Status | Meaning |
+| --- | --- |
+| **"Available"** | On the books, in service, and free to rent |
+| **"Reserved"** | Named on a draft or undelivered line of a `docs/reference/rental-agreements` |
+| **"On Rent"** | Delivered to a customer on an active rental agreement |
+| **"In Maintenance"** | Taken out of service |
+| **"Under Construction"** | Still collecting cost |
+| **"Sold"** | Disposed by sale or scrapping, including a unit leased out on a `docs/reference/rental-agreements` |
+| **"Returned to Stock"** | Returned to inventory |
+
+Two actions manage whether a unit is out of service without touching its accounting. **"Take Out of Service"** records a reason and date, keeps the asset depreciating, and flips the register to In Maintenance; **"Return to Service"** clears it. Both live on the asset page and in the register's row menu. A unit on rent is taken out of service from its rental agreement instead: **"Return"** it with **"Take out of service"** ticked.
+
+An Available unit's row menu also offers **"Rent"**, which starts a new rental agreement with that unit on it.
+
+A unit can also go back to stock. **"Return to Inventory"** on an Active or Fully Depreciated asset with an item puts the same serial back on the shelf at net book value, marks the asset Disposed, and the unit then sells like any other stock. Return it to service first, and return it from its rental agreement if it is reserved or on rent: Carbon refuses either case.
+
+The seeded **Rental Fleet** class is the default target for these units, and **"Build for Fleet"** on the register opens a new job with that class already set as its Complete To target.
 
 ## Depreciating
 
-Depreciation runs as a **monthly batch you trigger**. There's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. Carbon keeps a separate **tax** book too, including MACRS, when tax depreciation is enabled. When an asset's net book value reaches its residual, posting flips it to **Fully Depreciated**.
+Depreciation runs as a **monthly batch you trigger**. There's no background poster. You create a run for a period, Carbon pulls every Active asset and computes each charge, you review it as a draft, then post: debit depreciation expense, credit accumulated depreciation. An asset under construction is not Active, so it is skipped until it is capitalized; a fleet unit out of service is still Active, so it keeps depreciating. Carbon keeps a separate **tax** book too, including MACRS, when tax depreciation is enabled. When an asset's net book value reaches its residual, posting flips it to **Fully Depreciated**.
 
 Book depreciation follows the asset's method: straight line, declining balance, or units of production.
 
@@ -37,15 +76,16 @@ An Active or Fully Depreciated asset leaves the books two different ways:
 | Asset status | Unchanged (stays Active) | **Disposed** |
 | Money | Collected through the invoice, like any sale | Remaining book value booked as a loss |
 
-Selling and disposing are **not** two names for one thing. Selling hands the asset to the normal quote-to-cash flow at book value and leaves it on the books; disposing retires it directly as a write-off. Disposal today is scrapping at a loss. There's no proceeds-based gain calculation wired up.
+Selling and disposing are **not** two names for one thing. Selling hands the asset to the normal quote-to-cash flow at book value; the asset leaves the books when its shipment posts, and the invoice then books the gain or loss against net book value. Disposing retires it directly: disposal from the asset page is scrapping at a loss. A fleet unit has a third exit, Return to Inventory, described above.
 
-A fixed asset is **not** the same record as a work center. The machine you schedule production on and the machine you depreciate are tracked independently. Carbon keeps no link between them.
+A fixed asset is **not** the same record as a work center. The machine you schedule production on and the machine you depreciate are tracked separately, but they can point at each other: an asset's **"Work Center"** field records which work center it serves, and that work center's page shows a read-only **Capital Cost** panel with its assets, their net book value, and the monthly straight-line depreciation they carry. Machine rates are still typed by hand.
 
 ## Related
 
   - Manufacturing accounting The narrative: putting a machine on the books and writing it down.
   - Accounting Where an asset's acquisition, depreciation, and disposal entries land.
-  - Work centers The same machine as a production resource — a separate record.
+  - Jobs The job whose Complete To target turns finished units into assets.
+  - Work centers The same machine as a production resource, with the capital cost its assets carry.
 
 ## Troubleshooting
 
@@ -53,7 +93,43 @@ A fixed asset is **not** the same record as a work center. The machine you sched
 A purchase invoice line of type *Fixed Asset* has no asset record linked. Open the line and select (or create) the fixed asset before posting the invoice.
 
 ### "Asset is no longer in Draft status"
-The register action found the asset already activated — usually someone else registered it between page load and save. Reload the asset; if it's Active, the registration already happened.
+The register action (or a capitalization into a Draft asset) found the asset already activated — usually someone else registered it between page load and save. Reload the asset; if it's Active, the registration already happened.
+
+### "Make to Asset needs a serialized item or a quantity of one"
+Raised when a job goes Ready (`$jobId.status.tsx`) and again by `complete_job_to_inventory`: the job's Complete To is a fixed asset class or an asset under construction, its item is not serial-tracked, and its quantity is not exactly 1. Set the quantity to 1, use a serial-tracked item, or set Complete To back to Inventory.
+
+### "A job linked to a sales order line cannot complete to a fixed asset"
+Same gate: the job has a `salesOrderLineId`. A make-to-order job is a sale; create a separate job for the asset.
+
+### "Job … targets fixed asset … which is not in a Construction in Progress class"
+`complete_job_to_inventory`: the job's `fixedAssetId` points at an asset whose class is not flagged `isConstructionInProgress`. Only an asset under construction accumulates job cost; an Active asset's basis is never restated.
+
+### "A job can only be attached to an asset under construction"
+Attach Job needs a CIP-class asset at Draft or Under Construction. The edge function also refuses "Job … is Completed/Cancelled/Closed and can no longer be attached to an asset", "Job … is linked to a sales order line and cannot build an asset", and "Job … already completes to a fixed asset".
+
+### "Only an asset under construction can be capitalized"
+The Capitalize action needs a CIP-class asset at status Under Construction. Attach a job or post a purchase line first so it has cost; the edge function also refuses a CIP class as the target ("… is a Construction in Progress class; choose the in-service class") and an asset with no location ("Set a location on asset … before capitalizing it").
+
+### "Only an asset capitalized from inventory can be returned to inventory" / "Only Active or Fully Depreciated assets can be returned to inventory" / "Return the asset to service before returning it to inventory"
+Return to Inventory needs `fixedAsset.itemId`, status Active or Fully Depreciated, and no `outOfServiceSince`. A job-built asset has an item and can be returned too.
+
+### "Asset … is on rent on rental agreement …; return it from the agreement first" / "Asset … is reserved on rental agreement …; return it from the agreement first"
+Return to Inventory refuses a unit on a live rental agreement line (Pending or On Rent). Return the unit on the agreement, or cancel the agreement if it was never delivered.
+
+### "Only an Available unit can be capitalized" / "Choose a serialized unit from the item's inventory to capitalize"
+Capitalize as Fixed Asset needs an Available serialized unit with on-hand at the chosen location; the capitalize route is reached from the item's storage-unit row with `itemId`, `trackedEntityId`, `locationId` and `storageUnitId` in the URL.
+
+### "Asset was capitalized; reverse the capitalization first"
+Voiding a receipt or purchase invoice whose Fixed Asset line fed a CIP asset that has since been capitalized (status no longer Under Construction). The CIP cost rows cannot be backed out of an Active asset.
+
+### "The asset is already out of service" / "A disposed asset cannot be taken out of service"
+Out-of-service gates on the asset route. Return to Service is a POST to the same route with `?intent=return`.
+
+### "The asset is on rent on RA…; return it from the agreement and take it out of service there"
+The unit is on a rental agreement. Return it from the agreement with **"Take out of service"** ticked; the register hides Take Out of Service for units on rent.
 
 ### Depreciation or receipt posting fails with a period error
 Asset postings land in an accounting period like everything else. "Accounting period is closed/locked" means the run's period needs reopening — see `docs/reference/accounting`.
+
+## Internals
+Tables: `fixedAssetTransfer` (sequence `FAT`; `type` Capitalization / Return to Inventory; `sourceType` Inventory / Job / Construction in Progress), `fixedAssetCipCost` (append-only; `sourceType` Purchase Invoice / Receipt / Job / Manual), view `fleetAssets` (derived `fleetStatus`; since the rental migration it joins the live `rentalAgreementLine` for Reserved / On Rent and exposes `rentalAgreementId`, `customerId`, `customerLocationId`). Columns: `fixedAsset.itemId`, `trackedEntityId`, `workCenterId`, `outOfServiceSince`, `outOfServiceReason`; `fixedAssetClass.isConstructionInProgress`; `job.fixedAssetClassId` / `job.fixedAssetId`. Edge function `post-asset-transfer` (`capitalize`, `return`, `attachJob`, `capitalizeCip`); journal source type `Asset Transfer`; the job branch lives in `complete_job_to_inventory`. Routes: `/x/accounting/fleet`, `/x/fixed-asset/capitalize`, `/x/fixed-asset/:id/capitalize`, `/x/fixed-asset/:id/return-to-inventory`, `/x/fixed-asset/:id/attach-job`, `/x/fixed-asset/:id/out-of-service`. Seeded accounts 1370 Rental Fleet, 1380 Accumulated Depreciation – Rental Fleet, 1390 Construction in Progress; classes Rental Fleet and Construction in Progress.

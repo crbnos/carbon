@@ -67,6 +67,7 @@ import {
   usePercentFormatter,
   usePermissions,
   useRouteData,
+  useSettings,
   useUser
 } from "~/hooks";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
@@ -100,6 +101,7 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
   const permissions = usePermissions();
+  const { revenueRecognitionEnabled } = useSettings();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const { orderId } = useParams();
@@ -688,6 +690,19 @@ const SalesOrderLineForm = ({
                               label={t`Promised Date`}
                               termId="sales-order-line-promised-date"
                             />
+                            {revenueRecognitionEnabled &&
+                              lineType !== "Fixed Asset" && (
+                                <>
+                                  <DatePicker
+                                    name="serviceStartDate"
+                                    label={t`Service start`}
+                                  />
+                                  <DatePicker
+                                    name="serviceEndDate"
+                                    label={t`Service end`}
+                                  />
+                                </>
+                              )}
                             {[
                               "Part",
                               "Material",

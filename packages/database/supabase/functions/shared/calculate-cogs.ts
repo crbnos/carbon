@@ -1,5 +1,6 @@
 import { Transaction } from "kysely";
 import { DB } from "../lib/database.ts";
+import { orderLayersForConsumption } from "./cost-layer-order.ts";
 
 export interface CostLayer {
   costLedgerId: string;
@@ -19,10 +20,15 @@ export async function calculateCOGS(
     itemId,
     quantity,
     companyId,
+    trackedEntityIds,
   }: {
     itemId: string;
     quantity: number;
     companyId: string;
+    // The serial units leaving, when the caller knows them: each is relieved
+    // from the layer booked for it (specific identification) before the
+    // FIFO / LIFO layers. See cost-layer-order.ts.
+    trackedEntityIds?: readonly string[];
   }
 ): Promise<COGSResult> {
   const itemCost = await trx
@@ -57,7 +63,7 @@ export async function calculateCOGS(
     case "LIFO": {
       const orderDirection = costingMethod === "FIFO" ? "asc" : "desc";
 
-      const layers = await trx
+      const orderedLayers = await trx
         .selectFrom("costLedger")
         .selectAll()
         .where("itemId", "=", itemId)
@@ -80,6 +86,7 @@ export async function calculateCOGS(
         // the layer twice (lost update).
         .forUpdate()
         .execute();
+      const layers = orderLayersForConsumption(orderedLayers, trackedEntityIds);
 
       let remainingToConsume = quantity;
       let totalCost = 0;

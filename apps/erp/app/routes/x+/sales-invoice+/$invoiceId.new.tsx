@@ -183,7 +183,9 @@ export default function NewSalesInvoiceLineRoute() {
     addOnCost: 0,
     nonTaxableAddOnCost: 0,
     taxPercent: 0,
-    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1
+    exchangeRate: salesInvoiceData?.salesInvoice?.exchangeRate ?? 1,
+    serviceStartDate: "",
+    serviceEndDate: ""
   };
 
   return <SalesInvoiceLineForm initialValues={initialValues} />;

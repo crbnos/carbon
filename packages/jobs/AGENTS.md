@@ -59,6 +59,8 @@ pnpm db:check:backups
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `rental-billing` | `0 5 * * *` | Per company with an Active rental agreement, one step each: `createRentalInvoicesForDuePeriods` (`@carbon/database/rental-billing`) as of the company's today, `userId "system"` — rolls operating lines forward and drafts Draft rental invoices; never posts |
+| `revenue-recognition-proposal` | `0 12 1 * *` | Per company, one step each: proposes a Draft revenue recognition run for the month that just ended on the company's calendar (`createRevenueRecognitionRunProposal`, `userId "system"`), skipped when a run for that period already exists; posting stays human |
 
 ## Safety Notes
 

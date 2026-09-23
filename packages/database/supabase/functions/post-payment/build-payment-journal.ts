@@ -6,7 +6,11 @@ import {
   assertExchangeRate,
   toBaseAmount,
 } from "../shared/accounting-currency.ts";
-import { onAccountCreditDescription } from "../shared/accounting-posting.ts";
+import {
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+  onAccountCreditDescription,
+} from "../shared/accounting-posting.ts";
 import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 export interface PaymentJournalLine {
@@ -36,6 +40,12 @@ export interface PaymentJournalApplicationInput {
   /** Original booked control accounts, resolved by the locked posting driver. */
   targetControlAccountId?: string;
   sourceControlAccountId?: string;
+  /** The prior credit was booked as a customer deposit — a liability on the
+   *  prepayment account — rather than on-account receivable credit, so its
+   *  release debits a liability and is described as a deposit release. The
+   *  driver reads this off the source's own journal line, never off today's
+   *  defaults. */
+  sourceIsDeposit?: boolean;
 }
 
 export interface PaymentJournalAccounts {
@@ -81,6 +91,13 @@ export interface BuildPaymentJournalInput {
   newOnAccountBase: number;
   accounts: PaymentJournalAccounts;
   fee?: PaymentJournalFeeInput;
+  /** A customer deposit: the payment references a sales order or rental
+   *  agreement. Its unapplied cash is a liability on `depositAccountId`
+   *  (Customer Prepayments) instead of on-account receivable credit, and a
+   *  Disbursement carrying the same reference refunds it from that account.
+   *  Ignored for supplier payments; applications are unaffected. */
+  isDeposit?: boolean;
+  depositAccountId?: string | null;
 }
 
 export interface BuildPaymentJournalResult {
@@ -114,7 +131,9 @@ export function buildPaymentJournal(
     applications,
     accounts,
     fee,
+    depositAccountId,
   } = input;
+  const isDeposit = isAR && Boolean(input.isDeposit);
   if (!accounts.controlAccountId) {
     throw new Error("Missing control account default");
   }
@@ -184,7 +203,10 @@ export function buildPaymentJournal(
   let totalFxImpact = 0;
   let currentCashReleased = 0;
   let currentDocumentReleased = 0;
-  const priorCreditReleased = new Map<string, number>();
+  const priorCreditReleased = new Map<
+    string,
+    { amount: number; isDeposit: boolean }
+  >();
   for (const app of applications) {
     const isRefund = cashIn !== isAR;
     const target = isRefund
@@ -227,10 +249,17 @@ export function buildPaymentJournal(
     if (app.sourcePaymentId) {
       const sourceAccount = app.sourceControlAccountId ??
         accounts.controlAccountId;
-      priorCreditReleased.set(
-        sourceAccount,
-        round((priorCreditReleased.get(sourceAccount) ?? 0) + releasedBase),
-      );
+      const sourceIsDeposit = isAR && Boolean(app.sourceIsDeposit);
+      const released = priorCreditReleased.get(sourceAccount);
+      if (released && released.isDeposit !== sourceIsDeposit) {
+        throw new Error(
+          "Funding source account holds both deposit and on-account credit",
+        );
+      }
+      priorCreditReleased.set(sourceAccount, {
+        amount: round((released?.amount ?? 0) + releasedBase),
+        isDeposit: sourceIsDeposit,
+      });
     } else {
       if (app.sourceExchangeRate !== exchangeRate) {
         throw new Error("Current cash rate does not match payment snapshot");
@@ -275,20 +304,36 @@ export function buildPaymentJournal(
     EPSILON,
     "Current payment funding",
   );
-  push(
-    cashIn ? "credit" : "debit",
-    isAR ? "asset" : "liability",
-    newOnAccountBase,
-    accounts.controlAccountId,
-    onAccountCreditDescription(isAR),
-  );
-  for (const [accountId, amount] of priorCreditReleased) {
+  // Unapplied cash. A deposit is the customer's money held against a document,
+  // so a Receipt books it as a liability on the prepayment account and a
+  // Disbursement carrying the same reference refunds it from there — the same
+  // two-direction leg the on-account credit below is, on a different account.
+  if (isDeposit) {
+    push(
+      cashIn ? "credit" : "debit",
+      "liability",
+      newOnAccountBase,
+      depositAccountId ?? null,
+      CUSTOMER_DEPOSIT_DESCRIPTION,
+    );
+  } else {
+    push(
+      cashIn ? "credit" : "debit",
+      isAR ? "asset" : "liability",
+      newOnAccountBase,
+      accounts.controlAccountId,
+      onAccountCreditDescription(isAR),
+    );
+  }
+  for (const [accountId, released] of priorCreditReleased) {
     push(
       cashIn ? "debit" : "credit",
-      isAR ? "asset" : "liability",
-      amount,
+      released.isDeposit ? "liability" : isAR ? "asset" : "liability",
+      released.amount,
       accountId,
-      `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
+      released.isDeposit
+        ? CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION
+        : `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
     );
   }
   totalFxImpact = round(totalFxImpact);

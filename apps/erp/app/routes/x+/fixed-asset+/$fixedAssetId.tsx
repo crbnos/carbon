@@ -19,21 +19,28 @@ import {
   useDisclosure
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import {
   LuChevronDown,
+  LuCircleArrowUp,
+  LuCircleCheck,
   LuCircleX,
   LuClipboardCheck,
   LuHistory,
+  LuLink,
+  LuPackageCheck,
   LuPencil,
   LuShoppingCart,
   LuStore,
-  LuTrash
+  LuTrash,
+  LuWrench
 } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import {
   Link,
   Outlet,
   redirect,
+  useFetcher,
   useLoaderData,
   useNavigate,
   useParams
@@ -47,13 +54,17 @@ import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
 import {
   getAssetDepreciationHistory,
   getFixedAsset,
-  getFixedAssetDisposal
+  getFixedAssetCipCosts,
+  getFixedAssetDisposal,
+  getFixedAssetTransfers
 } from "~/modules/accounting";
 import {
   DepreciationRunStatus,
+  FixedAssetCipCosts,
   FixedAssetNotes,
   FixedAssetStatus
 } from "~/modules/accounting/ui/FixedAssets";
+import { getWorkCenter } from "~/modules/resources";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -66,18 +77,21 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
   const { fixedAssetId } = params;
   if (!fixedAssetId) throw new Error("Could not find fixedAssetId");
 
-  const [asset, depreciationHistory, disposal] = await Promise.all([
-    getFixedAsset(client, fixedAssetId),
-    getAssetDepreciationHistory(client, fixedAssetId),
-    getFixedAssetDisposal(client, fixedAssetId)
-  ]);
+  const [asset, depreciationHistory, disposal, transfers, cipCosts] =
+    await Promise.all([
+      getFixedAsset(client, fixedAssetId),
+      getAssetDepreciationHistory(client, fixedAssetId),
+      getFixedAssetDisposal(client, fixedAssetId),
+      getFixedAssetTransfers(client, fixedAssetId),
+      getFixedAssetCipCosts(client, fixedAssetId, companyId)
+    ]);
 
   if (asset.error) {
     throw redirect(
@@ -86,17 +100,60 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  const assetClass = asset.data.fixedAssetClass as {
+    isConstructionInProgress?: boolean;
+  } | null;
+
+  // The readable job numbers behind the CIP cost rows — one lookup for the set.
+  const cipJobIds = [
+    ...new Set(
+      (cipCosts.data ?? [])
+        .map((cost) => cost.jobId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [workCenter, cipJobs] = await Promise.all([
+    asset.data.workCenterId
+      ? getWorkCenter(client, asset.data.workCenterId)
+      : null,
+    cipJobIds.length > 0
+      ? client
+          .from("job")
+          .select("id, jobId")
+          .eq("companyId", companyId)
+          .in("id", cipJobIds)
+      : null
+  ]);
+
   return {
     asset: asset.data,
+    isCipClass: Boolean(assetClass?.isConstructionInProgress),
+    workCenterName: workCenter?.data?.name ?? null,
     depreciationHistory: depreciationHistory.data ?? [],
-    disposal: disposal.data
+    disposal: disposal.data,
+    transfers: transfers.data ?? [],
+    cipCosts: cipCosts.data ?? [],
+    cipJobReadableIds: Object.fromEntries(
+      (cipJobs?.data ?? []).map((job) => [job.id, job.jobId])
+    ) as Record<string, string>
   };
 }
 
 export default function FixedAssetDetailRoute() {
   const { fixedAssetId } = useParams();
-  const { asset, depreciationHistory, disposal } =
-    useLoaderData<typeof loader>();
+  const {
+    asset,
+    isCipClass,
+    workCenterName,
+    depreciationHistory,
+    disposal,
+    transfers,
+    cipCosts,
+    cipJobReadableIds
+  } = useLoaderData<typeof loader>();
+  const { t } = useLingui();
+  const fetcher = useFetcher();
   const settings = useSettings();
   const taxDepreciationEnabled =
     (settings as any).assetTaxDepreciationEnabled ?? false;
@@ -131,7 +188,23 @@ export default function FixedAssetDetailRoute() {
   const isDraft = asset.status === "Draft";
   const isActive =
     asset.status === "Active" || asset.status === "Fully Depreciated";
+  const isUnderConstruction = asset.status === "Under Construction";
+  const isOutOfService = Boolean(asset.outOfServiceSince);
   const canUpdate = permissions.can("update", "accounting");
+  const canCreate = permissions.can("create", "accounting");
+  // A CIP asset takes cost from attached jobs until it is capitalized into
+  // its in-service class; both actions only make sense on a CIP class.
+  const canAttachJob = isCipClass && (isDraft || isUnderConstruction);
+  const canCapitalizeCip = isCipClass && isUnderConstruction;
+  const canReturnToInventory = Boolean(asset.itemId) && isActive;
+  const returnToService = () =>
+    fetcher.submit(
+      {},
+      {
+        method: "post",
+        action: `${path.to.fixedAssetOutOfService(fixedAssetId)}?intent=return`
+      }
+    );
 
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
@@ -140,6 +213,9 @@ export default function FixedAssetDetailRoute() {
         <Card>
           <DocumentHeader
             title={asset.fixedAssetId ?? ""}
+            subtitle={
+              workCenterName ? t`Work Center: ${workCenterName}` : undefined
+            }
             status={<FixedAssetStatus status={asset.status as any} />}
             menuItems={
               <>
@@ -188,13 +264,32 @@ export default function FixedAssetDetailRoute() {
                           Register
                         </Link>
                       </DropdownMenuItem>
-                      <DropdownMenuItem asChild>
-                        <Link to={path.to.fixedAssetPurchase(fixedAssetId)}>
-                          <DropdownMenuIcon icon={<LuShoppingCart />} />
-                          Purchase
-                        </Link>
-                      </DropdownMenuItem>
                     </>
+                  )}
+                  {/* A CIP asset collects purchased cost while Under Construction. */}
+                  {(isDraft || isUnderConstruction) && (
+                    <DropdownMenuItem asChild>
+                      <Link to={path.to.fixedAssetPurchase(fixedAssetId)}>
+                        <DropdownMenuIcon icon={<LuShoppingCart />} />
+                        Purchase
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {canAttachJob && (
+                    <DropdownMenuItem disabled={!canCreate} asChild>
+                      <Link to={path.to.fixedAssetAttachJob(fixedAssetId)}>
+                        <DropdownMenuIcon icon={<LuLink />} />
+                        <Trans>Attach Job</Trans>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
+                  {canCapitalizeCip && (
+                    <DropdownMenuItem disabled={!canCreate} asChild>
+                      <Link to={path.to.fixedAssetCapitalizeCip(fixedAssetId)}>
+                        <DropdownMenuIcon icon={<LuCircleArrowUp />} />
+                        <Trans>Capitalize</Trans>
+                      </Link>
+                    </DropdownMenuItem>
                   )}
                   {isActive && (
                     <>
@@ -204,7 +299,37 @@ export default function FixedAssetDetailRoute() {
                           Sell
                         </Link>
                       </DropdownMenuItem>
+                      {canReturnToInventory && (
+                        <DropdownMenuItem disabled={!canCreate} asChild>
+                          <Link
+                            to={path.to.fixedAssetReturnToInventory(
+                              fixedAssetId
+                            )}
+                          >
+                            <DropdownMenuIcon icon={<LuPackageCheck />} />
+                            <Trans>Return to Inventory</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuSeparator />
+                      {isOutOfService ? (
+                        <DropdownMenuItem
+                          disabled={!canUpdate}
+                          onClick={returnToService}
+                        >
+                          <DropdownMenuIcon icon={<LuCircleCheck />} />
+                          <Trans>Return to Service</Trans>
+                        </DropdownMenuItem>
+                      ) : (
+                        <DropdownMenuItem disabled={!canUpdate} asChild>
+                          <Link
+                            to={path.to.fixedAssetOutOfService(fixedAssetId)}
+                          >
+                            <DropdownMenuIcon icon={<LuWrench />} />
+                            <Trans>Take Out of Service</Trans>
+                          </Link>
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem disabled={!canUpdate} asChild>
                         <Link to={path.to.fixedAssetDispose(fixedAssetId)}>
                           <DropdownMenuIcon icon={<LuCircleX />} />
@@ -212,6 +337,15 @@ export default function FixedAssetDetailRoute() {
                         </Link>
                       </DropdownMenuItem>
                     </>
+                  )}
+                  {!isActive && isOutOfService && (
+                    <DropdownMenuItem
+                      disabled={!canUpdate}
+                      onClick={returnToService}
+                    >
+                      <DropdownMenuIcon icon={<LuCircleCheck />} />
+                      <Trans>Return to Service</Trans>
+                    </DropdownMenuItem>
                   )}
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -281,6 +415,23 @@ export default function FixedAssetDetailRoute() {
               <DetailRow label="Location">
                 <Enumerable value={(asset as any).location?.name ?? null} />
               </DetailRow>
+              <DetailRow label={t`Work Center`}>
+                {workCenterName ? <Enumerable value={workCenterName} /> : "—"}
+              </DetailRow>
+              {isOutOfService && (
+                <DetailRow label={t`Out of Service Since`}>
+                  <span>
+                    <DateTime
+                      value={asset.outOfServiceSince}
+                      variant="date"
+                      fallback="—"
+                    />
+                    {asset.outOfServiceReason
+                      ? ` · ${asset.outOfServiceReason}`
+                      : ""}
+                  </span>
+                </DetailRow>
+              )}
               <DetailRow label="Depreciation Method">
                 {asset.depreciationMethod}
               </DetailRow>
@@ -439,6 +590,93 @@ export default function FixedAssetDetailRoute() {
                   </table>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Construction in progress cost ledger */}
+        {isCipClass && (
+          <FixedAssetCipCosts
+            costs={cipCosts}
+            jobReadableIds={cipJobReadableIds}
+          />
+        )}
+
+        {/* Transfers */}
+        {transfers.length > 0 && (
+          <Card>
+            <CardHeader>
+              <CardTitle>
+                <Trans>Transfers</Trans>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="overflow-x-auto -mx-6 px-6">
+                <table className="w-full text-base sm:text-sm">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Transfer</Trans>
+                      </th>
+                      <th className="text-left py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Type</Trans>
+                      </th>
+                      <th className="text-left py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Source</Trans>
+                      </th>
+                      <th className="text-left py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Date</Trans>
+                      </th>
+                      <th className="text-left py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Journal</Trans>
+                      </th>
+                      <th className="text-right py-2.5 sm:py-2 font-medium text-muted-foreground">
+                        <Trans>Amount</Trans>
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {transfers.map((transfer) => (
+                      <tr
+                        key={transfer.id}
+                        className="border-b border-border last:border-0"
+                      >
+                        <td className="py-3 sm:py-2.5 tabular-nums">
+                          {transfer.transferId}
+                        </td>
+                        <td className="py-3 sm:py-2.5">
+                          <Enumerable value={transfer.type} />
+                        </td>
+                        <td className="py-3 sm:py-2.5">
+                          <Enumerable value={transfer.sourceType} />
+                        </td>
+                        <td className="py-3 sm:py-2.5">
+                          <DateTime
+                            value={transfer.transferDate}
+                            variant="date"
+                            fallback="—"
+                          />
+                        </td>
+                        <td className="py-3 sm:py-2.5">
+                          {transfer.journalId ? (
+                            <Link
+                              to={path.to.journalEntry(transfer.journalId)}
+                              className="text-foreground hover:underline"
+                            >
+                              <Trans>View</Trans>
+                            </Link>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
+                        <td className="py-3 sm:py-2.5 text-right tabular-nums">
+                          {currencyFormatter.format(Number(transfer.amount))}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             </CardContent>
           </Card>
         )}

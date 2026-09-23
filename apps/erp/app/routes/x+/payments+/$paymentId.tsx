@@ -23,6 +23,7 @@ import {
   paymentValidator,
   upsertPayment
 } from "~/modules/invoicing";
+import { getDepositDocuments } from "~/modules/invoicing/invoicing.server";
 import { setCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,11 +53,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   try {
     if (applications.error) throw new Error(applications.error.message);
-    const configuration = await getPaymentCurrencyConfiguration(
-      client,
-      companyId,
-      payment.data.currencyCode
-    );
+    const [configuration, depositDocuments] = await Promise.all([
+      getPaymentCurrencyConfiguration(
+        client,
+        companyId,
+        payment.data.currencyCode
+      ),
+      // The payment's own document stays listed even once it is closed.
+      getDepositDocuments(client, companyId, [payment.data.salesOrderId])
+    ]);
     let openInvoices: NonNullable<
       Awaited<ReturnType<typeof getOpenSalesInvoicesForCustomer>>["data"]
     > = [];
@@ -160,6 +165,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       funding,
       availableCredits,
       stagedCredits,
+      depositDocuments,
       ...configuration
     };
   } catch (e) {
@@ -253,7 +259,8 @@ export default function PaymentDetailRoute() {
     baseCurrencyCode,
     currencyDecimals,
     availableCredits,
-    stagedCredits
+    stagedCredits,
+    depositDocuments
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
   const side: "sales" | "purchase" = payment.customerId ? "sales" : "purchase";
@@ -272,12 +279,18 @@ export default function PaymentDetailRoute() {
     bankAccount: payment.bankAccount ?? "",
     reference: payment.reference ?? "",
     memo: payment.memo ?? "",
+    salesOrderId: payment.salesOrderId ?? "",
+    rentalAgreementId: payment.rentalAgreementId ?? "",
     status: payment.status ?? undefined
   };
 
   return (
     <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">
-      <PaymentForm key={payment.id} initialValues={initialValues} />
+      <PaymentForm
+        key={payment.id}
+        initialValues={initialValues}
+        depositDocuments={depositDocuments}
+      />
       <PaymentApplications
         applications={applications}
         paymentTotal={Number(payment.totalAmount)}

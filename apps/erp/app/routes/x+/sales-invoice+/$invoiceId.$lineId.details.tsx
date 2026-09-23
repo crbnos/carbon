@@ -237,6 +237,8 @@ export default function EditSalesInvoiceLineRoute() {
     exchangeRate: salesInvoiceLine?.exchangeRate ?? 1,
     unitOfMeasureCode: salesInvoiceLine?.unitOfMeasureCode ?? "",
     storageUnitId: salesInvoiceLine?.storageUnitId ?? "",
+    serviceStartDate: salesInvoiceLine?.serviceStartDate ?? "",
+    serviceEndDate: salesInvoiceLine?.serviceEndDate ?? "",
     assetReadableId: (salesInvoiceLine as any)?.assetReadableId ?? undefined,
     assetName: (salesInvoiceLine as any)?.assetName ?? undefined,
     ...getCustomFields(salesInvoiceLine?.customFields)
