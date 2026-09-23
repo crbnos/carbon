@@ -170,9 +170,8 @@ export function LineItemsBlock({
                               {getLineDescriptionDetails(line)}
                             </Text>
                             {opts.showThumbnails &&
-                              thumbnails &&
                               line.id != null &&
-                              line.id in thumbnails && (
+                              thumbnails?.[line.id] && (
                                 <View style={tw("mt-2")}>
                                   <Image
                                     src={thumbnails[line.id]!}

@@ -146,7 +146,14 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     : null;
 
   return {
-    line: line.data,
+    // Quantity breaks are stored in entry order; every surface renders them
+    // least-to-most (the summary, share page, and PDF sort the same way).
+    line: {
+      ...line.data,
+      quantity: line.data.quantity
+        ? [...line.data.quantity].sort((a, b) => a - b)
+        : line.data.quantity
+    },
     operations: operations?.data ?? [],
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<
