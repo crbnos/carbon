@@ -414,25 +414,32 @@ export namespace Rillet {
    * account-coded (`line_items[]`, NOT the bill's `items[]`), so the memo's
    * reason account binds the GL directly and no product is involved.
    *
-   * VERIFY (sandbox, plan Task 15): `line_items[]` and its member shape are
-   * confirmed against Rillet's OpenAPI; the HEADER field names below
-   * (`credit_date`, `credit_number`) are modelled on the bill/invoice/charge
-   * `<object>_date` + `<object>_number` convention and are NOT confirmed. A
-   * wrong name 400s and the sync operation lands Failed — visible, not silent.
+   * Header field names CONFIRMED against Rillet's OpenAPI
+   * (`CreateVendorCreditRequest` = `BaseVendorCreditRequest` + vendor_id +
+   * subsidiary_id). The earlier draft inferred them from the bill/invoice
+   * `<object>_date` convention and was wrong on three counts — `date` not
+   * `credit_date`, `gl_impact_date` not `impact_date`, and `subsidiary_id`
+   * REQUIRED here even though it is optional on a bill.
+   *
+   * The create body accepts ONLY credit_number, date, gl_impact_date, memo,
+   * line_items, vendor_id and subsidiary_id — note there is NO
+   * `external_references` and NO `exchange_rate`, unlike bills and invoices.
+   * Provenance therefore rides `credit_number` (Carbon's readable memo id) and
+   * the externalIntegrationMapping row.
    */
   export const VendorCreditSchema = z.object({
     id: z.string(),
     vendor_id: z.string(),
-    /** YYYY-MM-DD. */
-    credit_date: z.string(),
+    /** YYYY-MM-DD. Required. */
+    date: z.string(),
     line_items: z.array(VendorCreditLineItemSchema).min(1),
-    /** Carbon's readable memo id. */
-    credit_number: z.string().optional(),
-    /** GL impact date; defaults to credit_date when omitted. */
-    impact_date: z.string().optional(),
-    subsidiary_id: z.string().optional(),
-    external_references: z.array(ExternalReferenceSchema).optional(),
-    exchange_rate: ExchangeRateSchema.optional(),
+    /** Carbon's readable memo id. Required — also the provenance link. */
+    credit_number: z.string(),
+    /** Required; Rillet does not default it. */
+    gl_impact_date: z.string(),
+    /** Required on a vendor credit (unlike a bill, where it is optional). */
+    subsidiary_id: z.string(),
+    memo: z.string().optional(),
     status: z.string().optional(),
     updated_at: z.string().optional()
   });

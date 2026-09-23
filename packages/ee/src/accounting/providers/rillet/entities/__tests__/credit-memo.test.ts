@@ -144,14 +144,18 @@ describe("mapMemoToRilletVendorCredit", () => {
       decimalPlaces: 2,
       baseCurrencyCode: "USD",
       vendorRemoteId: "rillet-vendor-uuid",
-      subsidiaryId: null,
+      subsidiaryId: "rillet-subsidiary-uuid",
       companyId: "company-1"
     });
 
+    // Field names VERIFIED against Rillet's OpenAPI CreateVendorCreditRequest:
+    // `date` (not credit_date), `gl_impact_date` (not impact_date), and
+    // subsidiary_id REQUIRED — unlike a bill, where it is optional.
     expect(payload).toMatchObject({
       vendor_id: "rillet-vendor-uuid",
-      credit_date: "2026-09-20",
-      impact_date: "2026-09-21",
+      subsidiary_id: "rillet-subsidiary-uuid",
+      date: "2026-09-20",
+      gl_impact_date: "2026-09-21",
       credit_number: "DM-2026-0001",
       line_items: [
         {
@@ -161,6 +165,30 @@ describe("mapMemoToRilletVendorCredit", () => {
         }
       ]
     });
+
+    // The vendor-credit create body accepts ONLY credit_number, date,
+    // gl_impact_date, memo, line_items, vendor_id and subsidiary_id. Sending
+    // external_references or exchange_rate (which bills and invoices DO take)
+    // is not valid here — provenance rides credit_number and the mapping row.
+    expect(payload).not.toHaveProperty("external_references");
+    expect(payload).not.toHaveProperty("exchange_rate");
+    expect(payload).not.toHaveProperty("credit_date");
+    expect(payload).not.toHaveProperty("impact_date");
+  });
+
+  it("refuses to push without a subsidiary, which Rillet requires here", () => {
+    expect(() =>
+      mapMemoToRilletVendorCredit({
+        memo: supplierMemo(),
+        reasonAccountCode: "4200",
+        reasonAccountName: "Sales Returns & Allowances",
+        decimalPlaces: 2,
+        baseCurrencyCode: "USD",
+        vendorRemoteId: "rillet-vendor-uuid",
+        subsidiaryId: null,
+        companyId: "company-1"
+      })
+    ).toThrow(/subsidiary/i);
   });
 });
 
@@ -402,7 +430,8 @@ describe("RilletVendorCreditSyncer", () => {
       },
       provider: {
         id: "rillet",
-        subsidiaryId: null,
+        // Required on a vendor credit (optional on a credit memo and on bills).
+        subsidiaryId: "rillet-subsidiary-uuid",
         createVendorCredit,
         applyVendorCredit
       } as never

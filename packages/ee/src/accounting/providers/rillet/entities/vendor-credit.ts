@@ -7,8 +7,6 @@ import type {
 } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
-  carbonCompanyExternalReference,
-  carbonExternalReference,
   loadCompanyBaseCurrency,
   loadCurrencyDecimalPlaces,
   loadRilletAccountCodesById,
@@ -17,9 +15,7 @@ import {
   type RilletMemoSource,
   RilletTransactionSyncer,
   resolveMemoSyncGate,
-  toRilletExchangeRate,
-  toRilletMoney,
-  writeDroppingUnregisteredReferences
+  toRilletMoney
 } from "./shared";
 
 /**
@@ -76,23 +72,25 @@ export function mapMemoToRilletVendorCredit(args: {
     description: memo.notes ?? memo.reference ?? args.reasonAccountName
   };
 
+  // `subsidiary_id` is REQUIRED on a vendor credit (optional on a bill), so a
+  // company without one cannot push at all. Fail loudly rather than omitting it
+  // and taking a 400 the operator cannot interpret.
+  if (!args.subsidiaryId) {
+    throw new Error(
+      "Rillet requires a subsidiary on a vendor credit. Set the Rillet subsidiary in the integration settings, then retry."
+    );
+  }
+
   return {
     vendor_id: args.vendorRemoteId,
-    credit_date: memo.memoDate,
+    subsidiary_id: args.subsidiaryId,
+    // Carbon's readable memo id doubles as the provenance link: the vendor
+    // credit create body has no external_references field.
     credit_number: memo.memoId,
+    date: memo.memoDate,
+    gl_impact_date: impactDate,
     line_items: [lineItem],
-    impact_date: impactDate,
-    ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
-    exchange_rate: toRilletExchangeRate({
-      baseCurrencyCode: args.baseCurrencyCode,
-      documentCurrencyCode: memo.currencyCode,
-      foreignPerBaseRate: memo.exchangeRate,
-      date: impactDate
-    }),
-    external_references: [
-      carbonExternalReference(memo.id),
-      carbonCompanyExternalReference(args.companyId)
-    ]
+    ...(memo.reference ? { memo: memo.reference } : {})
   };
 }
 
@@ -339,15 +337,17 @@ export class RilletVendorCreditSyncer extends RilletTransactionSyncer<
     data: RilletVendorCreditCreate,
     localId: string
   ): Promise<string> {
-    const created = await writeDroppingUnregisteredReferences(data, (payload) =>
-      this.rilletProvider.createVendorCredit(
-        payload,
-        buildRilletIdempotencyKey({
-          companyId: this.companyId,
-          operation: "vendor-credit",
-          localId
-        })
-      )
+    // No writeDroppingUnregisteredReferences here: unlike bills and invoices, a
+    // vendor credit create has NO external_references field to drop. Idempotency
+    // rests on the entity-scoped key plus the mapping row, which is what the
+    // base syncer's fast-bailout reads.
+    const created = await this.rilletProvider.createVendorCredit(
+      data,
+      buildRilletIdempotencyKey({
+        companyId: this.companyId,
+        operation: "vendor-credit",
+        localId
+      })
     );
 
     const applications = this.pendingApplications.get(localId) ?? [];
