@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "क्रेडिट नोट"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "क्रेडिट नोट्स"
 
 msgid "Credit total"
 msgstr "क्रेडिट कुल"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "नया लागत केंद्र"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "नया क्रेडिट नोट"
 
 msgid "New Currency"
 msgstr "नई मुद्रा"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "नया आपूर्तिकर्ता क्रेडिट"
 
 msgid "New Version"
 msgstr "नया संस्करण"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "रिकॉर्ड करें"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "आपूर्तिकर्ता से एक क्रेडिट रिकॉर्ड करें — यह आपके बकाये को कम करता है। विशिष्ट चालानों के लिए आवेदन इसे बनाने के बाद जोड़े जाते हैं।"
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "ग्राहक के लिए क्रेडिट नोट रिकॉर्ड करें — यह उनके बकाये को कम करता है। विशिष्ट चालानों के लिए आवेदन इसे बनाने के बाद जोड़े जाते हैं।"
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, या धनवापसी दर्ज करें। भुगतान बनाने के बाद चालान या ज्ञापन में आवेदन जोड़े जाते हैं।"
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "वैट नंबर"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "आपूर्तिकर्ता क्रेडिट"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "आपूर्तिकर्ता क्रेडिट्स"
 
 msgid "Vendor Write-Off Income"
 msgstr "विक्रेता बट्टे खाते आय"

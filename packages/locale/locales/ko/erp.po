@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "대변전표"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "대변전표"
 
 msgid "Credit total"
 msgstr "크레딧 합계"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "신규 원가 센터"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "신규 대변전표"
 
 msgid "New Currency"
 msgstr "신규 통화"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "새 측정 단위"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "신규 공급업체 신용"
 
 msgid "New Version"
 msgstr "새 버전"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "기록"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "공급업체로부터 받은 신용을 기록하세요 — 공급업체에 지불해야 할 금액이 줄어듭니다. 생성된 후 특정 송장에 적용이 추가됩니다."
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "고객을 위한 대변전표를 기록하세요 — 고객이 지불해야 할 금액이 줄어듭니다. 생성된 후 특정 송장에 적용이 추가됩니다."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "고객 지불, 공급업체 지불 또는 환불을 기록합니다. 지불 생성 후 송장 또는 메모에 대한 적용이 추가됩니다."
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "사업자등록번호"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "공급업체 신용"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "공급업체 신용"
 
 msgid "Vendor Write-Off Income"
 msgstr "공급업체 대손 처리 수익"

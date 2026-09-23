@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "Кредит-нота"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "Кредит-ноты"
 
 msgid "Credit total"
 msgstr "Сумма кредита"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "Новый центр затрат"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "Новая кредит-нота"
 
 msgid "New Currency"
 msgstr "Новая валюта"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "Новый кредит поставщика"
 
 msgid "New Version"
 msgstr "Новая версия"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "Записать"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Запишите кредит от поставщика — это уменьшает сумму, которую вы им должны. Применение к конкретным счет-фактурам добавляется после создания."
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Запишите кредит-ноту для покупателя — это уменьшает сумму, которую он вам должен. Применение к конкретным счет-фактурам добавляется после создания."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Зафиксировать платеж покупателя, платеж поставщику или возврат. Применение к счетам-фактурам или справкам добавляется после создания платежа."
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "ИНН"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "Кредит поставщика"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "Кредиты поставщиков"
 
 msgid "Vendor Write-Off Income"
 msgstr "Доход от списания задолженности перед поставщиком"

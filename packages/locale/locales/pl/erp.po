@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "Faktura korygująca"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "Faktury korygujące"
 
 msgid "Credit total"
 msgstr "Razem kredyt"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "Nowe miejsce powstawania kosztów"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "Nowa faktura korygująca"
 
 msgid "New Currency"
 msgstr "Nowa waluta"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "Nowa jednostka miary"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "Nowy kredyt dostawcy"
 
 msgid "New Version"
 msgstr "Nowa wersja"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "Nagrywaj"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Zarejestruj kredyt od dostawcy — zmniejsza to, co im jesteś winien. Zastosowania do konkretnych faktur są dodawane po jej utworzeniu."
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Zarejestruj fakturę korygującą dla klienta — zmniejsza to, co Ci jest do zapłaty. Zastosowania do konkretnych faktur są dodawane po jej utworzeniu."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Zarejestruj płatność od klienta, płatność dla dostawcy lub zwrot. Zastosowania do faktur lub not są dodawane po utworzeniu płatności."
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "NIP"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "Kredyt dostawcy"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "Kredyty dostawcy"
 
 msgid "Vendor Write-Off Income"
 msgstr "Przychody ze spisania od dostawcy"

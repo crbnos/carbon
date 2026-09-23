@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "贷项凭证"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "贷项凭证"
 
 msgid "Credit total"
 msgstr "贷项总额"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "新建成本中心"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "新建贷项凭证"
 
 msgid "New Currency"
 msgstr "新货币"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "新计量单位"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "新建供应商贷项"
 
 msgid "New Version"
 msgstr "新版本"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "录音"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "记录来自供应商的贷项凭证——它减少了您欠该供应商的金额。与特定发票的关联在创建完成后添加。"
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "为客户记录贷项凭证——这会减少该客户欠的金额。与特定发票的关联在创建完成后添加。"
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "记录客户付款、供应商付款或退款。付款创建后，可以添加对发票或单据的应用。"
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "增值税号"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "供应商贷项"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "供应商贷项"
 
 msgid "Vendor Write-Off Income"
 msgstr "供应商核销收益"

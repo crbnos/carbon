@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "クレジットメモ"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "クレジットメモ"
 
 msgid "Credit total"
 msgstr "クレジット合計"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "新規原価センター"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "新規クレジットメモ"
 
 msgid "New Currency"
 msgstr "新規通貨"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "新しい測定単位"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "新規仕入先クレジット"
 
 msgid "New Version"
 msgstr "新しいバージョン"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "記録"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "仕入先からのクレジットを記録します — これはあなたが仕入先に負っているものを減らします。特定の請求書への適用は作成後に追加されます。"
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "得意先向けのクレジットメモを記録します — これは得意先が負っているものを減らします。特定の請求書への適用は作成後に追加されます。"
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "VAT番号"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "仕入先クレジット"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "仕入先クレジット"
 
 msgid "Vendor Write-Off Income"
 msgstr "仕入先償却収益"

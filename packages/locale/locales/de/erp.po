@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "Gutschrift"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "Gutschriften"
 
 msgid "Credit total"
 msgstr "Gutschriftsumme"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "Neue Kostenstelle"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "Neue Gutschrift"
 
 msgid "New Currency"
 msgstr "Neue Währung"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "Neue Mengeneinheit"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "Neue Lieferantengutschrift"
 
 msgid "New Version"
 msgstr "Neue Version"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "Aufnahme"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Erfassen Sie eine Lieferantengutschrift – sie reduziert das, was Sie dem Lieferanten schulden. Zuordnungen zu bestimmten Rechnungen werden nach der Erstellung hinzugefügt."
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Erfassen Sie eine Gutschrift für einen Kunden – sie reduziert das, was dieser Ihnen schuldet. Zuordnungen zu bestimmten Rechnungen werden nach der Erstellung hinzugefügt."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Erfassen Sie eine Kundenzahlung, Lieferantenzahlung oder Gutschrift. Anwendungen auf Rechnungen oder Notizen werden hinzugefügt, nachdem die Zahlung erstellt wurde."
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "USt-IdNr."
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "Lieferantengutschrift"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "Lieferantengutschriften"
 
 msgid "Vendor Write-Off Income"
 msgstr "Ausbuchungserträge von Lieferanten"

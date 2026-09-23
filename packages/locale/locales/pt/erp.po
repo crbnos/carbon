@@ -4882,7 +4882,7 @@ msgid "Credit Memo"
 msgstr "Nota de crédito"
 
 msgid "Credit Memos"
-msgstr ""
+msgstr "Notas de crédito"
 
 msgid "Credit total"
 msgstr "Total de crédito"
@@ -10765,7 +10765,7 @@ msgid "New Cost Center"
 msgstr "Novo Centro de Custo"
 
 msgid "New Credit Memo"
-msgstr ""
+msgstr "Nova nota de crédito"
 
 msgid "New Currency"
 msgstr "Nova Moeda"
@@ -11014,7 +11014,7 @@ msgid "New Unit of Measure"
 msgstr "Nova Unidade de Medida"
 
 msgid "New Vendor Credit"
-msgstr ""
+msgstr "Novo crédito do fornecedor"
 
 msgid "New Version"
 msgstr "Nova Versão"
@@ -13947,10 +13947,10 @@ msgid "Record"
 msgstr "Gravar"
 
 msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Registre um crédito do fornecedor — reduz o que você lhe deve. Aplicações para faturas específicas são adicionadas após a criação."
 
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
-msgstr ""
+msgstr "Registre uma nota de crédito para um cliente — reduz o que o cliente deve. Aplicações para faturas específicas são adicionadas após a criação."
 
 msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
 msgstr "Registre um pagamento do cliente, pagamento do fornecedor ou reembolso. As aplicações às faturas ou memorandos são adicionadas após o pagamento ser criado."
@@ -19246,10 +19246,10 @@ msgid "VAT Number"
 msgstr "Número de IVA"
 
 msgid "Vendor Credit"
-msgstr ""
+msgstr "Crédito do fornecedor"
 
 msgid "Vendor Credits"
-msgstr ""
+msgstr "Créditos do fornecedor"
 
 msgid "Vendor Write-Off Income"
 msgstr "Receitas de baixa contábil de fornecedor"
