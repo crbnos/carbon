@@ -1,8 +1,12 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
-import { updateCompanySession } from "@carbon/auth/session.server";
+import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import { flash, updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -16,6 +20,7 @@ import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import {
   type ActionFunctionArgs,
+  data,
   Link,
   redirect,
   useLoaderData
@@ -34,7 +39,7 @@ import {
   Timezone
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
-import { addressValidator, getCompany } from "~/modules/settings";
+import { addressValidator, getCompanies, getCompany } from "~/modules/settings";
 import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import {
   getOnboardingDraft,
@@ -82,6 +87,21 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(next, {
       headers: [["Set-Cookie", draftCookie]]
     });
+  }
+
+  // Cloud refuses a NEW company for a free/disposable email domain. The login
+  // seams block a brand-new account, but a session can still exist without a
+  // company (an invitee who signed in before accepting), and this is where
+  // such a session would create one. Re-entry that updates the user's
+  // existing company is not a new company and stays allowed.
+  if (isSelfSignupBlockedForEmail(email)) {
+    const existing = await getCompanies(client, userId);
+    if (!existing.data?.length) {
+      return data(
+        error(null, SELF_SIGNUP_BLOCKED_MESSAGE),
+        await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+      );
+    }
   }
 
   // Public signups skip the data-choice step and create a clean company here.

@@ -1,14 +1,18 @@
-import { assertIsPost, CONTROLLED_ENVIRONMENT } from "@carbon/auth";
+import { assertIsPost, CONTROLLED_ENVIRONMENT, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
-import { updateCompanySession } from "@carbon/auth/session.server";
+import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import { flash, updateCompanySession } from "@carbon/auth/session.server";
 import { enableAuditLog } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import { data, redirect } from "react-router";
 import { insertEmployeeJob } from "~/modules/people";
 import { upsertLocation } from "~/modules/resources";
 import {
@@ -24,9 +28,18 @@ const logger = getLogger("erp", "settings", "company");
 export async function action({ request }: ActionFunctionArgs) {
   try {
     assertIsPost(request);
-    const { userId } = await requirePermissions(request, {
+    const { userId, email } = await requirePermissions(request, {
       update: ["settings", "users"]
     });
+
+    // Cloud: a free/disposable email domain may belong to a company it was
+    // invited into, but never add one of its own (same rule as onboarding).
+    if (isSelfSignupBlockedForEmail(email)) {
+      return data(
+        error(null, SELF_SIGNUP_BLOCKED_MESSAGE),
+        await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+      );
+    }
     const formData = await request.formData();
     const validation = await validator(companyValidator).validate(formData);
     if (validation.error) {
