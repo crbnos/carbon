@@ -24,15 +24,20 @@ function referencedKeys(raw: LogRecord["rawMessage"]): Set<string> | null {
 // `ansiColorFormatter` drops properties the message doesn't reference (e.g. `{ error }`).
 export const devFormatter: TextFormatter = (record) => {
   const line = ansiColorFormatter(record);
-  const referenced = referencedKeys(record.rawMessage);
-  if (referenced === null) return line;
+  try {
+    const referenced = referencedKeys(record.rawMessage);
+    if (referenced === null) return line;
 
-  const extra = Object.fromEntries(
-    Object.entries(record.properties).filter(
-      ([key]) => !referenced.has(key) && !AMBIENT_KEYS.has(key)
-    )
-  );
-  if (Object.keys(extra).length === 0) return line;
+    const extra = Object.fromEntries(
+      Object.entries(record.properties ?? {}).filter(
+        ([key]) => !referenced.has(key) && !AMBIENT_KEYS.has(key)
+      )
+    );
+    if (Object.keys(extra).length === 0) return line;
 
-  return `${line.trimEnd()} ${inspect(extra, { colors: true, depth: 5 })}\n`;
+    return `${line.trimEnd()} ${inspect(extra, { colors: true, depth: 5 })}\n`;
+  } catch {
+    // Appending details must never cost the log line itself.
+    return line;
+  }
 };

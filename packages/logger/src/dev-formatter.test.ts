@@ -55,3 +55,27 @@ describe("devFormatter", () => {
     expect(line.endsWith("\n\n")).toBe(false);
   });
 });
+
+describe("devFormatter fallbacks", () => {
+  it("prints the plain line when properties are missing", () => {
+    const line = devFormatter({
+      ...(record("Hello", {}) as object),
+      properties: undefined
+    } as never);
+    expect(plain(line)).toContain("Hello");
+  });
+
+  it("prints the plain line when reading a property throws", () => {
+    const properties = {
+      get broken() {
+        throw new Error("boom");
+      }
+    };
+    const line = devFormatter({
+      ...(record("Hello", {}) as object),
+      properties
+    } as never);
+    expect(plain(line)).toContain("Hello");
+    expect(line.endsWith("\n")).toBe(true);
+  });
+});
