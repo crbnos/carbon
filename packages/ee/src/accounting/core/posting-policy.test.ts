@@ -279,13 +279,8 @@ describe("getJournalPostingPolicyDecision", () => {
       });
     });
 
-    it("parks memos/returns as DOC_SYNC_DISABLED (no document representation exists yet)", () => {
-      for (const sourceType of [
-        "Credit Memo",
-        "Debit Memo",
-        "Sales Return",
-        "Purchase Return"
-      ]) {
+    it("parks RETURNS as DOC_SYNC_DISABLED (no document representation exists yet)", () => {
+      for (const sourceType of ["Sales Return", "Purchase Return"]) {
         const decision = getJournalPostingPolicyDecision({
           sourceType,
           settings: settingsWith(),
@@ -294,6 +289,26 @@ describe("getJournalPostingPolicyDecision", () => {
         expect(decision, sourceType).toMatchObject({
           kind: "warn",
           code: "DOC_SYNC_DISABLED"
+        });
+      }
+    });
+
+    it("excludes memos as FAMILY_OFF by default (their families are opt-in)", () => {
+      // Memos DO have a document representation now; what stops them by
+      // default is that creditMemo/vendorCredit default to "none".
+      for (const [sourceType, memoParty] of [
+        ["Credit Memo", "customer"],
+        ["Debit Memo", "supplier"]
+      ] as const) {
+        const decision = getJournalPostingPolicyDecision({
+          sourceType,
+          settings: settingsWith(),
+          docSync: DOC_SYNC_ON,
+          memoParty
+        });
+        expect(decision, sourceType).toMatchObject({
+          kind: "exclude",
+          reason: "FAMILY_OFF"
         });
       }
     });
@@ -326,11 +341,19 @@ describe("getJournalPostingPolicyDecision", () => {
       });
       expect(decision).toEqual({ kind: "push", granularity: "individual" });
 
-      // memos ride the family too — no document exists to double-post against
+      // Memos ride their OWN family (creditMemo/vendorCredit), not ar/ap.
       const memo = getJournalPostingPolicyDecision({
         sourceType: "Credit Memo",
-        settings: journalsAr,
-        docSync: { invoiceEnabled: false, billEnabled: true }
+        settings: settingsWith({
+          families: {
+            ar: "journals",
+            ap: "documents",
+            creditMemo: "journals",
+            vendorCredit: "none"
+          }
+        }),
+        docSync: { invoiceEnabled: false, billEnabled: true },
+        memoParty: "customer"
       });
       expect(memo).toEqual({ kind: "push", granularity: "individual" });
     });
@@ -424,6 +447,112 @@ describe("getJournalPostingPolicyDecision", () => {
         kind: "exclude",
         reason: "DOC_BACKED"
       });
+    });
+  });
+});
+
+// ── Memo families resolve by PARTY, not direction ────────────────────────────
+
+describe("memo family resolution (per-party)", () => {
+  // Memo doc sync on for both sides, so the FAMILY MODE is the only variable.
+  const MEMO_DOC_SYNC = {
+    invoiceEnabled: false,
+    billEnabled: false,
+    creditMemoEnabled: true,
+    vendorCreditEnabled: true
+  };
+
+  // Only the customer family is on. A supplier memo must NOT be gated by it —
+  // which is exactly what direction-derived families got wrong.
+  const customerOnly = settingsWith({
+    families: {
+      ar: "none",
+      ap: "none",
+      creditMemo: "documents",
+      vendorCredit: "none"
+    }
+  });
+
+  const supplierOnly = settingsWith({
+    families: {
+      ar: "none",
+      ap: "none",
+      creditMemo: "none",
+      vendorCredit: "documents"
+    }
+  });
+
+  const decide = (
+    sourceType: "Credit Memo" | "Debit Memo",
+    memoParty: "customer" | "supplier" | null,
+    settings: ReturnType<typeof settingsWith>
+  ) =>
+    getJournalPostingPolicyDecision({
+      sourceType,
+      settings,
+      docSync: MEMO_DOC_SYNC,
+      memoParty
+    });
+
+  it("gates a CUSTOMER memo by creditMemo in both directions", () => {
+    expect(decide("Credit Memo", "customer", customerOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "DOC_BACKED"
+    });
+    // The crossing combo: a customer memo in the DEBIT direction is still AR.
+    expect(decide("Debit Memo", "customer", customerOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "DOC_BACKED"
+    });
+  });
+
+  it("gates a SUPPLIER memo by vendorCredit in both directions", () => {
+    expect(decide("Debit Memo", "supplier", supplierOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "DOC_BACKED"
+    });
+    // The crossing combo: a supplier memo in the CREDIT direction is still AP.
+    expect(decide("Credit Memo", "supplier", supplierOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "DOC_BACKED"
+    });
+  });
+
+  it("does not let direction pick the family (the misclassification bug)", () => {
+    // Under direction-derived families a "Credit Memo" always resolved to the
+    // AR family, so a SUPPLIER credit memo was gated by the wrong side.
+    expect(decide("Credit Memo", "supplier", customerOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "FAMILY_OFF"
+    });
+    // ...and a "Debit Memo" always resolved to AP, misfiling a CUSTOMER one.
+    expect(decide("Debit Memo", "customer", supplierOnly)).toMatchObject({
+      kind: "exclude",
+      reason: "FAMILY_OFF"
+    });
+  });
+
+  it("is decoupled from the invoice/bill families", () => {
+    // ap: "none" (bills handed to a spend tool) must NOT suppress vendor
+    // credits — the reason memos get their own families at all.
+    const apOff = settingsWith({
+      families: {
+        ar: "documents",
+        ap: "none",
+        creditMemo: "none",
+        vendorCredit: "documents"
+      }
+    });
+    expect(decide("Debit Memo", "supplier", apOff)).toMatchObject({
+      kind: "exclude",
+      reason: "DOC_BACKED"
+    });
+  });
+
+  it("parks MEMO_PARTY_UNRESOLVED rather than guessing a family", () => {
+    expect(decide("Credit Memo", null, customerOnly)).toMatchObject({
+      kind: "warn",
+      code: "MEMO_PARTY_UNRESOLVED"
     });
   });
 });

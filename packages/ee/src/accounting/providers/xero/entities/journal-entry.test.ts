@@ -288,11 +288,16 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     // reason is the loud delivery-hole message instead — either way the
     // journal is never pushed in documents mode.
     const backed = ["Sales Invoice", "Purchase Invoice", "Payment"];
+    // Memos resolve their family from the memo's PARTY, which this
+    // party-less reason helper cannot know — so they report that instead.
+    const partyResolved = ["Credit Memo", "Debit Memo"];
 
     for (const sourceType of POSTING_SYNC_EXCLUDED_SOURCE_TYPES) {
       const expected = backed.includes(sourceType)
         ? "excluded from posting sync"
-        : "no document representation";
+        : partyResolved.includes(sourceType)
+          ? "customer or supplier memo"
+          : "no document representation";
 
       expect(
         getPostingSyncSourceTypeSkipReason(sourceType, makeSettings()),

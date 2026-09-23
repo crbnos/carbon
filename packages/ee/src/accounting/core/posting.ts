@@ -96,6 +96,12 @@ export function isPaymentSyncbackEnabled(
 export type PostingSyncDocumentSyncFlags = {
   invoiceEnabled: boolean;
   billEnabled: boolean;
+  /** The `creditMemo` entity is enabled — customer memos push as the
+   * provider's native customer credit instead of a journal entry. */
+  creditMemoEnabled?: boolean;
+  /** The `vendorCredit` entity is enabled — supplier memos push as the
+   * provider's native vendor credit instead of a journal entry. */
+  vendorCreditEnabled?: boolean;
   /** The `charge` entity is enabled — Charges push as the
    * provider's native card-charge object instead of a journal entry. */
   chargeEnabled?: boolean;
@@ -173,7 +179,8 @@ export type JournalPostingPolicyDecision =
       code:
         | "DOC_SYNC_DISABLED"
         | "DOUBLE_REPRESENTATION"
-        | "PAYMENT_FAMILY_UNRESOLVED";
+        | "PAYMENT_FAMILY_UNRESOLVED"
+        | "MEMO_PARTY_UNRESOLVED";
       message: string;
     };
 
@@ -207,6 +214,12 @@ export function getJournalPostingPolicyDecision(args: {
    * the lines touch; null when unresolved. Ignored for static-family types.
    */
   paymentFamily?: "ar" | "ap" | null;
+  /**
+   * "customer" | "supplier" for Credit Memo / Debit Memo journals, resolved
+   * from the backing `memo` row's party; null when unresolved. The PARTY, not
+   * the direction, decides the family. Ignored for static-family types.
+   */
+  memoParty?: "customer" | "supplier" | null;
   inventoryAdjustmentEntitySyncEnabled?: boolean;
   /**
    * For "Charge" journals: the backing charge, resolved by
@@ -294,6 +307,34 @@ export function getJournalPostingPolicyDecision(args: {
     return { kind: "push", granularity: config.granularity };
   }
 
+  // Memo documents resolve their family from the memo's PARTY. Done before the
+  // generic resolution below because a null party is a memo-specific failure,
+  // not the Payment "diverging modes" case.
+  if (policy.family === "per-party") {
+    const memoFamily =
+      args.memoParty === "customer"
+        ? ("creditMemo" as const)
+        : args.memoParty === "supplier"
+          ? ("vendorCredit" as const)
+          : null;
+
+    if (!memoFamily) {
+      return {
+        kind: "warn",
+        code: "MEMO_PARTY_UNRESOLVED",
+        message: `Journal source type "${sourceType}" could not be resolved to a customer or supplier memo. The memo's party — not its direction — decides whether it is gated by the Credit Memos or Vendor Credits family.`
+      };
+    }
+
+    return decideDocumentFamily({
+      sourceType,
+      policy,
+      backingEntityType: memoFamily,
+      mode: settings.families[memoFamily],
+      docSync: args.docSync
+    });
+  }
+
   // Document-represented: resolve the family, then the family mode.
   const family =
     policy.family === "per-line" ? (args.paymentFamily ?? null) : policy.family;
@@ -327,18 +368,30 @@ export function getJournalPostingPolicyDecision(args: {
 function decideDocumentFamily(args: {
   sourceType: JournalEntrySourceType;
   policy: (typeof POSTING_POLICY)[JournalEntrySourceType];
+  /** Overrides the policy's value when it is resolved per record ("per-party"). */
+  backingEntityType?:
+    | "invoice"
+    | "bill"
+    | "payment"
+    | "creditMemo"
+    | "vendorCredit";
   mode: PostingSyncSettings["families"]["ar"];
   docSync: PostingSyncDocumentSyncFlags;
 }): JournalPostingPolicyDecision {
-  const backingEntityType = args.policy.backingEntityType ?? null;
+  const backingEntityType =
+    args.backingEntityType ?? args.policy.backingEntityType ?? null;
   const documentSyncEnabled =
     backingEntityType === "invoice"
       ? args.docSync.invoiceEnabled
       : backingEntityType === "bill"
         ? args.docSync.billEnabled
-        : backingEntityType === "payment"
-          ? true // cash application is provider-native, not a Carbon-pushed document
-          : false; // memos/returns have no document representation yet
+        : backingEntityType === "creditMemo"
+          ? args.docSync.creditMemoEnabled === true
+          : backingEntityType === "vendorCredit"
+            ? args.docSync.vendorCreditEnabled === true
+            : backingEntityType === "payment"
+              ? true // cash application is provider-native, not a Carbon-pushed document
+              : false; // returns have no document representation yet
 
   if (args.mode === "none") {
     return {

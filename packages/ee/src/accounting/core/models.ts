@@ -307,7 +307,17 @@ export type PostingGranularity = "individual" | "daily-summary";
  * AR (invoice-side), AP (bill-side), or resolved per journal from its
  * control-account lines (Payment spans both sides).
  */
-export type PostingSourceFamily = "ar" | "ap" | "per-line";
+export type PostingSourceFamily =
+  | "ar"
+  | "ap"
+  | "per-line"
+  /**
+   * Resolved per journal from the MEMO'S PARTY, not its direction: a customer
+   * memo is gated by `creditMemo`, a supplier memo by `vendorCredit`, in both
+   * directions. Direction alone would misfile the two "crossing" combos
+   * (supplier+Credit, customer+Debit).
+   */
+  | "per-party";
 
 export type PostingPolicyEntry = {
   representation: JournalRepresentation;
@@ -319,7 +329,15 @@ export type PostingPolicyEntry = {
    * or null when no document representation exists yet (memos/returns) —
    * those park loudly in documents mode instead of excluding silently.
    */
-  backingEntityType?: "invoice" | "bill" | "payment" | null;
+  backingEntityType?:
+    | "invoice"
+    | "bill"
+    | "payment"
+    | "creditMemo"
+    | "vendorCredit"
+    /** Resolved from the memo's party at decision time. */
+    | "per-party"
+    | null;
   /**
    * `false` ONLY for `Manual` — manual journals are NEVER synced in any engine.
    * They can touch arbitrary/unmapped accounts, and the external ledger owns
@@ -463,8 +481,10 @@ export const POSTING_POLICY: Record<
   },
   "Credit Memo": {
     representation: "document",
-    family: "ar",
-    backingEntityType: null,
+    // Party-resolved, NOT direction-resolved — a supplier memo in the Credit
+    // direction is a vendor credit, not an AR document.
+    family: "per-party",
+    backingEntityType: "per-party",
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
@@ -484,8 +504,9 @@ export const POSTING_POLICY: Record<
   },
   "Debit Memo": {
     representation: "document",
-    family: "ap",
-    backingEntityType: null,
+    // Party-resolved — see "Credit Memo".
+    family: "per-party",
+    backingEntityType: "per-party",
     defaultEnabled: false,
     defaultGranularity: "individual"
   },

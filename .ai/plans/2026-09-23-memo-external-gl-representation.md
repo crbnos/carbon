@@ -19,7 +19,7 @@ API surveys and Rillet sandbox probe recorded in the spec.
 ## Progress
 - [x] Task 1: Add `creditMemo` / `vendorCredit` posting-sync families
 - [x] Task 2: Add `creditMemo` / `vendorCredit` accounting entity types
-- [ ] Task 3: Per-party policy resolution + the family-misclassification fix
+- [x] Task 3: Per-party policy resolution + the family-misclassification fix
 - [ ] Task 4: Resolve a memo journal's party at the call site
 - [ ] Task 5: Shared credit-reason-item resolver
 - [ ] Task 6: Xero client — credit notes + allocations
