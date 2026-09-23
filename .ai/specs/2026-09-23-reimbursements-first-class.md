@@ -70,6 +70,23 @@ in this work.
 A first-class `reimbursement` document, its own posting path to a segregated control account,
 and per-provider representation.
 
+### Imported, then editable — never hand-created
+
+**Carbon never *creates* a reimbursement by hand** — it records something that happened in the
+spend tool, so hand-entering one would invent a transaction with no counterpart. There is no
+create form and no `new` route.
+
+**But an imported reimbursement IS editable in Carbon while it is Draft**, header and coding
+lines both, including adding and removing lines. The full model — import as Draft instead of
+auto-posting, the two-mode detail/edit surface, the line editor, the running total, and
+first-class provider attribution (the Ramp **logo**, the external id, and an "imported from
+RAMP" Activity entry) — is specified once in
+**`.ai/specs/2026-09-23-editable-imported-spend-documents.md`** and applies here identically.
+This spec owns the reimbursement data model; that one owns the shared shape.
+
+`reimbursementLine` must therefore mirror `chargeLine` exactly (`accountId`, `costCenterId`,
+`projectId`, `description`, `amount`, `sequence`) so one line-editor component serves both.
+
 ### Data model
 
 Two new tables, following Carbon conventions (composite PK, `companyId`, audit columns,
@@ -193,6 +210,8 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 | Payout | Reuse `payment` + `invoiceSettlement` with a new `targetReimbursementId` | Avoids forking a second settlement dialect; inherits FX, void and period handling. |
 | Provider representation | Per-provider: Rillet native; QBO/Xero employee-vendor bill | Only Rillet has a native object. Mirrors the credit spec's per-provider reality. |
 | Rillet payout | Implement `POST /reimbursements/{id}/payments` | The endpoint now exists; `UNSUPPORTED_REIMBURSEMENT_PAYMENT` is stale. |
+| Authoring | **Never created by hand; editable after import.** No create form and no `new` route, but header + lines ARE editable while Draft | A reimbursement records something that happened in Ramp, so creating one would invent a transaction. Editing an imported one is a different thing: it is how Carbon improves coding it owns (cost centers, projects). Shared model: `2026-09-23-editable-imported-spend-documents.md`. |
+| Line shape | Mirror `chargeLine` exactly | One line-editor component serves charges and reimbursements; divergence would fork it. |
 | Approval workflow | **Out of scope v1** | Ramp (or the provider) owns approval today; Carbon's `document-approvals` spec is the right home if it moves in-house later. |
 | Existing employee-supplier invoices | **No backfill** — left as purchaseInvoices | A backfill would rewrite posted history. New reimbursements use the new document; the old rows remain readable. |
 | Multi-tenancy (heuristic 1) | Composite PK `("id","companyId")`, `id('reimb')` default, `companyId` FK | Carbon convention. |
@@ -204,8 +223,11 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## API / Service Changes
 
-- `invoicing.service.ts` / `invoicing.models.ts` — `getReimbursement(s)`, `upsertReimbursement`,
-  `deleteReimbursement`, validators. No new service files (module convention).
+- `invoicing.service.ts` / `invoicing.models.ts` — `getReimbursement(s)` readers, plus
+  `updateReimbursement` (header) and `upsertReimbursementLines` / `deleteReimbursementLine`,
+  all refusing a non-Draft parent. **No create validator and no `new` route** — the Ramp sync
+  is the only thing that brings a reimbursement into existence. Line writes are multi-row, so
+  the Kysely client is built in a `.server` helper and passed in from the route action.
 - `post-reimbursement` edge function + `config.toml` entry (`verify_jwt = true`), with a pure
   `build-reimbursement-journal.ts` mirroring `build-charge-journal.ts`.
 - `packages/ee/src/accounting` — `reimbursement` `AccountingEntityType`, syncers for the three
@@ -223,11 +245,13 @@ retained only for the provider-side vendor mapping on QBO/Xero.
   is nothing to link to, and reimbursements sit **inside the Purchase Invoices list** mixed
   with real vendor bills.
 - `apps/erp/app/modules/invoicing/ui/Reimbursement/` — `ReimbursementsTable`,
-  `ReimbursementStatus`, `ReimbursementForm` (lines with account + cost center + project),
-  cloned from the `Charge` components per the copy-precedent convention.
-- Routes `x+/invoicing+/reimbursements*.tsx` with a Drawer detail (Carbon's detail-view
-  convention), plus a **Void** action for Posted rows. `path.to.reimbursements` /
-  `path.to.reimbursement(id)` follow the `charges` precedent.
+  `ReimbursementStatus`, and the **shared line editor** (the same component charges use).
+  No create form. Cloned from the `Charge` components per the copy-precedent convention.
+- Routes `x+/invoicing+/reimbursements*.tsx` — list, a detail surface with read and edit
+  modes, a **Post** action for Draft rows and a **Void** action for Posted rows. No `new`
+  route. The detail header carries the **SOURCE** badge (Ramp logo + external id) and an
+  Activity entry. `path.to.reimbursements` / `path.to.reimbursement(id)` follow the `charges`
+  precedent, which gains the same treatment.
 - Accounting settings gains the Employee Reimbursements Payable account picker.
 
 ## Acceptance Criteria
@@ -242,7 +266,13 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 - [ ] Voiding a Posted reimbursement writes a balanced reversal and flips it to `Voided`;
       re-voiding returns the stored journal id without a second reversal.
 - [ ] A Ramp reimbursement syncs into Carbon as a **`reimbursement`** row (not a
-      `purchaseInvoice`) with no synthetic "Employee" supplier created.
+      `purchaseInvoice`) with no synthetic "Employee" supplier created, and lands **Draft**.
+- [ ] Its detail page shows a SOURCE field with the **Ramp logo**, the provider name and the
+      external id, plus an Activity entry "Reimbursement imported from Ramp".
+- [ ] An imported Draft reimbursement can be edited: header fields, an existing line's
+      account/amount/description/cost center/project, and `+ Add line item` adds a second
+      coding line with the running total updating as amounts change.
+- [ ] A **Posted** reimbursement is not editable.
 - [ ] With Rillet connected, a posted reimbursement creates a Rillet `/reimbursements` record,
       and paying it in Carbon issues `POST /reimbursements/{id}/payments` — the operation closes
       `Completed`, **not** `UNSUPPORTED_REIMBURSEMENT_PAYMENT`.
@@ -298,6 +328,11 @@ retained only for the provider-side vendor mapping on QBO/Xero.
 
 ## Changelog
 
+- 2026-09-23: Reversed the "read and sync only" narrowing after reviewing Rillet's UI.
+  Reimbursements are still never hand-created, but an imported one IS editable while Draft —
+  header and lines. The shared editing model, line editor and provider attribution moved to
+  `.ai/specs/2026-09-23-editable-imported-spend-documents.md`; `reimbursementLine` must mirror
+  `chargeLine` so one editor serves both.
 - 2026-09-23: Created. Open questions resolved autonomously as part of a batch spec request;
   awaiting veto. Grounded in the 2026-09-22 ERP research plus the 2026-09-23 Rillet API survey
   and sandbox probe (which refuted Carbon's "no reimbursement-payment endpoint" assertion and
