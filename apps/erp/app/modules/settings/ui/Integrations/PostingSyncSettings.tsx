@@ -1,3 +1,4 @@
+import type { PostingSourceFamily } from "@carbon/ee/accounting";
 import {
   ChoiceCardGroup,
   DatePicker,
@@ -45,7 +46,9 @@ export type PostingSyncSettingsValues = {
 export type PostingSyncPolicyRow = {
   sourceType: string;
   representation: "journal" | "document";
-  family: "ar" | "ap" | "per-line" | null;
+  /** Derived from the engine's union so a new family can never silently drift
+   * out of sync with this page (it did: "per-party" was added for memos). */
+  family: PostingSourceFamily | null;
 };
 
 type PostingSyncSettingsProps = {
