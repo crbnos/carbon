@@ -1,8 +1,16 @@
-import { describe, expect, it, vi } from "vitest";
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
 // items.server's only runtime dependency; stubbed so the pure verdict logic
 // can be tested without dragging in the app's full module graph.
 vi.mock("~/modules/settings", () => ({ getCompanySettings: vi.fn() }));
+vi.mock("~/services/database.server", () => ({
+  getDatabaseClient: vi.fn()
+}));
+vi.mock("@carbon/auth/users.server", () => ({
+  getUserClaims: vi.fn()
+}));
 
 // items.server pulls the items module graph (via ~/modules/items), which
 // transitively loads @carbon/glossary — whose module-load-time Lingui `msg`
@@ -17,11 +25,569 @@ vi.mock("@carbon/glossary", () => ({
 }));
 
 const {
+  applyChangeNotice,
+  createAuthorizedChangeNoticeImpactTask,
+  deriveChangeNoticeImpactSourceAccess,
+  getAuthorizedChangeNoticeImpactHistory,
+  getChangeNoticeImpactMutationAccess,
+  getChangeNoticeImpactReadAccess,
+  getChangeNoticeImpactSourceAccess,
+  requireChangeNoticeActionTaskEditable,
+  reconcileAuthorizedChangeNoticeImpactProvenance,
+  writeAuthorizedChangeNoticeImpactDecisions,
   getLockVerdict,
   LOCKED_REVISION_MESSAGE,
   getUnreleasedChangeOrderItems,
   getUnreleasedChangeOrderIssue
 } = await import("./items.server");
+const { getUserClaims } = await import("@carbon/auth/users.server");
+const { getDatabaseClient } = await import("~/services/database.server");
+const { canEditChangeNoticeActionTaskFields } = await import("./items.models");
+
+afterEach(() => {
+  vi.mocked(getUserClaims).mockReset();
+  vi.mocked(getDatabaseClient).mockReset();
+});
+
+const claims = (permissions: Record<string, { view: string[] }>) => ({
+  role: "employee",
+  permissions: Object.fromEntries(
+    Object.entries(permissions).map(([name, permission]) => [
+      name,
+      { view: permission.view, create: [], update: [], delete: [] }
+    ])
+  )
+});
+
+function fakeImpactPermissionClient(
+  companies: Partial<Record<string, string[]>> = {},
+  rpcError: { message: string } | null = null,
+  memberships: { userId: string; companyId: string }[] = []
+): SupabaseClient<Database> {
+  return {
+    rpc: vi.fn(async (_name: string, args: { permission: string }) => ({
+      data: rpcError ? null : (companies[args.permission] ?? []),
+      error: rpcError
+    })),
+    // The `userToCompany` membership lookup the assignee guard walks.
+    from: vi.fn(() => {
+      const filters: Record<string, string> = {};
+      const builder = {
+        select: () => builder,
+        eq: (column: string, value: string) => {
+          filters[column] = value;
+          return builder;
+        },
+        maybeSingle: async () => ({
+          data:
+            memberships.find(
+              (membership) =>
+                membership.userId === filters.userId &&
+                membership.companyId === filters.companyId
+            ) ?? null,
+          error: null
+        })
+      };
+      return builder;
+    })
+  } as unknown as SupabaseClient<Database>;
+}
+
+describe("Change Notice Impact apply transition", () => {
+  it("rejects a Done transition unless the submitted source is Implementation", async () => {
+    const result = await applyChangeNotice(null as never, null as never, {
+      changeNoticeId: "notice-1",
+      userId: "user-1",
+      companyId: "company-1",
+      fromStatus: "Draft"
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: { message: "Change notice must be at Implementation to apply" }
+    });
+  });
+});
+
+describe("Change Notice Impact source access", () => {
+  it("rejects an invalid bulk request before resolving mutation access", async () => {
+    const result = await writeAuthorizedChangeNoticeImpactDecisions({
+      client: fakeImpactPermissionClient(),
+      userId: "user-1",
+      companyId,
+      decision: { changeNoticeId: "notice-1", targets: [] }
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: { message: "At least one Impact target is required" }
+    });
+    expect(getUserClaims).not.toHaveBeenCalled();
+  });
+
+  it("requires both Change Notice view and Impact update gates for bulk writes", async () => {
+    const result = await writeAuthorizedChangeNoticeImpactDecisions({
+      client: fakeImpactPermissionClient({
+        parts_view: [],
+        parts_update: [companyId],
+        purchasing_view: [companyId],
+        production_view: []
+      }),
+      userId: "user-1",
+      companyId,
+      decision: {
+        changeNoticeId: "notice-1",
+        targets: [
+          {
+            targetType: "purchaseOrderLine",
+            targetId: "pol-1",
+            decisionStatus: "Action required",
+            rationale: "Supplier follow-up remains open."
+          }
+        ]
+      }
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Change Notice view permission."
+      }
+    });
+  });
+
+  it("requires the source-domain view permission independently", () => {
+    expect(
+      deriveChangeNoticeImpactSourceAccess(
+        {
+          purchasing: { view: [companyId] },
+          production: { view: [] }
+        },
+        companyId
+      )
+    ).toEqual({
+      purchaseOrderLine: true,
+      job: false,
+      jobMaterial: false
+    });
+  });
+
+  it("resolves purchasing permission as Present access", async () => {
+    vi.mocked(getUserClaims).mockResolvedValue(
+      claims({ purchasing: { view: [companyId] }, production: { view: [] } })
+    );
+    await expect(
+      getChangeNoticeImpactSourceAccess({ userId: "user-1", companyId })
+    ).resolves.toEqual({
+      status: "resolved",
+      access: {
+        purchaseOrderLine: true,
+        job: false,
+        jobMaterial: false
+      }
+    });
+  });
+
+  it("keeps missing purchasing permission distinct from access failure", async () => {
+    vi.mocked(getUserClaims).mockResolvedValue(
+      claims({ purchasing: { view: [] }, production: { view: [companyId] } })
+    );
+    await expect(
+      getChangeNoticeImpactSourceAccess({ userId: "user-1", companyId })
+    ).resolves.toEqual({
+      status: "resolved",
+      access: {
+        purchaseOrderLine: false,
+        job: true,
+        jobMaterial: true
+      }
+    });
+  });
+
+  it("resolves production permission for both production target kinds", async () => {
+    vi.mocked(getUserClaims).mockResolvedValue(
+      claims({ purchasing: { view: [] }, production: { view: [companyId] } })
+    );
+    const result = await getChangeNoticeImpactSourceAccess({
+      userId: "user-1",
+      companyId
+    });
+    expect(result).toEqual({
+      status: "resolved",
+      access: {
+        purchaseOrderLine: false,
+        job: true,
+        jobMaterial: true
+      }
+    });
+  });
+
+  it("keeps missing production permission distinct from access failure", async () => {
+    vi.mocked(getUserClaims).mockResolvedValue(
+      claims({ purchasing: { view: [companyId] }, production: { view: [] } })
+    );
+    await expect(
+      getChangeNoticeImpactSourceAccess({ userId: "user-1", companyId })
+    ).resolves.toEqual({
+      status: "resolved",
+      access: {
+        purchaseOrderLine: true,
+        job: false,
+        jobMaterial: false
+      }
+    });
+  });
+
+  it("resolves read access through the active credential-bound permission RPCs", async () => {
+    const client = fakeImpactPermissionClient({
+      parts_view: [companyId],
+      purchasing_view: [companyId],
+      production_view: []
+    });
+
+    await expect(
+      getChangeNoticeImpactReadAccess({ client, userId: "user-1", companyId })
+    ).resolves.toEqual({
+      status: "resolved",
+      canViewChangeNotice: true,
+      sourceAccess: {
+        purchaseOrderLine: true,
+        job: false,
+        jobMaterial: false
+      }
+    });
+
+    const rpcPermissions = vi
+      .mocked(client.rpc)
+      .mock.calls.map(
+        ([, args]) => (args as unknown as { permission: string }).permission
+      );
+    expect(rpcPermissions).toHaveLength(3);
+    expect(rpcPermissions).toEqual(
+      expect.arrayContaining([
+        "parts_view",
+        "purchasing_view",
+        "production_view"
+      ])
+    );
+    expect(getUserClaims).not.toHaveBeenCalled();
+  });
+
+  it("fails closed when read access resolution fails", async () => {
+    await expect(
+      getChangeNoticeImpactReadAccess({
+        client: fakeImpactPermissionClient(
+          {},
+          { message: "permission RPC failed" }
+        ),
+        userId: "user-1",
+        companyId
+      })
+    ).resolves.toEqual({
+      status: "failed",
+      errorMessage: "Impact source access could not be established."
+    });
+  });
+
+  it("does not open the history reader without Change Notice view access", async () => {
+    const result = await getAuthorizedChangeNoticeImpactHistory({
+      client: fakeImpactPermissionClient({
+        parts_view: [],
+        purchasing_view: [companyId],
+        production_view: [companyId]
+      }),
+      userId: "user-1",
+      companyId,
+      changeNoticeId: "notice-1",
+      decisionId: "decision-1"
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: {
+        kind: "not-found",
+        message: "Impact decision was not found."
+      }
+    });
+  });
+
+  it("keeps Change Notice view and Impact update permissions independent", async () => {
+    await expect(
+      getChangeNoticeImpactMutationAccess({
+        client: fakeImpactPermissionClient({
+          parts_view: [],
+          parts_update: [companyId],
+          purchasing_view: [companyId],
+          production_view: []
+        }),
+        userId: "user-1",
+        companyId
+      })
+    ).resolves.toMatchObject({
+      status: "resolved",
+      canViewChangeNotice: false,
+      canUpdateItems: true,
+      sourceAccess: {
+        purchaseOrderLine: true,
+        job: false,
+        jobMaterial: false
+      }
+    });
+  });
+
+  it("uses only the active client's target-specific source permission RPC", async () => {
+    const client = fakeImpactPermissionClient({
+      parts_view: [companyId],
+      parts_update: [companyId],
+      purchasing_view: [companyId]
+    });
+
+    await expect(
+      getChangeNoticeImpactMutationAccess({
+        client,
+        userId: "user-1",
+        companyId,
+        targetTypes: ["purchaseOrderLine"]
+      })
+    ).resolves.toEqual({
+      status: "resolved",
+      canViewChangeNotice: true,
+      canUpdateItems: true,
+      sourceAccess: {
+        purchaseOrderLine: true,
+        job: false,
+        jobMaterial: false
+      }
+    });
+
+    const rpcPermissions = vi
+      .mocked(client.rpc)
+      .mock.calls.map(
+        ([, args]) => (args as unknown as { permission: string }).permission
+      );
+    expect(rpcPermissions).toHaveLength(3);
+    expect(rpcPermissions).toEqual(
+      expect.arrayContaining(["parts_view", "parts_update", "purchasing_view"])
+    );
+  });
+
+  it("fails closed when the active client's permission RPC fails", async () => {
+    await expect(
+      getChangeNoticeImpactMutationAccess({
+        client: fakeImpactPermissionClient(
+          {},
+          { message: "permission RPC failed" }
+        ),
+        userId: "user-1",
+        companyId,
+        targetTypes: ["job"]
+      })
+    ).resolves.toEqual({
+      status: "failed",
+      errorMessage: "Impact mutation access could not be established."
+    });
+  });
+
+  it("denies a job task when the active credential lacks production_view before opening Kysely", async () => {
+    vi.mocked(getUserClaims).mockResolvedValue(
+      claims({ production: { view: [companyId] } })
+    );
+    const client = fakeImpactPermissionClient({
+      parts_view: [companyId],
+      parts_update: [companyId],
+      production_view: []
+    });
+
+    const result = await createAuthorizedChangeNoticeImpactTask({
+      client,
+      userId: "user-1",
+      companyId,
+      task: {
+        changeNoticeId: "notice-1",
+        targetType: "job",
+        targetId: "job-1",
+        decision: {
+          decisionId: "decision-1",
+          targetType: "job",
+          targetId: "job-1"
+        },
+        task: { name: "Production follow-up", assignee: "outsider-1" }
+      }
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: { message: "Impact source access is restricted for this target." }
+    });
+    expect(client.rpc).toHaveBeenCalledWith(
+      "get_companies_with_employee_permission",
+      { permission: "production_view" }
+    );
+    expect(client.from).not.toHaveBeenCalled();
+    expect(getUserClaims).not.toHaveBeenCalled();
+    expect(getDatabaseClient).not.toHaveBeenCalled();
+  });
+
+  it("rejects an Impact task assignee who is not a member of the active company", async () => {
+    // The `user` table is global, so an API/MCP caller can name any id. The
+    // browser picker only offers members; the boundary has to hold without it.
+    const client = fakeImpactPermissionClient(
+      {
+        parts_view: [companyId],
+        parts_update: [companyId],
+        production_view: [companyId]
+      },
+      null,
+      []
+    );
+
+    const result = await createAuthorizedChangeNoticeImpactTask({
+      client,
+      userId: "user-1",
+      companyId,
+      task: {
+        changeNoticeId: "notice-1",
+        targetType: "job",
+        targetId: "job-1",
+        decision: {
+          decisionId: "decision-1",
+          targetType: "job",
+          targetId: "job-1"
+        },
+        task: { name: "Production follow-up", assignee: "outsider-1" }
+      }
+    });
+
+    expect(result).toEqual({
+      data: null,
+      error: { message: "The task assignee is not a member of this company." }
+    });
+    expect(client.from).toHaveBeenCalledWith("userToCompany");
+    // Source authorization runs before the membership probe; the outsider is
+    // only revealed after the caller is allowed to assess this target.
+    expect(client.rpc).toHaveBeenCalledWith(
+      "get_companies_with_employee_permission",
+      { permission: "production_view" }
+    );
+    expect(getUserClaims).not.toHaveBeenCalled();
+    expect(getDatabaseClient).not.toHaveBeenCalled();
+  });
+
+  it("lets a company-member assignee reach the existing Impact task writer", async () => {
+    const client = fakeImpactPermissionClient(
+      {
+        parts_view: [companyId],
+        parts_update: [companyId],
+        production_view: [companyId]
+      },
+      null,
+      [{ userId: "member-1", companyId }]
+    );
+    const downstreamResult = {
+      data: {
+        decisionId: "decision-1",
+        actionTaskId: "task-1",
+        decisionCreated: false,
+        taskOrigin: "Impact follow-up" as const,
+        status: "Pending" as const
+      },
+      error: null
+    };
+    vi.mocked(getDatabaseClient).mockReturnValue({
+      transaction: () => ({
+        execute: vi.fn().mockResolvedValue(downstreamResult)
+      })
+    } as never);
+
+    const result = await createAuthorizedChangeNoticeImpactTask({
+      client,
+      userId: "user-1",
+      companyId,
+      task: {
+        changeNoticeId: "notice-1",
+        targetType: "job",
+        targetId: "job-1",
+        decision: {
+          decisionId: "decision-1",
+          targetType: "job",
+          targetId: "job-1"
+        },
+        task: { name: "Production follow-up", assignee: "member-1" }
+      }
+    });
+
+    expect(result).toEqual(downstreamResult);
+    expect(client.from).toHaveBeenCalledWith("userToCompany");
+    expect(getDatabaseClient).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not look up membership when the assignee is null or cleared", async () => {
+    for (const assignee of [null, "   "] as const) {
+      const client = fakeImpactPermissionClient({
+        parts_view: [],
+        parts_update: [companyId],
+        production_view: []
+      });
+
+      await createAuthorizedChangeNoticeImpactTask({
+        client,
+        userId: "user-1",
+        companyId,
+        task: {
+          changeNoticeId: "notice-1",
+          targetType: "job",
+          targetId: "job-1",
+          decision: {
+            decisionId: "decision-1",
+            targetType: "job",
+            targetId: "job-1"
+          },
+          task: { name: "Production follow-up", assignee }
+        }
+      });
+
+      expect(client.from).not.toHaveBeenCalled();
+    }
+  });
+
+  it("returns explicit failed access instead of Restricted when claims resolution fails", async () => {
+    vi.mocked(getUserClaims).mockRejectedValue(new Error("claims unavailable"));
+    const result = await getChangeNoticeImpactSourceAccess({
+      userId: "user-1",
+      companyId
+    });
+    expect(result).toEqual({
+      status: "failed",
+      errorMessage: "Impact source access could not be established."
+    });
+    expect(result).not.toEqual(
+      expect.objectContaining({
+        access: {
+          purchaseOrderLine: false,
+          job: false,
+          jobMaterial: false
+        }
+      })
+    );
+  });
+
+  it("fails authorized reconciliation before opening the database when permission RPC fails", async () => {
+    await expect(
+      reconcileAuthorizedChangeNoticeImpactProvenance({
+        client: fakeImpactPermissionClient(
+          {},
+          { message: "permission RPC failed" }
+        ),
+        userId: "user-1",
+        companyId,
+        changeNoticeId: "notice-1"
+      })
+    ).resolves.toEqual({
+      data: null,
+      error: { message: "Impact mutation access could not be established." }
+    });
+  });
+});
 
 describe("getLockVerdict", () => {
   it("allows edits when the revision is not locked", () => {
@@ -109,6 +675,189 @@ function fakeListClient(
 
 const companyId = "company_1";
 const args = { itemId: "item_1", companyId };
+
+function fakeEditableActionClient({
+  task,
+  changeNotice,
+  taskError = null,
+  changeNoticeError = null
+}: {
+  task: {
+    id: string;
+    companyId: string;
+    changeOrderId: string;
+    taskOrigin: string;
+  } | null;
+  changeNotice: {
+    id: string;
+    companyId: string;
+    status: string;
+  } | null;
+  taskError?: { message: string } | null;
+  changeNoticeError?: { message: string } | null;
+}) {
+  return {
+    from(table: string) {
+      const filters = new Map<string, string>();
+      const builder = {
+        select: () => builder,
+        eq: (column: string, value: string) => {
+          filters.set(column, value);
+          return builder;
+        },
+        maybeSingle: async () => {
+          if (table === "changeOrderActionTask") {
+            const matches =
+              task &&
+              task.id === filters.get("id") &&
+              task.changeOrderId === filters.get("changeOrderId") &&
+              task.companyId === filters.get("companyId");
+            return {
+              data: matches ? task : null,
+              error: taskError
+            };
+          }
+
+          const matches =
+            changeNotice &&
+            changeNotice.id === filters.get("id") &&
+            changeNotice.companyId === filters.get("companyId");
+          return {
+            data: matches
+              ? {
+                  id: changeNotice.id,
+                  companyId: changeNotice.companyId,
+                  status: changeNotice.status
+                }
+              : null,
+            error: changeNoticeError
+          };
+        }
+      };
+      return builder;
+    }
+  } as never;
+}
+
+describe("canEditChangeNoticeActionTaskFields", () => {
+  it("locks ordinary task fields after Done and Cancelled", () => {
+    for (const status of ["Done", "Cancelled"]) {
+      expect(
+        canEditChangeNoticeActionTaskFields(status, "Template-owned")
+      ).toBe(false);
+      expect(canEditChangeNoticeActionTaskFields(status, "Manual")).toBe(false);
+      expect(
+        canEditChangeNoticeActionTaskFields(status, "Impact follow-up")
+      ).toBe(true);
+    }
+  });
+
+  it("allows every known origin before terminal workflow statuses", () => {
+    for (const status of [
+      "Draft",
+      "Start",
+      "Engineering Complete",
+      "Implementation"
+    ]) {
+      for (const origin of ["Template-owned", "Manual", "Impact follow-up"]) {
+        expect(canEditChangeNoticeActionTaskFields(status, origin)).toBe(true);
+      }
+    }
+  });
+
+  it("fails closed for unknown persisted values", () => {
+    expect(canEditChangeNoticeActionTaskFields("Done", "unknown")).toBe(false);
+    expect(canEditChangeNoticeActionTaskFields("unknown", "Manual")).toBe(
+      false
+    );
+  });
+});
+
+describe("requireChangeNoticeActionTaskEditable", () => {
+  const task = {
+    id: "task-1",
+    companyId,
+    changeOrderId: "notice-1",
+    taskOrigin: "Manual"
+  };
+  const changeNotice = { id: "notice-1", companyId, status: "Done" };
+
+  it("uses the persisted origin and parent status for the terminal lock", async () => {
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({ task, changeNotice }),
+        { actionTaskId: task.id, changeNoticeId: task.changeOrderId, companyId }
+      )
+    ).resolves.toEqual({
+      error: { message: "This action task is read-only" },
+      data: null
+    });
+
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({
+          task: { ...task, taskOrigin: "Impact follow-up" },
+          changeNotice
+        }),
+        { actionTaskId: task.id, changeNoticeId: task.changeOrderId, companyId }
+      )
+    ).resolves.toBeNull();
+  });
+
+  it("allows ordinary task edits while the Change Notice is open", async () => {
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({
+          task,
+          changeNotice: { ...changeNotice, status: "Implementation" }
+        }),
+        { actionTaskId: task.id, changeNoticeId: task.changeOrderId, companyId }
+      )
+    ).resolves.toBeNull();
+  });
+
+  it("fails closed when the task or parent is not owned by the request scope", async () => {
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({ task, changeNotice }),
+        { actionTaskId: task.id, changeNoticeId: "notice-2", companyId }
+      )
+    ).resolves.toEqual({
+      error: { message: "Could not find editable action task" },
+      data: null
+    });
+
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({ task, changeNotice }),
+        {
+          actionTaskId: task.id,
+          changeNoticeId: task.changeOrderId,
+          companyId: "company-2"
+        }
+      )
+    ).resolves.toEqual({
+      error: { message: "Could not find editable action task" },
+      data: null
+    });
+  });
+
+  it("fails closed when either scoped read fails", async () => {
+    await expect(
+      requireChangeNoticeActionTaskEditable(
+        fakeEditableActionClient({
+          task,
+          changeNotice,
+          taskError: { message: "task read failed" }
+        }),
+        { actionTaskId: task.id, changeNoticeId: task.changeOrderId, companyId }
+      )
+    ).resolves.toEqual({
+      error: { message: "Could not find editable action task" },
+      data: null
+    });
+  });
+});
 
 describe("getUnreleasedChangeOrderItems", () => {
   it("reads nothing when given no ids", async () => {

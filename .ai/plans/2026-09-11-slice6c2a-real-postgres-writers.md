@@ -1,0 +1,22 @@
+# Slice 6C.2A — real PostgreSQL Impact writer harness
+
+- [x] Add a maintained ERP PostgreSQL test harness that uses Carbon's PostgreSQL/Kysely factories and creates a unique per-run fixture without changing schema.
+- [x] Keep PostgreSQL tests out of ordinary ERP discovery; require the dedicated config and fail setup clearly for an absent, malformed, non-local, mismatched, or unreachable database URL.
+- [x] Cover first assessment creation plus repeated same-input idempotency, including persisted decision/provenance/history counts and revision.
+- [x] Cover source-fact reassessment with a real revision-1-to-revision-2 update, persisted snapshot/history assertions, and a now-stale expected-revision rejection that leaves all state unchanged.
+- [x] Cover bulk first-assessment rollback on an injected post-write failure, then retry successfully and verify both targets are committed atomically.
+- [x] Cover two writers forced to overlap at the parent lock, asserting one success, one exact revision-conflict failure, the winning actor, and one final history event.
+- [x] Clean up exact fixture roots with row-count checks, verify generated per-company tables and all requested residue counts are zero, collect teardown failures, close every pool, and restore the prior database environment value.
+- [x] Run focused PostgreSQL/unit verification, ERP typecheck, targeted Biome checks, discovery checks, and whitespace/status checks. No Slice 6C.2B work started.
+
+## Final correction verification
+
+- Generated per-company relation cleanup now drops `public."<escaped name>"` and performs one final exact catalog count through `pg_catalog.pg_class` joined to `pg_catalog.pg_namespace`, matching `nspname = 'public'` and `relname = $1`. The old `to_regclass` lookup and the duplicate post-drop lookup are gone.
+- The race writers share one Carbon factory pool configured with max 2 connections. Each writer has its own Kysely client and rendezvous driver; two arrivals at the parent-lock barrier prove the pool supplied two concurrent connections. Teardown closes that one race pool.
+- PostgreSQL run 1: passed, 1 test passed, 0 skipped. PostgreSQL run 2: passed, 1 test passed, 0 skipped. Both runs printed `0` for `company`, `Change Notice`, `affected item`, `Impact decision`, `Impact provenance`, `Impact history`, `Job`, `Job make-method children`, `Job material children`, `Job operation children`, `Item`, `location`, `unit of measure`, `user`, and both generated mixed-case `searchIndex_*` and `auditLog_*` relations.
+- The race assertions produced one successful revision-2 correction and one exact stale-revision rejection. The persisted winner's `assessedBy` and rationale matched the winning input; no history row was written by the rejected actor.
+- Focused ordinary Impact tests passed: 190 tests across 4 files. ERP typecheck passed. Targeted Biome formatting/checking passed for the test and config sources; the plan file was reviewed as Markdown. Whitespace checks passed.
+- Vitest 4.1.6 discovery found 91 ordinary ERP test files with no PostgreSQL test files, and the dedicated config found exactly `app/modules/items/items.impact.writers.postgres.test.ts`. The dedicated config has `passWithNoTests: false`; the ordinary config excludes only `**/*.postgres.test.ts`. Repository search found exactly 1 `*.postgres.test.ts` file and 0 `*.postgres.test.tsx` files.
+- `SUPABASE_DB_URL=not-a-url ... vitest.postgres.config.ts ...` failed with the malformed-URL setup error before the production writer import or any database connection. The harness source also rejects absent/placeholder, non-loopback, mismatched, and non-Carbon targets without printing credentials.
+- The broader ordinary-discovery blocker is proven pre-existing. `apps/erp/test/batching-migration-guards.test.ts` and `apps/erp/test/batching-tenant-scope-and-fk-locks.test.ts` are byte-identical to `HEAD`; both reference the absent `20260821024449_job-operation-batching.sql`, and the second also references absent `20260904151137_batch-member-fk-set-null-companyid.sql`. Both migration paths are absent at `HEAD`. `HEAD` already included `test/**/*.test.ts`, while the config change only excludes `*.postgres.test.ts`, so these tests remain selected and cannot be affected by the new exclusion.
+- Only the four Slice 6C.2A files are pending. Production code, schema, RLS, MCP artifacts, and Slice 6C.2B were untouched. Nothing was staged, committed, pushed, reset, rebased, amended, or stashed.

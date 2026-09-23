@@ -6556,9 +6556,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -6762,9 +6759,6 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
-          },
-          {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
           },
           {
@@ -6920,9 +6914,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.assemblyInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithDependencies.inspectionDocumentId"
@@ -17982,6 +17973,258 @@ export default {
         tags: ["itemInspectionDocumentAssignment"]
       }
     },
+    "/changeOrderImpactDecision": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.changeNoticeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.decisionStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.noActionReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessmentSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.snapshotVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changeOrderImpactDecision"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changeOrderImpactDecision"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecision"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changeOrderImpactDecision"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.changeNoticeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.decisionStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.noActionReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessmentSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.snapshotVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecision"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.changeNoticeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.decisionStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.noActionReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessmentSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.snapshotVersion"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.assessedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.revision"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecision.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecision"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecision"]
+      }
+    },
     "/fixedAssetClass": {
       get: {
         parameters: [
@@ -20425,6 +20668,9 @@ export default {
             $ref: "#/parameters/rowFilter.jobs.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.jobs.projectedCompletionAt"
           },
           {
@@ -20432,9 +20678,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobs.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobs.productionQuantity"
           },
           {
             $ref: "#/parameters/rowFilter.jobs.jobMakeMethodId"
@@ -26344,6 +26587,231 @@ export default {
           }
         },
         tags: ["enforcementRuleWorkCenterAssignment"]
+      }
+    },
+    "/changeOrderImpactDecisionAffectedItem": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changeOrderImpactDecisionAffectedItem"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionAffectedItem"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionAffectedItem"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changeOrderImpactDecisionAffectedItem"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionAffectedItem"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemSourceId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemLabel"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.startedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.endedReason"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionAffectedItem.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionAffectedItem"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionAffectedItem"]
       }
     },
     "/contractorAbility": {
@@ -33940,6 +34408,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -33947,9 +34418,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/select"
@@ -34122,6 +34590,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -34129,9 +34600,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -34258,6 +34726,9 @@ export default {
             $ref: "#/parameters/rowFilter.job.priority"
           },
           {
+            $ref: "#/parameters/rowFilter.job.productionQuantity"
+          },
+          {
             $ref: "#/parameters/rowFilter.job.projectedCompletionAt"
           },
           {
@@ -34265,9 +34736,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.job.scheduleOutdatedAt"
-          },
-          {
-            $ref: "#/parameters/rowFilter.job.productionQuantity"
           },
           {
             $ref: "#/parameters/body.job"
@@ -44020,10 +44488,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -44229,10 +44697,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -44392,10 +44860,10 @@ export default {
             $ref: "#/parameters/rowFilter.jobOperation.assemblyInstructionId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
+            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
           },
           {
-            $ref: "#/parameters/rowFilter.jobOperation.inspectionDocumentId"
+            $ref: "#/parameters/rowFilter.jobOperation.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperation.projectedCompletionAt"
@@ -63916,6 +64384,9 @@ export default {
             $ref: "#/parameters/rowFilter.changeOrderActionTask.actionTypeId"
           },
           {
+            $ref: "#/parameters/rowFilter.changeOrderActionTask.taskOrigin"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -64023,6 +64494,9 @@ export default {
             $ref: "#/parameters/rowFilter.changeOrderActionTask.actionTypeId"
           },
           {
+            $ref: "#/parameters/rowFilter.changeOrderActionTask.taskOrigin"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -64082,6 +64556,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.changeOrderActionTask.actionTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderActionTask.taskOrigin"
           },
           {
             $ref: "#/parameters/body.changeOrderActionTask"
@@ -69565,6 +70042,159 @@ export default {
           }
         },
         tags: ["nonConformancePurchaseOrderLine"]
+      }
+    },
+    "/changeOrderImpactDecisionActionTask": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.actionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changeOrderImpactDecisionActionTask"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionActionTask"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionActionTask"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changeOrderImpactDecisionActionTask"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.actionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionActionTask"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.actionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionActionTask.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionActionTask"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionActionTask"]
       }
     },
     "/inspection": {
@@ -82833,6 +83463,285 @@ export default {
         tags: ["supplier"]
       }
     },
+    "/changeOrderImpactDecisionHistory": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedActionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedAffectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.priorAssessmentWasChanged"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changeOrderImpactDecisionHistory"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionHistory"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionHistory"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changeOrderImpactDecisionHistory"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedActionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedAffectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.priorAssessmentWasChanged"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionHistory"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.decisionId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.targetId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.eventType"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newStatus"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newReasonCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.previousSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.newSnapshot"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.rationale"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.resolutionNote"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedActionTaskId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.relatedAffectedItemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.priorAssessmentWasChanged"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changeOrderImpactDecisionHistory.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.changeOrderImpactDecisionHistory"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changeOrderImpactDecisionHistory"]
+      }
+    },
     "/timeCardEntry": {
       get: {
         parameters: [
@@ -83543,9 +84452,6 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId"
-          },
-          {
-            $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.readyAt"
           },
           {
             $ref: "#/parameters/rowFilter.jobOperationsWithMakeMethods.inspectionDocumentId"
@@ -91732,9 +92638,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91742,6 +92645,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -91941,9 +92847,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91951,6 +92854,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -92104,9 +93010,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -92114,6 +93017,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -108729,10 +109635,6 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
@@ -113996,6 +114898,113 @@ export default {
       },
       type: "object"
     },
+    changeOrderImpactDecision: {
+      required: [
+        "id",
+        "companyId",
+        "changeNoticeId",
+        "targetType",
+        "targetId",
+        "decisionStatus",
+        "assessmentSnapshot",
+        "snapshotVersion",
+        "assessedBy",
+        "assessedAt",
+        "revision",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('coid'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        changeNoticeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `changeOrder.id`.<fk table='changeOrder' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        targetType: {
+          format: "text",
+          type: "string"
+        },
+        targetId: {
+          format: "text",
+          type: "string"
+        },
+        decisionStatus: {
+          format: "text",
+          type: "string"
+        },
+        noActionReasonCode: {
+          format: "text",
+          type: "string"
+        },
+        rationale: {
+          format: "text",
+          type: "string"
+        },
+        resolutionNote: {
+          format: "text",
+          type: "string"
+        },
+        assessmentSnapshot: {
+          format: "jsonb"
+        },
+        snapshotVersion: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        assessedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        assessedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        revision: {
+          default: 1,
+          format: "integer",
+          type: "integer"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     fixedAssetClass: {
       required: [
         "id",
@@ -115285,6 +116294,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           format: "timestamp with time zone",
           type: "string"
@@ -115296,10 +116309,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         },
         jobMakeMethodId: {
           description: "Note:\nThis is a Primary Key.<pk/>",
@@ -118182,6 +119191,96 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    changeOrderImpactDecisionAffectedItem: {
+      required: [
+        "id",
+        "companyId",
+        "decisionId",
+        "affectedItemId",
+        "affectedItemSourceId",
+        "startedAt",
+        "startedBy",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('coipa'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        decisionId: {
+          format: "text",
+          type: "string"
+        },
+        affectedItemId: {
+          format: "text",
+          type: "string"
+        },
+        affectedItemSourceId: {
+          format: "text",
+          type: "string"
+        },
+        affectedItemLabel: {
+          format: "text",
+          type: "string"
+        },
+        startedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        startedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        endedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        endedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        endedReason: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -121693,8 +122792,8 @@ export default {
             "Non-Conformance",
             "Inbound Inspection",
             "Scrap",
-            "Batch Merge",
-            "Card Transaction"
+            "Card Transaction",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -121938,6 +123037,10 @@ export default {
           format: "double precision",
           type: "number"
         },
+        productionQuantity: {
+          format: "numeric",
+          type: "number"
+        },
         projectedCompletionAt: {
           description:
             "Simulated finish of the job's last operation (forward-ASAP finite schedule). Null until first regen.",
@@ -121953,10 +123056,6 @@ export default {
         scheduleOutdatedAt: {
           format: "timestamp with time zone",
           type: "string"
-        },
-        productionQuantity: {
-          format: "numeric",
-          type: "number"
         }
       },
       type: "object"
@@ -126725,14 +127824,14 @@ export default {
           format: "text",
           type: "string"
         },
-        readyAt: {
-          format: "timestamp with time zone",
-          type: "string"
-        },
         inspectionDocumentId: {
           description:
             "Note:\nThis is a Foreign Key to `inspectionDocument.id`.<fk table='inspectionDocument' column='id'/>",
           format: "text",
+          type: "string"
+        },
+        readyAt: {
+          format: "timestamp with time zone",
           type: "string"
         },
         projectedCompletionAt: {
@@ -135265,8 +136364,8 @@ export default {
             "Non-Conformance",
             "Inbound Inspection",
             "Scrap",
-            "Batch Merge",
-            "Card Transaction"
+            "Card Transaction",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -135452,8 +136551,8 @@ export default {
             "Non-Conformance",
             "Inbound Inspection",
             "Scrap",
-            "Batch Merge",
-            "Card Transaction"
+            "Card Transaction",
+            "Batch Merge"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -135755,7 +136854,8 @@ export default {
         "sortOrder",
         "companyId",
         "createdAt",
-        "createdBy"
+        "createdBy",
+        "taskOrigin"
       ],
       properties: {
         id: {
@@ -135839,6 +136939,11 @@ export default {
         actionTypeId: {
           description:
             "Note:\nThis is a Foreign Key to `changeOrderRequiredAction.id`.<fk table='changeOrderRequiredAction' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        taskOrigin: {
+          default: "Manual",
           format: "text",
           type: "string"
         }
@@ -138487,6 +139592,56 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
           format: "text",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
+    changeOrderImpactDecisionActionTask: {
+      required: [
+        "decisionId",
+        "actionTaskId",
+        "companyId",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        decisionId: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        actionTaskId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `changeOrderActionTask.id`.<fk table='changeOrderActionTask' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
           type: "string"
         }
       },
@@ -144893,6 +146048,114 @@ export default {
       },
       type: "object"
     },
+    changeOrderImpactDecisionHistory: {
+      required: [
+        "id",
+        "companyId",
+        "decisionId",
+        "targetType",
+        "targetId",
+        "eventType",
+        "priorAssessmentWasChanged",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('coih'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        decisionId: {
+          format: "text",
+          type: "string"
+        },
+        targetType: {
+          format: "text",
+          type: "string"
+        },
+        targetId: {
+          format: "text",
+          type: "string"
+        },
+        eventType: {
+          format: "text",
+          type: "string"
+        },
+        previousStatus: {
+          format: "text",
+          type: "string"
+        },
+        newStatus: {
+          format: "text",
+          type: "string"
+        },
+        previousReasonCode: {
+          format: "text",
+          type: "string"
+        },
+        newReasonCode: {
+          format: "text",
+          type: "string"
+        },
+        previousSnapshot: {
+          format: "jsonb"
+        },
+        newSnapshot: {
+          format: "jsonb"
+        },
+        rationale: {
+          format: "text",
+          type: "string"
+        },
+        resolutionNote: {
+          format: "text",
+          type: "string"
+        },
+        relatedActionTaskId: {
+          format: "text",
+          type: "string"
+        },
+        relatedAffectedItemId: {
+          format: "text",
+          type: "string"
+        },
+        priorAssessmentWasChanged: {
+          default: false,
+          format: "boolean",
+          type: "boolean"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     timeCardEntry: {
       required: [
         "id",
@@ -145369,10 +146632,6 @@ export default {
           description:
             "Note:\nThis is a Foreign Key to `assemblyInstruction.id`.<fk table='assemblyInstruction' column='id'/>",
           format: "text",
-          type: "string"
-        },
-        readyAt: {
-          format: "timestamp with time zone",
           type: "string"
         },
         inspectionDocumentId: {
@@ -149121,10 +150380,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler"
       ],
       properties: {
@@ -149372,13 +150631,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -149393,6 +150645,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         includeOperationsOnTraveler: {
           default: true,
@@ -153564,12 +154823,6 @@ export default {
     },
     "rowFilter.jobOperationsWithDependencies.assemblyInstructionId": {
       name: "assemblyInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobOperationsWithDependencies.readyAt": {
-      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -159455,6 +160708,123 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.changeOrderImpactDecision": {
+      name: "changeOrderImpactDecision",
+      description: "changeOrderImpactDecision",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changeOrderImpactDecision"
+      }
+    },
+    "rowFilter.changeOrderImpactDecision.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.changeNoticeId": {
+      name: "changeNoticeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.targetType": {
+      name: "targetType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.targetId": {
+      name: "targetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.decisionStatus": {
+      name: "decisionStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.noActionReasonCode": {
+      name: "noActionReasonCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.rationale": {
+      name: "rationale",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.resolutionNote": {
+      name: "resolutionNote",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.assessmentSnapshot": {
+      name: "assessmentSnapshot",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.snapshotVersion": {
+      name: "snapshotVersion",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.assessedBy": {
+      name: "assessedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.assessedAt": {
+      name: "assessedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.revision": {
+      name: "revision",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecision.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.fixedAssetClass": {
       name: "fixedAssetClass",
       description: "fixedAssetClass",
@@ -160903,6 +162273,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.jobs.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.jobs.projectedCompletionAt": {
       name: "projectedCompletionAt",
       required: false,
@@ -160917,12 +162293,6 @@ export default {
     },
     "rowFilter.jobs.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobs.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -164174,6 +165544,105 @@ export default {
     },
     "rowFilter.enforcementRuleWorkCenterAssignment.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.changeOrderImpactDecisionAffectedItem": {
+      name: "changeOrderImpactDecisionAffectedItem",
+      description: "changeOrderImpactDecisionAffectedItem",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changeOrderImpactDecisionAffectedItem"
+      }
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.decisionId": {
+      name: "decisionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemId": {
+      name: "affectedItemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemSourceId": {
+      name: "affectedItemSourceId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.affectedItemLabel": {
+      name: "affectedItemLabel",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.startedAt": {
+      name: "startedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.startedBy": {
+      name: "startedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.endedAt": {
+      name: "endedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.endedBy": {
+      name: "endedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.endedReason": {
+      name: "endedReason",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionAffectedItem.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -168389,6 +169858,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.job.productionQuantity": {
+      name: "productionQuantity",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.job.projectedCompletionAt": {
       name: "projectedCompletionAt",
       description:
@@ -168407,12 +169882,6 @@ export default {
     },
     "rowFilter.job.scheduleOutdatedAt": {
       name: "scheduleOutdatedAt",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.job.productionQuantity": {
-      name: "productionQuantity",
       required: false,
       in: "query",
       type: "string"
@@ -173543,14 +175012,14 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.readyAt": {
-      name: "readyAt",
+    "rowFilter.jobOperation.inspectionDocumentId": {
+      name: "inspectionDocumentId",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.jobOperation.inspectionDocumentId": {
-      name: "inspectionDocumentId",
+    "rowFilter.jobOperation.readyAt": {
+      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -183812,6 +185281,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.changeOrderActionTask.taskOrigin": {
+      name: "taskOrigin",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.agentThread": {
       name: "agentThread",
       description: "agentThread",
@@ -186740,6 +188215,57 @@ export default {
     },
     "rowFilter.nonConformancePurchaseOrderLine.updatedBy": {
       name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.changeOrderImpactDecisionActionTask": {
+      name: "changeOrderImpactDecisionActionTask",
+      description: "changeOrderImpactDecisionActionTask",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changeOrderImpactDecisionActionTask"
+      }
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.decisionId": {
+      name: "decisionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.actionTaskId": {
+      name: "actionTaskId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionActionTask.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"
@@ -193920,6 +195446,141 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.changeOrderImpactDecisionHistory": {
+      name: "changeOrderImpactDecisionHistory",
+      description: "changeOrderImpactDecisionHistory",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changeOrderImpactDecisionHistory"
+      }
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.decisionId": {
+      name: "decisionId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.targetType": {
+      name: "targetType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.targetId": {
+      name: "targetId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.eventType": {
+      name: "eventType",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.previousStatus": {
+      name: "previousStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.newStatus": {
+      name: "newStatus",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.previousReasonCode": {
+      name: "previousReasonCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.newReasonCode": {
+      name: "newReasonCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.previousSnapshot": {
+      name: "previousSnapshot",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.newSnapshot": {
+      name: "newSnapshot",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.rationale": {
+      name: "rationale",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.resolutionNote": {
+      name: "resolutionNote",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.relatedActionTaskId": {
+      name: "relatedActionTaskId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.relatedAffectedItemId": {
+      name: "relatedAffectedItemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.priorAssessmentWasChanged": {
+      name: "priorAssessmentWasChanged",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changeOrderImpactDecisionHistory.updatedAt": {
+      name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.timeCardEntry": {
       name: "timeCardEntry",
       description: "timeCardEntry",
@@ -194432,12 +196093,6 @@ export default {
     },
     "rowFilter.jobOperationsWithMakeMethods.assemblyInstructionId": {
       name: "assemblyInstructionId",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.jobOperationsWithMakeMethods.readyAt": {
-      name: "readyAt",
       required: false,
       in: "query",
       type: "string"
@@ -198832,12 +200487,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -198852,6 +200501,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

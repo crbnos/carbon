@@ -21,7 +21,10 @@ const allTools = metadata.tools as Tool[];
 // excluded from the rule-based assertions. The API-key WRITES (upsert/delete)
 // moved to @carbon/ee/api-keys.server behind requireEntitlement, so they are no
 // longer MCP tools — only the read (getApiKeys) remains and keeps the override.
-const OVERRIDDEN = new Set(["settings_getApiKeys"]);
+const OVERRIDDEN = new Set([
+  "settings_getApiKeys",
+  "items_createImpactFollowUpTask"
+]);
 
 const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
 
@@ -29,11 +32,25 @@ const funcName = (t: Tool) => t.name.slice(t.module.length + 1).toLowerCase();
 
 describe("permission overrides", () => {
   it("API-key management gates on users_update, matching its ERP routes", () => {
-    for (const name of OVERRIDDEN) {
+    const t = allTools.find((t) => t.name === "settings_getApiKeys");
+    expect(t).toBeDefined();
+    expect(t?.permission).toEqual({
+      module: "users",
+      actions: ["update"]
+    });
+  });
+
+  it("Impact task adapters gate on parts_update regardless of their verb", () => {
+    for (const name of [
+      "items_createImpactFollowUpTask",
+      "items_linkImpactDecisionTask",
+      "items_unlinkImpactDecisionTask",
+      "items_designateImpactFollowUpTask"
+    ]) {
       const t = allTools.find((t) => t.name === name);
       expect(t, name).toBeDefined();
       expect(t?.permission, name).toEqual({
-        module: "users",
+        module: "parts",
         actions: ["update"]
       });
     }

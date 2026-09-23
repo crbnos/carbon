@@ -5,6 +5,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { setChangeNoticeActionTasks } from "~/modules/items";
 import { requireEditableChangeNoticeRoute } from "~/modules/items/items.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 // Reconcile a change notice's action tasks to the set chosen in the sidebar's
 // "Required Actions" multiselect (mirrors Quality's requiredActionIds field):
@@ -30,17 +31,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .split(",")
     .filter(Boolean);
 
-  const result = await setChangeNoticeActionTasks(client, {
-    changeNoticeId: id,
-    requiredActionIds,
-    companyId,
-    userId
-  });
-
-  if (result.error) {
+  try {
+    await setChangeNoticeActionTasks(getDatabaseClient(), {
+      changeNoticeId: id,
+      requiredActionIds,
+      companyId,
+      userId
+    });
+  } catch (err) {
     return data(
       { success: false },
-      await flash(request, error(result.error, "Failed to update actions"))
+      await flash(request, error(err, "Failed to update actions"))
     );
   }
 

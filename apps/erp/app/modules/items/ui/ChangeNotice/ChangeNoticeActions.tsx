@@ -1,41 +1,30 @@
-import { useCarbon } from "@carbon/auth";
-import { IconButton, type JSONContent, useDebounce } from "@carbon/react";
-import { useLingui } from "@lingui/react/macro";
-import type { DragControls } from "framer-motion";
-import { useCallback, useState } from "react";
-import { LuTrash2 } from "react-icons/lu";
+import { useCallback } from "react";
 import { useFetcher } from "react-router";
-import { DateTime } from "~/components";
-import {
-  ActionTaskCard,
-  type ActionTaskStatus
-} from "~/components/ActionTasks/ActionTaskCard";
 import { ActionTaskList } from "~/components/ActionTasks/ActionTaskList";
-import { ActionTaskStatusButton } from "~/components/ActionTasks/ActionTaskStatusButton";
-import { JiraIssueDialog } from "~/components/ActionTasks/Jira/IssueDialog";
-import { LinearIssueDialog } from "~/components/ActionTasks/Linear/IssueDialog";
-import { syncActionTaskNotes } from "~/components/ActionTasks/syncNotes";
-import { useImageUpload, usePermissions, useRouteData, useUser } from "~/hooks";
-import { useIntegrations } from "~/hooks/useIntegrations";
+import { useRouteData } from "~/hooks";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
-import type { ChangeNoticeActionTask } from "../../types";
+import type { ChangeNoticeActionTask, ChangeNoticeStatus } from "../../types";
+import { ChangeNoticeActionTaskItem } from "./ChangeNoticeActionTaskItem";
 
 // Change-order actions — a thin wrapper over the shared ActionTaskList (same
 // component the Quality issue uses). Adding picks from the change notice's
 // configured required-action templates via the "Add Actions" modal and writes
 // back through the reconcile route (`$id.action`), which instantiates the union
-// of the current tasks and the newly-picked templates. Each row is an ActionItem
-// (notes, status, assignee) with an inline delete. All actions live here on the
+// of the current tasks and the newly-picked templates. Each row is a
+// ChangeNoticeActionTaskItem (notes, status, assignee, due date) with an inline
+// delete. All actions live here on the
 // top-level detail route.
 export default function ChangeNoticeActions({
   changeOrderId,
+  changeNoticeStatus,
   actions,
-  isDisabled
+  canEditWorkflow
 }: {
   changeOrderId: string;
+  changeNoticeStatus: ChangeNoticeStatus;
   actions: ChangeNoticeActionTask[];
-  isDisabled: boolean;
+  canEditWorkflow: boolean;
 }) {
   const routeData = useRouteData<{ requiredActions: ListItem[] }>(
     path.to.changeNotice(changeOrderId)
@@ -68,158 +57,16 @@ export default function ChangeNoticeActions({
       templates={routeData?.requiredActions ?? []}
       onAdd={onAdd}
       isAddSubmitting={addFetcher.state !== "idle"}
-      isDisabled={isDisabled}
+      isDisabled={!canEditWorkflow}
       renderItem={(action, dragControls) => (
-        <ActionItem
+        <ChangeNoticeActionTaskItem
           changeOrderId={changeOrderId}
+          changeNoticeStatus={changeNoticeStatus}
           action={action}
-          isDisabled={isDisabled}
+          canEditWorkflow={canEditWorkflow}
           dragControls={dragControls}
         />
       )}
-    />
-  );
-}
-
-// The CO wrapper over the shared ActionTaskCard: owns CO-specific persistence
-// (notes via supabase, status + delete via CO routes) and passes the due date
-// into the card's slots.
-function ActionItem({
-  changeOrderId,
-  action,
-  isDisabled,
-  dragControls
-}: {
-  changeOrderId: string;
-  action: ChangeNoticeActionTask;
-  isDisabled: boolean;
-  dragControls: DragControls;
-}) {
-  const { t } = useLingui();
-  const permissions = usePermissions();
-  const integrations = useIntegrations();
-  const { id: userId } = useUser();
-  const { carbon } = useCarbon();
-  const statusFetcher = useFetcher<{ success: boolean }>();
-  const deleteFetcher = useFetcher<{ success: boolean }>();
-
-  const [content, setContent] = useState((action.notes ?? {}) as JSONContent);
-  const status = (action.status ?? "Pending") as ActionTaskStatus;
-  const canEdit = permissions.can("update", "parts") && !isDisabled;
-
-  const onUploadImage = useImageUpload("parts");
-
-  const hasLinearLink = !!action.linearIssue;
-  const hasJiraLink = !!action.jiraIssue;
-
-  const onUpdateContent = useDebounce(
-    async (value: JSONContent) => {
-      await carbon
-        ?.from("changeOrderActionTask")
-        .update({ notes: value, updatedBy: userId })
-        .eq("id", action.id);
-
-      if (hasLinearLink) {
-        await syncActionTaskNotes("Linear", {
-          actionId: action.id,
-          entityType: "changeOrderActionTask",
-          notes: value
-        });
-      }
-
-      if (hasJiraLink) {
-        await syncActionTaskNotes("Jira", {
-          actionId: action.id,
-          entityType: "changeOrderActionTask",
-          notes: value
-        });
-      }
-    },
-    2500,
-    true
-  );
-
-  const onStatusChange = (next: ActionTaskStatus) => {
-    if (isDisabled) return;
-    const formData = new FormData();
-    formData.append("id", action.id);
-    formData.append("status", next);
-    statusFetcher.submit(formData, {
-      method: "post",
-      action: path.to.changeNoticeActionStatus(changeOrderId, action.id)
-    });
-  };
-
-  const onDelete = () => {
-    if (isDisabled) return;
-    deleteFetcher.submit(
-      {},
-      {
-        method: "post",
-        action: path.to.deleteChangeNoticeAction(changeOrderId, action.id)
-      }
-    );
-  };
-
-  return (
-    <ActionTaskCard
-      title={action.name ?? ""}
-      status={status}
-      notes={content}
-      canEditNotes={canEdit}
-      onNotesChange={(value) => {
-        setContent(value);
-        onUpdateContent(value);
-      }}
-      onUploadImage={onUploadImage}
-      onStatusChange={onStatusChange}
-      assigneeTable="changeOrderActionTask"
-      assigneeId={action.id}
-      assignee={action.assignee ?? undefined}
-      isDisabled={isDisabled}
-      showDragHandle={!isDisabled}
-      dragControls={dragControls}
-      statusBadge={
-        <ActionTaskStatusButton
-          status={status}
-          onChange={onStatusChange}
-          isDisabled={isDisabled}
-        />
-      }
-      headerExtras={
-        <>
-          {integrations.has("linear") && (
-            <LinearIssueDialog
-              entityType="changeOrderActionTask"
-              taskId={action.id}
-              linkedIssue={action.linearIssue}
-            />
-          )}
-          {integrations.has("jira") && (
-            <JiraIssueDialog
-              entityType="changeOrderActionTask"
-              taskId={action.id}
-              linkedIssue={action.jiraIssue}
-            />
-          )}
-          {canEdit && (
-            <IconButton
-              aria-label={t`Delete action`}
-              icon={<LuTrash2 />}
-              variant="ghost"
-              onClick={onDelete}
-              isDisabled={deleteFetcher.state !== "idle"}
-            />
-          )}
-        </>
-      }
-      footerExtras={
-        action.dueDate ? (
-          <span className="text-xs text-muted-foreground tabular-nums whitespace-nowrap shrink-0">
-            <DateTime value={action.dueDate} variant="date" />
-          </span>
-        ) : undefined
-      }
     />
   );
 }

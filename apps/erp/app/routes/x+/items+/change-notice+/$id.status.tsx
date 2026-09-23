@@ -39,12 +39,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Implementation → Done IS the apply: applyChangeNotice activates each affected
   // item's CO-owned Draft make method and performs the final CAS flip to Done
-  // (G1/G2). All other transitions go through the plain guarded status writer.
+  // (G1/G2). Reject a stale or forged transition intent before invoking the
+  // orchestration; applyChangeNotice still reloads the row and keeps its CAS.
   if (toStatus === "Done") {
+    if (fromStatus !== "Implementation") {
+      throw redirect(
+        requestReferrer(request) ?? path.to.changeNoticeDetails(id),
+        await flash(
+          request,
+          error(
+            { message: "Change notice must be at Implementation to apply" },
+            "Failed to apply change notice"
+          )
+        )
+      );
+    }
+
     const applied = await applyChangeNotice(client, getDatabaseClient(), {
       changeNoticeId: id,
       userId,
-      companyId
+      companyId,
+      fromStatus
     });
     if (applied.error || !applied.data) {
       throw redirect(

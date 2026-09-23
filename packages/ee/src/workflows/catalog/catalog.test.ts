@@ -127,6 +127,7 @@ describe("createWorkflowCatalog — WorkflowCatalog conformance", () => {
       update: { entity: "purchaseOrder" }
     });
     expect(getActionRoute("ghost")).toBeUndefined();
+    expect(getActionRoute("items_deleteChangeNotice")).toBeUndefined();
   });
 
   it("answers with an operation and the entity it works on", () => {

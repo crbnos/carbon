@@ -63,8 +63,9 @@ export default function ChangeNoticeDetailsRoute() {
       />
       <ChangeNoticeActions
         changeOrderId={id}
+        changeNoticeStatus={changeNotice.status}
         actions={routeData?.actions ?? []}
-        isDisabled={isWorkflowDisabled}
+        canEditWorkflow={!isWorkflowDisabled}
       />
     </VStack>
   );

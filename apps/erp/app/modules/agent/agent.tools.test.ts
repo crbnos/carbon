@@ -53,6 +53,17 @@ describe("agent call_tool", () => {
     expect(callOperation).not.toHaveBeenCalled();
   });
 
+  it("does not expose Change Notice deletion to the session agent", async () => {
+    callOperation.mockClear();
+    const result = await callTool("items_deleteChangeNotice", {
+      changeNoticeId: "notice-1"
+    });
+    expect(result).toEqual({
+      error: 'Tool "items_deleteChangeNotice" is not available.'
+    });
+    expect(callOperation).not.toHaveBeenCalled();
+  });
+
   it("refuses a blocked tool without reaching the dispatch", async () => {
     callOperation.mockClear();
     const result = await callTool("settings_seedCompany", {});

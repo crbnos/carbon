@@ -36,6 +36,7 @@ export type AssigneeProps = Omit<
   size?: "sm" | "md";
   value?: string;
   isReadOnly?: boolean;
+  assignmentAction?: string;
   placeholder?: string;
   variant?: AssigneeVariants;
   onChange?: (selected: string) => void;
@@ -49,6 +50,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
       value,
       size = "md",
       isReadOnly,
+      assignmentAction,
       placeholder,
       variant = "button",
       onChange,
@@ -72,7 +74,7 @@ const Assign = forwardRef<HTMLButtonElement, AssigneeProps>(
 
       fetcher.submit(formData, {
         method: "post",
-        action: path.to.api.assign
+        action: assignmentAction ?? path.to.api.assign
       });
     };
 
@@ -211,14 +213,16 @@ export default Assign;
 
 export function useOptimisticAssignment({
   id,
-  table
+  table,
+  assignmentAction
 }: {
   id: string;
   table: string;
+  assignmentAction?: string;
 }) {
   const fetchers = useFetchers();
   const assignFetcher = fetchers.find(
-    (f) => f.formAction === path.to.api.assign
+    (f) => f.formAction === (assignmentAction ?? path.to.api.assign)
   );
 
   if (assignFetcher && assignFetcher.formData) {

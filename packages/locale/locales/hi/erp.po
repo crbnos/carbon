@@ -68,6 +68,18 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए इसे बैकअप नहीं किया जा सकता। इसे छोड़ने से सब कुछ और बैकअप हो जाता है।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए उन्हें बैकअप नहीं किया जा सकता। उन्हें छोड़ने से सब कुछ और बैकअप हो जाता है।}}"
 
+#. placeholder {0}: bulkSuccess.noOpCount
+msgid "{0, plural, one {# target was already current.} other {# targets were already current.}}"
+msgstr "{0, plural, one {# लक्ष्य पहले से अद्यतन था।} other {# लक्ष्य पहले से अद्यतन थे।}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target;} other {Impact updated for # targets;}}"
+msgstr "{0, plural, one {# लक्ष्य के लिए प्रभाव अपडेट किया गया;} other {# लक्ष्यों के लिए प्रभाव अपडेट किया गया;}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target.} other {Impact updated for # targets.}}"
+msgstr "{0, plural, one {# लक्ष्य के लिए प्रभाव अपडेट किया गया।} other {# लक्ष्यों के लिए प्रभाव अपडेट किया गया।}}"
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
@@ -209,8 +221,13 @@ msgid "{0} scrapped"
 msgstr "{0} स्क्रैप किया गया"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedKeys.size
 msgid "{0} selected"
 msgstr "{0} चुने गए"
+
+#. placeholder {0}: candidates.length
+msgid "{0} selected targets"
+msgstr "{0} चयनित लक्ष्य"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -943,6 +960,9 @@ msgstr "एक बिक्रय RFQ (एक ग्राहक आपको �
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
 
+msgid "A selected row is no longer readable in the current workspace. Refresh and review the selection."
+msgstr "एक चयनित पंक्ति वर्तमान कार्यक्षेत्र में अब पढ़ने योग्य नहीं है। रीफ़्रेश करें और चयन की समीक्षा करें।"
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "कर रिपोर्टिंग के लिए एक अलग अनुसूची जब कर नियम पुस्तक मूल्यह्रास से अलग विधि की आवश्यकता होती है।"
 
@@ -1232,6 +1252,9 @@ msgstr "ACS URL"
 msgid "Action"
 msgstr "कार्रवाई"
 
+msgid "Action required"
+msgstr "कार्रवाई आवश्यक है"
+
 msgid "Action Status"
 msgstr "कार्रवाई स्थिति"
 
@@ -1321,7 +1344,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "बिल ऑफ मेटेरियल्स पर प्रत्येक आइटम और उसकी मात्रा को सूचीबद्ध करने वाली एक सामग्री अनुभाग जोड़ें।"
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "एक पैरामीटर जोड़ें (कार्यविधि एक्सप्लोरर में)"
+msgstr "पैरामीटर जोड़ें (कार्यविधि एक्सप्लोरर में)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि लेबल सीधे प्रिंट कर सकें।"
@@ -1604,6 +1627,12 @@ msgstr "{nextStatus} को आगे बढ़ाएं"
 
 msgid "Advanced"
 msgstr "उन्नत"
+
+msgid "Affected item"
+msgstr "प्रभावित आइटम"
+
+msgid "Affected item details unavailable."
+msgstr "प्रभावित आइटम का विवरण उपलब्ध नहीं है।"
 
 msgid "Affected item not found."
 msgstr "प्रभावित आइटम नहीं मिला।"
@@ -2023,6 +2052,10 @@ msgstr "सुझाव लागू करें"
 
 msgid "Apply To"
 msgstr "लागू करें"
+
+#. placeholder {0}: candidates.length
+msgid "Apply to {0}"
+msgstr "{0} पर लागू करें"
 
 msgid "Apply to invoice"
 msgstr "चालान पर लागू करें"
@@ -2611,6 +2644,36 @@ msgstr "असेंबली निर्देश"
 msgid "Assembly:"
 msgstr "असेंबली:"
 
+msgid "Assess"
+msgstr "आकलन करें"
+
+msgid "Assess operational impact"
+msgstr "परिचालन प्रभाव का आकलन करें"
+
+msgid "Assessment coverage"
+msgstr "आकलन कवरेज"
+
+msgid "Assessment coverage needs attention"
+msgstr "आकलन कवरेज पर ध्यान आवश्यक है"
+
+msgid "Assessment created"
+msgstr "आकलन बनाया गया"
+
+msgid "Assessment reassessed"
+msgstr "आकलन का पुनः आकलन किया गया"
+
+msgid "Assessment reopened"
+msgstr "आकलन फिर खोला गया"
+
+msgid "Assessment resolved"
+msgstr "आकलन का समाधान किया गया"
+
+msgid "Assessment snapshot"
+msgstr "आकलन स्नैपशॉट"
+
+msgid "Assessment snapshot · changed"
+msgstr "आकलन स्नैपशॉट · बदला गया"
+
 msgid "Asset"
 msgstr "संपत्ति"
 
@@ -2675,6 +2738,9 @@ msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
 
 msgid "Assignee"
+msgstr "असाइनी"
+
+msgid "Assignees"
 msgstr "असाइनी"
 
 msgid "Assignment"
@@ -2821,6 +2887,12 @@ msgstr "कानबान स्कैन किए जाने पर जॉ�
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "कानबान स्कैन किए जाने पर जॉब को स्वचालित रूप से शुरू करें"
 
+msgid "Availability"
+msgstr "उपलब्धता"
+
+msgid "Availability states"
+msgstr "उपलब्धता स्थितियाँ"
+
 msgid "available"
 msgstr "उपलब्ध"
 
@@ -2854,6 +2926,9 @@ msgstr "अनुमोदन की प्रतीक्षा में"
 
 msgid "Back"
 msgstr "वापस"
+
+msgid "Back to Change Notice"
+msgstr "परिवर्तन सूचना पर वापस जाएँ"
 
 msgid "Back to traceability"
 msgstr "ट्रेसेबिलिटी पर वापस जाएं"
@@ -2992,6 +3067,9 @@ msgstr "वापस करने के लिए बैच"
 
 msgid "Batching"
 msgstr "बैचिंग"
+
+msgid "Before"
+msgstr "पहले"
 
 msgid "Beginning"
 msgstr "आरंभ"
@@ -3339,6 +3417,9 @@ msgstr "रद्द किया गया"
 msgid "Cancelled"
 msgstr "रद्द किया गया"
 
+msgid "Cancelled · New Impact assessment is locked. Existing operational follow-up remains available."
+msgstr "रद्द · नया प्रभाव आकलन लॉक है। मौजूदा परिचालन फ़ॉलो-अप अभी भी उपलब्ध है।"
+
 msgid "Cannot add parameters to unsaved operation"
 msgstr "असहेजे गए ऑपरेशन में पैरामीटर नहीं जोड़े जा सकते"
 
@@ -3383,6 +3464,9 @@ msgstr "क्षमता आरक्षण"
 
 msgid "Caption"
 msgstr "कैप्शन"
+
+msgid "Captured snapshot"
+msgstr "लिया गया स्नैपशॉट"
 
 msgid "Carbon"
 msgstr "कार्बन"
@@ -3561,6 +3645,9 @@ msgstr "प्रकार बदलें"
 
 msgid "Changed By"
 msgstr "द्वारा परिवर्तित"
+
+msgid "Changed since assessment"
+msgstr "आकलन के बाद से बदला गया"
 
 msgid "Changes"
 msgstr "परिवर्तन"
@@ -3743,6 +3830,12 @@ msgstr "समापन"
 msgid "Closure blocked"
 msgstr "बंद करना अवरुद्ध"
 
+msgid "Closure evidence"
+msgstr "समापन साक्ष्य"
+
+msgid "Closure evidence for every selected target"
+msgstr "हर चयनित लक्ष्य के लिए समापन साक्ष्य"
+
 msgid "Cloud, or your self-hosted environment."
 msgstr "क्लाउड, या आपका स्व-होस्ट किया गया वातावरण।"
 
@@ -3906,6 +3999,15 @@ msgstr "की गणना {0}"
 msgid "Computed At"
 msgstr "गणना समय"
 
+msgid "Conclusion"
+msgstr "निष्कर्ष"
+
+msgid "Conclusion corrected"
+msgstr "निष्कर्ष सुधारा गया"
+
+msgid "Conclusion for every selected target"
+msgstr "हर चयनित लक्ष्य के लिए निष्कर्ष"
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "मार्जिन और मुख्य उप-योग के साथ संक्षिप्त P&L"
 
@@ -4037,6 +4139,12 @@ msgstr "इन्वेंटरी गणना की पुष्टि क�
 
 msgid "Confirm Mapping"
 msgstr "मैपिंग की पुष्टि करें"
+
+msgid "Confirm no purchasing intervention remains"
+msgstr "पुष्टि करें कि कोई क्रय हस्तक्षेप शेष नहीं है"
+
+msgid "Confirm no purchasing intervention remains for every selected target"
+msgstr "हर चयनित लक्ष्य के लिए पुष्टि करें कि कोई क्रय हस्तक्षेप शेष नहीं है"
 
 msgid "Confirm Password"
 msgstr "पासवर्ड की पुष्टि करें"
@@ -4434,6 +4542,9 @@ msgstr "सुधार"
 msgid "Correction {correctionNumber}"
 msgstr "सुधार {correctionNumber}"
 
+msgid "Correction rationale"
+msgstr "सुधार का औचित्य"
+
 msgid "Corrections"
 msgstr "सुधार"
 
@@ -4516,7 +4627,7 @@ msgstr "दस्तावेज़ नहीं पढ़ा जा सका: 
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "जारी नहीं कर सके {0}: {1}"
+msgstr "{0} जारी नहीं कर सके: {1}"
 
 msgid "Could not save"
 msgstr "सहेज नहीं सके"
@@ -4571,6 +4682,12 @@ msgstr "देश कोड"
 
 msgid "Coverage"
 msgstr "कवरेज"
+
+msgid "Coverage failed. This is not an empty or safe result; refresh after the source is available."
+msgstr "कवरेज विफल रहा। यह खाली या सुरक्षित परिणाम नहीं है; स्रोत उपलब्ध होने के बाद रीफ़्रेश करें।"
+
+msgid "Coverage is partial. Counts and source-deletion conclusions are withheld where the scan could not be completed."
+msgstr "कवरेज आंशिक है। जहाँ स्कैन पूरा नहीं किया जा सका, वहाँ संख्या और स्रोत-विलोपन संबंधी निष्कर्ष उपलब्ध नहीं कराए गए हैं।"
 
 msgid "Create"
 msgstr "बनाएं"
@@ -4650,8 +4767,14 @@ msgstr "बैच बनाएँ"
 msgid "Create Change Notice"
 msgstr "परिवर्तन सूचना बनाएं"
 
+msgid "Create follow-up"
+msgstr "फ़ॉलो-अप बनाएँ"
+
 msgid "Create Forecast"
 msgstr "पूर्वानुमान बनाएं"
+
+msgid "Create Impact follow-up"
+msgstr "प्रभाव फ़ॉलो-अप बनाएँ"
 
 msgid "Create Issue"
 msgstr "समस्या बनाएं"
@@ -4691,6 +4814,9 @@ msgstr "नियम बनाएं"
 
 msgid "Create Supplier Return"
 msgstr "आपूर्तिकर्ता रिटर्न बनाएं"
+
+msgid "Create task"
+msgstr "कार्य बनाएँ"
 
 msgid "Create Transfer"
 msgstr "ट्रांसफर बनाएं"
@@ -4938,8 +5064,17 @@ msgstr "वर्तमान"
 msgid "Current"
 msgstr "वर्तमान"
 
+msgid "Current cause"
+msgstr "वर्तमान कारण"
+
+msgid "Current conclusion"
+msgstr "वर्तमान निष्कर्ष"
+
 msgid "Current Net Book Value:"
 msgstr "वर्तमान शुद्ध बही मूल्य:"
+
+msgid "Current operational exposure"
+msgstr "वर्तमान परिचालन एक्सपोज़र"
 
 msgid "Current Password"
 msgstr "वर्तमान पासवर्ड"
@@ -4949,6 +5084,21 @@ msgstr "वर्तमान प्रक्षेपण"
 
 msgid "Current quantity"
 msgstr "वर्तमान मात्रा"
+
+msgid "Current source facts are unavailable because the source was deleted."
+msgstr "वर्तमान स्रोत तथ्य उपलब्ध नहीं हैं क्योंकि स्रोत हटा दिया गया है।"
+
+msgid "Current source facts are unavailable."
+msgstr "वर्तमान स्रोत तथ्य उपलब्ध नहीं हैं।"
+
+msgid "Current source facts changed since the stored assessment. Saving will capture a fresh assessment snapshot."
+msgstr "संग्रहीत आकलन के बाद से वर्तमान स्रोत तथ्यों में बदलाव हुआ है। सहेजने पर नए आकलन का स्नैपशॉट सहेजा जाएगा।"
+
+msgid "Current source facts had changed since the prior assessment."
+msgstr "पिछले आकलन के बाद से वर्तमान स्रोत तथ्यों में बदलाव हो गया था।"
+
+msgid "Current state"
+msgstr "वर्तमान स्थिति"
 
 msgid "Custom"
 msgstr "कस्टम"
@@ -5321,6 +5471,12 @@ msgstr "तय करें कि वर्क सेंटर में चु
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
+
+msgid "Decision"
+msgstr "निर्णय"
+
+msgid "Decisions"
+msgstr "निर्णय"
 
 msgid "Declining balance"
 msgstr "ह्रासमान शेष"
@@ -5888,6 +6044,12 @@ msgstr "परिवर्तन का विवरण"
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
+msgid "Designate"
+msgstr "नामित करें"
+
+msgid "Designate as Impact follow-up"
+msgstr "प्रभाव फ़ॉलो-अप के रूप में नामित करें"
+
 msgid "Detail"
 msgstr "विवरण"
 
@@ -6099,6 +6261,12 @@ msgstr "दस्तावेज़ चालान, बिल और भुग�
 msgid "Documents you open will show up here for quick access."
 msgstr "जो दस्तावेज़ आप खोलेंगे वह तेज़ पहुंच के लिए यहां दिखाई देंगे।"
 
+msgid "Domain"
+msgstr "डोमेन"
+
+msgid "Domains"
+msgstr "डोमेन"
+
 msgid "Don't Cancel"
 msgstr "रद्द न करें"
 
@@ -6110,6 +6278,9 @@ msgstr "हो गया"
 
 msgid "Done"
 msgstr "हो गया"
+
+msgid "Done · Engineering released. Operational assessment remains available."
+msgstr "हो गया · इंजीनियरिंग द्वारा जारी। परिचालन आकलन अभी भी उपलब्ध है।"
 
 msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
@@ -7070,6 +7241,9 @@ msgstr "शाम, {name}।"
 msgid "Event"
 msgstr "घटना"
 
+msgid "Event details are unavailable for this event type."
+msgstr "इस इवेंट प्रकार के लिए इवेंट विवरण उपलब्ध नहीं हैं।"
+
 msgid "Event Type"
 msgstr "ईवेंट प्रकार"
 
@@ -7084,6 +7258,9 @@ msgstr "हर शर्त मेल खानी चाहिए"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "आपकी कॉन्फ़िगर की गई सिस्टम में, आपके डेटा के साथ, हर स्कोप में आने वाला टेस्ट पास होता है।"
+
+msgid "Every linked task must be Completed or Skipped before this Impact can be resolved."
+msgstr "इस प्रभाव का समाधान करने से पहले, प्रत्येक लिंक किए गए कार्य की स्थिति पूर्ण या छोड़ी गई होनी चाहिए।"
 
 msgid "Every match"
 msgstr "हर मेल"
@@ -7295,6 +7472,12 @@ msgstr "CSV निर्यात करें"
 
 msgid "Export Lines to CSV"
 msgstr "CSV में लाइनें निर्यात करें"
+
+msgid "Exposure"
+msgstr "एक्सपोज़र"
+
+msgid "Exposure states"
+msgstr "एक्सपोज़र की स्थितियाँ"
 
 msgid "Extended Price"
 msgstr "विस्तारित मूल्य"
@@ -7928,6 +8111,15 @@ msgstr "फिक्सचर आईडी"
 msgid "Flags"
 msgstr "झंडे"
 
+msgid "Follow-up for"
+msgstr "के लिए फ़ॉलो-अप"
+
+msgid "Follow-up rationale"
+msgstr "फ़ॉलो-अप का औचित्य"
+
+msgid "Follow-up rationale for every selected target"
+msgstr "प्रत्येक चयनित लक्ष्य के लिए फ़ॉलो-अप का औचित्य"
+
 msgid "for anything. They'll pull in the right person."
 msgstr "किसी भी चीज़ के लिए। वे सही व्यक्ति को शामिल करेंगे।"
 
@@ -7973,6 +8165,15 @@ msgstr "आवृत्तियाँ"
 
 msgid "Frequency"
 msgstr "आवृत्ति"
+
+msgid "Freshness"
+msgstr "ताज़गी"
+
+msgid "Freshness states"
+msgstr "ताज़गी की स्थितियाँ"
+
+msgid "Freshness unavailable"
+msgstr "ताज़गी उपलब्ध नहीं है"
 
 msgid "Friday"
 msgstr "शुक्रवार"
@@ -8400,6 +8601,15 @@ msgstr "उच्च"
 msgid "Hints in the first row"
 msgstr "पहली पंक्ति में संकेत"
 
+msgid "Historical"
+msgstr "ऐतिहासिक"
+
+msgid "Historical causes"
+msgstr "ऐतिहासिक कारण"
+
+msgid "Historical coverage is incomplete."
+msgstr "ऐतिहासिक कवरेज अधूरी है।"
+
 msgid "Historical data older than what's on the Data Migration Map"
 msgstr "डेटा माइग्रेशन मैप पर जो है उससे पुराना ऐतिहासिक डेटा"
 
@@ -8408,6 +8618,12 @@ msgstr "ऐतिहासिक दर (इक्विटी)"
 
 msgid "Historical Rate (Equity)"
 msgstr "ऐतिहासिक दर (इक्विटी)"
+
+msgid "Historical reference"
+msgstr "ऐतिहासिक संदर्भ"
+
+msgid "Historical references"
+msgstr "ऐतिहासिक संदर्भ"
 
 msgid "History"
 msgstr "इतिहास"
@@ -8685,6 +8901,24 @@ msgstr "III (कठोर)"
 msgid "Impact"
 msgstr "प्रभाव"
 
+msgid "Impact assessment changed while you were editing."
+msgstr "आपके संपादन के दौरान प्रभाव आकलन बदल गया।"
+
+msgid "Impact event"
+msgstr "प्रभाव इवेंट"
+
+msgid "Impact follow-up"
+msgstr "प्रभाव फ़ॉलो-अप"
+
+msgid "Impact history"
+msgstr "प्रभाव इतिहास"
+
+msgid "Impact task could not be created."
+msgstr "प्रभाव कार्य नहीं बनाया जा सका।"
+
+msgid "Impact task could not be linked."
+msgstr "प्रभाव कार्य को लिंक नहीं किया जा सका।"
+
 msgid "Imperial"
 msgstr "इंपीरियल"
 
@@ -8832,6 +9066,9 @@ msgstr "अप्रत्यक्ष सामग्री और सेवा
 
 msgid "Indirect Materials & Services (default)"
 msgstr "अप्रत्यक्ष सामग्री और सेवाएं (डिफ़ॉल्ट)"
+
+msgid "Informational context only"
+msgstr "केवल सूचना संबंधी संदर्भ"
 
 msgid "Infrastructure"
 msgstr "बुनियादी ढांचा"
@@ -9238,6 +9475,9 @@ msgstr "आइटम"
 msgid "Item / Location"
 msgstr "आइटम / स्थान"
 
+msgid "Item details unavailable"
+msgstr "आइटम का विवरण उपलब्ध नहीं है"
+
 msgid "Item filters"
 msgstr "आइटम फ़िल्टर"
 
@@ -9334,6 +9574,9 @@ msgstr "जॉब स्थान"
 msgid "Job make method"
 msgstr "जॉब निर्माण विधि"
 
+msgid "Job Material"
+msgstr "जॉब सामग्री"
+
 msgid "Job Materials"
 msgstr "जॉब सामग्री"
 
@@ -9354,6 +9597,9 @@ msgstr "नौकरी प्राथमिकता"
 
 msgid "Job readable"
 msgstr "नौकरी पठनीय"
+
+msgid "Job status"
+msgstr "जॉब स्थिति"
 
 msgid "Job Traveler"
 msgstr "जॉब ट्रैवलर"
@@ -9393,7 +9639,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "इस तारीख को या इससे पहले दिनांकित जर्नल को लॉक माना जाता है। दोनों मौजूद होने पर प्रदाता द्वारा रिपोर्ट की गई लॉक तारीख के साथ मर्ज किया जाता है।"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "विस्तार पृष्ठों पर एक खंड पर जाएं (समान संशोधक + खंड का अक्षर)"
+msgstr "विवरण पृष्ठों पर किसी अनुभाग पर जाएँ (वही संशोधक + अनुभाग का अक्षर)"
 
 msgid "Just one"
 msgstr "बस एक"
@@ -9730,6 +9976,9 @@ msgstr "क्रय आदेश लिंक करें"
 msgid "Link a sales order"
 msgstr "विक्रय आदेश लिंक करें"
 
+msgid "Link existing task"
+msgstr "मौजूदा कार्य लिंक करें"
+
 msgid "Link Jira Issue"
 msgstr "Jira समस्या को लिंक करें"
 
@@ -9738,6 +9987,9 @@ msgstr "Linear समस्या को लिंक करें"
 
 msgid "link outside company"
 msgstr "कंपनी के बाहर का लिंक"
+
+msgid "Link task"
+msgstr "कार्य लिंक करें"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "इस Carbon ग्राहक को इनमें से किसी एक से जोड़ें, या एक अलग Stripe ग्राहक बनाएँ।"
@@ -9755,6 +10007,12 @@ msgstr "जुड़ी समस्या"
 
 msgid "Linked PO"
 msgstr "लिंक्ड PO"
+
+msgid "Linked tasks"
+msgstr "लिंक किए गए कार्य"
+
+msgid "Linking preserves the task's existing origin and status. It does not resolve this Impact decision."
+msgstr "लिंक करने से कार्य की मौजूदा उत्पत्ति और स्थिति बनी रहती है। इससे यह प्रभाव संबंधी निर्णय हल नहीं होता।"
 
 msgid "List Options"
 msgstr "सूची विकल्प"
@@ -10806,6 +11064,9 @@ msgstr "नया फील्ड"
 msgid "New Fixed Asset"
 msgstr "नई अचल संपत्ति"
 
+msgid "New follow-up rationale"
+msgstr "नए अनुवर्ती कार्य का औचित्य"
+
 msgid "New Gauge"
 msgstr "नया गेज"
 
@@ -11109,6 +11370,9 @@ msgstr "कोई खाता आपकी खोज से मेल नही
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
 
+msgid "No action required"
+msgstr "कोई कार्रवाई आवश्यक नहीं है"
+
 msgid "No actions found."
 msgstr "कोई कार्य नहीं मिला।"
 
@@ -11126,9 +11390,6 @@ msgstr "कोई सक्रिय उद्धरण नहीं"
 
 msgid "No addresses found"
 msgstr "कोई पता नहीं मिला"
-
-msgid "No affected items to assess."
-msgstr "मूल्यांकन के लिए कोई प्रभावित आइटम नहीं।"
 
 msgid "No affected items."
 msgstr "कोई प्रभावित आइटम नहीं।"
@@ -11182,6 +11443,9 @@ msgstr "अभी तक कोई खंड नहीं है। ऊपर �
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
+msgid "No complete current result is available."
+msgstr "कोई पूर्ण वर्तमान परिणाम उपलब्ध नहीं है।"
+
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
 
@@ -11196,6 +11460,12 @@ msgstr "कोई लागत इतिहास नहीं मिला"
 
 msgid "No credits yet"
 msgstr "अभी कोई क्रेडिट नहीं"
+
+msgid "No current operational exposure is available."
+msgstr "वर्तमान परिचालन जोखिम उपलब्ध नहीं है।"
+
+msgid "No current snapshot is needed for this historical reference."
+msgstr "इस ऐतिहासिक संदर्भ के लिए वर्तमान स्नैपशॉट की आवश्यकता नहीं है।"
 
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
@@ -11232,6 +11502,9 @@ msgstr "इस आइटम के लिए कोई संपादन यो
 
 msgid "No eligible operations"
 msgstr "कोई पात्र ऑपरेशन नहीं"
+
+msgid "No eligible tasks are available to link."
+msgstr "लिंक करने के लिए कोई पात्र कार्य उपलब्ध नहीं है।"
 
 msgid "No employees assigned this week"
 msgstr "इस सप्ताह कोई कर्मचारी निर्धारित नहीं"
@@ -11284,8 +11557,17 @@ msgstr "कोई समूहीकृत सूचनाएं नहीं"
 msgid "No groups assigned"
 msgstr "कोई समूह असाइन नहीं किया गया"
 
+msgid "No historical references are available."
+msgstr "कोई ऐतिहासिक संदर्भ उपलब्ध नहीं हैं।"
+
+msgid "No history is recorded for this assessment."
+msgstr "इस आकलन के लिए कोई इतिहास दर्ज नहीं है।"
+
 msgid "No image"
 msgstr "कोई छवि नहीं"
+
+msgid "No Impact rows match the current search and filters."
+msgstr "वर्तमान खोज और फ़िल्टर से प्रभाव की कोई पंक्ति मेल नहीं खाती।"
 
 msgid "No inspection plans"
 msgstr "कोई निरीक्षण योजनाएं नहीं"
@@ -11304,6 +11586,9 @@ msgstr "अभी तक यहाँ कोई आइटम इन्वें�
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
+
+msgid "No Jobs or Job Materials are available."
+msgstr "कोई जॉब या जॉब सामग्री उपलब्ध नहीं है।"
 
 msgid "No jobs were created"
 msgstr "कोई जॉब नहीं बनाया गया"
@@ -11329,6 +11614,9 @@ msgstr "कोई स्थान नहीं मिला।"
 msgid "No logo uploaded"
 msgstr "कोई लोगो अपलोड नहीं किया गया"
 
+msgid "No longer in current scope"
+msgstr "अब वर्तमान दायरे में नहीं है"
+
 msgid "No matches"
 msgstr "कोई मेल नहीं"
 
@@ -11340,6 +11628,9 @@ msgstr "कोई मेल नहीं। बनाने के लिए ट
 
 msgid "No matching bins"
 msgstr "कोई मिलान बिन नहीं"
+
+msgid "No matching loaded Impact rows are visible. Coverage is incomplete, so this is not a complete result."
+msgstr "लोड की गई प्रभाव पंक्तियों में कोई मेल खाती पंक्ति दिखाई नहीं दे रही है। कवरेज अधूरी है, इसलिए यह पूर्ण परिणाम नहीं है।"
 
 msgid "No matching operations"
 msgstr "कोई मेल खाने वाला ऑपरेशन नहीं"
@@ -11453,8 +11744,14 @@ msgstr "इस ऑपरेशन के लिए अभी तक कोई �
 msgid "No production recorded yet."
 msgstr "अभी तक कोई उत्पादन दर्ज नहीं किया गया।"
 
+msgid "No Purchase Order lines are available."
+msgstr "कोई क्रय आदेश पंक्ति उपलब्ध नहीं है।"
+
 msgid "No purchases in this period"
 msgstr "इस अवधि में कोई खरीद नहीं"
+
+msgid "No purchasing intervention remains"
+msgstr "अब कोई क्रय हस्तक्षेप शेष नहीं है"
 
 msgid "No Quote"
 msgstr "कोई कोटेशन नहीं"
@@ -11552,6 +11849,9 @@ msgstr "अभी तक कोई आपूर्तिकर्ता नह�
 msgid "No sync operations yet"
 msgstr "अभी तक कोई सिंक ऑपरेशन नहीं"
 
+msgid "No task linked. Keep a written rationale describing the follow-up path."
+msgstr "कोई कार्य लिंक नहीं किया गया। अनुवर्ती मार्ग का वर्णन करने वाला लिखित औचित्य रखें।"
+
 msgid "No time entries for this week"
 msgstr "इस सप्ताह के लिए कोई समय प्रविष्टि नहीं"
 
@@ -11566,6 +11866,9 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
+
+msgid "No unavailable source rows are available."
+msgstr "कोई अनुपलब्ध स्रोत पंक्ति उपलब्ध नहीं है।"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
@@ -11602,6 +11905,12 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
+
+msgid "No-action reason"
+msgstr "कार्रवाई न करने का कारण"
+
+msgid "No-action reason for every selected target"
+msgstr "प्रत्येक चयनित लक्ष्य के लिए कार्रवाई न करने का कारण"
 
 msgid "Nom"
 msgstr "नाम"
@@ -11651,6 +11960,9 @@ msgstr "सामान्य"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "एक तालिका नहीं बल्कि एक सामान्य खाता बही शेष: लागत जमा होती है जब जॉब सामग्री जारी की जाती है और साफ़ होती है जब जॉब स्टॉक में प्राप्त होता है।"
 
+msgid "Not affected after review"
+msgstr "समीक्षा के बाद प्रभावित नहीं"
+
 msgid "Not certified"
 msgstr "प्रमाणित नहीं"
 
@@ -11671,9 +11983,6 @@ msgstr "प्राप्त नहीं"
 
 msgid "Not recorded"
 msgstr "रिकॉर्ड नहीं किया गया"
-
-msgid "Not referenced anywhere yet."
-msgstr "अभी तक कहीं भी संदर्भित नहीं।"
 
 msgid "Not Required"
 msgstr "आवश्यक नहीं"
@@ -11892,6 +12201,9 @@ msgstr "एक वर्कफ़्लो का एक निष्पाद�
 msgid "One or more quantities cannot meet this date"
 msgstr "एक या अधिक मात्रा इस तारीख को पूरी नहीं कर सकती है"
 
+msgid "One or more selected rows are no longer eligible for a bulk assessment. Refresh and review the selection."
+msgstr "चयनित एक या अधिक पंक्तियाँ अब सामूहिक आकलन के लिए पात्र नहीं हैं। चयन को रीफ़्रेश करें और उसकी जाँच करें।"
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "एक सीरीज यूनिट या एक बैच जो Carbon व्यक्तिगत रूप से अनुसरण करता है, अपनी स्वयं की स्थिति और विशेषताएं जैसे समाप्ति तिथि ले जाता है।"
 
@@ -11985,6 +12297,9 @@ msgstr "खुली तारीख"
 msgid "Open Dispatches"
 msgstr "खुले रखरखाव कार्य"
 
+msgid "Open Impact workspace"
+msgstr "प्रभाव कार्यक्षेत्र खोलें"
+
 msgid "Open in Carbon"
 msgstr "Carbon में खोलें"
 
@@ -12047,6 +12362,9 @@ msgstr "खुले विक्रय आदेश"
 
 msgid "Open Scheduled"
 msgstr "खुली अनुसूचित"
+
+msgid "Open source"
+msgstr "स्रोत खोलें"
 
 msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
@@ -12129,6 +12447,9 @@ msgstr "ऑपरेशन प्रकार"
 
 msgid "Operation unit cost"
 msgstr "ऑपरेशन यूनिट लागत"
+
+msgid "Operational Impact"
+msgstr "परिचालन प्रभाव"
 
 msgid "Operations"
 msgstr "ऑपरेशन"
@@ -12264,6 +12585,9 @@ msgstr "आदेश"
 msgid "Orders submitted"
 msgstr "ऑर्डर जमा किए गए"
 
+msgid "Ordinary tasks are read-only after Done."
+msgstr "‘हो गया’ के बाद सामान्य कार्य केवल-पठन योग्य होते हैं।"
+
 msgid "Origin"
 msgstr "मूल"
 
@@ -12305,6 +12629,9 @@ msgstr "आउटपुट"
 
 msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 msgstr "आउटपुट कभी भी इसके कच्चे माल को पार नहीं करता। जब किसी इनपुट की समाप्ति तारीख नहीं होती तो निर्धारित अवधि पर वापस जाता है।"
+
+msgid "Outside effectivity"
+msgstr "प्रभावी तिथि के दायरे से बाहर"
 
 msgid "Outside operation"
 msgstr "ओवरहेड विचरण"
@@ -12882,6 +13209,9 @@ msgstr "PO संख्या"
 msgid "PO PDF"
 msgstr "पीओ पीडीएफ"
 
+msgid "PO status"
+msgstr "क्रय आदेश स्थिति"
+
 msgid "Policy"
 msgstr "नीति"
 
@@ -12980,6 +13310,9 @@ msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
 msgid "Prepayments (default)"
 msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
+
+msgid "Present"
+msgstr "वर्तमान"
 
 msgid "Present Week"
 msgstr "वर्तमान सप्ताह"
@@ -13158,6 +13491,12 @@ msgstr "उत्पादित आइटम"
 msgid "Produced item"
 msgstr "उत्पादित आइटम"
 
+msgid "Producing Job"
+msgstr "उत्पादन जॉब"
+
+msgid "Producing Jobs"
+msgstr "उत्पादन जॉब"
+
 msgid "Product issues during hypercare"
 msgstr "हाइपरकेयर के दौरान उत्पाद समस्याएं"
 
@@ -13273,6 +13612,9 @@ msgstr "अनुमान"
 msgid "Projects"
 msgstr "परियोजनाएँ"
 
+msgid "Promised"
+msgstr "प्रतिबद्ध"
+
 msgid "Promised Date"
 msgstr "वादा की गई तिथि"
 
@@ -13302,6 +13644,15 @@ msgstr "आपकी कंपनी के डेटा की सुरक्�
 
 msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
 msgstr "SAML SSO साइन-इन को रूट करने से पहले DNS TXT रिकॉर्ड के साथ प्रत्येक ईमेल डोमेन का स्वामित्व साबित करें। DNS होस्ट पर रिकॉर्ड जोड़ें, फिर सत्यापित करें पर क्लिक करें — केवल सत्यापित डोमेन एकल साइन-ऑन में भाग लेते हैं।"
+
+msgid "Provenance"
+msgstr "उत्पत्ति"
+
+msgid "Provenance ended"
+msgstr "उत्पत्ति समाप्त हो गई है"
+
+msgid "Provenance started"
+msgstr "स्रोत-इतिहास शुरू हुआ"
 
 msgid "Provide process knowledge and inputs"
 msgstr "प्रक्रिया ज्ञान और इनपुट प्रदान करें"
@@ -13394,8 +13745,14 @@ msgstr "क्रय आदेश अनुमोदन नियम"
 msgid "Purchase Order ID"
 msgstr "क्रय आदेश ID"
 
+msgid "Purchase Order line"
+msgstr "क्रय आदेश पंक्ति"
+
 msgid "Purchase Order Line"
 msgstr "क्रय आदेश पंक्ति"
+
+msgid "Purchase Order lines"
+msgstr "क्रय आदेश पंक्तियाँ"
 
 msgid "Purchase Order Location"
 msgstr "क्रय आदेश स्थान"
@@ -13753,6 +14110,9 @@ msgstr "समेकन में इक्विटी खातों के �
 msgid "Ratio"
 msgstr "अनुपात"
 
+msgid "Rationale"
+msgstr "औचित्य"
+
 msgid "Raw Materials"
 msgstr "कच्चा माल"
 
@@ -13831,6 +14191,12 @@ msgstr "छोड़ने का कारण (आवश्यक)"
 msgid "Reasons"
 msgstr "कारणें"
 
+msgid "Reassess"
+msgstr "पुनर्मूल्यांकन करें"
+
+msgid "Reassess operational impact"
+msgstr "परिचालन प्रभाव का पुनर्मूल्यांकन करें"
+
 msgid "Reassign specific tracked entities from this row to another disposition row."
 msgstr "इस पंक्ति से विशिष्ट ट्रैक किए गए इकाइयों को दूसरी निपटान पंक्ति में पुनः असाइन करें।"
 
@@ -13845,6 +14211,9 @@ msgstr "पुनः गणना की जा रही है…"
 
 msgid "Receipt"
 msgstr "रसीद"
+
+msgid "Receipt complete"
+msgstr "प्राप्ति पूर्ण"
 
 msgid "Receipt ID"
 msgstr "रसीद आईडी"
@@ -13863,6 +14232,9 @@ msgstr "प्राप्ति अनुरोधित तिथि"
 
 msgid "Receipts"
 msgstr "रसीदें"
+
+msgid "Receipts, inspections, sales, shipments, and other related records are outside the current Impact assessment scope. They do not count toward assessment totals or offer decision controls here."
+msgstr "प्राप्तियाँ, निरीक्षण, बिक्री, शिपमेंट और अन्य संबंधित रिकॉर्ड वर्तमान प्रभाव आकलन के दायरे से बाहर हैं। वे आकलन के योग में नहीं गिने जाते और यहाँ निर्णय नियंत्रण उपलब्ध नहीं कराते।"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "प्राप्ति, शिपमेंट, विक्रय चालान, क्रय चालान, भुगतान, और जमा/नामे ज्ञापन जो अभी भी ड्राफ्ट या लंबित हैं, उन्हें पोस्ट किया जाना चाहिए या अमान्य किया जाना चाहिए — दोनों दस्तावेज़ इस अवधि में दिनांकित और बिना दिनांक के दस्तावेज़ जो पोस्ट होने पर इसमें एक तिथि प्राप्त करेंगे। जब तक वे पोस्ट नहीं होते, उनकी राशियाँ सामान्य खाता बही में नहीं हैं, इसलिए अवधि को कम दिखाया जाएगा।"
@@ -13920,7 +14292,10 @@ msgid "Received Qty"
 msgstr "प्राप्त मात्रा"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
-msgstr "प्राप्त मात्रा अभी तक जमा नहीं की गई। क्रेडिट नोट को ड्राफ्ट के रूप में बनाया गया है।"
+msgstr "प्राप्त मात्रा अभी क्रेडिट नहीं की गई है। क्रेडिट मेमो ड्राफ्ट के रूप में बनाया गया है।"
+
+msgid "Received to inventory"
+msgstr "स्टॉक में प्राप्त किया गया"
 
 msgid "Receiving Location"
 msgstr "प्राप्ति स्थान"
@@ -14437,8 +14812,29 @@ msgstr "अवशिष्ट मूल्य"
 msgid "Residual Value %"
 msgstr "अवशिष्ट मूल्य %"
 
+msgid "Resolution is unavailable until linked task coverage is complete."
+msgstr "लिंक किए गए कार्यों का कवरेज पूरा होने तक समाधान उपलब्ध नहीं है।"
+
+msgid "Resolution note"
+msgstr "समाधान नोट"
+
+msgid "Resolve"
+msgstr "समाधान करें"
+
+msgid "Resolve after every linked task is Completed or Skipped."
+msgstr "प्रत्येक लिंक किया गया कार्य पूर्ण या छोड़ा गया होने के बाद समाधान करें।"
+
+msgid "Resolve after linked task coverage is complete."
+msgstr "लिंक किए गए कार्यों का कवरेज पूरा होने के बाद समाधान करें।"
+
+msgid "Resolve operational impact"
+msgstr "परिचालन प्रभाव का समाधान करें"
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "इसे NCR पूरा करने से पहले हल करें: प्रत्येक पंक्ति के पास एक गैर-लंबित निपटान होना चाहिए, और इसकी जुड़ी हुई इकाई मात्रा पंक्ति मात्रा से मेल खानी चाहिए।"
+
+msgid "Resolved"
+msgstr "समाधान किया गया"
 
 msgid "Resolved Price"
 msgstr "समाधान की गई कीमत"
@@ -14497,6 +14893,9 @@ msgstr "फ़ाइलें पुनः स्थापित कर रह�
 
 msgid "restoring…"
 msgstr "पुनर्स्थापित किया जा रहा है…"
+
+msgid "Restricted"
+msgstr "प्रतिबंधित"
 
 msgid "Result"
 msgstr "परिणाम"
@@ -14636,8 +15035,23 @@ msgstr "समीक्षा"
 msgid "Review & create"
 msgstr "समीक्षा और बनाएं"
 
+msgid "Review bulk Impact assessment"
+msgstr "सामूहिक प्रभाव मूल्यांकन की समीक्षा"
+
+msgid "Review current purchasing and production exposure with source coverage, provenance, and freshness details."
+msgstr "स्रोत कवरेज, स्रोत-इतिहास और डेटा की नवीनता के विवरण के साथ वर्तमान क्रय और उत्पादन जोखिम-स्थिति की जाँच करें।"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
+
+msgid "Review rationale"
+msgstr "औचित्य की समीक्षा"
+
+msgid "Review rationale for every selected target"
+msgstr "हर चयनित लक्ष्य के औचित्य की समीक्षा"
+
+msgid "Review selected"
+msgstr "चयनित की जाँच करें"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि के तुलन पत्र और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही दिखते हैं। यह एक मैनुअल हस्ताक्षर बंद है — समीक्षा के बाद इसे पूरा करें।"
@@ -15048,6 +15462,9 @@ msgstr "सहेजें और अधिलेखित करें"
 msgid "Save applications"
 msgstr "आवेदन सहेजें"
 
+msgid "Save assessment"
+msgstr "मूल्यांकन सहेजें"
+
 msgid "Save changes"
 msgstr "परिवर्तन सहेजें"
 
@@ -15062,6 +15479,9 @@ msgstr "विधि सहेजें"
 
 msgid "Save Rate"
 msgstr "दर सहेजें"
+
+msgid "Save reassessment"
+msgstr "पुनर्मूल्यांकन सहेजें"
 
 msgid "Save the form you're editing"
 msgstr "जिस फॉर्म को आप संपादित कर रहे हैं उसे सहेजें"
@@ -15446,7 +15866,7 @@ msgid "Select dimension"
 msgstr "आयाम चुनें"
 
 msgid "Select disposition"
-msgstr "निपटान चुनें"
+msgstr "निष्पादन चुनें"
 
 msgid "Select Employee"
 msgstr "कर्मचारी चुनें"
@@ -15894,7 +16314,7 @@ msgid "Shipped"
 msgstr "भेजी गई"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
-msgstr "इस ग्राहक के लिए भेजी गई लाइनें जिनमें वापसी के लिए मात्रा बाकी है"
+msgstr "भेजा गया"
 
 msgid "Shipped Qty"
 msgstr "भेजी गई मात्रा"
@@ -16182,6 +16602,9 @@ msgstr "समाधान इंजीनियर"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "PDF से निकाली गई कुछ पंक्तियों को आपकी इन्वेंटरी आइटम्स से स्वचालित रूप से मैप नहीं किया जा सका। नीचे प्रत्येक पंक्ति की समीक्षा करें और मैप करें।"
 
+msgid "Some linked task metadata is unavailable. Decision state is shown independently and has not been inferred from task status. Task details are omitted where linked-task coverage could not be read."
+msgstr "लिंक किए गए कुछ कार्यों का मेटाडेटा उपलब्ध नहीं है। निर्णय की स्थिति स्वतंत्र रूप से दिखाई जाती है और कार्य की स्थिति से उसका अनुमान नहीं लगाया गया है। जहाँ लिंक किए गए कार्यों का कवरेज पढ़ा नहीं जा सका, वहाँ कार्य विवरण हटा दिए गए हैं।"
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "कुछ रिकॉर्ड वापस नहीं आएंगे। जारी रखने के लिए <0>{CONFIRM_WORD}</0> टाइप करें।"
 
@@ -16221,6 +16644,9 @@ msgstr "स्रोत विश्लेषण"
 msgid "Source Company"
 msgstr "स्रोत कंपनी"
 
+msgid "Source deleted"
+msgstr "स्रोत हटाया गया"
+
 msgid "Source document"
 msgstr "स्रोत दस्तावेज़"
 
@@ -16233,6 +16659,9 @@ msgstr "स्रोत दस्तावेज़ ID"
 msgid "Source document readable"
 msgstr "स्रोत दस्तावेज़ पठनीय"
 
+msgid "Source identities are retained only where they were authorized; decision-relevant facts are withheld until coverage is restored."
+msgstr "स्रोत पहचान केवल वहीं रखी जाती हैं जहाँ उन्हें अधिकृत किया गया था; कवरेज बहाल होने तक निर्णय के लिए प्रासंगिक तथ्य रोके जाते हैं।"
+
 msgid "Source Item"
 msgstr "स्रोत आइटम"
 
@@ -16244,6 +16673,9 @@ msgstr "स्रोत सूची"
 
 msgid "Source Method"
 msgstr "स्रोत विधि"
+
+msgid "Source record unavailable"
+msgstr "स्रोत रिकॉर्ड उपलब्ध नहीं है"
 
 msgid "Source types"
 msgstr "स्रोत प्रकार"
@@ -16538,6 +16970,9 @@ msgstr "इस आइटम पर निश्चित संख्या क�
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
 msgstr "इस आइटम पर निश्चित संख्या के दिनों के लिए भंडारण करें। समाप्ति प्रारंभ तिथि प्रत्येक बैच या सीरीयल पर सेट की जाती है जब यह प्राप्त किया जाता है।"
 
+msgid "Stored assessment snapshot is unavailable."
+msgstr "संग्रहीत मूल्यांकन स्नैपशॉट उपलब्ध नहीं है।"
+
 msgid "Straight line"
 msgstr "सीधी रेखा"
 
@@ -16799,6 +17234,9 @@ msgstr "आपूर्तिकर्ता रिटर्न लाइन"
 msgid "Supplier Return Lines"
 msgstr "आपूर्तिकर्ता रिटर्न लाइनें"
 
+msgid "Supplier return, replacement, credit, and communication interventions have been reviewed."
+msgstr "आपूर्तिकर्ता को वापसी, प्रतिस्थापन, क्रेडिट और संचार संबंधी हस्तक्षेपों की जाँच की गई है।"
+
 msgid "Supplier Returns"
 msgstr "आपूर्तिकर्ता रिटर्न"
 
@@ -16843,6 +17281,9 @@ msgstr "आपूर्ति और मांग"
 
 msgid "Support"
 msgstr "समर्थन"
+
+msgid "Supported purchasing and production targets that can receive an independent Impact assessment."
+msgstr "समर्थित क्रय और उत्पादन लक्ष्य, जिन पर स्वतंत्र प्रभाव मूल्यांकन किया जा सकता है।"
 
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
@@ -16977,6 +17418,33 @@ msgstr "लक्ष्य संस्करण"
 msgid "Task"
 msgstr "कार्य"
 
+msgid "Task designated as Impact follow-up"
+msgstr "प्रभाव फ़ॉलो-अप के रूप में निर्दिष्ट कार्य"
+
+msgid "Task details unavailable."
+msgstr "कार्य विवरण उपलब्ध नहीं है।"
+
+msgid "Task filters use incomplete linked-task metadata. Missing tasks or assignees are not treated as absent."
+msgstr "कार्य फ़िल्टर अपूर्ण लिंक किए गए कार्यों के मेटाडेटा का उपयोग करते हैं। गुम कार्यों या असाइनियों को अनुपस्थित नहीं माना जाता।"
+
+msgid "Task linked"
+msgstr "कार्य लिंक किया गया"
+
+msgid "Task name"
+msgstr "कार्य का नाम"
+
+msgid "Task origin: Impact follow-up"
+msgstr "कार्य का स्रोत: प्रभाव संबंधी अनुवर्ती कार्रवाई"
+
+msgid "Task status"
+msgstr "कार्य की स्थिति"
+
+msgid "Task statuses"
+msgstr "कार्य की स्थितियाँ"
+
+msgid "Task unlinked"
+msgstr "कार्य का लिंक हटा दिया गया"
+
 msgid "tasks"
 msgstr "कार्य"
 
@@ -17072,6 +17540,9 @@ msgstr "तापमान"
 
 msgid "Template ID"
 msgstr "टेम्पलेट आईडी"
+
+msgid "Template-owned"
+msgstr "टेम्पलेट-स्वामित्व वाला"
 
 msgid "Templates"
 msgstr "टेम्पलेट्स"
@@ -17319,6 +17790,9 @@ msgstr "विभाग जिसके अंतर्गत यह रिप�
 
 msgid "The early hours, {name}."
 msgstr "सुबह के शुरुआती घंटे, {name}।"
+
+msgid "The editor was closed and the workspace was refreshed. Review the current state before submitting again."
+msgstr "संपादक बंद कर दिया गया था और कार्यक्षेत्र रीफ़्रेश किया गया। दोबारा सबमिट करने से पहले वर्तमान स्थिति की समीक्षा करें।"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "आठ-अनुशासन गुणवत्ता विधि, गैर-अनुरूपता वर्कफ़्लो के कार्यों के साथ मॉडल किया गया, हार्ड-कोडेड नहीं।"
@@ -17740,6 +18214,12 @@ msgstr "यह शेड्यूल जिसका उपयोग इस स�
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "शेड्यूलर नीचे दिए गए पहले नियम का उपयोग करता है जो लागू होता है, फिर डाउनटाइम और स्टाफिंग को घटाता है।"
 
+msgid "The selected rows do not share an available conclusion. Adjust the selection before reviewing it."
+msgstr "चुनी गई पंक्तियों में कोई साझा उपलब्ध निष्कर्ष नहीं है। समीक्षा करने से पहले चयन समायोजित करें।"
+
+msgid "The server will recheck every target and reject the whole batch if any source fact, eligibility rule, or decision revision changed after this preview."
+msgstr "सर्वर हर लक्ष्य की फिर से जाँच करेगा और इस पूर्वावलोकन के बाद किसी स्रोत तथ्य, पात्रता नियम या निर्णय रिवीजन में बदलाव होने पर पूरे बैच को अस्वीकार कर देगा।"
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "वह शेल्फ और बिन जहां स्टॉक भौतिक रूप से रखा जाता है"
 
@@ -17974,6 +18454,9 @@ msgstr "ये ऑपरेशन कई आपूर्तिकर्ताओ
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "ये पार्ट्स इसके द्वारा प्रतिस्थापित किए जा रहे हैं। प्रत्येक नियम पुराने पार्ट पर सेट है; नियम बदलने के लिए इसे खोलें।"
 
+msgid "These references remain traceable but do not create a new Unassessed obligation."
+msgstr "ये संदर्भ ट्रेस करने योग्य बने रहते हैं, लेकिन कोई नया “मूल्यांकन नहीं किया गया” दायित्व नहीं बनाते।"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
 
@@ -18174,6 +18657,9 @@ msgstr "इस विक्रय आदेश के पास जुड़ी 
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "इस विक्रय आदेश के पास पंक्तियां हैं जिनके लिए जॉब बनाने की आवश्यकता है"
+
+msgid "This source domain is restricted for your current permissions. No target identities or source facts are shown."
+msgstr "आपकी वर्तमान अनुमतियों के तहत इस स्रोत डोमेन तक पहुँच प्रतिबंधित है। लक्ष्य पहचान या स्रोत तथ्य नहीं दिखाए गए हैं।"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "यह स्टेशन कौशल-गेटेड कार्य चलाता है — यह केवल तब चलता है जब एक योग्य ऑपरेटर शिफ्ट पर हो; मानिंग बोर्ड पर असाइन किए गए ऑपरेटर उपलब्ध श्रम को आगे आकार देते हैं।"
@@ -18734,11 +19220,20 @@ msgstr "लागू नहीं:"
 msgid "Unapproved Supplier"
 msgstr "अनुमोदित नहीं आपूर्तिकर्ता"
 
+msgid "Unassessed"
+msgstr "मूल्यांकन नहीं किया गया"
+
 msgid "Unassign rule"
 msgstr "नियम को अनअसाइन करें"
 
 msgid "Unassigned"
 msgstr "अनुत्तरित"
+
+msgid "Unavailable"
+msgstr "अनुपलब्ध"
+
+msgid "Unavailable source rows"
+msgstr "अनुपलब्ध स्रोत पंक्तियाँ"
 
 msgid "Unballoon"
 msgstr "गुब्बारा हटाएं"
@@ -18839,6 +19334,9 @@ msgstr "वापसी को क्रय आदेश से अनलिं�
 msgid "Unlink RMA from sales order?"
 msgstr "RMA को विक्रय आदेश से अनलिंक करें?"
 
+msgid "Unlink task"
+msgstr "कार्य का लिंक हटाएँ"
+
 msgid "Unlock"
 msgstr "अनलॉक करें"
 
@@ -18856,6 +19354,9 @@ msgstr "अनमैप्ड मान"
 
 msgid "Unmatched"
 msgstr "बेमेल"
+
+msgid "Unnamed task"
+msgstr "अनाम कार्य"
 
 msgid "Unpick"
 msgstr "अनपिक करें"
@@ -19112,6 +19613,9 @@ msgstr "एक अलग ईमेल का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
+
+msgid "Use No action required only if the earlier conclusion was incorrect and intervention was never required. If intervention occurred and closed the consequence, use Resolve."
+msgstr "केवल “कोई कार्रवाई आवश्यक नहीं” का उपयोग तभी करें जब पहले का निष्कर्ष गलत हो और हस्तक्षेप की कभी आवश्यकता न रही हो। यदि हस्तक्षेप किया गया था और उसके परिणाम का समाधान कर दिया गया है, तो “समाधान करें” का उपयोग करें।"
 
 msgid "Used In"
 msgstr "में उपयोग किया गया"
@@ -19901,9 +20405,6 @@ msgstr "जहां इस आइटम की नई स्टॉक डिफ
 msgid "Where stock lives and how it ships."
 msgstr "स्टॉक कहाँ रहता है और यह कैसे भेजा जाता है।"
 
-msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr "जहां प्रभावित आइटम पूरे सिस्टम में उपयोग किए जाते हैं। सूचनात्मक — यहां कुछ भी जारी करने में बाधा नहीं डालता।"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
 
@@ -20213,6 +20714,9 @@ msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "आपके पास वर्कफ़्लो संपादित करने की अनुमति नहीं है"
+
+msgid "You do not have permission to update this task."
+msgstr "आपको इस कार्य को अपडेट करने की अनुमति नहीं है।"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "आपके पास इस सामग्री विधि को संपादित करने की अनुमति नहीं है।"

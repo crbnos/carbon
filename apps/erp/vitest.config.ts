@@ -1,4 +1,4 @@
-import { defineConfig } from "vitest/config";
+import { configDefaults, defineConfig } from "vitest/config";
 
 export default defineConfig({
   resolve: {
@@ -6,6 +6,7 @@ export default defineConfig({
   },
   test: {
     include: ["app/**/*.test.ts", "app/**/*.test.tsx", "test/**/*.test.ts"],
+    exclude: [...configDefaults.exclude, "**/*.postgres.test.ts"],
     passWithNoTests: true,
     // @carbon/env throws at import time when these are unset; tests that
     // transitively import a module barrel (e.g. modules/shared) hit it.

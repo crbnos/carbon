@@ -64,3 +64,40 @@ export const revalidateIgnoringPivotDisplay: ShouldRevalidateFunction = ({
 
   return defaultShouldRevalidate;
 };
+
+const IMPACT_DISPLAY_PARAMS = ["search", "filter"];
+
+/**
+ * Impact search and filters are applied to the already-authorized workspace
+ * DTO. Skip parent/leaf loader work only when an Impact URL changes in those
+ * display-only parameters; mutations, path changes, explicit refreshes, and
+ * unrelated query parameters retain the router default.
+ */
+export const revalidateIgnoringImpactDisplay: ShouldRevalidateFunction = ({
+  currentUrl,
+  nextUrl,
+  formMethod,
+  defaultShouldRevalidate
+}) => {
+  if (formMethod && formMethod !== "GET") return defaultShouldRevalidate;
+  if (
+    currentUrl.pathname !== nextUrl.pathname ||
+    !currentUrl.pathname.endsWith("/impact")
+  ) {
+    return defaultShouldRevalidate;
+  }
+  if (currentUrl.search === nextUrl.search) return defaultShouldRevalidate;
+
+  const current = new URLSearchParams(currentUrl.search);
+  const next = new URLSearchParams(nextUrl.search);
+  for (const param of IMPACT_DISPLAY_PARAMS) {
+    current.delete(param);
+    next.delete(param);
+  }
+  current.sort();
+  next.sort();
+
+  return current.toString() === next.toString()
+    ? false
+    : defaultShouldRevalidate;
+};

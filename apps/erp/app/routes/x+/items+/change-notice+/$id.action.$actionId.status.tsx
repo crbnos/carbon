@@ -8,10 +8,7 @@ import {
   changeNoticeActionStatusValidator,
   updateChangeNoticeActionStatus
 } from "~/modules/items";
-import {
-  requireChangeNoticeChildRoute,
-  requireEditableChangeNoticeRoute
-} from "~/modules/items/items.server";
+import { requireChangeNoticeActionTaskEditable } from "~/modules/items/items.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -21,14 +18,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const changeNoticeId = params.id;
   if (!changeNoticeId) throw new Error("Could not find id");
-
-  const locked = await requireEditableChangeNoticeRoute(request, {
-    client,
-    changeNoticeId,
-    companyId,
-    scope: "workflow"
-  });
-  if (locked) return locked;
 
   const formData = await request.formData();
   const validation = await validator(
@@ -47,17 +36,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const owned = await requireChangeNoticeChildRoute(request, {
-    client,
-    table: "changeOrderActionTask",
-    id,
+  const editable = await requireChangeNoticeActionTaskEditable(client, {
+    actionTaskId: id,
     changeNoticeId,
     companyId
   });
-  if (owned) return owned;
+  if (editable) {
+    return data(
+      { success: false },
+      await flash(request, error(editable.error, editable.error.message))
+    );
+  }
 
   const update = await updateChangeNoticeActionStatus(client, {
     id,
+    changeNoticeId,
+    companyId,
     status,
     userId
   });

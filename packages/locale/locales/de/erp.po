@@ -68,6 +68,18 @@ msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehme
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# Zeile verweist auf Daten außerhalb dieses Unternehmens, daher kann sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.} other {# Zeilen verweisen auf Daten außerhalb dieses Unternehmens, daher können sie nicht gesichert werden. Wenn Sie sie überspringen, wird alles andere gesichert.}}"
 
+#. placeholder {0}: bulkSuccess.noOpCount
+msgid "{0, plural, one {# target was already current.} other {# targets were already current.}}"
+msgstr "{0, plural, one {# Zielobjekt war bereits aktuell.} other {# Zielobjekte waren bereits aktuell.}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target;} other {Impact updated for # targets;}}"
+msgstr "{0, plural, one {Auswirkung für # Zielobjekt aktualisiert;} other {Auswirkung für # Zielobjekte aktualisiert;}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target.} other {Impact updated for # targets.}}"
+msgstr "{0, plural, one {Auswirkung für # Zielobjekt aktualisiert.} other {Auswirkung für # Zielobjekte aktualisiert.}}"
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Dieser Artikel ist auf 1 offener Änderungsmitteilung} other {Dieser Artikel ist auf # offenen Änderungsmitteilungen}}"
@@ -209,8 +221,13 @@ msgid "{0} scrapped"
 msgstr "{0} verschrottet"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedKeys.size
 msgid "{0} selected"
 msgstr "{0} ausgewählt"
+
+#. placeholder {0}: candidates.length
+msgid "{0} selected targets"
+msgstr "{0} ausgewählte Zielobjekte"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -943,6 +960,9 @@ msgstr "Ein Verkaufs-Anfrage (ein Kunde bittet Sie um ein Angebot) oder eine Ein
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Ein bereichsbegrenztes Geheimnis, das im carbon-key-Anfrage-Header gesendet wird und programmgesteuerte Aufrufe an Carbon authentifiziert, mit eigenen Berechtigungen und Ratenlimit statt einer Benutzersitzung."
 
+msgid "A selected row is no longer readable in the current workspace. Refresh and review the selection."
+msgstr "Eine ausgewählte Zeile ist im aktuellen Arbeitsbereich nicht mehr lesbar. Aktualisieren Sie die Ansicht und prüfen Sie die Auswahl."
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "Ein separater Plan für die Steuermeldung, wenn Steuerregeln eine Methode erfordern, die sich von der buchhalterischen Abschreibung unterscheidet."
 
@@ -1232,6 +1252,9 @@ msgstr "ACS-URL"
 msgid "Action"
 msgstr "Aktion"
 
+msgid "Action required"
+msgstr "Aktion erforderlich"
+
 msgid "Action Status"
 msgstr "Aktionsstatus"
 
@@ -1321,7 +1344,7 @@ msgid "Add a materials section that lists each item on the bill of materials wit
 msgstr "Materialien-Abschnitt hinzufügen, der jeden Artikel auf der Stückliste mit seiner Menge auflistet."
 
 msgid "Add a parameter (in the procedure explorer)"
-msgstr "Parameter hinzufügen (im Verfahrensanweisung-Explorer)"
+msgstr "Parameter hinzufügen (im Verfahrensanweisungs-Explorer)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
@@ -1336,7 +1359,7 @@ msgid "Add a step"
 msgstr "Einen Schritt hinzufügen"
 
 msgid "Add a step or question (in procedure and training explorers)"
-msgstr "Schritt oder Frage hinzufügen (in Verfahrensanweisung- und Schulungs-Explorern)"
+msgstr "Schritt oder Frage hinzufügen (in den Explorern für Verfahrensanweisungen und Schulungen)"
 
 msgid "Add Ability"
 msgstr "Qualifikation hinzufügen"
@@ -1604,6 +1627,12 @@ msgstr "Zu {nextStatus} übergehen"
 
 msgid "Advanced"
 msgstr "Erweitert"
+
+msgid "Affected item"
+msgstr "Betroffener Artikel"
+
+msgid "Affected item details unavailable."
+msgstr "Details zum betroffenen Artikel nicht verfügbar."
 
 msgid "Affected item not found."
 msgstr "Betroffenes Element nicht gefunden."
@@ -2023,6 +2052,10 @@ msgstr "Vorschläge anwenden"
 
 msgid "Apply To"
 msgstr "Anwenden auf"
+
+#. placeholder {0}: candidates.length
+msgid "Apply to {0}"
+msgstr "Auf {0} anwenden"
 
 msgid "Apply to invoice"
 msgstr "Auf Rechnung anwenden"
@@ -2611,6 +2644,36 @@ msgstr "Montageanleitungen"
 msgid "Assembly:"
 msgstr "Baugruppe:"
 
+msgid "Assess"
+msgstr "Bewerten"
+
+msgid "Assess operational impact"
+msgstr "Betriebliche Auswirkung bewerten"
+
+msgid "Assessment coverage"
+msgstr "Bewertungsabdeckung"
+
+msgid "Assessment coverage needs attention"
+msgstr "Die Bewertungsabdeckung erfordert Aufmerksamkeit"
+
+msgid "Assessment created"
+msgstr "Bewertung erstellt"
+
+msgid "Assessment reassessed"
+msgstr "Bewertung erneut durchgeführt"
+
+msgid "Assessment reopened"
+msgstr "Bewertung wieder geöffnet"
+
+msgid "Assessment resolved"
+msgstr "Bewertung gelöst"
+
+msgid "Assessment snapshot"
+msgstr "Momentaufnahme der Bewertung"
+
+msgid "Assessment snapshot · changed"
+msgstr "Momentaufnahme der Bewertung · geändert"
+
 msgid "Asset"
 msgstr "Anlage"
 
@@ -2675,6 +2738,9 @@ msgid "Assigned to Me"
 msgstr "Mir zugewiesen"
 
 msgid "Assignee"
+msgstr "Bearbeiter"
+
+msgid "Assignees"
 msgstr "Bearbeiter"
 
 msgid "Assignment"
@@ -2821,6 +2887,12 @@ msgstr "Den Auftrag automatisch freigeben, wenn der Kanban gescannt wird"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "Starten Sie den Job automatisch, wenn der Kanban gescannt wird"
 
+msgid "Availability"
+msgstr "Verfügbarkeit"
+
+msgid "Availability states"
+msgstr "Verfügbarkeitszustände"
+
 msgid "available"
 msgstr "verfügbar"
 
@@ -2854,6 +2926,9 @@ msgstr "Genehmigung ausstehend"
 
 msgid "Back"
 msgstr "Zurück"
+
+msgid "Back to Change Notice"
+msgstr "Zurück zur Änderungsmitteilung"
 
 msgid "Back to traceability"
 msgstr "Zurück zur Rückverfolgbarkeit"
@@ -2992,6 +3067,9 @@ msgstr "Rückzugebende Lose"
 
 msgid "Batching"
 msgstr "Losbildung"
+
+msgid "Before"
+msgstr "Vorher"
 
 msgid "Beginning"
 msgstr "Anfang"
@@ -3339,6 +3417,9 @@ msgstr "Storniert"
 msgid "Cancelled"
 msgstr "Storniert"
 
+msgid "Cancelled · New Impact assessment is locked. Existing operational follow-up remains available."
+msgstr "Storniert · Neue Auswirkungsbewertung ist gesperrt. Die bestehende operative Nachverfolgung bleibt verfügbar."
+
 msgid "Cannot add parameters to unsaved operation"
 msgstr "Kann keine Parameter zu nicht gespeichertem Vorgang hinzufügen"
 
@@ -3383,6 +3464,9 @@ msgstr "Kapazitätsreservierung"
 
 msgid "Caption"
 msgstr "Beschriftung"
+
+msgid "Captured snapshot"
+msgstr "Erfasste Momentaufnahme"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -3561,6 +3645,9 @@ msgstr "Typ ändern"
 
 msgid "Changed By"
 msgstr "Geändert von"
+
+msgid "Changed since assessment"
+msgstr "Seit der Bewertung geändert"
 
 msgid "Changes"
 msgstr "Änderungen"
@@ -3743,6 +3830,12 @@ msgstr "Schlussbilanz"
 msgid "Closure blocked"
 msgstr "Abschluss blockiert"
 
+msgid "Closure evidence"
+msgstr "Abschlussnachweis"
+
+msgid "Closure evidence for every selected target"
+msgstr "Abschlussnachweis für jedes ausgewählte Zielobjekt"
+
 msgid "Cloud, or your self-hosted environment."
 msgstr "Cloud oder Ihre selbst gehostete Umgebung."
 
@@ -3906,6 +3999,15 @@ msgstr "berechnet {0}"
 msgid "Computed At"
 msgstr "Berechnet am"
 
+msgid "Conclusion"
+msgstr "Schlussfolgerung"
+
+msgid "Conclusion corrected"
+msgstr "Schlussfolgerung korrigiert"
+
+msgid "Conclusion for every selected target"
+msgstr "Schlussfolgerung für jedes ausgewählte Zielobjekt"
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Komprimierte Gewinn- und Verlustrechnung mit Margen und wichtigen Zwischensummen"
 
@@ -4037,6 +4139,12 @@ msgstr "Bestandszählung bestätigen"
 
 msgid "Confirm Mapping"
 msgstr "Zuordnung bestätigen"
+
+msgid "Confirm no purchasing intervention remains"
+msgstr "Bestätigen, dass keine Einkaufsmaßnahme mehr offen ist"
+
+msgid "Confirm no purchasing intervention remains for every selected target"
+msgstr "Bestätigen, dass für jedes ausgewählte Zielobjekt keine Einkaufsmaßnahme mehr offen ist"
 
 msgid "Confirm Password"
 msgstr "Passwort bestätigen"
@@ -4434,6 +4542,9 @@ msgstr "Korrektur"
 msgid "Correction {correctionNumber}"
 msgstr "Korrektur {correctionNumber}"
 
+msgid "Correction rationale"
+msgstr "Begründung der Korrektur"
+
 msgid "Corrections"
 msgstr "Korrektionen"
 
@@ -4516,7 +4627,7 @@ msgstr "Dokument konnte nicht gelesen werden: {0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "Konnte {0} nicht freigeben: {1}"
+msgstr "{0} konnte nicht freigegeben werden: {1}"
 
 msgid "Could not save"
 msgstr "Konnte nicht gespeichert werden"
@@ -4571,6 +4682,12 @@ msgstr "Ländercode"
 
 msgid "Coverage"
 msgstr "Besetzung"
+
+msgid "Coverage failed. This is not an empty or safe result; refresh after the source is available."
+msgstr "Abdeckung fehlgeschlagen. Dies ist kein leeres oder sicheres Ergebnis; aktualisieren Sie die Ansicht, sobald die Quelle verfügbar ist."
+
+msgid "Coverage is partial. Counts and source-deletion conclusions are withheld where the scan could not be completed."
+msgstr "Die Abdeckung ist teilweise. Zählwerte und Schlussfolgerungen zur Löschung der Quelle werden dort nicht angezeigt, wo das Scannen nicht abgeschlossen werden konnte."
 
 msgid "Create"
 msgstr "Erstellen"
@@ -4650,8 +4767,14 @@ msgstr "Los erstellen"
 msgid "Create Change Notice"
 msgstr "Änderungsmitteilung erstellen"
 
+msgid "Create follow-up"
+msgstr "Folgemaßnahme erstellen"
+
 msgid "Create Forecast"
 msgstr "Prognose erstellen"
+
+msgid "Create Impact follow-up"
+msgstr "Folgemaßnahme zur Auswirkung erstellen"
 
 msgid "Create Issue"
 msgstr "Problem erstellen"
@@ -4691,6 +4814,9 @@ msgstr "Regel erstellen"
 
 msgid "Create Supplier Return"
 msgstr "Lieferantenrückgabe erstellen"
+
+msgid "Create task"
+msgstr "Aufgabe erstellen"
 
 msgid "Create Transfer"
 msgstr "Übertrag erstellen"
@@ -4938,8 +5064,17 @@ msgstr "aktuell"
 msgid "Current"
 msgstr "Aktuell"
 
+msgid "Current cause"
+msgstr "Aktuelle Ursache"
+
+msgid "Current conclusion"
+msgstr "Aktuelle Schlussfolgerung"
+
 msgid "Current Net Book Value:"
 msgstr "Aktueller Restbuchwert:"
+
+msgid "Current operational exposure"
+msgstr "Aktuelle operative Betroffenheit"
 
 msgid "Current Password"
 msgstr "Aktuelles Passwort"
@@ -4949,6 +5084,21 @@ msgstr "Aktuelle Prognose"
 
 msgid "Current quantity"
 msgstr "Aktuelle Menge"
+
+msgid "Current source facts are unavailable because the source was deleted."
+msgstr "Aktuelle Quelldaten sind nicht verfügbar, weil die Quelle gelöscht wurde."
+
+msgid "Current source facts are unavailable."
+msgstr "Aktuelle Quelldaten sind nicht verfügbar."
+
+msgid "Current source facts changed since the stored assessment. Saving will capture a fresh assessment snapshot."
+msgstr "Die aktuellen Quelldaten haben sich seit der gespeicherten Bewertung geändert. Beim Speichern wird eine neue Momentaufnahme der Bewertung erfasst."
+
+msgid "Current source facts had changed since the prior assessment."
+msgstr "Die aktuellen Quelldaten hatten sich seit der vorherigen Bewertung geändert."
+
+msgid "Current state"
+msgstr "Aktueller Status"
 
 msgid "Custom"
 msgstr "Benutzerdefiniert"
@@ -5321,6 +5471,12 @@ msgstr "Entscheiden Sie, wann Material, das zu einem Arbeitsplatz kommissioniert
 
 msgid "Decimal Places"
 msgstr "Dezimalstellen"
+
+msgid "Decision"
+msgstr "Entscheidung"
+
+msgid "Decisions"
+msgstr "Entscheidungen"
 
 msgid "Declining balance"
 msgstr "Degressive Abschreibung"
@@ -5888,6 +6044,12 @@ msgstr "Änderungsbeschreibung"
 msgid "Description of Issue"
 msgstr "Problembeschreibung"
 
+msgid "Designate"
+msgstr "Festlegen"
+
+msgid "Designate as Impact follow-up"
+msgstr "Als Folgemaßnahme zur Auswirkung festlegen"
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -6099,6 +6261,12 @@ msgstr "Dokumente sendet Rechnungen, Lieferscheine und Zahlungen als native Anbi
 msgid "Documents you open will show up here for quick access."
 msgstr "Dokumente, die Sie öffnen, werden hier zur schnellen Zugreifbarkeit angezeigt."
 
+msgid "Domain"
+msgstr "Bereich"
+
+msgid "Domains"
+msgstr "Bereiche"
+
 msgid "Don't Cancel"
 msgstr "Nicht abbrechen"
 
@@ -6110,6 +6278,9 @@ msgstr "erledigt"
 
 msgid "Done"
 msgstr "Erledigt"
+
+msgid "Done · Engineering released. Operational assessment remains available."
+msgstr "Abgeschlossen · Konstruktion genehmigt. Operative Bewertung bleibt verfügbar."
 
 msgid "Done when day-to-day runs without us in the room"
 msgstr "Erledigt, wenn der Tagesablauf ohne unsere Anwesenheit läuft"
@@ -7070,6 +7241,9 @@ msgstr "Abend, {name}."
 msgid "Event"
 msgstr "Ereignis"
 
+msgid "Event details are unavailable for this event type."
+msgstr "Ereignisdetails sind für diesen Ereignistyp nicht verfügbar."
+
 msgid "Event Type"
 msgstr "Ereignistyp"
 
@@ -7084,6 +7258,9 @@ msgstr "Jede Bedingung muss erfüllt sein"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "Jeder Test im Umfang wird in Ihrem konfigurierten System mit Ihren Daten bestanden."
+
+msgid "Every linked task must be Completed or Skipped before this Impact can be resolved."
+msgstr "Jede verknüpfte Aufgabe muss den Status „Fertiggestellt“ oder „Übersprungen“ haben, bevor diese Auswirkung behoben werden kann."
 
 msgid "Every match"
 msgstr "Jede Übereinstimmung"
@@ -7295,6 +7472,12 @@ msgstr "CSV exportieren"
 
 msgid "Export Lines to CSV"
 msgstr "Zeilen als CSV exportieren"
+
+msgid "Exposure"
+msgstr "Betroffenheit"
+
+msgid "Exposure states"
+msgstr "Betroffenheitsstatus"
 
 msgid "Extended Price"
 msgstr "Erweiterte Preis"
@@ -7928,6 +8111,15 @@ msgstr "Vorrichtungs-ID"
 msgid "Flags"
 msgstr "Flaggen"
 
+msgid "Follow-up for"
+msgstr "Folgemaßnahme für"
+
+msgid "Follow-up rationale"
+msgstr "Begründung für die Folgemaßnahme"
+
+msgid "Follow-up rationale for every selected target"
+msgstr "Begründung der Folgemaßnahme für jedes ausgewählte Ziel"
+
 msgid "for anything. They'll pull in the right person."
 msgstr "für alles. Sie werden die richtige Person hinzuziehen."
 
@@ -7973,6 +8165,15 @@ msgstr "Häufigkeiten"
 
 msgid "Frequency"
 msgstr "Häufigkeit"
+
+msgid "Freshness"
+msgstr "Aktualität"
+
+msgid "Freshness states"
+msgstr "Aktualitätsstatus"
+
+msgid "Freshness unavailable"
+msgstr "Aktualität nicht verfügbar"
 
 msgid "Friday"
 msgstr "Freitag"
@@ -8400,6 +8601,15 @@ msgstr "Hoch"
 msgid "Hints in the first row"
 msgstr "Hinweise in der ersten Zeile"
 
+msgid "Historical"
+msgstr "Historisch"
+
+msgid "Historical causes"
+msgstr "Historische Ursachen"
+
+msgid "Historical coverage is incomplete."
+msgstr "Die historische Abdeckung ist unvollständig."
+
 msgid "Historical data older than what's on the Data Migration Map"
 msgstr "Historische Daten älter als die auf der Data Migration Map"
 
@@ -8408,6 +8618,12 @@ msgstr "Historischer Kurs (Eigenkapital)"
 
 msgid "Historical Rate (Equity)"
 msgstr "Historischer Kurs (Eigenkapital)"
+
+msgid "Historical reference"
+msgstr "Historische Referenz"
+
+msgid "Historical references"
+msgstr "Historische Referenzen"
 
 msgid "History"
 msgstr "Verlauf"
@@ -8685,6 +8901,24 @@ msgstr "III (verschärft)"
 msgid "Impact"
 msgstr "Auswirkung"
 
+msgid "Impact assessment changed while you were editing."
+msgstr "Die Auswirkungsbewertung wurde während Ihrer Bearbeitung geändert."
+
+msgid "Impact event"
+msgstr "Auswirkungsereignis"
+
+msgid "Impact follow-up"
+msgstr "Folgemaßnahme zur Auswirkung"
+
+msgid "Impact history"
+msgstr "Auswirkungsverlauf"
+
+msgid "Impact task could not be created."
+msgstr "Die Auswirkungsaufgabe konnte nicht angelegt werden."
+
+msgid "Impact task could not be linked."
+msgstr "Die Auswirkungsaufgabe konnte nicht verknüpft werden."
+
 msgid "Imperial"
 msgstr "Imperial"
 
@@ -8832,6 +9066,9 @@ msgstr "Indirekte Materialien & Dienstleistungen"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "Indirekte Materialien & Dienstleistungen (Standard)"
+
+msgid "Informational context only"
+msgstr "Nur zur Information"
 
 msgid "Infrastructure"
 msgstr "Infrastruktur"
@@ -9238,6 +9475,9 @@ msgstr "Artikel"
 msgid "Item / Location"
 msgstr "Artikel / Standort"
 
+msgid "Item details unavailable"
+msgstr "Artikeldetails nicht verfügbar"
+
 msgid "Item filters"
 msgstr "Artikelfilter"
 
@@ -9334,6 +9574,9 @@ msgstr "Auftragsort"
 msgid "Job make method"
 msgstr "Auftragsfertigungsmethode"
 
+msgid "Job Material"
+msgstr "Auftragsmaterial"
+
 msgid "Job Materials"
 msgstr "Auftragsmaterialien"
 
@@ -9354,6 +9597,9 @@ msgstr "Auftragspriorität"
 
 msgid "Job readable"
 msgstr "Auftrag lesbar"
+
+msgid "Job status"
+msgstr "Status des Fertigungsauftrags"
 
 msgid "Job Traveler"
 msgstr "Fertigungsauftrag-Laufkarte"
@@ -9393,7 +9639,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "Buchungssätze mit Datum an oder vor diesem Datum werden als gesperrt behandelt. Sie werden mit dem vom Anbieter gemeldeten Sperrdatum zusammengeführt, falls beide vorhanden sind."
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Zu einem Bereich auf Detailseiten springen (gleiche Modifizierer + Buchstabe des Bereichs)"
+msgstr "Zu einem Abschnitt auf Detailseiten springen (gleiche Modifikatoren + der Buchstabe des Abschnitts)"
 
 msgid "Just one"
 msgstr "Nur eine"
@@ -9728,7 +9974,10 @@ msgid "Link a purchase order"
 msgstr "Bestellung verknüpfen"
 
 msgid "Link a sales order"
-msgstr "Kundenauftrag verknüpfen"
+msgstr "Verkaufsauftrag verknüpfen"
+
+msgid "Link existing task"
+msgstr "Vorhandene Aufgabe verknüpfen"
 
 msgid "Link Jira Issue"
 msgstr "Jira-Problem verknüpfen"
@@ -9738,6 +9987,9 @@ msgstr "Linear-Problem verknüpfen"
 
 msgid "link outside company"
 msgstr "Link außerhalb des Unternehmens"
+
+msgid "Link task"
+msgstr "Aufgabe verknüpfen"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem davon, oder erstellen Sie einen separaten Stripe-Kunden."
@@ -9755,6 +10007,12 @@ msgstr "Verknüpftes Problem"
 
 msgid "Linked PO"
 msgstr "Verknüpfte Bestellung"
+
+msgid "Linked tasks"
+msgstr "Verknüpfte Aufgaben"
+
+msgid "Linking preserves the task's existing origin and status. It does not resolve this Impact decision."
+msgstr "Beim Verknüpfen bleiben der vorhandene Ursprung und Status der Aufgabe erhalten. Dadurch wird diese Auswirkungsentscheidung nicht gelöst."
 
 msgid "List Options"
 msgstr "Listenoptionen"
@@ -10806,6 +11064,9 @@ msgstr "Neues Feld"
 msgid "New Fixed Asset"
 msgstr "Neues Anlage"
 
+msgid "New follow-up rationale"
+msgstr "Neue Begründung für die Nachverfolgung"
+
 msgid "New Gauge"
 msgstr "Neues Prüfmittel"
 
@@ -11109,6 +11370,9 @@ msgstr "Keine Konten stimmen mit Ihrer Suche überein"
 msgid "No action needed"
 msgstr "Keine Aktion erforderlich"
 
+msgid "No action required"
+msgstr "Keine Aktion erforderlich"
+
 msgid "No actions found."
 msgstr "Keine Aktionen gefunden."
 
@@ -11126,9 +11390,6 @@ msgstr "Keine aktiven Angebote"
 
 msgid "No addresses found"
 msgstr "Keine Adressen gefunden"
-
-msgid "No affected items to assess."
-msgstr "Keine betroffenen Elemente zu bewerten."
 
 msgid "No affected items."
 msgstr "Keine betroffenen Elemente."
@@ -11182,6 +11443,9 @@ msgstr "Noch keine Klauseln vorhanden. Verwenden Sie oben 'Klausel hinzufügen'.
 msgid "No comments yet. Be the first to add a comment."
 msgstr "Noch keine Kommentare. Seien Sie der Erste, der einen Kommentar hinzufügt."
 
+msgid "No complete current result is available."
+msgstr "Es ist kein vollständiges aktuelles Ergebnis verfügbar."
+
 msgid "No completed jobs within range"
 msgstr "Keine fertiggestellten Fertigungsaufträge im Bereich"
 
@@ -11196,6 +11460,12 @@ msgstr "Kein Kostenverlauf gefunden"
 
 msgid "No credits yet"
 msgstr "Noch keine Gutschriften"
+
+msgid "No current operational exposure is available."
+msgstr "Es ist keine aktuelle operative Betroffenheit verfügbar."
+
+msgid "No current snapshot is needed for this historical reference."
+msgstr "Für diese historische Referenz ist kein aktueller Snapshot erforderlich."
 
 msgid "No Data"
 msgstr "Keine Daten"
@@ -11232,6 +11502,9 @@ msgstr "Keine bearbeitbaren Eigenschaften für dieses Element."
 
 msgid "No eligible operations"
 msgstr "Keine berechtigten Arbeitsgänge"
+
+msgid "No eligible tasks are available to link."
+msgstr "Es sind keine geeigneten Aufgaben zum Verknüpfen verfügbar."
 
 msgid "No employees assigned this week"
 msgstr "Keine Mitarbeiter in dieser Woche zugewiesen"
@@ -11284,8 +11557,17 @@ msgstr "Keine gruppierten Benachrichtigungen"
 msgid "No groups assigned"
 msgstr "Keine Gruppen zugewiesen"
 
+msgid "No historical references are available."
+msgstr "Keine historischen Referenzen verfügbar."
+
+msgid "No history is recorded for this assessment."
+msgstr "Für diese Bewertung ist kein Verlauf erfasst."
+
 msgid "No image"
 msgstr "Kein Bild"
+
+msgid "No Impact rows match the current search and filters."
+msgstr "Keine Auswirkungszeilen entsprechen der aktuellen Suche und den aktuellen Filtern."
 
 msgid "No inspection plans"
 msgstr "Keine Prüfpläne"
@@ -11303,7 +11585,10 @@ msgid "No items have inventory activity here yet."
 msgstr "Hier gibt es noch keine Bestandsbewegungen."
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
-msgstr "Noch keine Fertigungsaufträge an diesem Standort geplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitszentrums-Auslastung zu sehen."
+msgstr "Es sind noch keine Fertigungsaufträge an diesem Standort eingeplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitsplatz-Auslastung zu sehen."
+
+msgid "No Jobs or Job Materials are available."
+msgstr "Keine Fertigungsaufträge oder Auftragsmaterialien verfügbar."
 
 msgid "No jobs were created"
 msgstr "Keine Fertigungsaufträge wurden erstellt"
@@ -11329,6 +11614,9 @@ msgstr "Keine Standorte gefunden."
 msgid "No logo uploaded"
 msgstr "Kein Logo hochgeladen"
 
+msgid "No longer in current scope"
+msgstr "Nicht mehr im aktuellen Geltungsbereich"
+
 msgid "No matches"
 msgstr "Keine Übereinstimmungen"
 
@@ -11340,6 +11628,9 @@ msgstr "Keine Übereinstimmungen. Geben Sie ein, um eine zu erstellen."
 
 msgid "No matching bins"
 msgstr "Keine übereinstimmenden Lagerplätze"
+
+msgid "No matching loaded Impact rows are visible. Coverage is incomplete, so this is not a complete result."
+msgstr "Keine passenden geladenen Auswirkungszeilen sind sichtbar. Die Datenabdeckung ist unvollständig, daher ist dies kein vollständiges Ergebnis."
 
 msgid "No matching operations"
 msgstr "Keine entsprechenden Arbeitsgänge"
@@ -11453,8 +11744,14 @@ msgstr "Für diesen Vorgang wurden noch keine Produktionsereignisse aufgezeichne
 msgid "No production recorded yet."
 msgstr "Noch keine Produktion aufgezeichnet."
 
+msgid "No Purchase Order lines are available."
+msgstr "Keine Bestellpositionen verfügbar."
+
 msgid "No purchases in this period"
 msgstr "Keine Käufe in diesem Zeitraum"
+
+msgid "No purchasing intervention remains"
+msgstr "Keine Einkaufsmaßnahme mehr erforderlich"
 
 msgid "No Quote"
 msgstr "Kein Angebot"
@@ -11552,6 +11849,9 @@ msgstr "Noch keine Lieferanten"
 msgid "No sync operations yet"
 msgstr "Noch keine Synchronisierungsvorgänge"
 
+msgid "No task linked. Keep a written rationale describing the follow-up path."
+msgstr "Keine Aufgabe verknüpft. Halten Sie eine schriftliche Begründung für den weiteren Ablauf fest."
+
 msgid "No time entries for this week"
 msgstr "Keine Zeiteinträge für diese Woche"
 
@@ -11566,6 +11866,9 @@ msgstr "Keine Schulungen zugewiesen"
 
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
+
+msgid "No unavailable source rows are available."
+msgstr "Keine nicht verfügbaren Quellzeilen sind verfügbar."
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Keine nicht zugeordneten Konten entsprechen einem Provider-Code"
@@ -11602,6 +11905,12 @@ msgstr "Keine Arbeitsplätze an diesem Standort"
 
 msgid "No work centers exist"
 msgstr "Keine Arbeitsplätze vorhanden"
+
+msgid "No-action reason"
+msgstr "Grund für keine Aktion"
+
+msgid "No-action reason for every selected target"
+msgstr "Grund für keine Aktion für jedes ausgewählte Ziel"
 
 msgid "Nom"
 msgstr "Nom"
@@ -11651,6 +11960,9 @@ msgstr "Normal"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "Nicht eine Tabelle, sondern ein Hauptbuch-Saldo: Kosten sammeln sich, wenn Auftragsmaterialien ausgegeben werden, und werden gelöscht, wenn der Auftrag im Bestand empfangen wird."
 
+msgid "Not affected after review"
+msgstr "Nach der Überprüfung nicht betroffen"
+
 msgid "Not certified"
 msgstr "Nicht zertifiziert"
 
@@ -11671,9 +11983,6 @@ msgstr "Nicht erreicht"
 
 msgid "Not recorded"
 msgstr "Nicht erfasst"
-
-msgid "Not referenced anywhere yet."
-msgstr "Noch nirgendwo referenziert."
 
 msgid "Not Required"
 msgstr "Nicht erforderlich"
@@ -11892,6 +12201,9 @@ msgstr "Ein Workflow-Durchlauf, aufgezeichnet Schritt für Schritt mit den Werte
 msgid "One or more quantities cannot meet this date"
 msgstr "Eine oder mehrere Mengen können diesen Termin nicht erfüllen"
 
+msgid "One or more selected rows are no longer eligible for a bulk assessment. Refresh and review the selection."
+msgstr "Eine oder mehrere ausgewählte Zeilen sind nicht mehr für eine Sammelbewertung geeignet. Aktualisieren Sie die Seite und überprüfen Sie die Auswahl."
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Eine Serieneinheit oder eine Partie, die Carbon einzeln verfolgt und ihre eigenen Status und Attribute wie ein Verfallsdatum trägt."
 
@@ -11985,6 +12297,9 @@ msgstr "Öffnungsdatum"
 msgid "Open Dispatches"
 msgstr "Instandhaltungsaufträge öffnen"
 
+msgid "Open Impact workspace"
+msgstr "Arbeitsbereich „Auswirkungen“ öffnen"
+
 msgid "Open in Carbon"
 msgstr "In Carbon öffnen"
 
@@ -12047,6 +12362,9 @@ msgstr "Offene Kundenaufträge"
 
 msgid "Open Scheduled"
 msgstr "Offene geplante Wartungen"
+
+msgid "Open source"
+msgstr "Quelle öffnen"
 
 msgid "Open task details"
 msgstr "Aufgabendetails öffnen"
@@ -12129,6 +12447,9 @@ msgstr "Operationstyp"
 
 msgid "Operation unit cost"
 msgstr "Einheitskosten der Operation"
+
+msgid "Operational Impact"
+msgstr "Operative Auswirkungen"
 
 msgid "Operations"
 msgstr "Arbeitsgänge"
@@ -12264,6 +12585,9 @@ msgstr "Bestellungen"
 msgid "Orders submitted"
 msgstr "Bestellungen eingereicht"
 
+msgid "Ordinary tasks are read-only after Done."
+msgstr "Normale Aufgaben sind nach „Erledigt“ schreibgeschützt."
+
 msgid "Origin"
 msgstr "Ursprung"
 
@@ -12305,6 +12629,9 @@ msgstr "Ausgabe"
 
 msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 msgstr "Die Ausgabe überlebt ihre Rohstoffe nie. Fällt auf die feste Dauer zurück, wenn keine Eingabe ein Verfallsdatum hat."
+
+msgid "Outside effectivity"
+msgstr "Außerhalb der Gültigkeit"
 
 msgid "Outside operation"
 msgstr "Gemeinkostenabweichung"
@@ -12882,6 +13209,9 @@ msgstr "Bestellnummer"
 msgid "PO PDF"
 msgstr "PO PDF"
 
+msgid "PO status"
+msgstr "Status der Bestellung"
+
 msgid "Policy"
 msgstr "Richtlinie"
 
@@ -12980,6 +13310,9 @@ msgstr "Anzahlungen"
 
 msgid "Prepayments (default)"
 msgstr "Anzahlungen (Standard)"
+
+msgid "Present"
+msgstr "Vorhanden"
 
 msgid "Present Week"
 msgstr "Aktuelle Woche"
@@ -13158,6 +13491,12 @@ msgstr "erzeugter Artikel"
 msgid "Produced item"
 msgstr "Erzeugter Artikel"
 
+msgid "Producing Job"
+msgstr "Produzierender Fertigungsauftrag"
+
+msgid "Producing Jobs"
+msgstr "Produzierende Fertigungsaufträge"
+
 msgid "Product issues during hypercare"
 msgstr "Produktprobleme während der Hypercare"
 
@@ -13273,6 +13612,9 @@ msgstr "Prognosen"
 msgid "Projects"
 msgstr "Projekte"
 
+msgid "Promised"
+msgstr "Zugesagt"
+
 msgid "Promised Date"
 msgstr "Zugesagter Termin"
 
@@ -13302,6 +13644,15 @@ msgstr "Schützt die Daten Ihres Unternehmens"
 
 msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
 msgstr "Weisen Sie den Besitz jeder E-Mail-Domäne mit einem DNS-TXT-Datensatz nach, bevor sie SAML-SSO-Anmeldungen weiterleiten kann. Fügen Sie den Datensatz bei Ihrem DNS-Host hinzu und klicken Sie auf „Überprüfen\" – nur verifizierte Domänen nehmen an Single Sign-On teil."
+
+msgid "Provenance"
+msgstr "Herkunft"
+
+msgid "Provenance ended"
+msgstr "Herkunft beendet"
+
+msgid "Provenance started"
+msgstr "Provenienz gestartet"
 
 msgid "Provide process knowledge and inputs"
 msgstr "Prozesswissen und Eingaben bereitstellen"
@@ -13394,8 +13745,14 @@ msgstr "Genehmigungsregel für Bestellung"
 msgid "Purchase Order ID"
 msgstr "Bestellnummer"
 
+msgid "Purchase Order line"
+msgstr "Bestellposition"
+
 msgid "Purchase Order Line"
 msgstr "Bestellposition"
+
+msgid "Purchase Order lines"
+msgstr "Bestellpositionen"
 
 msgid "Purchase Order Location"
 msgstr "Bestellort"
@@ -13753,6 +14110,9 @@ msgstr "Kurs für die Umrechnung von Eigenkapitalkonten in der Konsolidierung (I
 msgid "Ratio"
 msgstr "Verhältnis"
 
+msgid "Rationale"
+msgstr "Begründung"
+
 msgid "Raw Materials"
 msgstr "Rohstoffe"
 
@@ -13831,6 +14191,12 @@ msgstr "Grund für das Überspringen (erforderlich)"
 msgid "Reasons"
 msgstr "Gründe"
 
+msgid "Reassess"
+msgstr "Neu bewerten"
+
+msgid "Reassess operational impact"
+msgstr "Operative Auswirkungen neu bewerten"
+
 msgid "Reassign specific tracked entities from this row to another disposition row."
 msgstr "Ordnen Sie spezifische verfolgte Einheiten aus dieser Position einer anderen Verwendungsentscheid-Position zu."
 
@@ -13845,6 +14211,9 @@ msgstr "Wird neu berechnet…"
 
 msgid "Receipt"
 msgstr "Beleg"
+
+msgid "Receipt complete"
+msgstr "Wareneingang abschließen"
 
 msgid "Receipt ID"
 msgstr "Beleg-ID"
@@ -13863,6 +14232,9 @@ msgstr "Wunschtermin Wareneingang"
 
 msgid "Receipts"
 msgstr "Quittungen"
+
+msgid "Receipts, inspections, sales, shipments, and other related records are outside the current Impact assessment scope. They do not count toward assessment totals or offer decision controls here."
+msgstr "Wareneingänge, Prüfungen, Vertrieb, Lieferungen und andere zugehörige Datensätze liegen außerhalb des Umfangs der aktuellen Auswirkungsbewertung. Sie werden hier weder auf die Bewertungssummen angerechnet noch bieten sie Entscheidungsmöglichkeiten."
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "Wareneingang, Lieferung, Ausgangsrechnung, Eingangsrechnung, Zahlung und Gut-/Lastschrift, die sich noch in Entwurf oder Ausstehend befinden, müssen gebucht oder storniert werden – sowohl Dokumente, die in diesem Zeitraum datiert sind, als auch undatierte Dokumente, die bei der Buchung in diesem Zeitraum ein Datum erhalten würden. Solange sie nicht gebucht sind, sind ihre Beträge nicht im Hauptbuch enthalten, daher wäre der Zeitraum untererfasst."
@@ -13921,6 +14293,9 @@ msgstr "Empfangene Menge"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "Empfangene Menge noch nicht kreditiert. Das Gutschriftenmemo wird als Entwurf erstellt."
+
+msgid "Received to inventory"
+msgstr "In den Bestand eingegangen"
 
 msgid "Receiving Location"
 msgstr "Empfangsort"
@@ -14437,8 +14812,29 @@ msgstr "Restwert"
 msgid "Residual Value %"
 msgstr "Restwert %"
 
+msgid "Resolution is unavailable until linked task coverage is complete."
+msgstr "Die Klärung ist nicht verfügbar, bis die Abdeckung der verknüpften Aufgaben vollständig ist."
+
+msgid "Resolution note"
+msgstr "Notiz zur Klärung"
+
+msgid "Resolve"
+msgstr "Klärung durchführen"
+
+msgid "Resolve after every linked task is Completed or Skipped."
+msgstr "Klärung durchführen, nachdem jede verknüpfte Aufgabe den Status „Fertiggestellt“ oder „Übersprungen“ hat."
+
+msgid "Resolve after linked task coverage is complete."
+msgstr "Klärung durchführen, nachdem die Abdeckung der verknüpften Aufgaben vollständig ist."
+
+msgid "Resolve operational impact"
+msgstr "Operative Auswirkungen klären"
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "Lösen Sie diese auf, bevor Sie die NCR abschließen: Jede Zeile muss einen nicht-ausstehenden Verwendungsentscheid haben, und ihre verknüpften Entitätsmengen müssen der Zeilenmenge entsprechen."
+
+msgid "Resolved"
+msgstr "Geklärt"
 
 msgid "Resolved Price"
 msgstr "Aufgelöster Preis"
@@ -14497,6 +14893,9 @@ msgstr "Dateien werden wiederhergestellt"
 
 msgid "restoring…"
 msgstr "wird wiederhergestellt…"
+
+msgid "Restricted"
+msgstr "Eingeschränkt"
 
 msgid "Result"
 msgstr "Ergebnis"
@@ -14636,8 +15035,23 @@ msgstr "Überprüfung"
 msgid "Review & create"
 msgstr "Überprüfen & erstellen"
 
+msgid "Review bulk Impact assessment"
+msgstr "Massenbewertung von Auswirkungen prüfen"
+
+msgid "Review current purchasing and production exposure with source coverage, provenance, and freshness details."
+msgstr "Aktuelle Betroffenheit von Einkauf und Produktion anhand von Quelldatenabdeckung, Provenienz und Aktualitätsdetails überprüfen."
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Überprüfen Sie die Änderungen jedes Elements, und bestätigen Sie dann – die Freigabe kann nicht rückgängig gemacht werden."
+
+msgid "Review rationale"
+msgstr "Begründung prüfen"
+
+msgid "Review rationale for every selected target"
+msgstr "Begründung für jedes ausgewählte Ziel überprüfen"
+
+msgid "Review selected"
+msgstr "Auswahl überprüfen"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Überprüfen Sie die Bilanz und die Gewinn- und Verlustrechnung der Periode und bestätigen Sie, dass die Zahlen korrekt aussehen. Dies ist eine manuelle Genehmigung – markieren Sie sie als erledigt, sobald Sie diese überprüft haben."
@@ -15048,6 +15462,9 @@ msgstr "Speichern und Überschreiben"
 msgid "Save applications"
 msgstr "Anwendungen speichern"
 
+msgid "Save assessment"
+msgstr "Bewertung speichern"
+
 msgid "Save changes"
 msgstr "Änderungen speichern"
 
@@ -15062,6 +15479,9 @@ msgstr "Methode speichern"
 
 msgid "Save Rate"
 msgstr "Kurs speichern"
+
+msgid "Save reassessment"
+msgstr "Neubewertung speichern"
 
 msgid "Save the form you're editing"
 msgstr "Das bearbeitete Formular speichern"
@@ -15446,7 +15866,7 @@ msgid "Select dimension"
 msgstr "Dimension wählen"
 
 msgid "Select disposition"
-msgstr "Verwendungsentscheid wählen"
+msgstr "Disposition auswählen"
 
 msgid "Select Employee"
 msgstr "Mitarbeiter auswählen"
@@ -15894,7 +16314,7 @@ msgid "Shipped"
 msgstr "Versandt"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
-msgstr "Versandte Zeilen für diesen Kunden mit zu returnierenden Restmengen"
+msgstr "Versendet"
 
 msgid "Shipped Qty"
 msgstr "Versendete Menge"
@@ -16182,6 +16602,9 @@ msgstr "Lösungsingenieur"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "Einige aus dem PDF extrahierte Zeilen konnten nicht automatisch Ihren Bestandsartikeln zugeordnet werden. Überprüfen und ordnen Sie jede Zeile unten zu."
 
+msgid "Some linked task metadata is unavailable. Decision state is shown independently and has not been inferred from task status. Task details are omitted where linked-task coverage could not be read."
+msgstr "Einige Metadaten verknüpfter Aufgaben sind nicht verfügbar. Der Entscheidungsstatus wird unabhängig angezeigt und nicht aus dem Aufgabenstatus abgeleitet. Aufgabendetails werden ausgelassen, wenn die Abdeckung verknüpfter Aufgaben nicht gelesen werden konnte."
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "Einige Datensätze werden nicht zurückkommen. Geben Sie <0>{CONFIRM_WORD}</0> ein, um fortzufahren."
 
@@ -16221,6 +16644,9 @@ msgstr "Quellenanalyse"
 msgid "Source Company"
 msgstr "Quellunternehmen"
 
+msgid "Source deleted"
+msgstr "Quelle gelöscht"
+
 msgid "Source document"
 msgstr "Ursprungsbeleg"
 
@@ -16233,6 +16659,9 @@ msgstr "Ursprungsbeleg-ID"
 msgid "Source document readable"
 msgstr "Ursprungsbeleg lesbar"
 
+msgid "Source identities are retained only where they were authorized; decision-relevant facts are withheld until coverage is restored."
+msgstr "Quellidentitäten bleiben nur dort erhalten, wo sie autorisiert waren; entscheidungsrelevante Fakten werden zurückgehalten, bis die Abdeckung wiederhergestellt ist."
+
 msgid "Source Item"
 msgstr "Quellartikel"
 
@@ -16244,6 +16673,9 @@ msgstr "Quellenliste"
 
 msgid "Source Method"
 msgstr "Quellmethode"
+
+msgid "Source record unavailable"
+msgstr "Quelldatensatz nicht verfügbar"
 
 msgid "Source types"
 msgstr "Quellentypen"
@@ -16538,6 +16970,9 @@ msgstr "Speichern Sie eine feste Anzahl von Tagen auf diesem Artikel. Das Verfal
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
 msgstr "Speichern Sie eine feste Anzahl von Tagen auf diesem Artikel. Das Verfallstartdatum wird auf jedem Los oder jeder Seriennummer gesetzt, wenn es/sie empfangen wird."
 
+msgid "Stored assessment snapshot is unavailable."
+msgstr "Gespeicherte Bewertungs-Momentaufnahme ist nicht verfügbar."
+
 msgid "Straight line"
 msgstr "Linear"
 
@@ -16799,6 +17234,9 @@ msgstr "Lieferantenrücksendungs-Zeile"
 msgid "Supplier Return Lines"
 msgstr "Lieferantenrücksendungs-Zeilen"
 
+msgid "Supplier return, replacement, credit, and communication interventions have been reviewed."
+msgstr "Rücksendung an den Lieferanten, Ersatz, Gutschrift und Kommunikationsmaßnahmen wurden überprüft."
+
 msgid "Supplier Returns"
 msgstr "Lieferantenrücksendungen"
 
@@ -16843,6 +17281,9 @@ msgstr "Deckung & Bedarf"
 
 msgid "Support"
 msgstr "Support"
+
+msgid "Supported purchasing and production targets that can receive an independent Impact assessment."
+msgstr "Unterstützte Einkaufs- und Produktionsziele, die einer unabhängigen Auswirkungsbewertung unterzogen werden können."
 
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
@@ -16977,6 +17418,33 @@ msgstr "Zielversion"
 msgid "Task"
 msgstr "Aufgabe"
 
+msgid "Task designated as Impact follow-up"
+msgstr "Aufgabe als Nachverfolgung von Auswirkungen gekennzeichnet"
+
+msgid "Task details unavailable."
+msgstr "Aufgabendetails nicht verfügbar."
+
+msgid "Task filters use incomplete linked-task metadata. Missing tasks or assignees are not treated as absent."
+msgstr "Aufgabenfilter verwenden unvollständige Metadaten verknüpfter Aufgaben. Fehlende Aufgaben oder Bearbeiter werden nicht als abwesend gewertet."
+
+msgid "Task linked"
+msgstr "Aufgabe verknüpft"
+
+msgid "Task name"
+msgstr "Aufgabenname"
+
+msgid "Task origin: Impact follow-up"
+msgstr "Aufgabenherkunft: Auswirkungsnachverfolgung"
+
+msgid "Task status"
+msgstr "Aufgabenstatus"
+
+msgid "Task statuses"
+msgstr "Aufgabenstatus"
+
+msgid "Task unlinked"
+msgstr "Aufgabe nicht verknüpft"
+
 msgid "tasks"
 msgstr "Aufgaben"
 
@@ -17072,6 +17540,9 @@ msgstr "Temperatur"
 
 msgid "Template ID"
 msgstr "Vorlagen-ID"
+
+msgid "Template-owned"
+msgstr "Vorlagengesteuert"
 
 msgid "Templates"
 msgstr "Vorlagen"
@@ -17319,6 +17790,9 @@ msgstr "Die Abteilung, unter die diese für Berichterstattung und Kopfzahlen-Hie
 
 msgid "The early hours, {name}."
 msgstr "Die frühen Stunden, {name}."
+
+msgid "The editor was closed and the workspace was refreshed. Review the current state before submitting again."
+msgstr "Der Editor wurde geschlossen und der Arbeitsbereich aktualisiert. Überprüfen Sie den aktuellen Stand, bevor Sie erneut absenden."
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "Die Acht-Disziplinen-Qualitätsmethode, modelliert mit den Aufgaben des Nichtkonformitäts-Workflows statt hartcodiert."
@@ -17738,7 +18212,13 @@ msgid "The schedule used to spread this asset's cost over its useful life (strai
 msgstr "Der Zeitplan, der verwendet wird, um die Kosten dieses Vermögenswerts über seine Nutzungsdauer zu verteilen (linear, degressiv, Produktionseinheiten)."
 
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
-msgstr "Der Scheduler verwendet zuerst die zutreffende Regel unten, dann subtrahiert er Stillstandszeit und Besetzung."
+msgstr "Der Planer verwendet die erste Regel unten, die zutrifft, und zieht dann Ausfallzeit und Personal ab."
+
+msgid "The selected rows do not share an available conclusion. Adjust the selection before reviewing it."
+msgstr "Die ausgewählten Zeilen haben kein gemeinsames verfügbares Ergebnis. Passen Sie die Auswahl an, bevor Sie sie überprüfen."
+
+msgid "The server will recheck every target and reject the whole batch if any source fact, eligibility rule, or decision revision changed after this preview."
+msgstr "Der Server überprüft jedes Ziel erneut und lehnt das gesamte Los ab, wenn sich nach dieser Vorschau eine Quellinformation, eine Zulässigkeitsregel oder eine Entscheidungsrevision geändert hat."
 
 msgid "The shelves and bins where stock physically sits"
 msgstr "Die Regale und Lagerplätze, an denen Bestand physisch sitzt"
@@ -17974,6 +18454,9 @@ msgstr "Diese Arbeitsgänge nutzen ein Verfahren mit mehreren Lieferanten. Wähl
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
 
+msgid "These references remain traceable but do not create a new Unassessed obligation."
+msgstr "Diese Verweise bleiben rückverfolgbar, erzeugen jedoch keine neue Verpflichtung mit dem Status „Nicht bewertet“."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher kann keine Sicherheitskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Sollten diese sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Wiederherstellung wird nicht gestartet."
 
@@ -18174,6 +18657,9 @@ msgstr "Dieser Kundenauftrag hat zugeordnete Fertigungsaufträge. Wählen Sie, w
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "Dieser Kundenauftrag hat Positionen, für die Fertigungsaufträge erstellt werden müssen"
+
+msgid "This source domain is restricted for your current permissions. No target identities or source facts are shown."
+msgstr "Diese Quelldomäne ist aufgrund Ihrer aktuellen Berechtigungen eingeschränkt. Es werden keine Zielidentitäten oder Quellinformationen angezeigt."
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "Diese Arbeitsstation läuft befähigungsgesteuerte Arbeit – sie läuft nur, wenn ein qualifizierter Werker in der Schicht arbeitet; Werker, die auf der Besetzungstafel zugewiesen sind, gestalten das verfügbare Personal weiter."
@@ -18734,11 +19220,20 @@ msgstr "Nicht angewendet:"
 msgid "Unapproved Supplier"
 msgstr "Nicht genehmigter Lieferant"
 
+msgid "Unassessed"
+msgstr "Nicht bewertet"
+
 msgid "Unassign rule"
 msgstr "Regel entfernen"
 
 msgid "Unassigned"
 msgstr "Nicht zugewiesen"
+
+msgid "Unavailable"
+msgstr "Nicht verfügbar"
+
+msgid "Unavailable source rows"
+msgstr "Nicht verfügbare Quellzeilen"
 
 msgid "Unballoon"
 msgstr "Ballon entfernen"
@@ -18837,7 +19332,10 @@ msgid "Unlink return from purchase order?"
 msgstr "Retoure von der Bestellung trennen?"
 
 msgid "Unlink RMA from sales order?"
-msgstr "RMA vom Kundenauftrag abkoppeln?"
+msgstr "RMA vom Verkaufsauftrag trennen?"
+
+msgid "Unlink task"
+msgstr "Verknüpfung der Aufgabe aufheben"
 
 msgid "Unlock"
 msgstr "Entsperren"
@@ -18856,6 +19354,9 @@ msgstr "Nicht zugeordnete Werte"
 
 msgid "Unmatched"
 msgstr "Nicht abgestimmt"
+
+msgid "Unnamed task"
+msgstr "Unbenannte Aufgabe"
 
 msgid "Unpick"
 msgstr "Entfernen"
@@ -19112,6 +19613,9 @@ msgstr "Verwenden Sie eine andere E-Mail"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Metrisches System für Standard-Materialdimensionen verwenden."
+
+msgid "Use No action required only if the earlier conclusion was incorrect and intervention was never required. If intervention occurred and closed the consequence, use Resolve."
+msgstr "Verwenden Sie „Keine Maßnahme erforderlich“ nur, wenn die frühere Schlussfolgerung falsch war und nie eine Maßnahme erforderlich war. Wenn eine Maßnahme durchgeführt und die Folge dadurch behoben wurde, verwenden Sie „Beheben“."
 
 msgid "Used In"
 msgstr "Verwendet in"
@@ -19901,9 +20405,6 @@ msgstr "Wohin neue Bestände dieses Artikels standardmäßig bei Wareneingang la
 msgid "Where stock lives and how it ships."
 msgstr "Wo Bestände lagern und wie sie versendet werden."
 
-msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr "Wo die betroffenen Elemente im System verwendet werden. Informativ – nichts hier blockiert die Freigabe."
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Woher dieser Eintrag stammt (manuelle Eingabe, Buchung aus Vertrieb/Einkauf, wiederkehrende Vorlage, usw.)."
 
@@ -20209,6 +20710,9 @@ msgstr "Sie haben {leftoverQuantity} weitere {0} als die bestellte Menge von {1}
 
 msgid "You do not have permission to edit workflows"
 msgstr "Sie haben keine Berechtigung, Workflows zu bearbeiten"
+
+msgid "You do not have permission to update this task."
+msgstr "Sie haben keine Berechtigung, diese Aufgabe zu aktualisieren."
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "Sie haben keine Berechtigung, diese Stückliste zu bearbeiten."

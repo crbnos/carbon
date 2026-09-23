@@ -1035,6 +1035,17 @@ canvas hosting Radix popovers/selects.
 **Rule:** An API call that only runs inside a cron/sweep is exercised for the first time in production — verify VERIFY-flagged endpoints against the live sandbox *before* wiring them into a loop (one curl answers it), and never let one entity family's listing failure discard another family's already-collected changes. When an assumed endpoint is missing, compose from verified ones instead: Rillet AP payments = `GET /bills?updated.gt` (payment activity bumps the bill's `updated_at`) + `GET /bills/{id}/payments` per changed bill.
 
 **Applies to:** `packages/ee/src/accounting/providers/rillet/provider.ts` (`listChanges`, `listBillPaymentsUpdatedSince`), any `SupportsIncrementalPull.listChanges` implementation, VERIFY-flagged calls anywhere under `packages/ee/src/accounting/providers/**`.
+
+## Use shared quantity formatting for read-only numeric facts
+
+**Context:** Change Notice Impact snapshot facts render quantities from persisted operational snapshots.
+
+**Problem:** A read-only component used `toLocaleString` with an inline fraction-digit limit. The value looked harmless because it only affected display, but the repository's conformance gate correctly treats digit choices as a shared numeric contract and rejected the new file.
+
+**Rule:** Use the named `@carbon/utils` formatter for quantities in display-only components too. Do not choose fraction digits at the call site; shared formatters keep tables, snapshots, and editable fields aligned with the numeric-precision standard.
+
+**Applies to:** `apps/erp/app/modules/items/ui/ChangeNotice/ChangeNoticeImpactSnapshotFacts.tsx`, `packages/utils/src/format.ts`, and any UI that displays stored quantities or rates.
+
 ## react-aria's blur commit makes the input formatter part of arithmetic
 
 **Context:** The numeric-precision standard's motivating bug — a user typed 6.25% tax, saved, reopened, and read 6.22%.
@@ -2111,6 +2122,76 @@ full-screen ERP route.
 **Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
 **Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+
+## Nullable CHECK branches and missing RLS policies are both silent contract gaps
+
+**Context:** Slice 0 initially used a PostgreSQL CHECK branch for `No action required` that only tested `reason IN (...)`, and left server-owned write policies absent. PostgreSQL treats a NULL CHECK result as passing, while RLS policy absence denies correctly but obscures whether the denial is intentional.
+
+**Problem:** A `No action required` row with a NULL reason passed structural validation, and maintainers could mistake absent INSERT/UPDATE/DELETE policies for an accidental migration omission. Both defects were invisible in generated types and ordinary typechecking.
+
+**Rule:** When a CHECK branch requires a value, state `IS NOT NULL` explicitly before the allowed-value test. For intentionally unsupported PostgREST operations, keep Carbon's standardized `SELECT`/`INSERT`/`UPDATE`/`DELETE` policy shape and use explicit `WITH CHECK (false)` / `USING (false)` deny policies. Test both the rejected payload and the persisted row state through the actual user-scoped boundary.
+
+**Applies to:** PostgreSQL status/reason CHECK constraints, server-owned Carbon tables, source-aware RLS migrations, and SQL/PostgREST regression harnesses.
+
+## PostgreSQL timestamp results can violate Carbon's string DTO contract
+
+**Context:** The Slice 2B existing-decision writer validated persisted `assessedAt` metadata before a provenance-only reassessment.
+
+**Problem:** Kysely's generated Carbon type describes timestamps as strings, but the PostgreSQL driver returned the timestamp column as a `Date` at runtime. The strict validation rejected an otherwise valid persisted decision, and a real PostgreSQL harness exposed the mismatch that fake recorder tests could not.
+
+**Rule:** When a service boundary requires Carbon's string timestamp contract, cast the timestamp to `text` in the Kysely select (`assessedAt::text`) rather than weakening validation or introducing JavaScript `Date` parsing/formatting. Exercise timestamp-sensitive write paths against real PostgreSQL as well as recorders.
+
+**Applies to:** Existing-decision reads in `apps/erp/app/modules/items/items.service.ts` and any Kysely query whose generated timestamp type is `string` but whose driver result is runtime-sensitive.
+
+## Cross-domain read workspaces need independent coverage contracts
+
+**Context:** Building the Change Notice Impact workspace from purchasing, production, persisted assessment, and action-task data.
+
+**Problem:** A mixed-domain where-used read can silently turn denied, incomplete, or failed source/task reads into empty arrays. Pagination can also make visible rows look complete while totals are unknown.
+
+**Rule:** Redact restricted domains before browser serialization; keep source coverage, task coverage, freshness, historical state, and persisted decisions separate; null counts whenever completeness is unproven; batch linked-task reads without inferring decision state; and reuse a source-aware domain façade instead of a legacy fan-out with weaker authorization semantics.
+
+**Applies to:** Read-only operational workspaces in `apps/erp/app/modules/items/`, especially Change Notice Impact and future cross-domain projections.
+
+## Full workspace materialization must not replay the candidate façade
+
+**Context:** The Change Notice Impact workspace needs all visible candidate rows for document grouping, while the candidate façade also supports ordinary cursor pages.
+
+**Problem:** Looping over regular candidate pages in the workspace re-ran the affected-item, persisted-decision, and source-domain scans for every page. The result was correct but multiplied expensive set reads by the page count.
+
+**Rule:** Keep ordinary candidate requests paged, but give a full workspace read one explicit, bounded materialization window (the normal page size multiplied by the workspace page budget). Each source scan must still use Carbon's normal `fetchAll` range pagination; the workspace budget must never become a giant raw `.limit(...)` request. Mark a non-exhausted cursor as partial instead of fetching beyond the budget, and add a query-count regression so the workspace cannot silently return to scan-per-page behavior.
+
+**Applies to:** `getChangeNoticeImpactWorkspace`, `getChangeNoticeImpactCandidates`, and any read model that materializes a bounded collection from a paged source façade.
+
+## Malformed persisted snapshots must not erase readable live source facts
+
+**Context:** A Change Notice Impact candidate had a valid live PO/production source and a valid persisted decision, but its stored assessment snapshot was malformed or no longer comparable.
+
+**Problem:** Treating the comparison artifact as source health moved the candidate to `Unavailable`, hid the live snapshot/exposure, and could make a real source look like a missing or unassessed row. The malformed row still correctly made domain coverage partial, so exact counts and source-deletion conclusions had to remain withheld.
+
+**Rule:** Keep a readable live source `Present` and retain its current facts, exposure, and valid decision when only the persisted snapshot is uncomparable. Set freshness to `Unknown`, set the persisted snapshot projection to unavailable, and mark the domain partial so counts stay null. Do not use source `Unavailable` merely because a stored assessment snapshot cannot be compared with an otherwise readable live source.
+
+**Applies to:** `impactCandidateWithState`, persisted Impact snapshot validation, and any read model that compares current source facts with stored evidence.
+
+## Keep service deletion tests separate from PostgreSQL cascade tests
+
+**Context:** Change Notice deletion combines application-owned draft cleanup with database-owned foreign-key actions.
+
+**Problem:** A fake that replays PostgreSQL cascades can pass while drifting from the live schema.
+
+**Rule:** Service unit tests should model only service-owned decisions, predicates, delete order, and transaction failure. PostgreSQL-owned `CASCADE`, `SET NULL`, locks, and rollback belong in the real database harness.
+
+**Applies to:** `deleteChangeNotice` and services that combine explicit cleanup with PostgreSQL referential actions.
+
+## Dedicated Carbon RLS companies need the employee-group seed before employee types
+
+**Context:** The direct PostgREST RLS harness now creates per-run companies and a real Supabase Auth employee instead of borrowing a shared local employee.
+
+**Problem:** Inserting an `employeeType` into a bare company fired Carbon's employee-group interceptor, which expects that company's deterministic `All Employees` group to already exist. A minimal company row is enough for Impact rows, but not for a normal employee fixture.
+
+**Rule:** When a database harness creates an isolated Carbon company and inserts employee types, seed the deterministic `All Employees` group first (or use the repository's full company bootstrap). Do not bypass the interceptor or invent only partial auth/public-user records.
+
+**Applies to:** Direct PostgREST/RLS fixtures, `employeeType`/`employee` setup, and any future isolated authenticated-company harness.
 
 ## A fetcher's redirect is dropped when anything revalidates during the action
 

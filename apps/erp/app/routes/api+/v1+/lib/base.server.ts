@@ -1,6 +1,7 @@
 // oRPC context + middleware shared by the HTTP transport and the MCP/agent bridges.
 
 import type { ManifestEntry, ToolPermission } from "@carbon/api";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import { ORPCError, os } from "@orpc/server";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -16,11 +17,12 @@ export interface AuthedContext {
   userId: string;
   companyId: string;
   companyGroupId: string;
-  /** `"api-key"` runs the per-operation scope gate. `"oauth"` (MCP connector) does
-   *  not — its RLS/role already bounds it, exactly as MCP behaves today. `"session"`
-   *  is an already-authorized in-process caller (the in-app agent behind the route's
-   *  requirePermissions, and the workflow engine acting as the workflow's owner) —
-   *  not "oauth" because that names a wire protocol, not a trust decision. */
+  /** `"api-key"` runs the per-operation scope gate. `"oauth"` (MCP connector)
+   *  normally relies on its user-scoped RLS client; service-role operations are
+   *  explicitly checked by the gate. `"session"` is an already-authorized
+   *  in-process caller (the in-app agent behind the route's requirePermissions, and
+   *  the workflow engine acting as the workflow's owner) — not `"oauth"` because
+   *  that names a wire protocol, not a trust decision. */
   authKind: "api-key" | "oauth" | "session";
   /** The API key's scopes: `{ "<module>_<action>": [companyId, …] }`. */
   scopes: Record<string, string[]>;
@@ -50,15 +52,54 @@ export function assertScopes(
   }
 }
 
-/** Per-operation gate middleware — runs the scope check for API-key callers.
- *  The blocked-name guard is belt-and-braces: blocked tools are already excluded
- *  from the manifest at generation time, so this only fires if that exclusion
- *  ever regresses — the surface stays closed instead of silently opening. */
+// An operation whose service params include `db` is handed a server-owned Kysely
+// client by the dispatcher (see dispatchOperation), and that client bypasses RLS.
+// Every other operation runs as the OAuth caller's user-scoped client, where RLS
+// IS the permission check — which is why the scope gate is skipped for oauth.
+// So a DB-backed operation must pass the user-permission check explicitly, or a
+// connector caller could reach it without holding the operation's permission.
+// Derived from the manifest, not a hand-kept name list: a new DB-backed operation
+// cannot silently skip the check. The check mirrors requirePermissions:
+// permissions are exact company grants; the removed "0" wildcard is not accepted.
+function usesServerOwnedDatabase(meta: ManifestEntry): boolean {
+  return meta.serviceParams.includes("db");
+}
+
+async function assertOAuthServiceRolePermission(
+  context: AuthedContext,
+  meta: ManifestEntry
+): Promise<void> {
+  if (!usesServerOwnedDatabase(meta)) return;
+  const module = meta.permission.module;
+  if (module === null) return;
+
+  const claims = await getUserClaims(context.userId, context.companyId);
+  const missingAction = meta.permission.actions.find(
+    (action) =>
+      !claims.permissions[module]?.[action]?.includes(context.companyId)
+  );
+
+  if (missingAction) {
+    throw new ORPCError("FORBIDDEN", {
+      message: `OAuth caller lacks the required permission: ${module}_${missingAction}`
+    });
+  }
+}
+
+/** Per-operation gate middleware — runs the scope check for API-key callers and
+ *  the explicit user-permission check for OAuth operations that bypass RLS.
+ *  Session callers are already-authorized in-process callers and remain
+ *  intentionally unchanged here. The blocked-name guard is belt-and-braces:
+ *  blocked tools are already excluded from the manifest at generation time, so
+ *  this only fires if that exclusion ever regresses — the surface stays closed
+ *  instead of silently opening. */
 export const gate = (meta: ManifestEntry) =>
   base.middleware(async ({ context, next }) => {
     if (isMcpBlockedTool(meta.name)) throw new ORPCError("NOT_FOUND");
     if (context.authKind === "api-key") {
       assertScopes(context.scopes, context.companyId, meta.permission);
+    } else if (context.authKind === "oauth") {
+      await assertOAuthServiceRolePermission(context, meta);
     }
     return next();
   });

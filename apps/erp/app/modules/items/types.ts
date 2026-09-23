@@ -40,6 +40,56 @@ import type {
   getUnitOfMeasuresList
 } from "./items.service";
 
+export type {
+  ChangeNoticeImpactCandidate,
+  ChangeNoticeImpactCandidateOptions,
+  ChangeNoticeImpactCandidateReadModel,
+  ChangeNoticeImpactCandidateReadResult,
+  ChangeNoticeImpactCoverage,
+  ChangeNoticeImpactDecisionBulkMutationInput,
+  ChangeNoticeImpactDecisionBulkRequest,
+  ChangeNoticeImpactDecisionBulkTargetRequest,
+  ChangeNoticeImpactDecisionBulkWriteData,
+  ChangeNoticeImpactDecisionBulkWriteResult,
+  ChangeNoticeImpactDecisionMutationInput,
+  ChangeNoticeImpactDecisionOperation,
+  ChangeNoticeImpactDecisionProjection,
+  ChangeNoticeImpactDecisionRequest,
+  ChangeNoticeImpactDecisionWriteData,
+  ChangeNoticeImpactDecisionWriteResult,
+  ChangeNoticeImpactDomainCursor,
+  ChangeNoticeImpactExposureClassification,
+  ChangeNoticeImpactFirstAssessmentValidation,
+  ChangeNoticeImpactFreshnessStatus,
+  ChangeNoticeImpactHistoryEntry,
+  ChangeNoticeImpactHistoryProvenance,
+  ChangeNoticeImpactHistoryReadErrorKind,
+  ChangeNoticeImpactHistoryReadModel,
+  ChangeNoticeImpactHistoryReadResult,
+  ChangeNoticeImpactHistorySnapshotStatus,
+  ChangeNoticeImpactItemContext,
+  ChangeNoticeImpactJobMaterialSnapshotInput,
+  ChangeNoticeImpactJobSnapshotInput,
+  ChangeNoticeImpactParentContext,
+  ChangeNoticeImpactProvenance,
+  ChangeNoticeImpactPurchaseOrderLineSnapshotInput,
+  ChangeNoticeImpactSnapshot,
+  ChangeNoticeImpactSnapshotNormalization,
+  ChangeNoticeImpactSourceAccess,
+  ChangeNoticeImpactSourceAccessResult,
+  ChangeNoticeImpactTargetType,
+  ChangeNoticeImpactTaskCoverage,
+  ChangeNoticeImpactTaskLink,
+  ChangeNoticeImpactWorkspaceCandidate,
+  ChangeNoticeImpactWorkspaceDecisionProjection,
+  ChangeNoticeImpactWorkspaceReadModel,
+  ChangeNoticeImpactWorkspaceReadResult,
+  ChangeNoticeImpactWorkspaceSnapshot,
+  JobImpactSnapshot,
+  JobMaterialImpactSnapshot,
+  PurchaseOrderLineImpactSnapshot
+} from "./items.models";
+
 export type ItemRevisionStatus =
   Database["public"]["Enums"]["itemRevisionStatus"];
 

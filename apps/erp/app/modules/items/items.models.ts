@@ -1,3 +1,4 @@
+import type { Database, Json } from "@carbon/database";
 import type { PostgrestError } from "@supabase/supabase-js";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -1070,6 +1071,1309 @@ export const changeNoticeTaskStatus = [
   "Skipped"
 ] as const;
 
+export const changeNoticeActionTaskOrigins = [
+  "Template-owned",
+  "Manual",
+  "Impact follow-up"
+] as const;
+export type ChangeNoticeActionTaskOrigin =
+  (typeof changeNoticeActionTaskOrigins)[number];
+
+// =============================================================================
+// Change Notice Operational Impact — Slice 1 contracts.
+//
+// These unions are deliberately closed. Operational Impact is a constrained
+// read model for the three V1 target kinds, not a registry for arbitrary source
+// tables or a second workflow state machine.
+// =============================================================================
+
+export const changeNoticeImpactTargetTypes = [
+  "purchaseOrderLine",
+  "job",
+  "jobMaterial"
+] as const;
+export type ChangeNoticeImpactTargetType =
+  (typeof changeNoticeImpactTargetTypes)[number];
+
+export const changeNoticeImpactDecisionStatuses = [
+  "No action required",
+  "Action required",
+  "Resolved"
+] as const;
+export type ChangeNoticeImpactDecisionStatus =
+  (typeof changeNoticeImpactDecisionStatuses)[number];
+
+/** Returned when a bulk browser preview no longer matches live source facts. */
+export const CHANGE_NOTICE_IMPACT_BULK_PREVIEW_STALE_MESSAGE =
+  "This Impact bulk preview is stale. Refresh and review the selected targets.";
+
+export const changeNoticeImpactNoActionReasonCodes = [
+  "Outside effectivity",
+  "Not affected after review",
+  "No purchasing intervention remains"
+] as const;
+export type ChangeNoticeImpactNoActionReasonCode =
+  (typeof changeNoticeImpactNoActionReasonCodes)[number];
+
+export const changeNoticeImpactExposureClassifications = [
+  "Current operational exposure",
+  "Historical reference",
+  "No longer in current scope"
+] as const;
+export type ChangeNoticeImpactExposureClassification =
+  (typeof changeNoticeImpactExposureClassifications)[number];
+
+export const changeNoticeImpactSourceAvailabilities = [
+  "Present",
+  "Restricted",
+  "Source deleted",
+  "Unavailable"
+] as const;
+export type ChangeNoticeImpactSourceAvailability =
+  (typeof changeNoticeImpactSourceAvailabilities)[number];
+
+export const changeNoticeImpactFreshnessStatuses = [
+  "Current",
+  "Changed since assessment",
+  "Unknown"
+] as const;
+export type ChangeNoticeImpactFreshnessStatus =
+  (typeof changeNoticeImpactFreshnessStatuses)[number];
+
+export const changeNoticeImpactCoverageStatuses = [
+  "complete",
+  "partial",
+  "failed",
+  "restricted"
+] as const;
+export type ChangeNoticeImpactCoverageStatus =
+  (typeof changeNoticeImpactCoverageStatuses)[number];
+
+export const changeNoticeImpactDecisionStatusValidator = z.enum(
+  changeNoticeImpactDecisionStatuses
+);
+export const changeNoticeImpactNoActionReasonCodeValidator = z.enum(
+  changeNoticeImpactNoActionReasonCodes
+);
+export const changeNoticeImpactTargetTypeValidator = z.enum(
+  changeNoticeImpactTargetTypes
+);
+
+/**
+ * The browser/API contract for one assessment. Company, actor, source access,
+ * operation, event type, and the canonical snapshot are all server-owned. The
+ * strict object is intentional: accepting an operation or client snapshot and
+ * silently stripping it would make the contract look authoritative when it is
+ * not.
+ */
+const changeNoticeImpactDecisionTargetRequestShape = {
+  targetType: changeNoticeImpactTargetTypeValidator,
+  targetId: z.string().min(1, { message: "Impact target is required" }),
+  decisionStatus: changeNoticeImpactDecisionStatusValidator,
+  noActionReasonCode: changeNoticeImpactNoActionReasonCodeValidator
+    .nullable()
+    .optional(),
+  rationale: z.string().trim().nullable().optional(),
+  resolutionNote: z.string().trim().nullable().optional(),
+  confirmNoPurchasingInterventionRemains: z.boolean().optional(),
+  expectedRevision: z.number().int().positive().nullable().optional()
+};
+
+export const changeNoticeImpactDecisionRequestValidator = z
+  .object({
+    changeNoticeId: z.string().min(1, { message: "Change notice is required" }),
+    ...changeNoticeImpactDecisionTargetRequestShape
+  })
+  .strict();
+export type ChangeNoticeImpactDecisionRequest = z.infer<
+  typeof changeNoticeImpactDecisionRequestValidator
+>;
+
+/**
+ * The browser form shape deliberately differs from the JSON request shape:
+ * empty optional controls are omitted and numeric/checkbox values are decoded
+ * from FormData before the server-authorized request boundary is called.
+ */
+export const changeNoticeImpactDecisionFormValidator = z
+  .object({
+    changeNoticeId: zfd.text(
+      z.string().min(1, { message: "Change notice is required" })
+    ),
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" }),
+    decisionStatus: changeNoticeImpactDecisionStatusValidator,
+    noActionReasonCode: zfd.text(
+      changeNoticeImpactNoActionReasonCodeValidator.optional()
+    ),
+    rationale: zfd.text(z.string().trim().optional()),
+    resolutionNote: zfd.text(z.string().trim().optional()),
+    confirmNoPurchasingInterventionRemains: zfd.checkbox(),
+    expectedRevision: zfd.numeric(z.number().int().positive().optional())
+  })
+  .strict();
+export type ChangeNoticeImpactDecisionFormValues = z.infer<
+  typeof changeNoticeImpactDecisionFormValidator
+>;
+
+/**
+ * A bulk request names every target explicitly. It deliberately has no maximum
+ * selection size: authorization, complete preflight, and the one transaction
+ * are the safety boundaries rather than an arbitrary count cap.
+ */
+export const changeNoticeImpactDecisionBulkTargetRequestValidator = z
+  .object({
+    ...changeNoticeImpactDecisionTargetRequestShape,
+    /** Opaque server-issued source/eligibility proof from the browser preview. */
+    expectedSnapshotFingerprint: z.string().trim().min(1).optional()
+  })
+  .strict();
+export type ChangeNoticeImpactDecisionBulkTargetRequest = z.infer<
+  typeof changeNoticeImpactDecisionBulkTargetRequestValidator
+>;
+
+export const changeNoticeImpactDecisionBulkRequestValidator = z
+  .object({
+    changeNoticeId: z.string().min(1, { message: "Change notice is required" }),
+    targets: z
+      .array(changeNoticeImpactDecisionBulkTargetRequestValidator)
+      .min(1, { message: "At least one Impact target is required" })
+  })
+  .strict()
+  .superRefine((input, context) => {
+    const seen = new Set<string>();
+    for (const [index, target] of input.targets.entries()) {
+      const key = `${target.targetType}\u0000${target.targetId}`;
+      if (seen.has(key)) {
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["targets", index, "targetId"],
+          message: "Bulk Impact targets must be unique."
+        });
+      }
+      seen.add(key);
+    }
+  });
+export type ChangeNoticeImpactDecisionBulkRequest = z.infer<
+  typeof changeNoticeImpactDecisionBulkRequestValidator
+>;
+
+const changeNoticeImpactDecisionBulkFormTargetValidator = z
+  .object({
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" }),
+    expectedRevision: z.number().int().positive().nullable().optional(),
+    expectedSnapshotFingerprint: z.string().trim().min(1)
+  })
+  .strict();
+export type ChangeNoticeImpactDecisionBulkFormTarget = z.infer<
+  typeof changeNoticeImpactDecisionBulkFormTargetValidator
+>;
+
+export const changeNoticeImpactDecisionBulkFormValidator = z
+  .object({
+    changeNoticeId: zfd.text(
+      z.string().min(1, { message: "Change notice is required" })
+    ),
+    targets: zfd.text(
+      z
+        .string()
+        .trim()
+        .min(1, { message: "Selected Impact targets are required" })
+        .transform((value, context) => {
+          let parsed: unknown;
+          try {
+            parsed = JSON.parse(value);
+          } catch {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message: "Selected Impact targets are invalid."
+            });
+            return z.NEVER;
+          }
+          const validation = z
+            .array(changeNoticeImpactDecisionBulkFormTargetValidator)
+            .min(1, { message: "At least one Impact target is required" })
+            .safeParse(parsed);
+          if (!validation.success) {
+            context.addIssue({
+              code: z.ZodIssueCode.custom,
+              message:
+                validation.error.issues[0]?.message ??
+                "Selected Impact targets are invalid."
+            });
+            return z.NEVER;
+          }
+          return validation.data;
+        })
+    ),
+    decisionStatus: zfd.text(changeNoticeImpactDecisionStatusValidator),
+    noActionReasonCode: zfd.text(
+      changeNoticeImpactNoActionReasonCodeValidator.optional()
+    ),
+    rationale: zfd.text(z.string().trim().optional()),
+    resolutionNote: zfd.text(z.string().trim().optional()),
+    confirmNoPurchasingInterventionRemains: zfd.checkbox()
+  })
+  .strict();
+export type ChangeNoticeImpactDecisionBulkFormValues = z.infer<
+  typeof changeNoticeImpactDecisionBulkFormValidator
+>;
+
+/** Internal operation labels. Callers never submit one of these values. */
+export const changeNoticeImpactDecisionOperations = [
+  "createDecision",
+  "reassessDecision",
+  "correctDecision",
+  "reopenDecision",
+  "resolveActionRequired",
+  "updateDecision",
+  "noOp"
+] as const;
+export type ChangeNoticeImpactDecisionOperation =
+  (typeof changeNoticeImpactDecisionOperations)[number];
+
+/**
+ * Classify the lifecycle operation from persisted state and the requested
+ * conclusion. This helper deliberately has no public input field for the
+ * operation; it is used by the server after loading the current row.
+ */
+export function deriveChangeNoticeImpactDecisionOperation(input: {
+  existingStatus: ChangeNoticeImpactDecisionStatus | null;
+  requestedStatus: ChangeNoticeImpactDecisionStatus;
+}): ChangeNoticeImpactDecisionOperation {
+  if (input.existingStatus === null) return "createDecision";
+  if (input.existingStatus === input.requestedStatus) return "updateDecision";
+  if (
+    input.existingStatus === "Resolved" &&
+    input.requestedStatus === "Action required"
+  ) {
+    return "reopenDecision";
+  }
+  if (
+    input.existingStatus === "Action required" &&
+    input.requestedStatus === "Resolved"
+  ) {
+    return "resolveActionRequired";
+  }
+  if (
+    (input.existingStatus === "Action required" ||
+      input.existingStatus === "Resolved") &&
+    input.requestedStatus === "No action required"
+  ) {
+    return "correctDecision";
+  }
+  return "reassessDecision";
+}
+
+export const purchaseOrderLineImpactItemTypes = [
+  "Part",
+  "Material",
+  "Tool",
+  "Consumable",
+  "Fixture"
+] as const;
+export type PurchaseOrderLineImpactItemType =
+  (typeof purchaseOrderLineImpactItemTypes)[number];
+
+export const purchaseOrderLineImpactNonAssessmentTypes = [
+  "Comment",
+  "G/L Account",
+  "Fixed Asset",
+  "Service"
+] as const;
+
+export const purchaseOrderLineImpactCurrentStatuses = [
+  "Draft",
+  "Planned",
+  "Needs Approval",
+  "To Review",
+  "To Receive",
+  "To Receive and Invoice",
+  "To Invoice"
+] as const;
+export type PurchaseOrderLineImpactCurrentStatus =
+  (typeof purchaseOrderLineImpactCurrentStatuses)[number];
+
+export const purchaseOrderLineImpactHistoricalStatuses = [
+  "Completed",
+  "Closed",
+  "Rejected"
+] as const;
+export type PurchaseOrderLineImpactHistoricalStatus =
+  (typeof purchaseOrderLineImpactHistoricalStatuses)[number];
+
+export const jobImpactActiveStatuses = [
+  "Draft",
+  "Planned",
+  "Ready",
+  "In Progress",
+  "Paused"
+] as const;
+export type JobImpactActiveStatus = (typeof jobImpactActiveStatuses)[number];
+
+export const jobImpactHistoricalStatuses = [
+  "Completed",
+  "Closed",
+  "Cancelled"
+] as const;
+export type JobImpactHistoricalStatus =
+  (typeof jobImpactHistoricalStatuses)[number];
+
+export const PO_LINE_SNAPSHOT_V1 = "PO_LINE_SNAPSHOT_V1" as const;
+export const JOB_SNAPSHOT_V1 = "JOB_SNAPSHOT_V1" as const;
+export const JOB_MATERIAL_SNAPSHOT_V1 = "JOB_MATERIAL_SNAPSHOT_V1" as const;
+
+export const OPEN_PURCHASING_COMMITMENT = "openPurchasingCommitment" as const;
+export const ACTIVE_PRODUCING_JOB = "activeProducingJob" as const;
+export const ACTIVE_JOB_MATERIAL = "activeJobMaterial" as const;
+
+export type ChangeNoticeImpactEffectivityProof = {
+  complete: boolean;
+  decisionRelevant: boolean;
+  outsideEffectivity: boolean;
+  ambiguous: boolean;
+};
+
+export type ChangeNoticeImpactPurchasingInterventionConfirmation = {
+  supplierReturnReviewed: boolean;
+  replacementReviewed: boolean;
+  creditReviewed: boolean;
+  communicationReviewed: boolean;
+  noInterventionRemains: boolean;
+};
+
+export type ChangeNoticeImpactReasonValidation =
+  | { valid: true }
+  | { valid: false; message: string };
+
+export type ChangeNoticeImpactFirstAssessmentValidation =
+  | {
+      valid: true;
+      noActionReasonCode: ChangeNoticeImpactNoActionReasonCode | null;
+      rationale: string | null;
+      resolutionNote: string | null;
+    }
+  | { valid: false; message: string };
+
+/**
+ * Validate the state-specific part of a first assessment. Source availability,
+ * exposure, lifecycle, and the canonical snapshot are deliberately checked by
+ * the server after it reloads the live rows.
+ */
+export function validateChangeNoticeImpactFirstAssessment(input: {
+  targetType: ChangeNoticeImpactTargetType;
+  decisionStatus: ChangeNoticeImpactDecisionStatus;
+  noActionReasonCode?: ChangeNoticeImpactNoActionReasonCode | null;
+  rationale?: string | null;
+  resolutionNote?: string | null;
+  confirmNoPurchasingInterventionRemains?: boolean;
+  expectedRevision?: number | null;
+}): ChangeNoticeImpactFirstAssessmentValidation {
+  const rationale = input.rationale?.trim() ?? "";
+  const resolutionNote = input.resolutionNote?.trim() ?? "";
+  const reason = input.noActionReasonCode ?? null;
+
+  if (input.expectedRevision !== undefined && input.expectedRevision !== null) {
+    return {
+      valid: false,
+      message:
+        "First assessments must not include an expected decision revision."
+    };
+  }
+
+  if (input.decisionStatus !== "Resolved" && resolutionNote.length > 0) {
+    return {
+      valid: false,
+      message: "Resolution notes are only valid for a Resolved decision."
+    };
+  }
+
+  if (input.decisionStatus !== "No action required") {
+    if (input.confirmNoPurchasingInterventionRemains !== undefined) {
+      return {
+        valid: false,
+        message:
+          "Purchasing intervention confirmation is only valid for a No action required decision."
+      };
+    }
+  }
+
+  if (input.decisionStatus === "No action required") {
+    if (reason === null) {
+      return {
+        valid: false,
+        message: "No action required needs a reason."
+      };
+    }
+    if (reason === "Outside effectivity") {
+      return {
+        valid: false,
+        message:
+          "Outside effectivity is unavailable until Carbon can provide authoritative applicability evidence."
+      };
+    }
+    if (reason === "Not affected after review" && rationale.length === 0) {
+      return {
+        valid: false,
+        message: "Not affected after review requires written rationale."
+      };
+    }
+    if (
+      reason === "No purchasing intervention remains" &&
+      input.targetType !== "purchaseOrderLine"
+    ) {
+      return {
+        valid: false,
+        message:
+          "No purchasing intervention remains applies only to purchase order lines."
+      };
+    }
+    if (
+      reason !== "No purchasing intervention remains" &&
+      input.confirmNoPurchasingInterventionRemains !== undefined
+    ) {
+      return {
+        valid: false,
+        message:
+          "Purchasing intervention confirmation is only valid for No purchasing intervention remains."
+      };
+    }
+    if (
+      reason === "No purchasing intervention remains" &&
+      input.confirmNoPurchasingInterventionRemains !== true
+    ) {
+      return {
+        valid: false,
+        message:
+          "No purchasing intervention remains requires explicit confirmation that no supplier return, replacement, credit, or communication intervention remains."
+      };
+    }
+    if (
+      (reason === "Not affected after review" ||
+        reason === "No purchasing intervention remains") &&
+      rationale.length === 0
+    ) {
+      return {
+        valid: false,
+        message: `${reason} requires written rationale.`
+      };
+    }
+  } else if (reason !== null) {
+    return {
+      valid: false,
+      message:
+        "No Action reason is only valid for a No action required decision."
+    };
+  }
+
+  if (input.decisionStatus === "Action required" && rationale.length === 0) {
+    return {
+      valid: false,
+      message: "Action required needs written follow-up rationale."
+    };
+  }
+
+  if (input.decisionStatus === "Resolved" && resolutionNote.length === 0) {
+    return {
+      valid: false,
+      message: "Resolved requires written closure evidence."
+    };
+  }
+
+  return {
+    valid: true,
+    noActionReasonCode: reason,
+    rationale: rationale.length > 0 ? rationale : null,
+    resolutionNote: resolutionNote.length > 0 ? resolutionNote : null
+  };
+}
+
+/**
+ * Validate No Action semantics without creating a decision or mutating any
+ * source/Impact row. Historical evidence is intentionally not a reason.
+ */
+export function validateChangeNoticeImpactNoActionReason(input: {
+  targetType: ChangeNoticeImpactTargetType;
+  reasonCode: ChangeNoticeImpactNoActionReasonCode;
+  exposureClassification: ChangeNoticeImpactExposureClassification;
+  rationale?: string | null;
+  effectivityProof?: ChangeNoticeImpactEffectivityProof;
+  purchasingInterventionConfirmation?: ChangeNoticeImpactPurchasingInterventionConfirmation | null;
+}): ChangeNoticeImpactReasonValidation {
+  if (input.exposureClassification !== "Current operational exposure") {
+    return {
+      valid: false,
+      message: "No Action reasons require a current operational exposure."
+    };
+  }
+
+  const rationale = input.rationale?.trim() ?? "";
+
+  switch (input.reasonCode) {
+    case "Outside effectivity":
+      if (
+        !input.effectivityProof?.complete ||
+        !input.effectivityProof.decisionRelevant ||
+        !input.effectivityProof.outsideEffectivity
+      ) {
+        return {
+          valid: false,
+          message:
+            "Outside effectivity requires a complete, decision-relevant applicability proof."
+        };
+      }
+      if (input.effectivityProof.ambiguous && rationale.length === 0) {
+        return {
+          valid: false,
+          message:
+            "Ambiguous outside-effectivity evidence requires written rationale."
+        };
+      }
+      return { valid: true };
+    case "Not affected after review":
+      return rationale.length > 0
+        ? { valid: true }
+        : {
+            valid: false,
+            message: "Not affected after review requires written rationale."
+          };
+    case "No purchasing intervention remains": {
+      if (input.targetType !== "purchaseOrderLine") {
+        return {
+          valid: false,
+          message:
+            "No purchasing intervention remains applies only to purchase order lines."
+        };
+      }
+      const confirmation = input.purchasingInterventionConfirmation;
+      if (
+        !confirmation?.supplierReturnReviewed ||
+        !confirmation.replacementReviewed ||
+        !confirmation.creditReviewed ||
+        !confirmation.communicationReviewed ||
+        !confirmation.noInterventionRemains
+      ) {
+        return {
+          valid: false,
+          message:
+            "No purchasing intervention remains requires explicit confirmation that supplier return, replacement, credit, and communication intervention do not remain."
+        };
+      }
+      return rationale.length > 0
+        ? { valid: true }
+        : {
+            valid: false,
+            message:
+              "No purchasing intervention remains requires written rationale."
+          };
+    }
+  }
+}
+
+// =============================================================================
+// Change Notice Operational Impact — Slice 1 read contracts.
+//
+// Kept next to the closed product contracts so the service layer does not need
+// to import the broad Items type barrel (which also infers many service return
+// types).
+// =============================================================================
+
+export type ChangeNoticeImpactSourceAccess = {
+  purchaseOrderLine: boolean;
+  job: boolean;
+  jobMaterial: boolean;
+};
+
+export type ChangeNoticeImpactSourceAccessResult =
+  | {
+      status: "resolved";
+      access: ChangeNoticeImpactSourceAccess;
+    }
+  | {
+      status: "failed";
+      errorMessage: string;
+    };
+
+export type PurchaseOrderLineImpactSnapshot = {
+  schema: "PO_LINE_SNAPSHOT_V1";
+  purchaseOrderLineId: string;
+  purchaseOrderId: string;
+  supplierId: string;
+  itemId: string;
+  itemRevision: string | null;
+  purchaseOrderLineType: Database["public"]["Enums"]["purchaseOrderLineType"];
+  purchaseOrderStatus:
+    | "Draft"
+    | "Planned"
+    | "Needs Approval"
+    | "To Review"
+    | "To Receive"
+    | "To Receive and Invoice"
+    | "To Invoice"
+    | "Completed"
+    | "Closed"
+    | "Rejected";
+  receivedComplete: boolean;
+  orderedQuantity: number;
+  receivedQuantity: number;
+  remainingQuantity: number;
+  purchaseUnitOfMeasureCode: string | null;
+  inventoryUnitOfMeasureCode: string | null;
+  conversionFactor: number;
+  requiredDate: string | null;
+  promisedDate: string | null;
+  eligibilityBasis: "openPurchasingCommitment";
+};
+
+export type JobImpactSnapshot = {
+  schema: "JOB_SNAPSHOT_V1";
+  jobId: string;
+  itemId: string;
+  itemRevision: string | null;
+  status:
+    | "Draft"
+    | "Planned"
+    | "Ready"
+    | "In Progress"
+    | "Paused"
+    | "Completed"
+    | "Closed"
+    | "Cancelled";
+  plannedQuantity: number;
+  completedQuantity: number;
+  remainingQuantity: number;
+  quantityShipped: number;
+  quantityReceivedToInventory: number;
+  dueDate: string | null;
+  effectiveMethodId: string;
+  effectiveMethodVersion: number;
+  unitOfMeasureCode: string;
+  eligibilityBasis: "activeProducingJob";
+};
+
+export type JobMaterialImpactSnapshot = {
+  schema: "JOB_MATERIAL_SNAPSHOT_V1";
+  jobMaterialId: string;
+  jobId: string;
+  itemId: string;
+  itemRevision: string | null;
+  jobStatus:
+    | "Draft"
+    | "Planned"
+    | "Ready"
+    | "In Progress"
+    | "Paused"
+    | "Completed"
+    | "Closed"
+    | "Cancelled";
+  requiredQuantity: number;
+  issuedQuantity: number | null;
+  remainingQuantity: number;
+  unitOfMeasureCode: string | null;
+  methodType: Database["public"]["Enums"]["methodType"];
+  jobOperationId: string | null;
+  requiresTracking: {
+    batch: boolean;
+    serial: boolean;
+  };
+  eligibilityBasis: "activeJobMaterial";
+};
+
+export type ChangeNoticeImpactSnapshot =
+  | PurchaseOrderLineImpactSnapshot
+  | JobImpactSnapshot
+  | JobMaterialImpactSnapshot;
+
+// Browser-safe snapshot projection. Canonical snapshots retain source and
+// operation identifiers for persistence, comparison, and guarded writes; the
+// read-only workspace only needs the decision-relevant display facts.
+export type ChangeNoticeImpactWorkspaceSnapshot =
+  | Omit<
+      PurchaseOrderLineImpactSnapshot,
+      "purchaseOrderLineId" | "purchaseOrderId" | "supplierId" | "itemId"
+    >
+  | Omit<JobImpactSnapshot, "jobId" | "itemId" | "effectiveMethodId">
+  | Omit<
+      JobMaterialImpactSnapshot,
+      "jobMaterialId" | "jobId" | "itemId" | "jobOperationId"
+    >;
+
+export type ChangeNoticeImpactDecisionMutationInput =
+  ChangeNoticeImpactDecisionRequest & {
+    /** Optional only for the legacy/raw bulk boundary; browser bulk forms require it. */
+    expectedSnapshotFingerprint?: string;
+    /** Server-derived tenant and actor context. */
+    companyId: string;
+    userId: string;
+    /** Resolved from the actor's source-domain view permissions. */
+    sourceAccess: ChangeNoticeImpactSourceAccess;
+  };
+
+export type ChangeNoticeImpactDecisionBulkMutationInput =
+  ChangeNoticeImpactDecisionBulkRequest & {
+    /** Server-derived tenant and actor context. */
+    companyId: string;
+    userId: string;
+    /** Resolved from the actor's source-domain view permissions. */
+    sourceAccess: ChangeNoticeImpactSourceAccess;
+  };
+
+export type ChangeNoticeImpactDecisionWriteData = {
+  /** Derived by the server from persisted state, never supplied by a caller. */
+  operation: ChangeNoticeImpactDecisionOperation;
+  decision: {
+    id: string;
+    targetType: ChangeNoticeImpactTargetType;
+    targetId: string;
+    decisionStatus: ChangeNoticeImpactDecisionStatus;
+    noActionReasonCode: ChangeNoticeImpactNoActionReasonCode | null;
+    rationale: string | null;
+    resolutionNote: string | null;
+    assessmentSnapshot: ChangeNoticeImpactSnapshot;
+    snapshotVersion: number;
+    assessedBy: string;
+    assessedAt: string;
+    revision: number;
+  };
+};
+
+export type ChangeNoticeImpactDecisionWriteResult = {
+  data: ChangeNoticeImpactDecisionWriteData | null;
+  error: { message: string } | null;
+};
+
+export type ChangeNoticeImpactDecisionBulkWriteData = {
+  changeNoticeId: string;
+  selectedCount: number;
+  appliedCount: number;
+  noOpCount: number;
+};
+
+export type ChangeNoticeImpactDecisionBulkWriteResult = {
+  data: ChangeNoticeImpactDecisionBulkWriteData | null;
+  error: { message: string } | null;
+};
+
+export type ChangeNoticeImpactTaskDecisionReference = {
+  decisionId: string;
+  targetType: ChangeNoticeImpactTargetType;
+  targetId: string;
+};
+
+export type ChangeNoticeImpactTaskFields = {
+  name?: string;
+  notes?: Json | null;
+  assignee?: string | null;
+  dueDate?: string | null;
+};
+
+export type ChangeNoticeImpactTaskCreateRequest = {
+  changeNoticeId: string;
+  targetType: ChangeNoticeImpactTargetType;
+  targetId: string;
+  decision?: ChangeNoticeImpactTaskDecisionReference;
+  bootstrapDecision?: {
+    decisionStatus: "Action required";
+    rationale: string;
+  };
+  task: ChangeNoticeImpactTaskFields;
+};
+
+export type ChangeNoticeImpactTaskRelationshipRequest =
+  ChangeNoticeImpactTaskDecisionReference & {
+    actionTaskId: string;
+  };
+
+export type ChangeNoticeImpactTaskCreateMutationInput =
+  ChangeNoticeImpactTaskCreateRequest & {
+    /** Server-derived tenant and actor context. */
+    companyId: string;
+    userId: string;
+    /** Resolved from the actor's source-domain view permissions. */
+    sourceAccess: ChangeNoticeImpactSourceAccess;
+  };
+
+export type ChangeNoticeImpactTaskRelationshipMutationInput =
+  ChangeNoticeImpactTaskRelationshipRequest & {
+    changeNoticeId: string;
+    /** Server-derived tenant and actor context. */
+    companyId: string;
+    userId: string;
+    /** Resolved from the actor's source-domain view permissions. */
+    sourceAccess: ChangeNoticeImpactSourceAccess;
+  };
+
+export type ChangeNoticeImpactTaskCreateData = {
+  decisionId: string;
+  actionTaskId: string;
+  decisionCreated: boolean;
+  taskOrigin: "Impact follow-up";
+  status: (typeof changeNoticeTaskStatus)[number];
+};
+
+export type ChangeNoticeImpactTaskRelationshipData = {
+  decisionId: string;
+  actionTaskId: string;
+  changed: boolean;
+};
+
+export type ChangeNoticeImpactTaskDesignationData =
+  ChangeNoticeImpactTaskRelationshipData & {
+    previousTaskOrigin: ChangeNoticeActionTaskOrigin;
+    taskOrigin: "Impact follow-up";
+  };
+
+export type ChangeNoticeImpactTaskCreateResult = {
+  data: ChangeNoticeImpactTaskCreateData | null;
+  error: { message: string } | null;
+};
+
+export type ChangeNoticeImpactTaskRelationshipResult = {
+  data: ChangeNoticeImpactTaskRelationshipData | null;
+  error: { message: string } | null;
+};
+
+export type ChangeNoticeImpactTaskDesignationResult = {
+  data: ChangeNoticeImpactTaskDesignationData | null;
+  error: { message: string } | null;
+};
+
+export const changeNoticeImpactTaskDecisionReferenceValidator = z
+  .object({
+    decisionId: z.string().min(1, { message: "Decision is required" }),
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" })
+  })
+  .strict();
+
+/**
+ * Impact task notes cross the browser/API boundary as a JSON object. This is a
+ * narrow shape check, not a ProseMirror/Tiptap schema validator — the browser
+ * editor owns the document semantics. Without the predicate, `z.custom<Json>()`
+ * accepts anything and the API/MCP create path can store a string or array where
+ * the browser sends an object.
+ */
+export function isJsonObjectTaskNotes(value: unknown): value is Json {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+  return Object.values(value as Record<string, unknown>).every(isJsonValue);
+}
+
+function isJsonValue(value: unknown): boolean {
+  if (
+    value === null ||
+    typeof value === "string" ||
+    typeof value === "number" ||
+    typeof value === "boolean"
+  ) {
+    return true;
+  }
+  if (Array.isArray(value)) return value.every(isJsonValue);
+  if (typeof value !== "object") return false;
+  return Object.values(value as Record<string, unknown>).every(isJsonValue);
+}
+
+const changeNoticeImpactTaskFieldsValidator = z
+  .object({
+    name: z.string().trim().min(1).optional(),
+    notes: z.custom<Json>(isJsonObjectTaskNotes).nullable().optional(),
+    assignee: z.string().trim().nullable().optional(),
+    dueDate: z.string().trim().nullable().optional()
+  })
+  .strict();
+
+export const changeNoticeImpactTaskCreateRequestValidator = z
+  .object({
+    changeNoticeId: z.string().min(1, { message: "Change notice is required" }),
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" }),
+    decision: changeNoticeImpactTaskDecisionReferenceValidator.optional(),
+    bootstrapDecision: z
+      .object({
+        decisionStatus: z.literal("Action required"),
+        rationale: z.string().trim().min(1, {
+          message: "Action required needs written follow-up rationale."
+        })
+      })
+      .strict()
+      .optional(),
+    task: changeNoticeImpactTaskFieldsValidator
+  })
+  .strict()
+  .superRefine((input, context) => {
+    if ((input.decision ? 1 : 0) + (input.bootstrapDecision ? 1 : 0) !== 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["decision"],
+        message:
+          "Impact task creation requires an existing decision or an Action Required bootstrap."
+      });
+    }
+    if (
+      input.decision &&
+      (input.decision.targetType !== input.targetType ||
+        input.decision.targetId !== input.targetId)
+    ) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["decision"],
+        message:
+          "Impact task decision target does not match the requested target."
+      });
+    }
+  });
+
+export const changeNoticeImpactTaskRelationshipRequestValidator = z
+  .object({
+    decisionId: z.string().min(1, { message: "Decision is required" }),
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" }),
+    actionTaskId: z.string().min(1, { message: "Action task is required" })
+  })
+  .strict();
+
+export const changeNoticeImpactTaskCreateFormValidator = z
+  .object({
+    decisionId: zfd.text(z.string().trim().min(1).optional()),
+    targetType: changeNoticeImpactTargetTypeValidator,
+    targetId: z.string().min(1, { message: "Impact target is required" }),
+    bootstrapRationale: zfd.text(z.string().trim().min(1).optional()),
+    name: zfd.text(z.string().trim().min(1).optional()),
+    notes: zfd.text(z.string().optional()),
+    assignee: zfd.text(z.string().trim().min(1).optional()),
+    dueDate: zfd.text(z.string().trim().min(1).optional())
+  })
+  .superRefine((input, context) => {
+    if ((input.decisionId ? 1 : 0) + (input.bootstrapRationale ? 1 : 0) !== 1) {
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["decisionId"],
+        message:
+          "Impact task creation requires an existing decision or an Action Required bootstrap."
+      });
+    }
+  });
+
+export const changeNoticeImpactTaskRelationshipFormValidator = z.object({
+  decisionId: z.string().min(1, { message: "Decision is required" }),
+  targetType: changeNoticeImpactTargetTypeValidator,
+  targetId: z.string().min(1, { message: "Impact target is required" }),
+  actionTaskId: z.string().min(1, { message: "Action task is required" })
+});
+
+export type ChangeNoticeImpactProvenanceReconciliationInput = {
+  /** Server-derived tenant and actor context. */
+  companyId: string;
+  userId: string;
+  changeNoticeId: string;
+  /** Resolved from the actor's source-domain view permissions. */
+  sourceAccess: ChangeNoticeImpactSourceAccess;
+};
+
+export type ChangeNoticeImpactProvenanceReconciliationData = {
+  changeNoticeId: string;
+  changeNoticeStatus: Database["public"]["Enums"]["changeOrderStatus"];
+  started: number;
+  ended: number;
+  /** Domain names only; target identities from restricted domains are omitted. */
+  restrictedTargetTypes: ChangeNoticeImpactTargetType[];
+};
+
+export type ChangeNoticeImpactProvenanceReconciliationResult = {
+  data: ChangeNoticeImpactProvenanceReconciliationData | null;
+  error: { message: string } | null;
+};
+
+export type ChangeNoticeImpactSnapshotNormalization =
+  | {
+      sourceAvailability: "Present";
+      snapshot: ChangeNoticeImpactSnapshot;
+    }
+  | {
+      sourceAvailability: "Unavailable";
+      snapshot: null;
+      reason: string;
+    };
+
+export type ChangeNoticeImpactPurchaseOrderLineSnapshotInput = {
+  purchaseOrderLineId?: unknown;
+  id?: unknown;
+  purchaseOrderId?: unknown;
+  supplierId?: unknown;
+  itemId?: unknown;
+  itemRevision?: unknown;
+  purchaseOrderLineType?: unknown;
+  purchaseOrderStatus?: unknown;
+  receivedComplete?: unknown;
+  purchaseQuantity?: unknown;
+  quantityReceived?: unknown;
+  quantityToReceive?: unknown;
+  purchaseUnitOfMeasureCode?: unknown;
+  inventoryUnitOfMeasureCode?: unknown;
+  conversionFactor?: unknown;
+  requiredDate?: unknown;
+  promisedDate?: unknown;
+  linePromisedDate?: unknown;
+  deliveryReceiptPromisedDate?: unknown;
+  /** Required parent-delivery hydration marker supplied by live discovery. */
+  deliveryRowPresent?: unknown;
+};
+
+export type ChangeNoticeImpactJobSnapshotInput = {
+  jobId?: unknown;
+  id?: unknown;
+  itemId?: unknown;
+  itemRevision?: unknown;
+  status?: unknown;
+  plannedQuantity?: unknown;
+  quantity?: unknown;
+  completedQuantity?: unknown;
+  quantityComplete?: unknown;
+  remainingQuantity?: unknown;
+  quantityShipped?: unknown;
+  quantityReceivedToInventory?: unknown;
+  dueDate?: unknown;
+  effectiveMethodId?: unknown;
+  effectiveMethodVersion?: unknown;
+  unitOfMeasureCode?: unknown;
+};
+
+export type ChangeNoticeImpactJobMaterialSnapshotInput = {
+  jobMaterialId?: unknown;
+  id?: unknown;
+  jobId?: unknown;
+  itemId?: unknown;
+  itemRevision?: unknown;
+  jobStatus?: unknown;
+  requiredQuantity?: unknown;
+  estimatedQuantity?: unknown;
+  issuedQuantity?: unknown;
+  quantityIssued?: unknown;
+  remainingQuantity?: unknown;
+  quantityToIssue?: unknown;
+  unitOfMeasureCode?: unknown;
+  methodType?: unknown;
+  jobOperationId?: unknown;
+  requiresTracking?: unknown;
+  requiresBatchTracking?: unknown;
+  requiresSerialTracking?: unknown;
+};
+
+export type ChangeNoticeImpactProvenance = {
+  affectedItemId: string;
+  affectedItemSourceId: string;
+  /** Null means the source label was not available; the UI localizes its fallback. */
+  affectedItemLabel: string | null;
+  status: "Current" | "Historical";
+  endedReason: string | null;
+};
+
+export type ChangeNoticeImpactParentContext =
+  | {
+      type: "purchaseOrder";
+      id: string;
+      readableId: string;
+      status: string;
+      supplierName: string | null;
+    }
+  | {
+      type: "job";
+      id: string;
+      readableId: string;
+      status: string;
+    };
+
+export type ChangeNoticeImpactItemContext = {
+  id: string;
+  readableId: string | null;
+  readableIdWithRevision: string | null;
+  revision: string | null;
+  unitOfMeasureCode: string | null;
+};
+
+export type ChangeNoticeImpactDecisionProjection = {
+  id: string;
+  status: ChangeNoticeImpactDecisionStatus;
+  decisionStatus: ChangeNoticeImpactDecisionStatus;
+  noActionReasonCode: ChangeNoticeImpactNoActionReasonCode | null;
+  rationale: string | null;
+  resolutionNote: string | null;
+  revision: number;
+  snapshotVersion: number;
+  persistedSnapshot: ChangeNoticeImpactSnapshot | null;
+};
+
+export type ChangeNoticeImpactCandidate = {
+  targetType: ChangeNoticeImpactTargetType;
+  targetId: string;
+  parent: ChangeNoticeImpactParentContext | null;
+  item: ChangeNoticeImpactItemContext | null;
+  currentSnapshot: ChangeNoticeImpactSnapshot | null;
+  currentProvenance: ChangeNoticeImpactProvenance[];
+  historicalProvenance: ChangeNoticeImpactProvenance[];
+  provenance: ChangeNoticeImpactProvenance[];
+  exposureClassification: ChangeNoticeImpactExposureClassification | null;
+  sourceAvailability: ChangeNoticeImpactSourceAvailability;
+  unavailableReason: string | null;
+  decision: ChangeNoticeImpactDecisionProjection | null;
+  freshness: ChangeNoticeImpactFreshnessStatus | null;
+};
+
+// Read-only projection of an existing Change Notice action task linked to an
+// Impact decision. Task lifecycle remains independent from the decision state.
+export type ChangeNoticeImpactTaskLink = {
+  decisionId: string;
+  actionTaskId: string;
+  name: string | null;
+  status: (typeof changeNoticeTaskStatus)[number];
+  assignee: string | null;
+  dueDate: string | null;
+  taskOrigin: string;
+};
+
+export type ChangeNoticeImpactTaskCoverage = {
+  status: "complete" | "partial" | "failed";
+  errorMessage?: string;
+};
+
+export type ChangeNoticeImpactWorkspaceDecisionProjection = Omit<
+  ChangeNoticeImpactDecisionProjection,
+  "persistedSnapshot"
+> & {
+  persistedSnapshot: ChangeNoticeImpactWorkspaceSnapshot | null;
+};
+
+export type ChangeNoticeImpactWorkspaceCandidate = Omit<
+  ChangeNoticeImpactCandidate,
+  "currentSnapshot" | "decision"
+> & {
+  currentSnapshot: ChangeNoticeImpactWorkspaceSnapshot | null;
+  decision: ChangeNoticeImpactWorkspaceDecisionProjection | null;
+  /** Opaque proof that the reviewed source facts and current cause were read together. */
+  previewFingerprint: string | null;
+  taskLinks: ChangeNoticeImpactTaskLink[];
+};
+
+export type ChangeNoticeImpactWorkspaceReadModel = Omit<
+  ChangeNoticeImpactCandidateReadModel,
+  "candidates"
+> & {
+  candidates: ChangeNoticeImpactWorkspaceCandidate[];
+  taskCoverage: ChangeNoticeImpactTaskCoverage;
+};
+
+export type ChangeNoticeImpactWorkspaceReadResult = {
+  data: ChangeNoticeImpactWorkspaceReadModel | null;
+  error: { message: string } | null;
+};
+
+// Browser-safe, lazy history projection. Source and database identifiers stay
+// behind the service boundary; only the task id is retained so the workspace
+// can resolve it against its already-authorized action collection.
+export type ChangeNoticeImpactHistoryProvenance = {
+  affectedItemLabel: string | null;
+  endedAt: string | null;
+  endedReason: string | null;
+};
+
+export type ChangeNoticeImpactHistorySnapshotStatus =
+  | "present"
+  | "absent"
+  | "unavailable";
+
+export type ChangeNoticeImpactHistoryEntry = {
+  id: string;
+  eventType: string;
+  previousStatus: ChangeNoticeImpactDecisionStatus | null;
+  newStatus: ChangeNoticeImpactDecisionStatus | null;
+  previousReasonCode: ChangeNoticeImpactNoActionReasonCode | null;
+  newReasonCode: ChangeNoticeImpactNoActionReasonCode | null;
+  previousSnapshot: ChangeNoticeImpactWorkspaceSnapshot | null;
+  previousSnapshotStatus: ChangeNoticeImpactHistorySnapshotStatus;
+  newSnapshot: ChangeNoticeImpactWorkspaceSnapshot | null;
+  newSnapshotStatus: ChangeNoticeImpactHistorySnapshotStatus;
+  rationale: string | null;
+  resolutionNote: string | null;
+  priorAssessmentWasChanged: boolean;
+  relatedActionTaskId: string | null;
+  provenance: ChangeNoticeImpactHistoryProvenance | null;
+  createdBy: string;
+  createdAt: string;
+};
+
+export type ChangeNoticeImpactHistoryReadModel = {
+  entries: ChangeNoticeImpactHistoryEntry[];
+};
+
+export type ChangeNoticeImpactHistoryReadErrorKind =
+  | "not-found"
+  | "restricted"
+  | "unavailable";
+
+export type ChangeNoticeImpactHistoryReadResult = {
+  data: ChangeNoticeImpactHistoryReadModel | null;
+  error: {
+    kind: ChangeNoticeImpactHistoryReadErrorKind;
+    message: string;
+  } | null;
+};
+
+export type ChangeNoticeImpactDomainCursor = {
+  // undefined = never started, string = continuation, null = exhausted.
+  current?: string | null;
+  historical?: string | null;
+};
+
+export type ChangeNoticeImpactCoverage = {
+  targetType: ChangeNoticeImpactTargetType;
+  status: ChangeNoticeImpactCoverageStatus;
+  currentExposureCount: number | null;
+  historicalReferenceCount: number | null;
+  unassessedCount: number | null;
+  errorMessage?: string;
+  nextCursor: {
+    current: string | null;
+    historical: string | null;
+  };
+};
+
+export type ChangeNoticeImpactCandidateOptions = {
+  sourceAccess:
+    | ChangeNoticeImpactSourceAccess
+    | ChangeNoticeImpactSourceAccessResult;
+  limit?: number;
+  pageSize?: number;
+  /**
+   * Materialize the bounded workspace window in one candidate read instead of
+   * returning one regular page. The service caps this at its workspace page
+   * budget; it is not an unbounded result request.
+   */
+  fetchAll?: boolean;
+  cursor?: Partial<
+    Record<
+      ChangeNoticeImpactTargetType,
+      ChangeNoticeImpactDomainCursor | null | undefined
+    >
+  >;
+};
+
+export type ChangeNoticeImpactCandidateReadModel = {
+  changeNoticeId: string;
+  changeNoticeStatus: Database["public"]["Enums"]["changeOrderStatus"] | null;
+  candidates: ChangeNoticeImpactCandidate[];
+  coverage: {
+    purchaseOrderLine: ChangeNoticeImpactCoverage;
+    job: ChangeNoticeImpactCoverage;
+    jobMaterial: ChangeNoticeImpactCoverage;
+  };
+};
+
+export type ChangeNoticeImpactCandidateReadResult = {
+  data: ChangeNoticeImpactCandidateReadModel | null;
+  error: { message: string } | null;
+};
+
 // v2 per-affected-item change type. Drives the release action + which editing
 // surface is shown. Two axes — is there a predecessor, and same part number?
 //   Version          = new method version on the SAME item (BoM/BoP, no supersession)
@@ -1171,11 +2475,36 @@ export function changeNoticeLockedMessage(status: string | null | undefined) {
     : "This change notice is closed, so its changes are read-only.";
 }
 
-// Workflow content — action tasks, assignee, dates, priority. Editable until closed.
+// Workflow operations — adding, reconciling, reordering, and deleting tasks —
+// remain editable until the Change Notice is closed.
 export function canEditChangeNoticeWorkflow(
   status: string | null | undefined
 ): boolean {
   return !isChangeNoticeLocked(status);
+}
+
+// Task fields have a separate lifecycle from workflow operations such as adding,
+// reconciling, reordering, and deleting tasks. Only an Impact follow-up keeps its
+// fields editable after the Change Notice is Done or Cancelled.
+export function canEditChangeNoticeActionTaskFields(
+  status: string | null | undefined,
+  taskOrigin: string | null | undefined
+): boolean {
+  if (
+    !changeNoticeStatus.includes(status as (typeof changeNoticeStatus)[number])
+  ) {
+    return false;
+  }
+
+  if (
+    !changeNoticeActionTaskOrigins.includes(
+      taskOrigin as (typeof changeNoticeActionTaskOrigins)[number]
+    )
+  ) {
+    return false;
+  }
+
+  return !isChangeNoticeLocked(status) || taskOrigin === "Impact follow-up";
 }
 
 // -----------------------------------------------------------------------------
@@ -1266,6 +2595,21 @@ export const changeNoticeAffectedItemCutoverValidator = z.object({
 export const changeNoticeActionStatusValidator = z.object({
   id: z.string().min(1, { message: "Id is required" }),
   status: z.enum(changeNoticeTaskStatus)
+});
+
+export const changeNoticeActionNotesValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  notes: zfd.text(z.string().min(1, { message: "Notes are required" }))
+});
+
+export const changeNoticeActionAssigneeValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  assignee: zfd.text(z.string().optional())
+});
+
+export const changeNoticeActionDueDateValidator = z.object({
+  id: z.string().min(1, { message: "Id is required" }),
+  dueDate: zfd.text(z.string().optional())
 });
 
 // Configurable default actions (changeOrderRequiredAction templates) — the

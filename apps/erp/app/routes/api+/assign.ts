@@ -15,6 +15,19 @@ export async function action({ request }: ActionFunctionArgs) {
   const assignee = formData.get("assignee") as string;
   const table = formData.get("table") as string;
 
+  if (table === "changeOrderActionTask") {
+    return data(
+      { success: false },
+      await flash(
+        request,
+        error(
+          null,
+          "Change Notice action tasks must use their dedicated assignment route"
+        )
+      )
+    );
+  }
+
   if (table && id) {
     const result = await assign(client, { table, id, assignee });
 

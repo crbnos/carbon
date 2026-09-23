@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { flash } from "@carbon/auth/session.server";
+import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
@@ -15,16 +16,667 @@ import {
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
-import type { plmReleaseControl } from "./items.models";
+import type {
+  ChangeNoticeImpactDecisionBulkRequest,
+  ChangeNoticeImpactDecisionBulkWriteResult,
+  ChangeNoticeImpactDecisionRequest,
+  ChangeNoticeImpactDecisionWriteResult,
+  ChangeNoticeImpactHistoryReadResult,
+  ChangeNoticeImpactProvenanceReconciliationResult,
+  ChangeNoticeImpactTargetType,
+  ChangeNoticeImpactTaskCreateRequest,
+  ChangeNoticeImpactTaskCreateResult,
+  ChangeNoticeImpactTaskDesignationResult,
+  ChangeNoticeImpactTaskRelationshipRequest,
+  ChangeNoticeImpactTaskRelationshipResult,
+  changeNoticeStatus,
+  plmReleaseControl
+} from "./items.models";
 import {
+  canEditChangeNoticeActionTaskFields,
   canEditChangeNoticeEngineering,
   canEditChangeNoticeWorkflow,
+  changeNoticeImpactDecisionBulkRequestValidator,
+  changeNoticeImpactDecisionRequestValidator,
+  changeNoticeImpactTaskCreateRequestValidator,
+  changeNoticeImpactTaskRelationshipRequestValidator,
   changeNoticeLockedMessage,
   changeNoticeOpenStatuses,
   supersessionModes
 } from "./items.models";
+import {
+  assertChangeNoticeAssigneeIsCompanyMember,
+  createChangeNoticeImpactTask,
+  designateChangeNoticeImpactTask,
+  getChangeNoticeImpactHistory,
+  linkChangeNoticeImpactTask,
+  reconcileChangeNoticeImpactProvenance,
+  unlinkChangeNoticeImpactTask,
+  writeChangeNoticeImpactDecision,
+  writeChangeNoticeImpactDecisions
+} from "./items.service";
+import type {
+  ChangeNoticeImpactSourceAccess,
+  ChangeNoticeImpactSourceAccessResult
+} from "./types";
 
 const logger = getLogger("erp", "change-orders");
+
+/**
+ * Convert the canonical Carbon claims shape into the three source capabilities
+ * consumed by the read-only Impact façade. This is deliberately separate from
+ * `requirePermissions`: a workspace may contain a Restricted Purchasing domain
+ * while still returning authorized Production candidates.
+ */
+export function deriveChangeNoticeImpactSourceAccess(
+  permissions: Record<string, { view?: string[] }>,
+  companyId: string
+): ChangeNoticeImpactSourceAccess {
+  const canView = (permission: string) =>
+    permissions[permission]?.view?.some(
+      (scope) => scope === companyId || scope === "0"
+    ) ?? false;
+  return {
+    purchaseOrderLine: canView("purchasing"),
+    job: canView("production"),
+    jobMaterial: canView("production")
+  };
+}
+
+/** Resolve source access from the effective user's cached Carbon claims. */
+export async function getChangeNoticeImpactSourceAccess(args: {
+  userId: string;
+  companyId: string;
+}): Promise<ChangeNoticeImpactSourceAccessResult> {
+  try {
+    const claims = await getUserClaims(args.userId, args.companyId);
+    return {
+      status: "resolved",
+      access: deriveChangeNoticeImpactSourceAccess(
+        claims.permissions,
+        args.companyId
+      )
+    };
+  } catch (cause) {
+    logger.error("Failed to resolve Change Notice Impact source access", {
+      error: cause,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return {
+      status: "failed",
+      errorMessage: "Impact source access could not be established."
+    };
+  }
+}
+
+export type ChangeNoticeImpactReadAccessResult =
+  | {
+      status: "resolved";
+      canViewChangeNotice: boolean;
+      sourceAccess: ChangeNoticeImpactSourceAccess;
+    }
+  | {
+      status: "failed";
+      errorMessage: string;
+    };
+
+/**
+ * Resolve Change Notice and source-domain read access through the active
+ * credential-bound client. A source denial is represented as restricted domain
+ * coverage; an RPC failure remains an explicit failed-access result.
+ */
+export async function getChangeNoticeImpactReadAccess(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+}): Promise<ChangeNoticeImpactReadAccessResult> {
+  try {
+    const permissions = [
+      "parts_view",
+      "purchasing_view",
+      "production_view"
+    ] as const;
+    const results = await Promise.all(
+      permissions.map(async (permission) => {
+        const result = await args.client.rpc(
+          "get_companies_with_employee_permission",
+          { permission }
+        );
+        if (
+          result.error ||
+          !Array.isArray(result.data) ||
+          result.data.some((company) => typeof company !== "string")
+        ) {
+          throw (
+            result.error ?? new Error("Permission RPC returned invalid data.")
+          );
+        }
+        return [permission, result.data.includes(args.companyId)] as const;
+      })
+    );
+    const accessByPermission = new Map(results);
+    const productionAccess = accessByPermission.get("production_view") ?? false;
+
+    return {
+      status: "resolved",
+      canViewChangeNotice: accessByPermission.get("parts_view") ?? false,
+      sourceAccess: {
+        purchaseOrderLine: accessByPermission.get("purchasing_view") ?? false,
+        job: productionAccess,
+        jobMaterial: productionAccess
+      }
+    };
+  } catch (cause) {
+    logger.error("Failed to resolve Change Notice Impact read access", {
+      error: cause,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return {
+      status: "failed",
+      errorMessage: "Impact source access could not be established."
+    };
+  }
+}
+
+/**
+ * Server-authorized entry point for one Impact decision's history. The client
+ * supplies only the request-boundary identifiers; source access is resolved
+ * through the active credential before the service reads any history rows.
+ */
+export async function getAuthorizedChangeNoticeImpactHistory(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  changeNoticeId: string;
+  decisionId: string;
+}): Promise<ChangeNoticeImpactHistoryReadResult> {
+  const access = await getChangeNoticeImpactReadAccess({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId
+  });
+  if (access.status === "failed") {
+    return {
+      data: null,
+      error: { kind: "unavailable", message: access.errorMessage }
+    };
+  }
+  if (!access.canViewChangeNotice) {
+    return {
+      data: null,
+      error: {
+        kind: "not-found",
+        message: "Impact decision was not found."
+      }
+    };
+  }
+  return getChangeNoticeImpactHistory(
+    args.client,
+    args.companyId,
+    args.changeNoticeId,
+    args.decisionId,
+    { sourceAccess: access.sourceAccess }
+  );
+}
+
+export type ChangeNoticeImpactMutationAccessResult =
+  | {
+      status: "resolved";
+      canViewChangeNotice: boolean;
+      canUpdateItems: boolean;
+      sourceAccess: ChangeNoticeImpactSourceAccess;
+    }
+  | {
+      status: "failed";
+      errorMessage: string;
+    };
+
+/**
+ * Resolve the independent server-side gates for an Impact mutation through the
+ * active credential-bound client. This is deliberately not backed by cached
+ * claims: API-key and session credentials must be checked by the same
+ * PostgREST permission RPC that protects the source rows.
+ */
+export async function getChangeNoticeImpactMutationAccess(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  targetTypes?: ChangeNoticeImpactTargetType[];
+}): Promise<ChangeNoticeImpactMutationAccessResult> {
+  try {
+    const targetTypes = args.targetTypes ?? [
+      "purchaseOrderLine",
+      "job",
+      "jobMaterial"
+    ];
+    const needsPurchasing = targetTypes.includes("purchaseOrderLine");
+    const needsProduction = targetTypes.some(
+      (targetType) => targetType === "job" || targetType === "jobMaterial"
+    );
+    const permissions = [
+      "parts_view",
+      "parts_update",
+      ...(needsPurchasing ? ["purchasing_view"] : []),
+      ...(needsProduction ? ["production_view"] : [])
+    ] as const;
+    const results = await Promise.all(
+      permissions.map(async (permission) => {
+        const result = await args.client.rpc(
+          "get_companies_with_employee_permission",
+          { permission }
+        );
+        if (
+          result.error ||
+          !Array.isArray(result.data) ||
+          result.data.some((company) => typeof company !== "string")
+        ) {
+          throw (
+            result.error ?? new Error("Permission RPC returned invalid data.")
+          );
+        }
+        return [permission, result.data.includes(args.companyId)] as const;
+      })
+    );
+    const accessByPermission = new Map(results);
+
+    return {
+      status: "resolved",
+      canViewChangeNotice: accessByPermission.get("parts_view") ?? false,
+      canUpdateItems: accessByPermission.get("parts_update") ?? false,
+      sourceAccess: {
+        purchaseOrderLine:
+          needsPurchasing &&
+          (accessByPermission.get("purchasing_view") ?? false),
+        job:
+          needsProduction &&
+          (accessByPermission.get("production_view") ?? false),
+        jobMaterial:
+          needsProduction &&
+          (accessByPermission.get("production_view") ?? false)
+      }
+    };
+  } catch (cause) {
+    logger.error("Failed to resolve Change Notice Impact mutation access", {
+      error: cause,
+      companyId: args.companyId,
+      userId: args.userId
+    });
+    return {
+      status: "failed",
+      errorMessage: "Impact mutation access could not be established."
+    };
+  }
+}
+
+/**
+ * Server-authorized entry point for the Impact decision mutation seam. It
+ * accepts only the final public request shape; tenant, actor, source access,
+ * and database client are supplied here rather than by the caller.
+ */
+export async function writeAuthorizedChangeNoticeImpactDecision(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  decision: ChangeNoticeImpactDecisionRequest;
+}): Promise<ChangeNoticeImpactDecisionWriteResult> {
+  const parsedDecision = changeNoticeImpactDecisionRequestValidator.safeParse(
+    args.decision
+  );
+  if (!parsedDecision.success) {
+    return {
+      data: null,
+      error: {
+        message:
+          parsedDecision.error.issues[0]?.message ??
+          "Invalid Change Notice Impact assessment."
+      }
+    };
+  }
+
+  const access = await getChangeNoticeImpactMutationAccess({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId,
+    targetTypes: [parsedDecision.data.targetType]
+  });
+  if (access.status === "failed") {
+    return { data: null, error: { message: access.errorMessage } };
+  }
+  if (!access.canViewChangeNotice) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Change Notice view permission."
+      }
+    };
+  }
+  if (!access.canUpdateItems) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Items update permission."
+      }
+    };
+  }
+
+  const { getDatabaseClient } = await import("~/services/database.server");
+  return writeChangeNoticeImpactDecision(getDatabaseClient(), {
+    ...parsedDecision.data,
+    companyId: args.companyId,
+    userId: args.userId,
+    sourceAccess: access.sourceAccess
+  });
+}
+
+/**
+ * Server-authorized entry point for an atomic bulk Impact decision mutation.
+ * The request contains only explicit target decisions; credential-bound
+ * authorization, tenant, source access, and the Kysely client are supplied by
+ * this boundary.
+ */
+export async function writeAuthorizedChangeNoticeImpactDecisions(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  decision: ChangeNoticeImpactDecisionBulkRequest;
+}): Promise<ChangeNoticeImpactDecisionBulkWriteResult> {
+  const parsedDecision =
+    changeNoticeImpactDecisionBulkRequestValidator.safeParse(args.decision);
+  if (!parsedDecision.success) {
+    return {
+      data: null,
+      error: {
+        message:
+          parsedDecision.error.issues[0]?.message ??
+          "Invalid Change Notice Impact bulk assessment."
+      }
+    };
+  }
+
+  const access = await getChangeNoticeImpactMutationAccess({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId,
+    targetTypes: [
+      ...new Set(parsedDecision.data.targets.map((target) => target.targetType))
+    ]
+  });
+  if (access.status === "failed") {
+    return { data: null, error: { message: access.errorMessage } };
+  }
+  if (!access.canViewChangeNotice) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Change Notice view permission."
+      }
+    };
+  }
+  if (!access.canUpdateItems) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Items update permission."
+      }
+    };
+  }
+
+  const { getDatabaseClient } = await import("~/services/database.server");
+  return writeChangeNoticeImpactDecisions(getDatabaseClient(), {
+    ...parsedDecision.data,
+    companyId: args.companyId,
+    userId: args.userId,
+    sourceAccess: access.sourceAccess
+  });
+}
+
+/**
+ * Server-authorized entry point for explicit Impact provenance reconciliation.
+ * The caller supplies no source capability or database handle; both are
+ * resolved here so restricted domains cannot be inferred through Kysely.
+ */
+export async function reconcileAuthorizedChangeNoticeImpactProvenance(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  changeNoticeId: string;
+}): Promise<ChangeNoticeImpactProvenanceReconciliationResult> {
+  const access = await getChangeNoticeImpactMutationAccess({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId
+  });
+  if (access.status === "failed") {
+    return { data: null, error: { message: access.errorMessage } };
+  }
+  if (!access.canViewChangeNotice) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Change Notice view permission."
+      }
+    };
+  }
+  if (!access.canUpdateItems) {
+    return {
+      data: null,
+      error: {
+        message: "Change Notice Impact requires Items update permission."
+      }
+    };
+  }
+
+  const { getDatabaseClient } = await import("~/services/database.server");
+  return reconcileChangeNoticeImpactProvenance(getDatabaseClient(), {
+    companyId: args.companyId,
+    userId: args.userId,
+    changeNoticeId: args.changeNoticeId,
+    sourceAccess: access.sourceAccess
+  });
+}
+
+function impactMutationAccessError(
+  access: ChangeNoticeImpactMutationAccessResult
+): { message: string } | null {
+  if (access.status === "failed") return { message: access.errorMessage };
+  if (!access.canViewChangeNotice) {
+    return {
+      message: "Change Notice Impact requires Change Notice view permission."
+    };
+  }
+  if (!access.canUpdateItems) {
+    return {
+      message: "Change Notice Impact requires Items update permission."
+    };
+  }
+  return null;
+}
+
+async function getAuthorizedImpactTaskContext(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  targetType: ChangeNoticeImpactTaskCreateRequest["targetType"];
+}): Promise<
+  | {
+      access: Extract<
+        ChangeNoticeImpactMutationAccessResult,
+        { status: "resolved" }
+      >;
+    }
+  | { error: { message: string } }
+> {
+  const access = await getChangeNoticeImpactMutationAccess({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId,
+    targetTypes: [args.targetType]
+  });
+  const accessError = impactMutationAccessError(access);
+  if (accessError) return { error: accessError };
+  if (access.status !== "resolved") {
+    return {
+      error: { message: "Impact mutation access could not be established." }
+    };
+  }
+  if (
+    args.targetType === "purchaseOrderLine" &&
+    !access.sourceAccess.purchaseOrderLine
+  ) {
+    return {
+      error: {
+        message: "Impact source access is restricted for this target."
+      }
+    };
+  }
+  if (
+    (args.targetType === "job" || args.targetType === "jobMaterial") &&
+    !access.sourceAccess.job
+  ) {
+    return {
+      error: {
+        message: "Impact source access is restricted for this target."
+      }
+    };
+  }
+  return { access };
+}
+
+export async function createAuthorizedChangeNoticeImpactTask(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  task: ChangeNoticeImpactTaskCreateRequest;
+}): Promise<ChangeNoticeImpactTaskCreateResult> {
+  const parsed = changeNoticeImpactTaskCreateRequestValidator.safeParse(
+    args.task
+  );
+  if (!parsed.success) {
+    return {
+      data: null,
+      error: {
+        message:
+          parsed.error.issues[0]?.message ??
+          "Invalid Change Notice Impact task request."
+      }
+    };
+  }
+
+  const context = await getAuthorizedImpactTaskContext({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId,
+    targetType: parsed.data.targetType
+  });
+  if ("error" in context) return { data: null, error: context.error };
+
+  const assigneeError = await assertChangeNoticeAssigneeIsCompanyMember(
+    args.client,
+    { companyId: args.companyId, assignee: parsed.data.task.assignee }
+  );
+  if (assigneeError) return { data: null, error: assigneeError.error };
+
+  const { getDatabaseClient } = await import("~/services/database.server");
+  return createChangeNoticeImpactTask(getDatabaseClient(), {
+    ...parsed.data,
+    companyId: args.companyId,
+    userId: args.userId,
+    sourceAccess: context.access.sourceAccess
+  });
+}
+
+async function runAuthorizedImpactTaskRelationship(
+  operation: "link" | "unlink" | "designate",
+  args: {
+    client: SupabaseClient<Database>;
+    userId: string;
+    companyId: string;
+    changeNoticeId: string;
+    task: ChangeNoticeImpactTaskRelationshipRequest;
+  }
+): Promise<
+  | ChangeNoticeImpactTaskRelationshipResult
+  | ChangeNoticeImpactTaskDesignationResult
+> {
+  const parsed = changeNoticeImpactTaskRelationshipRequestValidator.safeParse(
+    args.task
+  );
+  if (!parsed.success) {
+    return {
+      data: null,
+      error: {
+        message:
+          parsed.error.issues[0]?.message ??
+          "Invalid Change Notice Impact task relationship request."
+      }
+    };
+  }
+
+  const context = await getAuthorizedImpactTaskContext({
+    client: args.client,
+    userId: args.userId,
+    companyId: args.companyId,
+    targetType: parsed.data.targetType
+  });
+  if ("error" in context) return { data: null, error: context.error };
+
+  const input = {
+    ...parsed.data,
+    changeNoticeId: args.changeNoticeId,
+    companyId: args.companyId,
+    userId: args.userId,
+    sourceAccess: context.access.sourceAccess
+  };
+  const { getDatabaseClient } = await import("~/services/database.server");
+  if (operation === "link") {
+    return linkChangeNoticeImpactTask(getDatabaseClient(), input);
+  }
+  if (operation === "unlink") {
+    return unlinkChangeNoticeImpactTask(getDatabaseClient(), input);
+  }
+  return designateChangeNoticeImpactTask(getDatabaseClient(), input);
+}
+
+export async function linkAuthorizedChangeNoticeImpactTask(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  changeNoticeId: string;
+  task: ChangeNoticeImpactTaskRelationshipRequest;
+}): Promise<ChangeNoticeImpactTaskRelationshipResult> {
+  return runAuthorizedImpactTaskRelationship(
+    "link",
+    args
+  ) as Promise<ChangeNoticeImpactTaskRelationshipResult>;
+}
+
+export async function unlinkAuthorizedChangeNoticeImpactTask(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  changeNoticeId: string;
+  task: ChangeNoticeImpactTaskRelationshipRequest;
+}): Promise<ChangeNoticeImpactTaskRelationshipResult> {
+  return runAuthorizedImpactTaskRelationship(
+    "unlink",
+    args
+  ) as Promise<ChangeNoticeImpactTaskRelationshipResult>;
+}
+
+export async function designateAuthorizedChangeNoticeImpactTask(args: {
+  client: SupabaseClient<Database>;
+  userId: string;
+  companyId: string;
+  changeNoticeId: string;
+  task: ChangeNoticeImpactTaskRelationshipRequest;
+}): Promise<ChangeNoticeImpactTaskDesignationResult> {
+  return runAuthorizedImpactTaskRelationship(
+    "designate",
+    args
+  ) as Promise<ChangeNoticeImpactTaskDesignationResult>;
+}
 
 // Release-lock helpers — gate BOM/BOP mutations on a released (Production)
 // revision. A Production revision is the controlled, released make method;
@@ -333,6 +985,64 @@ export async function requireChangeNoticeChildRoute(
   return null;
 }
 
+// Existing action-task fields have their own lifecycle from workflow operations.
+// This guard owns only status, notes, assignee, and due-date edits; deletion,
+// template reconciliation, and reorder remain on their workflow guards.
+export async function requireChangeNoticeActionTaskEditable(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    changeNoticeId: string;
+    actionTaskId: string;
+  }
+): Promise<{ error: { message: string }; data: null } | null> {
+  const [task, changeNotice] = await Promise.all([
+    client
+      .from("changeOrderActionTask")
+      .select("id, companyId, changeOrderId, taskOrigin")
+      .eq("id", args.actionTaskId)
+      .eq("changeOrderId", args.changeNoticeId)
+      .eq("companyId", args.companyId)
+      .maybeSingle(),
+    client
+      .from("changeOrder")
+      .select("id, companyId, status")
+      .eq("id", args.changeNoticeId)
+      .eq("companyId", args.companyId)
+      .maybeSingle()
+  ]);
+
+  if (
+    task.error ||
+    !task.data ||
+    task.data.companyId !== args.companyId ||
+    task.data.changeOrderId !== args.changeNoticeId ||
+    changeNotice.error ||
+    !changeNotice.data ||
+    changeNotice.data.id !== args.changeNoticeId ||
+    changeNotice.data.companyId !== args.companyId
+  ) {
+    return {
+      error: { message: "Could not find editable action task" },
+      data: null
+    };
+  }
+
+  if (
+    !canEditChangeNoticeActionTaskFields(
+      changeNotice.data.status,
+      task.data.taskOrigin
+    )
+  ) {
+    return {
+      error: { message: "This action task is read-only" },
+      data: null
+    };
+  }
+
+  return null;
+}
+
 // The route-level guard: resolves the change notice from the URL, checks the
 // scope, and returns the flashed failure response so all eight mutation routes
 // share one failure contract. Returns null when the route may proceed.
@@ -460,9 +1170,16 @@ export async function applyChangeNotice(
     changeNoticeId: string;
     userId: string;
     companyId: string;
+    fromStatus: (typeof changeNoticeStatus)[number];
   }
 ): Promise<{ data: { id: string } | null; error: { message: string } | null }> {
-  const { changeNoticeId, userId, companyId } = args;
+  const { changeNoticeId, userId, companyId, fromStatus } = args;
+  if (fromStatus !== "Implementation") {
+    return {
+      data: null,
+      error: { message: "Change notice must be at Implementation to apply" }
+    };
+  }
 
   const cn = await client
     .from("changeOrder")

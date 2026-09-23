@@ -453,6 +453,16 @@ export const path = {
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}/action`),
+    changeNoticeActionAssignee: (id: string, actionId: string) =>
+      generatePath(
+        `${x}/items/change-notice/${id}/action/${actionId}/assignee`
+      ),
+    changeNoticeActionDueDate: (id: string, actionId: string) =>
+      generatePath(
+        `${x}/items/change-notice/${id}/action/${actionId}/due-date`
+      ),
+    changeNoticeActionNotes: (id: string, actionId: string) =>
+      generatePath(`${x}/items/change-notice/${id}/action/${actionId}/notes`),
     changeNoticeActionOrder: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}/action/order`),
     changeNoticeActionStatus: (id: string, actionId: string) =>
@@ -489,6 +499,24 @@ export const path = {
       ),
     changeNoticeDetails: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}/details`),
+    changeNoticeImpact: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact`),
+    changeNoticeImpactBulk: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/bulk`),
+    changeNoticeImpactDecision: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/decision`),
+    changeNoticeImpactHistory: (id: string, decisionId: string) =>
+      generatePath(
+        `${x}/items/change-notice/${id}/impact/history/${decisionId}`
+      ),
+    changeNoticeImpactTaskCreate: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/task/create`),
+    changeNoticeImpactTaskDesignate: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/task/designate`),
+    changeNoticeImpactTaskLink: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/task/link`),
+    changeNoticeImpactTaskUnlink: (id: string) =>
+      generatePath(`${x}/items/change-notice/${id}/impact/task/unlink`),
     changeNoticeRequiredAction: (id: string) =>
       generatePath(`${x}/items/change-notice-actions/${id}`),
     // Change Notice Actions config (the changeNoticeRequiredAction default-action

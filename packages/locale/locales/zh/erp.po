@@ -68,6 +68,18 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当�
 msgid "{0, plural, one {# row links to data outside this company, so it can't be backed up. Skipping it backs up everything else.} other {# rows link to data outside this company, so they can't be backed up. Skipping them backs up everything else.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。跳过它可以备份其他所有内容。} other {# 行链接到该公司外的数据，无法备份。跳过它们可以备份其他所有内容。}}"
 
+#. placeholder {0}: bulkSuccess.noOpCount
+msgid "{0, plural, one {# target was already current.} other {# targets were already current.}}"
+msgstr "{0, plural, one {# 个目标已是最新状态。} other {# 个目标已是最新状态。}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target;} other {Impact updated for # targets;}}"
+msgstr "{0, plural, one {已更新 # 个目标的影响；} other {已更新 # 个目标的影响；}}"
+
+#. placeholder {0}: bulkSuccess.appliedCount
+msgid "{0, plural, one {Impact updated for # target.} other {Impact updated for # targets.}}"
+msgstr "{0, plural, one {已更新 # 个目标的影响。} other {已更新 # 个目标的影响。}}"
+
 #. placeholder {0}: open.length
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
@@ -209,8 +221,13 @@ msgid "{0} scrapped"
 msgstr "{0} 报废"
 
 #. placeholder {0}: selected.length
+#. placeholder {0}: selectedKeys.size
 msgid "{0} selected"
 msgstr "{0} 已选择"
+
+#. placeholder {0}: candidates.length
+msgid "{0} selected targets"
+msgstr "已选择 {0} 个目标"
 
 #. placeholder {0}: suggestions.length
 msgid "{0} suggested batches"
@@ -943,6 +960,9 @@ msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
 
+msgid "A selected row is no longer readable in the current workspace. Refresh and review the selection."
+msgstr "当前工作区中已无法读取一个所选行。请刷新并检查所选内容。"
+
 msgid "A separate schedule for tax reporting when tax rules require a method different from book depreciation."
 msgstr "当税收规则要求与账面折旧不同的方法时，用于税收报告的单独税收折旧方案。"
 
@@ -1231,6 +1251,9 @@ msgstr "ACS URL"
 
 msgid "Action"
 msgstr "操作"
+
+msgid "Action required"
+msgstr "需要采取措施"
 
 msgid "Action Status"
 msgstr "操作状态"
@@ -1604,6 +1627,12 @@ msgstr "推进到{nextStatus}"
 
 msgid "Advanced"
 msgstr "高级"
+
+msgid "Affected item"
+msgstr "受影响的物料"
+
+msgid "Affected item details unavailable."
+msgstr "无法获取受影响物料的详细信息。"
 
 msgid "Affected item not found."
 msgstr "未找到受影响的项目。"
@@ -2023,6 +2052,10 @@ msgstr "应用建议"
 
 msgid "Apply To"
 msgstr "应用于"
+
+#. placeholder {0}: candidates.length
+msgid "Apply to {0}"
+msgstr "应用于 {0}"
 
 msgid "Apply to invoice"
 msgstr "应用到发票"
@@ -2611,6 +2644,36 @@ msgstr "装配说明"
 msgid "Assembly:"
 msgstr "装配体："
 
+msgid "Assess"
+msgstr "评估"
+
+msgid "Assess operational impact"
+msgstr "评估运营影响"
+
+msgid "Assessment coverage"
+msgstr "评估覆盖范围"
+
+msgid "Assessment coverage needs attention"
+msgstr "评估覆盖范围需要关注"
+
+msgid "Assessment created"
+msgstr "已创建评估"
+
+msgid "Assessment reassessed"
+msgstr "已重新评估"
+
+msgid "Assessment reopened"
+msgstr "评估已重新打开"
+
+msgid "Assessment resolved"
+msgstr "评估已解决"
+
+msgid "Assessment snapshot"
+msgstr "评估快照"
+
+msgid "Assessment snapshot · changed"
+msgstr "评估快照 · 已变更"
+
 msgid "Asset"
 msgstr "资产"
 
@@ -2675,6 +2738,9 @@ msgid "Assigned to Me"
 msgstr "已分配给我"
 
 msgid "Assignee"
+msgstr "经办人"
+
+msgid "Assignees"
 msgstr "经办人"
 
 msgid "Assignment"
@@ -2821,6 +2887,12 @@ msgstr "扫描看板时自动下达工单"
 msgid "Automatically start the job when the kanban is scanned"
 msgstr "当扫描看板时自动启动作业"
 
+msgid "Availability"
+msgstr "可用性"
+
+msgid "Availability states"
+msgstr "可用状态"
+
 msgid "available"
 msgstr "可用"
 
@@ -2854,6 +2926,9 @@ msgstr "等待审批"
 
 msgid "Back"
 msgstr "返回"
+
+msgid "Back to Change Notice"
+msgstr "返回变更通知"
 
 msgid "Back to traceability"
 msgstr "返回可追溯性"
@@ -2992,6 +3067,9 @@ msgstr "待退货的生产批次"
 
 msgid "Batching"
 msgstr "分批"
+
+msgid "Before"
+msgstr "之前"
 
 msgid "Beginning"
 msgstr "开始"
@@ -3339,6 +3417,9 @@ msgstr "已取消"
 msgid "Cancelled"
 msgstr "已取消"
 
+msgid "Cancelled · New Impact assessment is locked. Existing operational follow-up remains available."
+msgstr "已取消 · 新的影响评估已锁定。现有运营跟进仍可用。"
+
 msgid "Cannot add parameters to unsaved operation"
 msgstr "无法向未保存的操作添加参数"
 
@@ -3383,6 +3464,9 @@ msgstr "产能预留"
 
 msgid "Caption"
 msgstr "标题"
+
+msgid "Captured snapshot"
+msgstr "已采集的快照"
 
 msgid "Carbon"
 msgstr "Carbon"
@@ -3561,6 +3645,9 @@ msgstr "更改类型"
 
 msgid "Changed By"
 msgstr "更改者"
+
+msgid "Changed since assessment"
+msgstr "自评估后已变更"
 
 msgid "Changes"
 msgstr "更改"
@@ -3743,6 +3830,12 @@ msgstr "结余"
 msgid "Closure blocked"
 msgstr "关闭被阻止"
 
+msgid "Closure evidence"
+msgstr "结案证据"
+
+msgid "Closure evidence for every selected target"
+msgstr "每个所选目标的结案证据"
+
 msgid "Cloud, or your self-hosted environment."
 msgstr "云端或您自托管的环境。"
 
@@ -3906,6 +3999,15 @@ msgstr "计算于 {0}"
 msgid "Computed At"
 msgstr "计算于"
 
+msgid "Conclusion"
+msgstr "结论"
+
+msgid "Conclusion corrected"
+msgstr "结论已更正"
+
+msgid "Conclusion for every selected target"
+msgstr "每个所选目标的结论"
+
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "精简损益表，含利润率和关键小计"
 
@@ -4037,6 +4139,12 @@ msgstr "确认库存盘点"
 
 msgid "Confirm Mapping"
 msgstr "确认映射"
+
+msgid "Confirm no purchasing intervention remains"
+msgstr "确认不再需要采购干预"
+
+msgid "Confirm no purchasing intervention remains for every selected target"
+msgstr "确认每个所选目标均不再需要采购干预"
 
 msgid "Confirm Password"
 msgstr "确认密码"
@@ -4434,6 +4542,9 @@ msgstr "纠正"
 msgid "Correction {correctionNumber}"
 msgstr "修正 {correctionNumber}"
 
+msgid "Correction rationale"
+msgstr "更正理由"
+
 msgid "Corrections"
 msgstr "纠正"
 
@@ -4516,7 +4627,7 @@ msgstr "无法读取文件：{0}"
 #. placeholder {0}: d.failed.length
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not release {0}: {1}"
-msgstr "无法下达{0}：{1}"
+msgstr "无法下达 {0}：{1}"
 
 msgid "Could not save"
 msgstr "无法保存"
@@ -4571,6 +4682,12 @@ msgstr "国家代码"
 
 msgid "Coverage"
 msgstr "覆盖范围"
+
+msgid "Coverage failed. This is not an empty or safe result; refresh after the source is available."
+msgstr "覆盖范围检查失败。此结果不是空结果，也不是安全结果；源数据可用后请刷新。"
+
+msgid "Coverage is partial. Counts and source-deletion conclusions are withheld where the scan could not be completed."
+msgstr "覆盖范围不完整。扫描无法完成的部分将不提供计数和源数据删除结论。"
 
 msgid "Create"
 msgstr "创建"
@@ -4650,8 +4767,14 @@ msgstr "创建生产批次"
 msgid "Create Change Notice"
 msgstr "创建变更通知"
 
+msgid "Create follow-up"
+msgstr "创建跟进"
+
 msgid "Create Forecast"
 msgstr "创建预测"
+
+msgid "Create Impact follow-up"
+msgstr "创建影响跟进"
 
 msgid "Create Issue"
 msgstr "创建问题"
@@ -4691,6 +4814,9 @@ msgstr "创建规则"
 
 msgid "Create Supplier Return"
 msgstr "创建供应商退货"
+
+msgid "Create task"
+msgstr "创建任务"
 
 msgid "Create Transfer"
 msgstr "创建转移"
@@ -4938,8 +5064,17 @@ msgstr "当前"
 msgid "Current"
 msgstr "当前"
 
+msgid "Current cause"
+msgstr "当前原因"
+
+msgid "Current conclusion"
+msgstr "当前结论"
+
 msgid "Current Net Book Value:"
 msgstr "当前账面净值："
+
+msgid "Current operational exposure"
+msgstr "当前运营风险暴露程度"
 
 msgid "Current Password"
 msgstr "当前密码"
@@ -4949,6 +5084,21 @@ msgstr "当前预测"
 
 msgid "Current quantity"
 msgstr "当前数量"
+
+msgid "Current source facts are unavailable because the source was deleted."
+msgstr "由于来源已删除，当前来源数据不可用。"
+
+msgid "Current source facts are unavailable."
+msgstr "当前来源数据不可用。"
+
+msgid "Current source facts changed since the stored assessment. Saving will capture a fresh assessment snapshot."
+msgstr "自存储的评估以来，当前来源数据已发生变化。保存将记录新的评估快照。"
+
+msgid "Current source facts had changed since the prior assessment."
+msgstr "自之前的评估以来，当前来源数据已发生变化。"
+
+msgid "Current state"
+msgstr "当前状态"
 
 msgid "Custom"
 msgstr "自定义"
@@ -5321,6 +5471,12 @@ msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库
 
 msgid "Decimal Places"
 msgstr "小数位数"
+
+msgid "Decision"
+msgstr "决策"
+
+msgid "Decisions"
+msgstr "决策"
 
 msgid "Declining balance"
 msgstr "余额递减法"
@@ -5888,6 +6044,12 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Designate"
+msgstr "指定"
+
+msgid "Designate as Impact follow-up"
+msgstr "指定为影响跟进"
+
 msgid "Detail"
 msgstr "详情"
 
@@ -6099,6 +6261,12 @@ msgstr "文档推送发票、账单和付款作为本地提供商文件；其凭
 msgid "Documents you open will show up here for quick access."
 msgstr "您打开的文档将显示在此处以便快速访问。"
 
+msgid "Domain"
+msgstr "领域"
+
+msgid "Domains"
+msgstr "领域"
+
 msgid "Don't Cancel"
 msgstr "不要取消"
 
@@ -6110,6 +6278,9 @@ msgstr "完成"
 
 msgid "Done"
 msgstr "完成"
+
+msgid "Done · Engineering released. Operational assessment remains available."
+msgstr "处理完毕 · 工程已发布。运营评估仍可用。"
 
 msgid "Done when day-to-day runs without us in the room"
 msgstr "完成时日常运营无需我们在场"
@@ -7070,6 +7241,9 @@ msgstr "傍晚，{name}。"
 msgid "Event"
 msgstr "事件"
 
+msgid "Event details are unavailable for this event type."
+msgstr "此事件类型没有可用的事件详情。"
+
 msgid "Event Type"
 msgstr "事件类型"
 
@@ -7084,6 +7258,9 @@ msgstr "每个条件都必须匹配"
 
 msgid "Every in-scope test passes in your configured system, with your data."
 msgstr "您配置的系统中的每项范围内测试都通过了您的数据。"
+
+msgid "Every linked task must be Completed or Skipped before this Impact can be resolved."
+msgstr "解决此影响前，所有已关联任务必须处于“已完成”或“已跳过”状态。"
 
 msgid "Every match"
 msgstr "每次匹配"
@@ -7295,6 +7472,12 @@ msgstr "导出 CSV"
 
 msgid "Export Lines to CSV"
 msgstr "导出行到 CSV"
+
+msgid "Exposure"
+msgstr "风险暴露"
+
+msgid "Exposure states"
+msgstr "风险暴露状态"
 
 msgid "Extended Price"
 msgstr "扩展价格"
@@ -7928,6 +8111,15 @@ msgstr "工装夹具ID"
 msgid "Flags"
 msgstr "标志"
 
+msgid "Follow-up for"
+msgstr "跟进对象"
+
+msgid "Follow-up rationale"
+msgstr "跟进理由"
+
+msgid "Follow-up rationale for every selected target"
+msgstr "每个选定目标的跟进理由"
+
 msgid "for anything. They'll pull in the right person."
 msgstr "用于任何事项。他们会调配合适的人员。"
 
@@ -7973,6 +8165,15 @@ msgstr "频率"
 
 msgid "Frequency"
 msgstr "频率"
+
+msgid "Freshness"
+msgstr "时效性"
+
+msgid "Freshness states"
+msgstr "时效性状态"
+
+msgid "Freshness unavailable"
+msgstr "时效性不可用"
 
 msgid "Friday"
 msgstr "星期五"
@@ -8400,6 +8601,15 @@ msgstr "高"
 msgid "Hints in the first row"
 msgstr "第一行中的提示"
 
+msgid "Historical"
+msgstr "历史"
+
+msgid "Historical causes"
+msgstr "历史原因"
+
+msgid "Historical coverage is incomplete."
+msgstr "历史覆盖范围不完整。"
+
 msgid "Historical data older than what's on the Data Migration Map"
 msgstr "早于数据迁移地图上的数据的历史数据"
 
@@ -8408,6 +8618,12 @@ msgstr "历史汇率（权益）"
 
 msgid "Historical Rate (Equity)"
 msgstr "历史汇率（所有者权益）"
+
+msgid "Historical reference"
+msgstr "历史参考"
+
+msgid "Historical references"
+msgstr "历史参考记录"
 
 msgid "History"
 msgstr "历史记录"
@@ -8685,6 +8901,24 @@ msgstr "III（加严检验）"
 msgid "Impact"
 msgstr "影响"
 
+msgid "Impact assessment changed while you were editing."
+msgstr "编辑期间影响评估发生了变化。"
+
+msgid "Impact event"
+msgstr "影响事件"
+
+msgid "Impact follow-up"
+msgstr "影响跟进"
+
+msgid "Impact history"
+msgstr "影响历史记录"
+
+msgid "Impact task could not be created."
+msgstr "无法建立影响任务。"
+
+msgid "Impact task could not be linked."
+msgstr "无法关联影响任务。"
+
 msgid "Imperial"
 msgstr "英制"
 
@@ -8832,6 +9066,9 @@ msgstr "间接原材料及服务"
 
 msgid "Indirect Materials & Services (default)"
 msgstr "间接原材料及服务（默认）"
+
+msgid "Informational context only"
+msgstr "仅供信息参考"
 
 msgid "Infrastructure"
 msgstr "基础设施"
@@ -9238,6 +9475,9 @@ msgstr "物品"
 msgid "Item / Location"
 msgstr "物品 / 位置"
 
+msgid "Item details unavailable"
+msgstr "物料详细信息不可用"
+
 msgid "Item filters"
 msgstr "项目筛选器"
 
@@ -9334,6 +9574,9 @@ msgstr "工作地点"
 msgid "Job make method"
 msgstr "工单制造方法"
 
+msgid "Job Material"
+msgstr "工单物料"
+
 msgid "Job Materials"
 msgstr "工单物料"
 
@@ -9354,6 +9597,9 @@ msgstr "工作优先级"
 
 msgid "Job readable"
 msgstr "工作可读性"
+
+msgid "Job status"
+msgstr "工单状态"
 
 msgid "Job Traveler"
 msgstr "工单流转卡"
@@ -9393,7 +9639,7 @@ msgid "Journals dated on or before this date are treated as locked. Merged with 
 msgstr "在此日期或之前日期的凭证被视为已锁定。当两者都存在时，与提供商报告的锁定日期合并。"
 
 msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "跳转到详情页面中的某个分区（同样的修饰符 + 分区字母）"
+msgstr "跳转到详情页中的某个分区（相同修饰键+分区字母）"
 
 msgid "Just one"
 msgstr "仅一个"
@@ -9730,6 +9976,9 @@ msgstr "关联采购订单"
 msgid "Link a sales order"
 msgstr "关联销售订单"
 
+msgid "Link existing task"
+msgstr "关联现有任务"
+
 msgid "Link Jira Issue"
 msgstr "关联 Jira 问题"
 
@@ -9738,6 +9987,9 @@ msgstr "关联 Linear 问题"
 
 msgid "link outside company"
 msgstr "公司外的链接"
+
+msgid "Link task"
+msgstr "关联任务"
 
 msgid "Link this Carbon customer to one of them, or create a separate Stripe customer."
 msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe 客户。"
@@ -9755,6 +10007,12 @@ msgstr "关联问题"
 
 msgid "Linked PO"
 msgstr "关联采购订单"
+
+msgid "Linked tasks"
+msgstr "已关联任务"
+
+msgid "Linking preserves the task's existing origin and status. It does not resolve this Impact decision."
+msgstr "关联会保留任务现有的来源和状态。它不会解决此项影响决策。"
 
 msgid "List Options"
 msgstr "列表选项"
@@ -10806,6 +11064,9 @@ msgstr "新字段"
 msgid "New Fixed Asset"
 msgstr "新固定资产"
 
+msgid "New follow-up rationale"
+msgstr "新建后续跟进理由"
+
 msgid "New Gauge"
 msgstr "新建量具"
 
@@ -11109,6 +11370,9 @@ msgstr "没有账户与您的搜索匹配"
 msgid "No action needed"
 msgstr "无需操作"
 
+msgid "No action required"
+msgstr "无需采取行动"
+
 msgid "No actions found."
 msgstr "未找到操作。"
 
@@ -11126,9 +11390,6 @@ msgstr "没有启用的报价单"
 
 msgid "No addresses found"
 msgstr "未找到地址"
-
-msgid "No affected items to assess."
-msgstr "没有要评估的受影响物料。"
 
 msgid "No affected items."
 msgstr "没有受影响的物料。"
@@ -11182,6 +11443,9 @@ msgstr "还没有子句。使用上面的添加子句。"
 msgid "No comments yet. Be the first to add a comment."
 msgstr "还没有评论。成为第一个添加评论的人。"
 
+msgid "No complete current result is available."
+msgstr "当前没有完整结果可用。"
+
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
 
@@ -11196,6 +11460,12 @@ msgstr "未找到成本历史记录"
 
 msgid "No credits yet"
 msgstr "尚无信用"
+
+msgid "No current operational exposure is available."
+msgstr "当前没有可用的运营影响记录。"
+
+msgid "No current snapshot is needed for this historical reference."
+msgstr "对于此历史参考，无需当前快照。"
 
 msgid "No Data"
 msgstr "无数据"
@@ -11232,6 +11502,9 @@ msgstr "此项目没有可编辑的属性。"
 
 msgid "No eligible operations"
 msgstr "没有符合条件的操作"
+
+msgid "No eligible tasks are available to link."
+msgstr "没有可供关联的符合条件的任务。"
 
 msgid "No employees assigned this week"
 msgstr "本周没有分配员工"
@@ -11284,8 +11557,17 @@ msgstr "没有分组通知"
 msgid "No groups assigned"
 msgstr "没有已分配的组"
 
+msgid "No historical references are available."
+msgstr "没有可用的历史参考。"
+
+msgid "No history is recorded for this assessment."
+msgstr "此评估没有历史记录。"
+
 msgid "No image"
 msgstr "没有图像"
+
+msgid "No Impact rows match the current search and filters."
+msgstr "当前搜索和筛选条件没有匹配的影响行。"
 
 msgid "No inspection plans"
 msgstr "无检验计划"
@@ -11304,6 +11586,9 @@ msgstr "此处尚无物料库存活动。"
 
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
+
+msgid "No Jobs or Job Materials are available."
+msgstr "没有可用的工单或工单物料。"
 
 msgid "No jobs were created"
 msgstr "没有创建工单"
@@ -11329,6 +11614,9 @@ msgstr "未找到位置。"
 msgid "No logo uploaded"
 msgstr "未上传徽标"
 
+msgid "No longer in current scope"
+msgstr "不再属于当前范围"
+
 msgid "No matches"
 msgstr "没有匹配项"
 
@@ -11340,6 +11628,9 @@ msgstr "无匹配项。输入内容以创建一个。"
 
 msgid "No matching bins"
 msgstr "没有匹配的料箱"
+
+msgid "No matching loaded Impact rows are visible. Coverage is incomplete, so this is not a complete result."
+msgstr "没有可见的匹配已加载影响行。覆盖范围不完整，因此这不是完整结果。"
 
 msgid "No matching operations"
 msgstr "没有匹配的操作"
@@ -11453,8 +11744,14 @@ msgstr "此操作尚未记录任何生产事件"
 msgid "No production recorded yet."
 msgstr "还没有生产记录。"
 
+msgid "No Purchase Order lines are available."
+msgstr "没有可用的采购订单行。"
+
 msgid "No purchases in this period"
 msgstr "此期间无采购"
+
+msgid "No purchasing intervention remains"
+msgstr "不再需要采购干预"
 
 msgid "No Quote"
 msgstr "不报价"
@@ -11552,6 +11849,9 @@ msgstr "还没有供应商"
 msgid "No sync operations yet"
 msgstr "还没有同步操作"
 
+msgid "No task linked. Keep a written rationale describing the follow-up path."
+msgstr "未关联任务。请保留书面理由，说明后续跟进路径。"
+
 msgid "No time entries for this week"
 msgstr "本周没有时间条目"
 
@@ -11566,6 +11866,9 @@ msgstr "未分配培训"
 
 msgid "No transactions in this period"
 msgstr "此期间无交易"
+
+msgid "No unavailable source rows are available."
+msgstr "没有标记为不可用的来源行。"
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
@@ -11602,6 +11905,12 @@ msgstr "此地点没有工作中心"
 
 msgid "No work centers exist"
 msgstr "没有工作中心存在"
+
+msgid "No-action reason"
+msgstr "无需采取行动的理由"
+
+msgid "No-action reason for every selected target"
+msgstr "每个选定目标的无需采取行动理由"
 
 msgid "Nom"
 msgstr "标称值"
@@ -11651,6 +11960,9 @@ msgstr "正常"
 msgid "Not a table but a general-ledger balance: cost accumulates as job materials are issued and clears when the job is received to stock."
 msgstr "不是表，而是总账余额：成本随着工单物料的领料而累积，工单收到库存时清空。"
 
+msgid "Not affected after review"
+msgstr "评审后未受影响"
+
 msgid "Not certified"
 msgstr "未认证"
 
@@ -11671,9 +11983,6 @@ msgstr "未到达"
 
 msgid "Not recorded"
 msgstr "未记录"
-
-msgid "Not referenced anywhere yet."
-msgstr "还没有在任何地方被引用。"
 
 msgid "Not Required"
 msgstr "不需要"
@@ -11892,6 +12201,9 @@ msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，
 msgid "One or more quantities cannot meet this date"
 msgstr "一个或多个数量无法满足此日期"
 
+msgid "One or more selected rows are no longer eligible for a bulk assessment. Refresh and review the selection."
+msgstr "一个或多个选定行已不再符合批量评估条件。请刷新并重新检查所选内容。"
+
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己的状态和属性，例如有效期。"
 
@@ -11985,6 +12297,9 @@ msgstr "打开日期"
 msgid "Open Dispatches"
 msgstr "未结维护工单"
 
+msgid "Open Impact workspace"
+msgstr "打开影响工作区"
+
 msgid "Open in Carbon"
 msgstr "在 Carbon 中打开"
 
@@ -12047,6 +12362,9 @@ msgstr "未结销售订单"
 
 msgid "Open Scheduled"
 msgstr "打开 Scheduled"
+
+msgid "Open source"
+msgstr "打开来源"
 
 msgid "Open task details"
 msgstr "打开任务详情"
@@ -12129,6 +12447,9 @@ msgstr "操作类型"
 
 msgid "Operation unit cost"
 msgstr "操作单位成本"
+
+msgid "Operational Impact"
+msgstr "运营影响"
 
 msgid "Operations"
 msgstr "工序"
@@ -12264,6 +12585,9 @@ msgstr "订单"
 msgid "Orders submitted"
 msgstr "订单已提交"
 
+msgid "Ordinary tasks are read-only after Done."
+msgstr "普通任务在完成后为只读。"
+
 msgid "Origin"
 msgstr "来源"
 
@@ -12305,6 +12629,9 @@ msgstr "输出"
 
 msgid "Output never outlasts its raw materials. Falls back to the fixed duration when no input has an expiry date."
 msgstr "产出的有效期永远不会超过其原材料的有效期。当没有输入具有有效期时，回退到固定期限。"
+
+msgid "Outside effectivity"
+msgstr "不在生效日期范围内"
 
 msgid "Outside operation"
 msgstr "间接费用差异"
@@ -12882,6 +13209,9 @@ msgstr "采购订单号"
 msgid "PO PDF"
 msgstr "采购订单 PDF"
 
+msgid "PO status"
+msgstr "采购订单状态"
+
 msgid "Policy"
 msgstr "政策"
 
@@ -12980,6 +13310,9 @@ msgstr "预付款（默认）"
 
 msgid "Prepayments (default)"
 msgstr "预付款（默认）"
+
+msgid "Present"
+msgstr "存在"
 
 msgid "Present Week"
 msgstr "本周"
@@ -13158,6 +13491,12 @@ msgstr "生产物料"
 msgid "Produced item"
 msgstr "生产物料"
 
+msgid "Producing Job"
+msgstr "生产工单"
+
+msgid "Producing Jobs"
+msgstr "生产工单"
+
 msgid "Product issues during hypercare"
 msgstr "超级护理期间的产品问题"
 
@@ -13273,6 +13612,9 @@ msgstr "预测"
 msgid "Projects"
 msgstr "项目"
 
+msgid "Promised"
+msgstr "承诺日期"
+
 msgid "Promised Date"
 msgstr "承诺日期"
 
@@ -13302,6 +13644,15 @@ msgstr "保护您公司的数据"
 
 msgid "Prove ownership of each email domain with a DNS TXT record before it can route SAML SSO sign-ins. Add the record at DNS host, then click Verify — only verified domains participate in single sign-on."
 msgstr "在路由 SAML SSO 登录前，通过 DNS TXT 记录证明每个电子邮件域的所有权。在 DNS 主机上添加记录，然后单击验证 — 仅经过验证的域参与单点登录。"
+
+msgid "Provenance"
+msgstr "来源"
+
+msgid "Provenance ended"
+msgstr "来源关系已结束"
+
+msgid "Provenance started"
+msgstr "来源追溯已开始"
 
 msgid "Provide process knowledge and inputs"
 msgstr "提供流程知识和输入"
@@ -13394,7 +13745,13 @@ msgstr "采购订单审批规则"
 msgid "Purchase Order ID"
 msgstr "采购订单ID"
 
+msgid "Purchase Order line"
+msgstr "采购订单行"
+
 msgid "Purchase Order Line"
+msgstr "采购订单行"
+
+msgid "Purchase Order lines"
 msgstr "采购订单行"
 
 msgid "Purchase Order Location"
@@ -13753,6 +14110,9 @@ msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空
 msgid "Ratio"
 msgstr "比率"
 
+msgid "Rationale"
+msgstr "依据"
+
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -13831,6 +14191,12 @@ msgstr "跳过原因（必填）"
 msgid "Reasons"
 msgstr "原因"
 
+msgid "Reassess"
+msgstr "重新评估"
+
+msgid "Reassess operational impact"
+msgstr "重新评估运营影响"
+
 msgid "Reassign specific tracked entities from this row to another disposition row."
 msgstr "将此行中的特定追踪实体重新分配到另一个处置行。"
 
@@ -13845,6 +14211,9 @@ msgstr "重新计算中…"
 
 msgid "Receipt"
 msgstr "收据"
+
+msgid "Receipt complete"
+msgstr "收货已完成"
 
 msgid "Receipt ID"
 msgstr "收据ID"
@@ -13863,6 +14232,9 @@ msgstr "收货要求日期"
 
 msgid "Receipts"
 msgstr "收据"
+
+msgid "Receipts, inspections, sales, shipments, and other related records are outside the current Impact assessment scope. They do not count toward assessment totals or offer decision controls here."
+msgstr "收货、检验、销售、发货及其他相关记录不在当前影响评估范围内。这些记录不会计入评估总数，也不会在此处提供决策按钮。"
 
 msgid "Receipts, shipments, sales invoices, purchase invoices, payments, and credit/debit memos that are still Draft or Pending must be posted or voided — both documents dated in this period and undated documents that would receive a date in it when posted. Until they post, their amounts aren't in the general ledger, so the period would be understated."
 msgstr "还处于草稿或待处理状态的收货、发货、销售发票、采购发票、付款以及借方/贷方备忘录必须过账或作废——包括本期日期的文件和未日期但过账时会获得本期日期的文件。在它们过账之前，它们的金额不在总账中，因此本期将被低估。"
@@ -13921,6 +14293,9 @@ msgstr "已收货数量"
 
 msgid "Received quantity not yet credited. The credit memo is created as a draft."
 msgstr "已收到的数量尚未进行贷项。贷项通知单已创建为草稿。"
+
+msgid "Received to inventory"
+msgstr "已收货入库"
 
 msgid "Receiving Location"
 msgstr "收货地点"
@@ -14065,7 +14440,7 @@ msgstr "下达"
 
 #. placeholder {0}: releasable.length
 msgid "Release {0} batches"
-msgstr "下达{0}个生产批次"
+msgstr "下达 {0} 个生产批次"
 
 msgid "Release Batch"
 msgstr "下达生产批次"
@@ -14092,7 +14467,7 @@ msgstr "已下达"
 
 #. placeholder {0}: d.released
 msgid "Released {0} batches"
-msgstr "已下达{0}个生产批次"
+msgstr "已下达 {0} 个生产批次"
 
 msgid "Released date"
 msgstr "下达日期"
@@ -14437,8 +14812,29 @@ msgstr "残值"
 msgid "Residual Value %"
 msgstr "残值 %"
 
+msgid "Resolution is unavailable until linked task coverage is complete."
+msgstr "在关联任务覆盖完成前，无法执行解决操作。"
+
+msgid "Resolution note"
+msgstr "解决备注"
+
+msgid "Resolve"
+msgstr "解决"
+
+msgid "Resolve after every linked task is Completed or Skipped."
+msgstr "所有关联任务均为“已完成”或“已跳过”后解决。"
+
+msgid "Resolve after linked task coverage is complete."
+msgstr "在关联任务覆盖完成后解决。"
+
+msgid "Resolve operational impact"
+msgstr "解决运营影响"
+
 msgid "Resolve these before completing the NCR: every row must have a non-Pending disposition, and its linked entity quantities must match the row quantity."
 msgstr "在完成NCR之前解决这些问题：每一行必须有一个非待处理的处置，其关联实体数量必须与行数量匹配。"
+
+msgid "Resolved"
+msgstr "已解决"
 
 msgid "Resolved Price"
 msgstr "已解决价格"
@@ -14497,6 +14893,9 @@ msgstr "正在恢复文件"
 
 msgid "restoring…"
 msgstr "恢复中…"
+
+msgid "Restricted"
+msgstr "受限"
 
 msgid "Result"
 msgstr "结果"
@@ -14636,8 +15035,23 @@ msgstr "评审"
 msgid "Review & create"
 msgstr "查看和创建"
 
+msgid "Review bulk Impact assessment"
+msgstr "评审批量影响评估"
+
+msgid "Review current purchasing and production exposure with source coverage, provenance, and freshness details."
+msgstr "评审当前采购和生产影响范围，以及来源覆盖、来源追溯和数据时效性详情。"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
+
+msgid "Review rationale"
+msgstr "评审依据"
+
+msgid "Review rationale for every selected target"
+msgstr "每个选定目标的评审依据"
+
+msgid "Review selected"
+msgstr "查看所选项"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "评审期间的资产负债表和利润表，并确认数字正确。这是手动签核——一旦您评审完毕即标记为完成。"
@@ -15048,6 +15462,9 @@ msgstr "保存并覆盖"
 msgid "Save applications"
 msgstr "保存应用"
 
+msgid "Save assessment"
+msgstr "保存评估"
+
 msgid "Save changes"
 msgstr "保存更改"
 
@@ -15062,6 +15479,9 @@ msgstr "保存方法"
 
 msgid "Save Rate"
 msgstr "保存汇率"
+
+msgid "Save reassessment"
+msgstr "保存重新评估"
 
 msgid "Save the form you're editing"
 msgstr "保存您正在编辑的表单"
@@ -15894,7 +16314,7 @@ msgid "Shipped"
 msgstr "已发货"
 
 msgid "Shipped lines for this customer with quantity remaining to return"
-msgstr "该客户已发货行项中剩余待退货的数量"
+msgstr "该客户仍有数量待退货的已发货行"
 
 msgid "Shipped Qty"
 msgstr "已发货数量"
@@ -16182,6 +16602,9 @@ msgstr "解决方案工程师"
 msgid "Some lines extracted from the PDF could not be automatically mapped to your inventory items. Review and map each line below."
 msgstr "从 PDF 提取的某些行无法自动映射到你的库存物料。查看并映射下面的每一行。"
 
+msgid "Some linked task metadata is unavailable. Decision state is shown independently and has not been inferred from task status. Task details are omitted where linked-task coverage could not be read."
+msgstr "部分关联任务元数据不可用。决策状态会独立显示，不会根据任务状态推断。对于无法读取关联任务覆盖情况的记录，将省略任务详细信息。"
+
 msgid "Some records won't come back. Type <0>{CONFIRM_WORD}</0> to continue."
 msgstr "某些记录不会回来。输入 <0>{CONFIRM_WORD}</0> 继续。"
 
@@ -16221,6 +16644,9 @@ msgstr "来源分析"
 msgid "Source Company"
 msgstr "源公司"
 
+msgid "Source deleted"
+msgstr "来源已删除"
+
 msgid "Source document"
 msgstr "源单据"
 
@@ -16233,6 +16659,9 @@ msgstr "源单据ID"
 msgid "Source document readable"
 msgstr "源单据可读"
 
+msgid "Source identities are retained only where they were authorized; decision-relevant facts are withheld until coverage is restored."
+msgstr "来源标识仅在获得授权时保留；在覆盖恢复前，不提供与决策相关的事实。"
+
 msgid "Source Item"
 msgstr "源项目"
 
@@ -16244,6 +16673,9 @@ msgstr "源列表"
 
 msgid "Source Method"
 msgstr "源方法"
+
+msgid "Source record unavailable"
+msgstr "来源记录不可用"
 
 msgid "Source types"
 msgstr "源类型"
@@ -16538,6 +16970,9 @@ msgstr "在此物料上存储固定天数。在收到或创建每个生产批次
 msgid "Store a fixed number of days on this item. Expiry start date is set on each batch or serial when it's received."
 msgstr "在此物料上存储固定天数。在收到每个生产批次或序列号时设置有效期开始日期。"
 
+msgid "Stored assessment snapshot is unavailable."
+msgstr "已存储的评估快照不可用。"
+
 msgid "Straight line"
 msgstr "直线法"
 
@@ -16799,6 +17234,9 @@ msgstr "供应商退货明细行"
 msgid "Supplier Return Lines"
 msgstr "供应商退货明细行"
 
+msgid "Supplier return, replacement, credit, and communication interventions have been reviewed."
+msgstr "供应商退货、替换、贷项和沟通干预措施均已评审。"
+
 msgid "Supplier Returns"
 msgstr "供应商退货"
 
@@ -16843,6 +17281,9 @@ msgstr "供应与需求"
 
 msgid "Support"
 msgstr "支持"
+
+msgid "Supported purchasing and production targets that can receive an independent Impact assessment."
+msgstr "支持进行独立影响评估的采购和生产目标。"
 
 #. placeholder {0}: supportedModelTypes.join(", ")
 msgid "Supports {0} files"
@@ -16977,6 +17418,33 @@ msgstr "目标版本"
 msgid "Task"
 msgstr "任务"
 
+msgid "Task designated as Impact follow-up"
+msgstr "已指定为影响跟进任务"
+
+msgid "Task details unavailable."
+msgstr "任务详细信息不可用。"
+
+msgid "Task filters use incomplete linked-task metadata. Missing tasks or assignees are not treated as absent."
+msgstr "任务筛选器使用不完整的关联任务元数据。缺失的任务或经办人不会被视为不存在。"
+
+msgid "Task linked"
+msgstr "任务已关联"
+
+msgid "Task name"
+msgstr "任务名称"
+
+msgid "Task origin: Impact follow-up"
+msgstr "任务来源：影响跟进"
+
+msgid "Task status"
+msgstr "任务状态"
+
+msgid "Task statuses"
+msgstr "任务状态"
+
+msgid "Task unlinked"
+msgstr "任务已解除关联"
+
 msgid "tasks"
 msgstr "任务"
 
@@ -17072,6 +17540,9 @@ msgstr "温度"
 
 msgid "Template ID"
 msgstr "模板 ID"
+
+msgid "Template-owned"
+msgstr "模板所属"
 
 msgid "Templates"
 msgstr "模板"
@@ -17319,6 +17790,9 @@ msgstr "该部门汇总用于报告和人员数量层级的部门；对于顶级
 
 msgid "The early hours, {name}."
 msgstr "早晨时刻，{name}。"
+
+msgid "The editor was closed and the workspace was refreshed. Review the current state before submitting again."
+msgstr "编辑器已关闭，工作区已刷新。重新提交前，请检查当前状态。"
 
 msgid "The eight-disciplines quality method, modeled with the nonconformance workflow's tasks rather than hard-coded."
 msgstr "八大纪律质量方法，通过不合格工作流的任务建模，而非硬编码。"
@@ -17740,6 +18214,12 @@ msgstr "用于在其使用年限内分摊此资产成本的排程（直线法、
 msgid "The scheduler uses the first rule below that applies, then subtracts downtime and staffing."
 msgstr "调度程序应用以下适用的第一条规则，然后减去停机时间和人员配置。"
 
+msgid "The selected rows do not share an available conclusion. Adjust the selection before reviewing it."
+msgstr "所选行没有共同的结论可供选择。请调整选择后再查看。"
+
+msgid "The server will recheck every target and reject the whole batch if any source fact, eligibility rule, or decision revision changed after this preview."
+msgstr "服务器将重新检查每个目标；如果在此预览之后任何源事实、资格规则或决策修订版发生变化，将拒绝整个生产批次。"
+
 msgid "The shelves and bins where stock physically sits"
 msgstr "库存实际存放的货架和料箱"
 
@@ -17974,6 +18454,9 @@ msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
+msgid "These references remain traceable but do not create a new Unassessed obligation."
+msgstr "这些引用仍可追溯，但不会产生新的未评估义务。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
@@ -18174,6 +18657,9 @@ msgstr "这个销售订单有关联的工单。选择如何处理它们。"
 
 msgid "This sales order has lines that require jobs to be created"
 msgstr "这个销售订单有需要创建工单的行。"
+
+msgid "This source domain is restricted for your current permissions. No target identities or source facts are shown."
+msgstr "此源域受您当前权限限制。不会显示任何目标标识或源事实。"
 
 msgid "This station runs ability-gated work — it only runs while a qualified operator is on shift; operators assigned on the manning board further shape available labor."
 msgstr "此工作中心运行需要特定技能的工作 — 仅当具有资格的操作员值班时才运行；人员配置委员会上指定的操作员进一步形成可用的人工。"
@@ -18734,11 +19220,20 @@ msgstr "未应用："
 msgid "Unapproved Supplier"
 msgstr "未批准的供应商"
 
+msgid "Unassessed"
+msgstr "未评估"
+
 msgid "Unassign rule"
 msgstr "取消分配规则"
 
 msgid "Unassigned"
 msgstr "未分配"
+
+msgid "Unavailable"
+msgstr "不可用"
+
+msgid "Unavailable source rows"
+msgstr "不可用的源行"
 
 msgid "Unballoon"
 msgstr "取消气球标注"
@@ -18839,6 +19334,9 @@ msgstr "解除退货与采购订单的关联？"
 msgid "Unlink RMA from sales order?"
 msgstr "解除 RMA 与销售订单的关联？"
 
+msgid "Unlink task"
+msgstr "解除任务关联"
+
 msgid "Unlock"
 msgstr "解锁"
 
@@ -18856,6 +19354,9 @@ msgstr "未映射的值"
 
 msgid "Unmatched"
 msgstr "未匹配"
+
+msgid "Unnamed task"
+msgstr "未命名任务"
 
 msgid "Unpick"
 msgstr "取消拣选"
@@ -19112,6 +19613,9 @@ msgstr "使用不同的电子邮件"
 
 msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
+
+msgid "Use No action required only if the earlier conclusion was incorrect and intervention was never required. If intervention occurred and closed the consequence, use Resolve."
+msgstr "仅当之前的结论不正确且从未需要干预时，才使用“无需采取行动”。如果已进行干预并解决了后果，请使用“解决”。"
 
 msgid "Used In"
 msgstr "用于"
@@ -19901,9 +20405,6 @@ msgstr "此项目的新库存在收据时默认登陆到哪里;收据上每行�
 msgid "Where stock lives and how it ships."
 msgstr "库存存放位置及其发货方式。"
 
-msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
-msgstr "受影响的物料在整个系统中的使用位置。仅供参考——此处没有任何内容阻止已下达。"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"
 
@@ -20213,6 +20714,9 @@ msgstr ""
 
 msgid "You do not have permission to edit workflows"
 msgstr "您没有权限编辑工作流"
+
+msgid "You do not have permission to update this task."
+msgstr "您没有权限更新此任务。"
 
 msgid "You don't have permission to edit this bill of material."
 msgstr "您没有权限编辑此物料清单。"

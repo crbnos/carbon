@@ -35,7 +35,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (owned) return owned;
 
-  const remove = await deleteChangeNoticeAction(client, actionId);
+  const remove = await deleteChangeNoticeAction(client, {
+    id: actionId,
+    changeNoticeId,
+    companyId
+  });
 
   if (remove.error) {
     return data(

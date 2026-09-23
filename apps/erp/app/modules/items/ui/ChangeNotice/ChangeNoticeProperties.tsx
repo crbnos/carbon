@@ -33,7 +33,7 @@ import { changeNoticePriority, isChangeNoticeLocked } from "../../items.models";
 import type { ChangeNotice } from "../../types";
 import type { AffectedItemDraft } from "./affectedItem.types";
 import ChangeNoticeReleaseMerge from "./ChangeNoticeReleaseMerge";
-import ImpactPanel, { type ChangeNoticeImpactItem } from "./ImpactPanel";
+import ImpactPanel from "./ImpactPanel";
 
 // One CO-centric section — the xxs uppercase heading + content used by the
 // PurchaseOrder / SalesOrder / Quote property sidebars. Sections are separated by
@@ -79,7 +79,6 @@ const ChangeNoticeProperties = () => {
     changeNotice: ChangeNotice;
     types: ListItem[];
     affectedItems: AffectedItemDraft[];
-    impactUsedIn: ChangeNoticeImpactItem[];
     nonConformanceOptions: {
       id: string;
       nonConformanceId: string;
@@ -95,7 +94,6 @@ const ChangeNoticeProperties = () => {
   const changeNotice = routeData?.changeNotice;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
-  const impactUsedIn = routeData?.impactUsedIn ?? [];
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);
@@ -347,7 +345,7 @@ const ChangeNoticeProperties = () => {
       {/* Reason for change, description, and the action tasks now live on the
           top-level detail route ($id.details), not here. */}
       <PropertiesSection title={<Trans>Impact</Trans>}>
-        <ImpactPanel embedded items={impactUsedIn} />
+        <ImpactPanel embedded changeNoticeId={id} />
       </PropertiesSection>
     </VStack>
   );

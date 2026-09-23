@@ -18,7 +18,7 @@ import {
   LuGripVertical,
   LuLoaderCircle
 } from "react-icons/lu";
-import Assignee from "~/components/Assignee";
+import Assignee, { useOptimisticAssignment } from "~/components/Assignee";
 
 export type ActionTaskStatus =
   | "Pending"
@@ -57,6 +57,7 @@ export function ActionTaskCard({
   assigneeTable,
   assigneeId,
   assignee,
+  assignmentAction,
   statusBadge,
   headerExtras,
   footerExtras,
@@ -74,6 +75,7 @@ export function ActionTaskCard({
   assigneeTable: string;
   assigneeId: string;
   assignee?: string;
+  assignmentAction?: string;
   // Slots for entity-specific bits: statusBadge (left of assignee), headerExtras
   // (left of the collapse chevron — e.g. Linear/Jira or a delete button), and
   // footerExtras (right of the assignee — e.g. due date / processes / supplier).
@@ -88,6 +90,11 @@ export function ActionTaskCard({
   const disclosure = useDisclosure({ defaultIsOpen: true });
   const statusAction = actionTaskStatusActions[status];
   const isComplete = status === "Completed" || status === "Skipped";
+  const optimisticAssignee = useOptimisticAssignment({
+    id: assigneeId,
+    table: assigneeTable,
+    assignmentAction
+  });
 
   return (
     <div className="rounded-lg border w-full flex flex-col bg-card">
@@ -148,7 +155,8 @@ export function ActionTaskCard({
             table={assigneeTable}
             id={assigneeId}
             size="sm"
-            value={assignee}
+            value={optimisticAssignee ?? assignee}
+            assignmentAction={assignmentAction}
             disabled={isDisabled}
           />
           {footerExtras}

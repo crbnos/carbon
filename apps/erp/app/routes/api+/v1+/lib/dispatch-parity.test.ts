@@ -17,6 +17,7 @@ const spies = vi.hoisted(() => ({
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   generateInventoryCountLines: vi.fn(),
+  deleteChangeNotice: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
   insertIssue: vi.fn(),
@@ -24,6 +25,17 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  updateChangeNotice: vi.fn(),
+  updateChangeNoticeStatus: vi.fn(),
+  createChangeNoticeDraftMethod: vi.fn(),
+  addChangeNoticeAffectedItem: vi.fn(),
+  updateChangeNoticeAffectedItemChangeType: vi.fn(),
+  updateChangeNoticeAffectedItemCutover: vi.fn(),
+  createImpactFollowUpTask: vi.fn(),
+  linkImpactDecisionTask: vi.fn(),
+  unlinkImpactDecisionTask: vi.fn(),
+  designateImpactFollowUpTask: vi.fn(),
+  getUserClaims: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -47,8 +59,23 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
   applyCreditsToInvoices: spies.applyCreditsToInvoices
 }));
+vi.mock("~/modules/items/items.mcp.server", () => ({
+  createImpactFollowUpTask: spies.createImpactFollowUpTask,
+  linkImpactDecisionTask: spies.linkImpactDecisionTask,
+  unlinkImpactDecisionTask: spies.unlinkImpactDecisionTask,
+  designateImpactFollowUpTask: spies.designateImpactFollowUpTask
+}));
 vi.mock("~/modules/items/items.service", () => ({
-  upsertMethodMaterial: spies.upsertMethodMaterial
+  upsertMethodMaterial: spies.upsertMethodMaterial,
+  deleteChangeNotice: spies.deleteChangeNotice,
+  updateChangeNotice: spies.updateChangeNotice,
+  updateChangeNoticeStatus: spies.updateChangeNoticeStatus,
+  createChangeNoticeDraftMethod: spies.createChangeNoticeDraftMethod,
+  addChangeNoticeAffectedItem: spies.addChangeNoticeAffectedItem,
+  updateChangeNoticeAffectedItemChangeType:
+    spies.updateChangeNoticeAffectedItemChangeType,
+  updateChangeNoticeAffectedItemCutover:
+    spies.updateChangeNoticeAffectedItemCutover
 }));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
@@ -79,6 +106,9 @@ vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => spies.FAKE_DB
+}));
+vi.mock("@carbon/auth/users.server", () => ({
+  getUserClaims: spies.getUserClaims
 }));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({
@@ -146,13 +176,25 @@ const allSpies = [
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.generateInventoryCountLines,
+  spies.deleteChangeNotice,
+  spies.updateChangeNotice,
+  spies.updateChangeNoticeStatus,
+  spies.createChangeNoticeDraftMethod,
+  spies.addChangeNoticeAffectedItem,
+  spies.updateChangeNoticeAffectedItemChangeType,
+  spies.updateChangeNoticeAffectedItemCutover,
   spies.upsertNotificationPreference,
   spies.insertJob,
   spies.insertIssue,
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
-  spies.applyCreditsToInvoices
+  spies.applyCreditsToInvoices,
+  spies.createImpactFollowUpTask,
+  spies.linkImpactDecisionTask,
+  spies.unlinkImpactDecisionTask,
+  spies.designateImpactFollowUpTask,
+  spies.getUserClaims
 ];
 
 beforeEach(() => {
@@ -314,6 +356,18 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         { startDate: "2026-01-01", companyId: "c1" }
       ]
     ]);
+  });
+
+  it("passes the server-owned Kysely client to Change Notice deletion without changing its wire argument", async () => {
+    const r = await runDispatch(
+      "items_deleteChangeNotice",
+      spies.deleteChangeNotice,
+      {
+        changeNoticeId: "notice-1"
+      }
+    );
+
+    expect(r.calls).toEqual([[spies.FAKE_DB, "notice-1", "c1"]]);
   });
 
   it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {
@@ -612,6 +666,222 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
   });
 });
 
+describe("OAuth authorization for server-owned database operations", () => {
+  const oauthContext: AuthedContext = {
+    ...ctx,
+    authKind: "oauth"
+  };
+
+  it("rejects Change Notice deletion without parts:delete", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        parts: { view: ["c1"], create: [], update: [], delete: [] }
+      },
+      role: "employee"
+    });
+
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      oauthContext,
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "OAuth caller lacks the required permission: parts_delete",
+      errorKind: "execution"
+    });
+    expect(spies.deleteChangeNotice).not.toHaveBeenCalled();
+    expect(spies.getUserClaims).toHaveBeenCalledWith("u1", "c1");
+  });
+
+  it("rejects an OAuth caller whose parts:delete grant belongs to another company", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        parts: { view: [], create: [], update: [], delete: ["c2"] }
+      },
+      role: "employee"
+    });
+
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      oauthContext,
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "OAuth caller lacks the required permission: parts_delete",
+      errorKind: "execution"
+    });
+    expect(spies.getUserClaims).toHaveBeenCalledWith("u1", "c1");
+    expect(spies.deleteChangeNotice).not.toHaveBeenCalled();
+  });
+
+  it("rejects an OAuth caller with a stale global wildcard grant", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        parts: { view: [], create: [], update: [], delete: ["0"] }
+      },
+      role: "employee"
+    });
+
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      oauthContext,
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "OAuth caller lacks the required permission: parts_delete",
+      errorKind: "execution"
+    });
+    expect(spies.getUserClaims).toHaveBeenCalledWith("u1", "c1");
+    expect(spies.deleteChangeNotice).not.toHaveBeenCalled();
+  });
+
+  it("passes an OAuth caller with parts:delete through to the service", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        parts: { view: ["c1"], create: [], update: [], delete: ["c1"] }
+      },
+      role: "employee"
+    });
+
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      oauthContext,
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result.success).toBe(true);
+    expect(spies.deleteChangeNotice).toHaveBeenCalledWith(
+      spies.FAKE_DB,
+      "notice-1",
+      "c1"
+    );
+  });
+
+  // The check keys off the manifest's `db` service param, so it covers every
+  // operation the dispatcher hands a RLS-bypassing Kysely client — not just the
+  // one that was special-cased. `inventory_generateInventoryCountLines` is the
+  // case the hand-kept list missed.
+  it("rejects a DB-backed inventory operation without inventory:create", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        inventory: { view: ["c1"], create: [], update: [], delete: [] }
+      },
+      role: "employee"
+    });
+
+    const result = await callOperation(
+      "inventory_generateInventoryCountLines",
+      oauthContext,
+      { inventoryCountId: "count-1", locationId: "loc1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "OAuth caller lacks the required permission: inventory_create",
+      errorKind: "execution"
+    });
+    expect(spies.getUserClaims).toHaveBeenCalledWith("u1", "c1");
+    expect(spies.generateInventoryCountLines).not.toHaveBeenCalled();
+  });
+
+  it("passes a DB-backed inventory operation through once the grant is held", async () => {
+    spies.getUserClaims.mockResolvedValueOnce({
+      permissions: {
+        inventory: { view: ["c1"], create: ["c1"], update: [], delete: [] }
+      },
+      role: "employee"
+    });
+    spies.generateInventoryCountLines.mockResolvedValue(0);
+
+    const result = await callOperation(
+      "inventory_generateInventoryCountLines",
+      oauthContext,
+      { inventoryCountId: "count-1", locationId: "loc1" }
+    );
+
+    expect(result).toEqual({ success: true, data: 0 });
+    expect(spies.generateInventoryCountLines).toHaveBeenCalledWith(
+      spies.FAKE_DB,
+      {
+        inventoryCountId: "count-1",
+        locationId: "loc1",
+        companyId: "c1",
+        createdBy: "u1",
+        updatedBy: "u1"
+      }
+    );
+  });
+
+  it("does not run the permission check for a caller-scoped operation", async () => {
+    // Non-`db` operations run on the OAuth caller's own RLS client, where RLS is
+    // the permission check — so the explicit gate must stay off for them.
+    spies.getUserClaims.mockClear();
+    spies.createImpactFollowUpTask.mockResolvedValue({
+      data: { id: "impact_1" },
+      error: null
+    });
+
+    const result = await callOperation(
+      "items_createImpactFollowUpTask",
+      oauthContext,
+      IMPACT_ADAPTER_CALLS[0][2]
+    );
+
+    expect(result).toEqual({ success: true, data: { id: "impact_1" } });
+    expect(spies.getUserClaims).not.toHaveBeenCalled();
+  });
+});
+
+describe("API-key authorization for Change Notice deletion", () => {
+  const unauthorizedScopes: Record<string, string[]>[] = [
+    {},
+    { parts_delete: ["company-2"] },
+    { parts_delete: ["0"] }
+  ];
+
+  it.each(
+    unauthorizedScopes
+  )("rejects a key without an exact parts:delete company scope", async (scopes) => {
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      { ...ctx, authKind: "api-key", scopes },
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      error: "API key lacks the required scope: parts_delete",
+      errorKind: "execution"
+    });
+    expect(spies.deleteChangeNotice).not.toHaveBeenCalled();
+  });
+
+  it("passes a key with the exact parts:delete company scope", async () => {
+    const result = await callOperation(
+      "items_deleteChangeNotice",
+      {
+        ...ctx,
+        authKind: "api-key",
+        scopes: { parts_delete: ["c1"] }
+      },
+      { changeNoticeId: "notice-1" }
+    );
+
+    expect(result.success).toBe(true);
+    expect(spies.deleteChangeNotice).toHaveBeenCalledWith(
+      spies.FAKE_DB,
+      "notice-1",
+      "c1"
+    );
+  });
+});
+
 // The exact ids the workflow engine's create actions dispatch
 // (packages/ee/src/workflows/catalog/actions.ts). Their results must stay readable by
 // create.ts's idIn(): an `id` on the returned object, or on an element of a list.
@@ -651,6 +921,55 @@ const LEDGER_ARGS = {
   offset: 0
 };
 
+// These are the exact generated operation names. Calling through callOperation
+// proves the manifest lookup, oRPC procedure, shared registry, and adapter export
+// all agree; a direct adapter import would miss any of those seams.
+const IMPACT_ADAPTER_CALLS: Array<[string, Spy, Record<string, unknown>]> = [
+  [
+    "items_createImpactFollowUpTask",
+    spies.createImpactFollowUpTask,
+    {
+      changeNoticeId: "cn_1",
+      targetType: "purchaseOrderLine",
+      targetId: "pol_1",
+      task: {}
+    }
+  ],
+  [
+    "items_linkImpactDecisionTask",
+    spies.linkImpactDecisionTask,
+    {
+      changeNoticeId: "cn_1",
+      decisionId: "decision_1",
+      targetType: "purchaseOrderLine",
+      targetId: "pol_1",
+      actionTaskId: "task_1"
+    }
+  ],
+  [
+    "items_unlinkImpactDecisionTask",
+    spies.unlinkImpactDecisionTask,
+    {
+      changeNoticeId: "cn_1",
+      decisionId: "decision_1",
+      targetType: "purchaseOrderLine",
+      targetId: "pol_1",
+      actionTaskId: "task_1"
+    }
+  ],
+  [
+    "items_designateImpactFollowUpTask",
+    spies.designateImpactFollowUpTask,
+    {
+      changeNoticeId: "cn_1",
+      decisionId: "decision_1",
+      targetType: "purchaseOrderLine",
+      targetId: "pol_1",
+      actionTaskId: "task_1"
+    }
+  ]
+];
+
 function idIn(payload: unknown): string | undefined {
   // Mirror of packages/jobs/src/workflows/actions/create.ts — what the workflow
   // engine actually runs over a dispatch result.
@@ -678,6 +997,61 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
     spy.mockResolvedValue({ data: [{ id: "rec_2" }], error: null });
     const asList = await callOperation(name, ctx, args);
     expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
+  });
+
+  it.each(
+    IMPACT_ADAPTER_CALLS
+  )("%s reaches its Items MCP adapter through the canonical dispatcher", async (name, spy, args) => {
+    spy.mockResolvedValue({ data: { id: "impact_1" }, error: null });
+
+    const result = await callOperation(name, ctx, args);
+
+    expect(result).toEqual({
+      success: true,
+      data: { id: "impact_1" }
+    });
+    expect(spy).toHaveBeenCalledWith(
+      spies.FAKE_CLIENT,
+      "c1",
+      "u1",
+      expect.objectContaining(args)
+    );
+  });
+
+  it.each([
+    ["empty scopes", {}],
+    ["parts_create without parts_update", { parts_create: ["c1"] }],
+    ["parts_update scoped to another company", { parts_update: ["c2"] }],
+    ["correct-company parts_update", { parts_update: ["c1"] }]
+  ] as Array<
+    [string, Record<string, string[]>]
+  >)("API-key Impact create scope: %s", async (_caseName, scopes) => {
+    spies.createImpactFollowUpTask.mockResolvedValue({
+      data: { id: "impact_1" },
+      error: null
+    });
+
+    const result = await callOperation(
+      "items_createImpactFollowUpTask",
+      { ...ctx, authKind: "api-key", scopes },
+      IMPACT_ADAPTER_CALLS[0][2]
+    );
+    const allowed = scopes.parts_update?.includes("c1") ?? false;
+
+    if (allowed) {
+      expect(result).toEqual({
+        success: true,
+        data: { id: "impact_1" }
+      });
+      expect(spies.createImpactFollowUpTask).toHaveBeenCalled();
+    } else {
+      expect(result).toEqual({
+        success: false,
+        errorKind: "execution",
+        error: "API key lacks the required scope: parts_update"
+      });
+      expect(spies.createImpactFollowUpTask).not.toHaveBeenCalled();
+    }
   });
 
   it("maps a Supabase error to the errorKind:database envelope with a closed-set message", async () => {
@@ -761,5 +1135,45 @@ describe("blocked tools (D5)", () => {
       errorKind: "execution",
       error: "Tool disabled: settings_seedCompany is not available via MCP."
     });
+  });
+
+  it.each([
+    ["items_updateChangeNotice", spies.updateChangeNotice],
+    ["items_updateChangeNoticeStatus", spies.updateChangeNoticeStatus],
+    [
+      "items_createChangeNoticeDraftMethod",
+      spies.createChangeNoticeDraftMethod
+    ],
+    ["items_addChangeNoticeAffectedItem", spies.addChangeNoticeAffectedItem],
+    [
+      "items_updateChangeNoticeAffectedItemChangeType",
+      spies.updateChangeNoticeAffectedItemChangeType
+    ],
+    [
+      "items_updateChangeNoticeAffectedItemCutover",
+      spies.updateChangeNoticeAffectedItemCutover
+    ]
+  ] as Array<
+    [string, Spy]
+  >)("refuses a blocked Change Notice engineering writer: %s", async (name, spy) => {
+    const result = await callOperation(
+      name,
+      { ...ctx, authKind: "api-key", scopes: {} },
+      {
+        id: "notice-1",
+        changeNoticeId: "notice-1",
+        companyId: "forged-company",
+        userId: "forged-user",
+        createdBy: "forged-creator",
+        updatedBy: "forged-updater"
+      }
+    );
+
+    expect(result).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: `Tool disabled: ${name} is not available via MCP.`
+    });
+    expect(spy).not.toHaveBeenCalled();
   });
 });
