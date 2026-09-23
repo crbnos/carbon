@@ -27,11 +27,12 @@ export type SeedArgs = {
   dataset: string;
   tiers: number[] | null;
   skipWipe: boolean;
+  skipPlan: boolean;
 };
 
 function printUsage(datasets: string[]) {
   console.log(`
-Usage: pnpm run db:seed:dev -- --email <email> [--dataset <key>] [--tiers 1,2,3] [--skip-wipe]
+Usage: pnpm run db:seed:dev -- --email <email> [--dataset <key>] [--tiers 1,2,3] [--skip-wipe] [--skip-plan]
 
 Arguments:
   --email, -e    Required. Seeds the company this user belongs to.
@@ -40,6 +41,7 @@ Arguments:
                  Available: ${datasets.join(", ")}
   --tiers        Dev only. Comma-separated tier numbers to run (default: all).
   --skip-wipe    Dev only. Leave existing business data in place.
+  --skip-plan    Skip the MRP + scheduler run that follows the seed.
 
 Example:
   pnpm run db:seed:dev -- --email developer@example.com --dataset satellite
@@ -54,7 +56,8 @@ export function parseSeedArgs(datasets: string[]): SeedArgs {
       email: { type: "string", short: "e" },
       dataset: { type: "string", default: "satellite" },
       tiers: { type: "string" },
-      "skip-wipe": { type: "boolean", default: false }
+      "skip-wipe": { type: "boolean", default: false },
+      "skip-plan": { type: "boolean", default: false }
     },
     strict: true
   });
@@ -90,5 +93,11 @@ export function parseSeedArgs(datasets: string[]): SeedArgs {
     }
   }
 
-  return { email, dataset, tiers, skipWipe: values["skip-wipe"] ?? false };
+  return {
+    email,
+    dataset,
+    tiers,
+    skipWipe: values["skip-wipe"] ?? false,
+    skipPlan: values["skip-plan"] ?? false
+  };
 }
