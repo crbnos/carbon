@@ -279,6 +279,29 @@ export async function resolvePaymentJournalFamily(
   return null;
 }
 
+/**
+ * Which party a memo journal belongs to. The memo's PARTY — not its direction —
+ * decides whether it is gated by the Credit Memos or Vendor Credits family
+ * (`family: "per-party"` in POSTING_POLICY), so a supplier memo in the Credit
+ * direction is a vendor credit, not an AR document.
+ */
+export async function resolveMemoJournalParty(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; journalId: string }
+): Promise<"customer" | "supplier" | null> {
+  const memo = await client
+    .from("memo")
+    .select("customerId, supplierId")
+    .eq("companyId", args.companyId)
+    .eq("journalId", args.journalId)
+    .maybeSingle();
+
+  if (memo.error || !memo.data) return null;
+  if (memo.data.customerId) return "customer";
+  if (memo.data.supplierId) return "supplier";
+  return null;
+}
+
 export type TerminalSyncOperationRequest = {
   entityType: string;
   entityId: string;
@@ -437,6 +460,14 @@ export async function planJournalPostingOperation(args: {
         })
       : null;
 
+  const memoParty =
+    sourceType === "Credit Memo" || sourceType === "Debit Memo"
+      ? await resolveMemoJournalParty(args.client, {
+          companyId: args.companyId,
+          journalId: args.event.recordId
+        })
+      : null;
+
   // "Charge" journals are DOC_BACKED per row (a Charge with a
   // supplier only), so the policy needs the backing charge.
   let charge: ChargePolicyInput | null = null;
@@ -459,9 +490,12 @@ export async function planJournalPostingOperation(args: {
       chargeEnabled: syncConfig.entities.charge.enabled,
       chargeCreditEnabled: args.providerId
         ? CHARGE_CREDIT_PROVIDERS.has(args.providerId)
-        : false
+        : false,
+      creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
+      vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled
     },
     paymentFamily,
+    memoParty,
     inventoryAdjustmentEntitySyncEnabled:
       syncConfig.entities.inventoryAdjustment.enabled,
     charge
@@ -475,7 +509,8 @@ export async function planJournalPostingOperation(args: {
  * `planJournalPostingOperation` (event path, backfill) and the reconcile
  * decision core both delegate here, so the policy routing can never diverge
  * between callers. Pure: `paymentFamily` is resolved by the caller when the
- * source type is Payment and the AR/AP family modes diverge.
+ * source type is Payment and the AR/AP family modes diverge; `memoParty` is
+ * resolved by the caller for Credit Memo / Debit Memo source types.
  */
 export function planJournalPostingFromState(args: {
   journalId: string;
@@ -487,8 +522,12 @@ export function planJournalPostingFromState(args: {
     billEnabled: boolean;
     chargeEnabled?: boolean;
     chargeCreditEnabled?: boolean;
+    creditMemoEnabled?: boolean;
+    vendorCreditEnabled?: boolean;
   };
   paymentFamily: "ar" | "ap" | null;
+  /** Memo source types only: the backing memo's party. */
+  memoParty?: "customer" | "supplier" | null;
   inventoryAdjustmentEntitySyncEnabled: boolean;
   /** "Charge" journals only: the backing charge. */
   charge?: ChargePolicyInput | null;
@@ -500,6 +539,7 @@ export function planJournalPostingFromState(args: {
     settings: args.settings,
     docSync: args.docSync,
     paymentFamily: args.paymentFamily,
+    memoParty: args.memoParty ?? null,
     inventoryAdjustmentEntitySyncEnabled:
       args.inventoryAdjustmentEntitySyncEnabled,
     charge: args.charge ?? null

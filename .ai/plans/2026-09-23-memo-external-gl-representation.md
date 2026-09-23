@@ -20,7 +20,7 @@ API surveys and Rillet sandbox probe recorded in the spec.
 - [x] Task 1: Add `creditMemo` / `vendorCredit` posting-sync families
 - [x] Task 2: Add `creditMemo` / `vendorCredit` accounting entity types
 - [x] Task 3: Per-party policy resolution + the family-misclassification fix
-- [ ] Task 4: Resolve a memo journal's party at the call site
+- [x] Task 4: Resolve a memo journal's party at the call site
 - [ ] Task 5: Shared credit-reason-item resolver
 - [ ] Task 6: Xero client — credit notes + allocations
 - [ ] Task 7: Xero syncers — credit memo + vendor credit
@@ -160,7 +160,14 @@ requires recreating the type).
 **Depends on:** Task 3
 **Files:**
 - Modify: `packages/jobs/src/inngest/functions/integrations/accounting-sync-operations.ts` — add the resolver + pass `memoParty` and the two new `docSync` flags
+- Modify: `packages/jobs/src/inngest/functions/integrations/reconcile-executor.ts` — resolve `memoParty` for memo-source journal snapshots, mirroring its existing `paymentFamily` block (~line 352)
 - Copy from (precedent): `resolvePaymentJournalFamily` and `loadChargePolicyInputs`, used at lines ~432 and ~443 of the same file
+
+> **Plan amendment (2026-09-23, during execution):** `reconcile-executor.ts` was
+> missing from this task. It resolves `paymentFamily` for journalEntry snapshots and
+> feeds the same policy decision, so without the parallel `memoParty` resolution every
+> memo journal reaching the policy through the reconcile/sweep path would park
+> `MEMO_PARTY_UNRESOLVED`. Same decision, second call site — no design change.
 
 **Steps:**
 1. Add `resolveMemoJournalParty(client, { companyId, journalId })` returning
@@ -180,6 +187,10 @@ const memoParty =
 3. Extend the `docSync` object passed to `planJournalPostingFromState` with
    `creditMemoEnabled: syncConfig.entities.creditMemo.enabled` and
    `vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled`, and pass `memoParty`.
+4. In `reconcile-executor.ts`, mirror the `paymentFamily` block: for a journalEntry
+   snapshot whose `sourceType` is `"Credit Memo"` or `"Debit Memo"`, call
+   `resolveMemoJournalParty` and put the result on the reconcile input; extend the
+   `docSync` flags there the same way.
 
 **Verify:**
 ```bash

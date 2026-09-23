@@ -29,6 +29,7 @@ import {
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
   loadChargePolicyInputs,
+  resolveMemoJournalParty,
   resolvePaymentJournalFamily,
   type SyncOperationRequest,
   type TerminalSyncOperationRequest
@@ -351,6 +352,18 @@ export async function reconcileEntities(args: {
 
       // Payment-source journals resolve the AR/AP side only when the family
       // modes diverge (matches planJournalPostingOperation exactly).
+      let memoParty: "customer" | "supplier" | null = null;
+      if (
+        entityType === "journalEntry" &&
+        (snapshot?.sourceType === "Credit Memo" ||
+          snapshot?.sourceType === "Debit Memo")
+      ) {
+        memoParty = await resolveMemoJournalParty(args.client, {
+          companyId: args.companyId,
+          journalId: entityId
+        });
+      }
+
       let paymentFamily: "ar" | "ap" | null = null;
       if (
         entityType === "journalEntry" &&
@@ -410,11 +423,14 @@ export async function reconcileEntities(args: {
             chargeEnabled: syncConfig.entities.charge.enabled,
             chargeCreditEnabled: CHARGE_CREDIT_PROVIDERS.has(
               args.providerId as ProviderID
-            )
+            ),
+            creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
+            vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled
           },
           inventoryAdjustmentEnabled:
             syncConfig.entities.inventoryAdjustment.enabled,
-          paymentFamily
+          paymentFamily,
+          memoParty
         }
       };
 

@@ -131,11 +131,15 @@ export type ReconcileContext = {
     billEnabled: boolean;
     chargeEnabled: boolean;
     chargeCreditEnabled: boolean;
+    creditMemoEnabled?: boolean;
+    vendorCreditEnabled?: boolean;
   };
   inventoryAdjustmentEnabled: boolean;
   /** Resolved by the executor only for Payment-source journals when the
    * AR/AP family modes diverge (otherwise the side cannot matter). */
   paymentFamily: "ar" | "ap" | null;
+  /** Memo source types only: the backing memo's party (decides the family). */
+  memoParty?: "customer" | "supplier" | null;
 };
 
 export type ReconcileAction =
@@ -225,6 +229,7 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
       settings: input.context.settings,
       docSync: input.context.docSync,
       paymentFamily: input.context.paymentFamily,
+      memoParty: input.context.memoParty ?? null,
       inventoryAdjustmentEntitySyncEnabled:
         input.context.inventoryAdjustmentEnabled,
       charge: input.charge ?? null
