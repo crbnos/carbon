@@ -23,12 +23,14 @@ import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 // transaction, next to the write it informs.
 async function currentEntityStatus(
   trx: Transaction<DB>,
-  trackedEntityId: string
+  trackedEntityId: string,
+  companyId: string
 ): Promise<Database["public"]["Enums"]["trackedEntityStatus"]> {
   const row = await trx
     .selectFrom("trackedEntity")
     .select("status")
     .where("id", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
     .executeTakeFirstOrThrow();
   return row.status;
 }
@@ -870,7 +872,7 @@ serve(async (req: Request) => {
               .set({
                 ...settleQuantity({
                   quantity: resolvedQty - adjustmentQuantity,
-                  status: await currentEntityStatus(trx, resolvedId),
+                  status: await currentEntityStatus(trx, resolvedId, companyId),
                 }),
                 readableId,
               })
@@ -949,7 +951,7 @@ serve(async (req: Request) => {
           .set(
             settleQuantity({
               quantity: targetQty - adjustmentQuantity,
-              status: await currentEntityStatus(trx, targetId),
+              status: await currentEntityStatus(trx, targetId, companyId),
             })
           )
           .where("id", "=", targetId)
@@ -988,7 +990,7 @@ serve(async (req: Request) => {
           // one that can land on a Scrapped lot — settleQuantity preserves it.
           const entityUpdate: Record<string, unknown> = settleQuantity({
             quantity: signedQuantity + currentQuantityOnHand,
-            status: await currentEntityStatus(trx, trackedEntityId),
+            status: await currentEntityStatus(trx, trackedEntityId, companyId),
           });
           if (readableId !== undefined && readableId !== null) {
             entityUpdate.readableId = readableId;

@@ -616,6 +616,11 @@ export function resolveStockTransferPickForward(input: {
   const outstanding = round(
     round(input.lineQuantity) - round(input.pickedQuantity)
   );
+  // Checked first, matching resolvePick's order, so the pre-check and the
+  // edge function name the same refusal for the same input.
+  if (pickQuantity <= 0) {
+    return { ok: false, message: "Enter a quantity to pick" };
+  }
   if (equals(outstanding, 0) || outstanding < 0) {
     return { ok: false, message: "This line is already fully picked" };
   }
@@ -627,9 +632,6 @@ export function resolveStockTransferPickForward(input: {
       ok: false,
       message: `Only ${outstanding} left to pick on this line`
     };
-  }
-  if (pickQuantity <= 0) {
-    return { ok: false, message: "Enter a quantity to pick" };
   }
   return {
     ok: true,
