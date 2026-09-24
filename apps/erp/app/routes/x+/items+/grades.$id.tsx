@@ -40,7 +40,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -56,6 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const updateMaterialGrade = await upsertMaterialGrade(client, {
     id: id,
+    companyId,
     ...validation.data
   });
 

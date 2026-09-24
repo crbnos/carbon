@@ -8,7 +8,7 @@ import type {
 } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { datetime, getMaterialDescription, getMaterialId } from "@carbon/utils";
+import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -19,7 +19,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
@@ -86,6 +86,19 @@ import {
   type toolValidator,
   type unitOfMeasureValidator
 } from "./items.models";
+import {
+  checkMaterialProperties,
+  clearsSubstanceOrShape,
+  generatedIdsNeedSubstanceAndShape,
+  generateMaterialIdentity,
+  type MaterialPropertyLookups,
+  type MaterialPropertyValues,
+  materialPropertyFields,
+  noMaterialProperties,
+  resolveMaterialProperties,
+  sentFields,
+  sentMaterialProperties
+} from "./material-properties";
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
@@ -3321,9 +3334,9 @@ async function resolveTypedItemForUpdate(
   if (byReadableId.data.length > 1) {
     return {
       data: null,
-      error: {
-        message: `${args.type} ${args.id} has ${byReadableId.data.length} revisions; pass the item id of the revision to update`
-      }
+      error: ruleError(
+        `${args.type} ${args.id} has ${byReadableId.data.length} revisions; pass the item id of the revision to update`
+      )
     };
   }
   // PGRST116 is what a `.single()` miss reports, so the API layer maps this to
@@ -4868,51 +4881,12 @@ export async function setMethodOperationToolStepLink(
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 
-const materialPropertyFields = [
-  "materialSubstanceId",
-  "materialFormId",
-  "materialTypeId",
-  "finishId",
-  "gradeId",
-  "dimensionId"
-] as const;
-
-type MaterialPropertyField = (typeof materialPropertyFields)[number];
-type MaterialPropertyValues = Record<MaterialPropertyField, string | null>;
-
 type MaterialPropertyPlan = {
   changed: Partial<MaterialPropertyValues>;
   generated: { readableId: string; name: string } | null;
 };
 
 type ServiceError = PostgrestError | { message: string; code?: string };
-
-const noMaterialProperties: MaterialPropertyValues = {
-  materialSubstanceId: null,
-  materialFormId: null,
-  materialTypeId: null,
-  finishId: null,
-  gradeId: null,
-  dimensionId: null
-};
-
-/**
- * The `fields` present on `source`. A present key holding undefined (a
- * cleared form field) counts as sent and clears; an absent key (an API caller
- * editing some fields) is left alone.
- */
-function sentFields<K extends string>(
-  source: object,
-  fields: readonly K[]
-): Partial<Record<K, any>> {
-  const sent: Partial<Record<K, any>> = {};
-  for (const field of fields) {
-    if (field in source) {
-      sent[field] = (source as Record<string, unknown>)[field] ?? null;
-    }
-  }
-  return sent;
-}
 
 async function materialIdsAreGenerated(
   client: SupabaseClient<Database>,
@@ -4964,7 +4938,10 @@ async function getMaterialPropertyLookups(
   client: SupabaseClient<Database>,
   companyId: string,
   values: MaterialPropertyValues
-) {
+): Promise<
+  | { data: MaterialPropertyLookups; error: null }
+  | { data: null; error: ServiceError }
+> {
   const visible = `companyId.eq.${companyId},companyId.is.null`;
   const none = { data: null, error: null };
   const [substance, form, type, finish, grade, dimension] = await Promise.all([
@@ -5036,68 +5013,10 @@ async function getMaterialPropertyLookups(
   };
 }
 
-type MaterialPropertyLookups = NonNullable<
-  Awaited<ReturnType<typeof getMaterialPropertyLookups>>["data"]
->;
-
 /**
- * The property panel's pickers as rules: grade and finish come from the
- * substance's list, dimension from the shape's, and type from the pair's.
- * Only checks a value that is new or whose parent changed, so an unrelated
- * edit never trips over an older inconsistency.
- */
-function checkMaterialProperties(
-  current: MaterialPropertyValues,
-  next: MaterialPropertyValues,
-  lookups: MaterialPropertyLookups
-): string | null {
-  const substanceChanged =
-    next.materialSubstanceId !== current.materialSubstanceId;
-  const formChanged = next.materialFormId !== current.materialFormId;
-  const touched = (field: MaterialPropertyField, parentChanged: boolean) =>
-    next[field] !== null && (next[field] !== current[field] || parentChanged);
-
-  if (touched("materialSubstanceId", false) && !lookups.substance) {
-    return `Substance ${next.materialSubstanceId} not found`;
-  }
-  if (touched("materialFormId", false) && !lookups.form) {
-    return `Shape ${next.materialFormId} not found`;
-  }
-  if (touched("gradeId", substanceChanged)) {
-    if (!lookups.grade) return `Grade ${next.gradeId} not found`;
-    if (lookups.grade.materialSubstanceId !== next.materialSubstanceId) {
-      return `Grade ${next.gradeId} is not a grade of substance ${next.materialSubstanceId ?? "(none)"}`;
-    }
-  }
-  if (touched("finishId", substanceChanged)) {
-    if (!lookups.finish) return `Finish ${next.finishId} not found`;
-    if (lookups.finish.materialSubstanceId !== next.materialSubstanceId) {
-      return `Finish ${next.finishId} is not a finish of substance ${next.materialSubstanceId ?? "(none)"}`;
-    }
-  }
-  if (touched("dimensionId", formChanged)) {
-    if (!lookups.dimension) return `Dimension ${next.dimensionId} not found`;
-    if (lookups.dimension.materialFormId !== next.materialFormId) {
-      return `Dimension ${next.dimensionId} is not a dimension of shape ${next.materialFormId ?? "(none)"}`;
-    }
-  }
-  if (touched("materialTypeId", substanceChanged || formChanged)) {
-    if (!lookups.type) return `Type ${next.materialTypeId} not found`;
-    if (
-      lookups.type.materialSubstanceId !== next.materialSubstanceId ||
-      lookups.type.materialFormId !== next.materialFormId
-    ) {
-      return `Type ${next.materialTypeId} is not a type of substance ${next.materialSubstanceId ?? "(none)"} and shape ${next.materialFormId ?? "(none)"}`;
-    }
-  }
-  return null;
-}
-
-/**
- * Resolves and checks a set of property changes without writing anything.
- * Mirrors the properties panel: a new substance clears finish, grade and type,
- * and a new shape clears dimension and type, unless `changes` sets them too.
- * With generated material IDs on, also derives the readable id and name.
+ * Resolves and checks a set of property changes without writing anything (see
+ * material-properties.ts for the rules). With generated material IDs on, also
+ * derives the readable id and name.
  */
 async function planMaterialPropertyChanges(
   client: SupabaseClient<Database>,
@@ -5111,28 +5030,15 @@ async function planMaterialPropertyChanges(
   | { data: MaterialPropertyPlan; error: null }
   | { data: null; error: ServiceError }
 > {
-  const { current, changes } = args;
-  const next: MaterialPropertyValues = { ...current, ...changes };
-
-  if (next.materialSubstanceId !== current.materialSubstanceId) {
-    for (const field of ["finishId", "gradeId", "materialTypeId"] as const) {
-      if (!(field in changes)) next[field] = null;
-    }
-  }
-  if (next.materialFormId !== current.materialFormId) {
-    for (const field of ["dimensionId", "materialTypeId"] as const) {
-      if (!(field in changes)) next[field] = null;
-    }
-  }
-
-  const changedFields = materialPropertyFields.filter(
-    (field) => next[field] !== current[field]
+  const { next, changed } = resolveMaterialProperties(
+    args.current,
+    args.changes
   );
-  if (changedFields.length === 0) {
-    return {
-      data: { changed: {}, generated: null },
-      error: null
-    };
+  if (Object.keys(changed).length === 0) {
+    return { data: { changed, generated: null }, error: null };
+  }
+  if (args.generatedIds && clearsSubstanceOrShape(args.current, next)) {
+    return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
   }
 
   const lookups = await getMaterialPropertyLookups(
@@ -5142,54 +5048,78 @@ async function planMaterialPropertyChanges(
   );
   if (lookups.error) return { data: null, error: lookups.error };
 
-  const invalid = checkMaterialProperties(current, next, lookups.data);
-  if (invalid) return { data: null, error: { message: invalid } };
-
-  let generated: MaterialPropertyPlan["generated"] = null;
-  if (args.generatedIds) {
-    if (!next.materialSubstanceId || !next.materialFormId) {
-      return {
-        data: null,
-        error: {
-          message:
-            "Generated material IDs need a substance and a shape; set both"
-        }
-      };
-    }
-    const { substance, form, type, finish, grade, dimension } = lookups.data;
-    const naming = {
-      substance: substance?.name,
-      substanceCode: substance?.code,
-      shape: form?.name,
-      shapeCode: form?.code,
-      materialType: type?.name,
-      materialTypeCode: type?.code,
-      finish: finish?.name,
-      grade: grade?.name,
-      dimensions: dimension?.name
-    };
-    generated = {
-      readableId: getMaterialId(naming),
-      name: getMaterialDescription(naming)
-    };
-  }
+  const invalid = checkMaterialProperties(args.current, next, lookups.data);
+  if (invalid) return { data: null, error: ruleError(invalid) };
 
   return {
     data: {
-      changed: Object.fromEntries(changedFields.map((f) => [f, next[f]])),
-      generated
+      changed,
+      generated: args.generatedIds
+        ? generateMaterialIdentity(next, lookups.data)
+        : null
     },
     error: null
   };
 }
 
+async function materialIdIsTaken(
+  client: SupabaseClient<Database>,
+  readableId: string,
+  companyId: string
+): Promise<
+  { data: boolean; error: null } | { data: null; error: ServiceError }
+> {
+  const taken = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId)
+    .eq("type", "Material")
+    .limit(1);
+  if (taken.error) return { data: null, error: taken.error };
+  return { data: taken.data.length > 0, error: null };
+}
+
 /**
- * Writes property changes and a new readable id or name in one transaction:
- * the material row, and every revision's item row when the readable id or
- * name changes. An id already taken is refused. Returns the readable id after.
+ * Proves the caller may update the material before a Kysely write, which
+ * bypasses RLS: the same UPDATE through the caller's client has to match the
+ * row. Material's UPDATE policy (parts_update in the company) is the one its
+ * item and itemCost rows also grant. It sets only the audit columns the write
+ * sets anyway.
  */
-async function saveMaterialIdentity(
-  db: Kysely<KyselyDatabase>,
+async function requireMaterialUpdatable(
+  client: SupabaseClient<Database>,
+  args: { readableId: string; companyId: string; updatedBy: string }
+): Promise<{ error: ServiceError | null }> {
+  const probe = await client
+    .from("material")
+    .update({ updatedBy: args.updatedBy, updatedAt: datetime.timestamp() })
+    .eq("id", args.readableId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+  return { error: probe.error };
+}
+
+/** A refusal raised inside a material transaction, rolled back and reported. */
+class MaterialRuleViolation extends Error {}
+
+function materialWriteError(error: unknown): ServiceError {
+  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  return code ? { code, message } : { message };
+}
+
+/**
+ * Inside `trx`: property changes and a new readable id or name on the material
+ * row and every revision's item row. Returns the readable id after.
+ */
+async function writeMaterialIdentity(
+  trx: KyselyTx,
   args: {
     readableId: string;
     newReadableId?: string;
@@ -5198,83 +5128,70 @@ async function saveMaterialIdentity(
     updatedBy: string;
     changes: Partial<MaterialPropertyValues>;
   }
-): Promise<
-  | { data: { readableId: string }; error: null }
-  | { data: null; error: ServiceError }
-> {
+): Promise<string> {
   const { readableId, companyId, updatedBy, changes } = args;
   const newReadableId = args.newReadableId ?? readableId;
   const renamed = newReadableId !== readableId;
   if (!newReadableId) {
-    return { data: null, error: { message: "Material ID cannot be empty" } };
+    throw new MaterialRuleViolation("Material ID cannot be empty");
   }
   if (!renamed && args.name === undefined && !Object.keys(changes).length) {
-    return { data: { readableId }, error: null };
+    return readableId;
   }
 
   const updatedAt = datetime.timestamp();
-  try {
-    await db.transaction().execute(async (trx) => {
-      if (renamed) {
-        const taken = await trx
-          .selectFrom("item")
-          .select("id")
-          .where("readableId", "=", newReadableId)
-          .where("companyId", "=", companyId)
-          .where("type", "=", "Material")
-          .executeTakeFirst();
-        if (taken) throw new Error(`Material ${newReadableId} already exists`);
-      }
-
-      const material = await trx
-        .updateTable("material")
-        .set({ ...changes, id: newReadableId, updatedBy, updatedAt })
-        .where("id", "=", readableId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (Number(material.numUpdatedRows) !== 1) {
-        throw new Error(`Material ${readableId} not found`);
-      }
-
-      if (renamed || args.name !== undefined) {
-        await trx
-          .updateTable("item")
-          .set({
-            readableId: newReadableId,
-            ...(args.name !== undefined ? { name: args.name } : {}),
-            updatedBy,
-            updatedAt
-          })
-          .where("readableId", "=", readableId)
-          .where("companyId", "=", companyId)
-          .where("type", "=", "Material")
-          .execute();
-      }
-    });
-  } catch (error) {
-    return {
-      data: null,
-      error: {
-        message: error instanceof Error ? error.message : String(error)
-      }
-    };
+  if (renamed) {
+    const taken = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("readableId", "=", newReadableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .executeTakeFirst();
+    if (taken) {
+      throw new MaterialRuleViolation(
+        `Material ${newReadableId} already exists`
+      );
+    }
   }
 
-  return { data: { readableId: newReadableId }, error: null };
+  const material = await trx
+    .updateTable("material")
+    .set({ ...changes, id: newReadableId, updatedBy, updatedAt })
+    .where("id", "=", readableId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(material.numUpdatedRows) !== 1) {
+    throw new MaterialRuleViolation(`Material ${readableId} not found`);
+  }
+
+  if (renamed || args.name !== undefined) {
+    await trx
+      .updateTable("item")
+      .set({
+        readableId: newReadableId,
+        ...(args.name !== undefined ? { name: args.name } : {}),
+        updatedBy,
+        updatedAt
+      })
+      .where("readableId", "=", readableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .execute();
+  }
+  return newReadableId;
 }
 
 /**
- * Adds a revision for each size the material lacks, copied from `itemId` the
- * way New Revision copies one. Refused while the material is open in a change
- * notice, as New Revision is.
+ * The sizes a material lacks, refused while it is open in a change notice as
+ * New Revision is. Runs before any write so a refusal changes nothing.
  */
-async function addMaterialSizes(
+async function getNewMaterialSizes(
   client: SupabaseClient<Database>,
   args: {
     itemId: string;
     readableId: string;
     companyId: string;
-    createdBy: string;
     sizes: string[];
   }
 ): Promise<
@@ -5309,36 +5226,23 @@ async function addMaterialSizes(
     const ids = open.data.map((co) => co.changeOrderId).join(", ");
     return {
       data: null,
-      error: {
-        message: `This item is open in change notice ${ids}. Release it to create new revisions.`
-      }
+      error: ruleError(
+        `This item is open in change notice ${ids}. Release it to create new revisions.`
+      )
     };
   }
-
-  const source = await getItem(client, args.itemId);
-  if (source.error) return { data: null, error: source.error };
-
-  const created: string[] = [];
-  for (const size of sizes) {
-    const revision = await createRevision(client, {
-      item: source.data,
-      revision: size,
-      createdBy: args.createdBy
-    });
-    if (revision.error) return { data: null, error: revision.error };
-    created.push(revision.data.id);
-  }
-  return { data: created, error: null };
+  return { data: sizes, error: null };
 }
 
 /**
- * Creates a material or updates one by item id or readable id; an update
- * writes only the fields sent, and `sizes` adds a revision per new size.
+ * Creates a material or updates one by item id or readable id; an update keeps
+ * any optional field it leaves out, and `sizes` adds a revision per new size.
  * Property changes follow updateMaterialProperties: dependents reset, picks
  * are checked against their substance and shape, and with generated material
  * IDs on the readable id and name are derived from the properties (any `id`
  * or `name` sent for them is replaced). `readableId` renames a material when
- * IDs are typed by hand.
+ * IDs are typed by hand. An update's material, item and item cost writes land
+ * together or not at all.
  */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
@@ -5366,21 +5270,33 @@ export async function upsertMaterial(
     const plan = await planMaterialPropertyChanges(client, {
       companyId: material.companyId,
       current: noMaterialProperties,
-      changes: sentFields(material, materialPropertyFields),
+      changes: sentMaterialProperties(material),
       generatedIds: generatedIds.data
     });
     if (plan.error) return plan;
     if (generatedIds.data && !plan.data.generated) {
       return {
         data: null,
-        error: {
-          message:
-            "Generated material IDs need a substance and a shape; set both"
-        }
+        error: ruleError(generatedIdsNeedSubstanceAndShape)
       };
     }
     const readableId = plan.data.generated?.readableId ?? material.id;
     const name = plan.data.generated?.name ?? material.name;
+
+    // An existing id would take the new item rows as extra revisions and
+    // overwrite its material row; sizes on an update add revisions instead.
+    const taken = await materialIdIsTaken(
+      client,
+      readableId,
+      material.companyId
+    );
+    if (taken.error) return taken;
+    if (taken.data) {
+      return {
+        data: null,
+        error: ruleError(`Material ${readableId} already exists`)
+      };
+    }
 
     // Collect every newly-created item id across the sizes / no-sizes
     // branches so the shelf-life policy can be applied uniformly.
@@ -5531,6 +5447,7 @@ export async function upsertMaterial(
   const itemId = item.data.id;
   let readableId = item.data.readableId;
 
+  // Everything that can be refused is checked before the first write.
   const current = await getMaterialPropertyValues(
     client,
     readableId,
@@ -5538,28 +5455,25 @@ export async function upsertMaterial(
   );
   if (current.error) return current;
 
-  // Everything that can be refused is checked before the first write.
   const plan = await planMaterialPropertyChanges(client, {
     companyId,
     current: current.data,
-    changes: sentFields(material, materialPropertyFields),
+    changes: sentMaterialProperties(material),
     generatedIds: generatedIds.data
   });
   if (plan.error) return plan;
 
-  // Generated IDs follow the properties; hand-typed ones follow `readableId`.
-  const saved = await saveMaterialIdentity(db, {
-    readableId,
-    newReadableId: generatedIds.data
-      ? plan.data.generated?.readableId
-      : material.readableId || undefined,
-    name: plan.data.generated?.name,
-    companyId,
-    updatedBy,
-    changes: plan.data.changed
-  });
-  if (saved.error) return saved;
-  readableId = saved.data.readableId;
+  let newSizes: string[] = [];
+  if (material.sizes?.length) {
+    const sizes = await getNewMaterialSizes(client, {
+      itemId,
+      readableId,
+      companyId,
+      sizes: material.sizes
+    });
+    if (sizes.error) return sizes;
+    newSizes = sizes.data;
+  }
 
   const itemUpdate = sentFields(material, [
     "name",
@@ -5570,55 +5484,73 @@ export async function upsertMaterial(
     "itemTrackingType",
     "unitOfMeasureCode"
   ]);
-  // A regenerated name was just written to every revision.
+  // A regenerated name is written to every revision below.
   if (plan.data.generated) itemUpdate.name = plan.data.generated.name;
-
-  const updateItem = await client
-    .from("item")
-    .update({
-      ...itemUpdate,
-      updatedBy,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("id", itemId)
-    .eq("companyId", companyId)
-    .select("id")
-    .single();
-  if (updateItem.error) return updateItem;
-
-  if ("customFields" in material) {
-    const updateMaterial = await client
-      .from("material")
-      .update({
-        customFields: material.customFields ?? null,
-        updatedBy,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", readableId)
-      .eq("companyId", companyId)
-      .select("id")
-      .single();
-    if (updateMaterial.error) return updateMaterial;
-  }
 
   const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
     {};
   if ("postingGroupId" in material) {
-    costUpdate.itemPostingGroupId = material.postingGroupId ?? null;
+    costUpdate.itemPostingGroupId = material.postingGroupId || null;
   }
   if (typeof material.unitCost === "number") {
     costUpdate.unitCost = material.unitCost;
   }
-  if (Object.keys(costUpdate).length > 0) {
-    // The item insert trigger creates the itemCost row, so this updates it.
-    const itemCost = await client
-      .from("itemCost")
-      .update({ ...costUpdate, updatedBy, updatedAt: datetime.timestamp() })
-      .eq("itemId", itemId)
-      .eq("companyId", companyId)
-      .select("itemId")
-      .single();
-    if (itemCost.error) return itemCost;
+
+  const permitted = await requireMaterialUpdatable(client, {
+    readableId,
+    companyId,
+    updatedBy
+  });
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  const updatedAt = datetime.timestamp();
+  try {
+    readableId = await db.transaction().execute(async (trx) => {
+      // Generated IDs follow the properties; hand-typed ones follow
+      // `readableId`.
+      const saved = await writeMaterialIdentity(trx, {
+        readableId,
+        newReadableId: generatedIds.data
+          ? plan.data.generated?.readableId
+          : material.readableId || undefined,
+        name: plan.data.generated?.name,
+        companyId,
+        updatedBy,
+        changes: plan.data.changed
+      });
+
+      await trx
+        .updateTable("item")
+        .set({ ...itemUpdate, updatedBy, updatedAt })
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if ("customFields" in material) {
+        await trx
+          .updateTable("material")
+          .set({ customFields: material.customFields ?? null, updatedAt })
+          .where("id", "=", saved)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      // The item insert trigger creates the itemCost row, so this updates it.
+      if (Object.keys(costUpdate).length > 0) {
+        const cost = await trx
+          .updateTable("itemCost")
+          .set({ ...costUpdate, updatedBy, updatedAt })
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (Number(cost.numUpdatedRows) !== 1) {
+          throw new MaterialRuleViolation(`Item cost for ${itemId} not found`);
+        }
+      }
+      return saved;
+    });
+  } catch (error) {
+    return { data: null, error: materialWriteError(error) };
   }
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
@@ -5640,15 +5572,18 @@ export async function upsertMaterial(
   });
   if (shelfLife.error) return shelfLife;
 
-  if (material.sizes?.length) {
-    const sizes = await addMaterialSizes(client, {
-      itemId,
-      readableId,
-      companyId,
-      createdBy: updatedBy,
-      sizes: material.sizes
-    });
-    if (sizes.error) return sizes;
+  if (newSizes.length > 0) {
+    // Copied from the updated revision, the way New Revision copies one.
+    const source = await getItem(client, itemId);
+    if (source.error) return source;
+    for (const size of newSizes) {
+      const revision = await createRevision(client, {
+        item: source.data,
+        revision: size,
+        createdBy: updatedBy
+      });
+      if (revision.error) return revision;
+    }
   }
 
   return client
@@ -5661,11 +5596,12 @@ export async function upsertMaterial(
 /**
  * Changes a material's substance, shape, type, finish, grade or dimension by
  * item id or readable id, as the item properties panel does. Omitted
- * properties keep their value and null clears one. A new substance clears
- * finish, grade and type, and a new shape clears dimension and type, unless
- * the same call sets them. Grade and finish must belong to the substance,
- * dimension to the shape, and type to both. With generated material IDs on,
- * every revision's readable id and name are regenerated.
+ * properties keep their value; null or an empty string clears one. A new
+ * substance clears finish, grade and type, and a new shape clears dimension
+ * and type, unless the same call sets them. Grade and finish must belong to
+ * the substance, dimension to the shape, and type to both. With generated
+ * material IDs on, every revision's readable id and name are regenerated once
+ * the material has a substance and a shape.
  */
 export async function updateMaterialProperties(
   client: SupabaseClient<Database>,
@@ -5694,7 +5630,7 @@ export async function updateMaterialProperties(
     .eq("type", "Material")
     .maybeSingle();
   if (item.error) return item;
-  const readableId = item.data?.readableId ?? material.id;
+  let readableId = item.data?.readableId ?? material.id;
 
   const [current, generatedIds] = await Promise.all([
     getMaterialPropertyValues(client, readableId, companyId),
@@ -5706,27 +5642,47 @@ export async function updateMaterialProperties(
   const plan = await planMaterialPropertyChanges(client, {
     companyId,
     current: current.data,
-    changes: sentFields(material, materialPropertyFields),
+    changes: sentMaterialProperties(material),
     generatedIds: generatedIds.data
   });
   if (plan.error) return plan;
 
-  const saved = await saveMaterialIdentity(db, {
-    readableId,
-    newReadableId: plan.data.generated?.readableId,
-    name: plan.data.generated?.name,
-    companyId,
-    updatedBy,
-    changes: plan.data.changed
-  });
-  if (saved.error) return saved;
+  if (Object.keys(plan.data.changed).length > 0) {
+    const permitted = await requireMaterialUpdatable(client, {
+      readableId,
+      companyId,
+      updatedBy
+    });
+    if (permitted.error) return { data: null, error: permitted.error };
 
-  return client
+    try {
+      readableId = await db.transaction().execute((trx) =>
+        writeMaterialIdentity(trx, {
+          readableId,
+          newReadableId: plan.data.generated?.readableId,
+          name: plan.data.generated?.name,
+          companyId,
+          updatedBy,
+          changes: plan.data.changed
+        })
+      );
+    } catch (error) {
+      return { data: null, error: materialWriteError(error) };
+    }
+  }
+
+  // The view names the grade, finish, dimension and type; add their ids.
+  const row = await client
     .from("materials")
     .select("*")
-    .eq("readableId", saved.data.readableId)
+    .eq("readableId", readableId)
     .eq("companyId", companyId)
     .single();
+  if (row.error) return row;
+  return {
+    data: { ...row.data, ...current.data, ...plan.data.changed },
+    error: null
+  };
 }
 
 /**
@@ -5742,18 +5698,19 @@ export async function upsertMaterialDimension(
       })
     | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialDimension) {
-    return (
-      client
-        .from("materialDimension")
-        .update(sanitize(materialDimension))
-        // @ts-ignore
-        .eq("id", materialDimension.id)
-        .select("id")
-        .single()
-    );
+    // Never moves the row to another company: companyId only narrows the
+    // match (MCP stamps it on every call; the settings page omits it).
+    const { id, companyId, ...update } = materialDimension;
+    let query = client
+      .from("materialDimension")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
 
   return client
@@ -5775,18 +5732,19 @@ export async function upsertMaterialFinish(
       })
     | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialFinish) {
-    return (
-      client
-        .from("materialFinish")
-        .update(sanitize(materialFinish))
-        // @ts-ignore
-        .eq("id", materialFinish.id)
-        .select("id")
-        .single()
-    );
+    // Never moves the row to another company: companyId only narrows the
+    // match (MCP stamps it on every call; the settings page omits it).
+    const { id, companyId, ...update } = materialFinish;
+    let query = client
+      .from("materialFinish")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialFinish")
@@ -5839,18 +5797,19 @@ export async function upsertMaterialGrade(
       })
     | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialGrade) {
-    return (
-      client
-        .from("materialGrade")
-        .update(sanitize(materialGrade))
-        // @ts-ignore
-        .eq("id", materialGrade.id)
-        .select("id")
-        .single()
-    );
+    // Never moves the row to another company: companyId only narrows the
+    // match (MCP stamps it on every call; the settings page omits it).
+    const { id, companyId, ...update } = materialGrade;
+    let query = client
+      .from("materialGrade")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialGrade")
@@ -5924,18 +5883,19 @@ export async function upsertMaterialType(
       })
     | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialType) {
-    return (
-      client
-        .from("materialType")
-        .update(sanitize(materialType))
-        // @ts-ignore
-        .eq("id", materialType.id)
-        .select("id")
-        .single()
-    );
+    // Never moves the row to another company: companyId only narrows the
+    // match (MCP stamps it on every call; the settings page omits it).
+    const { id, companyId, ...update } = materialType;
+    let query = client
+      .from("materialType")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialType")

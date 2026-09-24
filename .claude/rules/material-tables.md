@@ -83,25 +83,34 @@ de-dupes to the latest item per `(readableId, companyId)` and aggregates the rev
 
 `updateMaterialProperties(client, db, material)` is the one path for substance, form, type,
 finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`),
-`upsertMaterial`'s update branch and MCP all go through its helpers.
+`upsertMaterial`'s update branch and MCP all go through it. The rules are pure functions in
+`apps/erp/app/modules/items/material-properties.ts` (pinned by `apps/erp/test/material-properties.test.ts`);
+the service loads the rows they read and writes what they decide.
 
 - A new substance clears finish, grade and type; a new form clears dimension and type; unless the
-  same call sets them. This mirrors the panel's cascading pickers.
+  same call sets them (`resolveMaterialProperties`). This mirrors the panel's cascading pickers;
+  `MaterialForm` clears the same fields on create.
 - Grade and finish must belong to the substance, dimension to the form, type to both
   (`checkMaterialProperties`). Only a value the call changes, or whose parent changed, is checked,
-  so an unrelated edit never fails on older data.
-- With `materialGeneratedIds` on, substance and form are required and the readable id and name are
-  derived with `getMaterialId` / `getMaterialDescription` (`@carbon/utils`) from the resolved
-  properties, on create and on every property change. The rename of the material row and every
-  revision's item row runs in one Kysely transaction (`saveMaterialIdentity`), which refuses an id
-  another material already has.
+  so an unrelated edit never fails on older data. Refusals are `ruleError`s, so MCP shows them.
+- With `materialGeneratedIds` on, the readable id and name are derived with `getMaterialId` /
+  `getMaterialDescription` once the material has a substance and a form
+  (`generateMaterialIdentity`); until then it keeps its id, so the panel can set them one at a
+  time. Clearing a substance or form that is set is refused. Create requires both.
+- Writes go through Kysely in one transaction (`writeMaterialIdentity`): the material row and, on
+  a rename, every revision's item row; `upsertMaterial` adds the item row, custom fields and
+  itemCost to the same transaction. Kysely bypasses RLS, so `requireMaterialUpdatable` first runs
+  an UPDATE through the caller's client (material's policy is parts_update in the company, which
+  also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
 - `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
   a cleared form field, clears); `active` is never touched; `postingGroupId`/`unitCost` go to
-  `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size via
-  `createRevision`, refused while the material is open in a change notice.
+  `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size
+  via `createRevision` after the transaction, refused before any write while the material is open
+  in a change notice.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
   so their MCP tools inject only `companyId` (`INJECT_AUTH_OVERRIDES` in
-  `scripts/lib/service-metadata.ts`).
+  `scripts/lib/service-metadata.ts`). Their update branch filters by `companyId` when given and
+  never writes it, so an update cannot move a row to another company.
 
 ## Code map
 
