@@ -167,6 +167,21 @@ export type IntegrationConfig = {
   active?: boolean;
   /** Category for grouping in the UI (e.g., "Accounting", "CAD", "Email") */
   category: string;
+  /**
+   * The BEHAVIOURAL role this integration plays, as opposed to `category`,
+   * which stays a display string for badges and grouping.
+   *
+   * It answers, in one declaration, what five different hard-coded lists answer
+   * today: which integrations are accounting providers, which are spend
+   * providers, which produce sync operations, and which pairs are mutually
+   * exclusive — the database enforces at most one ACTIVE integration per role
+   * per company (migration `20260924133915`).
+   *
+   * Absent = unconstrained. Slack, Jira, Linear, Onshape, Paperless Parts,
+   * Email and Stripe Connect declare no role and are never in conflict with
+   * anything.
+   */
+  providerRole?: "accounting" | "spend";
   /** Logo component for the integration */
   logo: React.FC<React.ComponentProps<"svg">>;
   /** Brief one-liner description */

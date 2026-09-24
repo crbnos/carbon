@@ -48,6 +48,7 @@ export const Ramp = defineIntegration({
   // empty client_id, so the card reads "Coming soon" until the app is set up.
   active: !!RAMP_CLIENT_ID,
   category: "Spend Management",
+  providerRole: "spend" as const,
   logo: Logo,
   setupInstructions: SetupInstructions,
   description:

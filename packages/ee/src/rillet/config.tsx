@@ -17,6 +17,7 @@ export const Rillet = defineIntegration({
   id: "rillet",
   active: true,
   category: "Accounting",
+  providerRole: "accounting" as const,
   logo: Logo,
   setupInstructions: SetupInstructions,
   description:

@@ -8,6 +8,7 @@ export const QuickBooks = defineIntegration({
   id: "quickbooks",
   active: false,
   category: "Accounting",
+  providerRole: "accounting" as const,
   logo: Logo,
   description:
     "Integrating Carbon with QuickBooks Online keeps your books in sync: customers, vendors, items, invoices and bills flow between both systems, and Carbon's inventory and production postings are pushed as journal entries into your QuickBooks Online ledger.",

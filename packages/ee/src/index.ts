@@ -68,6 +68,34 @@ export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
 
+/**
+ * Every integration declaring a behavioural role (see `IntegrationConfig`).
+ *
+ * This is the replacement for the four hard-coded provider-id lists —
+ * `Object.values(ProviderID)` in the accounting sweeps,
+ * `ACCOUNTING_SYNC_INTEGRATION_IDS`, the inline `["xero","quickbooks","rillet"]`
+ * in the accounting layout, and `.eq("id","ramp")` in the Ramp sweep. A new
+ * provider joins by declaring its role, not by being added to a list.
+ */
+export type ProviderRole = "accounting" | "spend";
+
+/**
+ * `integrations` is a union of concrete descriptor types, and only the four
+ * providers that declare a role carry the property at all — so reading it off
+ * the union needs this widening rather than an `any`.
+ */
+const roleOf = (
+  integration: (typeof integrations)[number]
+): ProviderRole | undefined =>
+  (integration as { providerRole?: ProviderRole }).providerRole;
+
+export const getIntegrationsByRole = (role: ProviderRole) =>
+  integrations.filter((integration) => roleOf(integration) === role);
+
+/** The ids of every integration declaring `role`, for `.in("id", …)` filters. */
+export const getIntegrationIdsByRole = (role: ProviderRole) =>
+  getIntegrationsByRole(role).map((integration) => integration.id);
+
 export {
   IntegrationSecretUnavailableError,
   persistIntegrationSecrets,

@@ -20,6 +20,7 @@ export const Xero = defineIntegration({
   id: "xero",
   active: true,
   category: "Accounting",
+  providerRole: "accounting" as const,
   logo: Logo,
   description:
     "Integrating Carbon with Xero enables you to post transactions from sales invoices and purchase invoices into your existing accounting software, neatly organizing everything in your bookkeeping software.",
