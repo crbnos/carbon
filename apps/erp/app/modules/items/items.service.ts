@@ -660,7 +660,7 @@ export async function getItemDemand(
     companyId: string;
   }
 ) {
-  const [actuals, forecasts] = await Promise.all([
+  const [actuals, forecasts, projections] = await Promise.all([
     client
       .from("demandActual")
       .select("*")
@@ -675,12 +675,20 @@ export async function getItemDemand(
       .eq("locationId", locationId)
       .eq("companyId", companyId)
       .in("periodId", periods)
-      .order("periodId")
+      .order("periodId"),
+    client
+      .from("demandProjection")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId)
+      .in("periodId", periods)
   ]);
 
   return {
     actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
+    forecasts: forecasts.data ?? [],
+    projections: projections.data ?? []
   };
 }
 

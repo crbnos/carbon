@@ -48,6 +48,18 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# दिन का अतिरिक्त समय} other {# दिन का अतिरिक्त समय}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {# दिन की कमी} other {# दिन की कमी}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# ऑपरेशन के लिए कोई समय मानक नहीं है} other {# ऑपरेशन के लिए कोई समय मानक नहीं हैं}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# पंक्ति इस कंपनी के बाहर डेटा से जुड़ी है, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।} other {# पंक्तियाँ इस कंपनी के बाहर डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती।}}"
@@ -399,6 +411,9 @@ msgstr "{updatedJobCount} जॉब अपडेट किए गए"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "{uploadedFileName} अपलोड हो गया — दस्तावेज़ से फ़ील्ड भर दिए गए हैं।"
 
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# दिन} other {# दिन}}"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# पंक्ति अपेक्षित मात्रा से भिन्न है} other {# पंक्तियां अपेक्षित मात्रा से भिन्न हैं}}"
 
@@ -522,6 +537,9 @@ msgstr "90 दिन"
 
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "इस प्रक्रिया पर एक \"मेल खाना चाहिए\" नियम इन्हें एक बैच साझा करने से रोकता है"
+
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
@@ -2545,6 +2563,9 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure?"
 msgstr "क्या आप सुनिश्चित हैं?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "मानो यह कार्यशाला की कतार के आगे कूद गया हो।"
+
 msgid "As needed"
 msgstr "आवश्यकतानुसार"
 
@@ -2667,6 +2688,9 @@ msgstr "यह भंडारण इकाई को वर्क सेंट�
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "इकाई को लाइनसाइड सामग्री के लिए वर्क सेंटर में असाइन करता है, इसलिए ऑपरेटर इसे उत्पादन दृश्य में देखते हैं; मूल इकाई में सेट किए जाने पर मूल इकाई से विरासत में मिलता है।"
+
+msgid "Assumptions"
+msgstr "मान्यताएँ"
 
 msgid "At each gate"
 msgstr "हर गेट पर"
@@ -2994,6 +3018,9 @@ msgstr "सर्वश्रेष्ठ स्थिति प्रक्ष�
 msgid "Best case…"
 msgstr "सर्वश्रेष्ठ स्थिति…"
 
+msgid "Best-case finish"
+msgstr "सर्वश्रेष्ठ स्थिति में समाप्ति"
+
 msgid "Beta"
 msgstr "बीटा"
 
@@ -3090,6 +3117,9 @@ msgstr "पुस्तकें लॉक तारीख (मैनुअल)"
 
 msgid "Both"
 msgstr "दोनों"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "दोनों समाप्तियों की तुलना आपके द्वारा चुनी गई तारीख से की गई है।"
 
 msgid "Bottleneck"
 msgstr "अड़चन"
@@ -4478,6 +4508,9 @@ msgstr "PDF नहीं बना सके। फिर से कोशिश
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "{0} को भंग नहीं कर सके: {1} — उत्पादन पहले से दर्ज है"
+
+msgid "Could not predict lead time"
+msgstr "लीड टाइम की भविष्यवाणी नहीं कर सके"
 
 msgid "Could not prepare region image for analysis"
 msgstr "विश्लेषण के लिए क्षेत्र छवि तैयार नहीं की जा सकी"
@@ -6813,6 +6846,9 @@ msgstr "पिछले महीने का अंत"
 msgid "End of Last Quarter"
 msgstr "पिछली तिमाही का अंत"
 
+msgid "End of queue"
+msgstr "कतार का अंत"
+
 msgid "End Time"
 msgstr "समाप्ति समय"
 
@@ -7631,6 +7667,9 @@ msgstr "गणना अपडेट करने में विफल"
 
 msgid "Failed to update item cost"
 msgstr "आइटम लागत अपडेट करने में विफल"
+
+msgid "Failed to update lead times"
+msgstr "लीड टाइम अपडेट करने में विफल"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "क्रय आदेश के साथ अवसर अपडेट करने में विफल"
@@ -8621,6 +8660,9 @@ msgstr "यदि यह अवरुद्ध है या एक तारी
 
 msgid "If items already exist"
 msgstr "अगर आइटम पहले से मौजूद हैं"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "यदि आज ऑर्डर किया गया — सब कुछ पहले से जारी के पीछे रखा जाएगा।"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "यदि ऑर्डर किया जाता है, तो अगले 48 सप्ताह में कोई स्टॉकआउट प्रक्षेपित नहीं है"
@@ -10647,6 +10689,9 @@ msgstr "आवश्यक उस दिन के कारण काम के
 msgid "Needs a Business or Partner plan."
 msgstr "एक बिजनेस या पार्टनर प्लान की आवश्यकता है।"
 
+msgid "Needs expedite"
+msgstr "तेजी की आवश्यकता"
+
 msgid "Needs fixing"
 msgstr "मरम्मत की आवश्यकता है"
 
@@ -11624,6 +11669,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
+msgid "Not feasible"
+msgstr "संभव नहीं"
+
 msgid "Not reached"
 msgstr "प्राप्त नहीं"
 
@@ -11809,6 +11857,9 @@ msgstr "भंडारण इकाई पर"
 msgid "On this operation"
 msgstr "इस ऑपरेशन पर"
 
+msgid "On time"
+msgstr "समय पर"
+
 msgid "On-account credit available"
 msgstr "खाते पर उपलब्ध क्रेडिट"
 
@@ -11843,6 +11894,9 @@ msgstr "1 {0} कितने {1} के बराबर है?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "एक वर्कफ़्लो का एक निष्पादन, चरण दर चरण रिकॉर्ड किया गया जिसमें प्रत्येक चरण द्वारा उपयोग किए गए और उत्पादित मान शामिल हैं, वर्कफ़्लो के स्वामी की अनुमतियों के साथ पूरे समय कार्य करते हुए।"
+
+msgid "One or more quantities cannot meet this date"
+msgstr "एक या अधिक मात्रा इस तारीख को पूरी नहीं कर सकती है"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "एक सीरीज यूनिट या एक बैच जो Carbon व्यक्तिगत रूप से अनुसरण करता है, अपनी स्वयं की स्थिति और विशेषताएं जैसे समाप्ति तिथि ले जाता है।"
@@ -12652,6 +12706,9 @@ msgstr "पहले एक प्रॉपर्टी चुनें"
 msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
 
+msgid "Pick a target date to compare."
+msgstr "तुलना के लिए एक लक्ष्य तारीख चुनें।"
+
 msgid "Pick a value from an earlier step"
 msgstr "पहले के एक चरण से मान चुनें"
 
@@ -12911,6 +12968,12 @@ msgstr "संभावित डेटा हानि"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "समाप्ति Fixed Duration होने पर नई वस्तु के लिए पूर्व-भरी हुई।"
+
+msgid "Predict lead time"
+msgstr "लीड टाइम की भविष्यवाणी करें"
+
+msgid "Predicting lead time…"
+msgstr "लीड टाइम की भविष्यवाणी जारी है…"
 
 msgid "Preferred Supplier"
 msgstr "पसंदीदा आपूर्तिकर्ता"
@@ -13591,6 +13654,9 @@ msgstr "प्रश्न"
 msgid "Queued"
 msgstr "कतार में"
 
+msgid "Queued finish"
+msgstr "कतार में समाप्ति"
+
 msgid "Quiet on the floor tonight, {name}."
 msgstr "आज रात फ्लोर पर शांत, {name}।"
 
@@ -14062,9 +14128,18 @@ msgstr "निकालें"
 msgid "Remove {0}"
 msgstr "निकालें {0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "इस बैच से {0} को निकालें? इसका ऑपरेशन अपने आप चलने के लिए शेड्यूल में वापस जाता है।"
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"
@@ -14921,9 +14996,6 @@ msgstr "बिक्रय राजस्व"
 msgid "Sales Rule Violations"
 msgstr "बिक्री नियम उल्लंघन"
 
-msgid "Sales rules"
-msgstr "बिक्री नियम"
-
 msgid "Sales Rules"
 msgstr "बिक्री नियम"
 
@@ -15074,6 +15146,9 @@ msgstr "शेड्यूल पुनर्जनित"
 
 msgid "Scheduled"
 msgstr "अनुसूचित"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr "आपकी दुकान के वर्तमान कार्यभार के विरुद्ध शेड्यूल किया गया। लागू करने तक कुछ भी सहेजा नहीं जाता है।"
 
 msgid "Scheduled Maintenance"
 msgstr "अनुसूचित रखरखाव"
@@ -16872,6 +16947,9 @@ msgstr "लक्ष्य कंपनी"
 msgid "Target customers by type."
 msgstr "ग्राहकों को प्रकार से लक्ष्य करें।"
 
+msgid "Target date"
+msgstr "लक्ष्य तारीख"
+
 msgid "Target disposition row"
 msgstr "लक्ष्य निपटान पंक्ति"
 
@@ -18012,6 +18090,9 @@ msgstr "यह नौकरी अब शॉप फ्लोर पर उपल
 
 msgid "This job's own required quantity for the material."
 msgstr "इस सामग्री के लिए इस कार्य की अपनी आवश्यक मात्रा।"
+
+msgid "This line has no routing to schedule."
+msgstr "इस पंक्ति के पास शेड्यूल करने के लिए कोई रूटिंग नहीं है।"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "यह स्थान केवल स्टाफ वाले वर्क सेंटर को शेड्यूल करता है, लेकिन यह एक लाइट्स-आउट (24×7) स्टेशन है — यह छूट प्राप्त है और निरीक्षण के बिना चल रहा है।"
@@ -19169,6 +19250,9 @@ msgstr "वैट नंबर"
 
 msgid "Vendor Write-Off Income"
 msgstr "विक्रेता बट्टे खाते आय"
+
+msgid "Verdict"
+msgstr "परिणाम"
 
 msgid "Verification Error"
 msgstr "सत्यापन त्रुटि"

@@ -11,7 +11,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
+  isPlatformSignupDisabled,
   isSelfSignupBlockedForEmail,
+  PLATFORM_SIGNUP_DISABLED_MESSAGE,
   SELF_SIGNUP_BLOCKED_MESSAGE
 } from "@carbon/auth/self-signup.server";
 import {
@@ -356,9 +358,15 @@ export async function action({ request }: ActionFunctionArgs) {
     // to mint a session and leave the account: with no company it can access
     // nothing, and a later legitimate invite reuses the same row
     // (createEmployeeAccount), so there is nothing to tear down.
+    // The platform toggle closes this same OAuth seam: GoTrue exempts
+    // nothing here (the auth user already exists by the time this action
+    // runs), so a no-company, no-invite arrival is a self-signup however
+    // it authenticated.
+    const platformClosed =
+      pickable.length === 0 && (await isPlatformSignupDisabled());
     if (
-      pickable.length === 0 &&
-      isSelfSignupBlockedForEmail(authSession.email)
+      platformClosed ||
+      (pickable.length === 0 && isSelfSignupBlockedForEmail(authSession.email))
     ) {
       // ilike for the case fold only — escape LIKE metacharacters so %/_ in an
       // address can never act as wildcards and match someone else's invite.
@@ -377,7 +385,15 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!pendingInvite.data?.length) {
         return redirect(
           path.to.root,
-          await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+          await flash(
+            request,
+            error(
+              null,
+              platformClosed
+                ? PLATFORM_SIGNUP_DISABLED_MESSAGE
+                : SELF_SIGNUP_BLOCKED_MESSAGE
+            )
+          )
         );
       }
     }

@@ -647,9 +647,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isAccountingInstalled =
     integration.category === "Accounting" && integrationData.data.active;
 
-  // Sync-operation inbox for accounting integrations (RLS SELECT covers
-  // employees, so the user-scoped client is enough). Params are prefixed
-  // (syncStatus/syncPage) to avoid clashing with other search params.
+  // Ramp (Spend Management) also writes accountingSyncOperation rows for its
+  // inbound/outbound families, so it gets the same Sync Activity inbox — minus
+  // the accounting-only tie-out/reconciliation surfaces, which stay gated on
+  // isAccountingInstalled below.
+  const producesSyncOperations =
+    isAccountingInstalled ||
+    (integration.id === "ramp" && integrationData.data.active);
+
+  // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
+  // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
+  // clashing with other search params.
   let syncActivity: {
     operations: SyncOperation[];
     count: number;
@@ -672,7 +680,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     } | null;
   } | null = null;
 
-  if (isAccountingInstalled) {
+  if (producesSyncOperations) {
     const url = new URL(request.url);
     const statusFilter = SyncOperationStatusSchema.safeParse(
       url.searchParams.get("syncStatus")
@@ -699,13 +707,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         status: ["Failed", "Warning"],
         limit: 1
       }),
-      // Tie-out cells for this integration. The table is not in the
-      // generated DB types yet — cast, same pattern as
-      // @carbon/ee/accounting core/operations.ts.
-      (client.from("accountingSyncTieOut" as any) as any)
-        .select("internalDelta, externalDelta, computedAt")
-        .eq("companyId", companyId)
-        .eq("integration", integrationId)
+      // Tie-out cells for this integration — accounting-only (Ramp has no
+      // reconciliation tie-out). The table is not in the generated DB types
+      // yet — cast, same pattern as @carbon/ee/accounting core/operations.ts.
+      isAccountingInstalled
+        ? (client.from("accountingSyncTieOut" as any) as any)
+            .select("internalDelta, externalDelta, computedAt")
+            .eq("companyId", companyId)
+            .eq("integration", integrationId)
+        : Promise.resolve({ data: [], error: null })
     ]);
 
     if (operations.error) {

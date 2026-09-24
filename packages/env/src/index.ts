@@ -9,7 +9,6 @@ declare global {
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
       STRIPE_CONNECT_ENABLED: string;
-      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
       JIRA_CLIENT_ID: string;
@@ -36,8 +35,6 @@ declare global {
     interface ProcessEnv {
       CARBON_EDITION: string;
       CARBON_API_URL: string;
-      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
-      CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
       DOMAIN: string;
       ERP_URL: string;
       JIRA_CLIENT_ID: string;
@@ -162,15 +159,6 @@ export const CARBON_API_URL =
     isRequired: false,
     isSecret: false
   }) ?? getEnv("SUPABASE_URL", { isSecret: false });
-
-export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SITE_KEY",
-  { isRequired: false, isSecret: false }
-);
-export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SECRET_KEY",
-  { isRequired: false }
-);
 
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 
@@ -377,15 +365,6 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isSecret: true
   }
 );
-// True once Supabase Auth captcha (Attack Protection) is enabled — login
-// actions then forward Turnstile tokens to GoTrue instead of verifying in-app.
-export const SUPABASE_AUTH_CAPTCHA_ENABLED = parseBoolean(
-  getEnv("SUPABASE_AUTH_CAPTCHA_ENABLED", {
-    isRequired: false,
-    isSecret: false
-  }),
-  false
-);
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
 export const SESSION_ERROR_KEY = "error";
@@ -493,6 +472,11 @@ export const IS_LOCAL_DEV =
   VERCEL_ENV !== "production" &&
   VERCEL_ENV !== "preview";
 
+// Set to "1" by Vercel itself on every build and function — never by SST,
+// Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.
+export const IS_VERCEL =
+  getEnv("VERCEL", { isRequired: false, isSecret: true }) === "1";
+
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
 });
@@ -580,7 +564,6 @@ export function getBrowserEnv() {
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
     STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
     ERP_URL,

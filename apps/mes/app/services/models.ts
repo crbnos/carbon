@@ -1,5 +1,13 @@
+import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+// Round an optional produced/scrap quantity to internal precision at parse, so a
+// decimal typed on the floor is stored at the same scale everywhere.
+const roundedOptionalQuantity = () =>
+  zfd
+    .numeric(z.number().min(0).optional())
+    .transform((v) => (v === undefined ? v : round(v)));
 
 export const documentTypes = [
   "Archive",
@@ -242,9 +250,10 @@ export const scrapTrackedEntityValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-// Complete a job operation batch: per-member produced quantity (pre-filled with the
-// operation quantity) + optional per-member scrap. quantity is int —
-// productionQuantity.quantity is INTEGER. See
+// Complete a job operation batch: per-member produced quantity (pre-filled with
+// the operation quantity) + optional per-member scrap. Quantities are decimal —
+// productionQuantity.quantity is NUMERIC (widened for weight/length UoMs) — and
+// are rounded to internal precision at parse. See
 // .ai/specs/2026-08-21-job-operation-batching.md.
 export const completeJobOperationBatchValidator = z.object({
   batchId: z.string().min(1, { message: "Batch is required" }),
@@ -256,8 +265,13 @@ export const completeJobOperationBatchValidator = z.object({
         // disabled and therefore omitted from FormData. The route forces
         // excluded members to 0 after validation and coerces an omitted
         // included quantity to 0, so `undefined` never reaches the edge fn.
-        quantity: zfd.numeric(z.number().int().min(0).optional()),
-        scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // Not integer-only: a job's operation quantity can be fractional (any
+        // non-discrete unit of measure), so the pre-filled remainder — and the
+        // operator's edit — must accept decimals, matching single-op completion
+        // (baseQuantityValidator). An `.int()` here silently failed validation
+        // and the modal never submitted. Rounded to internal precision at parse.
+        quantity: roundedOptionalQuantity(),
+        scrapQuantity: roundedOptionalQuantity(),
         // Batch-tracked output: the member's WIP entity finalized as the
         // produced lot. Its lot number was planned at batch creation and is
         // resolved server-side — never an operator input.

@@ -642,6 +642,9 @@ msgstr "Finish with material unpicked?"
 msgid "First due {0}"
 msgstr "First due {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Fix the highlighted quantities before completing."
+
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
@@ -1162,7 +1165,7 @@ msgstr "Pause"
 msgid "Pick"
 msgstr "Pick"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Pick {0}"
 

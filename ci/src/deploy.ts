@@ -40,8 +40,6 @@ export type Workspace = {
   // App Configuration
   auth_providers: string | null;
   carbon_edition: string | null;
-  cloudflare_turnstile_secret_key: string | null;
-  cloudflare_turnstile_site_key: string | null;
   controlled_environment: string | null;
   exchange_rates_api_key: string | null;
   google_places_api_key: string | null;
@@ -122,8 +120,6 @@ async function deploy(): Promise<void> {
         carbon_edition,
         cert_arn_erp,
         cert_arn_mes,
-        cloudflare_turnstile_secret_key,
-        cloudflare_turnstile_site_key,
         controlled_environment,
         database_connection_pooler_url,
         database_password,
@@ -288,10 +284,6 @@ async function deploy(): Promise<void> {
           CARBON_EDITION: carbon_edition ?? "enterprise",
           CERT_ARN_ERP: cert_arn_erp,
           CERT_ARN_MES: cert_arn_mes,
-          CLOUDFLARE_TURNSTILE_SECRET_KEY:
-            cloudflare_turnstile_secret_key ?? undefined,
-          CLOUDFLARE_TURNSTILE_SITE_KEY:
-            cloudflare_turnstile_site_key ?? undefined,
           CONTROLLED_ENVIRONMENT: controlled_environment ?? undefined,
           DOMAIN: domain_name,
           EXCHANGE_RATES_API_KEY: exchange_rates_api_key ?? undefined,

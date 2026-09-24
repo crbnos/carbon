@@ -5,7 +5,7 @@ import {
   parseDate,
   toCalendarDate
 } from "@internationalized/date";
-import { it } from "vitest";
+import { it, vi } from "vitest";
 
 /**
  * Determinism proof for the finite placement engine.
@@ -57,6 +57,11 @@ import {
   type ProcessRequirement,
   WorkCenterSelector
 } from "./work-center-selector.ts";
+
+// Each test runs the full ~120-operation placement two or more times: ~100ms
+// on a workstation, but 2-6s under CI's parallel turbo test run, which
+// overruns vitest's 5s default without anything being wrong.
+vi.setConfig({ testTimeout: 30_000 });
 
 const utc = (iso: string) => parseAbsolute(iso, "UTC").toDate().getTime();
 const iso = (ms: number) => fromAbsolute(ms, "UTC").toAbsoluteString();

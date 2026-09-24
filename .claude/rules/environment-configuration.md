@@ -70,7 +70,8 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
 single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
-`CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`.
+`RATE_LIMIT`. `IS_VERCEL` reads Vercel's own `VERCEL=1` and gates
+login BotID (see `authentication-system.md`).
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
 root `.env` and reach GoTrue via docker-compose substitution (`GOTRUE_SAML_*`).
 Both `crbn up` and `crbn reload` preload `.env.local` then `.env` into

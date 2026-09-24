@@ -167,6 +167,8 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
         mapping: createMappingService(db, scope.companyId),
         decimalsCache: new Map(),
         exchangeRateCache: new Map(),
+        createdBy: "system",
+        trigger: "event",
         metadata: { sync: { pullBills: true } } as RampSyncContext["metadata"]
       };
       const bill: RampBill = {

@@ -28,6 +28,8 @@ import {
   getRampExchangeRate,
   normalizeVerifiedMinorAmount,
   type RampSyncContext,
+  recordRampSyncFailures,
+  resolveRampSyncOperations,
   type SyncItem,
   stripSpecialCharacters,
   verifyCostCenters,
@@ -414,6 +416,8 @@ type CardFamilyGate =
 type CardFamilyConfig<TItem extends RampCardListItem> = {
   /** Sync toggle key (`metadata.sync.pull*`). */
   family: RampInboundFamily;
+  /** `accountingSyncOperation.entityType` for this family's Sync Activity rows. */
+  entityType: string;
   /** Human name used in the drain-failure log line. */
   label: string;
   /** Ramp confirm `sync_type` for this family. */
@@ -523,6 +527,22 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
   result.reconfirmed += reconfirmed.successful.length;
   result.created = successful.length - result.reconfirmed;
   result.failed += failed.length;
+
+  // Sync Activity: record why each item failed, and clear a prior Warning for
+  // any item that synced (or is now already mapped) this run.
+  await recordRampSyncFailures(ctx, {
+    entityType: config.entityType,
+    direction: "pull-from-accounting",
+    failures: failed
+  });
+  await resolveRampSyncOperations(ctx, {
+    entityType: config.entityType,
+    direction: "pull-from-accounting",
+    entityIds: [
+      ...successful.map((item) => item.id),
+      ...mapped.map((item) => item.rampId)
+    ]
+  });
   return result;
 }
 
@@ -708,6 +728,7 @@ export async function syncRampCardTransactions(
     cardLiabilityAccountId,
     {
       family: "transactions",
+      entityType: "cardTransaction",
       label: "card transactions",
       syncType: "TRANSACTION_SYNC",
       gate: (ctx, cardLiabilityAccountId) => {
@@ -746,6 +767,7 @@ export async function syncRampTransfers(
     cardLiabilityAccountId,
     {
       family: "transfers",
+      entityType: "transfer",
       label: "transfers",
       syncType: "TRANSFER_SYNC",
       gate: (ctx, cardLiabilityAccountId) => {
@@ -780,6 +802,7 @@ export async function syncRampCashbacks(
     cardLiabilityAccountId,
     {
       family: "cashbacks",
+      entityType: "cashback",
       label: "cashbacks",
       syncType: "STATEMENT_CREDIT_SYNC",
       // Skip the family silently when no cashback income account is configured.

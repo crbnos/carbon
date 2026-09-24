@@ -65,7 +65,6 @@ catalog:
   '@lingui/macro': 5.9.4
   '@lingui/react': 5.9.4
   '@lingui/vite-plugin': 5.9.4
-  '@marsidev/react-turnstile': 1.5.0
   '@logtape/logtape': 2.2.3
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3
@@ -113,6 +112,7 @@ catalog:
   '@vercel/analytics': 1.6.1
   '@vercel/react-router': 1.2.6
   axios: 1.16.0
+  botid: 1.5.11
   class-variance-authority: 0.7.1
   cookie: 1.1.1
   cross-env: 7.0.3

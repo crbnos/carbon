@@ -48,6 +48,18 @@ msgstr "\"{taskName}\"已完成——其所有{0}个设置映射项都已配置�
 msgid "(excluded for this customer)"
 msgstr "(已为此客户排除)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# 天的松弛} other {# 天的松弛}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {缺# 天} other {缺# 天}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# 道工序无工时定额} other {# 道工序无工时定额}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# 行链接到该公司外的数据，无法制作当前数据的安全副本。} other {# 行链接到该公司外的数据，无法制作当前数据的安全副本。}}"
@@ -399,6 +411,9 @@ msgstr "已更新{updatedJobCount}个工单"
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "已上传{uploadedFileName}——字段从文件填充。"
 
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# 天} other {# 天}}"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {#行与预期数量不同} other {#行与预期数量不同}}"
 
@@ -522,6 +537,9 @@ msgstr "90天"
 
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
+
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
@@ -2545,6 +2563,9 @@ msgstr "您确定要作废此发货吗？此操作将反转所有库存交易，
 msgid "Are you sure?"
 msgstr "你确定吗？"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "就像它跳到了车间队列的最前面。"
+
 msgid "As needed"
 msgstr "按需"
 
@@ -2667,6 +2688,9 @@ msgstr "将此存储单元分配给工作中心（线边）"
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "将此库位分配给工作中心以进行线边物料管理，使操作员能在生产视图上看到；从父库位继承该设置。"
+
+msgid "Assumptions"
+msgstr "假设"
 
 msgid "At each gate"
 msgstr "在每个关卡"
@@ -2994,6 +3018,9 @@ msgstr "最佳情况预测"
 msgid "Best case…"
 msgstr "最佳情况…"
 
+msgid "Best-case finish"
+msgstr "最佳情况完成日期"
+
 msgid "Beta"
 msgstr "测试版"
 
@@ -3090,6 +3117,9 @@ msgstr "账册锁定日期（手动）"
 
 msgid "Both"
 msgstr "两者"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "将两个交期与您选择的日期进行对比。"
 
 msgid "Bottleneck"
 msgstr "瓶颈"
@@ -4478,6 +4508,9 @@ msgstr "无法生成 PDF。请重试。"
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "无法解散 {0}: {1} — 生产已记录"
+
+msgid "Could not predict lead time"
+msgstr "无法预测提前期"
 
 msgid "Could not prepare region image for analysis"
 msgstr "无法准备区域图像以进行分析"
@@ -6813,6 +6846,9 @@ msgstr "上月末"
 msgid "End of Last Quarter"
 msgstr "上一季度末"
 
+msgid "End of queue"
+msgstr "队列末尾"
+
 msgid "End Time"
 msgstr "结束时间"
 
@@ -7631,6 +7667,9 @@ msgstr "更新计数失败"
 
 msgid "Failed to update item cost"
 msgstr "更新项目成本失败"
+
+msgid "Failed to update lead times"
+msgstr "无法更新提前期"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "未能使用采购订单更新商机"
@@ -8621,6 +8660,9 @@ msgstr "如果它正在阻塞或日期处于风险中，它会获得一个负责
 
 msgid "If items already exist"
 msgstr "如果物料已经存在"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "如果今日订购——将排在所有已下达工作之后。"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "如果已订购，未来48周内无缺货预测"
@@ -10647,6 +10689,9 @@ msgstr "需要的是该天的工作小时数除以 {personDayHours} 小时，向
 msgid "Needs a Business or Partner plan."
 msgstr "需要业务或合作伙伴计划。"
 
+msgid "Needs expedite"
+msgstr "需要加急"
+
 msgid "Needs fixing"
 msgstr "需要修复"
 
@@ -11624,6 +11669,9 @@ msgstr "未配置"
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
+msgid "Not feasible"
+msgstr "不可行"
+
 msgid "Not reached"
 msgstr "未到达"
 
@@ -11809,6 +11857,9 @@ msgstr "在存储单元上"
 msgid "On this operation"
 msgstr "在此工序上"
 
+msgid "On time"
+msgstr "准时"
+
 msgid "On-account credit available"
 msgstr "可用账户贷方"
 
@@ -11843,6 +11894,9 @@ msgstr "1 {0} 等于多少 {1}？"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "一次工作流执行，逐步记录每个步骤使用和产生的值，始终以工作流负责人的权限行动。"
+
+msgid "One or more quantities cannot meet this date"
+msgstr "一个或多个数量无法满足此日期"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Carbon单独跟踪的一个编号件或一个生产批次，具有自己的状态和属性，例如有效期。"
@@ -12652,6 +12706,9 @@ msgstr "先选择属性"
 msgid "Pick a record type…"
 msgstr "选择记录类型…"
 
+msgid "Pick a target date to compare."
+msgstr "选择一个目标日期进行比较。"
+
 msgid "Pick a value from an earlier step"
 msgstr "从早期步骤选择一个值"
 
@@ -12911,6 +12968,12 @@ msgstr "潜在数据丢失"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "当有效期为固定期间时，为新物料预填充。"
+
+msgid "Predict lead time"
+msgstr "预测提前期"
+
+msgid "Predicting lead time…"
+msgstr "正在预测提前期…"
 
 msgid "Preferred Supplier"
 msgstr "首选供应商"
@@ -13591,6 +13654,9 @@ msgstr "问题"
 msgid "Queued"
 msgstr "排队中"
 
+msgid "Queued finish"
+msgstr "排队完成日期"
+
 msgid "Quiet on the floor tonight, {name}."
 msgstr "今晚车间很安静，{name}。"
 
@@ -14062,9 +14128,18 @@ msgstr "移除"
 msgid "Remove {0}"
 msgstr "移除{0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行。"
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -14921,9 +14996,6 @@ msgstr "销售收入"
 msgid "Sales Rule Violations"
 msgstr "销售规则违规"
 
-msgid "Sales rules"
-msgstr "销售规则"
-
 msgid "Sales Rules"
 msgstr "销售规则"
 
@@ -15074,6 +15146,9 @@ msgstr "排程已重新生成"
 
 msgid "Scheduled"
 msgstr "已计划"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr "根据您车间当前工作负荷进行排程。在您应用前，不会保存任何内容。"
 
 msgid "Scheduled Maintenance"
 msgstr "定期维护"
@@ -16872,6 +16947,9 @@ msgstr "目标公司"
 msgid "Target customers by type."
 msgstr "按类型定位客户。"
 
+msgid "Target date"
+msgstr "目标日期"
+
 msgid "Target disposition row"
 msgstr "目标处置行"
 
@@ -18012,6 +18090,9 @@ msgstr "此工作将不再在车间可用。"
 
 msgid "This job's own required quantity for the material."
 msgstr "这个工单所需的原材料数量。"
+
+msgid "This line has no routing to schedule."
+msgstr "此行没有要排程的工艺路线。"
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "此地点仅排程有人值守的工作中心，但这是一个无人值守工作站（24×7）— 它被豁免并保持无人运行。"
@@ -19169,6 +19250,9 @@ msgstr "增值税号"
 
 msgid "Vendor Write-Off Income"
 msgstr "供应商核销收益"
+
+msgid "Verdict"
+msgstr "结果"
 
 msgid "Verification Error"
 msgstr "验证错误"

@@ -20,6 +20,7 @@ import {
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { isAuditLogEnabled } from "@carbon/ee/audit.server";
 import { getPlan } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
 import {
   detectImplementationSignals,
   getImplementationCheckStates,
@@ -88,6 +89,8 @@ import {
   getUserGroups
 } from "~/modules/users/users.server";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
+
+const log = getLogger("erp", "auth");
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -210,7 +213,28 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // logging out here made the `requiresOnboarding` redirect below unreachable.
   // Only a genuine RPC error (groups.error) logs out.
   if (!claims || user.error || !user.data || groups.error) {
-    throw await destroyAuthSession(request);
+    // Four very different faults share this exit: no claims usually means the
+    // user has no company membership (get_claims returned nothing), while the
+    // user/groups errors mean a failed RPC. Record which one before bouncing.
+    const reason = !claims
+      ? "no-claims"
+      : user.error
+        ? "user-error"
+        : !user.data
+          ? "no-user-row"
+          : "groups-error";
+
+    log.warn("Destroying auth session in x+/_layout loader", {
+      userId,
+      companyId,
+      reason,
+      noClaims: !claims,
+      userError: user.error?.message ?? null,
+      hasUserData: Boolean(user.data),
+      groupsError: groups.error?.message ?? null
+    });
+
+    throw await destroyAuthSession(request, reason);
   }
 
   const employeeCompanies = employeeCompaniesResult.data ?? [];
@@ -481,7 +505,7 @@ export default function AuthenticatedRoute() {
               <TooltipProvider>
                 <div className="flex h-screen">
                   <PrimaryNavigation />
-                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border relative z-10">
+                  <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
                     <Topbar />
                     <main className="flex-1 overflow-y-auto scrollbar-hide relative">
                       <Outlet />

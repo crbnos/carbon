@@ -44,8 +44,9 @@ Enterprise `docs/reference/single-sign-on` adds two more:
 Turns on the SAML engine in the auth service.
 SAML signing key — base64-encoded PKCS#1 DER RSA, minimum 2048-bit; the generation command is in `.env.example`.
 
-Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY` and
-`CLOUDFLARE_TURNSTILE_SECRET_KEY`.
+Carbon Cloud protects sign-in with Vercel BotID. It runs only on a Vercel deployment of
+the Cloud edition and needs no environment variables, so a self-hosted instance has no
+bot check on sign-in. The per-IP rate limit and per-account lockout still apply.
 
 ## Jobs & cache
 

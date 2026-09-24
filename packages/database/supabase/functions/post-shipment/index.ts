@@ -7,7 +7,7 @@ import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database, Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import {
   buildJournalLineDimensionInserts,
   type JournalDimensionMeta,
@@ -741,10 +741,20 @@ serve(async (req: Request) => {
                     ]
                 );
 
+                // Round both, then ask isFullDraw first: a residue lot
+                // (holding 0.020000000000000018 after an earlier split)
+                // shipped in full reads as `shipped < quantity` on a raw
+                // compare, and the split loop below then throws the builder's
+                // `draw >= parentQty` guard on a legitimate full shipment.
+                const entityQuantity = round(Number(trackedEntity.quantity));
+                const shippedQuantity = round(
+                  Number(shipmentLine?.shippedQuantity)
+                );
                 if (
                   shipmentLine?.shippedQuantity !== undefined &&
                   trackedEntity.quantity !== undefined &&
-                  shipmentLine.shippedQuantity < trackedEntity.quantity
+                  !isFullDraw(entityQuantity, shippedQuantity) &&
+                  shippedQuantity < entityQuantity
                 ) {
                   // Partial shipment → split. The shelf entity keeps its id
                   // and is only decremented (split loop below); the SHIPPED
@@ -752,10 +762,9 @@ serve(async (req: Request) => {
                   // update on the parent here.
                   trackedEntitySplits[trackedEntity.id] = {
                     originalEntityId: trackedEntity.id,
-                    originalQuantity: trackedEntity.quantity,
-                    shippedQuantity: shipmentLine.shippedQuantity,
-                    remainingQuantity:
-                      trackedEntity.quantity - shipmentLine.shippedQuantity,
+                    originalQuantity: entityQuantity,
+                    shippedQuantity,
+                    remainingQuantity: round(entityQuantity - shippedQuantity),
                     readableId: trackedEntity.readableId,
                     attributes:
                       trackedEntity.attributes as TrackedEntityAttributes,
@@ -772,8 +781,14 @@ serve(async (req: Request) => {
 
                 acc[trackedEntity.id] = {
                   status: "Consumed",
-                  quantity:
-                    shipmentLine?.shippedQuantity ?? trackedEntity.quantity,
+                  // Keep the ?? fallback exactly as it was and just round it:
+                  // a null shippedQuantity must still fall through to the
+                  // entity's own quantity, which `!== undefined` would not do.
+                  quantity: round(
+                    Number(
+                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
+                    )
+                  ),
                 };
 
                 return acc;
@@ -1391,10 +1406,20 @@ serve(async (req: Request) => {
                     ]
                 );
 
+                // Round both, then ask isFullDraw first: a residue lot
+                // (holding 0.020000000000000018 after an earlier split)
+                // shipped in full reads as `shipped < quantity` on a raw
+                // compare, and the split loop below then throws the builder's
+                // `draw >= parentQty` guard on a legitimate full shipment.
+                const entityQuantity = round(Number(trackedEntity.quantity));
+                const shippedQuantity = round(
+                  Number(shipmentLine?.shippedQuantity)
+                );
                 if (
                   shipmentLine?.shippedQuantity !== undefined &&
                   trackedEntity.quantity !== undefined &&
-                  shipmentLine.shippedQuantity < trackedEntity.quantity
+                  !isFullDraw(entityQuantity, shippedQuantity) &&
+                  shippedQuantity < entityQuantity
                 ) {
                   // Partial shipment → split. The shelf entity keeps its id
                   // and is only decremented (split loop below); the SHIPPED
@@ -1402,10 +1427,9 @@ serve(async (req: Request) => {
                   // the parent here.
                   trackedEntitySplits[trackedEntity.id] = {
                     originalEntityId: trackedEntity.id,
-                    originalQuantity: trackedEntity.quantity,
-                    shippedQuantity: shipmentLine.shippedQuantity,
-                    remainingQuantity:
-                      trackedEntity.quantity - shipmentLine.shippedQuantity,
+                    originalQuantity: entityQuantity,
+                    shippedQuantity,
+                    remainingQuantity: round(entityQuantity - shippedQuantity),
                     readableId: trackedEntity.readableId,
                     attributes:
                       trackedEntity.attributes as TrackedEntityAttributes,
@@ -1421,8 +1445,14 @@ serve(async (req: Request) => {
                 }
 
                 acc[trackedEntity.id] = {
-                  quantity:
-                    shipmentLine?.shippedQuantity ?? trackedEntity.quantity,
+                  // Keep the ?? fallback exactly as it was and just round it:
+                  // a null shippedQuantity must still fall through to the
+                  // entity's own quantity, which `!== undefined` would not do.
+                  quantity: round(
+                    Number(
+                      shipmentLine?.shippedQuantity ?? trackedEntity.quantity
+                    )
+                  ),
                 };
 
                 return acc;
@@ -2396,17 +2426,17 @@ serve(async (req: Request) => {
                     createdBy: userId,
                     companyId,
                   });
-                  if (draw + 0.00001 >= entityQty) {
+                  if (isFullDraw(entityQty, draw)) {
                     trackedEntityUpdates[entity.id] = {
                       status: "Consumed",
-                      quantity: entityQty,
+                      quantity: round(entityQty),
                     };
                   } else {
                     // Partial → split at post; the negative ledger row above is
                     // retargeted to the departing child in the transaction.
                     trackedEntitySplits.push({
                       entity,
-                      drawQuantity: draw,
+                      drawQuantity: round(draw),
                       storageUnitId: shipmentLine.storageUnitId,
                       itemId: shipmentLine.itemId,
                       ledgerIndex,

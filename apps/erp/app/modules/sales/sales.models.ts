@@ -1070,6 +1070,17 @@ export const selectedLineSchema = z.object({
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
+// Quote lead-time prediction — a JSON body (not FormData), so plain zod.
+export const quoteLeadTimeValidator = z.object({
+  // Each quantity runs two full scheduling simulations; cap the per-request work.
+  quantities: z.array(z.number().positive()).min(1).max(50),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable()
+});
+
 // Sales Order Locked Status
 export const SALES_ORDER_LOCKED_STATUSES = [
   "To Ship and Invoice",

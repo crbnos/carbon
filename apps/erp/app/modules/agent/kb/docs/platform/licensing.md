@@ -1,6 +1,6 @@
 # Licensing
 
-> Carbon is dual-licensed: AGPLv3 for the open core, a commercial license for Enterprise features and for production or hosted use.
+> Carbon is dual-licensed: AGPLv3 for Community Edition (CE), and a commercial license for Business features or for keeping your changes private.
 
 Carbon's source is public, but using it isn't unconditional. Two licenses govern the code, and which one applies depends on **what you run and how you run it**. This page is the map; the [LICENSE](https://github.com/crbnos/carbon/blob/main/LICENSE) file is the contract.
 
@@ -8,11 +8,33 @@ Carbon's source is public, but using it isn't unconditional. Two licenses govern
 
 | Edition | What it is | License |
 | --- | --- | --- |
-| **Community** | The open core: ERP + MES, self-hosted on your own infrastructure. | AGPLv3 |
-| **Enterprise** | Self-hosted Carbon with a commercial license: unlocks Enterprise features and lifts the AGPL copyleft obligation. | Commercial |
-| **Cloud** | Carbon run for you at [app.carbon.ms](https://app.carbon.ms), billed on the Starter and Business plans. | Commercial |
+| **Community Edition**<br />CE | The open core: ERP, MES, MRP, and QMS, plus accounting and the product configurator, self-hosted on your own infrastructure. | AGPLv3 |
+| **Enterprise Edition**<br />EE | Self-hosted Carbon with a commercial license: unlocks the Business features and lifts the AGPL copyleft obligation. | Commercial |
+| **Cloud Edition** | Carbon run for you at [app.carbon.ms](https://app.carbon.ms), on the Starter, Business, or Enterprise plan. | Commercial |
 
-Self-hosting (the `docs/platform/self-hosting/docker-caddy` or the `docs/platform/self-hosting/aws-sst`) runs the **Community** edition by default. A commercial license turns the same hardware into the **Enterprise** edition.
+Self-hosting (the `docs/platform/self-hosting/docker-caddy` or the `docs/platform/self-hosting/aws-sst`) runs **Community Edition (CE)** by default. A commercial license turns the same hardware into **Enterprise Edition (EE)**.
+
+## What each plan unlocks
+
+Carbon Cloud comes in three plans, and the line between them is the line the repository already draws. The **Starter** plan runs the open core: every feature whose code sits outside `packages/ee`, under AGPLv3. That is the same code **Community Edition (CE)** runs when you host Carbon yourself.
+
+The **Business** and **Enterprise** plans add the Business features, the code in `packages/ee` and in any `.ee.` file, which is what **Enterprise Edition (EE)** unlocks on your own hardware. The Enterprise plan goes further again, adding capabilities no other plan can reach, like SSO and controlled or self-hosted deployments, together with the people to implement them.
+
+| Cloud plan | What it adds | Code it runs | How you get it |
+| --- | --- | --- | --- |
+| **Starter** | The open core, hosted and kept up to date for you | CE only: everything outside `packages/ee` | Self-signup, month to month |
+| **Business** | The Business features, plus technical support | CE + EE: adds `packages/ee` and `.ee.` files | Self-signup, month to month |
+| **Enterprise** | Everything in Business, plus deployment options, compliance, and services | CE + EE, plus capabilities gated to the Enterprise edition | A signed [Enterprise Subscription](#carbon-cloud--we-run-it) |
+
+The **Starter** plan covers ERP, MES, MRP, and QMS, accounting with general ledger, financial reports, fixed assets, and multi-currency, the product configurator with rules-based BOMs and routings, unlimited records, self-onboarding, and community support.
+
+The **Business** plan adds technical support; API, webhooks, integrations, and MCP; workflow automation with custom triggers; demand forecasting; shop floor console mode; customer portals with live order status and files; email and Slack notifications; custom roles, permissions, and approval rules; and audit logging, 2FA enforcement, and backup/restore.
+
+The **Enterprise** plan adds a forward deployed engineer; customizations, training, and integrations; full setup and migrations; SSO/SAML; CMMC Level 2 compliance; air-gapped and ITAR deployments; and unlimited functional support. It runs on Carbon Cloud, or on your own infrastructure under a commercial license as Enterprise Edition.
+
+The **Enterprise plan** is how you buy Carbon Cloud with a service level attached. **Enterprise Edition (EE)** is what a commercial license turns a self-hosted install into. They unlock the same Business features by different routes, so the docs always say "plan" or "Edition" rather than Enterprise on its own.
+
+[carbon.ms/pricing](https://carbon.ms/pricing) carries the current prices and the side-by-side comparison.
 
 ## How to buy
 
@@ -41,23 +63,18 @@ Custom features, integrations, data migrations, additional forward-deployed engi
 
 ## Self-hosted — you run it
 
-Clone Carbon from GitHub and run it on your own infrastructure. By default that's the **Community** edition, and how you're licensed depends on what you change and who you run it for.
+Clone Carbon from GitHub and run it on your own infrastructure. By default that's **Community Edition (CE)**, which is free under AGPLv3. You only need a commercial license to use Business features or to keep your changes private.
 
-**Community Edition** is the open core under AGPLv3 — free, no agreement needed. Running unmodified Community Edition for your own business never requires a license. Two things come with that freedom: any modifications you make available to users over a network must be published under the AGPL, and the Enterprise code is excluded, so community mode ships without EE features, Carbon support, or an SLA.
+**Community Edition (CE)** is the open core under AGPLv3 — free, no agreement needed. Running CE for your own business, modified or not, never requires a license. Two things come with that freedom: if you let others use a modified version over a network, you must offer those users its source under the AGPL, and the Enterprise Edition code is excluded, so CE ships without Business features, Carbon support, or an SLA.
 
 A **commercial license is required** the moment any one of these is true:
 
-- You keep a private fork or make private changes.
-- You use anything under `packages/ee` or any `.ee` file.
-- You host Carbon for anyone else, including an integrator running it for clients.
-- You resell, white-label, or ship Carbon inside a product you sell.
+- You use anything under `packages/ee` or any `.ee.` file.
+- You want to keep your changes private from the people who use your modified version.
 
-The **Carbon Commercial License Agreement** covers all of that. It's self-hosted with full codebase access including Enterprise, over a one, three, or five-year term, and it replaces the AGPL copyleft so your modifications stay private. It takes two shapes for a company running Carbon for itself:
+The **Carbon Commercial License Agreement** covers all of that. It's self-hosted with full codebase access, including the Business features, over a one, three, or five-year term, and it replaces the AGPL copyleft so your modifications stay private. For a company running Carbon for itself, it's licensed per user, per year, and renews.
 
-- **Subscription** — licensed per user, per year, and renewing.
-- **Perpetual** — a one-time license you own outright, offered on a premium basis. A perpetual license can also be reached through a written rent-to-own path.
-
-For **partners** who sell Carbon, the same commercial license covers three models:
+For **partners** who sell Carbon with Business features or without AGPL obligations, the same commercial license covers three models:
 
 - **Reseller** — you sell Carbon under Carbon's name.
 - **White-label** — you sell it under your own brand and take first-line support, so your customers never see Carbon.
@@ -65,13 +82,7 @@ For **partners** who sell Carbon, the same commercial license covers three model
 
 ## The AGPL obligation
 
-AGPLv3 is a **network copyleft** license: modify Carbon, make it available to users over a network, and you must offer those users your complete modified source under the same license. Carbon's license goes one step further than stock AGPL.
-
-From the LICENSE: *"any use of this software for internal production use is strictly prohibited unless the modifications are made open-source in accordance with the 'AGPLv3' license or a commercial license is obtained."* Running Carbon in production is fine, but unless you hold a commercial license, your changes have to be published under AGPLv3.
-
-## You can't resell Carbon as a service
-
-From the LICENSE: *"Any use of this software to sell Carbon source code as a hosted service is strictly prohibited without obtaining a commercial license."*
+AGPLv3 is a **network copyleft** license: modify Carbon, make it available to users over a network, and you must offer those users your complete modified source under the same license.
 
 ## How the agreements fit together
 
@@ -87,11 +98,9 @@ A commercial agreement covers the signer and its named affiliates. Customer-port
 
 [Get a commercial license](mailto:chase@carbon.ms), or just use [Carbon Cloud](https://app.carbon.ms), if you want to:
 
-- **Keep your modifications private** instead of publishing them under AGPLv3.
-- **Use Enterprise features:** the EE integrations and other Enterprise capabilities. See `docs/integrations` for the catalog.
-- **Run Carbon in production** without open-sourcing your changes.
-- **Offer Carbon to others** as a hosted service, a white-label product, or embedded in what you sell.
+- **Keep your modifications private** from the people who use them, instead of offering them the source under AGPLv3.
+- **Use Business features:** the integrations and other capabilities in `packages/ee`. See `docs/integrations` for the catalog.
 
-Cloud is the managed path; an Enterprise (commercial) license is the self-hosted path. Either one lifts the copyleft obligation and unlocks the full feature set.
+Carbon Cloud (the Business plan or an Enterprise Subscription) is the managed path; a commercial license is the self-hosted path. Either one unlocks the Business features.
 
 This page summarizes the terms so you can find the right path quickly. The [LICENSE](https://github.com/crbnos/carbon/blob/main/LICENSE) file is what actually governs. Read it in full, and [email us](mailto:chase@carbon.ms) if you're unsure which edition fits.

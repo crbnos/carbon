@@ -11,6 +11,7 @@ import {
   type FlatTree,
   flattenTree,
   generateBomIds,
+  round,
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -835,6 +836,13 @@ export async function getBatchMaterialTotals(
     const share = t.perMember.find((m) => m.jobOperationId === jobOperationId);
     if (share) share.required += required;
     else t.perMember.push({ jobOperationId, required });
+  }
+  // Rounded to internal scale like the pick's own check (splitPickAcrossMembers),
+  // so a requirement finer than a quantity input (0.000072 KG) reads as done
+  // once the pickable 0.00007 is issued, and the default pick is one it accepts.
+  for (const t of Object.values(totals)) {
+    t.required = round(t.required);
+    t.issued = round(t.issued);
   }
   return totals;
 }

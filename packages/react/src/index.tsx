@@ -27,6 +27,7 @@ import {
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { BarProgress } from "./BarProgress";
+import { useBotIdProtection } from "./BotId";
 import {
   BottomSheet,
   BottomSheetBody,
@@ -348,7 +349,6 @@ import {
   usePickOrderOptions
 } from "./TrackedEntityPicker";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
-import { TurnstileChallenge } from "./Turnstile";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
@@ -634,7 +634,6 @@ export {
   TimePicker,
   Toaster,
   Toggle,
-  TurnstileChallenge,
   ToggleGroup,
   ToggleGroupItem,
   TrackedEntityPicker,
@@ -656,6 +655,7 @@ export {
   reactNodeToString,
   shortcutKeyVariants,
   toast,
+  useBotIdProtection,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

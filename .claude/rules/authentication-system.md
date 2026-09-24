@@ -34,11 +34,26 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 
 Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carbon/kv`,
-`RATE_LIMIT` env default **5 / hour**), optionally verifies a Cloudflare Turnstile token
-(Cloud edition), then:
+`RATE_LIMIT` env default **5 / hour**), runs Vercel BotID (`verifyBotId`), then:
 
 - `DEV_BYPASS_EMAIL` match + active user → `signInWithBypassEmail` (local dev only).
 - Existing active user → `sendMagicLink` (Supabase OTP email).
+
+**Bot protection (Vercel BotID).** `botIdEnabled` (`auth.server.ts`) is true only for
+the Cloud edition running ON Vercel (`IS_VERCEL`, from Vercel's own `VERCEL=1`, which
+SST/Docker/local never set; they set `VERCEL_ENV` by hand). Every login loader
+(erp, mes, academy, starter) returns it, and the page calls
+`useBotIdProtection("/login", botIdEnabled)` (`@carbon/react`). That hook runs
+`initBotId`, which patches `window.fetch` so a POST to `/login` or `/login.data` (React
+Router's action URL) carries the invisible challenge. The action calls
+`verifyBotId(ip, email)` → `checkBotId()`. Both sides read the one flag on purpose:
+off Vercel the challenge script (served through the `apps/*/vercel.json` rewrites) 404s
+and the patched fetch rejects, so the client must never init where the server cannot
+verify. A `checkBotId` THROW (e.g. the project's OIDC token is off) fails OPEN and logs.
+It is a platform misconfiguration, not a verdict, and failing closed would lock out every
+Cloud user. The rate limit and lockout still apply. Supabase Auth captcha (Attack Protection)
+must stay OFF: GoTrue only verifies hCaptcha/Turnstile tokens, and the magic-link call
+sends none.
 - Unknown user (non-Enterprise) → `sendVerificationCode`, redirect to `/verify` (email
   verification-code signup). Enterprise edition rejects unknown users.
 
@@ -382,7 +397,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`,
 `SESSION_SECRET`, `SESSION_KEY` (`"auth"`), `SESSION_MAX_AGE`,
 `REFRESH_ACCESS_TOKEN_THRESHOLD`, `DOMAIN`, `RATE_LIMIT`, `CarbonEdition`,
-`STRIPE_BYPASS_COMPANY_IDS`, Turnstile + OAuth-provider keys.
+`STRIPE_BYPASS_COMPANY_IDS`, `IS_VERCEL`, OAuth-provider keys.
 
 ## Gotchas
 
@@ -398,4 +413,4 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
 - API key `scopes: {}` denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan
-  and enforces Turnstile.
+  and enforces BotID (on Vercel only).

@@ -642,6 +642,9 @@ msgstr "Terminare con il materiale non prelevato?"
 msgid "First due {0}"
 msgstr "Prima scadenza {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Correggi le quantità evidenziate prima di completare."
+
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato il timbra fine?"
 
@@ -1162,7 +1165,7 @@ msgstr "Sospendi"
 msgid "Pick"
 msgstr "Preleva"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Prelievo {0}"
 

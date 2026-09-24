@@ -642,6 +642,9 @@ msgstr "Mit nicht gepicktem Material abschließen?"
 msgid "First due {0}"
 msgstr "Zuerst fällig {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Korrigieren Sie die markierten Mengen vor dem Fertigstellen."
+
 msgid "Forgot to Clock Out?"
 msgstr "Ausstempeln vergessen?"
 
@@ -1162,7 +1165,7 @@ msgstr "Unterbrechen"
 msgid "Pick"
 msgstr "Kommissionieren"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Kommissionieren {0}"
 

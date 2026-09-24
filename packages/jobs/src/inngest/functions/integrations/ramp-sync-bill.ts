@@ -27,6 +27,8 @@ import {
   invoiceDeepLinkUrl,
   normalizeVerifiedMinorAmount,
   type RampSyncContext,
+  recordRampSyncFailures,
+  resolveRampSyncOperations,
   type SyncItem,
   stripSpecialCharacters,
   verifyCostCenters,
@@ -486,6 +488,17 @@ export async function syncRampBills(
   result.created = successful.length - reconfirmed;
   result.reconfirmed = reconfirmed;
   result.failed += failed.length;
+
+  await recordRampSyncFailures(ctx, {
+    entityType: "bill",
+    direction: "pull-from-accounting",
+    failures: failed
+  });
+  await resolveRampSyncOperations(ctx, {
+    entityType: "bill",
+    direction: "pull-from-accounting",
+    entityIds: successful.map((item) => item.id)
+  });
   return result;
 }
 
@@ -580,5 +593,16 @@ export async function syncRampBillPayments(
   result.created = successful.length - reconfirmed;
   result.reconfirmed = reconfirmed;
   result.failed += failed.length;
+
+  await recordRampSyncFailures(ctx, {
+    entityType: "billPayment",
+    direction: "pull-from-accounting",
+    failures: failed
+  });
+  await resolveRampSyncOperations(ctx, {
+    entityType: "billPayment",
+    direction: "pull-from-accounting",
+    entityIds: successful.map((item) => item.id)
+  });
   return result;
 }

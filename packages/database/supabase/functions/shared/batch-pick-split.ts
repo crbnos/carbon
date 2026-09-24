@@ -8,7 +8,7 @@
 // drift. Dependency-free pure TS aside from the sibling precision module.
 // See .ai/specs/2026-09-16-batch-materials-and-output-lots.md.
 
-import { distributeRoundingResidual, EPSILON } from "./precision.ts";
+import { distributeRoundingResidual, EPSILON, round } from "./precision.ts";
 
 export interface PickMember {
   jobOperationId: string;
@@ -38,7 +38,11 @@ export function splitPickAcrossMembers(
   }
 
   const open = members.filter((m) => m.remaining > 0);
-  const totalRemaining = open.reduce((sum, m) => sum + m.remaining, 0);
+  const exactRemaining = open.reduce((sum, m) => sum + m.remaining, 0);
+  // Compared at internal scale: a requirement can carry more digits than a
+  // quantity input accepts (24 mg in KG is 0.000024), so the exact figure can
+  // never be picked; what is left below scale counts as covered.
+  const totalRemaining = round(exactRemaining);
   if (open.length === 0 || totalRemaining <= 0) {
     throw new Error("No member operation still requires this item");
   }
@@ -48,7 +52,7 @@ export function splitPickAcrossMembers(
     );
   }
 
-  const exact = open.map((m) => (pickedQuantity * m.remaining) / totalRemaining);
+  const exact = open.map((m) => (pickedQuantity * m.remaining) / exactRemaining);
   const shares = distributeRoundingResidual(exact, pickedQuantity);
 
   return open.map((m, i) => ({

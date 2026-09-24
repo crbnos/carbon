@@ -174,6 +174,53 @@ it("an untouched op books the full standard hours", async () => {
   assertEquals(spanMs, 4 * 60 * 60 * 1000); // full 4h
 });
 
+it("materialReadyAt floors the placement", async () => {
+  // Same fixture placed twice: an op WITHOUT the floor starts at now; the same
+  // op WITH materialReadyAt three days out starts no earlier than that floor.
+  const now = utc("2026-01-05T00:00:00.000Z"); // Monday
+  const floor = now + 3 * 24 * 3_600_000;
+
+  const baseOp = () =>
+    makeOp({
+      id: "op-1",
+      workCenterId: "wc1",
+      startDate: null,
+      dueDate: null,
+      setupTime: 0,
+      laborTime: 4,
+      laborUnit: "Total Hours" as const,
+      machineTime: 0,
+      operationQuantity: 10,
+      quantityComplete: 0
+    });
+
+  const unfloored = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  unfloored.setFiniteContext(makeContext());
+  const unflooredSelections = await unfloored.selectWorkCentersForOperations(
+    [baseOp()],
+    { jobDueDate: null }
+  );
+  const unflooredSelection = unflooredSelections.get("op-1");
+  assert(unflooredSelection?.placedStart);
+  assertEquals(utc(unflooredSelection.placedStart), now);
+
+  const floored = new WorkCenterSelector(
+    {} as unknown as MasterDataProvider,
+    "loc1"
+  );
+  floored.setFiniteContext(makeContext());
+  const flooredSelections = await floored.selectWorkCentersForOperations(
+    [{ ...baseOp(), materialReadyAt: floor }],
+    { jobDueDate: null }
+  );
+  const flooredSelection = flooredSelections.get("op-1");
+  assert(flooredSelection?.placedStart);
+  assert(utc(flooredSelection.placedStart) >= floor);
+});
+
 // --- load balancing across equivalent work centers --------------------------
 
 it("two identical not-started ops spread across equivalent work centers", async () => {

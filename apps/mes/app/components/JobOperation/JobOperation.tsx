@@ -61,7 +61,8 @@ import {
   formatDate,
   formatDurationMilliseconds,
   getItemReadableId,
-  MODEL_RAW_KEEP_MAX_BYTES
+  MODEL_RAW_KEEP_MAX_BYTES,
+  round
 } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
@@ -460,7 +461,9 @@ export const JobOperation = ({
   const selectedBatchRemaining = (() => {
     if (!isBatched || !selectedMaterial?.itemId) return undefined;
     const totals = batchMaterialTotals?.[selectedMaterial.itemId];
-    return totals ? Math.max(0, totals.required - totals.issued) : undefined;
+    return totals
+      ? Math.max(0, round(totals.required - totals.issued))
+      : undefined;
   })();
 
   // In batch mode the shared timer is judged against the batch's TOTAL plan:

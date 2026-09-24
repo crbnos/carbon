@@ -11,6 +11,32 @@ import {
   SUPABASE_AUTH_EXTERNAL_GOOGLE_REDIRECT_URI,
 } from "./env";
 
+/**
+ * PostgREST errors do not always populate `message` — a transport or gateway
+ * failure can arrive with every field undefined, which rendered the only clue
+ * we logged as the literal string "undefined". Serialize whatever is actually
+ * present so the next failure is diagnosable from CI output alone.
+ */
+function describePostgrestError(error: unknown): string {
+  if (!error || typeof error !== "object") return String(error);
+
+  const { message, code, details, hint } = error as {
+    message?: string;
+    code?: string;
+    details?: string;
+    hint?: string;
+  };
+
+  const parts = [
+    message && `message=${message}`,
+    code && `code=${code}`,
+    details && `details=${details}`,
+    hint && `hint=${hint}`,
+  ].filter(Boolean);
+
+  return parts.length > 0 ? parts.join(" ") : JSON.stringify(error);
+}
+
 export type Workspace = {
   id: number;
   name: string;
@@ -89,13 +115,19 @@ async function runPendingScripts(
         // The work is done but unrecorded, so the next deploy runs it again.
         // Every listed script must be idempotent for exactly this reason.
         throw new Error(
-          `ran but could not be recorded: ${error.message}. It will run again on the next deploy.`
+          `ran but could not be recorded: ${describePostgrestError(
+            error
+          )}. It will run again on the next deploy.`
         );
       }
 
       console.log(`✅ 📜 Completed ${script.name} for ${workspace.id}`);
     } catch (e) {
-      console.error(`🔴 📜 Script ${script.name} failed for ${workspace.id}`, e);
+      console.error(
+        `🔴 📜 Script ${script.name} failed for ${workspace.id}`,
+        e instanceof Error ? e.message : describePostgrestError(e)
+      );
+      if (e instanceof Error && e.stack) console.error(e.stack);
       succeeded = false;
     }
   }
