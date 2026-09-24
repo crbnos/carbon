@@ -4,6 +4,11 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
 import type { AccountingProvider } from "../providers";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "./counterpart-types";
 import {
   createMappingService,
   type ExternalIntegrationMappingService
@@ -104,6 +109,13 @@ export interface ProviderCapabilities {
    * (Rillet Fields are dimension-native).
    */
   maxJournalDimensionSlots?: number;
+  /**
+   * Entity kinds this provider can search for an existing counterpart before
+   * creating one (see `core/counterpart.ts`). Absent or empty = always create,
+   * which is the behaviour of a provider that has never implemented the search
+   * — so the capability is opt-in and declaring nothing regresses nothing.
+   */
+  searchableCounterparts?: ExternalIdentityKind[];
 }
 
 /**
@@ -180,6 +192,25 @@ export function providerSupportsIncrementalPull<T extends BaseProvider>(
   );
 }
 
+/**
+ * Whether this provider can search for an existing counterpart of `kind`.
+ *
+ * BOTH conditions are required, and the `?? []` default is load-bearing:
+ * `XeroProvider` deliberately declares no `capabilities` object at all, so an
+ * absent declaration must read as "no search" rather than throwing. A provider
+ * that implements the method but does not list the kind is treated as not
+ * supporting it — declaring the kind is the opt-in.
+ */
+export function providerSupportsCounterpartSearch<T extends BaseProvider>(
+  provider: T,
+  kind: ExternalIdentityKind
+): provider is T & Required<Pick<BaseProvider, "findRemoteCandidates">> {
+  return (
+    typeof provider.findRemoteCandidates === "function" &&
+    (provider.capabilities?.searchableCounterparts ?? []).includes(kind)
+  );
+}
+
 export abstract class BaseProvider {
   static id: ProviderID;
 
@@ -199,6 +230,18 @@ export abstract class BaseProvider {
    * no journal dimensions.
    */
   journalDimensionTargets?(): Promise<DimensionTarget[]>;
+
+  /**
+   * Optional: remote records that might already BE this local record, for the
+   * counterpart ladder (`core/counterpart.ts`). Returns candidates — it never
+   * decides. Declaring this without listing the kind in
+   * `capabilities.searchableCounterparts` leaves it unused, and vice versa;
+   * `providerSupportsCounterpartSearch` requires both.
+   */
+  findRemoteCandidates?(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]>;
 
   abstract getSyncConfig<T extends AccountingEntityType>(
     entity: T
