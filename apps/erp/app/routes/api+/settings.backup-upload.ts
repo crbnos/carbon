@@ -2,10 +2,13 @@ import { Readable } from "node:stream";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { TEMP_STAGING_BUCKET } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { canManageBackups } from "~/modules/settings/backups.server";
 import { unpackBackupArchive } from "~/modules/settings/backups-archive.server";
+
+const logger = getLogger("erp", "settings-backup-upload");
 
 /**
  * Two-step upload of a `.carbon.tar.gz` (a whole backup folder):
@@ -39,6 +42,10 @@ export async function action({ request }: ActionFunctionArgs) {
     const path = `${companyId}/backups/${nanoid()}.tar.gz`;
     const signed = await staging.createSignedUploadUrl(path);
     if (signed.error) {
+      logger.error("Failed to create backup upload URL", {
+        companyId,
+        error: signed.error
+      });
       throw new Response(signed.error.message, { status: 500 });
     }
     return { path: signed.data.path, token: signed.data.token };
@@ -64,9 +71,21 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       return await unpackBackupArchive(client, companyId, source);
     } catch (err) {
+      logger.error("Failed to unpack uploaded backup", {
+        companyId,
+        path,
+        error: err
+      });
       throw new Response((err as Error).message, { status: 400 });
     } finally {
-      await staging.remove([path]);
+      const removed = await staging.remove([path]);
+      if (removed.error) {
+        logger.error("Failed to remove staged backup archive", {
+          companyId,
+          path,
+          error: removed.error
+        });
+      }
     }
   }
 
