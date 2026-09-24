@@ -114,7 +114,7 @@ export type SyncProviderCapabilities =
       /** Carbon creates and owns this platform's accounting-connection seat. */
       ownsRemoteCodingSurface: boolean;
       /** GL families this platform posts instead of Carbon. §5. */
-      ownsLedgerFamilies: PostingSourceFamily[];
+      ownsLedgerFamilies: LedgerFamilyKey[];
     });
 ```
 
@@ -154,7 +154,7 @@ export type IntegrationTopology = {
     capabilities: SyncProviderCapabilities;
   } | null;
   /** Who posts each GL family. Derived; never stored. §5 */
-  ledgerOwnership: Record<PostingSourceFamily, LedgerOwner>;
+  ledgerOwnership: Record<LedgerFamilyKey, LedgerOwner>;
   /** Whose identifiers a given outbound target expects. Derived; never stored. §4 */
   identityScope(targetIntegrationId: string): IdentityScope;
 };
@@ -383,12 +383,24 @@ in the GL.
 
 An earlier draft called this `PayablesOwnership`. That name encodes the one case we
 have, not the concept. The general question is **who posts each GL family** — and
-`PostingSourceFamily` (`"ar" | "ap" | "per-line"`) plus `postingSync.families` already
-exist to express exactly that. A billing platform owning AR is the same shape; naming
-the abstraction after AP would guarantee a second, parallel mechanism when it arrives.
+`postingSync.families` already exists to express exactly that. A billing platform owning
+AR is the same shape; naming the abstraction after AP would guarantee a second, parallel
+mechanism when it arrives.
+
+**Key the ownership on the SETTINGS family keys, not on `PostingSourceFamily`.** The
+policy discriminator is now `"ar" | "ap" | "per-line" | "per-party"`, and the last two
+are *resolution strategies* — "resolve from the payment's control-account lines",
+"resolve from the memo's party" — not families a company can own. The ownable set is
+the keys of `postingSync.families`, which the credit-memo work grew to four:
+`ar`, `ap`, `creditMemo`, `vendorCredit` (the two memo families defaulting to `"none"`,
+since a family that has never synced has no correct backlog).
 
 ```ts
-topology.ledgerOwnership: Record<PostingSourceFamily, LedgerOwner>
+/** The OWNABLE families — the keys of `postingSync.families`. */
+type LedgerFamilyKey = keyof PostingSyncSettings["families"];
+  // "ar" | "ap" | "creditMemo" | "vendorCredit"
+
+topology.ledgerOwnership: Record<LedgerFamilyKey, LedgerOwner>
 ```
 
 A family is externally owned when the installed spend integration's mode declares it in
@@ -402,25 +414,41 @@ table already declares, per journal source type, its `family` and its
 | Source type | family | backingEntityType |
 |---|---|---|
 | `Purchase Invoice` | `ap` | `bill` |
-| `Debit Memo`, `Purchase Return` | `ap` | `null` |
+| `Reimbursement` | `ap` | `reimbursement` |
+| `Purchase Return` | `ap` | `null` |
 | `Sales Invoice` | `ar` | `invoice` |
-| `Credit Memo`, `Sales Return` | `ar` | `null` |
+| `Sales Return` | `ar` | `null` |
+| `Credit Memo`, `Debit Memo` | `per-party` | `"per-party"` (sentinel) |
 | `Payment` | `per-line` | `payment` |
 
 So for each externally-owned family the rule is mechanical:
 
 1. set `postingSync.families[family] = "none"` → every source type in that family
-   records `Excluded / FAMILY_OFF`; and
-2. disable each **distinct non-null `backingEntityType`** of that family in
-   `syncConfig.entities` → the document push stops
-   (`reconcileDocument` returns `nothing` on `entityPushEnabled` false).
+   records `Excluded / FAMILY_OFF`;
+2. disable each **distinct `backingEntityType`** of that family in
+   `syncConfig.entities`, skipping `null` and the `"per-party"` sentinel → the document
+   push stops (`reconcileDocument` returns `nothing` on `entityPushEnabled` false); and
+3. clear that entity's flag in `PostingSyncDocumentSyncFlags`
+   (`billEnabled`, `reimbursementEnabled`, `invoiceEnabled`,
+   `creditMemoEnabled`, `vendorCreditEnabled`) so the policy sees a consistent picture.
+   Disabling the entity without clearing its flag is the `DOC_SYNC_DISABLED` pairing bug
+   this section exists to prevent, one level down.
 
-For `ap` that resolves to `entities.bill.enabled = false`; the same code would resolve
-`ar` to `entities.invoice.enabled = false` with no edit. **`per-line` families are
-skipped** — a `Payment` journal is shared between AR and AP and is resolved per journal
-from its control-account lines, so disabling the `payment` entity wholesale would break
-the side that is still Carbon-owned. That nuance is already handled by the existing
-`paymentFamily` resolution; the rule only has to not fight it.
+**Two sentinels are skipped, for the same reason.** A `per-line` family (`Payment`) is
+shared between AR and AP and resolved per journal from its control-account lines;
+a `per-party` family (the memos) is resolved per record from the memo's party
+(`posting.ts:333-356`). Disabling either wholesale would break the side that is still
+Carbon-owned. Both nuances are already handled by the existing `paymentFamily` /
+`memoParty` resolution; the rule only has to not fight them.
+
+**This rule has already been validated by a document type that did not exist when it
+was written.** `Reimbursement` landed on this branch as `{ family: "ap",
+backingEntityType: "reimbursement" }`. Delegating AP therefore disables **both `bill`
+and `reimbursement`** — correctly, since in push-only mode reimbursements reach the GL
+through the spend platform — and it does so with **no edit to this rule**. A version
+that hard-coded `"bill"` would have silently kept pushing reimbursements to the GL
+alongside the spend platform's copy. That is the argument for deriving from
+`POSTING_POLICY`, and it is no longer hypothetical.
 
 Both steps are required, and each alone is wrong. `families.ap = "none"` alone does
 **not** stop the bill push — `reconcileDocument` never reads `families`, only
@@ -616,7 +644,7 @@ live-verified two-way integration too. PO push and draft-bill push were verified
 | **Capability surface** | One `SyncProviderCapabilities` discriminated on `role`, not a second vocabulary for spend | Two shapes would make every "can this provider do X?" question start with "which kind is it?" — the branching this spec exists to remove. `externalAddressing` and `searchableCounterparts` are shared because both roles need them. |
 | **Per-entity enablement** | `GlobalSyncConfig` only; a mode contributes a ceiling fragment | The draft had `inbound`/`outbound` capability maps duplicating it. Two sources of truth for "does this entity sync?" is the defect. |
 | **Company landscape** | One `IntegrationTopology`, resolved once and threaded | Replacing five ad-hoc lookups with four new ones is not an abstraction. Consumers ask about roles and ownership, never "is Rillet installed". |
-| **Ledger delegation naming** | `ledgerOwnership: Record<PostingSourceFamily, LedgerOwner>`, not `PayablesOwnership` | Naming it after AP guarantees a parallel mechanism when a billing platform owns AR. `PostingSourceFamily` and `postingSync.families` already exist. |
+| **Ledger delegation naming** | `ledgerOwnership: Record<LedgerFamilyKey, LedgerOwner>`, not `PayablesOwnership` | Naming it after AP guarantees a parallel mechanism when a billing platform owns AR. Keyed on the `postingSync.families` keys (now four: ar, ap, creditMemo, vendorCredit) — NOT `PostingSourceFamily`, whose `per-line`/`per-party` members are resolution strategies, not ownable families. |
 | **Which entity to suppress** | Derived from `POSTING_POLICY`'s `family` + `backingEntityType`; `per-line` skipped | `bill` is a lookup result, not a constant. The same code resolves `ar → invoice` with no edit, and skipping `per-line` protects the AR half of a shared `Payment` journal. |
 | **Identity-resolver selector** | Coding authority (`ownsRemoteCodingSurface`), not ledger ownership | They coincide for Ramp but answer different questions; a partner role that pushes coding while the GL posts AP externally (the Brex/Coupa shape) breaks under the conflated rule. |
 | One integration with modes, or two integrations | One, with install modes | A second id needs a registry row plus parameterising ~92 hard-coded `"ramp"` literals (save routing, sweep `.eq("id","ramp")`, mapping namespace, `charge.integration` default, nav gate, plan whitelist). That forks the subsystem to change a scope string. |
@@ -1052,3 +1080,12 @@ vendor half or the payables-suppression half, which can proceed regardless.
   ownership; made the counterpart ladder a shared capability both roles implement; added the
   `no-integration-id-branching` conformance rule and abstraction-level acceptance criteria;
   recorded the `accounting/core` naming debt as a stated follow-up.
+- 2026-09-24: Reconciled with the two-way sync work that landed on the branch (credit
+  memos, vendor credits, reimbursements-as-documents) — see
+  `.ai/runs/2026-09-24-two-way-sync-branch-state.md`. Re-keyed `ledgerOwnership` off
+  `PostingSourceFamily` onto the `postingSync.families` keys (now four); added the
+  `per-party` sentinel to the skip rule beside `per-line`; added step 3 clearing the
+  matching `PostingSyncDocumentSyncFlags` entry; and recorded that `Reimbursement`
+  (`family: "ap"`, `backingEntityType: "reimbursement"`) validated the
+  POSTING_POLICY-derived suppression with no edit — a hard-coded `"bill"` would have
+  kept pushing reimbursements to the GL alongside the spend platform's copy.
