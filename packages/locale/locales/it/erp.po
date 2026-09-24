@@ -14990,9 +14990,6 @@ msgstr "Ricavi di vendita"
 msgid "Sales Rule Violations"
 msgstr "Violazioni delle Regole di Vendita"
 
-msgid "Sales rules"
-msgstr "Regole di vendita"
-
 msgid "Sales Rules"
 msgstr "Regole di Vendita"
 

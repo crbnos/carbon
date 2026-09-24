@@ -14990,9 +14990,6 @@ msgstr "Выручка от продаж"
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
 
-msgid "Sales rules"
-msgstr "Правила продаж"
-
 msgid "Sales Rules"
 msgstr "Правила продаж"
 

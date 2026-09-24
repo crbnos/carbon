@@ -14990,9 +14990,6 @@ msgstr "销售收入"
 msgid "Sales Rule Violations"
 msgstr "销售规则违规"
 
-msgid "Sales rules"
-msgstr "销售规则"
-
 msgid "Sales Rules"
 msgstr "销售规则"
 

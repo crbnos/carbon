@@ -14990,9 +14990,6 @@ msgstr "매출"
 msgid "Sales Rule Violations"
 msgstr "판매 규칙 위반"
 
-msgid "Sales rules"
-msgstr "판매 규칙"
-
 msgid "Sales Rules"
 msgstr "판매 규칙"
 

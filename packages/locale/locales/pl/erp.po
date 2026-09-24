@@ -14990,9 +14990,6 @@ msgstr "Przychód ze sprzedaży"
 msgid "Sales Rule Violations"
 msgstr "Naruszenia reguł sprzedaży"
 
-msgid "Sales rules"
-msgstr "Reguły sprzedaży"
-
 msgid "Sales Rules"
 msgstr "Reguły sprzedaży"
 

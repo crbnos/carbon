@@ -14990,9 +14990,6 @@ msgstr "Umsatzerlöse"
 msgid "Sales Rule Violations"
 msgstr "Verstöße gegen Verkaufsregeln"
 
-msgid "Sales rules"
-msgstr "Verkaufsregeln"
-
 msgid "Sales Rules"
 msgstr "Verkaufsregeln"
 

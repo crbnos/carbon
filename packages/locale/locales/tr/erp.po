@@ -14990,9 +14990,6 @@ msgstr "Satış Hasılat"
 msgid "Sales Rule Violations"
 msgstr "Satış Kuralı İhlalleri"
 
-msgid "Sales rules"
-msgstr "Satış kuralları"
-
 msgid "Sales Rules"
 msgstr "Satış Kuralları"
 

@@ -14990,9 +14990,6 @@ msgstr "販売売上高"
 msgid "Sales Rule Violations"
 msgstr "販売ルール違反"
 
-msgid "Sales rules"
-msgstr "販売ルール"
-
 msgid "Sales Rules"
 msgstr "販売ルール"
 

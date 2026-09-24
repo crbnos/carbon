@@ -14990,9 +14990,6 @@ msgstr "Sales Revenue"
 msgid "Sales Rule Violations"
 msgstr "Sales Rule Violations"
 
-msgid "Sales rules"
-msgstr "Sales rules"
-
 msgid "Sales Rules"
 msgstr "Sales Rules"
 

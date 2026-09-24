@@ -14990,9 +14990,6 @@ msgstr "बिक्रय राजस्व"
 msgid "Sales Rule Violations"
 msgstr "बिक्री नियम उल्लंघन"
 
-msgid "Sales rules"
-msgstr "बिक्री नियम"
-
 msgid "Sales Rules"
 msgstr "बिक्री नियम"
 

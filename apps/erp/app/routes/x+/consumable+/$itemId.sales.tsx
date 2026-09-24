@@ -10,13 +10,11 @@ import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
-  getItemCustomerParts,
   getItemUnitSalePrice,
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
 } from "~/modules/items";
 import { ItemSalePriceForm } from "~/modules/items/ui/Item";
-import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -30,31 +28,28 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [
-    partUnitSalePrice,
-    customerParts,
-    salesRuleAssignments,
-    salesRuleLibrary
-  ] = await Promise.all([
-    getItemUnitSalePrice(client, itemId, companyId),
-    getItemCustomerParts(client, itemId, companyId),
-    getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
-    getSalesRulesList(client, companyId)
-  ]);
+  const [consumableUnitSalePrice, salesRuleAssignments, salesRuleLibrary] =
+    await Promise.all([
+      getItemUnitSalePrice(client, itemId, companyId),
+      getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
+      getSalesRulesList(client, companyId)
+    ]);
 
-  if (partUnitSalePrice.error) {
+  if (consumableUnitSalePrice.error) {
     throw redirect(
       path.to.items,
       await flash(
         request,
-        error(partUnitSalePrice.error, "Failed to load part unit sale price")
+        error(
+          consumableUnitSalePrice.error,
+          "Failed to load consumable unit sale price"
+        )
       )
     );
   }
 
   return {
-    partUnitSalePrice: partUnitSalePrice.data,
-    customerParts: customerParts.data,
+    consumableUnitSalePrice: consumableUnitSalePrice.data,
     salesRuleAssignments: salesRuleAssignments.data ?? [],
     salesRuleLibrary: salesRuleLibrary.data ?? [],
     itemId
@@ -79,41 +74,44 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const updatePartUnitSalePrice = await upsertItemUnitSalePrice(client, {
+  const updateConsumableUnitSalePrice = await upsertItemUnitSalePrice(client, {
     ...validation.data,
     itemId,
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (updatePartUnitSalePrice.error) {
+  if (updateConsumableUnitSalePrice.error) {
     throw redirect(
-      path.to.part(itemId),
+      path.to.consumable(itemId),
       await flash(
         request,
-        error(updatePartUnitSalePrice.error, "Failed to update part sale price")
+        error(
+          updateConsumableUnitSalePrice.error,
+          "Failed to update consumable sale price"
+        )
       )
     );
   }
 
   throw redirect(
-    path.to.partSales(itemId),
-    await flash(request, success("Updated part sale price"))
+    path.to.consumableSales(itemId),
+    await flash(request, success("Updated consumable sale price"))
   );
 }
 
-export default function PartSalesRoute() {
+export default function ConsumableSalesRoute() {
   const {
-    customerParts,
-    partUnitSalePrice,
+    consumableUnitSalePrice,
     salesRuleAssignments,
     salesRuleLibrary,
     itemId
   } = useLoaderData<typeof loader>();
 
   const initialValues = {
-    ...partUnitSalePrice,
-    salesUnitOfMeasureCode: partUnitSalePrice?.salesUnitOfMeasureCode ?? "",
-    ...getCustomFields(partUnitSalePrice.customFields),
+    ...consumableUnitSalePrice,
+    salesUnitOfMeasureCode:
+      consumableUnitSalePrice?.salesUnitOfMeasureCode ?? "",
+    ...getCustomFields(consumableUnitSalePrice.customFields),
     itemId: itemId
   };
 
@@ -123,9 +121,6 @@ export default function PartSalesRoute() {
         key={initialValues.itemId}
         initialValues={initialValues}
       />
-      {customerParts ? (
-        <CustomerParts customerParts={customerParts} itemId={itemId} />
-      ) : null}
       <SalesRuleAssignmentsList
         itemId={itemId}
         assignments={salesRuleAssignments as never}
