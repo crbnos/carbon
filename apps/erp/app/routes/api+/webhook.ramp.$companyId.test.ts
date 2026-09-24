@@ -6,7 +6,16 @@ vi.mock("@carbon/auth/client.server", () => ({
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
 vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn() })
+  // Mirror the real logger surface. A partial mock turns "this route logs a
+  // diagnostic" into "this route throws", which is strictly worse than the 401
+  // the log exists to explain.
+  getLogger: () => ({
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    warning: vi.fn(),
+    error: vi.fn()
+  })
 }));
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),

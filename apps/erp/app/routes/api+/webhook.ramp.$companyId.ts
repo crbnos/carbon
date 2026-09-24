@@ -64,7 +64,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Every delivery, including an ownership challenge, requires a stored secret
   // and a valid signature before it can call Ramp or echo authenticated data.
   const signature = request.headers.get("x-ramp-signature");
+
+  // DIAGNOSTIC. The signing scheme above (header name, base64, body-only HMAC)
+  // is a documented DEFAULT that has never been checked against a real Ramp
+  // delivery — see the docblock. All three 401s below are indistinguishable
+  // from the caller's side, so one rejected delivery otherwise tells you
+  // nothing about which assumption is wrong.
+  //
+  // Logs SHAPES, never secrets: header NAMES (which reveals whether Ramp signs
+  // via `x-ramp-*` or, say, Svix's `svix-id`/`svix-timestamp`/`svix-signature`),
+  // and the signature's length/prefix rather than the signature itself.
+  const signatureHeaderCandidates = [...request.headers.keys()].filter((name) =>
+    /sign|ramp|svix|hmac|digest|timestamp/i.test(name)
+  );
+  const rejection = {
+    companyId,
+    bodyBytes: body.length,
+    headerNames: [...request.headers.keys()].sort(),
+    signatureHeaderCandidates,
+    hasSignatureHeader: Boolean(signature),
+    signatureLength: signature?.length ?? 0,
+    // A leading "v1," / "t=" means a composite Svix/Stripe-style payload, which
+    // this body-only HMAC would never reproduce.
+    signaturePrefix: signature?.slice(0, 3) ?? null,
+    hasStoredSecret: Boolean(metadata.webhookSecret),
+    // `whsec_` is the Svix secret convention — a strong hint the scheme differs.
+    secretLooksSvix: metadata.webhookSecret?.startsWith("whsec_") ?? false
+  };
+
   if (!signature || !metadata.webhookSecret) {
+    logger.warn("Ramp webhook rejected before signature check", {
+      ...rejection,
+      reason: !signature ? "no-signature-header" : "no-stored-secret"
+    });
     return data({ success: false }, { status: 401 });
   }
   const verified = verifyRampWebhookSignature({
@@ -73,6 +105,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     secret: metadata.webhookSecret
   });
   if (!verified) {
+    logger.warn("Ramp webhook signature mismatch", {
+      ...rejection,
+      reason: "signature-mismatch"
+    });
     return data({ success: false }, { status: 401 });
   }
 
@@ -121,12 +157,27 @@ function safeJsonParse(body: string): unknown {
  */
 function extractChallenge(body: string): string | null {
   const parsed = safeJsonParse(body);
+  if (!parsed || typeof parsed !== "object") return null;
+
+  // Activation must complete WITHOUT anyone clicking a button in Ramp, so this
+  // looks in both plausible places rather than betting on one. Ramp's
+  // `webhooks.verification` event is documented as carrying `challenge` at the
+  // top level, but its envelope is `{ id, type, data }` for every other event
+  // type and we have never seen a real one. Missing the challenge leaves the
+  // endpoint stuck on "Pending verification" forever with no deliveries and no
+  // error — the most silent failure available.
+  const root = parsed as { challenge?: unknown; data?: unknown };
+  if (typeof root.challenge === "string" && root.challenge) {
+    return root.challenge;
+  }
+  const nested = root.data as { challenge?: unknown } | undefined;
   if (
-    parsed &&
-    typeof parsed === "object" &&
-    typeof (parsed as { challenge?: unknown }).challenge === "string"
+    nested &&
+    typeof nested === "object" &&
+    typeof nested.challenge === "string" &&
+    nested.challenge
   ) {
-    return (parsed as { challenge: string }).challenge;
+    return nested.challenge;
   }
   return null;
 }

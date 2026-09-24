@@ -27,14 +27,31 @@ export function verifyRampWebhookSignature(args: {
     return false;
   }
 
-  let provided: Buffer;
+  // Tolerate a scheme prefix (`sha256=<sig>`, `v1,<sig>`) — several providers
+  // qualify the digest and Ramp's exact wire format is not pinned by a doc we
+  // can read.
+  const raw = signature.trim().replace(/^(sha256=|v1[,=])/i, "");
+
+  // Accept HEX or BASE64. Which one Ramp actually sends has never been
+  // confirmed against a real delivery (the docs render client-side and the
+  // llms.txt bundle omits the webhooks guide), and picking wrong fails CLOSED
+  // and SILENTLY: a hex digest base64-decodes to 48 bytes against an expected
+  // 32, so the length guard rejects every delivery and the endpoint can never
+  // complete Ramp's activation challenge. Both candidates are HMACs of the same
+  // body under the same secret, so trying both concedes nothing — an attacker
+  // still has to produce a correct digest in one of two encodings.
+  const candidates: Buffer[] = [];
+  if (/^[0-9a-f]+$/i.test(raw) && raw.length === expected.length * 2) {
+    candidates.push(Buffer.from(raw, "hex"));
+  }
   try {
-    provided = Buffer.from(signature.trim(), "base64");
+    candidates.push(Buffer.from(raw, "base64"));
   } catch {
-    return false;
+    // ignore — the hex candidate may still match
   }
 
-  return (
-    provided.length === expected.length && timingSafeEqual(provided, expected)
+  return candidates.some(
+    (provided) =>
+      provided.length === expected.length && timingSafeEqual(provided, expected)
   );
 }
