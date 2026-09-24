@@ -20,10 +20,8 @@
  * duplicates, and cooldown races unrepresentable rather than specially
  * handled.
  */
-import type {
-  ChargePolicyInput,
-  PostingSyncSettings
-} from "@carbon/ee/accounting";
+import type { ChargePolicyInput } from "@carbon/ee/accounting";
+import type { EffectivePostingSyncSettings } from "@carbon/ee/sync";
 import {
   MAX_REDRIVE_ATTEMPTS,
   planJournalPostingFromState,
@@ -129,7 +127,11 @@ export type ReconcileContext = {
   /** Rillet supports native document/payment deletion; Xero/QBO support charge deletion. */
   providerSupportsNativeVoid?: boolean;
   /** Inputs the journal policy core needs (planJournalPostingFromState). */
-  settings: PostingSyncSettings;
+  /**
+   * Settings with ledger delegation applied. Branded so the pure decision core
+   * cannot be reached with raw settings — see `applyLedgerDelegation`.
+   */
+  settings: EffectivePostingSyncSettings;
   docSync: {
     invoiceEnabled: boolean;
     billEnabled: boolean;

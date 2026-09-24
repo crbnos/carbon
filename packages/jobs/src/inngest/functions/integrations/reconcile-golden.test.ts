@@ -28,6 +28,7 @@
  * table.
  */
 import { resolvePostingSyncSettings } from "@carbon/ee/accounting";
+import { asCarbonOwnedSettings } from "@carbon/ee/sync";
 import { describe, expect, it } from "vitest";
 import {
   getJournalPostingDecision,
@@ -47,7 +48,7 @@ const baseContext: ReconcileContext = {
   journalEntryPushEnabled: true,
   entityPushEnabled: true,
   providerSupportsPaymentPush: true,
-  settings,
+  settings: asCarbonOwnedSettings(settings),
   docSync: {
     invoiceEnabled: true,
     billEnabled: true,

@@ -56,6 +56,7 @@ import {
 import { MASTER_DATA_SWEEP_TARGETS } from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
+import { loadIntegrationTopology } from "./topology";
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 25;
@@ -218,6 +219,8 @@ async function sweepCompanyProvider(args: {
       `[OUTBOUND SWEEP] ${companyId}/${providerId}: removed stale subscription(s): ${converged.removed.join(", ")}`
     );
   }
+
+  const topology = await loadIntegrationTopology(client, companyId);
 
   const ctx: SweepContext = {
     client,
@@ -563,6 +566,7 @@ async function sweepCompanyProvider(args: {
   for (let start = 0; start < refs.length; start += RECONCILE_BATCH_SIZE) {
     const batch = refs.slice(start, start + RECONCILE_BATCH_SIZE);
     const result = await reconcileEntities({
+      topology,
       client,
       database,
       companyId,

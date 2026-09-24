@@ -1,4 +1,9 @@
 import type { Database } from "@carbon/database";
+import {
+  resolvePostingSyncSettings,
+  resolveSyncConfig
+} from "@carbon/ee/accounting";
+import { asCarbonOwnedSettings } from "@carbon/ee/sync";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
@@ -1089,10 +1094,23 @@ describe("resolvePaymentJournalFamily", () => {
   });
 });
 
+/**
+ * Delegation is resolved by the CALLER, so these tests supply the
+ * carbon-owned state directly — which is also what keeps
+ * planJournalPostingOperation client-free (pinned by `untouchableClient`).
+ */
+const carbonOwnedState = (metadata: unknown) => ({
+  settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+  syncConfig: resolveSyncConfig(metadata)
+});
+
+const CARBON_OWNED = carbonOwnedState(null);
+
 describe("planJournalPostingOperation", () => {
   it("skips non-posting events without touching the policy", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1108,6 +1126,7 @@ describe("planJournalPostingOperation", () => {
   it("plans a push with granularity + sourceType metadata for enabled journal types", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1140,6 +1159,7 @@ describe("planJournalPostingOperation", () => {
   it("records DOC_BACKED exclusions with the backing document entity", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1166,8 +1186,12 @@ describe("planJournalPostingOperation", () => {
   });
 
   it("parks DOC_SYNC_DISABLED as a Warning when the backing document sync is off", async () => {
+    const metadata = postingEnabledMetadata({
+      entities: { invoice: { enabled: false } }
+    });
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: carbonOwnedState(metadata),
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1180,9 +1204,7 @@ describe("planJournalPostingOperation", () => {
         },
         old: null
       },
-      integrationMetadata: postingEnabledMetadata({
-        entities: { invoice: { enabled: false } }
-      })
+      integrationMetadata: metadata
     });
 
     expect(plan.action).toBe("terminal");
@@ -1194,6 +1216,7 @@ describe("planJournalPostingOperation", () => {
   it("suffixes reversal pushes and stamps reversal metadata", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "UPDATE",
@@ -1228,6 +1251,10 @@ describe("planJournalPostingOperation", () => {
     });
 
     const arPlan = await planJournalPostingOperation({
+      effective: {
+        settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+        syncConfig: resolveSyncConfig(metadata)
+      },
       client: stubPaymentClient({
         receivables: "acc-ar",
         payables: "acc-ap",
@@ -1250,6 +1277,10 @@ describe("planJournalPostingOperation", () => {
     expect(arPlan.action).toBe("push");
 
     const unresolvedPlan = await planJournalPostingOperation({
+      effective: {
+        settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+        syncConfig: resolveSyncConfig(metadata)
+      },
       client: stubPaymentClient({
         receivables: "acc-ar",
         payables: "acc-ap",

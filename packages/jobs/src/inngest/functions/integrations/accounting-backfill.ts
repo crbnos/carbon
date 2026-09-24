@@ -34,6 +34,7 @@ import { PostgresDriver } from "kysely";
 import z from "zod";
 import { inngest } from "../../client";
 import {
+  applyEffectivePostingState,
   drainSyncOperations,
   enqueueSyncOperations,
   getSyncOperationActor,
@@ -43,6 +44,7 @@ import {
   type SyncOperationRequest,
   type TerminalSyncOperationRequest
 } from "./accounting-sync-operations";
+import { loadIntegrationTopology } from "./topology";
 
 const log = getLogger("jobs", "accounting-backfill");
 
@@ -273,12 +275,20 @@ export const accountingBackfillFunction = inngest.createFunction(
         const pushRequests: SyncOperationRequest[] = [];
         const terminalRequests: TerminalSyncOperationRequest[] = [];
 
+        // Once per phase, not per row: resolving ledger delegation reads the
+        // company's integration rows.
+        const effective = applyEffectivePostingState(
+          phaseIntegration.metadata,
+          await loadIntegrationTopology(phaseClient, payload.companyId)
+        );
+
         for (const row of rows) {
           if (covered.has(row.id)) {
             summary.alreadyCovered++;
           } else {
             const plan = await planJournalPostingOperation({
               client: phaseClient,
+              effective,
               companyId: payload.companyId,
               event: {
                 operation: "INSERT",
@@ -306,6 +316,7 @@ export const accountingBackfillFunction = inngest.createFunction(
           if (row.status === "Reversed" && !covered.has(`${row.id}:reversal`)) {
             const reversalPlan = await planJournalPostingOperation({
               client: phaseClient,
+              effective,
               companyId: payload.companyId,
               event: {
                 operation: "UPDATE",

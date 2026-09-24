@@ -1,4 +1,5 @@
 import { QboChargeSyncer, XeroChargeSyncer } from "@carbon/ee/accounting";
+import { buildIntegrationTopology } from "@carbon/ee/sync";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CardChargeSource } from "../../../../../ee/src/accounting/core/card-charge-source";
 import type { SyncOperationRequest } from "./accounting-sync-operations";
@@ -57,6 +58,9 @@ beforeEach(() => {
   mapping.metadata = {};
 });
 
+// Nothing is delegated in these fixtures, so the topology is carbon-owned.
+const CARBON_TOPOLOGY = buildIntegrationTopology([], []);
+
 describe.each([
   "xero",
   "quickbooks"
@@ -90,6 +94,7 @@ describe.each([
       }
     };
     const summary = await reconcileEntities({
+      topology: CARBON_TOPOLOGY,
       client: client as never,
       database: database as never,
       companyId: "company-1",
@@ -178,6 +183,7 @@ describe.each([
     expect(
       (
         await reconcileEntities({
+          topology: CARBON_TOPOLOGY,
           client: client as never,
           database: database as never,
           companyId: "company-1",

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { asCarbonOwnedSettings } from "../../sync/delegation";
 import {
   JOURNAL_ENTRY_SOURCE_TYPES,
   POSTING_POLICY,
@@ -7,17 +8,18 @@ import {
 } from "./models";
 import {
   getJournalPostingPolicyDecision,
-  type PostingSyncSettings,
   resolvePostingSyncSettings
 } from "./posting";
 
 /** Resolve a v3 stored fragment exactly as production reads it. */
-const settingsWith = (
-  fragment?: Record<string, unknown>
-): PostingSyncSettings =>
-  resolvePostingSyncSettings({
-    settings: { postingSync: { enabled: true, ...fragment } }
-  });
+// These tests exercise the POLICY, not delegation, so the settings are marked
+// carbon-owned. Delegation has its own tests in sync/delegation.test.ts.
+const settingsWith = (fragment?: Record<string, unknown>) =>
+  asCarbonOwnedSettings(
+    resolvePostingSyncSettings({
+      settings: { postingSync: { enabled: true, ...fragment } }
+    })
+  );
 
 const DOC_SYNC_ON = { invoiceEnabled: true, billEnabled: true };
 const DOC_SYNC_OFF = { invoiceEnabled: false, billEnabled: false };

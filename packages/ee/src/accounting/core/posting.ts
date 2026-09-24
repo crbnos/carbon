@@ -1,5 +1,9 @@
 import type z from "zod";
 import {
+  asCarbonOwnedSettings,
+  type EffectivePostingSyncSettings
+} from "../../sync/delegation";
+import {
   type JournalEntryLineDimensionSchema,
   type JournalEntrySourceType,
   POSTING_POLICY,
@@ -227,7 +231,16 @@ export type JournalPostingPolicyDecision =
  */
 export function getJournalPostingPolicyDecision(args: {
   sourceType: string | null | undefined;
-  settings: PostingSyncSettings;
+  /**
+   * Settings that have been through `applyLedgerDelegation`.
+   *
+   * Required by TYPE rather than by convention: a family another system posts
+   * must be `"none"` here AND its backing entities disabled in the sync config,
+   * and the two together are the only correct state. Accepting raw
+   * `PostingSyncSettings` would let a caller reach a posting decision that
+   * silently double-posts a delegated family — so the compiler refuses instead.
+   */
+  settings: EffectivePostingSyncSettings;
   docSync: PostingSyncDocumentSyncFlags;
   /**
    * "ar" | "ap" for Payment journals, resolved from which control account
@@ -517,6 +530,14 @@ export function toDebitSignedAmount(
   }
 }
 
+/**
+ * A provider syncer's own source-type gate.
+ *
+ * Deliberately takes RAW settings and treats nothing as delegated: this runs
+ * after the primary gate, and a delegated family never reaches a syncer (its
+ * backing entity is disabled, so nothing is enqueued). See
+ * `asCarbonOwnedSettings`.
+ */
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
   settings: PostingSyncSettings,
@@ -524,7 +545,7 @@ export function getPostingSyncSourceTypeSkipReason(
 ): string | null {
   const decision = getJournalPostingPolicyDecision({
     sourceType,
-    settings,
+    settings: asCarbonOwnedSettings(settings),
     docSync: {
       invoiceEnabled: settings.families.ar === "documents",
       billEnabled: settings.families.ap === "documents"

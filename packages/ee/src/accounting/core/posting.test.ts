@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { asCarbonOwnedSettings } from "../../sync/delegation";
 import {
   aggregateJournalEntriesForDate,
   collectUnmappedDimensionValues,
@@ -242,7 +243,7 @@ describe("getDailyConsolidationNarration", () => {
 // ── Source-type gate ─────────────────────────────────────────────────────────
 
 describe("getPostingSyncSourceTypeSkipReason", () => {
-  const settings = resolvePostingSyncSettings(null);
+  const settings = asCarbonOwnedSettings(resolvePostingSyncSettings(null));
 
   it("pushes the quality-scrap source types by default", () => {
     expect(
@@ -329,15 +330,17 @@ const ATLANTA = { dimensionId: LOCATION_DIM, valueId: "loc_atl" };
 const BOSTON = { dimensionId: LOCATION_DIM, valueId: "loc_bos" };
 
 function dimensionSettings(onUnmapped: "warn" | "drop") {
-  return resolvePostingSyncSettings({
-    settings: {
-      postingSync: {
-        enabled: true,
-        dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
-        onUnmappedDimensionValue: onUnmapped
+  return asCarbonOwnedSettings(
+    resolvePostingSyncSettings({
+      settings: {
+        postingSync: {
+          enabled: true,
+          dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+          onUnmappedDimensionValue: onUnmapped
+        }
       }
-    }
-  });
+    })
+  );
 }
 
 describe("collectUnmappedDimensionValues", () => {

@@ -44,6 +44,7 @@ import {
   type ReconcileSummary,
   reconcileEntities
 } from "../integrations/reconcile-executor";
+import { loadIntegrationTopology } from "../integrations/topology";
 import { getEntityTypeFromTable } from "./sync-tables";
 
 const SyncRecordSchema = z.object({
@@ -182,6 +183,7 @@ export const syncFunction = inngest.createFunction(
 
             stepSummary.summary = await reconcileEntities({
               client,
+              topology: await loadIntegrationTopology(client, companyId),
               database: kysely,
               companyId,
               providerId: provider,

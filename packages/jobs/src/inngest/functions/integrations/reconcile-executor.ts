@@ -15,17 +15,17 @@ import {
   CHARGE_NATIVE_VOID_PROVIDERS,
   type ChargePolicyInput,
   PAYMENT_PUSH_PROVIDERS,
-  type PostingSyncSettings,
   type ProviderID,
   REIMBURSEMENT_NATIVE_VOID_PROVIDERS,
-  resolvePostingSyncSettings,
-  resolveSyncConfig,
+  type resolveSyncConfig,
   type SyncContext,
   transitionOperation
 } from "@carbon/ee/accounting";
+import type { IntegrationTopology } from "@carbon/ee/sync";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
+  applyEffectivePostingState,
   enqueueSyncOperations,
   insertTerminalSyncOperations,
   isJournalEntryPostingEnabled,
@@ -136,6 +136,12 @@ export async function reconcileEntities(args: {
   companyId: string;
   providerId: string;
   integrationMetadata: unknown;
+  /**
+   * The company's integration topology — who owns each GL family. Injected by
+   * the entry point rather than resolved here: resolving it needs the
+   * `@carbon/ee` registry, whose import validates the server env.
+   */
+  topology: IntegrationTopology;
   createdBy: string;
   /** Idempotency scope for this reconcile occasion (event id / run id). */
   scope: string;
@@ -144,8 +150,14 @@ export async function reconcileEntities(args: {
   const summary = emptySummary();
   if (args.refs.length === 0) return summary;
 
-  const settings = resolvePostingSyncSettings(args.integrationMetadata);
-  const syncConfig = resolveSyncConfig(args.integrationMetadata);
+  // One read per reconcile occasion, applying ledger delegation to BOTH the
+  // family modes and the backing entities — the pair that is only correct
+  // together. With nothing delegated this is byte-identical to the previous
+  // two lines.
+  const { settings, syncConfig } = applyEffectivePostingState(
+    args.integrationMetadata,
+    args.topology
+  );
   // Always-on: automated postings sync whenever an accounting integration is
   // connected — the old settings.enabled master gate is gone. The entity flag
   // now defaults true and provider configs force it on.
@@ -438,7 +450,7 @@ export async function reconcileEntities(args: {
           providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(
             args.providerId as ProviderID
           ),
-          settings: settings as PostingSyncSettings,
+          settings,
           docSync: {
             invoiceEnabled: syncConfig.entities.invoice.enabled,
             billEnabled: syncConfig.entities.bill.enabled,

@@ -57,6 +57,11 @@ import {
   type SyncResult,
   skipOperation
 } from "@carbon/ee/accounting";
+import {
+  applyLedgerDelegation,
+  type EffectivePostingSyncSettings,
+  type IntegrationTopology
+} from "@carbon/ee/sync";
 import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -438,14 +443,19 @@ export async function planJournalPostingOperation(args: {
   /** The provider (ProviderID) — decides whether a card Credit has a native
    * refund object (`CHARGE_CREDIT_PROVIDERS`). Unknown → journal entry. */
   providerId?: string;
+  /** Settings + sync config with ledger delegation already applied. */
+  effective: EffectivePostingState;
 }): Promise<JournalPostingOperationPlan> {
   const transition = getJournalPostingDecision(args.event);
   if (transition.action === "skip") {
     return { action: "skip", reason: transition.reason };
   }
 
-  const settings = resolvePostingSyncSettings(args.integrationMetadata);
-  const syncConfig = resolveSyncConfig(args.integrationMetadata);
+  // Effective state comes from the CALLER. This function is deliberately
+  // client-free for the simple cases (pinned by a test that fails if it ever
+  // touches the client), and resolving delegation needs a `companyIntegration`
+  // read — so the caller, which already has one, does it.
+  const { settings, syncConfig } = args.effective;
 
   const sourceType =
     typeof args.event.new?.sourceType === "string"
@@ -513,11 +523,51 @@ export async function planJournalPostingOperation(args: {
  * source type is Payment and the AR/AP family modes diverge; `memoParty` is
  * resolved by the caller for Credit Memo / Debit Memo source types.
  */
+/**
+ * Resolve a company's posting settings and sync config WITH ledger delegation
+ * applied.
+ *
+ * One read of `companyIntegration` per call. When another system posts a GL
+ * family, this is what turns that into `families[x] = "none"` plus its backing
+ * entities disabled — the two halves that are only correct together.
+ */
+export type EffectivePostingState = {
+  settings: EffectivePostingSyncSettings;
+  syncConfig: ReturnType<typeof resolveSyncConfig>;
+};
+
+/**
+ * Posting settings + sync config with ledger delegation applied.
+ *
+ * PURE, and the topology is injected. Two earlier shapes were wrong and both
+ * broke tests: reading `companyIntegration` here made
+ * `planJournalPostingOperation` touch the client (a contract an existing test
+ * pins), and lazily importing the `@carbon/ee` barrel to get the registry booted
+ * the server env at call time. The entry points already know the company; they
+ * resolve the topology and pass it down.
+ */
+export function applyEffectivePostingState(
+  integrationMetadata: unknown,
+  topology: IntegrationTopology
+): EffectivePostingState {
+  const applied = applyLedgerDelegation({
+    settings: resolvePostingSyncSettings(integrationMetadata),
+    syncConfig: resolveSyncConfig(integrationMetadata),
+    topology
+  });
+  return { settings: applied.settings, syncConfig: applied.syncConfig };
+}
+
 export function planJournalPostingFromState(args: {
   journalId: string;
   sourceType: string | null;
   reversal: boolean;
-  settings: PostingSyncSettings;
+  /**
+   * Settings with ledger delegation applied — see `applyLedgerDelegation`.
+   * Required by type so a caller cannot reach a posting decision that would
+   * double-post a family another system already posts.
+   */
+  settings: EffectivePostingSyncSettings;
   docSync: {
     invoiceEnabled: boolean;
     billEnabled: boolean;
