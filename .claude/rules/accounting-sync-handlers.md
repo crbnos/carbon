@@ -17,14 +17,14 @@ Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (
 The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/accounting`):
 - `core/sync.ts` — `SyncFactory.getSyncer(context)` returns the right syncer by `providerId` + `entityType` from the registry.
 - `core/types.ts` — `BaseEntitySyncer<TLocal, TRemote, TOmit>` abstract base (~800 lines). Implements `pushToAccounting` / `pullFromAccounting` (+ `*Batch*`) with: mapping lookup, `shouldSync` gate, fast-bailout on unchanged timestamps, `mapToRemote`/`mapToLocal`, then `withTriggersDisabled` DB write + `linkEntities`. Also `SupportsIncrementalPull` (`listChanges({since}) → ProviderChange[]`) — the pull-sweep contract (QBO CDC, Rillet `updated.gt`, Xero `/Payments` `If-Modified-Since`).
-- `providers/{xero,quickbooks-online,rillet}/entities/*.ts` — concrete syncers. Xero `ContactSyncer` backs both `customer` AND `vendor`; QBO/Rillet have separate Customer + Vendor syncers. Each provider has item/bill/invoice(+PO/journalEntry) syncers and a **`PaymentSyncer`** (see Payment sync-back below). `employee` is not implemented.
+- `providers/{xero,quickbooks-online,rillet}/entities/*.ts` — concrete syncers. Xero `ContactSyncer` backs both `customer` AND `vendor`; QBO/Rillet have separate Customer + Vendor syncers. Each provider has item/bill/invoice(+PO/journalEntry) syncers, a **`PaymentSyncer`** (see Payment sync-back below), a `ChargeSyncer` and a `ReimbursementSyncer`. `employee` is not implemented.
 - `core/external-mapping.ts` — `ExternalIntegrationMappingService` / `createMappingService(db, companyId)`: all ID linking goes through the `externalIntegrationMapping` table.
-- `core/models.ts` — Zod schemas, `ProviderID`, `AccountingSyncSchema`, `ENTITY_DEFINITIONS`, `DEFAULT_SYNC_CONFIG`, `PostingSyncSettings` (`families.ar`/`families.ap` = `documents|journals|none`).
+- `core/models.ts` — Zod schemas, `ProviderID`, `AccountingSyncSchema`, `ENTITY_DEFINITIONS`, `DEFAULT_SYNC_CONFIG`, `PostingSyncSettings` — four families (`ar`, `ap`, `creditMemo`, `vendorCredit`), each `documents|journals|none`. `creditMemo`/`vendorCredit` are party-scoped: a memo's family is resolved from its PARTY (customer → `creditMemo`, supplier → `vendorCredit`), never from the sign of its amount, via the `"per-party"` `PostingSourceFamily` that mirrors `Payment`'s existing `"per-line"`.
 - `core/service.ts` — `getAccountingIntegration()` (reads `companyIntegration` row) + `getProviderIntegration()` (instantiates the right provider; applies the merged per-company `syncConfig`).
 
 ## Entity types & directions
 
-`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge`. `charge` is a Carbon charge (the `charge` table) pushed as the provider's native card-charge object (see "Card charges as provider objects"). `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
+`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge | reimbursement`. `charge` is a Carbon charge (the `charge` table) pushed as the provider's native card-charge object (see "Card charges as provider objects"); `reimbursement` is a Carbon reimbursement pushed as the provider's native employee-reimbursement document (see "Reimbursements as provider documents"). Note `employee` remains DECLARED BUT UNIMPLEMENTED — it is reserved for a payroll master sync, and a reimbursement's employee-as-vendor link uses the separate `employeeVendor` mapping entityType instead. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
 `SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. Rillet's `customer`/`vendor` are the one place a Carbon-owned entity has a working PULL path: the explicit contact import below enqueues `pull-from-accounting` operations by hand (see the Rillet contact import section) — the automatic direction is unchanged, and `owner: "carbon"` is exactly what keeps a re-import from overwriting a linked record. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
 
@@ -430,24 +430,69 @@ Ramp ownership challenges require a valid body HMAC before callback or echo; que
 parameters are unsigned and cannot supply the challenge. See `ramp-integration.md` for
 these support boundaries.
 
-**Rillet reimbursements.** A purchase invoice to an "Employee" supplier (what the
-Ramp reimbursement sync creates) is ALWAYS written to `POST /reimbursements`, Rillet's
-native object, never to `/bills` — there is deliberately no setting for it (one was
-built and removed the same day: an unnecessary choice). `RilletBillSyncer` routes in
-`upsertRemote` (pure `toRilletReimbursement(billPayload, payableAccountCode)`; the
-payable is the AP control account of the posted journal, now returned by
-`loadBillCostingLines` as `payablesAccountId`), stamps the mapping
-`metadata.remoteKind = "reimbursement"` in `linkEntities`, and `deleteRemote(remoteId,
-metadata)` — the base now passes the mapping metadata — deletes the right object on
-void. Rillet publishes **no reimbursement-payment endpoint** (2026-09-10; the schema
-exists in its spec without a path), so `RilletPaymentSyncer.pushRemotePayment` parks a
-payout against such a bill as Warning `UNSUPPORTED_REIMBURSEMENT_PAYMENT` — visible, and
-retryable once Rillet ships the endpoint; until then the reimbursement is marked paid in
-Rillet by hand — rather than 404ing on `/bills/{id}/payments`. **Both live-verified
-2026-09-10**: `POST /reimbursements` (vendor JIT-created, item on the coded account,
-`reimbursement_date` = `dateIssued`, mapping `remoteKind: reimbursement`, status UNPAID) and
-the parked payout Warning on a posted Carbon AP payment. The AP control account must be
-mapped too (`payable_account_code`).
+## Reimbursements as provider documents (`reimbursement` entity)
+
+A Carbon `reimbursement` (its own document since 2026-09-23 — NOT a purchase invoice to
+an "Employee" supplier any more) is pushed as each provider's native object: Rillet
+`POST /reimbursements`, QBO a `Bill` with `APAccountRef`, Xero an ACCPAY invoice. The
+journal it derives is the one Carbon already posts — debit each coding line, credit the
+employee payable — so the representation carries no GL-drift risk.
+
+**The employee is linked through its own `employeeVendor` mapping entityType**, never
+`vendor` (which holds Carbon supplier ids, and reusing it would recreate exactly the
+vendor-master pollution this design removes) and never `employee` (reserved for a payroll
+master sync; Xero's `Employees` is a different object from a Contact, so pointing it at a
+Vendor id would poison it in advance). Precedent: the Ramp sync's `merchant` entityType.
+Each provider JIT-creates its own vendor/contact and links under this key, wrapped in
+`withTriggersDisabled()`.
+
+Shared core: `core/reimbursement-source.ts` — one batched tenant-scoped load (header,
+employee identity, employee-vendor mapping, lines, generic dimensions, currency scale),
+plus the pure `mergeReimbursementLineDimensions`, `resolveReimbursementSyncGate` and
+`validateReimbursementAccountMapping`. Create-only on all three providers
+(`updateMappedCharges` stays false): a Posted reimbursement is immutable in Carbon, so
+there is never a later edit to push.
+
+Provider specifics that are easy to get wrong:
+
+- **Xero `Reference` is ACCREC-ONLY.** On an ACCPAY the value the UI shows as "Reference"
+  is `InvoiceNumber`, and a `Reference` sent on an ACCPAY is silently dropped. So the
+  deterministic create-recovery key rides `InvoiceNumber` and recovery reads back
+  `Type=="ACCPAY" AND InvoiceNumber==…` — the same shape the credit-note syncer uses for
+  `CreditNoteNumber`. Using `Reference` looks right and passes unit tests while recovering
+  nothing after a lost create response, which duplicates the document on retry.
+- **Xero cannot segregate the payable.** Its AP control account is an org-level system
+  account with no per-document override, so `validateReimbursementAccountMapping` takes
+  `requirePayableAccount: false` for Xero alone. Demanding a mapping Xero cannot use would
+  park documents it would have accepted.
+- **Xero void** is `Status: "VOIDED"` (DELETED applies only to DRAFT/SUBMITTED) and Xero
+  REFUSES it once any payment is applied; the refusal is surfaced, never tombstoned.
+- **QBO** `Bill.APAccountRef` must reference a Liability account of sub-type Payables —
+  a mismatched mapping is rejected by QBO with Intuit's own message.
+- **Rillet payouts now work.** `POST /reimbursements/{id}/payments`
+  (`{amount, date, account_code}`) exists, so the old
+  `UNSUPPORTED_REIMBURSEMENT_PAYMENT` park is gone. Rillet reimbursement payments get
+  their own composite id space (`reimbursement:<docId>:<payId>`) — without it a voided
+  payout would `DELETE /bills/{reimbursementId}/payments/…`.
+
+`REIMBURSEMENT_NATIVE_VOID_PROVIDERS` (`core/posting.ts`) is the capability declaration
+the reconciler reads, and must stay in step with the syncers' `deleteRemote`: a provider
+missing from it has its void silently suppressed as "no active native push mapping to
+void", leaving the remote document live with nothing failing.
+
+**Two jobs-side omissions that no typecheck catches** (the relevant types are
+`Record<string, …>` or their own unions, so every one of these compiles green):
+the `docSync` flag builders MUST set `reimbursementEnabled`, or `decideDocumentFamily`
+reads `undefined` → false and every Reimbursement journal parks as a
+`DOC_SYNC_DISABLED` Warning; and `reconcileDocument` picks accepted statuses by a ternary
+chain that must have an explicit `reimbursement → SWEPT_REIMBURSEMENT_STATUSES` arm, or a
+Posted reimbursement falls through to `SWEPT_INVOICE_STATUSES` (which never contains
+"Posted") and never enqueues.
+
+NOT live-verified — no provider sandbox credentials were available. Flagged VERIFY in
+code: Rillet `external_references` on the reimbursement-payment body (undocumented on that
+path, though the bill-payment path accepts it), QBO `APAccountRef` and
+`POST /bill?operation=delete`, and the Xero VOIDED round trip.
 
 ## Dimensions (journal / bill analytics)
 

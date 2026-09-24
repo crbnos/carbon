@@ -281,7 +281,7 @@ total. Durable steps remain, in order:
 | `ramp-cashbacks` | cashbacks `SYNC_READY` | `charge` Cashback | `STATEMENT_CREDIT_SYNC` |
 | `ramp-bills` | bills (`sync_ready`, not-synced) | posted `purchaseInvoice` | `BILL_SYNC` |
 | `ramp-bill-payments` | paid bills' `payment` | AP `payment` + `invoiceSettlement` | `BILL_PAYMENT_SYNC` |
-| `ramp-reimbursements` | reimbursements `SYNC_READY` | `purchaseInvoice` (Employee supplier) | `REIMBURSEMENT_SYNC` |
+| `ramp-reimbursements` | reimbursements `SYNC_READY` | Draft `reimbursement` (employee party) | `REIMBURSEMENT_SYNC` |
 | `ramp-repayments` | repayments (`from_repaid_at` cursor) | `charge` Repayment | *(no Ramp confirm)* |
 | `ramp-outbound` | Carbon POs + posted invoices | Ramp POs (archived on Completed/Closed) + coded Ramp DRAFT bills (never submitted) | *(no confirm)* |
 
@@ -298,10 +298,24 @@ before `post-purchase-invoice`; an ambiguous response is accepted only after obs
 `syncRampBillPayment` in `ramp-sync-payment.ts`: the Draft payment, settlement, and Ramp
 mapping are staged atomically, the stored source-FX snapshot is retained on resume, and
 success requires a tenant-scoped reread showing Posted. Reimbursements delegate to
-`syncRampReimbursement` in `ramp-sync-reimbursement.ts`: a company/Ramp-id advisory lock
-serializes the atomic supplier-interaction + Draft invoice + delivery + lines + mapping
-stage, and Ramp-paid rows also require their AP payment to be observably Posted before
-confirm. All writes attribute to `"system"`. Gating: `metadata.sync.pull*` flags;
+`createRampReimbursement` in `ramp-sync-reimbursement.ts`: a company/Ramp-id advisory lock
+serializes the atomic `reimbursement` header + lines + mapping stage. The document is its
+own Carbon type, NOT a purchase invoice to an "Employee" supplier, and it lands **Draft** —
+nothing auto-posts, so no settlement is written at import. The mapping entity type is
+`reimbursement` (`RAMP_REIMBURSEMENT_ENTITY_TYPE`), not `bill`.
+
+**Sync creates, and never re-writes.** An already-mapped reimbursement returns its existing
+row untouched, so a reviewer's edits survive a re-sync. The ONE exception is the payout
+intent on the mapping metadata, which is additive-only: a reimbursement imported while
+`APPROVED` that Ramp later PAYS would otherwise keep a payout-less mapping forever and
+Post would never create the `payment`/`invoiceSettlement`. Mapping bookkeeping is not a
+document re-write — nobody edits it — and an intent already recorded carries the FX
+snapshot of the payout that really happened and is never overwritten
+(`hasRecordedPayout`, keyed on `rampPaymentId`).
+
+Ramp line amounts are in MERCHANT currency while the header is the SETTLEMENT amount, so
+`scaleLinesToTotal` applies here as it does for cards; unscaled lines would not sum to the
+header and `requireLineSum` would block Post forever. All writes attribute to `"system"`. Gating: `metadata.sync.pull*` flags;
 `cardLiabilityAccountId` (required for
 every card family); `statementBankAccountId` (transfers, bill payments, repayments);
 `cashbackIncomeAccountId` (cashbacks). A configured `entityId` is enforced locally on
@@ -389,18 +403,24 @@ spaces); bill payments → `payment`.
   `LOCAL_BANK_TRANSFER`, `RTP`, and `SWIFT` post an AP payment. Missing/unknown methods,
   `PAID_MANUALLY`, `VENDOR_CREDIT`, crypto, and `UNSPECIFIED` fail visibly rather than
   guessing the statement bank account.
-- **Reimbursements**: `REIMBURSED` and `REIMBURSED_VIA_PUSH` require a posted settlement.
-  `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and `MANUALLY_REIMBURSED`
-  create/confirm the invoice without a Ramp bank payment. Other states fail before writes.
+- **Reimbursements**: every supported state now creates a **Draft** `reimbursement` and
+  confirms — nothing auto-posts, so confirmation no longer waits on a posted settlement.
+  `REIMBURSED` and `REIMBURSED_VIA_PUSH` additionally record a payout INTENT on the mapping
+  metadata, which the ERP's Post helper turns into the `payment` + `invoiceSettlement`.
+  `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT` and `MANUALLY_REIMBURSED` record
+  no intent. Other states fail before writes.
   Legacy adoption requires exactly one unposted, system-created Draft with the expected
   `RAMP-REIMB-<id>` reference, supplier interaction, complete delivery/lines, matching dates,
   currency, amounts and coding, valid preserved FX, zero tax/shipping, and no PO/item/asset
   provenance. Incomplete or ambiguous reference matches are rejected without repair;
   an existing mapping remains the authoritative resume identity.
 - **Suppliers** (`resolveRampSupplier`): mapping-first (`vendor` entityType) → case-
-  insensitive exact `supplier.name` match → auto-create. `resolveEmployeeSupplier`
-  (reimbursements/repayment users) does the same but ensures an "Employee" `supplierType`
-  and names the supplier `"<First> <Last> (<email>)"`.
+  insensitive exact `supplier.name` match → auto-create. Repayment users still resolve to an
+  "Employee" `supplierType` supplier this way. **Reimbursements no longer do**:
+  `resolveReimbursementEmployee` matches the Ramp user's email to an `employee` row and
+  writes the reimbursement's employee party directly. Zero matches fails with a named
+  error and more than one fails as ambiguous — it never auto-creates an employee, because
+  a wrong match pays the wrong person.
 
 ### Repayments (cursor-driven)
 
