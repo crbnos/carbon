@@ -11,14 +11,12 @@ import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
 } from "@supabase/supabase-js";
-import { checkBotId } from "botid/server";
 import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
   CONTROLLED_ENVIRONMENT,
   IS_LOCAL_DEV,
-  IS_VERCEL,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
   SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
@@ -458,15 +456,6 @@ export async function sendInviteByEmail(
   });
 }
 
-const BOT_BLOCKED_MESSAGE = "Bot verification failed. Please try again.";
-
-// Vercel BotID guards login on Cloud. It only works on a Vercel deployment:
-// the client challenge script is served through Vercel rewrites (vercel.json)
-// and checkBotId() needs Vercel's request context and OIDC token, so the SST,
-// Docker and local stacks never enable it. Login loaders pass this flag to
-// useBotIdProtection so the client and server can never disagree.
-export const botIdEnabled = CarbonEdition === Edition.Cloud && IS_VERCEL;
-
 export async function sendMagicLink(
   email: string,
   // The app's own origin. VERCEL_URL is only correct for the app it was set
@@ -483,27 +472,11 @@ export async function sendMagicLink(
   });
 }
 
-// Returns a user-facing message when BotID classifies the request as a bot,
-// null when the gate passes. A request that skipped the client challenge
-// arrives without the x-is-human header and is classified as a bot.
-export async function verifyBotId(
-  ip: string,
-  actor?: string
-): Promise<string | null> {
-  if (!botIdEnabled) return null;
-  try {
-    const { isBot } = await checkBotId();
-    if (!isBot) return null;
-    logAuthEvent("login_failed", { actor, ip, reason: "bot detected" });
-    return BOT_BLOCKED_MESSAGE;
-  } catch (e) {
-    // A throw is a platform misconfiguration (e.g. OIDC disabled on the
-    // project), not a verdict on the caller — fail open so it cannot lock
-    // every Cloud user out; the IP rate limit and account lockout still apply.
-    log.error("BotID check failed", { error: e });
-    return null;
-  }
-}
+export {
+  type BotProtection,
+  botProtection,
+  verifyBotProtection
+} from "./bot-protection.server";
 
 export function getMagicLinkErrorMessage(error: { code?: string }): string {
   switch (error.code) {

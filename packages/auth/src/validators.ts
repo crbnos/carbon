@@ -29,7 +29,9 @@ export const magicLinkValidator = z.object({
     .string()
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
-  redirectTo: zfd.text(z.string().optional())
+  redirectTo: zfd.text(z.string().optional()),
+  // The Turnstile response, when Turnstile is the bot check (see botProtection)
+  botToken: zfd.text(z.string().optional())
 });
 
 export const passwordLoginValidator = z.object({

@@ -35,6 +35,8 @@ declare global {
     interface ProcessEnv {
       CARBON_EDITION: string;
       CARBON_API_URL: string;
+      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
+      CLOUDFLARE_TURNSTILE_SECRET_KEY: string;
       DOMAIN: string;
       ERP_URL: string;
       JIRA_CLIENT_ID: string;
@@ -159,6 +161,17 @@ export const CARBON_API_URL =
     isRequired: false,
     isSecret: false
   }) ?? getEnv("SUPABASE_URL", { isSecret: false });
+
+// Turnstile guards login wherever BotID can't run (anything not on Vercel).
+// Both keys or neither: a site key alone would render a widget nobody checks.
+export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SITE_KEY",
+  { isRequired: false, isSecret: false }
+);
+export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
+  "CLOUDFLARE_TURNSTILE_SECRET_KEY",
+  { isRequired: false }
+);
 
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 
@@ -476,6 +489,15 @@ export const IS_LOCAL_DEV =
 // Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.
 export const IS_VERCEL =
   getEnv("VERCEL", { isRequired: false, isSecret: true }) === "1";
+
+// Which check guards login: "botid" or "turnstile". Unset picks one — BotID
+// for the Cloud edition on Vercel, else Turnstile when its keys are set. Set it
+// when the keys are there for something else (GoTrue, another form) and login
+// should still use BotID. Vercel exposes no variable of its own for BotID.
+export const BOT_PROTECTION = getEnv("BOT_PROTECTION", {
+  isRequired: false,
+  isSecret: false
+});
 
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false

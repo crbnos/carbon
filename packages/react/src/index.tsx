@@ -27,7 +27,7 @@ import {
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { BarProgress } from "./BarProgress";
-import { useBotIdProtection } from "./BotId";
+import { useBotProtection } from "./BotProtection";
 import {
   BottomSheet,
   BottomSheetBody,
@@ -655,7 +655,7 @@ export {
   reactNodeToString,
   shortcutKeyVariants,
   toast,
-  useBotIdProtection,
+  useBotProtection,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,
