@@ -33,7 +33,7 @@ Two facts established by reading the code, which this slice fixes:
 - [x] Task 7: Replace the hard-coded provider-id lists — 3 of 4 done; `ACCOUNTING_SYNC_INTEGRATION_IDS` documented as structurally blocked
 - [x] Task 8: Block conflicting installs in the UI and the OAuth callbacks
 - [x] Task 9: Add the `no-integration-id-branching` conformance check
-- [ ] Task 10: Full-suite verification
+- [x] Task 10: Full-suite verification — gates green; browser spot-check pending
 
 ## Dependencies
 - Task 2 needs Task 1. Task 3 needs Task 2 (types).
@@ -465,6 +465,27 @@ pnpm --filter @carbon/checks test
 ---
 
 ## Task 10: Full-suite verification
+
+> **2026-09-24 — automated gates GREEN.**
+>
+> `typecheck` (ee, jobs, erp, checks), `pnpm run lint`, and `pnpm run test`
+> (31 tasks) all pass. The migration and trigger were verified directly against
+> the live schema in a rolled-back transaction: a second spend install is refused
+> naming `ramp`, a second accounting install refused naming `rillet`, a different
+> role allowed alongside, an inactive row allowed.
+>
+> **Step 2's browser spot-check has NOT been run.** The no-behaviour-change claim
+> rests on typecheck plus the fact that nothing declares `ownsLedgerFamilies`, so
+> every family resolves carbon-owned — but nobody has watched a purchase invoice
+> post and confirmed the Bill still pushes and its journal still records
+> DOC_BACKED rather than FAMILY_OFF. That needs an accounting provider connected;
+> only `ramp` is installed on the dev company.
+>
+> Deviation worth knowing: Task 6 shipped as a BRANDED TYPE on the policy
+> decision, not the planned required argument on the parsers. Only two production
+> sites reach `getJournalPostingPolicyDecision`; most of the 21 parser call sites
+> are syncers with no way to obtain a topology. See the commit message.
+
 
 **Depends on:** Tasks 1–9
 **Files:** none
