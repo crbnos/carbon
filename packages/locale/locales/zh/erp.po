@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "删除操作"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "删除并应用"
 
 msgid "Delete and restore"
 msgstr "删除并恢复"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。包含这些行的备份永远无法恢复。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "每一行都是从此公司的数据指向其不拥有的行的链接。移除这些行可以应用演示数据。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删除这些行可以运行恢复。"
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "移除条件"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "移除损坏的数据并应用"
 
 msgid "Remove corrupted data and restore"
 msgstr "移除损坏数据并恢复"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "这些行链接到此公司外部的数据，因此无法为您当前的数据创建安全副本。删除它们无法撤销。如果它们与此集团中的其他公司共享，则不会删除任何内容，演示数据也不会应用。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "备份失败原因"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "为什么失败"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告记录。"

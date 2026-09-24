@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "Удалить действие"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "Удалить и применить"
 
 msgid "Delete and restore"
 msgstr "Удалить и восстановить"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Резервную копию с этими строками никогда не удастся восстановить."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "Каждая Строка — это ссылка из данных этой Организации на Строку, которой она не владеет. Убрание этих Строк позволяет применить демо-данные."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Удаление этих строк позволяет выполнить восстановление."
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "Убрать условие"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "Убрать поврежденные данные и применить"
 
 msgid "Remove corrupted data and restore"
 msgstr "Убрать поврежденные данные и восстановить"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "Эти детали заменяются на эту. Каждое правило установлено на старой детали; откройте ее, чтобы изменить правило."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "Эти Строки ссылаются на данные вне этой Организации, поэтому невозможно создать резервную копию ваших текущих данных. Их удаление невозможно отменить. Если окажется, что они используются другими Организациями в этой группе, ничего не удаляется и демо-данные не применяются."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "Почему эта резервная копия не удалась"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "Почему это не удалось"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Почему эта строка отклоняется; отображается в печатаемом предложении и записывается для отчетов по победам и потерям."

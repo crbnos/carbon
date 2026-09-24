@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "アクションを削除"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "削除して適用"
 
 msgid "Delete and restore"
 msgstr "削除して復元"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "各明細はこの会社のデータから、それが所有していない行へのリンクです。これらの行を含むバックアップは復元できません。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "各明細は、この会社のデータから所有していない行へのリンクです。これらの行を除去すれば、デモデータが適用されます。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "各明細はこの会社のデータから、それが所有していない行へのリンクです。それらの行を削除すると、復元を実行できます。"
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "条件を除去"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "破損したデータを除去して適用"
 
 msgid "Remove corrupted data and restore"
 msgstr "破損データを除去して復元"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "これらの行は、この会社の外部のデータにリンクしています。このため、現在のデータのセーフコピーを作成できません。これらの削除は取り消すことができません。これらがこのグループ内の他の会社と共有されている場合、何も削除されず、デモデータは適用されません。"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "このバックアップが失敗した理由"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "これが失敗した理由"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "この行が拒否されている理由。印刷可能な見積もりに表示され、win-loss報告用に記録されます。"

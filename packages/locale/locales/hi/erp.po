@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "कार्रवाई हटाएं"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "हटाएँ और लागू करें"
 
 msgid "Delete and restore"
 msgstr "हटाएँ और पुनः स्थापित करें"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। इन पंक्तियों के साथ एक बैकअप को कभी भी पुनः स्थापित नहीं किया जा सकता।"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक पंक्ति तक एक लिंक है जिसके लिए यह कंपनी मालिक नहीं है। उन पंक्तियों को निकालने से डेमो डेटा को लागू करने की अनुमति मिलती है।"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। उन पंक्तियों को हटाने से पुनः स्थापन चल जाता है।"
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "शर्त निकालें"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "भ्रष्ट डेटा निकालें और लागू करें"
 
 msgid "Remove corrupted data and restore"
 msgstr "भ्रष्ट डेटा निकालें और पुनर्स्थापित करें"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "ये पार्ट्स इसके द्वारा प्रतिस्थापित किए जा रहे हैं। प्रत्येक नियम पुराने पार्ट पर सेट है; नियम बदलने के लिए इसे खोलें।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हैं, इसलिए आपके वर्तमान डेटा की एक सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत् नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा निकलते हैं, तो कुछ भी हटाया नहीं जाता और डेमो डेटा लागू नहीं किया जाता है।"
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए आपके वर्तमान डेटा की सुरक्षा प्रति नहीं बनाई जा सकती। उन्हें हटाना पूर्ववत नहीं किया जा सकता। यदि वे इस समूह की अन्य कंपनियों के साथ साझा की जाती हैं, तो कुछ भी हटाया नहीं जाता है और पुनर्स्थापन शुरू नहीं होता है।"
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "यह बैकअप क्यों विफल हुआ"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "यह विफल क्यों हुआ"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "यह पंक्ति क्यों अस्वीकार की जा रही है; मुद्रण योग्य उद्धरण पर प्रदर्शित और जीत-हानि रिपोर्टिंग के लिए दर्ज।"

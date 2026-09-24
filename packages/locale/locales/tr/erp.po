@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "İşlemi Sil"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "Sil ve uygula"
 
 msgid "Delete and restore"
 msgstr "Sil ve geri yükle"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları içeren bir yedekleme asla geri yüklenemez."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "Her satır, bu şirketin verilerine ait olmayan bir satıra bağlantıdır. Bu satırları kaldırmak, demo verinin uygulanmasını sağlar."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları kaldırmak geri yüklemenin çalışmasını sağlar."
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "Koşulu kaldır"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "Bozulmuş veriyi kaldır ve uygula"
 
 msgid "Remove corrupted data and restore"
 msgstr "Bozuk verileri kaldır ve geri yükle"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "Bu satırlar bu şirketin dışındaki verilere bağlantılı, bu yüzden mevcut verilerinizin güvenlik kopyası oluşturulamaz. Onları silmek geri alınamaz. Eğer bu grup içindeki diğer şirketlerle paylaşıldığı ortaya çıkarsa, hiçbir şey silinmez ve demo verileri uygulanmaz."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "Bu yedek neden başarısız oldu"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "Bu neden başarısız oldu"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir ve kazanç-kayıp raporlaması için kaydedilir."

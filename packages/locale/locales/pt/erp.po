@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "Excluir Ação"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "Excluir e aplicar"
 
 msgid "Delete and restore"
 msgstr "Excluir e restaurar"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "Cada linha é um vínculo dos dados desta empresa para uma linha que não é de sua propriedade. Um backup com essas linhas nunca poderia ser restaurado."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "Cada linha é um link dos dados desta empresa para uma linha que ela não possui. Remover essas linhas permite que os dados de demonstração sejam aplicados."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Cada linha é um vínculo dos dados desta empresa para uma linha que não é de sua propriedade. Remover essas linhas permite que a restauração seja executada."
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "Remover condição"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "Remover dados corrompidos e aplicar"
 
 msgid "Remove corrupted data and restore"
 msgstr "Remover dados corrompidos e restaurar"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "Essas peças estão sendo substituídas por esta. Cada regra é definida na peça antiga; abra-a para alterar a regra."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto, não é possível fazer uma cópia de segurança de seus dados atuais. Excluir essas linhas não pode ser desfeito. Se elas forem compartilhadas com outras empresas neste grupo, nada será excluído e os dados de demonstração não serão aplicados."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Essas linhas estão vinculadas a dados fora desta empresa, portanto não é possível criar uma cópia de segurança dos seus dados atuais. A exclusão dessas linhas não pode ser desfeita. Se forem compartilhadas com outras empresas neste grupo, nada será excluído e a restauração não será iniciada."
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "Por que este backup falhou"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "Por que isso falhou"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Por que esta linha está sendo recusada; mostrado na cotação imprimível e registrado para relatórios de ganho-perda."

@@ -5453,7 +5453,7 @@ msgid "Delete Action"
 msgstr "작업 삭제"
 
 msgid "Delete and apply"
-msgstr ""
+msgstr "삭제 및 적용"
 
 msgid "Delete and restore"
 msgstr "삭제 및 복원"
@@ -6319,7 +6319,7 @@ msgid "Each line is a link from this company's data to a row it doesn't own. A b
 msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로의 링크입니다. 이 행들이 포함된 백업은 복원할 수 없습니다."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
-msgstr ""
+msgstr "각 라인은 이 회사가 소유하지 않은 행을 가리키는 링크입니다. 해당 행을 제거하면 데모 데이터를 적용할 수 있습니다."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "각 라인은 이 회사 데이터에서 소유하지 않은 행으로의 링크입니다. 해당 행들을 제거하면 복원을 실행할 수 있습니다."
@@ -14079,7 +14079,7 @@ msgid "Remove condition"
 msgstr "조건 제거"
 
 msgid "Remove corrupted data and apply"
-msgstr ""
+msgstr "손상된 데이터 제거 및 적용"
 
 msgid "Remove corrupted data and restore"
 msgstr "손상된 데이터 제거 및 복원"
@@ -17903,7 +17903,7 @@ msgid "These parts are being replaced by this one. Each rule is set on the old p
 msgstr "이 부품들이 이 부품으로 대체됩니다. 각 규칙은 기존 부품에 설정되어 있으니 규칙을 변경하려면 해당 부품을 열어주세요."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
-msgstr ""
+msgstr "이 행들은 이 회사 외부의 데이터로 연결되어 있으므로 현재 데이터의 백업 복사본을 만들 수 없습니다. 이를 삭제하면 되돌릴 수 없습니다. 이것이 이 그룹의 다른 회사들과 공유되는 것으로 판명되면 아무것도 삭제되지 않으며 데모 데이터도 적용되지 않습니다."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "이 행들은 이 회사 외부의 데이터와 연결되어 있으므로 현재 데이터의 안전한 사본을 만들 수 없습니다. 이들을 삭제하면 되돌릴 수 없습니다. 이들이 이 그룹의 다른 회사와 공유되는 경우, 아무것도 삭제되지 않고 복원이 시작되지 않습니다."
@@ -19956,7 +19956,7 @@ msgid "Why this backup failed"
 msgstr "이 백업이 실패한 이유"
 
 msgid "Why this failed"
-msgstr ""
+msgstr "이것이 실패한 이유"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "이 라인이 거절되는 이유로, 인쇄용 견적서에 표시되며 수주/실주 보고를 위해 기록됩니다."
