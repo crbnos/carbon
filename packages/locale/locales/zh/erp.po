@@ -1918,6 +1918,9 @@ msgstr "注释已更新"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "该成本中心所归属的另一个成本中心，允许您在其父级下嵌套子成本中心，以进行分层成本报告。"
 
+msgid "Another spend integration is already active"
+msgstr "另一个支出集成已处于活跃状态"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "此存储单元嵌套在其中的另一个存储单元（例如，架内的料箱）；必须在同一地点"
 
@@ -11956,6 +11959,9 @@ msgstr "仅当与客户名称不同时"
 msgid "Only if it differs from the supplier name"
 msgstr "仅当与供应商名称不同时"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "一次只能激活一个支出集成。请先卸载当前的集成，然后连接 Ramp。"
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
 
@@ -18827,6 +18833,9 @@ msgstr "撤销"
 
 msgid "Uninstall"
 msgstr "卸载"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "先卸载 {conflictsWith}"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "唯一、大写、无空格（最多 10 个字符）"

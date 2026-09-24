@@ -649,16 +649,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const isAccountingInstalled =
-    integration.category === "Accounting" && integrationData.data.active;
+  // The DECLARED role, not the display category and not an id literal.
+  const providerRole = (
+    integration as { providerRole?: "accounting" | "spend" }
+  ).providerRole;
 
-  // Ramp (Spend Management) also writes accountingSyncOperation rows for its
-  // inbound/outbound families, so it gets the same Sync Activity inbox — minus
-  // the accounting-only tie-out/reconciliation surfaces, which stay gated on
-  // isAccountingInstalled below.
+  const isAccountingInstalled =
+    providerRole === "accounting" && integrationData.data.active;
+
+  // Any provider-role integration writes accountingSyncOperation rows — a spend
+  // provider records its own inbound/outbound dispositions there — so it gets
+  // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
+  // surfaces stay gated on isAccountingInstalled below.
   const producesSyncOperations =
-    isAccountingInstalled ||
-    (integration.id === "ramp" && integrationData.data.active);
+    providerRole !== undefined && integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
   // client is enough). Params are prefixed (syncStatus/syncPage) to avoid

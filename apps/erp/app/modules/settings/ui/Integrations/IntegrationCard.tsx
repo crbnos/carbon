@@ -36,10 +36,24 @@ export function IntegrationCard({
   const routeData = useRouteData<{
     state: string;
     oauthStates: Record<string, string>;
+    activeRoles: Record<string, string | null>;
   }>(path.to.integrations);
   const { isGated } = usePlanGate({ feature: "INTEGRATIONS" });
   const isWhitelisted = isIntegrationWhitelisted(integration.id);
   const isStarterPlan = isGated && !isWhitelisted;
+
+  // At most one ACTIVE integration per provider role, enforced by a database
+  // trigger. Surfacing it here is what keeps a customer from meeting that
+  // refusal as a failed install — and it names the incumbent, so the next step
+  // is obvious.
+  const providerRole = (
+    integration as { providerRole?: "accounting" | "spend" }
+  ).providerRole;
+  const roleIncumbent = providerRole
+    ? (routeData?.activeRoles?.[providerRole] ?? null)
+    : null;
+  const conflictsWith =
+    roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
 
   const handleInstall = async () => {
     if ("oauth" in integration && integration.oauth) {
@@ -138,7 +152,11 @@ export function IntegrationCard({
               </fetcher.Form>
             ) : (
               <Button
-                isDisabled={!integration.active || fetcher.state !== "idle"}
+                isDisabled={
+                  !integration.active ||
+                  !!conflictsWith ||
+                  fetcher.state !== "idle"
+                }
                 isLoading={fetcher.state !== "idle"}
                 onClick={handleInstall}
               >
@@ -146,6 +164,11 @@ export function IntegrationCard({
               </Button>
             )}
           </>
+        )}
+        {conflictsWith && !installed && (
+          <span className="text-xs text-muted-foreground mr-auto">
+            <Trans>Uninstall {conflictsWith} first</Trans>
+          </span>
         )}
         {installed && integration.active && (
           <StatusBadge status={installed.health} />

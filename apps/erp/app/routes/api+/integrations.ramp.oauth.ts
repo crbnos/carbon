@@ -111,6 +111,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
       updatedBy: userId
     });
   } catch (error) {
+    // The one-active-per-role trigger raises 23505. Ramp's authorization
+    // already succeeded at this point, so the honest report is "another spend
+    // integration holds the slot", not a generic save failure.
+    if (
+      typeof (error as { code?: unknown })?.code === "string" &&
+      (error as { code: string }).code === "23505"
+    ) {
+      logger.error("Ramp connect refused — a spend integration is active", {
+        companyId
+      });
+      return connectionFailed("role-conflict", consumedState.cookie);
+    }
     logger.error("Failed to save Ramp integration", { error, companyId });
     return connectionFailed("save-failed", consumedState.cookie);
   }

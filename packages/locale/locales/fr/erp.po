@@ -1918,6 +1918,9 @@ msgstr "Annotation mise à jour"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Un autre centre de coûts auquel celui-ci se rapporte, vous permettant d'imbriquer un sous-centre de coûts sous son supérieur pour des rapports de coûts hiérarchiques."
 
+msgid "Another spend integration is already active"
+msgstr "Une autre intégration de dépenses est déjà active"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "Une autre unité de stockage dans laquelle celle-ci est imbriquée (p. ex. un bac dans un casier); doit être au même emplacement."
 
@@ -11956,6 +11959,9 @@ msgstr "Uniquement s'il diffère du nom du client"
 msgid "Only if it differs from the supplier name"
 msgstr "Uniquement s'il diffère du nom du fournisseur"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "Une seule intégration de dépenses peut être active à la fois. Désinstallez d'abord celle en cours, puis connectez Ramp."
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Seuls les employés qualifiés peuvent être planifiés pour et exécuter ce processus"
 
@@ -18827,6 +18833,9 @@ msgstr "Annuler"
 
 msgid "Uninstall"
 msgstr "Désinstaller"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "Désinstallez {conflictsWith} d'abord"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Unique, en majuscules, sans espaces (10 caractères max.)"

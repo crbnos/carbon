@@ -39,6 +39,10 @@ export const integrationErrors = {
       title: msg`Couldn't save the Ramp connection`,
       description: msg`Ramp authorized the connection but saving it failed. Try connecting again.`
     },
+    "role-conflict": {
+      title: msg`Another spend integration is already active`,
+      description: msg`Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp.`
+    },
     "install-failed": {
       title: msg`Ramp connected but setup didn't finish`,
       description: msg`Open the Ramp integration and try connecting again to finish setup.`

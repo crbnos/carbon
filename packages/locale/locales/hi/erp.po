@@ -1918,6 +1918,9 @@ msgstr "एनोटेशन अपडेट किया गया"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "एक अन्य लागत केंद्र जिसमें यह रोल हो जाता है, आपको एक उप-लागत केंद्र को इसके मूल के अंतर्गत घोंसले के लिए सक्षम करता है जो पदानुक्रमित लागत रिपोर्टिंग के लिए।"
 
+msgid "Another spend integration is already active"
+msgstr "एक अन्य व्यय एकीकरण पहले से सक्रिय है"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "एक अन्य भंडारण इकाई जिसमें यह घोंसला है (जैसे एक बिन एक रैक में); एक ही स्थान पर होना चाहिए।"
 
@@ -11956,6 +11959,9 @@ msgstr "केवल यदि यह ग्राहक के नाम से
 msgid "Only if it differs from the supplier name"
 msgstr "केवल यदि यह आपूर्तिकर्ता के नाम से भिन्न हो"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "एक बार में केवल एक खर्च एकीकरण सक्रिय हो सकता है। पहले वर्तमान को अनइंस्टॉल करें, फिर Ramp को कनेक्ट करें।"
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
 
@@ -18827,6 +18833,9 @@ msgstr "पूर्ववत करें"
 
 msgid "Uninstall"
 msgstr "अनइंस्टॉल करें"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "पहले {conflictsWith} को अनइंस्टॉल करें"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "अद्वितीय, बड़े अक्षरों में, बिना स्थान के (अधिकतम 10 वर्ण)"

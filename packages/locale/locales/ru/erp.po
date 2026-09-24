@@ -1918,6 +1918,9 @@ msgstr "Аннотация обновлена"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Еще один центр затрат, в который входит этот, позволяя вложить подразделение под его родительский центр затрат для иерархической отчетности по затратам."
 
+msgid "Another spend integration is already active"
+msgstr "Другая интеграция расходов уже активна"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "Другая единица хранения, в которую вложена данная единица (например, ячейка внутри стеллажа); должна находиться на одной площадке."
 
@@ -11956,6 +11959,9 @@ msgstr "Только если отличается от имени покупа�
 msgid "Only if it differs from the supplier name"
 msgstr "Только если отличается от имени поставщика"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "Одновременно может быть активна только одна интеграция расходов. Сначала удалите текущую, а затем подключите Ramp."
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
 
@@ -18827,6 +18833,9 @@ msgstr "Отменить"
 
 msgid "Uninstall"
 msgstr "Удалить"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "Сначала удалите {conflictsWith}"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Уникальный, заглавными буквами, без пробелов (макс. 10 символов)"

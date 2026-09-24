@@ -1918,6 +1918,9 @@ msgstr "Açıklama güncellendi"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "Bu toplandığı başka bir maliyet merkezi, hiyerarşik maliyet raporlaması için bir alt maliyet merkezini ana kütesinin altında iç içe geçirmenizi sağlar."
 
+msgid "Another spend integration is already active"
+msgstr "Başka bir harcama entegrasyonu zaten etkin"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "Bu depolama biriminin yerleştirildiği başka bir depolama birimi (örneğin, bir raf içinde bir göz); aynı lokasyonda olması gerekir."
 
@@ -11956,6 +11959,9 @@ msgstr "Yalnızca müşteri adından farklıysa"
 msgid "Only if it differs from the supplier name"
 msgstr "Yalnızca tedarikçi adından farklıysa"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "Aynı anda yalnızca bir harcama entegrasyonu etkin olabilir. Önce mevcut olanı kaldırın, ardından Ramp'ı bağlayın."
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çalıştırılabilir"
 
@@ -18827,6 +18833,9 @@ msgstr "Geri Al"
 
 msgid "Uninstall"
 msgstr "Kaldır"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "Önce {conflictsWith} kaldırın"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"

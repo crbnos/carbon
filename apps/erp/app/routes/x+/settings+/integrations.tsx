@@ -4,6 +4,7 @@ import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
+  getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
 import { toast } from "@carbon/react";
@@ -54,9 +55,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
     companyId
   });
 
+  // Which role slots are taken. The database refuses a second active
+  // integration of a role (migration 20260924133915); this is what stops a
+  // customer reaching that refusal through the UI.
+  const activeRoles: Record<string, string | null> = {
+    accounting: null,
+    spend: null
+  };
+  for (const role of ["accounting", "spend"] as const) {
+    const ids = new Set<string>(getIntegrationIdsByRole(role));
+    activeRoles[role] =
+      items.find((i) => i.active && ids.has(i.id))?.id ?? null;
+  }
+
   return data(
     {
       integrations: items,
+      activeRoles,
       // Existing OAuth callbacks still receive a server-generated correlation
       // value. Ramp uses the browser-bound, single-use value below.
       state: crypto.randomUUID(),

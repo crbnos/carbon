@@ -8,7 +8,10 @@ vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
 vi.mock("@carbon/ee", () => ({
   integrations: [],
-  quickInstallConnectors: []
+  quickInstallConnectors: [],
+  // The loader derives which role slots are taken so the cards can disable a
+  // conflicting Install. No integrations in this fixture, so no role is held.
+  getIntegrationIdsByRole: () => []
 }));
 vi.mock("@carbon/react", () => ({ toast: { error: vi.fn() } }));
 vi.mock("@lingui/react/macro", () => ({ useLingui: vi.fn() }));

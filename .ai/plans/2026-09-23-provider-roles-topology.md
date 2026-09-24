@@ -27,12 +27,12 @@ Two facts established by reading the code, which this slice fixes:
 - [x] Task 1: Migration — `integration.providerRole` + exclusivity trigger
 - [x] Task 2: Regenerate database types
 - [x] Task 3: Declare `providerRole` on the descriptors
-- [ ] Task 4: Unify the capability surface
-- [ ] Task 5: Build `IntegrationTopology` + `resolveIntegrationTopology`
-- [ ] Task 6: Thread the topology through the settings resolvers
-- [~] Task 7: Replace the hard-coded provider-id lists — 2 of 3 done; third is structurally blocked
-- [ ] Task 8: Block conflicting installs in the UI and the OAuth callbacks
-- [ ] Task 9: Add the `no-integration-id-branching` conformance check
+- [x] Task 4: Unify the capability surface
+- [x] Task 5: Build `IntegrationTopology` + `resolveIntegrationTopology`
+- [x] Task 6: Thread the topology through the settings resolvers
+- [x] Task 7: Replace the hard-coded provider-id lists — 3 of 4 done; `ACCOUNTING_SYNC_INTEGRATION_IDS` documented as structurally blocked
+- [x] Task 8: Block conflicting installs in the UI and the OAuth callbacks
+- [x] Task 9: Add the `no-integration-id-branching` conformance check
 - [ ] Task 10: Full-suite verification
 
 ## Dependencies

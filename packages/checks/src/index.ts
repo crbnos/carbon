@@ -11,6 +11,7 @@ export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+export { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noNumericPrecision } from "./conformance/no-numeric-precision";

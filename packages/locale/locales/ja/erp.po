@@ -1918,6 +1918,9 @@ msgstr "注釈が更新されました"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
 
+msgid "Another spend integration is already active"
+msgstr "別の支出統合が既にアクティブです"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "この保管ユニットがネストされる別の保管ユニット（例：ラック内のビン）。同じ拠点にある必要があります"
 
@@ -11956,6 +11959,9 @@ msgstr "得意先名と異なる場合のみ"
 msgid "Only if it differs from the supplier name"
 msgstr "仕入先名と異なる場合のみ"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "一度にアクティブにできる支出統合は1つだけです。まず現在のものをアンインストールしてから、Rampに接続してください。"
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
 
@@ -18827,6 +18833,9 @@ msgstr "元に戻す"
 
 msgid "Uninstall"
 msgstr "アンインストール"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "まず{conflictsWith}をアンインストールしてください"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
