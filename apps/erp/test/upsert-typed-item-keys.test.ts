@@ -11,15 +11,16 @@ vi.mock("@carbon/glossary", () => ({
   termSlug: vi.fn()
 }));
 
-const { upsertConsumable, upsertMaterial, upsertPart, upsertService, upsertTool } =
+const { upsertConsumable, upsertPart, upsertService, upsertTool } =
   await import("~/modules/items/items.service");
 
 // Pins the key resolution in the typed-item update branches. `item` is keyed
-// by uuid; part/material/tool/consumable/service are keyed by the item's
+// by uuid; part/tool/consumable/service are keyed by the item's
 // readableId + companyId. Filtering both tables by one id saved the item half
 // and silently matched zero typed rows (or the reverse when a readable id was
 // passed), with no error either way. Every read tool hands out the uuid, so
-// over MCP the typed fields never saved.
+// over MCP the typed fields never saved. Materials are pinned with their
+// property rules in material-properties.test.ts.
 
 type Call = {
   table: string;
@@ -123,104 +124,6 @@ const updateOf = (calls: Call[], table: string) =>
   updates(calls).find((c) => c.table === table);
 
 describe("typed item updates resolve uuid vs readable id", () => {
-  it("material: by item uuid writes item by uuid and material by readableId + companyId", async () => {
-    const { client, calls } = makeClient(respondWith({ byId: ITEM }));
-    const result = await upsertMaterial(client, {
-      ...base,
-      id: ITEM.id,
-      materialSubstanceId: "aluminum",
-      materialFormId: "plate",
-      gradeId: "aluminum-7075"
-    });
-    expect(result.error).toBeNull();
-
-    const item = updateOf(calls, "item");
-    expect(item?.filters).toEqual(
-      expect.arrayContaining([
-        ["eq", "id", ITEM.id],
-        ["eq", "companyId", COMPANY]
-      ])
-    );
-    expect(item?.payload).not.toHaveProperty("id");
-    expect(item?.payload).toMatchObject({ updatedBy: "user-1" });
-    expect(item?.single).toBe("single");
-
-    const material = updateOf(calls, "material");
-    expect(material?.filters).toEqual(
-      expect.arrayContaining([
-        ["eq", "id", ITEM.readableId],
-        ["eq", "companyId", COMPANY]
-      ])
-    );
-    expect(material?.payload).toMatchObject({
-      materialSubstanceId: "aluminum",
-      materialFormId: "plate",
-      gradeId: "aluminum-7075",
-      updatedBy: "user-1"
-    });
-    expect(material?.single).toBe("single");
-  });
-
-  it("material: by readable id resolves the item uuid first", async () => {
-    const { client, calls } = makeClient(
-      respondWith({ byId: null, byReadableId: [ITEM] })
-    );
-    const result = await upsertMaterial(client, {
-      ...base,
-      id: ITEM.readableId,
-      gradeId: "aluminum-7075"
-    });
-    expect(result.error).toBeNull();
-    expect(updateOf(calls, "item")?.filters).toEqual(
-      expect.arrayContaining([["eq", "id", ITEM.id]])
-    );
-    expect(updateOf(calls, "material")?.filters).toEqual(
-      expect.arrayContaining([["eq", "id", ITEM.readableId]])
-    );
-  });
-
-  it("material: an unknown id is an error and writes nothing", async () => {
-    const { client, calls } = makeClient(
-      respondWith({ byId: null, byReadableId: [] })
-    );
-    const result = await upsertMaterial(client, { ...base, id: "nope" });
-    expect(result.data).toBeNull();
-    expect(result.error).toMatchObject({
-      code: "PGRST116",
-      message: expect.stringContaining("not found")
-    });
-    expect(updates(calls)).toHaveLength(0);
-  });
-
-  it("material: a readable id shared by several revisions is refused", async () => {
-    const { client, calls } = makeClient(
-      respondWith({
-        byId: null,
-        byReadableId: [ITEM, { ...ITEM, id: "item-uuid-2" }]
-      })
-    );
-    const result = await upsertMaterial(client, {
-      ...base,
-      id: ITEM.readableId
-    });
-    expect(result.data).toBeNull();
-    expect(result.error).toMatchObject({
-      message: expect.stringContaining("revisions")
-    });
-    expect(updates(calls)).toHaveLength(0);
-  });
-
-  it("material: a missed material row surfaces as an error", async () => {
-    const { client } = makeClient(
-      respondWith({
-        byId: ITEM,
-        typedUpdate: { data: null, error: { code: "PGRST116" } }
-      })
-    );
-    const result = await upsertMaterial(client, { ...base, id: ITEM.id });
-    expect(result.error).toMatchObject({ code: "PGRST116" });
-  });
-
   it.each([
     ["part", upsertPart],
     ["tool", upsertTool],

@@ -7,6 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { materialValidator, upsertMaterial } from "~/modules/items";
 import { MaterialForm } from "~/modules/items/ui/Materials";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -32,7 +33,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const createMaterial = await upsertMaterial(client, {
+  const createMaterial = await upsertMaterial(client, getDatabaseClient(), {
     ...validation.data,
     companyId,
     customFields: setCustomFields(formData),

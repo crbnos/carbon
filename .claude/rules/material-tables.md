@@ -69,14 +69,39 @@ RLS lets authenticated users read global rows and employees read their company's
 A material is an `item` of `type = 'Material'`. `material.id` is set to the item's `readableId`,
 **not** the item's `id`. Creating a material inserts the `item` row(s) first then the `material` row
 with the shared id — see `upsertMaterial` in
-`apps/erp/app/modules/items/items.service.ts` (`readableId: material.id`, then
-`client.from("material").upsert({ id: material.id, ... })`). Because the join is on `readableId`,
+`apps/erp/app/modules/items/items.service.ts` (the readable id is `material.id`, or the id derived
+from the properties when `companySettings.materialGeneratedIds` is on, then
+`client.from("material").upsert({ id: readableId, ... })`). Because the join is on `readableId`,
 one material can have multiple item **revisions** (and per-size item rows); the `materials` view
 de-dupes to the latest item per `(readableId, companyId)` and aggregates the revisions.
 
 `getMaterial` calls the **`get_material_details(item_id)`** RPC (defined/revised in the
 `20250721101110` and `20250725140205_material-details.sql` migrations). There is also
 `get_material_naming_details(readable_id)` (builds the readable name/code from the taxonomy).
+
+## Editing properties
+
+`updateMaterialProperties(client, db, material)` is the one path for substance, form, type,
+finish, grade and dimension changes: the properties panel (`x+/items+/update.tsx`),
+`upsertMaterial`'s update branch and MCP all go through its helpers.
+
+- A new substance clears finish, grade and type; a new form clears dimension and type; unless the
+  same call sets them. This mirrors the panel's cascading pickers.
+- Grade and finish must belong to the substance, dimension to the form, type to both
+  (`checkMaterialProperties`). Only a value the call changes, or whose parent changed, is checked,
+  so an unrelated edit never fails on older data.
+- With `materialGeneratedIds` on, substance and form are required and the readable id and name are
+  derived with `getMaterialId` / `getMaterialDescription` (`@carbon/utils`) from the resolved
+  properties, on create and on every property change. The rename of the material row and every
+  revision's item row runs in one Kysely transaction (`saveMaterialIdentity`), which refuses an id
+  another material already has.
+- `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
+  a cleared form field, clears); `active` is never touched; `postingGroupId`/`unitCost` go to
+  `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size via
+  `createRevision`, refused while the material is open in a change notice.
+- `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
+  so their MCP tools inject only `companyId` (`INJECT_AUTH_OVERRIDES` in
+  `scripts/lib/service-metadata.ts`).
 
 ## Code map
 
