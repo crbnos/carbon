@@ -362,7 +362,8 @@ export const QBO_CARBON_OWNED_ENTITIES = [
   "bill",
   "charge",
   "creditMemo",
-  "vendorCredit"
+  "vendorCredit",
+  "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -762,8 +763,11 @@ export class QboProvider extends BaseProvider {
     return this.readEntity<Qbo.Bill>("bill", "Bill", id);
   }
 
-  async createBill(bill: QboCreatePayload<Qbo.Bill>): Promise<Qbo.Bill> {
-    return this.writeEntity("bill", "Bill", "create bill", bill);
+  async createBill(
+    bill: QboCreatePayload<Qbo.Bill>,
+    requestId?: string
+  ): Promise<Qbo.Bill> {
+    return this.writeEntity("bill", "Bill", "create bill", bill, requestId);
   }
 
   async updateBill(bill: QboUpdatePayload<Qbo.Bill>): Promise<Qbo.Bill> {
@@ -858,6 +862,37 @@ export class QboProvider extends BaseProvider {
       deleted.data.Purchase.status !== "Deleted"
     )
       throw new Error("QuickBooks did not confirm the purchase was deleted");
+  }
+
+  /**
+   * Delete a Bill. QBO has no DELETE verb: `POST /bill?operation=delete`
+   * carrying the current `SyncToken` is the delete, exactly as for a Purchase
+   * (`deletePurchase` above, from which this is cloned). Refuses to claim
+   * success unless QBO echoes `status: "Deleted"` for the same id.
+   *
+   * VERIFY (QBO sandbox): the operation=delete contract is Intuit's documented
+   * pattern for transaction entities, but Carbon has not exercised it for
+   * `bill` against a live company.
+   */
+  async deleteBill(id: string): Promise<void> {
+    const current = await this.request<{
+      Bill: Qbo.Bill & { status?: string };
+    }>("GET", `/bill/${encodeURIComponent(id)}`);
+    if (current.error) throwQboApiError("read bill before delete", current);
+    const bill = current.data?.Bill;
+    if (bill?.Id === id && bill.status === "Deleted") return;
+    if (bill?.Id !== id || !bill.SyncToken)
+      throw new Error(
+        "QuickBooks bill read returned no current SyncToken; deletion was not attempted"
+      );
+    const deleted = await this.request<{
+      Bill: { Id: string; status?: string };
+    }>("POST", "/bill?operation=delete", {
+      body: JSON.stringify({ Id: id, SyncToken: bill.SyncToken })
+    });
+    if (deleted.error) throwQboApiError("delete bill", deleted);
+    if (deleted.data?.Bill?.Id !== id || deleted.data.Bill.status !== "Deleted")
+      throw new Error("QuickBooks did not confirm the bill was deleted");
   }
 
   async updatePurchase(

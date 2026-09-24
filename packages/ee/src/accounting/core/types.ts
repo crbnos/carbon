@@ -255,7 +255,14 @@ export type AccountingEntityType =
   /** A Carbon `memo` on a CUSTOMER, pushed as the provider's native customer credit. */
   | "creditMemo"
   /** A Carbon `memo` on a SUPPLIER, pushed as the provider's native vendor credit. */
-  | "vendorCredit";
+  | "vendorCredit"
+  /**
+   * A Carbon `reimbursement` (employee expense payable) pushed as the
+   * provider's native reimbursement object, or an employee-vendor bill where
+   * the provider has none. Distinct from `employee`, which is declared above
+   * for a (still unimplemented) payroll-employee master sync.
+   */
+  | "reimbursement";
 
 export interface EntityConfig {
   /** Is this entity sync active? */

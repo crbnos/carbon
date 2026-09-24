@@ -258,7 +258,8 @@ export const RILLET_PUSH_ONLY_ENTITIES = [
   "journalEntry",
   "charge",
   "creditMemo",
-  "vendorCredit"
+  "vendorCredit",
+  "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -839,6 +840,25 @@ export class RilletProvider extends BaseProvider {
     );
   }
 
+  /**
+   * `DELETE /reimbursements/{reimbursement_id}/payments/{payment_id}` —
+   * VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/delete-a-reimbursement-payment,
+   * 2026-09-23), 204 on success. A Carbon payout that is voided must delete
+   * the REIMBURSEMENT payment, not a bill payment: the two id spaces are
+   * disjoint and `/bills/{reimbursementId}/payments/...` would 404 (or, worse,
+   * hit an unrelated bill).
+   */
+  async deleteReimbursementPayment(
+    reimbursementId: string,
+    paymentId: string
+  ): Promise<void> {
+    await this.deleteEntity(
+      `/reimbursements/${reimbursementId}/payments/${paymentId}`,
+      "void reimbursement payment"
+    );
+  }
+
   private async writeEntity<T>(args: {
     method: "POST" | "PUT";
     path: string;
@@ -1247,6 +1267,27 @@ export class RilletProvider extends BaseProvider {
    * [...] }` envelope are assumed to mirror `/invoices/{id}/payments`; not yet
    * confirmed against the live Rillet OpenAPI.
    */
+  /**
+   * `GET /reimbursements/{reimbursement_id}/payments` — VERIFIED against
+   * Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/list-reimbursement-payments, 2026-09-23):
+   * a `{ payments: [...] }` envelope, the same shape the bill-payment listing
+   * returns.
+   */
+  async listReimbursementPayments(
+    reimbursementId: string
+  ): Promise<Rillet.ReimbursementPayment[]> {
+    const response = await this.request<{
+      payments?: Rillet.ReimbursementPayment[];
+    }>("GET", `/reimbursements/${reimbursementId}/payments`);
+
+    if (response.error) {
+      throwRilletApiError("list reimbursement payments", response);
+    }
+
+    return response.data?.payments ?? [];
+  }
+
   async listBillPayments(billId: string): Promise<Rillet.BillPayment[]> {
     const response = await this.request<{
       payments?: Rillet.BillPayment[];
@@ -1351,6 +1392,39 @@ export class RilletProvider extends BaseProvider {
       path: `/bills/${billId}/payments`,
       envelopeKey: "payment",
       operation: "create bill payment",
+      payload: payment,
+      idempotencyKey
+    });
+  }
+
+  /**
+   * Record a payment against one employee reimbursement.
+   *
+   * `POST /reimbursements/{id}/payments` — the AP-payout sibling of
+   * `createBillPayment`, and deliberately the same call shape: its request
+   * body is the identical required trio `{ amount, date, account_code }`
+   * (VERIFIED against Rillet's published OpenAPI,
+   * docs.api.rillet.com/reference/create-a-reimbursement-payment,
+   * 2026-09-23), and the response is flat
+   * (`{ id, status, reimbursement_id, amount, date, account_code }`), which
+   * `unwrapRilletEntity`'s flat fallback handles.
+   *
+   * `external_references` is NOT in the documented body for this endpoint —
+   * nor for `/bills/{id}/payments`, which nonetheless accepted it on the
+   * sandbox (2026-08-11). The shared `RilletPaymentCreate` therefore still
+   * carries it here; VERIFY on the sandbox before shipping, since an
+   * endpoint that rejects unknown fields would 400 the whole payout.
+   */
+  async createReimbursementPayment(
+    reimbursementId: string,
+    payment: RilletPaymentCreate,
+    idempotencyKey?: string
+  ): Promise<Rillet.ReimbursementPayment> {
+    return this.writeEntity({
+      method: "POST",
+      path: `/reimbursements/${reimbursementId}/payments`,
+      envelopeKey: "payment",
+      operation: "create reimbursement payment",
       payload: payment,
       idempotencyKey
     });

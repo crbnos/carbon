@@ -31,6 +31,7 @@ describe("composite payment sync entity id", () => {
     );
     expect(parseRilletPaymentSyncEntityId(entityId)).toEqual({
       family: "ar",
+      kind: "invoice",
       documentRemoteId: "0b9f9c1e-9f10-4c8e-8f2c-1a2b3c4d5e6f",
       paymentRemoteId: "7c8d9e0f-1a2b-3c4d-5e6f-7a8b9c0d1e2f"
     });
@@ -47,6 +48,7 @@ describe("composite payment sync entity id", () => {
     );
     expect(parseRilletPaymentSyncEntityId(entityId)).toEqual({
       family: "ap",
+      kind: "bill",
       documentRemoteId: "1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d",
       paymentRemoteId: "9f8e7d6c-5b4a-3210-fedc-ba9876543210"
     });

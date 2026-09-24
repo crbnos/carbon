@@ -10,6 +10,7 @@ import { ItemSyncer } from "./entities/item";
 import { JournalEntrySyncer } from "./entities/journal-entry";
 import { XeroPaymentSyncer } from "./entities/payment";
 import { PurchaseOrderSyncer } from "./entities/purchase-order";
+import { XeroReimbursementSyncer } from "./entities/reimbursement";
 import { SalesOrderSyncer } from "./entities/sales-order";
 import { VendorCreditSyncer } from "./entities/vendor-credit";
 
@@ -28,6 +29,7 @@ export * from "./entities/journal-entry";
 // webhook accelerator uses to enqueue payment operations
 export * from "./entities/payment";
 export * from "./entities/purchase-order";
+export * from "./entities/reimbursement";
 export * from "./entities/vendor-credit";
 export * from "./models";
 export * from "./provider";
@@ -62,6 +64,11 @@ export const xeroSyncerRegistry: SyncerRegistry = {
   // reason (XERO_MEMO_INCREASER_SKIP_REASON) — they are not credit documents.
   creditMemo: CreditMemoSyncer,
   vendorCredit: VendorCreditSyncer,
+
+  // Employee reimbursements as an ACCPAY invoice against an employee Contact
+  // — Xero has no reimbursement object, and no way to name the AP control
+  // account on a document, so the segregation holds on the Carbon side only.
+  reimbursement: XeroReimbursementSyncer,
 
   // Posting sync (push-only journal entries -> Xero Manual Journals)
   journalEntry: JournalEntrySyncer,

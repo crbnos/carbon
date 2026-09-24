@@ -8,6 +8,7 @@ import { RilletSalesInvoiceSyncer } from "./entities/invoice";
 import { RilletItemSyncer } from "./entities/item";
 import { RilletJournalEntrySyncer } from "./entities/journal-entry";
 import { RilletPaymentSyncer } from "./entities/payment";
+import { RilletReimbursementSyncer } from "./entities/reimbursement";
 import { RilletVendorSyncer } from "./entities/vendor";
 import { RilletVendorCreditSyncer } from "./entities/vendor-credit";
 
@@ -24,6 +25,7 @@ export * from "./entities/journal-entry";
 // payment exports the composite entity-id helpers the inbound
 // invoice-payment-updated webhook route uses to enqueue operations
 export * from "./entities/payment";
+export * from "./entities/reimbursement";
 export * from "./entities/shared";
 export * from "./entities/vendor";
 export * from "./entities/vendor-credit";
@@ -57,6 +59,11 @@ export const rilletSyncerRegistry: SyncerRegistry = {
   // supplier memo a vendor credit.
   creditMemo: RilletCreditMemoSyncer,
   vendorCredit: RilletVendorCreditSyncer,
+
+  // Employee reimbursements as Rillet's NATIVE reimbursement object — the
+  // one provider that has one. It names its own payable account, so Carbon's
+  // segregated employee-payable control account crosses the wire intact.
+  reimbursement: RilletReimbursementSyncer,
 
   // Posting sync (push-only journal entries -> Rillet journal entries)
   journalEntry: RilletJournalEntrySyncer,

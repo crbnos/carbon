@@ -252,11 +252,30 @@ export namespace Qbo {
     TxnDate: z.string().optional(),
     DueDate: z.string().optional(),
     VendorRef: RefSchema,
+    /**
+     * Which A/P account the bill is CREDITED to. Optional — most companies
+     * have one A/P account and QBO implies it — but Carbon sets it on an
+     * employee reimbursement so the segregated employee-payable control
+     * account survives the crossing.
+     *
+     * PRECONDITION (Intuit): the referenced account must be a Liability
+     * account whose sub-type is Payables. A Carbon employee-payable account
+     * mapped to anything else is rejected by QBO; the failure surfaces on the
+     * operation with Intuit's own message. VERIFY on a QBO sandbox.
+     */
+    APAccountRef: RefSchema.optional(),
     Line: z.array(ExpenseLineSchema),
     /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX bills. */
     CurrencyRef: RefSchema.optional(),
     /** Foreign→home exchange rate — set on FX bills (omitted at rate 1). */
     ExchangeRate: z.number().optional(),
+    /**
+     * Transaction-level location/department (QBO location tracking). Optional,
+     * and only meaningful when `Preferences.AccountingInfoPrefs.TrackDepartments`
+     * is on. Transaction-level on a Bill, exactly as on a Purchase — only
+     * `ClassRef` is per line.
+     */
+    DepartmentRef: RefSchema.optional(),
     TotalAmt: z.number().optional(),
     Balance: z.number().optional(),
     PrivateNote: z.string().optional(),

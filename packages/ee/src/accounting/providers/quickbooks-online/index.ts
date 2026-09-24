@@ -9,6 +9,7 @@ import { QboItemSyncer } from "./entities/item";
 import { QboJournalEntrySyncer } from "./entities/journal-entry";
 import { QboPaymentSyncer } from "./entities/payment";
 import { QboPurchaseOrderSyncer } from "./entities/purchase-order";
+import { QboReimbursementSyncer } from "./entities/reimbursement";
 import { QboVendorSyncer } from "./entities/vendor";
 import { QboVendorCreditSyncer } from "./entities/vendor-credit";
 
@@ -27,6 +28,7 @@ export * from "./entities/journal-entry";
 // the inbound QBO webhook route uses to enqueue operations
 export * from "./entities/payment";
 export * from "./entities/purchase-order";
+export * from "./entities/reimbursement";
 export * from "./entities/shared";
 export * from "./entities/vendor";
 export * from "./entities/vendor-credit";
@@ -61,6 +63,12 @@ export const qboSyncerRegistry: SyncerRegistry = {
   // vendorCredit), which default to "none".
   creditMemo: QboCreditMemoSyncer,
   vendorCredit: QboVendorCreditSyncer,
+
+  // Employee reimbursements as a Bill against an employee VENDOR — QBO has
+  // no native reimbursement object. `APAccountRef` carries Carbon's
+  // segregated employee-payable control account, so the provider ledger keeps
+  // the segregation too.
+  reimbursement: QboReimbursementSyncer,
 
   // Posting sync (push-only journal entries -> QBO JournalEntry objects)
   journalEntry: QboJournalEntrySyncer,

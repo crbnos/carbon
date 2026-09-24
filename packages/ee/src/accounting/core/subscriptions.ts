@@ -46,7 +46,10 @@ const COMMON_PUSH_TABLES: RequiredSyncSubscription[] = [
   // Credit memos / vendor credits push on the transition to Posted/Voided.
   // One table, TWO entity types — the memo's PARTY decides which (see
   // getEntityTypeFromTable). Draft-only DELETE, so INSERT/UPDATE only.
-  { table: "memo", operations: ["INSERT", "UPDATE"] }
+  { table: "memo", operations: ["INSERT", "UPDATE"] },
+  // Reimbursements push on the transition to Posted/Voided; the row is never
+  // deleted once posted (Draft-only DELETE), so only INSERT/UPDATE.
+  { table: "reimbursement", operations: ["INSERT", "UPDATE"] }
 ];
 
 /** Posting sync: journals are INSERTed born Posted or UPDATEd to

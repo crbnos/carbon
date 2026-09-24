@@ -31,6 +31,7 @@ import {
   SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
   SWEPT_PAYMENT_STATUSES,
+  SWEPT_REIMBURSEMENT_STATUSES,
   type SyncOperationRequest,
   shouldEnqueueMissingDocument,
   type TerminalSyncOperationRequest
@@ -42,6 +43,7 @@ export type ReconcileEntityType =
   | "bill"
   | "invoice"
   | "charge"
+  | "reimbursement"
   | "payment"
   | "customer"
   | "vendor"
@@ -135,6 +137,7 @@ export type ReconcileContext = {
     chargeCreditEnabled: boolean;
     creditMemoEnabled?: boolean;
     vendorCreditEnabled?: boolean;
+    reimbursementEnabled?: boolean;
   };
   inventoryAdjustmentEnabled: boolean;
   /** Resolved by the executor only for Payment-source journals when the
@@ -177,6 +180,10 @@ export function computeReconcileDecision(
     case "bill":
     case "invoice":
     case "charge":
+    // Every reimbursement is document-shaped (POSTING_POLICY.Reimbursement is
+    // `representation: "document"`), so there is no per-row charge-style
+    // analogue to resolve first — it always reconciles as a document.
+    case "reimbursement":
       return reconcileDocument(input);
     case "payment":
       return reconcilePayment(input);
@@ -342,7 +349,9 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
       ? SWEPT_BILL_STATUSES
       : input.entityType === "charge"
         ? SWEPT_CHARGE_STATUSES
-        : SWEPT_INVOICE_STATUSES;
+        : input.entityType === "reimbursement"
+          ? SWEPT_REIMBURSEMENT_STATUSES
+          : SWEPT_INVOICE_STATUSES;
   if (!snapshot.status || !postedStatuses.includes(snapshot.status)) {
     return nothing(
       `${input.entityType} status '${snapshot.status ?? "unknown"}' is not posted`

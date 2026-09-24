@@ -22,7 +22,8 @@ export const TABLE_TO_ENTITY_MAP: Partial<
   salesOrder: "salesOrder",
   journal: "journalEntry",
   payment: "payment",
-  charge: "charge"
+  charge: "charge",
+  reimbursement: "reimbursement"
 };
 
 /**

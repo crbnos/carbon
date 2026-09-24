@@ -109,6 +109,12 @@ export type PostingSyncDocumentSyncFlags = {
    * transaction) as a native object too (QBO `Credit: true`, Xero RECEIVE);
    * Rillet posts a Credit as a charge with negative items. */
   chargeCreditEnabled?: boolean;
+  /** The `reimbursement` entity is enabled — employee reimbursements push as
+   * the provider's native reimbursement (Rillet) or an employee-vendor bill
+   * (QBO/Xero) instead of a journal entry. Without this arm the family chain
+   * falls through to `false` and a Reimbursement journal would push as a
+   * plain journal entry ON TOP of the pushed document — a double-post. */
+  reimbursementEnabled?: boolean;
 };
 
 export type ChargeType =
@@ -152,6 +158,20 @@ export const CHARGE_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
   "quickbooks",
   "rillet"
 ]);
+
+/**
+ * Native reimbursement-document deletion, implemented by all three adapters:
+ * Rillet `DELETE /reimbursements/{id}`, QBO `POST /bill?operation=delete`, and
+ * Xero `Status: "VOIDED"` on the ACCPAY invoice.
+ *
+ * This set is the capability declaration the reconciler reads. It must stay in
+ * step with the syncers' `deleteRemote` — a provider missing here has its void
+ * silently suppressed as "no active native push mapping to void", with the
+ * remote document left live and nothing failing.
+ */
+export const REIMBURSEMENT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set(
+  ["xero", "quickbooks", "rillet"]
+);
 
 /** Whether this charge's journal is replaced by a synced charge. */
 export function isDocBackedCharge(
@@ -374,7 +394,8 @@ function decideDocumentFamily(args: {
     | "bill"
     | "payment"
     | "creditMemo"
-    | "vendorCredit";
+    | "vendorCredit"
+    | "reimbursement";
   mode: PostingSyncSettings["families"]["ar"];
   docSync: PostingSyncDocumentSyncFlags;
 }): JournalPostingPolicyDecision {
@@ -389,9 +410,11 @@ function decideDocumentFamily(args: {
           ? args.docSync.creditMemoEnabled === true
           : backingEntityType === "vendorCredit"
             ? args.docSync.vendorCreditEnabled === true
-            : backingEntityType === "payment"
-              ? true // cash application is provider-native, not a Carbon-pushed document
-              : false; // returns have no document representation yet
+            : backingEntityType === "reimbursement"
+              ? args.docSync.reimbursementEnabled === true
+              : backingEntityType === "payment"
+                ? true // cash application is provider-native, not a Carbon-pushed document
+                : false; // returns have no document representation yet
 
   if (args.mode === "none") {
     return {
@@ -596,10 +619,12 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // (the outbound sweep / manual Retry re-drives the payment). Kept distinct
   // from UNMAPPED_ACCOUNTS so it stops masquerading as a missing account.
   "UNSYNCED_DOCUMENT",
-  // A Carbon payment settles a bill that was written to Rillet as a native
-  // REIMBURSEMENT, and Rillet publishes no reimbursement-payment endpoint —
-  // the document stays UNPAID there until it is marked paid in Rillet by hand.
-  // Retryable once Rillet ships the endpoint.
+  // RETIRED for new runs. It meant: a Carbon payment settles a document that
+  // was written to Rillet as a native REIMBURSEMENT, and Rillet published no
+  // reimbursement-payment endpoint. Rillet has since shipped
+  // `POST /reimbursements/{id}/payments`, which the Rillet payment syncer now
+  // calls, so nothing records this code any more. It stays in the union only
+  // so historical operation rows that carry it still render.
   "UNSUPPORTED_REIMBURSEMENT_PAYMENT"
 ] as const;
 

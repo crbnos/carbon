@@ -372,10 +372,15 @@ export namespace Rillet {
    * An employee reimbursement (`/reimbursements`, spec
    * `CreateReimbursementRequest`). Unlike a charge, Rillet does NOT derive
    * the payable: the caller names `payable_account_code`, which Carbon takes
-   * from the AP control line of the posted "Purchase Invoice" journal. The
-   * items are the same account-costed shape as a bill's. Rillet publishes no
-   * reimbursement-PAYMENT endpoint (2026-09-10), so a Carbon payment against
-   * one parks Skipped until it does.
+   * from the `reimbursement.payableAccountId` its posting credited — so the
+   * segregated employee-payable control account crosses the wire intact. The
+   * items are the same account-costed shape as a bill's.
+   *
+   * Field names VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/create-a-reimbursement, 2026-09-23):
+   * `vendor_id`, `items`, `reimbursement_date` and `payable_account_code` are
+   * REQUIRED; `impact_date`, `subsidiary_id`, `external_references` and
+   * `exchange_rate` are optional.
    */
   export const ReimbursementSchema = z.object({
     id: z.string(),
@@ -603,6 +608,37 @@ export namespace Rillet {
   });
 
   export type BillPayment = z.infer<typeof BillPaymentSchema>;
+
+  /**
+   * One reimbursement payment — the employee payout.
+   * `POST /reimbursements/{id}/payments`, whose request body is the SAME
+   * three fields as a bill payment (`amount`, `date`, `account_code`, all
+   * required) and whose response is flat.
+   *
+   * VERIFIED against Rillet's published OpenAPI
+   * (docs.api.rillet.com/reference/create-a-reimbursement-payment,
+   * 2026-09-23): response `{ id, status: CLEARED | UNCLEARED,
+   * reimbursement_id, amount, date, account_code }`. `status` is kept lenient
+   * (a bare string) for the same reason `BillPaymentSchema` does — only
+   * "FAILED" would reverse a recorded payment, and a vocabulary that grows
+   * must not fail the parse.
+   *
+   * This endpoint is what retired `UNSUPPORTED_REIMBURSEMENT_PAYMENT`: the
+   * parking existed only because Rillet published no such path.
+   */
+  export const ReimbursementPaymentSchema = z.object({
+    id: z.string(),
+    status: z.string().optional(),
+    reimbursement_id: z.string().optional(),
+    amount: z.union([MonetaryAmountSchema, z.string(), z.number()]).optional(),
+    currency: z.string().optional(),
+    date: z.string().optional(),
+    account_code: z.string().optional(),
+    created_at: z.string().optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type ReimbursementPayment = z.infer<typeof ReimbursementPaymentSchema>;
 }
 
 /** Server-owned fields every Rillet write payload omits. */

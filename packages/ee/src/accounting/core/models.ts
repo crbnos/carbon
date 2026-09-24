@@ -215,6 +215,15 @@ export const ENTITY_DEFINITIONS: Record<
     type: "transaction",
     dependsOn: ["vendor", "bill"],
     supportedDirections: ["push-to-accounting"]
+  },
+  reimbursement: {
+    label: "Reimbursements",
+    type: "transaction",
+    // The payee is a Carbon `employee`, but every provider represents it with
+    // a VENDOR-side counterparty (Rillet `vendor_id`, QBO Vendor, Xero
+    // Contact), so the vendor master must exist before the document.
+    dependsOn: ["vendor"],
+    supportedDirections: ["push-to-accounting"]
   }
 };
 
@@ -286,6 +295,14 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       enabled: false,
       direction: "push-to-accounting",
       owner: "carbon"
+    },
+    // Employee reimbursements are opt-in: an upgrading integration must not
+    // start pushing a new AP document to the customer's ledger unasked. Spec
+    // `.ai/specs/2026-09-23-reimbursements-first-class.md`: defaultEnabled false.
+    reimbursement: {
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
     }
   }
 };
@@ -335,6 +352,7 @@ export type PostingPolicyEntry = {
     | "payment"
     | "creditMemo"
     | "vendorCredit"
+    | "reimbursement"
     /** Resolved from the memo's party at decision time. */
     | "per-party"
     | null;
@@ -511,15 +529,16 @@ export const POSTING_POLICY: Record<
     defaultGranularity: "individual"
   },
   /**
-   * Employee reimbursement. `backingEntityType` is null UNTIL the reimbursement
-   * syncers land (plan Phase G) — until then a reimbursement journal genuinely
-   * has no document representation and parking it as DOC_SYNC_DISABLED is the
-   * honest answer, not a placeholder.
+   * Employee reimbursement — backed by the `reimbursement` entity sync
+   * (Rillet native `/reimbursements`; an employee-vendor Bill on QBO and an
+   * employee-Contact ACCPAY invoice on Xero). The journal itself is
+   * DOC_BACKED-excluded whenever that entity is enabled, so a reimbursement
+   * reaches the provider as exactly one of the two, never both.
    */
   Reimbursement: {
     representation: "document",
     family: "ap",
-    backingEntityType: null,
+    backingEntityType: "reimbursement",
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
@@ -835,7 +854,8 @@ export const SyncConfigSchema = z
         journalEntry: createEntityConfigSchema().optional(),
         charge: createEntityConfigSchema().optional(),
         creditMemo: createEntityConfigSchema().optional(),
-        vendorCredit: createEntityConfigSchema().optional()
+        vendorCredit: createEntityConfigSchema().optional(),
+        reimbursement: createEntityConfigSchema().optional()
       })
       .optional()
   })

@@ -291,13 +291,21 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     // Memos resolve their family from the memo's PARTY, which this
     // party-less reason helper cannot know — so they report that instead.
     const partyResolved = ["Credit Memo", "Debit Memo"];
+    // Reimbursement IS document-backed (the `reimbursement` entity), but this
+    // helper only knows the invoice/bill flags, so it reports the backing
+    // sync as disabled. Either way the journal never pushes here — and the
+    // real decision, with the full docSync flags, is made by
+    // getJournalPostingPolicyDecision at enqueue time.
+    const backedButUnflagged = ["Reimbursement"];
 
     for (const sourceType of POSTING_SYNC_EXCLUDED_SOURCE_TYPES) {
       const expected = backed.includes(sourceType)
         ? "excluded from posting sync"
         : partyResolved.includes(sourceType)
           ? "customer or supplier memo"
-          : "no document representation";
+          : backedButUnflagged.includes(sourceType)
+            ? "document sync is disabled"
+            : "no document representation";
 
       expect(
         getPostingSyncSourceTypeSkipReason(sourceType, makeSettings()),

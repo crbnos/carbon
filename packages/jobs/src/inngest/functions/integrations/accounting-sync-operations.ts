@@ -492,7 +492,8 @@ export async function planJournalPostingOperation(args: {
         ? CHARGE_CREDIT_PROVIDERS.has(args.providerId)
         : false,
       creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
-      vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled
+      vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled,
+      reimbursementEnabled: syncConfig.entities.reimbursement.enabled
     },
     paymentFamily,
     memoParty,
@@ -524,6 +525,7 @@ export function planJournalPostingFromState(args: {
     chargeCreditEnabled?: boolean;
     creditMemoEnabled?: boolean;
     vendorCreditEnabled?: boolean;
+    reimbursementEnabled?: boolean;
   };
   paymentFamily: "ar" | "ap" | null;
   /** Memo source types only: the backing memo's party. */
@@ -1580,6 +1582,12 @@ export const SWEPT_INVOICE_STATUSES = [
 export const SWEPT_PAYMENT_STATUSES = ["Posted", "Voided"] as const;
 /** Card charges: Posted pushes; Voided is the native-void path (Rillet). */
 export const SWEPT_CHARGE_STATUSES = ["Posted", "Voided"] as const;
+/**
+ * Employee reimbursements: Posted pushes; Voided is the native-void path.
+ * `Draft` is deliberately absent — an unposted reimbursement has no journal
+ * and nothing to push.
+ */
+export const SWEPT_REIMBURSEMENT_STATUSES = ["Posted", "Voided"] as const;
 
 /**
  * The sweep window's lower bound: `todayIso - SWEEP_LOOKBACK_DAYS`, raised

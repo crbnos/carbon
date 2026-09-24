@@ -17,6 +17,7 @@ import {
   PAYMENT_PUSH_PROVIDERS,
   type PostingSyncSettings,
   type ProviderID,
+  REIMBURSEMENT_NATIVE_VOID_PROVIDERS,
   resolvePostingSyncSettings,
   resolveSyncConfig,
   type SyncContext,
@@ -53,6 +54,9 @@ const SNAPSHOT_TABLES: Record<
   bill: { table: "purchaseInvoice", columns: "id, status, updatedAt" },
   invoice: { table: "salesInvoice", columns: "id, status, updatedAt" },
   charge: { table: "charge", columns: "id, status, type, updatedAt" },
+  // No `type` column to read: unlike a charge, every reimbursement is
+  // document-shaped, so there is nothing to discriminate per row.
+  reimbursement: { table: "reimbursement", columns: "id, status, updatedAt" },
   payment: { table: "payment", columns: "id, status, updatedAt" },
   customer: { table: "customer", columns: "id, updatedAt" },
   vendor: { table: "supplier", columns: "id, updatedAt" },
@@ -76,6 +80,7 @@ const MAPPED_TYPES: ReadonlySet<ReconcileEntityType> = new Set([
   "bill",
   "invoice",
   "charge",
+  "reimbursement",
   "payment",
   "customer",
   "vendor",
@@ -417,10 +422,17 @@ export async function reconcileEntities(args: {
             }
           : {}),
         context: {
+          // Each document type declares its own native-void capability. A
+          // reimbursement is deletable on all three providers, so the old
+          // `=== "rillet"` fallback would have silently suppressed the QBO and
+          // Xero void paths their syncers actually implement — leaving the
+          // remote document live with nothing failing.
           providerSupportsNativeVoid:
             entityType === "charge"
               ? CHARGE_NATIVE_VOID_PROVIDERS.has(args.providerId)
-              : args.providerId === "rillet",
+              : entityType === "reimbursement"
+                ? REIMBURSEMENT_NATIVE_VOID_PROVIDERS.has(args.providerId)
+                : args.providerId === "rillet",
           journalEntryPushEnabled,
           entityPushEnabled,
           providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(
@@ -435,7 +447,8 @@ export async function reconcileEntities(args: {
               args.providerId as ProviderID
             ),
             creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
-            vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled
+            vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled,
+            reimbursementEnabled: syncConfig.entities.reimbursement.enabled
           },
           inventoryAdjustmentEnabled:
             syncConfig.entities.inventoryAdjustment.enabled,

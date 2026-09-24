@@ -107,11 +107,11 @@
 - [x] Task 21: `post-payment` — reimbursement settlement arm
 - [ ] Task 22: Payment UI — employee payee + reimbursement apply target
 - [x] Task 23: Ramp inbound — create a Draft `reimbursement`; never auto-post, never re-write
-- [ ] Task 24: `@carbon/ee` accounting — `reimbursement` entity type + plumbing
-- [ ] Task 25: Rillet `ReimbursementSyncer`
-- [ ] Task 26: Rillet payout — close `UNSUPPORTED_REIMBURSEMENT_PAYMENT`
-- [ ] Task 27: QBO `ReimbursementSyncer`
-- [ ] Task 28: Xero `ReimbursementSyncer`
+- [x] Task 24: `@carbon/ee` accounting — `reimbursement` entity type + plumbing
+- [x] Task 25: Rillet `ReimbursementSyncer`
+- [x] Task 26: Rillet payout — close `UNSUPPORTED_REIMBURSEMENT_PAYMENT`
+- [x] Task 27: QBO `ReimbursementSyncer`
+- [x] Task 28: Xero `ReimbursementSyncer`
 - [ ] Task 29: Full validation gate
 - [ ] Task 30: Browser verification via `/test`
 

@@ -49,7 +49,8 @@ import {
   SWEPT_BILL_STATUSES,
   SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
-  SWEPT_PAYMENT_STATUSES
+  SWEPT_PAYMENT_STATUSES,
+  SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
@@ -67,6 +68,7 @@ type SweepSummary = {
     invoices: number;
     payments: number;
     charges: number;
+    reimbursements: number;
     memos: number;
     parkedBills: number;
   };
@@ -95,6 +97,7 @@ async function pageIds(args: {
     | "salesInvoice"
     | "payment"
     | "charge"
+    | "reimbursement"
     | "memo";
   statuses: readonly string[];
   dateColumn: string;
@@ -204,6 +207,7 @@ async function sweepCompanyProvider(args: {
     invoices: 0,
     payments: 0,
     charges: 0,
+    reimbursements: 0,
     memos: 0,
     parkedBills: 0
   };
@@ -364,6 +368,47 @@ async function sweepCompanyProvider(args: {
     );
   } else {
     skippedReasons.push("charges: charge sync is disabled");
+  }
+
+  // Employee reimbursements — the provider's native reimbursement object (or
+  // an employee-vendor bill where it has none). Same two-page shape as
+  // charges: `reimbursementDate` for the window (postingDate is nullable)
+  // plus `voidedAt` for late voids. There is deliberately NO `type` filter —
+  // unlike a charge, every reimbursement is document-shaped.
+  const reimbursementConfig = provider.getSyncConfig("reimbursement");
+  if (
+    reimbursementConfig?.enabled &&
+    reimbursementConfig.direction !== "pull-from-accounting"
+  ) {
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: reimbursementConfig.syncFromDate
+    });
+    const reimbursementIds = await pageIds({
+      ctx,
+      table: "reimbursement",
+      statuses: SWEPT_REIMBURSEMENT_STATUSES,
+      dateColumn: "reimbursementDate",
+      floor
+    });
+    const lateVoidedReimbursementIds = await pageIds({
+      ctx,
+      table: "reimbursement",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor
+    });
+    const sweptReimbursementIds = [
+      ...new Set([...reimbursementIds, ...lateVoidedReimbursementIds])
+    ];
+    scanned.reimbursements = sweptReimbursementIds.length;
+    refs.push(
+      ...sweptReimbursementIds.map(
+        (id): ReconcileRef => ({ entityType: "reimbursement", entityId: id })
+      )
+    );
+  } else {
+    skippedReasons.push("reimbursements: reimbursement sync is disabled");
   }
 
   // Credit memos / vendor credits — ONE table, TWO entity types. The memo's

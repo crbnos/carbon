@@ -495,14 +495,8 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       // payments, each for its settlement's appliedAmount). Discounted and
       // FX payments remain parked as Skipped (documented follow-ups).
       const settlements = [...payment.settlements].sort((a, b) => {
-        const aTarget =
-          (family === "ar"
-            ? a.targetSalesInvoiceId
-            : a.targetPurchaseInvoiceId) ?? "";
-        const bTarget =
-          (family === "ar"
-            ? b.targetSalesInvoiceId
-            : b.targetPurchaseInvoiceId) ?? "";
+        const aTarget = resolveSettlementTarget(a, family)?.id ?? "";
+        const bTarget = resolveSettlementTarget(b, family)?.id ?? "";
         return aTarget.localeCompare(bTarget);
       });
       if (settlements.length === 0) {
@@ -574,18 +568,18 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
 
       let firstRemoteId: string | null = null;
       for (const settlement of settlements) {
-        const targetDocumentId =
-          family === "ar"
-            ? settlement.targetSalesInvoiceId
-            : settlement.targetPurchaseInvoiceId;
-        if (!targetDocumentId) {
+        const target = resolveSettlementTarget(settlement, family);
+        if (!target) {
           return skipped(
             entityId,
             `Payment ${entityId} settlement has no ${
-              family === "ar" ? "sales" : "purchase"
-            } invoice target`
+              family === "ar"
+                ? "sales invoice"
+                : "purchase invoice or reimbursement"
+            } target`
           );
         }
+        const targetDocumentId = target.id;
 
         const covered = await this.mappingService.getByEntity(
           "payment",
@@ -600,6 +594,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
         const { remoteId, compositeEntityId } = await this.pushRemotePayment({
           carbonPaymentId: entityId,
           family,
+          targetEntityType: target.entityType,
           targetDocumentId,
           bankAccountId: payment.bankAccount,
           amount: settlement.sourceAmount,
@@ -774,6 +769,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       .select([
         "targetSalesInvoiceId",
         "targetPurchaseInvoiceId",
+        "targetReimbursementId",
         "appliedAmount",
         "sourceAmount",
         "sourcePaymentId",
@@ -801,6 +797,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       settlements: settlements.map((s) => ({
         targetSalesInvoiceId: s.targetSalesInvoiceId,
         targetPurchaseInvoiceId: s.targetPurchaseInvoiceId,
+        targetReimbursementId: s.targetReimbursementId,
         appliedAmount: Number(s.appliedAmount ?? 0),
         sourceAmount: Number(s.sourceAmount),
         sourcePaymentId: s.sourcePaymentId,
@@ -843,11 +840,36 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
   }
 }
 
+/**
+ * Which Carbon document a settlement targets — and therefore the mapping
+ * `entityType` the provider resolves its remote id through. `family` alone
+ * cannot answer this any more: an employee REIMBURSEMENT is an AP payout
+ * whose remote id lives under the `reimbursement` mapping, not `bill`.
+ */
+export type PaymentTargetEntityType = "invoice" | "bill" | "reimbursement";
+
+/**
+ * How each settled document is named in a user-facing sync message. Canonical
+ * here because all three providers word the UNSYNCED_DOCUMENT warning the same
+ * way and `accounting/index.ts` star-exports core and providers into one
+ * namespace — three independently-declared copies would collide at typecheck.
+ */
+export const PAYMENT_TARGET_LABELS: Record<PaymentTargetEntityType, string> = {
+  invoice: "invoice",
+  bill: "bill",
+  reimbursement: "reimbursement"
+};
+
 /** Context handed to a provider's `pushRemotePayment` adapter (Phase G). */
 export interface PaymentPushContext {
   carbonPaymentId: string;
   family: "ar" | "ap";
-  /** Carbon salesInvoice (AR) or purchaseInvoice (AP) id being settled. */
+  /**
+   * The mapping entityType of `targetDocumentId`. Always "invoice" for AR;
+   * "bill" or "reimbursement" for AP.
+   */
+  targetEntityType: PaymentTargetEntityType;
+  /** Carbon salesInvoice (AR), purchaseInvoice or reimbursement id being settled. */
   targetDocumentId: string;
   /** Carbon account id (payment.bankAccount) the payment clears through. */
   bankAccountId: string;
@@ -870,6 +892,7 @@ type LocalPaymentForPush = {
   settlements: Array<{
     targetSalesInvoiceId: string | null;
     targetPurchaseInvoiceId: string | null;
+    targetReimbursementId: string | null;
     appliedAmount: number;
     sourceAmount: number;
     sourcePaymentId: string | null;
@@ -879,6 +902,34 @@ type LocalPaymentForPush = {
     writeOffAmount: number;
   }>;
 };
+
+/**
+ * Which document a settlement row settles, and the mapping entityType its
+ * remote id lives under. `invoiceSettlement`'s CHECK makes exactly one target
+ * column non-null, so the order below is a readability choice, not a
+ * precedence rule — but a reimbursement IS an AP payout, so it is tested on
+ * the AP side alongside the purchase invoice rather than getting a family of
+ * its own.
+ */
+function resolveSettlementTarget(
+  settlement: LocalPaymentForPush["settlements"][number],
+  family: "ar" | "ap"
+): { id: string; entityType: PaymentTargetEntityType } | null {
+  if (family === "ar") {
+    return settlement.targetSalesInvoiceId
+      ? { id: settlement.targetSalesInvoiceId, entityType: "invoice" }
+      : null;
+  }
+  if (settlement.targetReimbursementId) {
+    return {
+      id: settlement.targetReimbursementId,
+      entityType: "reimbursement"
+    };
+  }
+  return settlement.targetPurchaseInvoiceId
+    ? { id: settlement.targetPurchaseInvoiceId, entityType: "bill" }
+    : null;
+}
 
 function skipped(entityId: string, reason: string): SyncResult {
   return {
