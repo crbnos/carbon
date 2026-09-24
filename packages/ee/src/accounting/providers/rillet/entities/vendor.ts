@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import type { Rillet, RilletVendorWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
@@ -19,9 +20,13 @@ import {
  * The vendor half of what Xero handles with one dual-flag ContactSyncer:
  * Rillet Vendors are a separate object, so this syncer reads the supplier
  * tables only, with mapping rows under entityType "vendor". Same contract
- * as RilletCustomerSyncer on the push side — no name-matching lookup
- * before create; the carbon external_reference plus the create
- * Idempotency-Key are the duplicate guards there.
+ * as RilletCustomerSyncer on the push side: before creating, it resolves an
+ * existing remote counterpart through the shared ladder
+ * (`core/counterpart.ts`) — mapping row -> carbon external_reference ->
+ * tax id -> email -> name, ambiguity creating rather than guessing. The
+ * external_reference and the create Idempotency-Key remain the guards against
+ * CARBON double-creating; the ladder is what stops it duplicating a vendor
+ * someone else made.
  *
  * Automatic sync is push-only (buildRilletSyncConfig forces
  * `push-to-accounting` / `owner: "carbon"`); the PULL half exists for the
@@ -534,7 +539,21 @@ export class RilletVendorSyncer extends RilletEntitySyncer<
     data: RilletVendorWrite,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    // Mapping first, then the shared ladder: a Rillet vendor a human typed in,
+    // or one Carbon created before its mapping row was lost, must be ADOPTED
+    // rather than duplicated. Ambiguity creates — see core/counterpart.ts.
+    const { remoteId: existingRemoteId } =
+      await resolveOrCreateRemoteCounterpart({
+        provider: this.rilletProvider,
+        kind: "vendor",
+        keys: {
+          name: data.name,
+          email: data.email,
+          taxId: data.tax_id,
+          carbonReference: localId
+        },
+        existingRemoteId: await this.getRemoteId(localId)
+      });
 
     if (existingRemoteId) {
       const updated = await writeDroppingUnregisteredReferences(

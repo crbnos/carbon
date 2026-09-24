@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import type { Rillet, RilletCustomerWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
@@ -18,10 +19,13 @@ import {
  *
  * Rillet keeps customers and vendors as separate objects (like QBO, not
  * Xero's dual-flag Contact), so this syncer reads the customer tables
- * only and mapping rows live under entityType "customer". No
- * name-matching lookup before create on the PUSH side (unlike QBO's smart
- * match) — the carbon external_reference plus the create Idempotency-Key
- * are the duplicate guards there.
+ * only and mapping rows live under entityType "customer". Before creating,
+ * the PUSH side resolves an existing remote counterpart through the shared
+ * ladder (`core/counterpart.ts`) — mapping row -> carbon external_reference ->
+ * email -> name (a Rillet customer carries no tax id), ambiguity creating
+ * rather than guessing. The external_reference and the create
+ * Idempotency-Key remain the guards against CARBON double-creating; the ladder
+ * is what stops it duplicating a customer someone else made.
  *
  * AUTOMATIC sync is push-only: buildRilletSyncConfig forces
  * `push-to-accounting` / `owner: "carbon"`, so no sweep or webhook ever
@@ -548,7 +552,21 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
     data: RilletCustomerWrite,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    // Mapping first, then the shared ladder — see the vendor syncer. A Rillet
+    // customer has no tax id, so it resolves by carbon reference then name.
+    const { remoteId: existingRemoteId } =
+      await resolveOrCreateRemoteCounterpart({
+        provider: this.rilletProvider,
+        kind: "customer",
+        keys: {
+          name: data.name,
+          email:
+            data.emails?.find((entry) => entry.type === "MAIN_SENDER")?.email ??
+            data.emails?.[0]?.email,
+          carbonReference: localId
+        },
+        existingRemoteId: await this.getRemoteId(localId)
+      });
 
     if (existingRemoteId) {
       const updated = await writeDroppingUnregisteredReferences(
