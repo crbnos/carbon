@@ -1,4 +1,9 @@
 import { createHash } from "node:crypto";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -38,6 +43,7 @@ import type {
   RilletVendorCreditCreate,
   RilletVendorWrite
 } from "./models";
+import { readCarbonExternalReference } from "./references";
 
 const RILLET_PRODUCTION_HOST = "https://api.rillet.com";
 const RILLET_SANDBOX_HOST = "https://sandbox.api.rillet.com";
@@ -382,7 +388,13 @@ export class RilletProvider extends BaseProvider {
   readonly capabilities: ProviderCapabilities = {
     transport: "rest",
     supportsWebhooks: true,
-    supportsJournalPush: true
+    supportsJournalPush: true,
+    // Rillet was the ONLY provider creating contacts without looking first —
+    // Xero searches by contact name, QuickBooks queries DisplayName, Ramp
+    // matches its spend vendors. Declaring these opts Rillet into the shared
+    // ladder (core/counterpart.ts), so a Carbon supplier whose Rillet twin a
+    // human typed in links instead of duplicating.
+    searchableCounterparts: ["customer", "vendor"]
   };
 
   /** No cap: /invoice-payments `updated.gt` reaches arbitrarily far back. */
@@ -762,6 +774,54 @@ export class RilletProvider extends BaseProvider {
       throw err;
     });
     return this.listedCustomers;
+  }
+
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`). Reuses the
+   * SAME memoized list the contact import drains, so a whole sync run costs one
+   * pass per entity type rather than one per record — Rillet has no
+   * search-by-name endpoint, so the list IS the search.
+   *
+   * `carbonReference` is read company-qualified: a Rillet record carrying
+   * ANOTHER Carbon instance's id must not look like ours.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    _keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    const carbonRef = (
+      references: Rillet.ExternalReference[] | undefined
+    ): string | null =>
+      readCarbonExternalReference(references, this.config.companyId);
+
+    if (kind === "vendor") {
+      return (await this.listVendors()).map((vendor) => ({
+        remoteId: vendor.id,
+        name: vendor.name ?? null,
+        email: vendor.email ?? null,
+        taxId: vendor.tax_id ?? null,
+        carbonReference: carbonRef(vendor.external_references)
+      }));
+    }
+
+    if (kind === "customer") {
+      // A Rillet customer carries `emails[]` (typed MAIN_SENDER/CC/BCC), not a
+      // single `email`, and has no tax id — so the ladder resolves a customer
+      // by carbonReference then name, never by tax id.
+      return (await this.listCustomers()).map((customer) => ({
+        remoteId: customer.id,
+        name: customer.name ?? null,
+        email:
+          customer.emails?.find((entry) => entry.type === "MAIN_SENDER")
+            ?.email ??
+          customer.emails?.[0]?.email ??
+          null,
+        taxId: null,
+        carbonReference: carbonRef(customer.external_references)
+      }));
+    }
+
+    return [];
   }
 
   /** All Rillet vendors (cursor-drained, memoized). Throws on API failure. */

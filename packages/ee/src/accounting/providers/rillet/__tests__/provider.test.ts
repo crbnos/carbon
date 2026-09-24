@@ -112,7 +112,8 @@ describe("RilletProvider base URL + headers", () => {
     expect(provider.capabilities).toEqual({
       transport: "rest",
       supportsWebhooks: true,
-      supportsJournalPush: true
+      supportsJournalPush: true,
+      searchableCounterparts: ["customer", "vendor"]
     });
   });
 });
