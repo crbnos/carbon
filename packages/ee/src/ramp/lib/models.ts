@@ -244,12 +244,31 @@ export const RampReimbursementSchema = z
     id: z.string(),
     state: z.string().optional(),
     sync_status: z.string().optional(),
+    // DEPRECATED exactly as on a transaction: a live reimbursement sends a bare
+    // number in MAJOR units (dollars) here while the real amount sits in the
+    // verified minor-unit objects below. Readers must prefer those.
     amount: z.union([RampCurrencyAmountSchema, z.number()]).optional(),
+    // The settlement amount in the ENTITY's currency — signed integer minor
+    // units. This is the field the reimbursement header should read, matching
+    // the charge path's use of `entity_amount`.
+    entity_amount: RampSignedAmountSchema.nullish(),
+    // What the employee is actually paid, and what they originally submitted —
+    // integer minor units. Fallbacks when the entity amount is absent.
+    payee_amount: RampCurrencyAmountSchema.nullish(),
+    original_reimbursement_amount: RampCurrencyAmountSchema.nullish(),
     currency_code: z.string().optional(),
+    currency: z.string().optional(),
     transaction_date: z.string().nullish(),
     approved_at: z.string().nullish(),
     entity_id: z.string().nullish(),
     user_id: z.string().nullish(),
+    // Ramp puts the employee's identity at the TOP LEVEL of a reimbursement
+    // (`user_email` / `user_full_name`); `user` is null on every record we have
+    // seen. Declared explicitly because the employee match keys on the email —
+    // `.passthrough()` keeps undeclared fields at runtime but hides them from
+    // the type, which is how the reader came to look only at `user.email`.
+    user_email: z.string().nullish(),
+    user_full_name: z.string().nullish(),
     user: z.unknown().optional(),
     line_items: z.array(RampLineItemSchema).optional()
   })

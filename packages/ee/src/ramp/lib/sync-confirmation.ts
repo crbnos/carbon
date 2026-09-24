@@ -9,9 +9,20 @@ import { getRampIntegration } from "./connection";
 // \********************************************************/
 
 /**
- * Confirm a batch of postings back to Ramp (`POST /accounting/syncs`). The
- * idempotency key is deterministic over `(companyId, syncType, sha256(sorted
- * ids))` so a retried confirm cannot double-apply. A no-op batch is skipped.
+ * Confirm a batch of postings back to Ramp (`POST /accounting/syncs`). A no-op
+ * batch is skipped.
+ *
+ * The idempotency key hashes the OUTCOME of each id, not just the id set.
+ * Hashing ids alone permanently wedges an item that fails once: the failure is
+ * confirmed under key K, and after the underlying bug is fixed the retry
+ * rebuilds the same id set, so Ramp rejects the identical key with
+ * `400 DEVELOPER_7005 "Idempotency key already exists"` — Ramp does NOT replay
+ * a stored response here. Because the throw aborted the whole family, one
+ * previously-failed item blocked every later item too. Live-hit 2026-09-24.
+ *
+ * Including `ok`/`message` keeps genuine duplicates idempotent (identical
+ * outcome ⇒ identical key ⇒ Ramp rejects the repeat, which is what we want)
+ * while letting a CHANGED outcome (failed ⇒ succeeded) through as new work.
  */
 export async function confirmSyncs(
   serviceRole: SupabaseClient<Database>,
@@ -33,18 +44,34 @@ export async function confirmSyncs(
 
   const { client } = integration;
 
-  const ids = [
-    ...args.successful.map((item) => item.id),
-    ...args.failed.map((item) => item.id)
+  const outcomes = [
+    ...args.successful.map((item) => `${item.id}:ok`),
+    ...args.failed.map((item) => `${item.id}:fail:${item.message}`)
   ].sort();
-  const scope = createHash("sha256").update(ids.join(",")).digest("hex");
+  const scope = createHash("sha256").update(outcomes.join(",")).digest("hex");
   const idempotencyKey = buildRampIdempotencyKey({
     companyId,
     operation: args.syncType,
     scope
   });
 
-  await client.postAccountingSyncs(buildSyncConfirmBody(args, idempotencyKey));
+  try {
+    await client.postAccountingSyncs(
+      buildSyncConfirmBody(args, idempotencyKey)
+    );
+  } catch (err) {
+    // A duplicate key means THIS EXACT outcome was already confirmed — the
+    // desired end state. Swallow it rather than throwing: the confirm is the
+    // last step of a family sync, and letting it abort the run stops every
+    // later family from syncing at all.
+    if (
+      err instanceof Error &&
+      /DEVELOPER_7005|Idempotency key already exists/i.test(err.message)
+    ) {
+      return;
+    }
+    throw err;
+  }
 }
 
 /**

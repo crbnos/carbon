@@ -337,6 +337,33 @@ export function buildRampReimbursementPayout(args: {
   };
 }
 
+/**
+ * The header amount, in the verified minor-unit shape the normalizer requires.
+ *
+ * A live reimbursement's top-level `amount` is a bare number in MAJOR units —
+ * the same deprecated field the card path already learned not to read
+ * (`.claude/rules/ramp-integration.md`, live-verified 2026-08-28). Handing it
+ * to `normalizeVerifiedMinorAmount` rejected EVERY reimbursement with
+ * "ambiguous bare-number amount", so nothing could ever import.
+ *
+ * `entity_amount` first, for the same reason the charge header uses it: it is
+ * what the entity settles, in the entity's own currency. `payee_amount` (what
+ * the employee receives) and `original_reimbursement_amount` (what they
+ * submitted) follow. The bare `amount` is deliberately NOT a fallback — a
+ * number whose units cannot be verified must fail loudly rather than post a
+ * document that is wrong by 100×.
+ */
+export function reimbursementHeaderAmount(
+  reimbursement: RampReimbursement
+): unknown {
+  return (
+    reimbursement.entity_amount ??
+    reimbursement.payee_amount ??
+    reimbursement.original_reimbursement_amount ??
+    reimbursement.amount
+  );
+}
+
 export function extractRampUser(reimbursement: RampReimbursement): {
   user_id: string;
   first_name?: string | null;
@@ -355,11 +382,18 @@ export function extractRampUser(reimbursement: RampReimbursement): {
     | undefined;
   const userId = user?.user_id ?? user?.id ?? reimbursement.user_id ?? null;
   if (!userId) return null;
+  // Prefer the nested `user` object, then Ramp's TOP-LEVEL `user_email` /
+  // `user_full_name`. Real Ramp reimbursements carry the identity at the top
+  // level and send `user: null`, so reading only the nested object found no
+  // email and every import failed "cannot match a Carbon employee" — with the
+  // address sitting in the payload the whole time.
+  const fullName = reimbursement.user_full_name ?? null;
+  const [derivedFirst, ...derivedRest] = (fullName ?? "").trim().split(/\s+/);
   return {
     user_id: userId,
-    first_name: user?.first_name ?? null,
-    last_name: user?.last_name ?? null,
-    email: user?.email ?? null
+    first_name: user?.first_name ?? (derivedFirst || null),
+    last_name: user?.last_name ?? (derivedRest.join(" ") || null),
+    email: user?.email ?? reimbursement.user_email ?? null
   };
 }
 
@@ -650,9 +684,13 @@ export async function syncRampReimbursement(
     return { fail: { id: reimbursement.id, message: employee.error } };
   }
 
-  const currencyCode = reimbursement.currency_code ?? deps.baseCurrency;
+  const currencyCode =
+    reimbursement.entity_amount?.currency ??
+    reimbursement.currency_code ??
+    reimbursement.currency ??
+    deps.baseCurrency;
   const normalizedAmount = await deps.normalizeAmount(
-    reimbursement.amount,
+    reimbursementHeaderAmount(reimbursement),
     currencyCode,
     "Reimbursement amount"
   );
