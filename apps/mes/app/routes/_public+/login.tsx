@@ -10,13 +10,13 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  botIdEnabled,
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
-  turnstileSiteKey,
   verifyAuthSession,
-  verifyLoginCaptcha
+  verifyBotId
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -37,8 +37,8 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
-  TurnstileChallenge,
   toast,
+  useBotIdProtection,
   useMount,
   VStack
 } from "@carbon/react";
@@ -87,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
-        turnstileSiteKey
+        botIdEnabled
       },
       { headers: cookieHeaders }
     );
@@ -98,7 +98,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey
+    botIdEnabled
   };
 }
 
@@ -127,13 +127,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, turnstileToken } = validation.data;
+  const { email } = validation.data;
 
-  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
-  if (captchaError) {
+  const botError = await verifyBotId(ip, email);
+  if (botError) {
     return data(
-      error(null, captchaError),
-      await flash(request, error(null, captchaError))
+      error(null, botError),
+      await flash(request, error(null, botError))
     );
   }
 
@@ -209,7 +209,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, turnstileToken, getMESUrl());
+    const magicLink = await sendMagicLink(email, getMESUrl());
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -241,8 +241,9 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey: siteKey
+    botIdEnabled
   } = useLoaderData<typeof loader>();
+  useBotIdProtection("/login", botIdEnabled);
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -252,7 +253,6 @@ export default function LoginRoute() {
     { success: true } | { success: false; message: string }
   >();
 
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
@@ -497,7 +497,6 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -572,11 +571,7 @@ export default function LoginRoute() {
               />
 
               <Submit
-                isDisabled={
-                  fetcher.state !== "idle" ||
-                  ssoLoading ||
-                  (!!siteKey && !turnstileToken)
-                }
+                isDisabled={fetcher.state !== "idle" || ssoLoading}
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
                 size="lg"
@@ -586,10 +581,6 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              <TurnstileChallenge
-                siteKey={siteKey ?? undefined}
-                onToken={setTurnstileToken}
-              />
             </VStack>
           </ValidatedForm>
         )}

@@ -17,12 +17,6 @@ import {
 } from "./assembly-handler.ts";
 import type { BatchPlacement } from "./batch-scheduler.ts";
 import {
-  type CalendarShiftRow,
-  type CalendarWindow,
-  expandCalendar,
-  unionWindows
-} from "./calendar-utils.ts";
-import {
   type BehindTargetOperation,
   composeBehindTarget
 } from "./conflict-messages.ts";
@@ -41,26 +35,21 @@ import {
 } from "./dependency-manager.ts";
 import { calculateDurationHours } from "./duration-calculator.ts";
 import {
+  type AvailabilityWindows,
+  buildFiniteContext,
+  loadAvailabilityWindows
+} from "./finite-context.ts";
+import {
   KyselyMasterDataProvider,
   type MasterDataProvider
 } from "./master-data-provider.ts";
 import { MaterialManager } from "./material-manager.ts";
 import { calendarAdapters, computeNeedByDates } from "./need-by-calculator.ts";
 import {
-  buildAbsencesByEmployee,
-  buildAssignmentsByEmployee,
-  buildOvertimeByEmployee,
-  buildPeopleBudgets,
-  buildPeopleByWorkCenter,
-  extendWindowsByOvertime,
-  subtractAbsences
-} from "./people-utils.ts";
-import {
   applyPriorities,
   calculatePrioritiesByWorkCenter,
   toOperationWithJobInfo
 } from "./priority-calculator.ts";
-import type { ResourceCapacityData } from "./slot-allocator.ts";
 import type {
   BaseOperation,
   Job,
@@ -74,11 +63,10 @@ import { capacityHoldingJobStatuses } from "./types.ts";
 import {
   applyWorkCenterSelections,
   type FiniteSchedulingContext,
-  type PoolEmployee,
   WorkCenterSelector
 } from "./work-center-selector.ts";
 
-export const SCHEDULING_HORIZON_DAYS = 365;
+export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
 const log = getFunctionLogger("schedule");
 
@@ -148,13 +136,7 @@ export class SchedulingEngine {
    * the finite placement context so targets and forecasts run on the SAME
    * calendar physics (and the provider is read once, not twice).
    */
-  private availabilityWindows: {
-    workCenterIds: Set<string>;
-    workCenterAvailability: Map<string, CalendarWindow[]>;
-    locationDefaultWindows: CalendarWindow[];
-    rangeStart: number;
-    rangeEnd: number;
-  } | null = null;
+  private availabilityWindows: AvailabilityWindows | null = null;
 
   private provider: MasterDataProvider;
 
@@ -555,63 +537,17 @@ export class SchedulingEngine {
    * calendar — memoized so the backward need-by pass and buildFiniteContext
    * share the same load instead of reading the provider twice.
    */
-  private async loadAvailabilityWindows(): Promise<{
-    workCenterIds: Set<string>;
-    workCenterAvailability: Map<string, CalendarWindow[]>;
-    locationDefaultWindows: CalendarWindow[];
-    rangeStart: number;
-    rangeEnd: number;
-  }> {
+  private async loadAvailabilityWindows(): Promise<AvailabilityWindows> {
     if (this.availabilityWindows) {
       return this.availabilityWindows;
     }
-
-    const operations = Array.from(this.scheduledOperations.values());
-    const processIds = Array.from(
-      new Set(operations.map((op) => op.processId).filter(Boolean))
-    ) as string[];
-
-    // Candidates for selection + current assignments (assigned work centers
-    // stay in play via the sticky/fallback rules).
-    const workCenterIds = new Set(
-      this.workCenterSelector?.getAllCandidateWorkCenterIds(processIds) ?? []
-    );
-    for (const op of operations) {
-      if (op.workCenterId) {
-        workCenterIds.add(op.workCenterId);
-      }
-    }
-
-    const rangeStart = this.now;
-    const rangeEnd = this.now + (SCHEDULING_HORIZON_DAYS + 7) * 24 * 3_600_000;
-
-    const [workCenterAvailability, locationDefaultWindows] = await Promise.all([
-      this.provider.getWorkCenterAvailability(
-        [...workCenterIds],
-        rangeStart,
-        rangeEnd
-      ),
-      // People with no employeeShift rows default to the job location's calendar
-      // (plant hours), not 24×7 — matching the default machine window so
-      // unconfigured labor is non-constraining within plant hours.
-      this.job?.locationId
-        ? this.provider.getLocationCalendarWindows(
-            this.job.locationId,
-            rangeStart,
-            rangeEnd
-          )
-        : Promise.resolve<CalendarWindow[]>([
-            { start: rangeStart, end: rangeEnd }
-          ]) // rangeStart/rangeEnd are epoch-ms
-    ]);
-
-    this.availabilityWindows = {
-      workCenterIds,
-      workCenterAvailability,
-      locationDefaultWindows,
-      rangeStart,
-      rangeEnd
-    };
+    this.availabilityWindows = await loadAvailabilityWindows({
+      provider: this.provider,
+      workCenterSelector: this.workCenterSelector,
+      operations: Array.from(this.scheduledOperations.values()),
+      locationId: this.job?.locationId ?? null,
+      now: this.now
+    });
     return this.availabilityWindows;
   }
 
@@ -674,220 +610,17 @@ export class SchedulingEngine {
     if (!this.workCenterSelector) {
       return null;
     }
-
-    // The run's single clock (shared across the batch) — never Date.now() here.
-    const now = this.now;
-    const operations = Array.from(this.scheduledOperations.values());
-    const processIds = Array.from(
-      new Set(operations.map((op) => op.processId).filter(Boolean))
-    ) as string[];
-
-    // One shared windows fetch per run (also used by the need-by pass).
-    const {
-      workCenterIds,
-      workCenterAvailability,
-      locationDefaultWindows,
-      rangeStart,
-      rangeEnd
-    } = await this.loadAvailabilityWindows();
-
-    const operationIds = operations
-      .map((op) => op.id)
-      .filter((id): id is string => Boolean(id));
-
-    const [
-      liveReservations,
-      processRequirements,
-      peopleRows,
-      absenceRows,
-      operationsWithEvents
-    ] = await Promise.all([
-      this.provider.getLiveReservations(now, this.excludeJobIds),
-      this.provider.getProcessRequirements(processIds),
-      this.provider.getPeopleAssignments(rangeStart, rangeEnd, this.timezone),
-      this.provider.getPeopleAbsences(rangeStart, rangeEnd, this.timezone),
-      this.provider.getOperationsWithEvents(operationIds)
-    ]);
-
-    const abilityIds = Array.from(
-      new Set(processRequirements.map((r) => r.abilityId))
-    );
-    const employees = await this.provider.getQualifiedEmployees(abilityIds);
-    // People members at ungated stations need real availability windows too, so
-    // shift rows are loaded for the union of qualified + assigned people
-    const employeeIds = Array.from(
-      new Set([
-        ...employees.map((e) => e.employeeId),
-        ...peopleRows.map((r) => r.employeeId)
-      ])
-    );
-    const shiftRows = await this.provider.getEmployeeShiftWindows(employeeIds);
-
-    // Work centers: capacity 1, open per the availability ladder (explicit
-    // workCenterShift rows → location shifts → stock Mon–Fri 8h, or one open
-    // window for an alwaysOn machine). Reservations GATE placement (one op at a
-    // time) and feed attribution. A WC with no resolved windows (e.g. deleted)
-    // schedules nothing and surfaces a conflict.
-    // Require-staffing policy (per-location) + which stations are lights-out —
-    // both feed the selector's fallback gates. One cached read each per batch.
-    const [requiresStaffing, alwaysOnWorkCenterIds] = await Promise.all([
-      this.job?.locationId
-        ? this.provider.getLocationRequiresStaffing(this.job.locationId)
-        : Promise.resolve(false),
-      this.provider.getAlwaysOnWorkCenterIds(Array.from(workCenterIds))
-    ]);
-
-    const capacityByWorkCenter = new Map<string, ResourceCapacityData>();
-    for (const wcId of workCenterIds) {
-      capacityByWorkCenter.set(wcId, {
-        workCenter: { id: wcId, alwaysOn: alwaysOnWorkCenterIds.has(wcId) },
-        windows: workCenterAvailability.get(wcId) ?? [],
-        reservations: liveReservations
-          .filter(
-            (r) => r.resourceKind === "WorkCenter" && r.resourceId === wcId
-          )
-          .map((r) => ({
-            startAt: r.startAt,
-            endAt: r.endAt,
-            readableJobId: r.readableJobId
-          }))
-      });
-    }
-
-    const requirementByProcess = new Map(
-      processRequirements.map((r) => [
-        r.processId,
-        { abilityId: r.abilityId, abilityName: r.abilityName }
-      ])
-    );
-
-    // Each qualified person's availability = their assigned shifts expanded
-    // over the horizon (grouped by timezone, unioned). No shift assignment
-    // => always available.
-    const shiftPatternsByEmployee = new Map<
-      string,
-      Map<string, CalendarShiftRow[]>
-    >();
-    for (const row of shiftRows) {
-      let byTz = shiftPatternsByEmployee.get(row.employeeId);
-      if (!byTz) {
-        byTz = new Map();
-        shiftPatternsByEmployee.set(row.employeeId, byTz);
-      }
-      const list = byTz.get(row.timezone) ?? [];
-      list.push({
-        dayOfWeek: row.dayOfWeek,
-        startTime: row.startTime,
-        endTime: row.endTime
-      });
-      byTz.set(row.timezone, list);
-    }
-    const windowsByEmployee = new Map<string, CalendarWindow[]>();
-    for (const [employeeId, byTz] of shiftPatternsByEmployee) {
-      const lists = Array.from(byTz.entries()).map(([tz, shifts]) =>
-        expandCalendar(shifts, rangeStart, rangeEnd, tz)
-      );
-      windowsByEmployee.set(employeeId, unionWindows(lists));
-    }
-
-    // People with no shift assignment default to the job location's calendar
-    // (plant hours, matching the default machine window) — not 24×7 — so
-    // unconfigured labor degrades to non-constraining within plant hours.
-    // Materialized here so absences/overtime can adjust it too.
-    for (const employeeId of employeeIds) {
-      if (!windowsByEmployee.has(employeeId)) {
-        windowsByEmployee.set(employeeId, locationDefaultWindows);
-      }
-    }
-
-    const timeZone = this.job?.timezone ?? "UTC";
-
-    // Absences subtract the person's availability on those dates everywhere —
-    // people-preferred and qualified-fallback paths alike
-    const absentByEmployee = buildAbsencesByEmployee(absenceRows);
-    for (const [employeeId, absentDates] of absentByEmployee) {
-      const windows = windowsByEmployee.get(employeeId);
-      if (windows) {
-        windowsByEmployee.set(
-          employeeId,
-          subtractAbsences(windows, absentDates, timeZone)
-        );
-      }
-    }
-
-    // An absent person is never that day's people
-    const presentPeopleRows = peopleRows.filter(
-      (row) => !absentByEmployee.get(row.employeeId)?.has(row.date)
-    );
-    const peopleByWorkCenter = buildPeopleByWorkCenter(presentPeopleRows);
-    // Inverted board (employee -> date -> stations) so the any-qualified
-    // fallback can tell a manned person is committed elsewhere that day.
-    const assignmentsByEmployee =
-      buildAssignmentsByEmployee(peopleByWorkCenter);
-
-    // Authorized overtime = a longer day: extend the person's last window on
-    // each overtime date so the allocator can pack work into the extra hours
-    const overtimeByEmployee = buildOvertimeByEmployee(presentPeopleRows);
-    for (const [employeeId, overtimeByDate] of overtimeByEmployee) {
-      const windows = windowsByEmployee.get(employeeId);
-      if (windows) {
-        windowsByEmployee.set(
-          employeeId,
-          extendWindowsByOvertime(windows, overtimeByDate, timeZone)
-        );
-      }
-    }
-
-    // Split days: each station only gets its budgeted share of the person
-    const peopleBudgets = buildPeopleBudgets(presentPeopleRows);
-
-    const employeesByAbility = new Map<string, PoolEmployee[]>();
-    for (const e of employees) {
-      const list = employeesByAbility.get(e.abilityId) ?? [];
-      list.push({
-        employeeId: e.employeeId,
-        expiresAt: e.expiresAt,
-        windows: windowsByEmployee.get(e.employeeId) ?? locationDefaultWindows
-      });
-      employeesByAbility.set(e.abilityId, list);
-    }
-
-    // Named-person bookings across ALL abilities, keyed by employee id.
-    // Legacy OperatorPool rows are ignored deliberately: they can't be
-    // attributed to a person, and they stop existing after each job's next
-    // replan (the reactive stale-wave refreshes everything).
-    const reservationsByEmployee = new Map<
-      string,
-      { startAt: number; endAt: number; readableJobId?: string }[]
-    >();
-    for (const r of liveReservations) {
-      if (r.resourceKind !== "Employee") continue;
-      const list = reservationsByEmployee.get(r.resourceId) ?? [];
-      list.push({
-        startAt: r.startAt,
-        endAt: r.endAt,
-        readableJobId: r.readableJobId
-      });
-      reservationsByEmployee.set(r.resourceId, list);
-    }
-
-    return {
-      capacityByWorkCenter,
-      requirementByProcess,
-      employeesByAbility,
-      reservationsByEmployee,
-      peopleByWorkCenter,
-      assignmentsByEmployee,
-      requiresStaffing,
-      peopleBudgets,
-      windowsByEmployee,
+    const availability = await this.loadAvailabilityWindows();
+    return buildFiniteContext({
+      provider: this.provider,
+      operations: Array.from(this.scheduledOperations.values()),
       dependencies: this.dependencies,
-      now,
-      horizonDays: SCHEDULING_HORIZON_DAYS,
-      windowsEnd: rangeEnd,
-      timeZone,
-      operationsWithEvents
-    };
+      availability,
+      locationId: this.job?.locationId ?? null,
+      timeZone: this.job?.timezone ?? "UTC",
+      now: this.now,
+      excludeJobIds: this.excludeJobIds
+    });
   }
 
   /**

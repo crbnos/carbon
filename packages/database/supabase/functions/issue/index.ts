@@ -18,8 +18,9 @@ import { Database } from "../lib/types.ts";
 import type { Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { buildBatchMergeRecords } from "../shared/batch-merge.ts";
+import { round } from "../shared/precision.ts";
 import { splitPickAcrossMembers } from "../shared/batch-pick-split.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
@@ -368,8 +369,9 @@ async function issueJobOperationMaterials(
     await trx
       .updateTable("jobMaterial")
       .set({
-        quantityIssued:
-          (Number(material.quantityIssued) ?? 0) + quantityToIssue,
+        quantityIssued: round(
+          round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
+        ),
       })
       .where("id", "=", material.id)
       .execute();
@@ -861,6 +863,18 @@ async function createMaterialWipEntries(
   }
 }
 
+// Each child's quantity is its own persist boundary — it becomes one
+// Consumption ledger row — so round PER CHILD and then round the sum. That is
+// what makes jobMaterial.quantityIssued net exactly against those rows; a
+// single round of the raw sum can differ from them by a minor unit.
+function roundedChildTotal(
+  children: { quantity: number | string }[]
+): number {
+  return round(
+    children.reduce((sum, child) => sum + round(Number(child.quantity)), 0)
+  );
+}
+
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
 const logger = getFunctionLogger("issue");
@@ -1239,9 +1253,7 @@ async function consumeTrackedEntitiesIntoOperation(
               firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
             ) {
               // Create a new jobMaterial for the tracked entity's item
-              const totalChildQuantity = children.reduce((sum, child) => {
-                return sum + Number(child.quantity);
-              }, 0);
+              const totalChildQuantity = roundedChildTotal(children);
 
               const itemCost = await trx
                 .selectFrom("itemCost")
@@ -1302,9 +1314,7 @@ async function consumeTrackedEntitiesIntoOperation(
               throw new Error("Item not found");
             }
 
-            const totalChildQuantity = children.reduce((sum, child) => {
-              return sum + Number(child.quantity);
-            }, 0);
+            const totalChildQuantity = roundedChildTotal(children);
 
             const itemCost = await trx
               .selectFrom("itemCost")
@@ -1452,7 +1462,16 @@ async function consumeTrackedEntitiesIntoOperation(
             if (!trackedEntity) {
               throw new Error("Tracked entity not found");
             }
-            const { trackedEntityId, quantity } = child;
+            const { trackedEntityId } = child;
+
+            // ONE canonical quantity for this child, rounded at the persist
+            // boundary. On a FULL draw it is the lot's own on-hand: the entity
+            // is flipped Consumed without its quantity being rewritten, so
+            // booking the requested figure instead would leave the Consumption
+            // ledger row disagreeing with the lot it just emptied.
+            const entityQuantity = round(Number(trackedEntity.quantity));
+            const fullDraw = isFullDraw(entityQuantity, child.quantity);
+            const quantity = fullDraw ? entityQuantity : round(child.quantity);
 
             // Partial consume → split: the lineside entity keeps its id and
             // is decremented; a NEW child entity carries the consumed
@@ -1460,7 +1479,7 @@ async function consumeTrackedEntitiesIntoOperation(
             // Consumption ledger) books against the child — flipping the
             // entity half without the ledger half would double-count on-hand.
             let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
+            if (!fullDraw) {
               const consumedChildId = nanoid();
               consumedEntityId = consumedChildId;
 
@@ -1468,7 +1487,7 @@ async function consumeTrackedEntitiesIntoOperation(
                 parent: {
                   id: trackedEntity.id!,
                   readableId: trackedEntity.readableId,
-                  quantity: Number(trackedEntity.quantity),
+                  quantity: entityQuantity,
                   sourceDocument: trackedEntity.sourceDocument,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
                   sourceDocumentReadableId:
@@ -1639,16 +1658,16 @@ async function consumeTrackedEntitiesIntoOperation(
             }
           }
 
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
+          const totalChildQuantity = roundedChildTotal(children);
 
           // Only update if we didn't create a new jobMaterial (in which case it's already set)
           if (actualMaterialId === materialId) {
-            const currentQuantityIssued =
-              Number(jobMaterial?.quantityIssued) || 0;
-            const newQuantityIssued =
-              currentQuantityIssued + totalChildQuantity;
+            const currentQuantityIssued = round(
+              Number(jobMaterial?.quantityIssued) || 0
+            );
+            const newQuantityIssued = round(
+              currentQuantityIssued + totalChildQuantity
+            );
 
             await trx
               .updateTable("jobMaterial")
@@ -2745,12 +2764,16 @@ serve(async (req: Request) => {
               );
             }
 
-            const quantityToIssue =
+            // Rounded once here: it drives the ledger rows, the budget
+            // allocation and the quantityIssued write below.
+            const quantityToIssue = round(
               adjustmentType === "Positive Adjmt."
                 ? Number(quantity)
                 : adjustmentType === "Negative Adjmt."
                 ? Number(quantity)
-                : Number(quantity) - Number(material?.quantityIssued); // set quantity
+                : round(Number(quantity)) -
+                  round(Number(material?.quantityIssued)) // set quantity
+            );
 
             if (material && material.methodType !== "Make to Order") {
               let remaining = Number(quantityToIssue);
@@ -2816,11 +2839,12 @@ serve(async (req: Request) => {
                 // A positive adjustment returns material to inventory, so it
                 // reduces quantityIssued — otherwise the backflush cap sees
                 // returned material as still issued.
-                quantityIssued:
-                  (Number(material?.quantityIssued) ?? 0) +
-                  (adjustmentType === "Positive Adjmt."
-                    ? -Number(quantityToIssue)
-                    : Number(quantityToIssue)),
+                quantityIssued: round(
+                  round(Number(material?.quantityIssued) ?? 0) +
+                    (adjustmentType === "Positive Adjmt."
+                      ? -quantityToIssue
+                      : quantityToIssue)
+                ),
               })
               .where("id", "=", materialId)
               .execute();
@@ -2899,7 +2923,7 @@ serve(async (req: Request) => {
                 storageUnitId: storageUnitId ?? undefined,
                 methodType: "Pull from Inventory",
                 quantity: 0,
-                quantityIssued: Number(quantity ?? 0),
+                quantityIssued: round(Number(quantity ?? 0)),
                 unitCost: itemCost?.unitCost ?? 0,
               })
               .returning("id")
@@ -3352,11 +3376,16 @@ serve(async (req: Request) => {
 
             // Reopen the requirement — the consumed part is gone, so the
             // assembly needs a replacement issued.
-            const currentQuantityIssued = Number(material.quantityIssued) || 0;
+            const currentQuantityIssued = round(
+              Number(material.quantityIssued) || 0
+            );
             await trx
               .updateTable("jobMaterial")
               .set({
-                quantityIssued: Math.max(0, currentQuantityIssued - quantity),
+                quantityIssued: Math.max(
+                  0,
+                  round(currentQuantityIssued - round(quantity))
+                ),
               })
               .where("id", "=", materialId)
               .execute();
@@ -4152,13 +4181,14 @@ serve(async (req: Request) => {
             }
           }
 
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
+          const totalChildQuantity = roundedChildTotal(children);
 
-          const currentQuantityIssued =
-            Number(jobMaterial?.quantityIssued) || 0;
-          const newQuantityIssued = currentQuantityIssued - totalChildQuantity;
+          const currentQuantityIssued = round(
+            Number(jobMaterial?.quantityIssued) || 0
+          );
+          const newQuantityIssued = round(
+            currentQuantityIssued - totalChildQuantity
+          );
 
           await trx
             .updateTable("jobMaterial")
@@ -4654,7 +4684,13 @@ serve(async (req: Request) => {
             if (!trackedEntity) {
               throw new Error("Tracked entity not found");
             }
-            const { trackedEntityId, quantity } = child;
+            const { trackedEntityId } = child;
+
+            // Same canonical quantity as the job-consumption loop above: a
+            // full draw books the lot's own rounded on-hand.
+            const entityQuantity = round(Number(trackedEntity.quantity));
+            const fullDraw = isFullDraw(entityQuantity, child.quantity);
+            const quantity = fullDraw ? entityQuantity : round(child.quantity);
 
             // Book against the entity's ACTUAL bin (net on-hand), not an
             // arbitrary first ledger row — aligns with the job-consumption
@@ -4670,7 +4706,7 @@ serve(async (req: Request) => {
             // Maintenance Consumption ledger, junction row) books against
             // the child.
             let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
+            if (!fullDraw) {
               const consumedChildId = nanoid();
               consumedEntityId = consumedChildId;
 
@@ -4678,7 +4714,7 @@ serve(async (req: Request) => {
                 parent: {
                   id: trackedEntity.id!,
                   readableId: trackedEntity.readableId,
-                  quantity: Number(trackedEntity.quantity),
+                  quantity: entityQuantity,
                   sourceDocument: trackedEntity.sourceDocument,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
                   sourceDocumentReadableId:
@@ -5004,12 +5040,13 @@ serve(async (req: Request) => {
           }
 
           // Update the dispatch item quantity
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
+          const totalChildQuantity = roundedChildTotal(children);
 
-          const currentQuantity = Number(dispatchItem.quantity) || 0;
-          const newQuantity = Math.max(0, currentQuantity - totalChildQuantity);
+          const currentQuantity = round(Number(dispatchItem.quantity) || 0);
+          const newQuantity = Math.max(
+            0,
+            round(currentQuantity - totalChildQuantity)
+          );
 
           await trx
             .updateTable("maintenanceDispatchItem")

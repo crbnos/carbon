@@ -20,6 +20,7 @@ import {
   resolveBatchRules
 } from "../shared/batch-compatibility.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -97,8 +98,15 @@ const payloadValidator = z.discriminatedUnion("type", [
       .array(
         z.object({
           jobOperationId: z.string(),
-          quantity: z.number().int().min(0),
-          scrapQuantity: z.number().int().min(0).optional(),
+          // Decimal, matching the MES validator: productionQuantity.quantity is
+          // NUMERIC. An `.int()` here rejected every fractional completion the
+          // (already decimal) MES validator let through. Rounded at parse.
+          quantity: z.number().min(0).transform((v) => round(v)),
+          scrapQuantity: z
+            .number()
+            .min(0)
+            .transform((v) => round(v))
+            .optional(),
           // Batch-tracked output: the member's WIP entity to finalize as the
           // produced lot, and the batch number to stamp on it.
           trackedEntityId: z.string().optional().nullable(),
@@ -1091,6 +1099,19 @@ serve(async (req: Request) => {
 
       case "remove": {
         result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new Error("Batch not found");
+          if (batch.status !== "Planned" && batch.status !== "Active") {
+            throw new Error(
+              `Cannot remove operations from a batch with status ${batch.status}`
+            );
+          }
           const batchEvents = await trx
             .selectFrom("productionEvent")
             .select("id")

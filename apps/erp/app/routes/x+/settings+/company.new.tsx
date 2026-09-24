@@ -124,7 +124,6 @@ export async function action({ request }: ActionFunctionArgs) {
     if (error instanceof Response) throw error;
     logger.error("Company create failed: {message}", {
       message: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined,
       error
     });
     throw error;

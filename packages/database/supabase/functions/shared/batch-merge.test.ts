@@ -237,3 +237,53 @@ Deno.test("partially received merge moves exactly the received balance", () => {
     0
   );
 });
+
+Deno.test("sums parents at the persist boundary: 0.1 + 0.2 => exactly 0.3", () => {
+  const records = buildBatchMergeRecords({
+    ...base,
+    parents: [
+      parent({ id: "p1", quantity: 0.1, receivedQuantity: 0.1 }),
+      parent({ id: "p2", readableId: "LOT-B", quantity: 0.2, receivedQuantity: 0.2 })
+    ]
+  });
+  assertEquals(records.mergedEntityInsert.quantity, 0.3);
+  assertEquals(records.activityInsert.attributes["Merged Quantity"], 0.3);
+  assertEquals(records.activityOutputInsert.quantity, 0.3);
+  // The positive lands in one bin (both parents share it) and nets the negatives.
+  const positives = records.ledgerInserts.filter((r) => r.quantity > 0);
+  const negatives = records.ledgerInserts.filter((r) => r.quantity < 0);
+  assertEquals(positives.length, 1);
+  assertEquals(positives[0].quantity, 0.3);
+  // Each row is a clean 5dp value; the pool balances (the raw float sum of
+  // -0.1 + -0.2 + 0.3 carries ~5e-17 noise, which is not a stored value).
+  assertEquals(negatives.map((r) => r.quantity), [-0.1, -0.2]);
+  assertEquals(
+    Math.abs(records.ledgerInserts.reduce((acc, r) => acc + r.quantity, 0)) <
+      1e-9,
+    true
+  );
+});
+
+Deno.test("rounds received quantity PER PARENT so the bin rows net to zero", () => {
+  // Three parents sharing one bin, each holding a third of a unit. Rounding
+  // only the bin total gives 1 against negatives of 0.33333 × 3 = 0.99999 —
+  // the Batch Merge pair leaks a minor unit. Per-parent rounding nets exactly.
+  const third = 1 / 3;
+  const records = buildBatchMergeRecords({
+    ...base,
+    parents: [
+      parent({ id: "p1", quantity: third, receivedQuantity: third }),
+      parent({ id: "p2", readableId: "LOT-B", quantity: third, receivedQuantity: third }),
+      parent({ id: "p3", readableId: "LOT-C", quantity: third, receivedQuantity: third })
+    ]
+  });
+  const positives = records.ledgerInserts.filter((r) => r.quantity > 0);
+  const negatives = records.ledgerInserts.filter((r) => r.quantity < 0);
+  assertEquals(negatives.map((r) => r.quantity), [-0.33333, -0.33333, -0.33333]);
+  assertEquals(positives.length, 1);
+  assertEquals(positives[0].quantity, 0.99999);
+  assertEquals(
+    records.ledgerInserts.reduce((acc, r) => acc + r.quantity, 0) < 1e-9,
+    true
+  );
+});

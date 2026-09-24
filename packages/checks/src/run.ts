@@ -16,6 +16,7 @@ import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
@@ -40,7 +41,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noRawRounding,
   noInlineFractionDigits,
   noDbClientInService,
-  noDefaultOnEffects
+  noDefaultOnEffects,
+  noUnroundedTrackedQuantity
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];

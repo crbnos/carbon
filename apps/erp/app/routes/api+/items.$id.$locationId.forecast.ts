@@ -6,6 +6,7 @@ import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick"
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { mergeDemandProjections } from "~/modules/items/demand-projection";
 import {
   getDemandForecastSources,
   getItemDemand,
@@ -203,7 +204,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
-  if (demand.actuals.length === 0 && demand.forecasts.length === 0) {
+  const demandForecast = mergeDemandProjections(
+    demand.forecasts,
+    demand.projections,
+    periods.map((p) => p.id ?? "")
+  );
+
+  if (demand.actuals.length === 0 && demandForecast.length === 0) {
     return data(
       defaultResponse,
       await flash(request, error(null, "Failed to load demand"))
@@ -224,7 +231,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     demand: demand.actuals,
-    demandForecast: demand.forecasts,
+    demandForecast,
     demandForecastSources: demandForecastSources.data ?? [],
     supply: [
       ...supply.actuals,

@@ -8,11 +8,11 @@ import {
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
 import {
+  botIdEnabled,
   getMagicLinkErrorMessage,
   sendMagicLink,
-  turnstileSiteKey,
   verifyAuthSession,
-  verifyLoginCaptcha
+  verifyBotId
 } from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
@@ -25,11 +25,10 @@ import {
   Button,
   Heading,
   Separator,
-  TurnstileChallenge,
   toast,
+  useBotIdProtection,
   VStack
 } from "@carbon/react";
-import { useState } from "react";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
@@ -59,7 +58,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
     hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
-    turnstileSiteKey
+    botIdEnabled
   };
 }
 
@@ -88,20 +87,20 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, turnstileToken } = validation.data;
+  const { email } = validation.data;
 
-  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
-  if (captchaError) {
+  const botError = await verifyBotId(ip, email);
+  if (botError) {
     return data(
-      error(null, captchaError),
-      await flash(request, error(null, captchaError))
+      error(null, botError),
+      await flash(request, error(null, botError))
     );
   }
 
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, turnstileToken);
+    const magicLink = await sendMagicLink(email);
 
     if (magicLink.error) {
       const message = getMagicLinkErrorMessage(magicLink.error);
@@ -121,18 +120,15 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
-  const {
-    hasOutlookAuth,
-    hasGoogleAuth,
-    turnstileSiteKey: siteKey
-  } = useLoaderData<typeof loader>();
+  const { hasOutlookAuth, hasGoogleAuth, botIdEnabled } =
+    useLoaderData<typeof loader>();
+  useBotIdProtection("/login", botIdEnabled);
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({
@@ -197,7 +193,6 @@ export default function LoginRoute() {
             method="post"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Hidden name="turnstileToken" value={turnstileToken} />
             <VStack spacing={2}>
               {fetcher.data?.success === false && fetcher.data?.message && (
                 <Alert variant="destructive">
@@ -243,9 +238,7 @@ export default function LoginRoute() {
               <Input name="email" label="" placeholder="Email Address" />
 
               <Submit
-                isDisabled={
-                  fetcher.state !== "idle" || (!!siteKey && !turnstileToken)
-                }
+                isDisabled={fetcher.state !== "idle"}
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
                 className="w-full"
@@ -254,10 +247,6 @@ export default function LoginRoute() {
               >
                 Sign in with Email
               </Submit>
-              <TurnstileChallenge
-                siteKey={siteKey ?? undefined}
-                onToken={setTurnstileToken}
-              />
             </VStack>
           </ValidatedForm>
         )}

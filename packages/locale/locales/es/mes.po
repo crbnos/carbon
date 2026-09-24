@@ -642,6 +642,9 @@ msgstr "¿Finalizar con material sin recoger?"
 msgid "First due {0}"
 msgstr "Primer vencimiento {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Corrija las cantidades resaltadas antes de completar."
+
 msgid "Forgot to Clock Out?"
 msgstr "¿Olvidó fichar salida?"
 

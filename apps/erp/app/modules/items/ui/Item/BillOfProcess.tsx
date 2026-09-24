@@ -3574,6 +3574,31 @@ function OperationPreview({
     return ids.length === 0 || (!!step.id && ids.includes(step.id));
   });
 
+  // Pins are image-only and the overlay draws just the number, so surface each
+  // pin's label (and the tool it links to, when set) as a legend under the image —
+  // otherwise an annotation's meaning is only visible inside the annotator.
+  // The content CHECK is `imagePath IS NOT NULL OR modelUploadId IS NOT NULL`, so a
+  // row may carry both; the panel renders the model then, and no pins are drawn — so
+  // match that precedence here rather than listing labels for invisible pins.
+  const pinLegend = (
+    slide?.imagePath && !slide.modelUploadId ? (slide.annotations ?? []) : []
+  )
+    .map((pin, index) => {
+      const tool = pin.toolId
+        ? allTools.find((x) => x.id === pin.toolId)
+        : undefined;
+      return {
+        pin,
+        index,
+        toolId: tool?.readableIdWithRevision,
+        // MES names a pin's tool by item name; keep the preview reading the same.
+        toolName: tool?.name
+      };
+    })
+    .filter(({ pin, toolId, toolName }) =>
+      Boolean(pin.label || toolId || toolName)
+    );
+
   const descriptionHtml =
     step.description && typeof step.description === "object"
       ? generateHTML(step.description as Parameters<typeof generateHTML>[0])
@@ -3652,6 +3677,34 @@ function OperationPreview({
         <p className="text-xs text-muted-foreground">{slide.caption}</p>
       ) : null}
 
+      {pinLegend.length > 0 && (
+        <div className="flex flex-col gap-1">
+          {pinLegend.map(({ pin, index, toolId, toolName }) => (
+            <div key={pin.id} className="flex items-start gap-2">
+              <span
+                className="mt-px flex size-4 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold text-white"
+                style={{ backgroundColor: pin.color ?? "#ef4444" }}
+              >
+                {index + 1}
+              </span>
+              <span className="min-w-0 flex-1 text-xs">
+                {toolId ? <span className="font-medium">{toolId}</span> : null}
+                {toolName ? (
+                  <span className="text-muted-foreground">
+                    {toolId ? " " : null}
+                    {toolName}
+                  </span>
+                ) : null}
+                {(toolId || toolName) && pin.label ? " · " : null}
+                {pin.label ? (
+                  <span className="text-muted-foreground">{pin.label}</span>
+                ) : null}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
       {slides.length > 1 && (
         <div className="flex flex-wrap items-center gap-2">
           {slides.map((s, i) => {
@@ -3721,9 +3774,16 @@ function OperationPreview({
             return (
               <div key={tl.id ?? i} className="flex items-center gap-2 py-0.5">
                 <LuHammer className="size-3 shrink-0 text-muted-foreground" />
-                <span className="flex-1 text-xs">
-                  {tool?.readableIdWithRevision ?? tl.toolId}
-                </span>
+                <div className="flex min-w-0 flex-1 flex-col">
+                  <span className="truncate text-xs">
+                    {tool?.readableIdWithRevision ?? tl.toolId}
+                  </span>
+                  {tool?.name ? (
+                    <span className="truncate text-[11px] text-muted-foreground">
+                      {tool.name}
+                    </span>
+                  ) : null}
+                </div>
                 {tl.quantity > 1 ? (
                   <span className="text-xs text-muted-foreground">
                     ×{tl.quantity}

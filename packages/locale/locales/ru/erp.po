@@ -48,6 +48,18 @@ msgstr "«{taskName}» готово — все {0} позиций графика
 msgid "(excluded for this customer)"
 msgstr "(исключено для этого покупателя)"
 
+#. placeholder {0}: target.slackDays
+msgid "{0, plural, one {# day of slack} other {# days of slack}}"
+msgstr "{0, plural, one {# день страхового запаса} few {# дня страхового запаса} many {# дней страхового запаса} other {# дней страхового запаса}}"
+
+#. placeholder {0}: -target.slackDays
+msgid "{0, plural, one {# day short} other {# days short}}"
+msgstr "{0, plural, one {# день недостатка} few {# дня недостатка} many {# дней недостатка} other {# дней недостатка}}"
+
+#. placeholder {0}: forecast.zeroStandardOperationCount
+msgid "{0, plural, one {# operation has no time standards} other {# operations have no time standards}}"
+msgstr "{0, plural, one {# операция не имеет временных нормативов} few {# операции не имеют временных нормативов} many {# операций не имеют временных нормативов} other {# операций не имеют временных нормативов}}"
+
 #. placeholder {0}: totalScopeRows(run.violationRowsByTable)
 msgid "{0, plural, one {# row links to data outside this company, so a safety copy of your current data can't be made.} other {# rows link to data outside this company, so a safety copy of your current data can't be made.}}"
 msgstr "{0, plural, one {# строка связана с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.} other {# строк связаны с данными вне этой организации, поэтому резервная копия ваших текущих данных не может быть создана.}}"
@@ -399,6 +411,9 @@ msgstr "{updatedJobCount} производственных заказов обн
 msgid "{uploadedFileName} uploaded — fields filled from the document."
 msgstr "Файл {uploadedFileName} загружен — поля заполнены из документа."
 
+msgid "{value, plural, one {# day} other {# days}}"
+msgstr "{value, plural, one {# день} few {# дня} many {# дней} other {# дней}}"
+
 msgid "{variances, plural, one {# line differs from the expected quantity} other {# lines differ from the expected quantity}}"
 msgstr "{variances, plural, one {# строка отличается от ожидаемого количества} other {# строк отличаются от ожидаемого количества}}"
 
@@ -522,6 +537,9 @@ msgstr "90 дней"
 
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Правило «должны совпадать» на этом процессе препятствует размещению в одной серии"
+
+msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
+msgstr ""
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
@@ -2545,6 +2563,9 @@ msgstr "Вы уверены, что хотите аннулировать эту
 msgid "Are you sure?"
 msgstr "Вы уверены?"
 
+msgid "As if it jumped to the front of the shop's queue."
+msgstr "Как будто прыгнула в начало цеховой очереди"
+
 msgid "As needed"
 msgstr "По мере необходимости"
 
@@ -2667,6 +2688,9 @@ msgstr "Назначает данную единицу хранения рабо
 
 msgid "Assigns this unit to a work center for lineside material, so operators see it on the production view; inherited from the parent unit when set there."
 msgstr "Назначает данную единицу рабочему центру для прилинейного запаса материала, чтобы операторы видели его в представлении производства; наследуется от родительской единицы, если установлено там."
+
+msgid "Assumptions"
+msgstr "Предположения"
 
 msgid "At each gate"
 msgstr "На каждом этапе"
@@ -2994,6 +3018,9 @@ msgstr "Прогноз лучшего случая"
 msgid "Best case…"
 msgstr "Лучший случай…"
 
+msgid "Best-case finish"
+msgstr "Оптимальное завершение"
+
 msgid "Beta"
 msgstr "Бета"
 
@@ -3090,6 +3117,9 @@ msgstr "Дата блокировки книг (вручную)"
 
 msgid "Both"
 msgstr "Оба"
+
+msgid "Both finishes compared against a date you choose."
+msgstr "Оба варианта завершения сравниваются с выбранной вами датой"
 
 msgid "Bottleneck"
 msgstr "Узкое место"
@@ -4472,6 +4502,9 @@ msgstr "Не удалось создать PDF. Попробуйте еще ра
 #. placeholder {1}: d.failed .map((f) => f.readableId) .join(", ")
 msgid "Could not dissolve {0}: {1} — production already recorded"
 msgstr "Не удалось растворить {0}: {1} — производство уже записано"
+
+msgid "Could not predict lead time"
+msgstr "Не удалось предсказать срок поставки"
 
 msgid "Could not prepare region image for analysis"
 msgstr "Не удалось подготовить изображение региона для анализа"
@@ -6813,6 +6846,9 @@ msgstr "Конец последнего месяца"
 msgid "End of Last Quarter"
 msgstr "Конец последнего квартала"
 
+msgid "End of queue"
+msgstr "Конец очереди"
+
 msgid "End Time"
 msgstr "Время окончания"
 
@@ -7631,6 +7667,9 @@ msgstr "Ошибка обновления подсчета"
 
 msgid "Failed to update item cost"
 msgstr "Не удалось обновить себестоимость номенклатуры"
+
+msgid "Failed to update lead times"
+msgstr "Не удалось обновить сроки поставки"
 
 msgid "Failed to update opportunity with purchase order"
 msgstr "Не удалось обновить сделку заказом поставщику"
@@ -8621,6 +8660,9 @@ msgstr "Если это блокирует или есть риск по дат�
 
 msgid "If items already exist"
 msgstr "Если элементы уже существуют"
+
+msgid "If ordered today — placed behind everything already released."
+msgstr "Если заказано сегодня — будет размещено позади уже запущенного"
 
 msgid "If ordered, no stockout projected in the next 48 weeks"
 msgstr "Если заказано, дефицит не прогнозируется в течение следующих 48 недель"
@@ -10647,6 +10689,9 @@ msgstr "Необходимо - это рабочие часы, приходящ�
 msgid "Needs a Business or Partner plan."
 msgstr "Требуется план Business или Partner."
 
+msgid "Needs expedite"
+msgstr "Требует ускорения"
+
 msgid "Needs fixing"
 msgstr "Требуется исправление"
 
@@ -11624,6 +11669,9 @@ msgstr "Не настроено"
 msgid "Not enough jobs to cover quantity"
 msgstr "Недостаточно производственных заказов для покрытия количества"
 
+msgid "Not feasible"
+msgstr "Невозможно выполнить"
+
 msgid "Not reached"
 msgstr "Не достигнуто"
 
@@ -11809,6 +11857,9 @@ msgstr "На единице хранения"
 msgid "On this operation"
 msgstr "На эту операцию"
 
+msgid "On time"
+msgstr "Вовремя"
+
 msgid "On-account credit available"
 msgstr "Доступный кредит на счете"
 
@@ -11843,6 +11894,9 @@ msgstr "1 {0} — это сколько {1}?"
 
 msgid "One firing of a workflow, recorded step by step with the values each step used and produced, acting throughout with the permissions of the workflow's owner."
 msgstr "Одно выполнение рабочего процесса, записанное пошагово со значениями, использованными и созданными каждым шагом, выполняющееся с правами доступа владельца рабочего процесса."
+
+msgid "One or more quantities cannot meet this date"
+msgstr "Одно или несколько количеств не могут соответствовать этой дате"
 
 msgid "One serial unit or one batch that Carbon follows individually, carrying its own status and attributes such as an expiry date."
 msgstr "Одна серийная единица или одна серия, которую Carbon отслеживает отдельно, со своим статусом и атрибутами, такими как срок годности."
@@ -12652,6 +12706,9 @@ msgstr "Сначала выберите свойство"
 msgid "Pick a record type…"
 msgstr "Выберите тип записи…"
 
+msgid "Pick a target date to compare."
+msgstr "Выберите целевую дату для сравнения."
+
 msgid "Pick a value from an earlier step"
 msgstr "Выберите значение из предыдущего шага"
 
@@ -12911,6 +12968,12 @@ msgstr "Потенциальная потеря данных"
 
 msgid "Pre-filled for a new item when expiry is Fixed Duration."
 msgstr "Предзаполнено для новой номенклатуры, если срок годности установлен на фиксированную продолжительность."
+
+msgid "Predict lead time"
+msgstr "Предсказать срок поставки"
+
+msgid "Predicting lead time…"
+msgstr "Прогнозирование сроков поставки…"
 
 msgid "Preferred Supplier"
 msgstr "Основной поставщик"
@@ -13591,6 +13654,9 @@ msgstr "Вопрос"
 msgid "Queued"
 msgstr "В очереди"
 
+msgid "Queued finish"
+msgstr "Завершение в очереди"
+
 msgid "Quiet on the floor tonight, {name}."
 msgstr "Тихо на цехе сегодня ночью, {name}."
 
@@ -14062,9 +14128,18 @@ msgstr "Убрать"
 msgid "Remove {0}"
 msgstr "Убрать {0}"
 
+#. placeholder {0}: selectedIds.size
+msgid "Remove {0} from batch"
+msgstr ""
+
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "Убрать {0} из этой серии? Его операция вернется в график для самостоятельного запуска."
+
+#. placeholder {0}: selectedIds.size
+#. placeholder {1}: batch.readableId
+msgid "Remove {0} of {memberCount} operations from {1}?"
+msgstr ""
 
 msgid "Remove {label}"
 msgstr "Убрать {label}"
@@ -14924,9 +14999,6 @@ msgstr "Выручка от продаж"
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
 
-msgid "Sales rules"
-msgstr "Правила продаж"
-
 msgid "Sales Rules"
 msgstr "Правила продаж"
 
@@ -15077,6 +15149,9 @@ msgstr "График пересчитан"
 
 msgid "Scheduled"
 msgstr "Запланировано"
+
+msgid "Scheduled against your shop's current workload. Nothing is saved until you apply."
+msgstr "Запланировано с учетом текущей нагрузки вашего цеха. Ничего не сохраняется до применения."
 
 msgid "Scheduled Maintenance"
 msgstr "Запланированное техобслуживание"
@@ -16875,6 +16950,9 @@ msgstr "Целевая организация"
 msgid "Target customers by type."
 msgstr "Выберите покупателей по типу."
 
+msgid "Target date"
+msgstr "Целевая дата"
+
 msgid "Target disposition row"
 msgstr "Целевая строка решения"
 
@@ -18018,6 +18096,9 @@ msgstr "Этот производственный заказ больше не �
 
 msgid "This job's own required quantity for the material."
 msgstr "Собственное требуемое количество материала для этого задания."
+
+msgid "This line has no routing to schedule."
+msgstr "На этой строке нет маршрута для планирования."
 
 msgid "This location only schedules staffed work centers, but this is a lights-out (24×7) station — it is exempt and keeps running unattended."
 msgstr "Эта площадка планирует только укомплектованные рабочие центры, но эта станция работает без персонала (24×7) — она исключена и продолжает работать без присмотра."
@@ -19175,6 +19256,9 @@ msgstr "ИНН"
 
 msgid "Vendor Write-Off Income"
 msgstr "Доход от списания задолженности перед поставщиком"
+
+msgid "Verdict"
+msgstr "Вывод"
 
 msgid "Verification Error"
 msgstr "Ошибка проверки"

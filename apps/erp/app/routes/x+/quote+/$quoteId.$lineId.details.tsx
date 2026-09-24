@@ -146,7 +146,15 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
     : null;
 
   return {
-    line: line.data,
+    line: {
+      ...line.data,
+      // Present quantity breaks least-to-greatest everywhere they're consumed
+      // (line form, costing grid, pricing grid). Preserve null so the `?? [1]`
+      // fallbacks downstream still apply.
+      quantity: line.data.quantity
+        ? [...line.data.quantity].sort((a, b) => a - b)
+        : line.data.quantity
+    },
     operations: operations?.data ?? [],
     files: getOpportunityLineDocuments(serviceRole, companyId, lineId, itemId),
     pricesByQuantity: (prices?.data ?? []).reduce<

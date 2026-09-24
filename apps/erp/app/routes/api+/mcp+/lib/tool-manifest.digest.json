@@ -433,7 +433,7 @@
     {"name":"items_getItemCostHistory","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"37830a1bad13","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getItemCustomerPart","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"4c6e08919580","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getItemCustomerParts","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"458a8cdb47f2","injectAuth":"companyId","permission":"parts:view","paginates":false},
-    {"name":"items_getItemDemand","classification":"READ","paramCount":3,"schema":"ba3de97105ef","response":"d669af1cc644","injectAuth":"companyId","permission":"parts:view","paginates":false},
+    {"name":"items_getItemDemand","classification":"READ","paramCount":3,"schema":"ba3de97105ef","response":"a45dda8bd7a2","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getItemFiles","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"c8f657a900dd","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getItemManufacturing","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"f399bb7eda67","injectAuth":"companyId","permission":"parts:view","paginates":false},
     {"name":"items_getItemMpnsList","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"3ff28fd20707","injectAuth":"companyId","permission":"parts:view","paginates":false},

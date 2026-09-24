@@ -442,6 +442,9 @@ export class WorkCenterSelector {
             earliestMs = Math.max(earliestMs, depEnd);
           }
         }
+        if (op.materialReadyAt !== undefined) {
+          earliestMs = Math.max(earliestMs, op.materialReadyAt);
+        }
         const start = earliestMs;
         const outsideDurationHours =
           op.durationHours ??
@@ -533,6 +536,10 @@ export class WorkCenterSelector {
           earliestMs = depEnd;
           dominantDepId = depId;
         }
+      }
+      if (op.materialReadyAt !== undefined && op.materialReadyAt > earliestMs) {
+        earliestMs = op.materialReadyAt;
+        dominantDepId = null;
       }
       const earliestStart = earliestMs;
       // Cap at the precomputed windows: walking past them finds nothing and
