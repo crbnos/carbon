@@ -112,8 +112,8 @@
 - [x] Task 26: Rillet payout — close `UNSUPPORTED_REIMBURSEMENT_PAYMENT`
 - [x] Task 27: QBO `ReimbursementSyncer`
 - [x] Task 28: Xero `ReimbursementSyncer`
-- [ ] Task 29: Full validation gate
-- [ ] Task 30: Browser verification via `/test`
+- [x] Task 29: Full validation gate
+- [x] Task 30: Browser verification via `/test`
 
 ## Dependencies
 

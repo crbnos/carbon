@@ -241,10 +241,13 @@ function Logo(props: ComponentProps<"svg">) {
       // height; clamp to a modest height and let the width follow so it never
       // overflows the drawer's icon box. `currentColor` keeps it theme-aware.
       style={{
-        ...props.style,
         height: "1.25rem",
         width: "auto",
-        maxWidth: "100%"
+        maxWidth: "100%",
+        // Caller's style LAST: a render site that sizes the mark itself (the
+        // document SOURCE badge asks for 0.875rem) must win over this default,
+        // or every site is stuck at the drawer's size.
+        ...props.style
       }}
     >
       <g clipPath="url(#ramp-logo-clip)" fill="currentColor">

@@ -41,7 +41,13 @@ const DocumentSourceBadge = ({
 
   const badge = config ? (
     <span className="inline-flex items-center gap-1.5">
-      <config.logo style={{ height: "0.875rem" }} />
+      {/*
+        `shrink-0` is load-bearing: the logo is a flex item with no explicit
+        width (it sizes from its viewBox aspect), so flex-shrink squeezed the
+        Ramp wordmark from 75px to 11px while keeping its height — and
+        preserveAspectRatio then letterboxed it down to an illegible smudge.
+      */}
+      <config.logo className="shrink-0" style={{ height: "0.875rem" }} />
       <span className="text-sm">{config.name}</span>
     </span>
   ) : (
@@ -62,7 +68,9 @@ const DocumentSourceBadge = ({
   );
 
   return (
-    <div className="flex flex-col gap-1">
+    // `shrink-0` so the provider's wordmark keeps its intrinsic width in the
+    // header's flex row instead of being compressed into the adjacent action.
+    <div className="flex flex-col gap-1 shrink-0">
       <span className="text-xs text-muted-foreground">
         {label ?? <Trans>Source</Trans>}
       </span>
