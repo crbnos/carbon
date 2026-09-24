@@ -23,6 +23,7 @@ import {
   getPostgresConnectionPool
 } from "@carbon/database/client";
 import {
+  createMappingService,
   ensureProviderSubscriptions,
   getAccountingIntegration,
   getProviderIntegration,
@@ -52,6 +53,7 @@ import {
   SWEPT_PAYMENT_STATUSES,
   SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
+import { MASTER_DATA_SWEEP_TARGETS } from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
 
@@ -157,6 +159,32 @@ async function parkedBillIds(ctx: SweepContext): Promise<string[]> {
   return (parked.data ?? []).map((row) => row.entityId);
 }
 
+/**
+ * Rows of a master-data table changed since the floor. Master tables carry no
+ * `status`, so this cannot reuse `pageIds`.
+ */
+async function pageChangedMasterDataIds(args: {
+  ctx: SweepContext;
+  table: "customer" | "supplier" | "item";
+  floor: string;
+  limit: number;
+}): Promise<string[]> {
+  const result = await args.ctx.client
+    .from(args.table)
+    .select("id")
+    .eq("companyId", args.ctx.companyId)
+    .gte("updatedAt", args.floor)
+    .order("updatedAt", { ascending: false })
+    .limit(args.limit);
+
+  if (result.error) {
+    throw new Error(
+      `Failed to page ${args.table} for sweep: ${result.error.message}`
+    );
+  }
+  return (result.data ?? []).map((row: { id: string }) => row.id);
+}
+
 async function sweepCompanyProvider(args: {
   companyId: string;
   providerId: ProviderID;
@@ -209,7 +237,8 @@ async function sweepCompanyProvider(args: {
     charges: 0,
     reimbursements: 0,
     memos: 0,
-    parkedBills: 0
+    parkedBills: 0,
+    masterData: 0
   };
 
   // 2. Candidate refs. Paging filters are SCOPE (which rows are worth
@@ -463,6 +492,60 @@ async function sweepCompanyProvider(args: {
     refs.push(
       ...sweptMemoIds.map(
         (id): ReconcileRef => ({ entityType: side.entityType, entityId: id })
+      )
+    );
+  }
+
+  // 2b. Master data. Documents have had a sweep since v4; master data never
+  // did, so a supplier that predates the install — or whose row event was
+  // dropped — was NEVER pushed and nothing ever caught up. That gap is why a
+  // bill's JIT dependency sync was the only thing keeping vendors alive.
+  //
+  // Bounded by construction: the unmapped set drains to zero permanently, and
+  // the changed set rides the same window floor the documents use.
+  // Which of the two cron slots this is. Deliberately getUTC Minutes, NOT
+  // getMinutes: the cron (`15,45 * * * *`) is defined in UTC, so this is not a
+  // business-calendar read and no company timezone applies — which is also why
+  // it is outside `no-local-timezone`'s ban on process-zone date parts.
+  const isHourlyPass = new Date().getUTCMinutes() < 30;
+  const mappingService = createMappingService(database, companyId);
+
+  for (const master of MASTER_DATA_SWEEP_TARGETS) {
+    const config = provider.getSyncConfig(master.entityType);
+    if (!config?.enabled || config.direction === "pull-from-accounting") {
+      skippedReasons.push(`${master.entityType}: push disabled`);
+      continue;
+    }
+    if (master.hourlyOnly && !isHourlyPass) {
+      skippedReasons.push(`${master.entityType}: hourly pass only`);
+      continue;
+    }
+
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: config.syncFromDate
+    });
+
+    const [unmapped, changed] = await Promise.all([
+      mappingService.getUnsyncedEntityIds(
+        master.entityType,
+        master.table,
+        providerId,
+        master.limit
+      ),
+      pageChangedMasterDataIds({
+        ctx,
+        table: master.table,
+        floor,
+        limit: master.limit
+      })
+    ]);
+
+    const ids = [...new Set([...unmapped, ...changed])];
+    scanned.masterData += ids.length;
+    refs.push(
+      ...ids.map(
+        (id): ReconcileRef => ({ entityType: master.entityType, entityId: id })
       )
     );
   }
