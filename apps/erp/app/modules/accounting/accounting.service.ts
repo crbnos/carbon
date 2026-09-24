@@ -7,6 +7,7 @@ import {
   addDays,
   datetime,
   daysBetweenInclusive,
+  earnsInterest,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   isBalanced,
@@ -7077,7 +7078,13 @@ export async function getLeaseNetInvestment(
     let next: (typeof lineSchedule)[number] | null = null;
     const maturity: Record<number, number> = {};
     for (const row of lineSchedule) {
-      if (row.postedAt && row.periodDate <= asOf) {
+      // A line's principal is collected once its Interest row has posted —
+      // or, for a line that earns no interest (a 0 % lease, the last line of
+      // an Advance lease closing on zero), once its period date passes: it
+      // has no Interest row to post, and its rent invoice alone reduces the
+      // net investment.
+      const collected = row.postedAt || !earnsInterest(row.interestAmount);
+      if (collected && row.periodDate <= asOf) {
         postedPrincipal += row.principalAmount;
         continue;
       }

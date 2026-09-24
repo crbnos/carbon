@@ -83,7 +83,9 @@ A payment's **cash total**, though, need not equal what it applies:
 - **Pure credit-application** — a payment with **zero cash** that only applies the party's existing posted credits to open invoices. This is why `totalAmount` may be zero.
 - **Applying more than cash** — when applications exceed the payment's cash, the excess draws down the party's available on-account credit (the net unapplied cash on their other posted same-direction payments). Only same-direction payments contribute: a Receipt from a customer leaves credit, a Disbursement to the same customer consumes it. Applying more credit than the party actually has errors out.
 
-A customer receipt can also be a customer deposit: pick the sales order or `docs/reference/rental-agreements` under **"Deposit for"**, and its unapplied cash posts to **Customer Prepayments** instead of on-account credit. It is applied to an invoice like any other credit, and a disbursement with **"Refund deposit for"** pays the balance back.
+A customer receipt can also be a customer deposit. On a **"Payment from Customer"**, pick one of that customer's open sales orders or Draft or Active `docs/reference/rental-agreements` under **"Deposit for"**, and its unapplied cash posts to **Customer Prepayments** instead of on-account credit. It is applied to an invoice like any other credit.
+
+A **"Refund to Customer"** with **"Refund deposit for"** pays the balance back, and that picker also lists closed documents that still hold a deposit.
 
 Carbon forgives **dust**. When settlements leave a balance under one cent — smaller than the currency can represent — the invoice reads fully **Paid** rather than sitting a fraction of a cent short.
 

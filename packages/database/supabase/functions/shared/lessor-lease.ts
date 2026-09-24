@@ -1,4 +1,4 @@
-import { round, RoundingMode } from "./precision.ts";
+import { round, RoundingMode, SCALE } from "./precision.ts";
 import {
   bestRateCharge,
   fixedRateCharge,
@@ -449,4 +449,17 @@ export function salesTypeRequirementError(args: {
     return `${name} is a sales-type lease, which runs whole billing periods: the term must be a whole number of 28-day periods (it is ${days} days)`;
   }
   return null;
+}
+
+/** Whether a schedule line's interest is posted by a recognition run (an
+ *  Interest row). Zero earns nothing, and neither does rounding drift: an
+ *  Advance lease closing on zero ends its last line at −0.00001, one unit of
+ *  internal precision below zero. A line that earns none still reduces the
+ *  net investment by its rent invoice, so the net investment report counts
+ *  its principal once its period date passes. The unit is `1 / 10 ** SCALE`,
+ *  not `10 ** -SCALE`: a negative power is not correctly rounded in every V8
+ *  (Deno 1.x gives 0.000009999999999999999), a division is. */
+export function earnsInterest(interestAmount: number): boolean {
+  const amount = round(interestAmount);
+  return amount !== 0 && !(amount < 0 && -amount <= 1 / 10 ** SCALE);
 }

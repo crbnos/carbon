@@ -1,4 +1,5 @@
 import {
+  earnsInterest,
   LessorClassification,
   LessorScheduleLine,
 } from "../shared/lessor-lease.ts";
@@ -6,7 +7,6 @@ import {
   assertBalanced,
   EPSILON,
   round,
-  SCALE,
 } from "../shared/precision.ts";
 import {
   billingHorizon,
@@ -122,15 +122,8 @@ export function interestRows(
   if (schedule.length !== spans.length) {
     throw new Error("Every schedule line needs its billing period");
   }
-  // Zero earns no row, and neither does the last line's rounding drift: an
-  // Advance lease closing on zero ends at −0.00001, one unit of internal
-  // precision below zero, which is not interest. The unit is `1 / 10 **
-  // SCALE`, not `10 ** -SCALE`: a negative power is not correctly rounded in
-  // every V8 (Deno 1.x gives 0.000009999999999999999), a division is.
-  const isDrift = (amount: number) =>
-    amount < 0 && -amount <= 1 / 10 ** SCALE;
   return schedule.flatMap((line, index) =>
-    round(line.interestAmount) === 0 || isDrift(round(line.interestAmount))
+    !earnsInterest(line.interestAmount)
       ? []
       : [{
       index,

@@ -6,15 +6,17 @@ Job costing followed the money a job spends. The books also carry the machines t
 
 A fixed asset is an accounting record, not a production resource. It belongs to an **asset class**, which carries the general-ledger accounts every asset of that kind posts to: the asset account, accumulated depreciation, depreciation expense, and the accounts used when it's written off.
 
-The machine you schedule production on is a work center; the machine you depreciate is a fixed asset. They stay separate records, so the same physical press is a work center on the floor and a fixed asset in the books. If you want the books to know which press that is, set the asset's Work center field: the work center then shows a Capital cost panel listing its assets, and scheduling is unaffected.
+The machine you schedule production on is a work center; the machine you depreciate is a fixed asset. They stay separate records, so the same physical press is a work center on the floor and a fixed asset in the books. If you want the books to know which press that is, set the asset's **"Work Center"** field: the work center then shows a **"Capital Cost"** panel listing its assets, and scheduling is unaffected.
 
 ## Onto the books
 
-An asset comes onto the books one of two ways, and both start at **"Draft"**.
+A machine you buy for the shop comes onto the books one of two ways, and both start at **"Draft"**. The `docs/reference/fixed-assets` covers the other two: building one on a job and capitalizing a unit from stock.
 
-**Register one you already have.** Create the asset, then register it, supplying its acquisition cost, acquisition date, and the date depreciation should start. Registering moves it to **"Active"**. No money posts; you're recording something you already own.
+**Register one you already have.** Create the asset, then register it, supplying its acquisition cost, acquisition date, and the date depreciation should start. A machine that is already partway through its life also takes its **"Accumulated Depreciation"** to date. Registering moves it to **"Active"**. No money posts; you're recording something you already own.
 
-**Buy one through purchasing.** Put a **"Fixed Asset"** line on a purchase order pointed at the asset, then receive it. When the receipt posts, and only if accounting is enabled, Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
+**Buy one through purchasing.** Put a **"Fixed Asset"** line on a purchase order pointed at the asset, then receive it. The asset page's **"Purchase"** action drafts that purchase order for you.
+
+When the receipt posts (or a purchase invoice for the line posts with no receipt), and only if accounting is enabled, Carbon debits the asset account, credits goods-received-not-invoiced, **adds** the cost to the asset, stamps the dates, and flips it from **"Draft"** to **"Active"**. Because the cost is added, an asset can accumulate value across several receipts.
 
 The purchase-receipt path posts the acquisition entry and the Draft → Active flip inside the same gate as every other ledger posting. With accounting off, the PO line is received but the asset itself is left untouched. Register it manually instead.
 

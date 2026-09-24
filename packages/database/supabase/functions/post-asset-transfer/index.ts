@@ -834,8 +834,9 @@ async function returnToInventory(
       .returning(["id"])
       .executeTakeFirstOrThrow();
 
-    // Back into stock at net book value: a cost layer at N, so the unit is
-    // then sold like any other stock (gross revenue + COGS at N).
+    // Back into stock at net book value: a cost layer at N stamped with the
+    // serial, so under FIFO / LIFO that unit is later relieved at N (gross
+    // revenue + COGS at N), not at the oldest layer (cost-layer-order.ts).
     await bookAdjustment(trx, {
       ledger: {
         postingDate: payload.transferDate,

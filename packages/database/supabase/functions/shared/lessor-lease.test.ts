@@ -5,6 +5,7 @@ import {
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
   buildLessorSchedule,
+  earnsInterest,
   classifyLessorLease,
   presentValue,
 } from "./lessor-lease.ts";
@@ -225,4 +226,14 @@ Deno.test("the schedule needs one date per period", () => {
       periodDates: DATES.slice(1),
     })
   );
+});
+
+Deno.test("only real interest is posted: not zero, not one unit of closing drift", () => {
+  assertEquals(earnsInterest(185.25), true);
+  assertEquals(earnsInterest(-0.5), true);
+  assertEquals(earnsInterest(0), false);
+  assertEquals(earnsInterest(0.000001), false);
+  // An Advance lease closing on zero ends one unit below zero.
+  assertEquals(earnsInterest(-0.00001), false);
+  assertEquals(earnsInterest(-0.00002), true);
 });
