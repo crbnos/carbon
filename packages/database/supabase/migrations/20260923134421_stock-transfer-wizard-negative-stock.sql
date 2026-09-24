@@ -4,9 +4,12 @@
 -- wizard entirely — the strongest possible "needs stock" signal was the one
 -- case it could not show. Include any non-zero ledger balance instead.
 --
--- Bodies copied from 20260417000300_storage-unit-recreate-dependents.sql; the
--- only change is `> 0` -> `<> 0` on the item_ledgers_in_storage_unit branch of
--- items_with_activity, in both functions.
+-- Bodies copied from 20260417000300_storage-unit-recreate-dependents.sql with
+-- two changes, in both functions: `> 0` -> `<> 0` on the
+-- item_ledgers_in_storage_unit branch of items_with_activity, and a company
+-- guard at the top — these are SECURITY DEFINER and called straight from the
+-- browser with a caller-supplied company_id, so they must refuse a company the
+-- caller cannot view inventory for.
 
 DROP FUNCTION IF EXISTS get_item_storage_unit_requirements_by_location;
 CREATE OR REPLACE FUNCTION get_item_storage_unit_requirements_by_location(company_id TEXT, location_id TEXT)
@@ -27,6 +30,12 @@ CREATE OR REPLACE FUNCTION get_item_storage_unit_requirements_by_location(compan
     "isDefaultStorageUnit" BOOLEAN
   ) AS $$
   BEGIN
+    -- Client-callable SECURITY DEFINER RPC: company_id comes from the caller,
+    -- so scope it to a company the caller may view inventory for.
+    IF NOT (company_id = ANY (get_companies_with_employee_permission('inventory_view'))) THEN
+      RAISE EXCEPTION 'Not authorized to view inventory for company %', company_id
+        USING ERRCODE = '42501';
+    END IF;
     RETURN QUERY
 
 WITH
@@ -222,6 +231,12 @@ CREATE OR REPLACE FUNCTION get_item_storage_unit_requirements_by_location_and_it
     "isDefaultStorageUnit" BOOLEAN
   ) AS $$
   BEGIN
+    -- Client-callable SECURITY DEFINER RPC: company_id comes from the caller,
+    -- so scope it to a company the caller may view inventory for.
+    IF NOT (company_id = ANY (get_companies_with_employee_permission('inventory_view'))) THEN
+      RAISE EXCEPTION 'Not authorized to view inventory for company %', company_id
+        USING ERRCODE = '42501';
+    END IF;
     RETURN QUERY
 
 WITH
