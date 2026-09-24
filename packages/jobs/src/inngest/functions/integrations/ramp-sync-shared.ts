@@ -22,6 +22,10 @@ type CarbonClient = SupabaseClient<Database>;
 
 const CHARGES_PATH = "/x/invoicing/charges";
 const PURCHASE_INVOICE_PATH = "/x/purchase-invoice";
+// `path.to.reimbursement(id)` in the ERP. Jobs cannot import app code, so the
+// two are kept in step by hand — the document is a full page of its own, NOT a
+// child of the invoicing list.
+const REIMBURSEMENT_PATH = "/x/reimbursements";
 
 export type SyncItem = {
   id: string;
@@ -201,6 +205,10 @@ export function chargesDeepLinkUrl(): string {
 
 export function invoiceDeepLinkUrl(invoiceRowId: string): string {
   return `${getAppUrl()}${PURCHASE_INVOICE_PATH}/${invoiceRowId}`;
+}
+
+export function reimbursementDeepLinkUrl(reimbursementRowId: string): string {
+  return `${getAppUrl()}${REIMBURSEMENT_PATH}/${reimbursementRowId}`;
 }
 
 export async function getRampCurrencyDecimals(

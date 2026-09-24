@@ -3,7 +3,6 @@ import type { Kysely } from "kysely";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
 import { stageRampPaymentDraft } from "./ramp-sync-payment";
-import { stageOrResumeRampReimbursementInvoice } from "./ramp-sync-reimbursement";
 
 const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
@@ -121,113 +120,15 @@ describe.skipIf(!runDatabaseTests)(
       }
     });
 
-    function invoiceArgs(token: string, accountId = fixture.accountId) {
-      return {
-        companyId: fixture.companyId,
-        actorId: fixture.actorId,
-        reimbursementRemoteId: token,
-        supplierId: fixture.supplierId,
-        supplierReference: token,
-        currencyCode: fixture.currencyCode,
-        exchangeRate: 1.25,
-        dateIssued: "2026-09-10",
-        dateDue: "2026-09-11",
-        lines: [
-          {
-            accountId,
-            costCenterId: null,
-            projectId: null,
-            amount: 100,
-            description: "Ramp integration test"
-          }
-        ]
-      };
-    }
-
-    it("atomically creates and then resumes one mapped reimbursement Draft", async () => {
-      const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
-      tokens.push(token);
-      const first = await stageOrResumeRampReimbursementInvoice(
-        db,
-        invoiceArgs(token)
-      );
-      const retried = await stageOrResumeRampReimbursementInvoice(
-        db,
-        invoiceArgs(token)
-      );
-
-      expect(retried.invoiceRowId).toBe(first.invoiceRowId);
-      expect(retried.created).toBe(false);
-      const [headers, deliveries, lines, mappings] = await Promise.all([
-        db
-          .selectFrom("purchaseInvoice")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("supplierReference", "=", token)
-          .execute(),
-        db
-          .selectFrom("purchaseInvoiceDelivery")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("id", "=", first.invoiceRowId)
-          .execute(),
-        db
-          .selectFrom("purchaseInvoiceLine")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("invoiceId", "=", first.invoiceRowId)
-          .execute(),
-        db
-          .selectFrom("externalIntegrationMapping")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("integration", "=", "ramp")
-          .where("entityType", "=", "bill")
-          .where("externalId", "=", token)
-          .execute()
-      ]);
-      expect([
-        headers.length,
-        deliveries.length,
-        lines.length,
-        mappings.length
-      ]).toEqual([1, 1, 1, 1]);
-    });
-
-    it("serializes concurrent staging on the tenant-scoped reimbursement key", async () => {
-      const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
-      tokens.push(token);
-
-      const [first, second] = await Promise.all([
-        stageOrResumeRampReimbursementInvoice(db, invoiceArgs(token)),
-        stageOrResumeRampReimbursementInvoice(db, invoiceArgs(token))
-      ]);
-
-      expect(second.invoiceRowId).toBe(first.invoiceRowId);
-      expect([first.created, second.created].sort()).toEqual([false, true]);
-      const [headers, mappings] = await Promise.all([
-        db
-          .selectFrom("purchaseInvoice")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("supplierReference", "=", token)
-          .execute(),
-        db
-          .selectFrom("externalIntegrationMapping")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("integration", "=", "ramp")
-          .where("entityType", "=", "bill")
-          .where("externalId", "=", token)
-          .execute()
-      ]);
-      expect(headers).toHaveLength(1);
-      expect(mappings).toHaveLength(1);
-    });
-
-    it("adopts a complete untracked legacy reimbursement Draft after a pre-mapping crash", async () => {
-      const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
-      tokens.push(token);
+    /**
+     * A minimal Draft purchase invoice to settle a payment against. It used to
+     * come from the Ramp reimbursement stager; reimbursements are their own
+     * document now (`ramp-sync-reimbursement-create.integration.test.ts`), and
+     * these payment tests only ever needed an invoice id.
+     */
+    async function stageInvoice(
+      token: string
+    ): Promise<{ invoiceRowId: string }> {
       const interaction = await db
         .insertInto("supplierInteraction")
         .values({
@@ -236,10 +137,10 @@ describe.skipIf(!runDatabaseTests)(
         })
         .returning("id")
         .executeTakeFirstOrThrow();
-      const legacy = await db
+      const invoice = await db
         .insertInto("purchaseInvoice")
         .values({
-          invoiceId: `PINV-LEGACY-${crypto.randomUUID()}`,
+          invoiceId: `PINV-TEST-${crypto.randomUUID()}`,
           status: "Draft",
           supplierId: fixture.supplierId,
           supplierReference: token,
@@ -256,7 +157,7 @@ describe.skipIf(!runDatabaseTests)(
       await db
         .insertInto("purchaseInvoiceDelivery")
         .values({
-          id: legacy.id,
+          id: invoice.id,
           companyId: fixture.companyId,
           supplierShippingCost: 0
         })
@@ -264,7 +165,7 @@ describe.skipIf(!runDatabaseTests)(
       await db
         .insertInto("purchaseInvoiceLine")
         .values({
-          invoiceId: legacy.id,
+          invoiceId: invoice.id,
           invoiceLineType: "G/L Account",
           accountId: fixture.accountId,
           description: "Ramp integration test",
@@ -275,85 +176,26 @@ describe.skipIf(!runDatabaseTests)(
           createdBy: fixture.actorId
         })
         .execute();
-
-      const resumed = await stageOrResumeRampReimbursementInvoice(db, {
-        ...invoiceArgs(token),
-        reimbursementRemoteId: token.replace("RAMP-REIMB-", ""),
-        exchangeRate: 2
-      });
-
-      expect(resumed).toMatchObject({
-        invoiceRowId: legacy.id,
-        exchangeRate: 1.25,
-        created: false
-      });
-      const mapping = await db
-        .selectFrom("externalIntegrationMapping")
-        .select("entityId")
-        .where("companyId", "=", fixture.companyId)
-        .where("integration", "=", "ramp")
-        .where("entityType", "=", "bill")
-        .where("externalId", "=", token.replace("RAMP-REIMB-", ""))
-        .executeTakeFirstOrThrow();
-      expect(mapping.entityId).toBe(legacy.id);
-      const line = await db
-        .selectFrom("purchaseInvoiceLine")
-        .select("exchangeRate")
-        .where("companyId", "=", fixture.companyId)
-        .where("invoiceId", "=", legacy.id)
-        .executeTakeFirstOrThrow();
-      expect(line.exchangeRate).toBe(1.25);
-    });
-
-    it("rolls back interaction, header, delivery, and mapping on a mid-write line failure", async () => {
-      const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
-      tokens.push(token);
-      const before = await db
-        .selectFrom("supplierInteraction")
-        .select(({ fn }) => fn.countAll<number>().as("count"))
-        .where("companyId", "=", fixture.companyId)
-        .where("supplierId", "=", fixture.supplierId)
-        .executeTakeFirstOrThrow();
-
-      await expect(
-        stageOrResumeRampReimbursementInvoice(
-          db,
-          invoiceArgs(token, `acct_missing_${crypto.randomUUID()}`)
-        )
-      ).rejects.toThrow();
-
-      const [after, headers, mappings] = await Promise.all([
-        db
-          .selectFrom("supplierInteraction")
-          .select(({ fn }) => fn.countAll<number>().as("count"))
-          .where("companyId", "=", fixture.companyId)
-          .where("supplierId", "=", fixture.supplierId)
-          .executeTakeFirstOrThrow(),
-        db
-          .selectFrom("purchaseInvoice")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("supplierReference", "=", token)
-          .execute(),
-        db
-          .selectFrom("externalIntegrationMapping")
-          .select("id")
-          .where("companyId", "=", fixture.companyId)
-          .where("externalId", "=", token)
-          .execute()
-      ]);
-      expect(Number(after.count)).toBe(Number(before.count));
-      expect(headers).toEqual([]);
-      expect(mappings).toEqual([]);
-    });
+      // `upsertLocalPaymentDraft` resolves the settled document through its Ramp
+      // mapping, so the invoice must be anchored to the token the payment cites.
+      await db
+        .insertInto("externalIntegrationMapping")
+        .values({
+          entityType: "bill",
+          entityId: invoice.id,
+          integration: "ramp",
+          externalId: token,
+          companyId: fixture.companyId,
+          createdBy: fixture.actorId
+        })
+        .execute();
+      return { invoiceRowId: invoice.id };
+    }
 
     it("resumes a real mapped Draft payment without changing its FX snapshot", async () => {
       const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
       tokens.push(token);
-      const invoice = await stageOrResumeRampReimbursementInvoice(
-        db,
-        invoiceArgs(token)
-      );
+      const invoice = await stageInvoice(token);
       const paymentId = `pay_test_${crypto.randomUUID()}`;
       await db.transaction().execute(async (tx) => {
         await tx
@@ -451,7 +293,7 @@ describe.skipIf(!runDatabaseTests)(
     it("rolls back a newly inserted payment when its mapping write conflicts", async () => {
       const token = `RAMP-REIMB-TEST-${crypto.randomUUID()}`;
       tokens.push(token);
-      await stageOrResumeRampReimbursementInvoice(db, invoiceArgs(token));
+      await stageInvoice(token);
       await db
         .insertInto("externalIntegrationMapping")
         .values({

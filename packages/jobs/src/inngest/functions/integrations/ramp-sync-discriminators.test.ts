@@ -49,48 +49,50 @@ describe("Ramp inbound accounting discriminators", () => {
     "APPROVED",
     "AWAITING_PAYMENT",
     "AWAITING_PUSH_PAYMENT"
-  ])("requires a settlement only for verified Ramp-paid state %s", async (state) => {
+  ])("re-confirms an already-imported reimbursement in state %s without touching it", async (state) => {
+    // Carbon owns the document once it lands, in EVERY supported state —
+    // including the Ramp-paid ones, whose payout now rides the mapping metadata
+    // until a human posts the Draft. A mapped item does no import work at all.
     const mappingQuery = {
       select: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn().mockResolvedValue({ entityId: "invoice-1" })
+      executeTakeFirst: vi
+        .fn()
+        .mockResolvedValue({ entityId: "reimbursement-row-1" })
     };
-    const invoiceQuery = {
+    const documentQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          id: "invoice-1",
-          invoiceId: "PI-1",
-          status: "Posted",
-          currencyCode: "USD",
-          exchangeRate: 1
-        },
+        data: { id: "reimbursement-row-1", reimbursementId: "REIMB-1" },
         error: null
       })
     };
     const normalizeAmount = vi
       .fn()
       .mockResolvedValue({ ok: false, error: "Payment amount required" });
+    const from = vi.fn().mockReturnValue(documentQuery);
     const outcome = await syncRampReimbursement(
       {
         db: { selectFrom: vi.fn().mockReturnValue(mappingQuery) },
-        client: { from: vi.fn().mockReturnValue(invoiceQuery) },
+        client: { from },
         companyId: "company-1",
         normalizeAmount,
-        invoiceDeepLinkUrl: () => "https://carbon.example/invoice-1"
+        reimbursementDeepLinkUrl: (id: string) =>
+          `https://carbon.example/x/reimbursements/${id}`
       } as unknown as RampReimbursementDependencies,
       { id: "reimbursement-1", state }
     );
-    if (state === "REIMBURSED" || state === "REIMBURSED_VIA_PUSH") {
-      expect(outcome).toEqual({
-        fail: { id: "reimbursement-1", message: "Payment amount required" }
-      });
-      expect(normalizeAmount).toHaveBeenCalledOnce();
-    } else {
-      expect(outcome).toHaveProperty("ok");
-      expect(normalizeAmount).not.toHaveBeenCalled();
-    }
+    expect(outcome).toEqual({
+      ok: {
+        id: "reimbursement-1",
+        referenceId: "REIMB-1",
+        deepLinkUrl:
+          "https://carbon.example/x/reimbursements/reimbursement-row-1"
+      }
+    });
+    expect(normalizeAmount).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledWith("reimbursement");
   });
 
   it("continues original transaction resolution for documented ach repayments", async () => {

@@ -106,7 +106,7 @@
 - [x] Task 20: Settlement target — models + service
 - [x] Task 21: `post-payment` — reimbursement settlement arm
 - [ ] Task 22: Payment UI — employee payee + reimbursement apply target
-- [ ] Task 23: Ramp inbound — create a Draft `reimbursement`; never auto-post, never re-write
+- [x] Task 23: Ramp inbound — create a Draft `reimbursement`; never auto-post, never re-write
 - [ ] Task 24: `@carbon/ee` accounting — `reimbursement` entity type + plumbing
 - [ ] Task 25: Rillet `ReimbursementSyncer`
 - [ ] Task 26: Rillet payout — close `UNSUPPORTED_REIMBURSEMENT_PAYMENT`

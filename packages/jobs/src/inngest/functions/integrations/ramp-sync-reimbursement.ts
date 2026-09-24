@@ -1,20 +1,25 @@
 import type { Database } from "@carbon/database";
-import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import {
   codeSelections,
   type RampReimbursement,
-  resolveEmployeeSupplier
+  scaleLinesToTotal
 } from "@carbon/ee/ramp.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
-import { createOrResumeRampPayment } from "./ramp-sync-payment";
 
-type PaymentStatus = Database["public"]["Enums"]["paymentStatus"];
-type PurchaseInvoiceStatus =
-  Database["public"]["Enums"]["purchaseInvoiceStatus"];
+type ReimbursementStatus = Database["public"]["Enums"]["reimbursementStatus"];
 
-export type RampReimbursementInvoiceLine = {
+/**
+ * The `externalIntegrationMapping` entity type a Ramp reimbursement is keyed
+ * by. It is NOT `"bill"` any more: the document is a `reimbursement` row, not a
+ * purchase invoice, and the ERP's reimbursement detail loader reads this exact
+ * value to render the SOURCE badge's external id. The two must stay in step.
+ */
+export const RAMP_REIMBURSEMENT_ENTITY_TYPE = "reimbursement";
+
+export type RampReimbursementLine = {
   accountId: string;
   costCenterId: string | null;
   projectId: string | null;
@@ -22,25 +27,61 @@ export type RampReimbursementInvoiceLine = {
   description: string | null;
 };
 
-export type RampReimbursementInvoiceDraft = {
+/**
+ * Ramp already paid the employee, but the document lands **Draft** and a Draft
+ * cannot be settled — so the payout is recorded as an INTENT on the Ramp
+ * mapping's metadata and turned into a `payment` + `invoiceSettlement` by the
+ * ERP's Post helper (`apps/erp/app/modules/invoicing/reimbursement.server.ts`).
+ *
+ * These keys are the wire contract with that helper, so they are written at the
+ * TOP LEVEL of the mapping metadata rather than nested. `exchangeRate` is the
+ * rate resolved at IMPORT: the payout has to post at the rate Ramp used, so the
+ * Post helper must spend this snapshot and never re-derive a rate of its own.
+ */
+export type RampReimbursementPayout = {
+  rampPaymentId: string;
+  paidAt: string;
+  bankAccountId: string;
+  amount: number;
+  currencyCode: string;
+  exchangeRate: number;
+};
+
+/**
+ * Has a payout intent already been recorded on this mapping's metadata?
+ *
+ * Keyed on `rampPaymentId` because that is the field the Post helper cannot
+ * work without — a metadata bag carrying only the receipt/deep-link keys is
+ * NOT a recorded payout. Lives next to `RampReimbursementPayout` so the
+ * predicate and the wire contract cannot drift apart.
+ */
+export function hasRecordedPayout(metadata: unknown): boolean {
+  return (
+    typeof metadata === "object" &&
+    metadata !== null &&
+    typeof (metadata as Record<string, unknown>).rampPaymentId === "string"
+  );
+}
+
+export type RampReimbursementDraft = {
   companyId: string;
   actorId: string;
   reimbursementRemoteId: string;
-  supplierId: string;
-  supplierReference: string;
+  employeeId: string;
+  reference: string;
   currencyCode: string;
   exchangeRate: number;
-  dateIssued: string | null;
-  dateDue: string | null;
-  lines: RampReimbursementInvoiceLine[];
+  amount: number;
+  reimbursementDate: string;
+  postingDate: string | null;
+  lines: RampReimbursementLine[];
+  payout: RampReimbursementPayout | null;
 };
 
-export type StagedRampReimbursementInvoice = {
-  invoiceRowId: string;
-  readableInvoiceId: string;
-  status: PurchaseInvoiceStatus;
-  currencyCode: string;
-  exchangeRate: number;
+export type CreatedRampReimbursement = {
+  reimbursementRowId: string;
+  readableId: string;
+  status: ReimbursementStatus;
   created: boolean;
 };
 
@@ -66,10 +107,7 @@ export type RampReimbursementDependencies = {
     currencyCode: string,
     label: string
   ) => Promise<NormalizedAmount>;
-  postInvoice: (
-    invoiceRowId: string
-  ) => Promise<{ readableId: string } | { fail: string }>;
-  invoiceDeepLinkUrl: (invoiceRowId: string) => string;
+  reimbursementDeepLinkUrl: (reimbursementRowId: string) => string;
 };
 
 // Reimbursement.state in Ramp's OpenAPI contract (2026-09-11). Only verified
@@ -86,144 +124,31 @@ const REIMBURSEMENT_INVOICE_ONLY_STATES = new Set([
   "MANUALLY_REIMBURSED"
 ]);
 
-async function validateLegacyDraft(
-  tx: KyselyTx,
-  args: RampReimbursementInvoiceDraft,
-  invoice: Database["public"]["Tables"]["purchaseInvoice"]["Row"]
-): Promise<void> {
-  if (
-    invoice.status !== "Draft" ||
-    invoice.createdBy !== "system" ||
-    invoice.postingDate ||
-    invoice.datePaid
-  ) {
-    throw new Error(
-      "Reference-only invoice is not a valid legacy Ramp reimbursement Draft"
-    );
-  }
-  if (
-    args.supplierReference !== `RAMP-REIMB-${args.reimbursementRemoteId}` ||
-    invoice.currencyCode !== args.currencyCode ||
-    invoice.dateIssued !== args.dateIssued ||
-    invoice.dateDue !== args.dateDue ||
-    !Number.isFinite(invoice.exchangeRate) ||
-    invoice.exchangeRate <= 0
-  ) {
-    throw new Error(
-      "Legacy reimbursement Draft identity, dates or currency do not match Ramp"
-    );
-  }
-  const interaction = await tx
-    .selectFrom("supplierInteraction")
-    .select("id")
-    .where("id", "=", invoice.supplierInteractionId)
-    .where("companyId", "=", args.companyId)
-    .where("supplierId", "=", args.supplierId)
-    .executeTakeFirst();
-  const delivery = await tx
-    .selectFrom("purchaseInvoiceDelivery")
-    .selectAll()
-    .where("id", "=", invoice.id)
-    .where("companyId", "=", args.companyId)
-    .executeTakeFirst();
-  const lines = await tx
-    .selectFrom("purchaseInvoiceLine")
-    .selectAll()
-    .where("invoiceId", "=", invoice.id)
-    .where("companyId", "=", args.companyId)
-    .orderBy("sortOrder")
-    .execute();
-  if (
-    !interaction ||
-    !delivery ||
-    !lines.length ||
-    lines.length !== args.lines.length
-  ) {
-    throw new Error(
-      "Legacy reimbursement Draft is incomplete or does not match Ramp"
-    );
-  }
-  const provenance = [
-    "purchaseOrderId",
-    "purchaseOrderLineId",
-    "itemId",
-    "assetId",
-    "serviceId",
-    "locationId",
-    "storageUnitId",
-    "jobOperationId",
-    "purchaseUnitOfMeasureCode",
-    "inventoryUnitOfMeasureCode"
-  ] as const;
-  if (
-    delivery.supplierShippingCost !== 0 ||
-    lines.some((line, index) => {
-      const expected = args.lines[index]!;
-      return (
-        line.invoiceLineType !== "G/L Account" ||
-        line.accountId !== expected.accountId ||
-        line.costCenterId !== expected.costCenterId ||
-        line.projectId !== expected.projectId ||
-        line.description !== expected.description ||
-        line.quantity !== 1 ||
-        line.supplierUnitPrice !== expected.amount ||
-        line.exchangeRate !== invoice.exchangeRate ||
-        line.supplierTaxAmount !== 0 ||
-        line.supplierShippingCost !== 0 ||
-        line.conversionFactor !== 1 ||
-        provenance.some((field) => line[field] !== null)
-      );
-    })
-  ) {
-    throw new Error(
-      "Legacy reimbursement Draft does not match the complete Ramp lines"
-    );
-  }
-}
-
-async function insertInvoiceLines(
-  tx: KyselyTx,
-  args: RampReimbursementInvoiceDraft,
-  invoiceRowId: string
-): Promise<void> {
-  if (args.lines.length === 0) {
-    throw new Error("Ramp reimbursement requires at least one coded line");
-  }
-  await tx
-    .insertInto("purchaseInvoiceLine")
-    .values(
-      args.lines.map((line, index) => ({
-        invoiceId: invoiceRowId,
-        invoiceLineType: "G/L Account" as const,
-        accountId: line.accountId,
-        costCenterId: line.costCenterId,
-        projectId: line.projectId,
-        description: line.description,
-        quantity: 1,
-        supplierUnitPrice: line.amount,
-        exchangeRate: args.exchangeRate,
-        sortOrder: index + 1,
-        companyId: args.companyId,
-        createdBy: args.actorId
-      }))
-    )
-    .execute();
-}
-
 /**
- * Atomically create the reimbursement invoice Draft and its idempotency anchor.
- * A retry returns the mapped row. It may adopt the pre-transaction writer's
- * unique system reference only when an unposted system Draft's complete
- * structure matches Ramp. Incomplete or ambiguous documents require review.
+ * Atomically create the Draft `reimbursement`, its coding lines, and the Ramp
+ * mapping that is its idempotency anchor.
+ *
+ * It **creates, and never updates.** "Provider owns it until it lands; Carbon
+ * owns it after" — an imported spend document is editable in Carbon while it is
+ * Draft, so a later sweep that refreshed the header and replaced the lines (as
+ * the charge stager still does, and as this function's purchase-invoice
+ * ancestor did) would silently destroy a reviewer's coding with no error and no
+ * way to tell it happened. The accepted cost, stated in
+ * `.ai/specs/2026-09-23-editable-imported-spend-documents.md`: a provider-side
+ * correction made AFTER import does not flow through — the reviewer sees what
+ * originally arrived and can re-edit it.
+ *
+ * The advisory lock prevents two workers from creating different local rows
+ * before the mapping's uniqueness constraint is reached.
  */
-export async function stageOrResumeRampReimbursementInvoice(
+export async function createRampReimbursement(
   db: Kysely<KyselyDatabase>,
-  args: RampReimbursementInvoiceDraft
-): Promise<StagedRampReimbursementInvoice> {
+  args: RampReimbursementDraft
+): Promise<CreatedRampReimbursement> {
   return db.transaction().execute(async (tx) => {
     // Serialize the external idempotency key itself. The mapping's uniqueness
     // constraint is checked only at the final write; without this lock, two
-    // workers could both miss it and create separate invoice structures first.
+    // workers could both miss it and create separate documents first.
     await sql`
       SELECT pg_advisory_xact_lock(
         hashtextextended(
@@ -232,125 +157,121 @@ export async function stageOrResumeRampReimbursementInvoice(
         )
       )
     `.execute(tx);
+
     const mapping = createMappingService(tx, args.companyId);
     const mapped = await mapping.getByExternalId(
       "ramp",
       args.reimbursementRemoteId,
-      "bill"
+      RAMP_REIMBURSEMENT_ENTITY_TYPE
     );
-    let existing = mapped?.entityId
-      ? await tx
-          .selectFrom("purchaseInvoice")
-          .selectAll()
-          .select([
-            sql<string | null>`"dateIssued"::text`.as("dateIssued"),
-            sql<string | null>`"dateDue"::text`.as("dateDue")
-          ])
-          .where("id", "=", mapped.entityId)
-          .where("companyId", "=", args.companyId)
-          .executeTakeFirst()
-      : undefined;
-    if (mapped && !existing) {
-      throw new Error("Mapped reimbursement invoice no longer exists");
-    }
-
-    if (!existing) {
-      const legacy = await tx
-        .selectFrom("purchaseInvoice")
-        .selectAll()
-        .select([
-          sql<string | null>`"dateIssued"::text`.as("dateIssued"),
-          sql<string | null>`"dateDue"::text`.as("dateDue")
-        ])
+    if (mapped) {
+      const existing = await tx
+        .selectFrom("reimbursement")
+        .select(["id", "reimbursementId", "status"])
+        .where("id", "=", mapped.entityId)
         .where("companyId", "=", args.companyId)
-        .where("supplierId", "=", args.supplierId)
-        .where("supplierReference", "=", args.supplierReference)
-        .limit(2)
-        .forUpdate()
-        .execute();
-      if (legacy.length > 1) {
-        throw new Error("Ambiguous untracked Ramp reimbursement invoice");
+        .executeTakeFirst();
+      if (!existing) {
+        throw new Error("Mapped Ramp reimbursement no longer exists");
       }
-      existing = legacy[0];
-      if (existing) {
-        await validateLegacyDraft(tx, args, existing);
-        const otherSource = await mapping.getExternalId(
-          "bill",
-          existing.id,
-          "ramp"
-        );
-        if (otherSource && otherSource !== args.reimbursementRemoteId) {
-          throw new Error(
-            "Invoice is already linked to a different Ramp source"
-          );
-        }
-        await mapping.link(
-          "bill",
-          existing.id,
-          "ramp",
-          args.reimbursementRemoteId,
-          { createdBy: args.actorId }
-        );
+      // The DOCUMENT is never refreshed: no header, no lines, no re-read of
+      // Ramp's coding — see the note above.
+      //
+      // The mapping's payout intent is the one exception, and it is not a
+      // document re-write. "Never re-write" exists to protect a reviewer's
+      // edits; nobody edits mapping bookkeeping. Without this, a reimbursement
+      // imported while APPROVED that Ramp later PAYS and re-lists would keep a
+      // payout-less mapping forever, so Post would never create the
+      // `payment`/`invoiceSettlement` — money moves in Ramp and Carbon never
+      // settles it.
+      //
+      // Strictly additive: an intent already on the mapping is authoritative
+      // (it carries the FX snapshot of the payout that actually happened) and
+      // is never overwritten by a later pass.
+      if (args.payout && !hasRecordedPayout(mapped.metadata)) {
+        await tx
+          .updateTable("externalIntegrationMapping")
+          .set({
+            metadata: sql`coalesce("metadata", '{}'::jsonb) || ${JSON.stringify(
+              args.payout
+            )}::jsonb`
+          })
+          .where("id", "=", mapped.id)
+          .where("companyId", "=", args.companyId)
+          .execute();
       }
-    }
-
-    if (existing) {
       return {
-        invoiceRowId: existing.id,
-        readableInvoiceId: existing.invoiceId,
+        reimbursementRowId: existing.id,
+        readableId: existing.reimbursementId,
         status: existing.status,
-        currencyCode: existing.currencyCode,
-        exchangeRate: existing.exchangeRate,
         created: false
       };
     }
 
-    const interaction = await tx
-      .insertInto("supplierInteraction")
-      .values({ companyId: args.companyId, supplierId: args.supplierId })
-      .returning("id")
-      .executeTakeFirstOrThrow();
+    if (args.lines.length === 0) {
+      throw new Error("Ramp reimbursement requires at least one coded line");
+    }
+
     const sequence = await sql<{ get_next_sequence: string }>`
-      SELECT get_next_sequence('purchaseInvoice', ${args.companyId}) as get_next_sequence
+      SELECT get_next_sequence('reimbursement', ${args.companyId}) as get_next_sequence
     `.execute(tx);
-    const readableInvoiceId =
+    const readableId =
       sequence.rows[0]?.get_next_sequence ??
       `RAMP-${args.reimbursementRemoteId.slice(0, 8)}`;
-    const invoice = await tx
-      .insertInto("purchaseInvoice")
+
+    const header = await tx
+      .insertInto("reimbursement")
       .values({
-        invoiceId: readableInvoiceId,
+        reimbursementId: readableId,
+        companyId: args.companyId,
+        employeeId: args.employeeId,
         status: "Draft",
-        supplierId: args.supplierId,
-        supplierReference: args.supplierReference,
+        integration: "ramp",
+        reimbursementDate: args.reimbursementDate,
+        postingDate: args.postingDate,
         currencyCode: args.currencyCode,
         exchangeRate: args.exchangeRate,
-        dateIssued: args.dateIssued,
-        dateDue: args.dateDue,
-        supplierInteractionId: interaction.id,
-        companyId: args.companyId,
+        amount: args.amount,
+        reference: args.reference,
         createdBy: args.actorId
       })
       .returning("id")
       .executeTakeFirstOrThrow();
+
+    // 0-based `sequence`, the `chargeLine` convention — and the order
+    // `post-reimbursement` reads the lines back in.
     await tx
-      .insertInto("purchaseInvoiceDelivery")
-      .values({
-        id: invoice.id,
-        companyId: args.companyId,
-        supplierShippingCost: 0
-      })
+      .insertInto("reimbursementLine")
+      .values(
+        args.lines.map((line, index) => ({
+          reimbursementId: header.id,
+          companyId: args.companyId,
+          accountId: line.accountId,
+          costCenterId: line.costCenterId,
+          projectId: line.projectId,
+          description: line.description,
+          amount: line.amount,
+          sequence: index,
+          createdBy: args.actorId
+        }))
+      )
       .execute();
-    await insertInvoiceLines(tx, args, invoice.id);
-    await mapping.link("bill", invoice.id, "ramp", args.reimbursementRemoteId, {
-      createdBy: args.actorId
-    });
+
+    await mapping.link(
+      RAMP_REIMBURSEMENT_ENTITY_TYPE,
+      header.id,
+      "ramp",
+      args.reimbursementRemoteId,
+      {
+        createdBy: args.actorId,
+        metadata: args.payout ? { ...args.payout } : undefined
+      }
+    );
+
     return {
-      invoiceRowId: invoice.id,
-      readableInvoiceId,
+      reimbursementRowId: header.id,
+      readableId,
       status: "Draft",
-      currencyCode: args.currencyCode,
-      exchangeRate: args.exchangeRate,
       created: true
     };
   });
@@ -362,17 +283,61 @@ export function reimbursementPaymentExternalId(
   return `reimbursement-payment:${reimbursementId}`;
 }
 
-export function shouldConfirmReimbursement(args: {
-  invoicePosted: boolean;
-  rampPaid: boolean;
-  paymentStatus: PaymentStatus | null;
-}): boolean {
-  return (
-    args.invoicePosted && (!args.rampPaid || args.paymentStatus === "Posted")
-  );
+/**
+ * Build the deferred payout intent for a reimbursement Ramp has already paid.
+ * Pure, so the "never re-derive the rate at Post" rule is pinned by a test
+ * rather than only by a comment.
+ */
+export function buildRampReimbursementPayout(args: {
+  rampReimbursementId: string;
+  bankAccountId: string | null | undefined;
+  paidAt: string | null | undefined;
+  amount: number | null;
+  currencyCode: string;
+  exchangeRate: number;
+}):
+  | { ok: true; value: RampReimbursementPayout }
+  | { ok: false; error: string } {
+  if (!args.bankAccountId) {
+    return {
+      ok: false,
+      error:
+        "Ramp-paid reimbursement requires a reimbursement or statement bank account"
+    };
+  }
+  const paidAt = args.paidAt?.slice(0, 10);
+  if (
+    args.amount === null ||
+    !Number.isFinite(args.amount) ||
+    args.amount <= 0 ||
+    !paidAt
+  ) {
+    return {
+      ok: false,
+      error:
+        "Ramp-paid reimbursement requires a positive verified amount and payment date"
+    };
+  }
+  if (!Number.isFinite(args.exchangeRate) || args.exchangeRate <= 0) {
+    return {
+      ok: false,
+      error: "Ramp-paid reimbursement has no usable exchange-rate snapshot"
+    };
+  }
+  return {
+    ok: true,
+    value: {
+      rampPaymentId: reimbursementPaymentExternalId(args.rampReimbursementId),
+      paidAt,
+      bankAccountId: args.bankAccountId,
+      amount: args.amount,
+      currencyCode: args.currencyCode,
+      exchangeRate: args.exchangeRate
+    }
+  };
 }
 
-function extractRampUser(reimbursement: RampReimbursement): {
+export function extractRampUser(reimbursement: RampReimbursement): {
   user_id: string;
   first_name?: string | null;
   last_name?: string | null;
@@ -398,12 +363,68 @@ function extractRampUser(reimbursement: RampReimbursement): {
   };
 }
 
+/**
+ * Resolve the Ramp user to a Carbon **employee** — `employee.id` IS the user id
+ * (`.claude/rules/user-employee-job-relationships.md`), so the join is
+ * `user.email` → `user.id` → `employee(id, companyId)`.
+ *
+ * Never auto-creates anything. The old path auto-created a synthetic "Employee"
+ * supplier, which is the vendor-master pollution this document exists to end;
+ * an unknown employee is a real gap a human has to close in Carbon, so it fails
+ * the item visibly instead.
+ */
+async function resolveReimbursementEmployee(
+  deps: RampReimbursementDependencies,
+  rampUser: { email?: string | null }
+): Promise<{ ok: true; value: string } | { ok: false; error: string }> {
+  const email = rampUser.email?.trim().toLowerCase();
+  if (!email) {
+    return {
+      ok: false,
+      error:
+        "Reimbursement's Ramp user has no email — cannot match a Carbon employee"
+    };
+  }
+  const users = await deps.client.from("user").select("id").eq("email", email);
+  if (users.error) {
+    return {
+      ok: false,
+      error: `Failed to resolve the reimbursement's employee: ${users.error.message}`
+    };
+  }
+  const userIds = (users.data ?? []).map((row) => row.id);
+  const notAnEmployee = `Reimbursement has no matching Carbon employee — invite ${email} as an employee, then retry`;
+  if (userIds.length === 0) return { ok: false, error: notAnEmployee };
+
+  const employees = await deps.client
+    .from("employee")
+    .select("id")
+    .eq("companyId", deps.companyId)
+    .in("id", userIds);
+  if (employees.error) {
+    return {
+      ok: false,
+      error: `Failed to resolve the reimbursement's employee: ${employees.error.message}`
+    };
+  }
+  const matches = employees.data ?? [];
+  if (matches.length === 0) return { ok: false, error: notAnEmployee };
+  if (matches.length > 1) {
+    return {
+      ok: false,
+      error: `Reimbursement matches more than one Carbon employee for ${email} — resolve the duplicate, then retry`
+    };
+  }
+  return { ok: true, value: matches[0]!.id };
+}
+
 async function buildReimbursementLines(
   deps: RampReimbursementDependencies,
   reimbursement: RampReimbursement,
-  currencyCode: string
-): Promise<{ lines: RampReimbursementInvoiceLine[] } | { error: string }> {
-  await deps.getDecimals(currencyCode);
+  currencyCode: string,
+  headerAmount: number
+): Promise<{ lines: RampReimbursementLine[] } | { error: string }> {
+  const decimals = await deps.getDecimals(currencyCode);
   const items = reimbursement.line_items ?? [];
   if (items.length === 0) {
     return { error: "Reimbursement has no line items to post" };
@@ -411,7 +432,7 @@ async function buildReimbursementLines(
 
   const uncoded =
     "Reimbursement line is coded to an account Carbon doesn't recognize — recode it in Ramp";
-  const lines: RampReimbursementInvoiceLine[] = [];
+  const lines: RampReimbursementLine[] = [];
   for (const item of items) {
     const { accountId, costCenterId, projectId } = codeSelections(
       item.accounting_field_selections
@@ -432,7 +453,31 @@ async function buildReimbursementLines(
     });
   }
 
-  const accountIds = [...new Set(lines.map((line) => line.accountId))];
+  // Scale the coding lines onto the header amount, exactly as the card path
+  // does (`ramp-sync-card.ts`). `post-reimbursement`'s `requireLineSum` refuses
+  // a header/line mismatch outright, and under the Draft model an unbalanced
+  // import would sit in the review queue blocking Post with no obvious cause.
+  // Same-currency input is a no-op (ratio 1, residual 0).
+  let settledLines: RampReimbursementLine[];
+  try {
+    settledLines = scaleLinesToTotal(lines, headerAmount, decimals);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : String(error) };
+  }
+  // `requireLineSum` also rejects a non-positive coding line, so a Draft
+  // carrying one could never be posted. Fail the import instead of queueing it.
+  if (
+    settledLines.some(
+      (line) => !Number.isFinite(line.amount) || line.amount <= 0
+    )
+  ) {
+    return {
+      error:
+        "Reimbursement coding line amounts must be finite and greater than zero"
+    };
+  }
+
+  const accountIds = [...new Set(settledLines.map((line) => line.accountId))];
   let accountQuery = deps.client
     .from("account")
     .select("id")
@@ -451,7 +496,7 @@ async function buildReimbursementLines(
 
   const costCenterIds = [
     ...new Set(
-      lines
+      settledLines
         .map((line) => line.costCenterId)
         .filter((id): id is string => Boolean(id))
     )
@@ -480,7 +525,7 @@ async function buildReimbursementLines(
 
   const projectIds = [
     ...new Set(
-      lines
+      settledLines
         .map((line) => line.projectId)
         .filter((id): id is string => Boolean(id))
     )
@@ -505,123 +550,56 @@ async function buildReimbursementLines(
     }
   }
 
-  return { lines };
+  return { lines: settledLines };
 }
 
-async function finishRampReimbursement(
+/**
+ * Confirm to Ramp only once the write is observably durable — a tenant-scoped
+ * reread on the ordinary (non-transaction) client, so an ambiguous staging
+ * outcome cannot be reported as synced.
+ */
+async function observeRampReimbursement(
   deps: RampReimbursementDependencies,
   reimbursement: RampReimbursement,
-  invoice: StagedRampReimbursementInvoice,
-  isRampPaid: boolean,
-  paymentAmount: number | null
+  reimbursementRowId: string
 ): Promise<{ ok: SyncItem } | { fail: FailItem }> {
-  const observedInvoice = await deps.client
-    .from("purchaseInvoice")
-    .select("status")
-    .eq("id", invoice.invoiceRowId)
+  const observed = await deps.client
+    .from("reimbursement")
+    .select("id, reimbursementId")
+    .eq("id", reimbursementRowId)
     .eq("companyId", deps.companyId)
     .maybeSingle();
-  if (observedInvoice.error) {
-    return {
-      fail: { id: reimbursement.id, message: observedInvoice.error.message }
-    };
+  if (observed.error) {
+    return { fail: { id: reimbursement.id, message: observed.error.message } };
   }
-  const invoicePosted =
-    observedInvoice.data?.status !== undefined &&
-    !["Draft", "Pending", "Voided"].includes(observedInvoice.data.status);
-  if (!invoicePosted) {
+  if (!observed.data) {
     return {
       fail: {
         id: reimbursement.id,
-        message: "Reimbursement invoice is not observably posted in Carbon"
-      }
-    };
-  }
-
-  let paymentStatus: PaymentStatus | null = null;
-  if (isRampPaid) {
-    const bankAccount =
-      deps.reimbursementBankAccountId ?? deps.statementBankAccountId;
-    const paymentDate = (
-      reimbursement.approved_at ?? reimbursement.transaction_date
-    )?.slice(0, 10);
-    if (!bankAccount) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message:
-            "Ramp-paid reimbursement requires a reimbursement or statement bank account"
-        }
-      };
-    }
-    if (paymentAmount === null || paymentAmount <= 0 || !paymentDate) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message:
-            "Ramp-paid reimbursement requires a positive verified amount and payment date"
-        }
-      };
-    }
-
-    const paymentExternalId = reimbursementPaymentExternalId(reimbursement.id);
-    try {
-      const paymentExchangeRate = await deps.getExchangeRate(
-        invoice.currencyCode
-      );
-      await createOrResumeRampPayment(deps.db, deps.client, {
-        companyId: deps.companyId,
-        actorId: deps.actorId,
-        bankAccount,
-        paymentMappingId: paymentExternalId,
-        legacyMemo: `Ramp reimbursement ${reimbursement.id}`,
-        normalized: {
-          family: "ap",
-          documentRemoteId: reimbursement.id,
-          paymentRemoteId: paymentExternalId,
-          amount: paymentAmount,
-          currencyCode: invoice.currencyCode,
-          exchangeRate: paymentExchangeRate,
-          paidDate: paymentDate,
-          reference: paymentExternalId,
-          status: "settled"
-        }
-      });
-      paymentStatus = "Posted";
-    } catch (error) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      };
-    }
-  }
-
-  if (
-    !shouldConfirmReimbursement({
-      invoicePosted,
-      rampPaid: isRampPaid,
-      paymentStatus
-    })
-  ) {
-    return {
-      fail: {
-        id: reimbursement.id,
-        message: "Reimbursement is not fully posted in Carbon"
+        message: "Reimbursement is not observably durable in Carbon"
       }
     };
   }
   return {
     ok: {
       id: reimbursement.id,
-      referenceId: invoice.readableInvoiceId,
-      deepLinkUrl: deps.invoiceDeepLinkUrl(invoice.invoiceRowId)
+      referenceId: observed.data.reimbursementId,
+      deepLinkUrl: deps.reimbursementDeepLinkUrl(observed.data.id)
     }
   };
 }
 
-/** Atomically stage/resume, post, and if needed settle one reimbursement. */
+/**
+ * Import one Ramp reimbursement as a **Draft** `reimbursement`.
+ *
+ * It never posts. Draft is the review queue: the editable window exists so a
+ * human can correct the CODING before it reaches the GL. Whether Ramp already
+ * paid the employee is a settled fact about the outside world and a different
+ * question entirely, so the two are decoupled — Ramp is confirmed at import
+ * (its "synced" means the ERP has the record, which it does), and an
+ * already-paid reimbursement's payout rides the mapping metadata until the
+ * document is Posted, when the ERP's Post helper records it.
+ */
 export async function syncRampReimbursement(
   deps: RampReimbursementDependencies,
   reimbursement: RampReimbursement
@@ -636,153 +614,131 @@ export async function syncRampReimbursement(
       }
     };
   }
+
   const mapping = createMappingService(deps.db, deps.companyId);
-  const mappedInvoiceId = await mapping.getEntityId(
+  const mappedId = await mapping.getEntityId(
     "ramp",
     reimbursement.id,
-    "bill"
+    RAMP_REIMBURSEMENT_ENTITY_TYPE
   );
+  if (mappedId) {
+    // Already imported. Carbon owns the document now — re-confirm only.
+    return observeRampReimbursement(deps, reimbursement, mappedId);
+  }
 
-  let staged: StagedRampReimbursementInvoice;
-  let paymentAmount: number | null = null;
-  if (mappedInvoiceId) {
-    const existing = await deps.client
-      .from("purchaseInvoice")
-      .select("id, invoiceId, status, currencyCode, exchangeRate")
-      .eq("id", mappedInvoiceId)
-      .eq("companyId", deps.companyId)
-      .maybeSingle();
-    if (existing.error) {
-      return {
-        fail: { id: reimbursement.id, message: existing.error.message }
-      };
-    }
-    if (!existing.data?.currencyCode) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message: "Mapped reimbursement invoice is missing or has no currency"
-        }
-      };
-    }
-    if (existing.data.exchangeRate === null) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message:
-            "Mapped reimbursement invoice has no authoritative exchange-rate snapshot"
-        }
-      };
-    }
-    staged = {
-      invoiceRowId: existing.data.id,
-      readableInvoiceId: existing.data.invoiceId,
-      status: existing.data.status,
-      currencyCode: existing.data.currencyCode,
-      exchangeRate: existing.data.exchangeRate,
-      created: false
+  const reimbursementDate = reimbursement.transaction_date?.slice(0, 10);
+  if (!reimbursementDate) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: "Reimbursement has no transaction date"
+      }
     };
-    if (isRampPaid) {
-      const normalized = await deps.normalizeAmount(
-        reimbursement.amount,
-        staged.currencyCode,
-        "Reimbursement payment amount"
-      );
-      if (!normalized.ok) {
-        return { fail: { id: reimbursement.id, message: normalized.error } };
-      }
-      paymentAmount = Math.abs(normalized.value);
-    }
-  } else {
-    const rampUser = extractRampUser(reimbursement);
-    if (!rampUser) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message:
-            "Reimbursement has no user — cannot resolve an employee supplier"
-        }
-      };
-    }
-
-    let supplierId: string;
-    let currencyCode: string;
-    let exchangeRate: number;
-    let lines: RampReimbursementInvoiceLine[];
-    try {
-      supplierId = await resolveEmployeeSupplier(
-        deps.client,
-        deps.db,
-        deps.companyId,
-        rampUser
-      );
-      currencyCode = reimbursement.currency_code ?? deps.baseCurrency;
-      exchangeRate = await deps.getExchangeRate(currencyCode);
-      const built = await buildReimbursementLines(
-        deps,
-        reimbursement,
-        currencyCode
-      );
-      if ("error" in built) {
-        return { fail: { id: reimbursement.id, message: built.error } };
-      }
-      lines = built.lines;
-    } catch (error) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      };
-    }
-
-    if (isRampPaid) {
-      const normalized = await deps.normalizeAmount(
-        reimbursement.amount,
-        currencyCode,
-        "Reimbursement payment amount"
-      );
-      if (!normalized.ok) {
-        return { fail: { id: reimbursement.id, message: normalized.error } };
-      }
-      paymentAmount = Math.abs(normalized.value);
-    }
-
-    try {
-      staged = await stageOrResumeRampReimbursementInvoice(deps.db, {
-        companyId: deps.companyId,
-        actorId: deps.actorId,
-        reimbursementRemoteId: reimbursement.id,
-        supplierId,
-        supplierReference: `RAMP-REIMB-${reimbursement.id}`,
-        currencyCode,
-        exchangeRate,
-        dateIssued: reimbursement.transaction_date?.slice(0, 10) ?? null,
-        dateDue: reimbursement.approved_at?.slice(0, 10) ?? null,
-        lines
-      });
-    } catch (error) {
-      return {
-        fail: {
-          id: reimbursement.id,
-          message: error instanceof Error ? error.message : String(error)
-        }
-      };
-    }
   }
 
-  if (staged.status === "Draft" || staged.status === "Pending") {
-    const posted = await deps.postInvoice(staged.invoiceRowId);
-    if ("fail" in posted) {
-      return { fail: { id: reimbursement.id, message: posted.fail } };
-    }
-    staged = { ...staged, readableInvoiceId: posted.readableId };
+  const rampUser = extractRampUser(reimbursement);
+  if (!rampUser) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: "Reimbursement has no user — cannot resolve a Carbon employee"
+      }
+    };
   }
-  return finishRampReimbursement(
+  const employee = await resolveReimbursementEmployee(deps, rampUser);
+  if (!employee.ok) {
+    return { fail: { id: reimbursement.id, message: employee.error } };
+  }
+
+  const currencyCode = reimbursement.currency_code ?? deps.baseCurrency;
+  const normalizedAmount = await deps.normalizeAmount(
+    reimbursement.amount,
+    currencyCode,
+    "Reimbursement amount"
+  );
+  if (!normalizedAmount.ok) {
+    return { fail: { id: reimbursement.id, message: normalizedAmount.error } };
+  }
+  const amount = Math.abs(normalizedAmount.value);
+  if (!(amount > 0)) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: "Reimbursement amount must be greater than zero"
+      }
+    };
+  }
+
+  let exchangeRate: number;
+  let lines: RampReimbursementLine[];
+  try {
+    exchangeRate = await deps.getExchangeRate(currencyCode);
+    const built = await buildReimbursementLines(
+      deps,
+      reimbursement,
+      currencyCode,
+      amount
+    );
+    if ("error" in built) {
+      return { fail: { id: reimbursement.id, message: built.error } };
+    }
+    lines = built.lines;
+  } catch (error) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+
+  let payout: RampReimbursementPayout | null = null;
+  if (isRampPaid) {
+    const built = buildRampReimbursementPayout({
+      rampReimbursementId: reimbursement.id,
+      bankAccountId:
+        deps.reimbursementBankAccountId ?? deps.statementBankAccountId,
+      paidAt: reimbursement.approved_at ?? reimbursement.transaction_date,
+      amount,
+      currencyCode,
+      exchangeRate
+    });
+    if (!built.ok) {
+      return { fail: { id: reimbursement.id, message: built.error } };
+    }
+    payout = built.value;
+  }
+
+  let created: CreatedRampReimbursement;
+  try {
+    created = await createRampReimbursement(deps.db, {
+      companyId: deps.companyId,
+      actorId: deps.actorId,
+      reimbursementRemoteId: reimbursement.id,
+      employeeId: employee.value,
+      reference: `RAMP-REIMB-${reimbursement.id}`,
+      currencyCode,
+      exchangeRate,
+      amount,
+      reimbursementDate,
+      // Ramp's approval is when the expense became payable; posting resolves
+      // the accounting period from it (falling back to `reimbursementDate`).
+      postingDate: reimbursement.approved_at?.slice(0, 10) ?? null,
+      lines,
+      payout
+    });
+  } catch (error) {
+    return {
+      fail: {
+        id: reimbursement.id,
+        message: error instanceof Error ? error.message : String(error)
+      }
+    };
+  }
+
+  return observeRampReimbursement(
     deps,
     reimbursement,
-    staged,
-    isRampPaid,
-    paymentAmount
+    created.reimbursementRowId
   );
 }
