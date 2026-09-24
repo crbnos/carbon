@@ -24,13 +24,13 @@ Two facts established by reading the code, which this slice fixes:
    "at most three".
 
 ## Progress
-- [ ] Task 1: Migration — `integration.providerRole` + exclusivity trigger
-- [ ] Task 2: Regenerate database types
-- [ ] Task 3: Declare `providerRole` on the descriptors
+- [x] Task 1: Migration — `integration.providerRole` + exclusivity trigger
+- [x] Task 2: Regenerate database types
+- [x] Task 3: Declare `providerRole` on the descriptors
 - [ ] Task 4: Unify the capability surface
 - [ ] Task 5: Build `IntegrationTopology` + `resolveIntegrationTopology`
 - [ ] Task 6: Thread the topology through the settings resolvers
-- [ ] Task 7: Replace the hard-coded provider-id lists
+- [~] Task 7: Replace the hard-coded provider-id lists — 2 of 3 done; third is structurally blocked
 - [ ] Task 8: Block conflicting installs in the UI and the OAuth callbacks
 - [ ] Task 9: Add the `no-integration-id-branching` conformance check
 - [ ] Task 10: Full-suite verification
@@ -322,6 +322,30 @@ pnpm --filter @carbon/ee test && pnpm --filter @carbon/jobs test
 ---
 
 ## Task 7: Replace the hard-coded provider-id lists
+
+> **2026-09-24 — PARTIAL. Two converted, one structurally blocked.**
+>
+> Done: `ramp-sweep` now sweeps every SPEND-role integration instead of
+> `.eq("id","ramp")`, and the accounting layout reads
+> `getIntegrationIdsByRole("accounting")`.
+>
+> **`ACCOUNTING_SYNC_INTEGRATION_IDS` cannot be converted as this task assumed.**
+> `accounting.service.ts` is a `*.service.ts`, re-exported through the module
+> barrel that client components import, so it is BROWSER-BUNDLED — and the
+> `@carbon/ee` barrel reaches `@carbon/auth`, which validates the full server env
+> at import time. Importing the registry there fails the build with "server-only
+> module referenced by client". (The file separately already avoids
+> `@carbon/ee/accounting` for a TS2589 reason it documents.)
+>
+> The fix is for the caller to pass the ids in — the convention this module
+> already uses for `syncFromDate` — but `getPeriodExternalGlSyncReadiness`'s only
+> caller is `getPeriodReadiness` in the same file, so the signature change
+> cascades. Fold it into Task 6, which is already threading a resolved object
+> through this layer.
+>
+> The `isAccountingInstalled` / `producesSyncOperations` half of this task still
+> needs Task 5's topology and is untouched.
+
 
 **Depends on:** Task 5
 **Files:**
