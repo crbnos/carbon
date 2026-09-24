@@ -40,12 +40,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Table might not exist yet, that's ok
   }
 
+  const serviceRole = getCarbonServiceRole();
+
   // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1): audit logging is on
   // by default and cannot be turned off. Enable it on demand for any controlled
-  // company that isn't already capturing.
+  // company that isn't already capturing. This is mandatory, not the viewer's
+  // choice, so it runs as the service role: create_audit_log_table requires
+  // settings_update, and this loader only requires settings_view.
   if (CONTROLLED_ENVIRONMENT && !enabled) {
     try {
-      await enableAuditLog(client, companyId);
+      await enableAuditLog(serviceRole, companyId);
       enabled = true;
     } catch {
       // Best-effort; the write path degrades gracefully if it can't enable here.
@@ -65,7 +69,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let archives: Awaited<ReturnType<typeof getAuditLogArchives>> = [];
   if (enabled) {
     try {
-      const serviceRole = getCarbonServiceRole();
       archives = await getAuditLogArchives(serviceRole, companyId);
     } catch {
       // Archives table might not exist

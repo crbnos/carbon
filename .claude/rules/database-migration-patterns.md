@@ -141,6 +141,29 @@ add a trigger only when there's real derived state to maintain. For async/event-
 effects use the event system (see `event-system.md`), not ad-hoc triggers.
 <!-- UNVERIFIED: no GRANT statements appear in recent migrations; per-table grants are not a current convention -->
 
+## Restricting a function: guard inside, never `REVOKE EXECUTE`
+
+Every function in `public` is a PostgREST RPC. On supabase/postgres 15.14.1.112, calling a function
+the caller lacks EXECUTE on, as `anon`/`authenticated`, **segfaults the backend** and restarts every
+connection. So a `REVOKE EXECUTE … FROM anon, authenticated` turns "not allowed" into an
+unauthenticated one-request DoS. (A missing TABLE privilege is an ordinary error; table REVOKEs are fine.)
+
+- **Service-role-only function called directly by a service client** — first statement of the body:
+  `IF current_setting('role', true) IN ('anon','authenticated') THEN RAISE EXCEPTION … USING ERRCODE = 'insufficient_privilege'; END IF;`
+  PostgREST's `SET ROLE` stays visible inside SECURITY DEFINER, and service role / direct connections
+  (`none`) pass. Examples: `get_integration_secret`, `assert_audit_log_access(company, NULL)`.
+- **Tenant-scoped function** — raise unless `p_company_id = ANY(get_companies_with_employee_permission(…))`
+  (`assert_audit_log_access`).
+- **Internal helper of a SECURITY DEFINER function** — the role GUC still says `authenticated` inside
+  the nested call, so the guard above would refuse legitimate callers. Make the helper
+  `SECURITY INVOKER`: from its SECURITY DEFINER caller it runs as the owner, and from the API it runs
+  under the caller's RLS (`terminal_job_operations`, `complete_job_remaining_quantities`). Or put it in
+  `util` (no API `USAGE`) — see `event-system.md`.
+
+Migration `20260924192316_api-function-guards-not-revokes.sql` converted the six functions that used
+REVOKE. Test a new guard in a throwaway container (`docker run --rm supabase/postgres:<tag>`), never a
+shared database.
+
 ## Enums
 
 ```sql

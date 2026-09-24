@@ -81989,6 +81989,10 @@ export type Database = {
           netChange: number
         }[]
       }
+      assert_audit_log_access: {
+        Args: { p_company_id: string; p_permission: string }
+        Returns: undefined
+      }
       attach_audit_log_append_only: {
         Args: { p_table_name: string }
         Returns: undefined
@@ -84145,19 +84149,6 @@ export type Database = {
         Args: { webhook_id: string }
         Returns: undefined
       }
-      insert_audit_log: {
-        Args: {
-          p_actor_id: string
-          p_actor_name: string
-          p_company_id: string
-          p_diff?: Json
-          p_entity_id: string
-          p_entity_type: string
-          p_metadata?: Json
-          p_operation: string
-        }
-        Returns: string
-      }
       insert_audit_log_batch: {
         Args: { p_company_id: string; p_entries: Json[] }
         Returns: number
@@ -84399,6 +84390,10 @@ export type Database = {
           title: string
         }[]
       }
+      secure_audit_log_table: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
@@ -84540,6 +84535,10 @@ export type Database = {
         Returns: undefined
       }
       sync_delete_tracked_entity_on_job_make_method: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_delete_user_identity_group: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
