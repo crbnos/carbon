@@ -2934,7 +2934,23 @@ export type PeriodCloseUnpostedDocument = {
 
 const UNPOSTED_DOCUMENT_LIMIT = 25;
 
-/** companyIntegration ids that can carry accounting posting sync. */
+/**
+ * companyIntegration ids that can carry accounting posting sync.
+ *
+ * This duplicates `getIntegrationIdsByRole("accounting")` from `@carbon/ee`, and
+ * deliberately so: `*.service.ts` files are re-exported through the module
+ * barrel that client components import, so they are BROWSER-BUNDLED. The
+ * `@carbon/ee` barrel reaches `@carbon/auth`, which validates the full server
+ * env at import time — importing it here fails the build with "server-only
+ * module referenced by client". (This module also already avoids
+ * `@carbon/ee/accounting` for the TS2589 reason noted further down.)
+ *
+ * The clean fix is to have the caller pass the ids in, the way this module
+ * already takes `syncFromDate` from its caller — but the only caller is
+ * `getPeriodReadiness` in this same file, so that change cascades and is left
+ * for the topology work. Until then, a provider added to the registry must be
+ * added here too.
+ */
 const ACCOUNTING_SYNC_INTEGRATION_IDS = ["xero", "quickbooks", "rillet"];
 
 /** Terminal sync dispositions — the journal is accounted for externally. */
