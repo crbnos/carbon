@@ -59,7 +59,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ...lines.map((line) => line.accountId)
   ].filter((value): value is string => Boolean(value));
 
-  const [accounts, receipts, journal] = await Promise.all([
+  const costCenterIds = [
+    ...new Set(
+      lines
+        .map((line) => line.costCenterId)
+        .filter((value): value is string => Boolean(value))
+    )
+  ];
+
+  const [accounts, costCenters, receipts, journal] = await Promise.all([
     accountIds.length > 0
       ? client
           .from("account")
@@ -68,6 +76,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
           .in("id", [...new Set(accountIds)])
       : Promise.resolve({
           data: [] as { id: string; number: string; name: string }[],
+          error: null
+        }),
+    costCenterIds.length > 0
+      ? client
+          .from("costCenter")
+          .select("id, name")
+          .eq("companyId", companyId)
+          .in("id", costCenterIds)
+      : Promise.resolve({
+          data: [] as { id: string; name: string }[],
           error: null
         }),
     client
@@ -88,7 +106,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         })
   ]);
 
-  const auxiliaryError = accounts.error ?? receipts.error ?? journal.error;
+  const auxiliaryError =
+    accounts.error ?? costCenters.error ?? receipts.error ?? journal.error;
   if (auxiliaryError) {
     throw redirect(
       path.to.charges,
@@ -100,17 +119,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     (accounts.data ?? []).map((account) => [account.id, account])
   );
 
+  const costCentersById = Object.fromEntries(
+    (costCenters.data ?? []).map((costCenter) => [costCenter.id, costCenter])
+  );
+
   return {
     charge: charge.data,
     lines,
     accountsById,
+    costCentersById,
     receipts: receipts.data ?? [],
     journal: journal.data
   };
 }
 
 export default function ChargeDetailRoute() {
-  const { charge, lines, accountsById, receipts, journal } =
+  const { charge, lines, accountsById, costCentersById, receipts, journal } =
     useLoaderData<typeof loader>();
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -125,6 +149,19 @@ export default function ChargeDetailRoute() {
     if (!accountId) return null;
     const account = accountsById[accountId];
     return account ? `${account.number} ${account.name}` : accountId;
+  };
+
+  // `chargeLine.costCenterId` stores the id; a reader needs the name ("G&A"),
+  // not `daphdp4qs0g046qdc4qg`. Resolved in the LOADER alongside accounts
+  // rather than via the `useCostCenters` hook: that hook lives in the picker
+  // module, so importing it pulls `CostCenterForm` and its Lingui `msg` macro
+  // into this route's graph, which throws under vitest. It also avoids a
+  // client round-trip that would flash the raw id first.
+  const costCenterLabel = (costCenterId: string | null) => {
+    if (!costCenterId) return "—";
+    // An id we cannot resolve is still shown: a cost center deleted after the
+    // charge posted is information, and "—" would read as "never coded".
+    return costCentersById[costCenterId]?.name ?? costCenterId;
   };
 
   const canVoid =
@@ -221,7 +258,7 @@ export default function ChargeDetailRoute() {
                     lines.map((line) => (
                       <Tr key={line.id}>
                         <Td>{accountLabel(line.accountId)}</Td>
-                        <Td>{line.costCenterId ?? "—"}</Td>
+                        <Td>{costCenterLabel(line.costCenterId)}</Td>
                         <Td>{line.description ?? "—"}</Td>
                         <Td className="text-right tabular-nums">
                           {currencyFormatter.format(Number(line.amount))}

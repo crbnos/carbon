@@ -15,6 +15,7 @@ import {
 } from "react-icons/lu";
 import { EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { useCurrencyDecimalsLookup } from "~/hooks";
+import { usePeople } from "~/stores";
 import { path } from "~/utils/path";
 import { reimbursementStatus } from "../../invoicing.models";
 import ReimbursementStatus from "./ReimbursementStatus";
@@ -35,6 +36,7 @@ const ReimbursementsTable = memo(
     // hook — and there is no cross-currency total, which would sum unlike
     // units into a meaningless number.
     const currencyDecimals = useCurrencyDecimalsLookup();
+    const [people] = usePeople();
 
     const columns = useMemo<ColumnDef<ReimbursementRow>[]>(
       () => [
@@ -72,7 +74,17 @@ const ReimbursementsTable = memo(
           cell: ({ row }) => (
             <EmployeeAvatar employeeId={row.original.employeeId} />
           ),
-          meta: { icon: <LuUser /> }
+          meta: {
+            icon: <LuUser />,
+            filter: {
+              type: "static",
+              options: people.map((employee) => ({
+                value: employee.id,
+                label: employee.name
+              }))
+            },
+            pluralHeader: t`Employees`
+          }
         },
         {
           accessorKey: "reimbursementDate",
@@ -112,7 +124,7 @@ const ReimbursementsTable = memo(
           meta: { icon: <LuCreditCard /> }
         }
       ],
-      [t, locale, currencyDecimals]
+      [t, locale, currencyDecimals, people]
     );
 
     return (
