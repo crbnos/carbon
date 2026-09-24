@@ -29,6 +29,13 @@ export type {
   QuickInstallConnector
 } from "./types";
 
+import type { SyncProviderCapabilities } from "./sync/capabilities";
+import {
+  buildIntegrationTopology,
+  type CompanyIntegrationRow,
+  type ProviderDescriptor
+} from "./sync/topology";
+
 export const integrations = [
   // Radan,
   Email,
@@ -91,6 +98,32 @@ const roleOf = (
 
 export const getIntegrationsByRole = (role: ProviderRole) =>
   integrations.filter((integration) => roleOf(integration) === role);
+
+/**
+ * The registry slice `buildIntegrationTopology` needs. Lives here because this
+ * is where the descriptors are; the topology core stays free of this import so
+ * it does not boot the server env.
+ */
+export const getProviderDescriptors = (): ProviderDescriptor[] =>
+  integrations.flatMap((integration) => {
+    const role = roleOf(integration);
+    return role
+      ? [
+          {
+            integrationId: integration.id,
+            role,
+            capabilities: (
+              integration as { capabilities?: SyncProviderCapabilities }
+            ).capabilities
+          }
+        ]
+      : [];
+  });
+
+/** Resolve a company's integration topology from its `companyIntegration` rows. */
+export const resolveIntegrationTopology = (
+  rows: readonly CompanyIntegrationRow[]
+) => buildIntegrationTopology(rows, getProviderDescriptors());
 
 /** The ids of every integration declaring `role`, for `.in("id", …)` filters. */
 export const getIntegrationIdsByRole = (role: ProviderRole) =>
