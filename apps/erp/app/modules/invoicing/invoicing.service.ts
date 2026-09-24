@@ -1852,7 +1852,10 @@ export async function getInvoiceSettlementsForInvoice(
 // applied to. The reverse of the invoice "Payments" panel: drives the "Applied To"
 // card on the memo detail page so you can see at a glance which invoices a memo
 // settled without opening each one. Target is a tagged union (sales/purchase
-// invoice, or another memo when refunding a balance-increasing memo).
+// invoice, another memo when refunding a balance-increasing memo, or a
+// reimbursement — the fourth settlement target column, kept here so the union
+// stays total even though nothing writes a memo-sourced reimbursement
+// settlement today).
 export type MemoApplication = {
   id: string;
   appliedAmount: number;
@@ -1860,7 +1863,8 @@ export type MemoApplication = {
   target:
     | { type: "salesInvoice"; id: string; readableId: string }
     | { type: "purchaseInvoice"; id: string; readableId: string }
-    | { type: "memo"; id: string; readableId: string };
+    | { type: "memo"; id: string; readableId: string }
+    | { type: "reimbursement"; id: string; readableId: string };
 };
 
 export async function getMemoApplications(
@@ -1868,13 +1872,39 @@ export async function getMemoApplications(
   memoId: string
 ): Promise<{ data: MemoApplication[] | null; error: unknown }> {
   // Embed the target documents' human-readable ids so the card can link out.
-  const settlements = await client
-    .from("invoiceSettlement")
-    .select(
-      "id, appliedAmount, appliedDate, appliedViaPaymentId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId)"
-    )
-    .eq("memoId", memoId)
-    .order("appliedDate", { ascending: false });
+  //
+  // Read through `fetchAllFromTable` rather than `client.from(...).select(...)`
+  // for the same reason `getInvoiceSettlements` does: its `selectColumns` is a
+  // plain `string`, so PostgREST's select-string type parser never runs. With
+  // four embeds the inline literal form trips TS2589 ("Type instantiation is
+  // excessively deep"). Paging is a free bonus — a heavily applied memo can
+  // exceed PostgREST's 1000-row cap.
+  type SettlementRow = Pick<
+    Database["public"]["Tables"]["invoiceSettlement"]["Row"],
+    | "id"
+    | "appliedAmount"
+    | "appliedDate"
+    | "appliedViaPaymentId"
+    | "targetSalesInvoiceId"
+    | "targetPurchaseInvoiceId"
+    | "targetMemoId"
+    | "targetReimbursementId"
+  > & {
+    salesInvoice: { invoiceId: string } | null;
+    purchaseInvoice: { invoiceId: string } | null;
+    targetMemo: { memoId: string } | null;
+    targetReimbursement: { reimbursementId: string } | null;
+  };
+  const settlements = await fetchAllFromTable<SettlementRow>(
+    client,
+    "invoiceSettlement",
+    "id, appliedAmount, appliedDate, appliedViaPaymentId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:targetReimbursementId(reimbursementId)",
+    (query) =>
+      query
+        .eq("memoId", memoId)
+        .order("appliedDate", { ascending: false })
+        .order("id")
+  );
 
   if (settlements.error) return { data: null, error: settlements.error };
   if (!settlements.data || settlements.data.length === 0)
@@ -1882,9 +1912,7 @@ export async function getMemoApplications(
 
   // A credit applied through a payment only takes effect once that payment is
   // Posted (mirrors getInvoiceSettlementsForInvoice and the balance views).
-  const viaPaymentIds = (
-    settlements.data as { appliedViaPaymentId: string | null }[]
-  )
+  const viaPaymentIds = settlements.data
     .map((s) => s.appliedViaPaymentId)
     .filter((id): id is string => Boolean(id));
   const postedViaPayments =
@@ -1902,8 +1930,7 @@ export async function getMemoApplications(
   );
 
   const rows: MemoApplication[] = [];
-  // deno-lint-ignore no-explicit-any
-  for (const s of settlements.data as any[]) {
+  for (const s of settlements.data) {
     // Staged on a Draft payment — not applied yet, so omit it.
     if (s.appliedViaPaymentId && !postedViaSet.has(s.appliedViaPaymentId))
       continue;
@@ -1926,6 +1953,13 @@ export async function getMemoApplications(
         type: "memo",
         id: s.targetMemoId,
         readableId: s.targetMemo?.memoId ?? s.targetMemoId
+      };
+    } else if (s.targetReimbursementId) {
+      target = {
+        type: "reimbursement",
+        id: s.targetReimbursementId,
+        readableId:
+          s.targetReimbursement?.reimbursementId ?? s.targetReimbursementId
       };
     }
     if (!target) continue;
@@ -2140,6 +2174,191 @@ async function getOpenInvoicesForParty(
           error instanceof Error
             ? error.message
             : "Unable to load invoice balances"
+      }
+    };
+  }
+}
+
+/**
+ * Posted reimbursements an employee is still owed money on — the apply table's
+ * target list when a payment's payee is an employee, and the source of the
+ * balance the Pay expense modal defaults to.
+ *
+ * The supabase-client counterpart of `loadTransactionReimbursements`: same
+ * arithmetic (`invoiceRemainingAmounts` with `isReimbursement`), same control
+ * lookup, but a read rather than a `FOR UPDATE` lock — the transactional
+ * version stays the authority, this one only decides what to offer.
+ *
+ * `reimbursement.amount` is DOCUMENT currency (there is no base-currency total
+ * column), so it is converted once here; `invoiceRemainingAmounts` wants a base
+ * total and converts back itself.
+ */
+export async function getOpenReimbursementsForEmployee(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  employeeId: string,
+  currencyCode?: string
+): Promise<{
+  data:
+    | {
+        id: string;
+        reimbursementId: string;
+        reimbursementDate: string;
+        currencyCode: string;
+        exchangeRate: number;
+        totalAmount: number;
+        balance: number;
+        remainingDocument: number;
+      }[]
+    | null;
+  error: unknown;
+}> {
+  type ReimbursementRow = Pick<
+    Database["public"]["Tables"]["reimbursement"]["Row"],
+    | "id"
+    | "reimbursementId"
+    | "reimbursementDate"
+    | "currencyCode"
+    | "exchangeRate"
+    | "amount"
+  >;
+  type SettlementRow = SettlementBalanceRow & {
+    paymentId: string | null;
+    memoId: string | null;
+    appliedViaPaymentId: string | null;
+    payment: { status: string } | null;
+  };
+  type ControlRow = Pick<
+    Database["public"]["Tables"]["journalLine"]["Row"],
+    "documentId" | "amount"
+  >;
+  const [reimbursements, company] = await Promise.all([
+    fetchAllFromTable<ReimbursementRow>(
+      client,
+      "reimbursement",
+      "id, reimbursementId, reimbursementDate, currencyCode, exchangeRate, amount",
+      (query) => {
+        query = query
+          .eq("companyId", companyId)
+          .eq("employeeId", employeeId)
+          // Only a Posted reimbursement has a booked payable to settle.
+          .eq("status", "Posted");
+        if (currencyCode) query = query.eq("currencyCode", currencyCode);
+        return query
+          .order("reimbursementDate", { ascending: true })
+          .order("id");
+      }
+    ),
+    client.from("company").select("companyGroupId").eq("id", companyId).single()
+  ]);
+  if (reimbursements.error) return { data: null, error: reimbursements.error };
+  if (company.error || !company.data?.companyGroupId)
+    return {
+      data: null,
+      error: { message: "Company currency configuration is missing" }
+    };
+  if (!reimbursements.data.length) return { data: [], error: null };
+  const currencies = await client
+    .from("currency")
+    .select("code, decimalPlaces")
+    .eq("companyGroupId", company.data.companyGroupId);
+  if (currencies.error) return { data: null, error: currencies.error };
+  const ids = reimbursements.data.map((r) => r.id);
+  const settlements: SettlementRow[] = [];
+  const controls: ControlRow[] = [];
+  // Bound the filter URL as well as the response pages, exactly as the invoice
+  // reader does — one reimbursement can own more than a page of either.
+  for (const batch of chunkArray(ids, 100)) {
+    const [batchSettlements, batchControls] = await Promise.all([
+      fetchAllFromTable<SettlementRow>(
+        client,
+        "invoiceSettlement",
+        "paymentId, memoId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetReimbursementId, sourceAmount, appliedAmount, discountAmount, writeOffAmount, appliedViaPaymentId, payment:payment!invoiceSettlement_paymentId_fkey(status)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .in("targetReimbursementId", batch)
+            .order("id")
+      ),
+      fetchAllFromTable<ControlRow>(
+        client,
+        "journalLine",
+        "documentId, amount, journal:journalId!inner(status,sourceType,companyId)",
+        (query) =>
+          query
+            .eq("companyId", companyId)
+            .eq("journal.companyId", companyId)
+            .eq("journal.status", "Posted")
+            .eq("journal.sourceType", "Reimbursement")
+            .eq("documentType", "Reimbursement")
+            .eq("description", REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION)
+            .in("documentId", batch)
+            .order("id")
+      )
+    ]);
+    const error = batchSettlements.error ?? batchControls.error;
+    if (error) return { data: null, error };
+    settlements.push(...(batchSettlements.data ?? []));
+    controls.push(...(batchControls.data ?? []));
+  }
+  try {
+    const decimals = new Map(
+      (currencies.data ?? []).map((c) => [c.code, c.decimalPlaces])
+    );
+    // A reimbursement is never settled by a memo, so a Posted payment is the
+    // only source that can have taken effect.
+    const effective = settlements.filter((s) =>
+      isEffectiveSettlement({
+        paymentId: s.paymentId,
+        memoId: s.memoId,
+        appliedViaPaymentId: s.appliedViaPaymentId,
+        paymentStatus: s.payment?.status ?? null,
+        memoStatus: null,
+        viaStatus: null
+      })
+    );
+    const controlAmounts = new Map<string, number>();
+    for (const line of controls)
+      if (line.documentId)
+        controlAmounts.set(
+          line.documentId,
+          (controlAmounts.get(line.documentId) ?? 0) + Number(line.amount)
+        );
+    return {
+      data: reimbursements.data
+        .map((r) => {
+          const rate = Number(r.exchangeRate);
+          const totalAmount = toBaseAmount(Number(r.amount), rate);
+          const remaining = invoiceRemainingAmounts(
+            { id: r.id, totalAmount, exchangeRate: rate },
+            effective,
+            controlAmounts,
+            requireCurrencyDecimals(decimals, r.currencyCode),
+            false,
+            true
+          );
+          return {
+            id: r.id,
+            reimbursementId: r.reimbursementId,
+            reimbursementDate: r.reimbursementDate,
+            currencyCode: r.currencyCode,
+            exchangeRate: rate,
+            totalAmount,
+            balance: remaining.remainingBase,
+            remainingDocument: remaining.remainingDocument
+          };
+        })
+        .filter((r) => r.remainingDocument > 0),
+      error: null
+    };
+  } catch (error) {
+    return {
+      data: null,
+      error: {
+        message:
+          error instanceof Error
+            ? error.message
+            : "Unable to load reimbursement balances"
       }
     };
   }

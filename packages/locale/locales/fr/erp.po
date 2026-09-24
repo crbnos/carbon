@@ -2033,6 +2033,9 @@ msgstr "Appliquer à la facture"
 msgid "Apply to invoices"
 msgstr "Appliquer aux factures"
 
+msgid "Apply to reimbursements"
+msgstr "Appliquer aux remboursements"
+
 msgid "Applying"
 msgstr "Application en cours"
 
@@ -11393,6 +11396,9 @@ msgstr "Aucun mémo ouvert"
 msgid "No open orders for this item are available to link."
 msgstr "Aucune commande ouverte pour cet article n'est disponible pour la liaison."
 
+msgid "No open reimbursements"
+msgstr "Aucun remboursement ouvert"
+
 msgid "No open sales order lines"
 msgstr "Aucune ligne de commande client ouverte"
 
@@ -12541,6 +12547,12 @@ msgstr "Collez le XML de métadonnées si votre fournisseur d'identité ne publi
 
 msgid "Path"
 msgstr "Chemin"
+
+msgid "Pay"
+msgstr "Payer"
+
+msgid "Pay expense"
+msgstr "Payer la charge"
 
 msgid "Pay Rate"
 msgstr "Taux de paiement"
@@ -13977,14 +13989,17 @@ msgstr "Enregistrer un avoir fournisseur — il réduit ce que vous lui devez. L
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Enregistrer un avoir pour un client — il réduit ce que le client vous doit. Les applications à des factures spécifiques sont ajoutées après sa création."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Enregistrer un paiement client, un paiement fournisseur ou un remboursement. Les applications aux factures ou aux mémos sont ajoutées après la création du paiement."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Enregistrer un paiement client, un paiement fournisseur, un remboursement ou un remboursement d'employé. Les affectations aux factures, mémos ou remboursements sont ajoutées après la création du paiement."
 
 msgid "Record deleted"
 msgstr "Enregistrement supprimé"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Enregistrer les contrôles liés à une pièce et à un ordre de fabrication"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Enregistrer le versement de {displayId} à l'employé. Payer moins que le total dû pour le régler partiellement."
 
 msgid "Record type"
 msgstr "Type d'enregistrement"
@@ -14058,11 +14073,17 @@ msgstr "L'enregistrement a échoué"
 msgid "Registration Number"
 msgstr "Numéro d'enregistrement"
 
+msgid "Reimbursement"
+msgstr "Remboursement"
+
 msgid "Reimbursement Date"
 msgstr "Date de remboursement"
 
 msgid "Reimbursement ID"
 msgstr "ID de remboursement"
+
+msgid "Reimbursement to Employee"
+msgstr "Remboursement à l'Employé"
 
 msgid "Reimbursements"
 msgstr "Remboursements"
@@ -18503,6 +18524,9 @@ msgstr "Coût total capitalisé de l'actif (prix d'achat plus fret, installation
 
 msgid "Total discount"
 msgstr "Remise totale"
+
+msgid "Total Due"
+msgstr "Total dû"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unités de production totales attendues pour l'amortissement des unités de production; le coût est réparti par unité produite."

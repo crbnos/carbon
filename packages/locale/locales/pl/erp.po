@@ -2033,6 +2033,9 @@ msgstr "Zastosuj do faktury"
 msgid "Apply to invoices"
 msgstr "Zastosuj do faktur"
 
+msgid "Apply to reimbursements"
+msgstr "Zastosuj do zwrotów kosztów"
+
 msgid "Applying"
 msgstr "Stosowanie"
 
@@ -11393,6 +11396,9 @@ msgstr "Brak otwartych notatek"
 msgid "No open orders for this item are available to link."
 msgstr "Brak dostępnych otwartych zamówień dla tego produktu do powiązania."
 
+msgid "No open reimbursements"
+msgstr "Brak otwartych zwrotów kosztów"
+
 msgid "No open sales order lines"
 msgstr "Brak otwartych pozycji zamówienia sprzedaży"
 
@@ -12541,6 +12547,12 @@ msgstr "Wklej kod XML metadanych, jeśli Twój dostawca tożsamości nie publiku
 
 msgid "Path"
 msgstr "Ścieżka"
+
+msgid "Pay"
+msgstr "Opłacić"
+
+msgid "Pay expense"
+msgstr "Opłacić wydatek"
 
 msgid "Pay Rate"
 msgstr "Kurs płatności"
@@ -13977,14 +13989,17 @@ msgstr "Zarejestruj kredyt od dostawcy — zmniejsza to, co im jesteś winien. Z
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Zarejestruj fakturę korygującą dla klienta — zmniejsza to, co Ci jest do zapłaty. Zastosowania do konkretnych faktur są dodawane po jej utworzeniu."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Zarejestruj płatność od klienta, płatność dla dostawcy lub zwrot. Zastosowania do faktur lub not są dodawane po utworzeniu płatności."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Zarejestruj płatność od klienta, płatność dostawcy, zwrot lub zwrot kosztów pracownika. Przydzielenia do faktur, notatek lub zwrotów kosztów są dodawane po utworzeniu płatności."
 
 msgid "Record deleted"
 msgstr "Rekord usunięty"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Zarejestruj kontrole powiązane z częścią i zleceniem produkcyjnym"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Zarejestruj wypłatę {displayId} dla pracownika. Zapłacić mniej niż suma do spłacenia, aby to częściowo rozliczyć."
 
 msgid "Record type"
 msgstr "Typ rekordu"
@@ -14058,11 +14073,17 @@ msgstr "Rejestracja nie powiodła się"
 msgid "Registration Number"
 msgstr "Numer rejestracyjny"
 
+msgid "Reimbursement"
+msgstr "Zwrot kosztów"
+
 msgid "Reimbursement Date"
 msgstr "Data zwrotu"
 
 msgid "Reimbursement ID"
 msgstr "ID zwrotu"
+
+msgid "Reimbursement to Employee"
+msgstr "Zwrot kosztów dla pracownika"
 
 msgid "Reimbursements"
 msgstr "Zwroty"
@@ -18503,6 +18524,9 @@ msgstr "Całkowity skapitalizowany koszt zasobu (cena nabycia plus fracht, insta
 
 msgid "Total discount"
 msgstr "Rabat całkowity"
+
+msgid "Total Due"
+msgstr "Suma do spłacenia"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednostek produkcji; koszt jest rozłożony na wyprodukowaną jednostkę."

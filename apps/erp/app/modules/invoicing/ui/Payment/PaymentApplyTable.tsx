@@ -52,6 +52,7 @@ type OpenInvoice = {
 
 type ExistingApplication = {
   targetMemoId?: string | null;
+  targetReimbursementId?: string | null;
   sourceAmount: number | null;
   sourcePaymentId?: string | null;
   targetSalesInvoiceId: string | null;
@@ -84,6 +85,12 @@ type AmountField = "appliedAmount" | "discountAmount" | "writeOffAmount";
 
 type PaymentApplyTableProps = {
   isRefund?: boolean;
+  // An employee payee: the rows are Posted reimbursements, not invoices, and
+  // the only legal target column is `targetReimbursementId`. A reimbursement
+  // payout takes no discount and no write-off (there is no negotiated
+  // settlement with an employee), so those two columns are hidden as well —
+  // `replaceInvoiceSettlements` refuses a non-zero one.
+  isReimbursement?: boolean;
   paymentId: string;
   paymentType: "Receipt" | "Disbursement";
   paymentCurrency: string;
@@ -136,6 +143,7 @@ const AmountInput = ({
 
 const PaymentApplyTable = ({
   isRefund = false,
+  isReimbursement = false,
   paymentId,
   paymentType,
   paymentCurrency,
@@ -156,7 +164,9 @@ const PaymentApplyTable = ({
   const baseDecimals = useCurrencyDecimals(baseCurrency);
   const today = useCompanyToday().toString();
   const isReceipt = paymentType === "Receipt";
-  const grid = isRefund ? REFUND_GRID : GRID;
+  // Discount and write-off only exist on a trade invoice settlement.
+  const hasAdjustments = !isRefund && !isReimbursement;
+  const grid = hasAdjustments ? GRID : REFUND_GRID;
   const canEdit = permissions.can("update", "invoicing");
   const seed = useMemo<ApplyRow[]>(() => {
     const byInvoice = new Map<
@@ -169,11 +179,13 @@ const PaymentApplyTable = ({
       }
     >();
     for (const a of existingApplications) {
-      const id = isRefund
-        ? a.targetMemoId
-        : isReceipt
-          ? a.targetSalesInvoiceId
-          : a.targetPurchaseInvoiceId;
+      const id = isReimbursement
+        ? a.targetReimbursementId
+        : isRefund
+          ? a.targetMemoId
+          : isReceipt
+            ? a.targetSalesInvoiceId
+            : a.targetPurchaseInvoiceId;
       if (!id) continue;
       const existing = byInvoice.get(id) ?? {
         appliedAmount: 0,
@@ -220,6 +232,7 @@ const PaymentApplyTable = ({
     existingApplications,
     isReceipt,
     isRefund,
+    isReimbursement,
     paymentCurrency,
     currencyDecimals
   ]);
@@ -471,9 +484,11 @@ const PaymentApplyTable = ({
           r.checked && r.sourceAmount + r.discountAmount + r.writeOffAmount > 0
       )
       .map((r) => ({
-        targetSalesInvoiceId: !isRefund && isReceipt ? r.id : undefined,
-        targetPurchaseInvoiceId: !isRefund && !isReceipt ? r.id : undefined,
+        targetSalesInvoiceId: hasAdjustments && isReceipt ? r.id : undefined,
+        targetPurchaseInvoiceId:
+          hasAdjustments && !isReceipt ? r.id : undefined,
         targetMemoId: isRefund ? r.id : undefined,
+        targetReimbursementId: isReimbursement ? r.id : undefined,
         appliedAmount: r.appliedAmount,
         sourceAmount: r.sourceAmount,
         discountAmount: r.discountAmount,
@@ -498,21 +513,23 @@ const PaymentApplyTable = ({
         <HStack className="justify-between w-full">
           <div>
             <CardTitle>
-              {isRefund ? (
+              {isReimbursement ? (
+                <Trans>Apply to reimbursements</Trans>
+              ) : isRefund ? (
                 <Trans>Refund memos</Trans>
               ) : (
                 <Trans>Apply to invoices</Trans>
               )}
             </CardTitle>
             <CardDescription>
-              {isRefund ? (
-                <Trans>
-                  Applied amounts are in company base currency ({baseCurrency}).
-                </Trans>
-              ) : (
+              {hasAdjustments ? (
                 <Trans>
                   Applied, discount and write-off amounts are in company base
                   currency ({baseCurrency}).
+                </Trans>
+              ) : (
+                <Trans>
+                  Applied amounts are in company base currency ({baseCurrency}).
                 </Trans>
               )}
             </CardDescription>
@@ -543,7 +560,9 @@ const PaymentApplyTable = ({
         {rows.length === 0 ? (
           <div className="rounded-lg border border-dashed border-border py-10 px-6 text-center">
             <p className="text-sm font-medium text-foreground">
-              {isRefund ? (
+              {isReimbursement ? (
+                <Trans>No open reimbursements</Trans>
+              ) : isRefund ? (
                 <Trans>No open memos</Trans>
               ) : (
                 <Trans>No open invoices</Trans>
@@ -564,7 +583,13 @@ const PaymentApplyTable = ({
               >
                 <span aria-hidden />
                 <span>
-                  {isRefund ? <Trans>Memo</Trans> : <Trans>Invoice</Trans>}
+                  {isReimbursement ? (
+                    <Trans>Reimbursement</Trans>
+                  ) : isRefund ? (
+                    <Trans>Memo</Trans>
+                  ) : (
+                    <Trans>Invoice</Trans>
+                  )}
                 </span>
                 <span className="text-right">
                   <Trans>Open</Trans>
@@ -572,7 +597,7 @@ const PaymentApplyTable = ({
                 <span className="text-right">
                   <Trans>Applied</Trans>
                 </span>
-                {!isRefund && (
+                {hasAdjustments && (
                   <>
                     <span className="text-right">
                       <Trans>Discount</Trans>
@@ -630,7 +655,7 @@ const PaymentApplyTable = ({
                       currencyDecimals={baseDecimals}
                       onChange={(v) => updateAmount(r.id, "appliedAmount", v)}
                     />
-                    {!isRefund && (
+                    {hasAdjustments && (
                       <>
                         <AmountInput
                           label={t`Discount for ${r.invoiceId}`}

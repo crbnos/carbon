@@ -26,6 +26,7 @@ import {
   Customer,
   CustomFormFields,
   DatePicker,
+  Employee,
   Hidden,
   Input,
   Number,
@@ -105,16 +106,21 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
   const deleteModal = useDisclosure();
   const voidModal = useDisclosure();
 
-  // Cash direction and subledger party are independent for refunds.
-  const initialKind = initialValues.supplierId
-    ? initialValues.paymentType === "Receipt"
-      ? "supplier-refund"
-      : "supplier-payment"
-    : initialValues.paymentType === "Disbursement"
-      ? "customer-refund"
-      : "customer-payment";
+  // Cash direction and subledger party are independent for refunds. An employee
+  // payee is neither: it is always cash OUT against the reimbursement control
+  // account, so it has a single kind rather than a payment/refund pair.
+  const initialKind = initialValues.employeeId
+    ? "employee-payment"
+    : initialValues.supplierId
+      ? initialValues.paymentType === "Receipt"
+        ? "supplier-refund"
+        : "supplier-payment"
+      : initialValues.paymentType === "Disbursement"
+        ? "customer-refund"
+        : "customer-payment";
   const [paymentKind, setPaymentKind] = useState(initialKind);
   const defaultValues = { ...initialValues, paymentKind: initialKind };
+  const isEmployee = paymentKind === "employee-payment";
   const isCustomer = paymentKind.startsWith("customer-");
   const currentType =
     paymentKind === "customer-payment" || paymentKind === "supplier-refund"
@@ -124,7 +130,8 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
     { label: t`Payment from Customer`, value: "customer-payment" },
     { label: t`Payment to Supplier`, value: "supplier-payment" },
     { label: t`Refund to Customer`, value: "customer-refund" },
-    { label: t`Refund from Supplier`, value: "supplier-refund" }
+    { label: t`Refund from Supplier`, value: "supplier-refund" },
+    { label: t`Reimbursement to Employee`, value: "employee-payment" }
   ];
 
   return (
@@ -190,9 +197,9 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
               </CardTitle>
               <CardDescription>
                 <Trans>
-                  Record a customer payment, supplier payment, or refund.
-                  Applications to invoices or memos are added after the payment
-                  is created.
+                  Record a customer payment, supplier payment, refund, or
+                  employee reimbursement. Applications to invoices, memos or
+                  reimbursements are added after the payment is created.
                 </Trans>
               </CardDescription>
             </CardHeader>
@@ -200,7 +207,23 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
           <CardContent>
             <Hidden name="id" />
             <Hidden name="paymentType" value={currentType} />
-            <Hidden name={isCustomer ? "supplierId" : "customerId"} value="" />
+            {/* Exactly one party field is mounted, and the other two are
+                blanked — the validator's one-of-three refine (and the DB's
+                widened payment_party_check) rejects anything else. */}
+            {isEmployee ? (
+              <>
+                <Hidden name="customerId" value="" />
+                <Hidden name="supplierId" value="" />
+              </>
+            ) : (
+              <>
+                <Hidden
+                  name={isCustomer ? "supplierId" : "customerId"}
+                  value=""
+                />
+                <Hidden name="employeeId" value="" />
+              </>
+            )}
             {isEditing && <Hidden name="paymentId" />}
             {seedInvoiceIds && seedInvoiceIds.length > 0 && (
               <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
@@ -223,7 +246,9 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                     if (opt) setPaymentKind(opt.value);
                   }}
                 />
-                {isCustomer ? (
+                {isEmployee ? (
+                  <Employee name="employeeId" label={t`Employee`} />
+                ) : isCustomer ? (
                   <Customer name="customerId" label={t`Customer`} />
                 ) : (
                   <Supplier name="supplierId" label={t`Supplier`} />

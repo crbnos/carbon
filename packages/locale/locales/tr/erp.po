@@ -2033,6 +2033,9 @@ msgstr "Faturaya uygula"
 msgid "Apply to invoices"
 msgstr "Faturaları uygula"
 
+msgid "Apply to reimbursements"
+msgstr "Gider Talebilerine Uygula"
+
 msgid "Applying"
 msgstr "Uygulanıyor"
 
@@ -11393,6 +11396,9 @@ msgstr "Açık muhasebe notları yok"
 msgid "No open orders for this item are available to link."
 msgstr "Bu Stok kartı için bağlantı kurmak amacıyla Açık siparişler bulunmamaktadır."
 
+msgid "No open reimbursements"
+msgstr "Açık Gider Talebileri Yok"
+
 msgid "No open sales order lines"
 msgstr "Açık satış sipariş satırı yok"
 
@@ -12541,6 +12547,12 @@ msgstr "Kimlik sağlayıcınız bir meta veri URL'si yayınlamıyorsa meta veri 
 
 msgid "Path"
 msgstr "Yol"
+
+msgid "Pay"
+msgstr "Öde"
+
+msgid "Pay expense"
+msgstr "Gider Öde"
 
 msgid "Pay Rate"
 msgstr "Ödeme Oranı"
@@ -13977,14 +13989,17 @@ msgstr "Tedarikçiden alınan bir alacağı kaydedin — borçlu olduğunuz tuta
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Müşteri için bir alacak dekontu kaydedin — müşterinin borçlu olduğu tutarı azaltır. Belirli faturalara karşı uygulamalar oluşturulduktan sonra eklenir."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Müşteri ödemesi, tedarikçi ödemesi veya iade kaydedin. Faturaların veya muhasebe notlarının uygulamaları, ödeme oluşturulduktan sonra eklenir."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Müşteri ödeme, tedarikçi ödeme, iade veya çalışan gider talebi kaydı oluşturun. Ödeme oluşturulduktan sonra fatura, not veya gider talebilerine uygulamalar eklenir."
 
 msgid "Record deleted"
 msgstr "Kayıt silindi"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Bir parça ve bir işe bağlı muayeneleri kaydedin"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Çalışana {displayId} ödeyişini kayıt edin. Kısmen kapatmak için toplam borçtan daha az ödeme yapabilirsiniz."
 
 msgid "Record type"
 msgstr "Kayıt türü"
@@ -14058,11 +14073,17 @@ msgstr "Kayıt Başarısız Oldu"
 msgid "Registration Number"
 msgstr "Sicil Numarası"
 
+msgid "Reimbursement"
+msgstr "Gider Talebi"
+
 msgid "Reimbursement Date"
 msgstr "Geri Ödeme Tarihi"
 
 msgid "Reimbursement ID"
 msgstr "Geri Ödeme ID"
+
+msgid "Reimbursement to Employee"
+msgstr "Çalışana Gider Talebi"
 
 msgid "Reimbursements"
 msgstr "Geri Ödemeler"
@@ -18503,6 +18524,9 @@ msgstr "Varlığın toplam kapitalize edilen maliyeti (satın alma fiyatı artı
 
 msgid "Total discount"
 msgstr "Toplam iskonto"
+
+msgid "Total Due"
+msgstr "Toplam Borç"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."

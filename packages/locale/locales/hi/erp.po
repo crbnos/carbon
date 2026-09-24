@@ -2033,6 +2033,9 @@ msgstr "चालान पर लागू करें"
 msgid "Apply to invoices"
 msgstr "चालानों पर लागू करें"
 
+msgid "Apply to reimbursements"
+msgstr "प्रतिपूर्ति में लागू करें"
+
 msgid "Applying"
 msgstr "लागू कर रहे हैं"
 
@@ -11393,6 +11396,9 @@ msgstr "कोई खुला ज्ञापन नहीं"
 msgid "No open orders for this item are available to link."
 msgstr "इस आइटम के लिए लिंक करने के लिए कोई खुले ऑर्डर उपलब्ध नहीं हैं।"
 
+msgid "No open reimbursements"
+msgstr "कोई खुली प्रतिपूर्ति नहीं"
+
 msgid "No open sales order lines"
 msgstr "कोई खुली विक्रय आदेश पंक्ति नहीं"
 
@@ -12541,6 +12547,12 @@ msgstr "मेटाडेटा XML को पेस्ट करें यद�
 
 msgid "Path"
 msgstr "पथ"
+
+msgid "Pay"
+msgstr "भुगतान करें"
+
+msgid "Pay expense"
+msgstr "व्यय का भुगतान करें"
 
 msgid "Pay Rate"
 msgstr "भुगतान दर"
@@ -13977,14 +13989,17 @@ msgstr "आपूर्तिकर्ता से एक क्रेडिट
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "ग्राहक के लिए क्रेडिट नोट रिकॉर्ड करें — यह उनके बकाये को कम करता है। विशिष्ट चालानों के लिए आवेदन इसे बनाने के बाद जोड़े जाते हैं।"
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, या धनवापसी दर्ज करें। भुगतान बनाने के बाद चालान या ज्ञापन में आवेदन जोड़े जाते हैं।"
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "एक ग्राहक भुगतान, आपूर्तिकर्ता भुगतान, वापसी, या कर्मचारी प्रतिपूर्ति रिकॉर्ड करें। भुगतान बनाने के बाद चालान, मेमो या प्रतिपूर्ति पर लागू किए जाते हैं।"
 
 msgid "Record deleted"
 msgstr "रिकॉर्ड हटाया गया"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "एक भाग और एक कार्य से जुड़े निरीक्षण रिकॉर्ड करें"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "कर्मचारी को {displayId} का भुगतान रिकॉर्ड करें। इसे आंशिक रूप से निपटाने के लिए कुल देय राशि से कम का भुगतान करें।"
 
 msgid "Record type"
 msgstr "रिकॉर्ड प्रकार"
@@ -14058,11 +14073,17 @@ msgstr "पंजीकरण विफल"
 msgid "Registration Number"
 msgstr "पंजीकरण संख्या"
 
+msgid "Reimbursement"
+msgstr "प्रतिपूर्ति"
+
 msgid "Reimbursement Date"
 msgstr "प्रतिपूर्ति तारीख"
 
 msgid "Reimbursement ID"
 msgstr "प्रतिपूर्ति ID"
+
+msgid "Reimbursement to Employee"
+msgstr "कर्मचारी को प्रतिपूर्ति"
 
 msgid "Reimbursements"
 msgstr "प्रतिपूर्ति"
@@ -18503,6 +18524,9 @@ msgstr "संपत्ति की कुल पूंजीकृत ला�
 
 msgid "Total discount"
 msgstr "कुल छूट"
+
+msgid "Total Due"
+msgstr "कुल देय"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"

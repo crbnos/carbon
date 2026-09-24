@@ -2033,6 +2033,9 @@ msgstr "請求書に適用"
 msgid "Apply to invoices"
 msgstr "請求書に適用"
 
+msgid "Apply to reimbursements"
+msgstr "払戻に充当する"
+
 msgid "Applying"
 msgstr "適用中"
 
@@ -11393,6 +11396,9 @@ msgstr "オープンなメモはありません"
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
 
+msgid "No open reimbursements"
+msgstr "オープンな払戻がありません"
+
 msgid "No open sales order lines"
 msgstr "オープン受注明細がありません"
 
@@ -12541,6 +12547,12 @@ msgstr "IDプロバイダーがメタデータURLを公開していない場合�
 
 msgid "Path"
 msgstr "パス"
+
+msgid "Pay"
+msgstr "支払う"
+
+msgid "Pay expense"
+msgstr "費用を支払う"
 
 msgid "Pay Rate"
 msgstr "支払レート"
@@ -13977,14 +13989,17 @@ msgstr "仕入先からのクレジットを記録します — これはあな�
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "得意先向けのクレジットメモを記録します — これは得意先が負っているものを減らします。特定の請求書への適用は作成後に追加されます。"
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "得意先からの支払、仕入先への支払、返金、または従業員への払戻を記録します。請求書、メモ、または払戻への適用は、支払が作成された後に追加されます。"
 
 msgid "Record deleted"
 msgstr "レコード削除済み"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "部品とジョブに関連付けられた検査を記録する"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "{displayId}の従業員への支払を記録します。支払うべき合計金額より少ない金額を支払うと、部分的に清算することができます。"
 
 msgid "Record type"
 msgstr "レコード種別"
@@ -14058,11 +14073,17 @@ msgstr "登録に失敗しました"
 msgid "Registration Number"
 msgstr "登録番号"
 
+msgid "Reimbursement"
+msgstr "払戻"
+
 msgid "Reimbursement Date"
 msgstr "払戻日"
 
 msgid "Reimbursement ID"
 msgstr "払戻ID"
+
+msgid "Reimbursement to Employee"
+msgstr "従業員への払戻"
 
 msgid "Reimbursements"
 msgstr "払戻"
@@ -18503,6 +18524,9 @@ msgstr "資産の総資本化原価（購入価格、運賃、設置、および
 
 msgid "Total discount"
 msgstr "合計値引"
+
+msgid "Total Due"
+msgstr "支払うべき合計金額"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"

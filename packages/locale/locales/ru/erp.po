@@ -2033,6 +2033,9 @@ msgstr "Применить к счет-фактуре"
 msgid "Apply to invoices"
 msgstr "Применить к счет-фактурам"
 
+msgid "Apply to reimbursements"
+msgstr "Применить к возмещениям"
+
 msgid "Applying"
 msgstr "Применение"
 
@@ -11393,6 +11396,9 @@ msgstr "Нет открытых служебных записок"
 msgid "No open orders for this item are available to link."
 msgstr "Нет открытых заказов для этого товара, доступных для связи."
 
+msgid "No open reimbursements"
+msgstr "Нет открытых возмещений"
+
 msgid "No open sales order lines"
 msgstr "Нет открытых строк заказов покупателя"
 
@@ -12541,6 +12547,12 @@ msgstr "Вставьте XML метаданных, если ваш постав�
 
 msgid "Path"
 msgstr "Путь"
+
+msgid "Pay"
+msgstr "Оплатить"
+
+msgid "Pay expense"
+msgstr "Оплатить расход"
 
 msgid "Pay Rate"
 msgstr "Курс платежа"
@@ -13977,14 +13989,17 @@ msgstr "Запишите кредит от поставщика — это ум�
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Запишите кредит-ноту для покупателя — это уменьшает сумму, которую он вам должен. Применение к конкретным счет-фактурам добавляется после создания."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Зафиксировать платеж покупателя, платеж поставщику или возврат. Применение к счетам-фактурам или справкам добавляется после создания платежа."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Запишите платеж покупателя, платеж поставщика, возврат или возмещение сотруднику. Применения к счет-фактурам, служебным запискам или возмещениям добавляются после создания платежа."
 
 msgid "Record deleted"
 msgstr "Запись удалена"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Зарегистрировать контроль, связанный с деталью и производственным заказом"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Запишите выплату {displayId} сотруднику. Оплатите меньше итого к оплате, чтобы рассчитаться частично."
 
 msgid "Record type"
 msgstr "Тип записи"
@@ -14058,11 +14073,17 @@ msgstr "Регистрация не удалась"
 msgid "Registration Number"
 msgstr "Регистрационный номер"
 
+msgid "Reimbursement"
+msgstr "Возмещение"
+
 msgid "Reimbursement Date"
 msgstr "Дата возмещения"
 
 msgid "Reimbursement ID"
 msgstr "Номер возмещения"
+
+msgid "Reimbursement to Employee"
+msgstr "Возмещение сотруднику"
 
 msgid "Reimbursements"
 msgstr "Возмещения"
@@ -18503,6 +18524,9 @@ msgstr "Общая капитализированная стоимость ак�
 
 msgid "Total discount"
 msgstr "Общая скидка"
+
+msgid "Total Due"
+msgstr "Итого к оплате"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."

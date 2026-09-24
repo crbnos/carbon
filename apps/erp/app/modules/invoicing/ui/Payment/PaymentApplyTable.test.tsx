@@ -220,6 +220,39 @@ describe("payment composer document funding", () => {
     render({ ...overrides, existingApplications: apps });
     expect(savedApplications()).toEqual(apps);
   });
+  it("applies an employee disbursement to reimbursements without discount or write-off", () => {
+    const overrides = {
+      paymentType: "Disbursement" as const,
+      isReimbursement: true,
+      paymentTotal: 110,
+      openInvoices: [props.openInvoices[0]]
+    };
+    const html = render(overrides);
+    expect(html).toContain("Apply to reimbursements");
+    // One amount input, not three — there is no negotiated settlement with an
+    // employee, and `replaceInvoiceSettlements` refuses a non-zero adjustment.
+    expect(harness.amounts).toHaveLength(1);
+    click("Auto apply");
+    render(overrides);
+    const apps = savedApplications();
+    expect(apps).toEqual([
+      expect.objectContaining({
+        targetReimbursementId: "one",
+        appliedAmount: 100,
+        sourceAmount: 110,
+        discountAmount: 0,
+        writeOffAmount: 0
+      })
+    ]);
+    expect(apps[0]).not.toHaveProperty("targetSalesInvoiceId");
+    expect(apps[0]).not.toHaveProperty("targetPurchaseInvoiceId");
+    expect(apps[0]).not.toHaveProperty("targetMemoId");
+    // Reopening the draft seeds from targetReimbursementId and resaves as-is.
+    harness.state = undefined;
+    render({ ...overrides, existingApplications: apps });
+    expect(savedApplications()).toEqual(apps);
+  });
+
   const highRate = {
     paymentTotal: 0,
     paymentExchangeRate: 16000,

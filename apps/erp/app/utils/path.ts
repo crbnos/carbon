@@ -2024,6 +2024,8 @@ export const path = {
     reimbursement: (id: string) => generatePath(`${x}/reimbursements/${id}`),
     reimbursementEdit: (id: string) =>
       generatePath(`${x}/reimbursements/${id}/edit`),
+    reimbursementPay: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/pay`),
     reimbursementPost: (id: string) =>
       generatePath(`${x}/reimbursements/${id}/post`),
     reimbursements: `${x}/invoicing/reimbursements`,

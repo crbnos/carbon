@@ -2033,6 +2033,9 @@ msgstr "应用到发票"
 msgid "Apply to invoices"
 msgstr "应用于发票"
 
+msgid "Apply to reimbursements"
+msgstr "应用到报销单"
+
 msgid "Applying"
 msgstr "正在应用"
 
@@ -11393,6 +11396,9 @@ msgstr "无未结单据"
 msgid "No open orders for this item are available to link."
 msgstr "此物料没有未结订单可供链接。"
 
+msgid "No open reimbursements"
+msgstr "没有未结报销单"
+
 msgid "No open sales order lines"
 msgstr "没有未结销售订单行"
 
@@ -12541,6 +12547,12 @@ msgstr "如果您的身份提供商未发布元数据 URL,请粘贴元数据 XML
 
 msgid "Path"
 msgstr "路径"
+
+msgid "Pay"
+msgstr "支付"
+
+msgid "Pay expense"
+msgstr "支付费用"
 
 msgid "Pay Rate"
 msgstr "支付汇率"
@@ -13977,14 +13989,17 @@ msgstr "记录来自供应商的贷项凭证——它减少了您欠该供应商
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "为客户记录贷项凭证——这会减少该客户欠的金额。与特定发票的关联在创建完成后添加。"
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "记录客户付款、供应商付款或退款。付款创建后，可以添加对发票或单据的应用。"
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "记录客户付款、供应商付款、退款或员工报销。对发票、备忘录或报销单的分配在付款创建后添加。"
 
 msgid "Record deleted"
 msgstr "记录已删除"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "记录向员工支付 {displayId} 的款项。支付少于应付总额以部分结算。"
 
 msgid "Record type"
 msgstr "记录类型"
@@ -14058,11 +14073,17 @@ msgstr "注册失败"
 msgid "Registration Number"
 msgstr "注册号"
 
+msgid "Reimbursement"
+msgstr "报销"
+
 msgid "Reimbursement Date"
 msgstr "报销日期"
 
 msgid "Reimbursement ID"
 msgstr "报销ID"
+
+msgid "Reimbursement to Employee"
+msgstr "员工报销"
 
 msgid "Reimbursements"
 msgstr "报销"
@@ -18503,6 +18524,9 @@ msgstr "资产的总资本化成本（购买价格加运费、安装和其他成
 
 msgid "Total discount"
 msgstr "总折扣"
+
+msgid "Total Due"
+msgstr "应付总额"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"

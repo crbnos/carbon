@@ -2033,6 +2033,9 @@ msgstr "Apply to invoice"
 msgid "Apply to invoices"
 msgstr "Apply to invoices"
 
+msgid "Apply to reimbursements"
+msgstr "Apply to reimbursements"
+
 msgid "Applying"
 msgstr "Applying"
 
@@ -11393,6 +11396,9 @@ msgstr "No open memos"
 msgid "No open orders for this item are available to link."
 msgstr "No open orders for this item are available to link."
 
+msgid "No open reimbursements"
+msgstr "No open reimbursements"
+
 msgid "No open sales order lines"
 msgstr "No open sales order lines"
 
@@ -12541,6 +12547,12 @@ msgstr "Paste the metadata XML if your identity provider does not publish a meta
 
 msgid "Path"
 msgstr "Path"
+
+msgid "Pay"
+msgstr "Pay"
+
+msgid "Pay expense"
+msgstr "Pay expense"
 
 msgid "Pay Rate"
 msgstr "Pay Rate"
@@ -13977,14 +13989,17 @@ msgstr "Record a credit from a supplier — it reduces what you owe them. Applic
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
 
 msgid "Record deleted"
 msgstr "Record deleted"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
 
 msgid "Record type"
 msgstr "Record type"
@@ -14058,11 +14073,17 @@ msgstr "Registration failed"
 msgid "Registration Number"
 msgstr "Registration Number"
 
+msgid "Reimbursement"
+msgstr "Reimbursement"
+
 msgid "Reimbursement Date"
 msgstr "Reimbursement Date"
 
 msgid "Reimbursement ID"
 msgstr "Reimbursement ID"
+
+msgid "Reimbursement to Employee"
+msgstr "Reimbursement to Employee"
 
 msgid "Reimbursements"
 msgstr "Reimbursements"
@@ -18503,6 +18524,9 @@ msgstr "Total capitalized cost of the asset (purchase price plus freight, instal
 
 msgid "Total discount"
 msgstr "Total discount"
+
+msgid "Total Due"
+msgstr "Total Due"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total expected production units for units-of-production depreciation; cost is spread per unit produced."

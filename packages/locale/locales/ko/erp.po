@@ -2033,6 +2033,9 @@ msgstr "송장에 적용"
 msgid "Apply to invoices"
 msgstr "송장에 적용"
 
+msgid "Apply to reimbursements"
+msgstr "환급금에 배정"
+
 msgid "Applying"
 msgstr "적용 중"
 
@@ -11393,6 +11396,9 @@ msgstr "미결 메모 없음"
 msgid "No open orders for this item are available to link."
 msgstr "이 품목에 연결할 수 있는 미결 발주서가 없습니다."
 
+msgid "No open reimbursements"
+msgstr "미결 환급금 없음"
+
 msgid "No open sales order lines"
 msgstr "미결 수주 라인이 없습니다."
 
@@ -12541,6 +12547,12 @@ msgstr "자격 증명 공급자가 메타데이터 URL을 게시하지 않는 �
 
 msgid "Path"
 msgstr "경로"
+
+msgid "Pay"
+msgstr "지불"
+
+msgid "Pay expense"
+msgstr "비용 지불"
 
 msgid "Pay Rate"
 msgstr "급여율"
@@ -13977,14 +13989,17 @@ msgstr "공급업체로부터 받은 신용을 기록하세요 — 공급업체�
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "고객을 위한 대변전표를 기록하세요 — 고객이 지불해야 할 금액이 줄어듭니다. 생성된 후 특정 송장에 적용이 추가됩니다."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "고객 지불, 공급업체 지불 또는 환불을 기록합니다. 지불 생성 후 송장 또는 메모에 대한 적용이 추가됩니다."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "고객 지불, 공급업체 지불, 환불, 또는 직원 환급금을 기록하세요. 지불 생성 후 송장, 메모, 환급금에 대한 배정이 추가됩니다."
 
 msgid "Record deleted"
 msgstr "레코드가 삭제됨"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "품목과 작업에 연결된 검사를 기록"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "{displayId}의 지불을 직원에게 기록하세요. 부분적으로 결제하려면 총 미결액보다 적게 지불하세요."
 
 msgid "Record type"
 msgstr "기록 유형"
@@ -14058,11 +14073,17 @@ msgstr "등록 실패"
 msgid "Registration Number"
 msgstr "등록 번호"
 
+msgid "Reimbursement"
+msgstr "환급금"
+
 msgid "Reimbursement Date"
 msgstr "환급일"
 
 msgid "Reimbursement ID"
 msgstr "환급 ID"
+
+msgid "Reimbursement to Employee"
+msgstr "직원 환급금"
 
 msgid "Reimbursements"
 msgstr "환급금"
@@ -18503,6 +18524,9 @@ msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 
 
 msgid "Total discount"
 msgstr "총 할인"
+
+msgid "Total Due"
+msgstr "총 미결액"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."

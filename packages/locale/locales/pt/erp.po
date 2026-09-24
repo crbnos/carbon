@@ -2033,6 +2033,9 @@ msgstr "Aplicar à fatura"
 msgid "Apply to invoices"
 msgstr "Aplicar a faturas"
 
+msgid "Apply to reimbursements"
+msgstr "Aplicar para reembolsos"
+
 msgid "Applying"
 msgstr "Aplicando"
 
@@ -11393,6 +11396,9 @@ msgstr "Sem memorandos abertos"
 msgid "No open orders for this item are available to link."
 msgstr "Nenhum pedido aberto para este item está disponível para vincular."
 
+msgid "No open reimbursements"
+msgstr "Nenhum reembolso em aberto"
+
 msgid "No open sales order lines"
 msgstr "Nenhuma linha de pedido de venda aberta"
 
@@ -12541,6 +12547,12 @@ msgstr "Cole o XML de metadados se seu provedor de identidade não publicar um U
 
 msgid "Path"
 msgstr "Caminho"
+
+msgid "Pay"
+msgstr "Pagar"
+
+msgid "Pay expense"
+msgstr "Pagar despesa"
 
 msgid "Pay Rate"
 msgstr "Taxa de Pagamento"
@@ -13977,14 +13989,17 @@ msgstr "Registre um crédito do fornecedor — reduz o que você lhe deve. Aplic
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Registre uma nota de crédito para um cliente — reduz o que o cliente deve. Aplicações para faturas específicas são adicionadas após a criação."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Registre um pagamento do cliente, pagamento do fornecedor ou reembolso. As aplicações às faturas ou memorandos são adicionadas após o pagamento ser criado."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Registre um pagamento de cliente, pagamento de fornecedor, reembolso ou reembolso de funcionário. As aplicações para faturas, memorandos ou reembolsos são adicionadas após a criação do pagamento."
 
 msgid "Record deleted"
 msgstr "Registro eliminado"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Registar inspeções vinculadas a uma peça e um trabalho"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Registre o desembolso de {displayId} para o funcionário. Pague menos do total devido para liquidar parcialmente."
 
 msgid "Record type"
 msgstr "Tipo de registro"
@@ -14058,11 +14073,17 @@ msgstr "Falha no registo"
 msgid "Registration Number"
 msgstr "Número de Registro"
 
+msgid "Reimbursement"
+msgstr "Reembolso"
+
 msgid "Reimbursement Date"
 msgstr "Data de Reembolso"
 
 msgid "Reimbursement ID"
 msgstr "ID de Reembolso"
+
+msgid "Reimbursement to Employee"
+msgstr "Reembolso para Funcionário"
 
 msgid "Reimbursements"
 msgstr "Reembolsos"
@@ -18503,6 +18524,9 @@ msgstr "Custo total capitalizado do ativo (preço de compra mais frete, instala�
 
 msgid "Total discount"
 msgstr "Desconto total"
+
+msgid "Total Due"
+msgstr "Total Devido"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total de unidades de produção esperadas para depreciação de unidades de produção; o custo é distribuído por unidade produzida."

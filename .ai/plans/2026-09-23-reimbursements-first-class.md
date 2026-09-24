@@ -105,7 +105,7 @@
 - [x] Task 19: Nav entry under Accounts Payable
 - [x] Task 20: Settlement target — models + service
 - [x] Task 21: `post-payment` — reimbursement settlement arm
-- [ ] Task 22: Payment UI — employee payee + reimbursement apply target
+- [x] Task 22: Payment UI — employee payee + reimbursement apply target
 - [x] Task 23: Ramp inbound — create a Draft `reimbursement`; never auto-post, never re-write
 - [x] Task 24: `@carbon/ee` accounting — `reimbursement` entity type + plumbing
 - [x] Task 25: Rillet `ReimbursementSyncer`

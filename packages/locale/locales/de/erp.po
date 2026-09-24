@@ -2033,6 +2033,9 @@ msgstr "Auf Rechnung anwenden"
 msgid "Apply to invoices"
 msgstr "Auf Rechnungen anwenden"
 
+msgid "Apply to reimbursements"
+msgstr "Auf Kostenerstattungen anwenden"
+
 msgid "Applying"
 msgstr "Wird angewendet"
 
@@ -11393,6 +11396,9 @@ msgstr "Keine offenen Notizen"
 msgid "No open orders for this item are available to link."
 msgstr "Für diesen Artikel sind keine offenen Bestellungen zum Verknüpfen verfügbar."
 
+msgid "No open reimbursements"
+msgstr "Keine offenen Kostenerstattungen"
+
 msgid "No open sales order lines"
 msgstr "Keine offenen Kundenauftragsposition"
 
@@ -12541,6 +12547,12 @@ msgstr "Fügen Sie die Metadaten-XML ein, wenn Ihr Identitätsanbieter keine Met
 
 msgid "Path"
 msgstr "Pfad"
+
+msgid "Pay"
+msgstr "Zahlen"
+
+msgid "Pay expense"
+msgstr "Aufwand bezahlen"
 
 msgid "Pay Rate"
 msgstr "Zahlungskurs"
@@ -13977,14 +13989,17 @@ msgstr "Erfassen Sie eine Lieferantengutschrift – sie reduziert das, was Sie d
 msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
 msgstr "Erfassen Sie eine Gutschrift für einen Kunden – sie reduziert das, was dieser Ihnen schuldet. Zuordnungen zu bestimmten Rechnungen werden nach der Erstellung hinzugefügt."
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "Erfassen Sie eine Kundenzahlung, Lieferantenzahlung oder Gutschrift. Anwendungen auf Rechnungen oder Notizen werden hinzugefügt, nachdem die Zahlung erstellt wurde."
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "Erfassen Sie eine Kundenzahlung, Lieferantenzahlung, Rückerstattung oder Mitarbeiterkostenerstattung. Zuordnungen zu Rechnungen, Memos oder Kostenerstattungen werden nach Erstellen der Zahlung hinzugefügt."
 
 msgid "Record deleted"
 msgstr "Datensatz gelöscht"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "Erfassen Sie Prüfungen, die an einen Teil und einen Fertigungsauftrag gebunden sind"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "Erfassen Sie die Auszahlung von {displayId} an den Mitarbeiter. Zahlen Sie weniger als den fälligen Gesamtbetrag, um ihn teilweise auszugleichen."
 
 msgid "Record type"
 msgstr "Datensatztyp"
@@ -14058,11 +14073,17 @@ msgstr "Registrierung fehlgeschlagen"
 msgid "Registration Number"
 msgstr "Registrierungsnummer"
 
+msgid "Reimbursement"
+msgstr "Kostenerstattung"
+
 msgid "Reimbursement Date"
 msgstr "Erstattungsdatum"
 
 msgid "Reimbursement ID"
 msgstr "Erstattungs-ID"
+
+msgid "Reimbursement to Employee"
+msgstr "Kostenerstattung für Mitarbeiter"
 
 msgid "Reimbursements"
 msgstr "Erstattungen"
@@ -18503,6 +18524,9 @@ msgstr "Gesamtkapitalisierten Kosten des Vermögenswerts (Kaufpreis plus Fracht,
 
 msgid "Total discount"
 msgstr "Gesamtrabatt"
+
+msgid "Total Due"
+msgstr "Fälliger Gesamtbetrag"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Gesamterwartete Produktionseinheiten für Produktionseinheiten-Abschreibung; Kosten werden pro hergestellter Einheit verteilt."

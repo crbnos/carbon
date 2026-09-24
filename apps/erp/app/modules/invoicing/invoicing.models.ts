@@ -509,6 +509,21 @@ export const reimbursementLinesValidator = z
   .array(reimbursementLineValidator)
   .min(1, { message: "A reimbursement needs at least one line" });
 
+// The "Pay expense" modal. Exactly three fields, and deliberately no more: they
+// are a 1:1 match for Rillet's `POST /reimbursements/{id}/payments`
+// (`{amount, date, account_code}`), which is what lets the payout sync across
+// with no impedance. The amount is in the reimbursement's DOCUMENT currency and
+// may be LESS than the balance — a partial payout is supported — so it is not
+// pinned to the balance here; the balance ceiling is enforced server-side by
+// `replaceInvoiceSettlements`.
+export const reimbursementPaymentValidator = z.object({
+  amount: zfd.numeric(
+    z.number().positive({ message: "Amount must be greater than zero" })
+  ),
+  paymentDate: z.string().min(1, { message: "Payment date is required" }),
+  bankAccount: z.string().min(1, { message: "Bank account is required" })
+});
+
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
 // the refined validator below with `.innerType()` is brittle (it breaks whenever
