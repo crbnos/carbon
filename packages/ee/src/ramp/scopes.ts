@@ -26,6 +26,12 @@ export const RAMP_SCOPES = [
   "purchase_orders:read",
   "purchase_orders:write",
   "transfers:read",
+  // The repayments family calls GET /developer/v1/repayments on EVERY sync run.
+  // Without this scope Ramp answers 403 DEVELOPER_7100 ("These scopes are not
+  // allowed for this token: repayments:read"), the family logs "repayments
+  // drain failed" and returns nothing — every run, silently, since one family's
+  // failure does not fail the sync. Live-hit on the sandbox 2026-09-24.
+  "repayments:read",
   "statements:read",
   "cashbacks:read",
   "receipts:read",
