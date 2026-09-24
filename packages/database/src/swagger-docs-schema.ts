@@ -93718,6 +93718,9 @@ export default {
             $ref: "#/parameters/rowFilter.integration.jsonschema"
           },
           {
+            $ref: "#/parameters/rowFilter.integration.providerRole"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -93783,6 +93786,9 @@ export default {
             $ref: "#/parameters/rowFilter.integration.jsonschema"
           },
           {
+            $ref: "#/parameters/rowFilter.integration.providerRole"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -93800,6 +93806,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.integration.jsonschema"
+          },
+          {
+            $ref: "#/parameters/rowFilter.integration.providerRole"
           },
           {
             $ref: "#/parameters/body.integration"
@@ -150780,6 +150789,10 @@ export default {
         },
         jsonschema: {
           format: "json"
+        },
+        providerRole: {
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -200577,6 +200590,12 @@ export default {
     },
     "rowFilter.integration.jsonschema": {
       name: "jsonschema",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.integration.providerRole": {
+      name: "providerRole",
       required: false,
       in: "query",
       type: "string"

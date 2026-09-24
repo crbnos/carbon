@@ -20114,14 +20114,17 @@ export type Database = {
         Row: {
           id: string
           jsonschema: Json
+          providerRole: string | null
         }
         Insert: {
           id: string
           jsonschema: Json
+          providerRole?: string | null
         }
         Update: {
           id?: string
           jsonschema?: Json
+          providerRole?: string | null
         }
         Relationships: []
       }
