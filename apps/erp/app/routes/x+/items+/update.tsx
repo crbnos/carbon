@@ -126,9 +126,9 @@ export async function action({ request }: ActionFunctionArgs) {
         return { error: { message: "No materials found" }, data: null };
       }
 
-      // One material row per readable id, shared by its revisions. The
-      // service applies the dependent resets and, with generated material
-      // IDs on, regenerates each material's readable id and name.
+      // Each material commits on its own, so try them all and name every
+      // refusal rather than stopping partway through the selection.
+      const failures: string[] = [];
       for (const materialId of materialIds) {
         const update = await updateMaterialProperties(
           client,
@@ -141,8 +141,11 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         );
         if (update.error) {
-          return { error: { message: update.error.message }, data: null };
+          failures.push(`${materialId}: ${update.error.message}`);
         }
+      }
+      if (failures.length > 0) {
+        return { error: { message: failures.join("; ") }, data: null };
       }
 
       return { data: null, error: null };
