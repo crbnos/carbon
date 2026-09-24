@@ -381,6 +381,13 @@ export type CompanyTemplateRun = {
   /** Whether a pre-apply snapshot exists yet — the UI offers a revert retry on a
    *  stalled run only when there is actually something to put back. */
   hasSnapshot: boolean;
+  /** "scope-violations" = the pre-apply snapshot refused because the LIVE data
+   *  has rows escaping company scope — the one failure with a recovery. */
+  reason: "scope-violations" | null;
+  /** Per-edge breakdown for the details popover. Never summed. */
+  violations: ScopeViolationSummary[];
+  /** DISTINCT rows per table — sum this for anything a user reads. */
+  violationRowsByTable: RowsByTable[];
 };
 
 /**
@@ -416,6 +423,9 @@ export async function getCompanyTemplateRun(
     error?: string;
     progress?: { phase: string; done: number; total: number } | null;
     snapshotPath?: string;
+    reason?: "scope-violations" | null;
+    violations?: ScopeViolationSummary[] | null;
+    violationRowsByTable?: RowsByTable[] | null;
   };
 
   // Only whether a snapshot EXISTS is projected, never where — the job owns its
@@ -428,7 +438,10 @@ export async function getCompanyTemplateRun(
       startedAt: meta.startedAt ?? marker.data.createdAt,
       error: meta.error ?? null,
       progress: meta.progress ?? null,
-      hasSnapshot: Boolean(meta.snapshotPath)
+      hasSnapshot: Boolean(meta.snapshotPath),
+      reason: meta.reason ?? null,
+      violations: meta.violations ?? [],
+      violationRowsByTable: meta.violationRowsByTable ?? []
     },
     error: null
   };

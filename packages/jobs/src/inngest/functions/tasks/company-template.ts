@@ -11,11 +11,13 @@ import { inngest } from "../../client";
 import {
   backupAssetsDir,
   backupDir,
+  ExportScopeViolationError,
   getCompanyTableCatalog,
   type JobProgress,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
+  type ScopeViolation,
   throttleProgress,
   writeBackupManifest
 } from "./company-backup";
@@ -50,6 +52,13 @@ type TemplateMeta = {
   progress?: JobProgress | null;
   /** Set when post-apply MRP/scheduling failed; the seeded data stands regardless. */
   planningError?: string | null;
+  /** Set when the pre-apply snapshot refused because the LIVE data has rows
+   *  whose NOT-NULL FK escapes company scope — the one failure with a recovery. */
+  reason?: "scope-violations" | null;
+  /** Per FK EDGE — the breakdown, never summable into a row count. */
+  violations?: ScopeViolation[] | null;
+  /** DISTINCT rows involved, per table — what the user is told. */
+  violationRowsByTable?: Array<{ table: string; rows: number }> | null;
 };
 
 /**
@@ -222,7 +231,10 @@ export const companyTemplateFunction = inngest.createFunction(
           startedAt: datetime.timestamp(),
           // A retry, or a new run after a failed one, inherits that marker's error.
           error: null,
-          planningError: null
+          planningError: null,
+          reason: null,
+          violations: null,
+          violationRowsByTable: null
         }
       });
 
@@ -290,6 +302,7 @@ export const companyTemplateFunction = inngest.createFunction(
           onProgress: (p) => report({ ...p, phase: "seed" })
         });
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         await writeTemplateMarker(client, {
           companyId,
           userId,
@@ -298,9 +311,21 @@ export const companyTemplateFunction = inngest.createFunction(
             status: "failed",
             datasetKey,
             progress: null,
-            error: (err as Error).message
+            error: message,
+            ...(err instanceof ExportScopeViolationError
+              ? {
+                  reason: "scope-violations",
+                  violations: err.violations,
+                  violationRowsByTable: err.rowsByTable
+                }
+              : {})
           }
         });
+        // The snapshot guard's verdict is deterministic; a retry re-fails and
+        // flickers the marker running → failed under the user's recovery button.
+        if (err instanceof ExportScopeViolationError) {
+          throw new NonRetriableError(message, { cause: err });
+        }
         throw err;
       } finally {
         pgClient?.release();
