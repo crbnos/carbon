@@ -1419,6 +1419,9 @@ msgstr "Dodaj element"
 msgid "Add Line"
 msgstr "Dodaj linię"
 
+msgid "Add line item"
+msgstr "Dodaj pozycję"
+
 msgid "Add Line Item"
 msgstr "Dodaj pozycję"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Czy na pewno chcesz wysłać zaproszenie temu użytkownikowi?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Czy na pewno chcesz unieważnić {0}? To zaksięguje odwracający zapis księgowy i nie będzie możliwe do cofnięcia."
 
@@ -3766,6 +3770,9 @@ msgstr "Zwiń tabelę funkcji"
 
 msgid "Collapse Labor"
 msgstr "Zwiń robociznę"
+
+msgid "Collapse line"
+msgstr "Zwiń pozycję"
 
 msgid "Collapse Machine"
 msgstr "Zwiń maszynę"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Konta pracowników"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Zobowiązania z tytułu zwrotu wydatków pracownikom"
 
 msgid "Employee Type"
 msgstr "Typ pracownika"
@@ -7175,6 +7182,9 @@ msgstr "Rozwiń tabelę funkcji"
 
 msgid "Expand Labor"
 msgstr "Rozwiń Robociznę"
+
+msgid "Expand line"
+msgstr "Rozwiń pozycję"
 
 msgid "Expand Machine"
 msgstr "Rozwiń Maszynę"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Litera"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Konto zobowiązań dla kwot należnych pracownikom za zwrot wydatków. Jeśli nie zostanie ustawione, używane jest konto Zobowiązań"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Konto zobowiązań dla podatków odroczonych z przyspieszonych amortyzacji"
@@ -9699,6 +9709,9 @@ msgstr "Opis linii (opcjonalnie)"
 
 msgid "Line Item Comparison"
 msgstr "Porównanie pozycji"
+
+msgid "Line items"
+msgstr "Pozycje"
 
 msgid "Line options"
 msgstr "Opcje linii"
@@ -14045,6 +14058,15 @@ msgstr "Rejestracja nie powiodła się"
 msgid "Registration Number"
 msgstr "Numer rejestracyjny"
 
+msgid "Reimbursement Date"
+msgstr "Data zwrotu"
+
+msgid "Reimbursement ID"
+msgstr "ID zwrotu"
+
+msgid "Reimbursements"
+msgstr "Zwroty"
+
 msgid "Reject"
 msgstr "Odrzuć"
 
@@ -15056,6 +15078,9 @@ msgstr "Zapisz i zamknij"
 
 msgid "Save and Overwrite"
 msgstr "Zapisz i Zastąp"
+
+msgid "Save and post"
+msgstr "Zapisz i zaksięguj"
 
 msgid "Save applications"
 msgstr "Zapisz aplikacje"
@@ -18752,6 +18777,9 @@ msgstr "Usuń przypisanie reguły"
 msgid "Unassigned"
 msgstr "Nieprzydzielone"
 
+msgid "Unbalanced"
+msgstr "Niezrównoważony"
+
 msgid "Unballoon"
 msgstr "Usuń balon"
 
@@ -19532,6 +19560,9 @@ msgstr "Unieważnij fakturę zakupu"
 
 msgid "Void Receipt"
 msgstr "Unieważnij przyjęcie"
+
+msgid "Void Reimbursement"
+msgstr "Unieważnij zwrot"
 
 msgid "Void Sales Invoice"
 msgstr "Unieważnij fakturę sprzedaży"

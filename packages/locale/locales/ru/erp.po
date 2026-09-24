@@ -1419,6 +1419,9 @@ msgstr "Добавить элемент"
 msgid "Add Line"
 msgstr "Добавить строку"
 
+msgid "Add line item"
+msgstr "Добавить строку"
+
 msgid "Add Line Item"
 msgstr "Добавить позицию"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Вы уверены, что хотите отправить приглашение этому пользователю?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Вы уверены, что хотите аннулировать {0}? Это проведет обратную проводку и не может быть отменено."
 
@@ -3766,6 +3770,9 @@ msgstr "Свернуть таблицу функций"
 
 msgid "Collapse Labor"
 msgstr "Свернуть Труд"
+
+msgid "Collapse line"
+msgstr "Свернуть строку"
 
 msgid "Collapse Machine"
 msgstr "Свернуть станок"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Учетные записи сотрудников"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Кредиторская задолженность за возмещение расходов сотрудникам"
 
 msgid "Employee Type"
 msgstr "Тип сотрудника"
@@ -7175,6 +7182,9 @@ msgstr "Развернуть таблицу функций"
 
 msgid "Expand Labor"
 msgstr "Развернуть Труд"
+
+msgid "Expand line"
+msgstr "Развернуть строку"
 
 msgid "Expand Machine"
 msgstr "Развернуть Станок"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Буква"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Счет обязательств для сумм, причитающихся сотрудникам за возмещение расходов. Использует кредиторскую задолженность, если не установлено"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Счет обязательств по отложенным налогам от ускоренной амортизации"
@@ -9699,6 +9709,9 @@ msgstr "Описание строки (необязательно)"
 
 msgid "Line Item Comparison"
 msgstr "Сравнение позиций"
+
+msgid "Line items"
+msgstr "Позиции"
 
 msgid "Line options"
 msgstr "Параметры строки"
@@ -14045,6 +14058,15 @@ msgstr "Регистрация не удалась"
 msgid "Registration Number"
 msgstr "Регистрационный номер"
 
+msgid "Reimbursement Date"
+msgstr "Дата возмещения"
+
+msgid "Reimbursement ID"
+msgstr "Номер возмещения"
+
+msgid "Reimbursements"
+msgstr "Возмещения"
+
 msgid "Reject"
 msgstr "Отклонить"
 
@@ -15056,6 +15078,9 @@ msgstr "Сохранить и закрыть"
 
 msgid "Save and Overwrite"
 msgstr "Сохранить и перезаписать"
+
+msgid "Save and post"
+msgstr "Сохранить и провести"
 
 msgid "Save applications"
 msgstr "Сохранить применения"
@@ -18752,6 +18777,9 @@ msgstr "Отменить назначение правила"
 msgid "Unassigned"
 msgstr "Не назначено"
 
+msgid "Unbalanced"
+msgstr "Не сбалансировано"
+
 msgid "Unballoon"
 msgstr "Удалить выноску"
 
@@ -19532,6 +19560,9 @@ msgstr "Аннулировать счет-фактуру полученную"
 
 msgid "Void Receipt"
 msgstr "Аннулировать квитанцию"
+
+msgid "Void Reimbursement"
+msgstr "Аннулировать возмещение"
 
 msgid "Void Sales Invoice"
 msgstr "Аннулировать счет-фактуру выданную"

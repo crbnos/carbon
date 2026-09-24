@@ -1419,6 +1419,9 @@ msgstr "アイテムを追加"
 msgid "Add Line"
 msgstr "行を追加"
 
+msgid "Add line item"
+msgstr "明細行を追加"
+
 msgid "Add Line Item"
 msgstr "ラインアイテムを追加"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "このユーザーに招待を送信してもよろしいですか?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "{0}を取消してもよろしいですか？これにより逆仕訳行が転記され、元に戻すことはできません。"
 
@@ -3766,6 +3770,9 @@ msgstr "機能テーブルを折りたたむ"
 
 msgid "Collapse Labor"
 msgstr "労務を折りたたみ"
+
+msgid "Collapse line"
+msgstr "明細を折りたたむ"
 
 msgid "Collapse Machine"
 msgstr "機械を折りたたむ"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "従業員アカウント"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "従業員払戻金"
 
 msgid "Employee Type"
 msgstr "従業員タイプ"
@@ -7175,6 +7182,9 @@ msgstr "機能テーブルを展開"
 
 msgid "Expand Labor"
 msgstr "労務を展開"
+
+msgid "Expand line"
+msgstr "明細を展開する"
 
 msgid "Expand Machine"
 msgstr "機械を展開"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "文字"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "従業員への費用払戻に対する負債勘定です。未設定の場合は買掛金にフォールバックします。"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"
@@ -9699,6 +9709,9 @@ msgstr "行の説明 (オプション)"
 
 msgid "Line Item Comparison"
 msgstr "明細項目の比較"
+
+msgid "Line items"
+msgstr "明細行"
 
 msgid "Line options"
 msgstr "行オプション"
@@ -14045,6 +14058,15 @@ msgstr "登録に失敗しました"
 msgid "Registration Number"
 msgstr "登録番号"
 
+msgid "Reimbursement Date"
+msgstr "払戻日"
+
+msgid "Reimbursement ID"
+msgstr "払戻ID"
+
+msgid "Reimbursements"
+msgstr "払戻"
+
 msgid "Reject"
 msgstr "却下"
 
@@ -15056,6 +15078,9 @@ msgstr "保存して閉じる"
 
 msgid "Save and Overwrite"
 msgstr "保存して上書き"
+
+msgid "Save and post"
+msgstr "保存して転記する"
 
 msgid "Save applications"
 msgstr "アプリケーションを保存"
@@ -18752,6 +18777,9 @@ msgstr "ルールの割り当てを解除"
 msgid "Unassigned"
 msgstr "未割り当て"
 
+msgid "Unbalanced"
+msgstr "差額有り"
+
 msgid "Unballoon"
 msgstr "バルーンを削除"
 
@@ -19532,6 +19560,9 @@ msgstr "仕入先請求書を取消"
 
 msgid "Void Receipt"
 msgstr "入荷を取消"
+
+msgid "Void Reimbursement"
+msgstr "払戻を取消"
 
 msgid "Void Sales Invoice"
 msgstr "売上請求書を取消"

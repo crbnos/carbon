@@ -1419,6 +1419,9 @@ msgstr "Adicionar Item"
 msgid "Add Line"
 msgstr "Adicionar Linha"
 
+msgid "Add line item"
+msgstr "Adicionar item de linha"
+
 msgid "Add Line Item"
 msgstr "Adicionar Item de Linha"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Tem certeza de que deseja enviar um convite para este usuário?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Tem certeza de que deseja anular {0}? Isso contabilizará um lançamento de reversão e não pode ser desfeito."
 
@@ -3766,6 +3770,9 @@ msgstr "Recolher tabela de recursos"
 
 msgid "Collapse Labor"
 msgstr "Recolher Mão de obra"
+
+msgid "Collapse line"
+msgstr "Recolher linha"
 
 msgid "Collapse Machine"
 msgstr "Recolher Máquina"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Contas de Funcionários"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Contas a Pagar - Reembolsos de Funcionários"
 
 msgid "Employee Type"
 msgstr "Tipo de Funcionário"
@@ -7175,6 +7182,9 @@ msgstr "Expandir tabela de recursos"
 
 msgid "Expand Labor"
 msgstr "Expandir Mão de obra"
+
+msgid "Expand line"
+msgstr "Expandir linha"
 
 msgid "Expand Machine"
 msgstr "Expandir Máquina"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Letra"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Conta de passivo para valores devidos a funcionários por reembolso de despesas. Retorna para Contas a Pagar quando não definido"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Conta de passivo para impostos diferidos por depreciação acelerada"
@@ -9699,6 +9709,9 @@ msgstr "Descrição da linha (opcional)"
 
 msgid "Line Item Comparison"
 msgstr "Comparação de Itens de Linha"
+
+msgid "Line items"
+msgstr "Itens de linha"
 
 msgid "Line options"
 msgstr "Opções de linha"
@@ -14045,6 +14058,15 @@ msgstr "Falha no registo"
 msgid "Registration Number"
 msgstr "Número de Registro"
 
+msgid "Reimbursement Date"
+msgstr "Data de Reembolso"
+
+msgid "Reimbursement ID"
+msgstr "ID de Reembolso"
+
+msgid "Reimbursements"
+msgstr "Reembolsos"
+
 msgid "Reject"
 msgstr "Rejeitar"
 
@@ -15056,6 +15078,9 @@ msgstr "Salvar e fechar"
 
 msgid "Save and Overwrite"
 msgstr "Salvar e sobrescrever"
+
+msgid "Save and post"
+msgstr "Salvar e contabilizar"
 
 msgid "Save applications"
 msgstr "Salvar aplicações"
@@ -18752,6 +18777,9 @@ msgstr "Desatribuir regra"
 msgid "Unassigned"
 msgstr "Não atribuído"
 
+msgid "Unbalanced"
+msgstr "Desequilibrado"
+
 msgid "Unballoon"
 msgstr "Remover balão"
 
@@ -19532,6 +19560,9 @@ msgstr "Anular Fatura de Compra"
 
 msgid "Void Receipt"
 msgstr "Anular Recibo"
+
+msgid "Void Reimbursement"
+msgstr "Anular Reembolso"
 
 msgid "Void Sales Invoice"
 msgstr "Anular Fatura de Venda"

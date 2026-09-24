@@ -1419,6 +1419,9 @@ msgstr "Aggiungi Articolo"
 msgid "Add Line"
 msgstr "Aggiungi Riga"
 
+msgid "Add line item"
+msgstr "Aggiungi riga articolo"
+
 msgid "Add Line Item"
 msgstr "Aggiungi Voce"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Sei sicuro di voler inviare un invito a questo utente?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Sei sicuro di voler stornare {0}? Questo registra una riga di registrazione di storno e non può essere annullato."
 
@@ -3766,6 +3770,9 @@ msgstr "Comprimi tabella funzioni"
 
 msgid "Collapse Labor"
 msgstr "Comprimi manodopera"
+
+msgid "Collapse line"
+msgstr "Comprimi riga"
 
 msgid "Collapse Machine"
 msgstr "Comprimi macchina"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Account Dipendenti"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Debiti per rimborsi ai dipendenti"
 
 msgid "Employee Type"
 msgstr "Tipo di Dipendente"
@@ -7175,6 +7182,9 @@ msgstr "Espandi tabella funzioni"
 
 msgid "Expand Labor"
 msgstr "Espandi manodopera"
+
+msgid "Expand line"
+msgstr "Espandi riga"
 
 msgid "Expand Machine"
 msgstr "Espandi macchina"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Lettera"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Conto di debito per gli importi dovuti ai dipendenti per rimborsi spese. Ricade su Debiti quando non impostato"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Conto passività per imposte differite da ammortamento accelerato"
@@ -9699,6 +9709,9 @@ msgstr "Descrizione riga (facoltativa)"
 
 msgid "Line Item Comparison"
 msgstr "Confronto Articoli di Riga"
+
+msgid "Line items"
+msgstr "Articoli riga"
 
 msgid "Line options"
 msgstr "Opzioni riga"
@@ -14045,6 +14058,15 @@ msgstr "Registrazione non riuscita"
 msgid "Registration Number"
 msgstr "Numero di Registrazione"
 
+msgid "Reimbursement Date"
+msgstr "Data rimborso"
+
+msgid "Reimbursement ID"
+msgstr "ID rimborso"
+
+msgid "Reimbursements"
+msgstr "Rimborsi"
+
 msgid "Reject"
 msgstr "Rifiuta"
 
@@ -15056,6 +15078,9 @@ msgstr "Salva e chiudi"
 
 msgid "Save and Overwrite"
 msgstr "Salva e Sovrascrivi"
+
+msgid "Save and post"
+msgstr "Salva e registra"
 
 msgid "Save applications"
 msgstr "Salva applicazioni"
@@ -18752,6 +18777,9 @@ msgstr "Annulla assegnazione regola"
 msgid "Unassigned"
 msgstr "Non assegnato"
 
+msgid "Unbalanced"
+msgstr "Sbilanciato"
+
 msgid "Unballoon"
 msgstr "Rimuovi palloncino"
 
@@ -19532,6 +19560,9 @@ msgstr "Storna fattura di acquisto"
 
 msgid "Void Receipt"
 msgstr "Storna entrata merci"
+
+msgid "Void Reimbursement"
+msgstr "Storna rimborso"
 
 msgid "Void Sales Invoice"
 msgstr "Storna fattura di vendita"

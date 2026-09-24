@@ -3,7 +3,8 @@ import {
   LuBanknote,
   LuCreditCard,
   LuReceipt,
-  LuReceiptText
+  LuReceiptText,
+  LuWallet
 } from "react-icons/lu";
 import {
   BanknoteArrowDown,
@@ -61,6 +62,13 @@ export default function useInvoicingSubmodules() {
           to: path.to.charges,
           icon: <LuReceipt />,
           table: "charge",
+          permission: "invoicing"
+        },
+        {
+          name: t`Reimbursements`,
+          to: path.to.reimbursements,
+          icon: <LuWallet />,
+          table: "reimbursement",
           permission: "invoicing"
         }
       ]

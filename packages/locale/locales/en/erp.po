@@ -1419,6 +1419,9 @@ msgstr "Add Item"
 msgid "Add Line"
 msgstr "Add Line"
 
+msgid "Add line item"
+msgstr "Add line item"
+
 msgid "Add Line Item"
 msgstr "Add Line Item"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Are you sure you want to send an invite to this user?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 
@@ -3766,6 +3770,9 @@ msgstr "Collapse features table"
 
 msgid "Collapse Labor"
 msgstr "Collapse Labor"
+
+msgid "Collapse line"
+msgstr "Collapse line"
 
 msgid "Collapse Machine"
 msgstr "Collapse Machine"
@@ -7176,6 +7183,9 @@ msgstr "Expand features table"
 msgid "Expand Labor"
 msgstr "Expand Labor"
 
+msgid "Expand line"
+msgstr "Expand line"
+
 msgid "Expand Machine"
 msgstr "Expand Machine"
 
@@ -9699,6 +9709,9 @@ msgstr "Line description (optional)"
 
 msgid "Line Item Comparison"
 msgstr "Line Item Comparison"
+
+msgid "Line items"
+msgstr "Line items"
 
 msgid "Line options"
 msgstr "Line options"
@@ -14045,6 +14058,15 @@ msgstr "Registration failed"
 msgid "Registration Number"
 msgstr "Registration Number"
 
+msgid "Reimbursement Date"
+msgstr "Reimbursement Date"
+
+msgid "Reimbursement ID"
+msgstr "Reimbursement ID"
+
+msgid "Reimbursements"
+msgstr "Reimbursements"
+
 msgid "Reject"
 msgstr "Reject"
 
@@ -15056,6 +15078,9 @@ msgstr "Save & Close"
 
 msgid "Save and Overwrite"
 msgstr "Save and Overwrite"
+
+msgid "Save and post"
+msgstr "Save and post"
 
 msgid "Save applications"
 msgstr "Save applications"
@@ -18752,6 +18777,9 @@ msgstr "Unassign rule"
 msgid "Unassigned"
 msgstr "Unassigned"
 
+msgid "Unbalanced"
+msgstr "Unbalanced"
+
 msgid "Unballoon"
 msgstr "Unballoon"
 
@@ -19532,6 +19560,9 @@ msgstr "Void Purchase Invoice"
 
 msgid "Void Receipt"
 msgstr "Void Receipt"
+
+msgid "Void Reimbursement"
+msgstr "Void Reimbursement"
 
 msgid "Void Sales Invoice"
 msgstr "Void Sales Invoice"

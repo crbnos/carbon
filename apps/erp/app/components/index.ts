@@ -12,6 +12,7 @@ import { DeferredFiles } from "./DeferredFiles";
 import { DirectionAwareTabs } from "./DirectionAwareTabs";
 import DocumentHeader from "./DocumentHeader";
 import DocumentPreview from "./DocumentPreview";
+import DocumentSourceBadge from "./DocumentSourceBadge";
 import Documents from "./Documents";
 import EmployeeAvatar from "./EmployeeAvatar";
 import EmployeeAvatarGroup from "./EmployeeAvatarGroup";
@@ -71,6 +72,7 @@ export {
   DocumentHeader,
   DocumentPreview,
   Documents,
+  DocumentSourceBadge,
   EmployeeAvatar,
   EmployeeAvatarGroup,
   Empty,

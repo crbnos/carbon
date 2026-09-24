@@ -94,15 +94,15 @@
 - [x] Task 8: `build-reimbursement-journal.ts` (pure) + its Deno test
 - [x] Task 9: `post-reimbursement` edge function driver + `config.toml`
 - [x] Task 10: `post-reimbursement` handler + transaction Deno tests
-- [ ] Task 11: Dimension data plumbing for the line editor
-- [ ] Task 12: Shared `DocumentSourceBadge` component
-- [ ] Task 13: Shared `DocumentLineEditor` component
-- [ ] Task 14: `path.to` entries for reimbursements
-- [ ] Task 15: `ReimbursementStatus` + `ReimbursementsTable`
-- [ ] Task 16: Reimbursement detail — read mode
-- [ ] Task 17: Reimbursement detail — edit mode
-- [ ] Task 18: Post + Void action routes, with the totals guard
-- [ ] Task 19: Nav entry under Accounts Payable
+- [x] Task 11: Dimension data plumbing for the line editor
+- [x] Task 12: Shared `DocumentSourceBadge` component
+- [x] Task 13: Shared `DocumentLineEditor` component
+- [x] Task 14: `path.to` entries for reimbursements
+- [x] Task 15: `ReimbursementStatus` + `ReimbursementsTable`
+- [x] Task 16: Reimbursement detail — read mode
+- [x] Task 17: Reimbursement detail — edit mode
+- [x] Task 18: Post + Void action routes, with the totals guard
+- [x] Task 19: Nav entry under Accounts Payable
 - [ ] Task 20: Settlement target — models + service
 - [ ] Task 21: `post-payment` — reimbursement settlement arm
 - [ ] Task 22: Payment UI — employee payee + reimbursement apply target

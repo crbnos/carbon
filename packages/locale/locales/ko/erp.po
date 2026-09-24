@@ -1419,6 +1419,9 @@ msgstr "품목 추가"
 msgid "Add Line"
 msgstr "라인 추가"
 
+msgid "Add line item"
+msgstr "라인 품목 추가"
+
 msgid "Add Line Item"
 msgstr "라인 항목 추가"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "이 사용자에게 초대를 보내시겠습니까?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "{0}을(를) 무효 처리하시겠습니까? 역기입 분개가 전기되며 취소할 수 없습니다."
 
@@ -3766,6 +3770,9 @@ msgstr "기능 표 접기"
 
 msgid "Collapse Labor"
 msgstr "노무 접기"
+
+msgid "Collapse line"
+msgstr "라인 접기"
 
 msgid "Collapse Machine"
 msgstr "기계 접기"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "직원 계정"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "직원 환급금 매입채무"
 
 msgid "Employee Type"
 msgstr "직원 유형"
@@ -7175,6 +7182,9 @@ msgstr "기능 표 펼치기"
 
 msgid "Expand Labor"
 msgstr "노무 펼치기"
+
+msgid "Expand line"
+msgstr "라인 펼치기"
 
 msgid "Expand Machine"
 msgstr "기계 펼치기"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "레터"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "직원 비용 환급에 대해 직원에게 빚진 금액의 부채 계정입니다. 설정하지 않으면 매입채무로 대체됩니다"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "가속 감가상각으로 인한 이연법인세 부채 계정"
@@ -9699,6 +9709,9 @@ msgstr "행 설명 (선택 사항)"
 
 msgid "Line Item Comparison"
 msgstr "라인 항목 비교"
+
+msgid "Line items"
+msgstr "라인 품목"
 
 msgid "Line options"
 msgstr "라인 옵션"
@@ -14045,6 +14058,15 @@ msgstr "등록 실패"
 msgid "Registration Number"
 msgstr "등록 번호"
 
+msgid "Reimbursement Date"
+msgstr "환급일"
+
+msgid "Reimbursement ID"
+msgstr "환급 ID"
+
+msgid "Reimbursements"
+msgstr "환급금"
+
 msgid "Reject"
 msgstr "거부"
 
@@ -15056,6 +15078,9 @@ msgstr "저장 및 닫기"
 
 msgid "Save and Overwrite"
 msgstr "저장 및 덮어쓰기"
+
+msgid "Save and post"
+msgstr "저장 및 전기"
 
 msgid "Save applications"
 msgstr "애플리케이션 저장"
@@ -18752,6 +18777,9 @@ msgstr "규칙 할당 해제"
 msgid "Unassigned"
 msgstr "미배정"
 
+msgid "Unbalanced"
+msgstr "불균형"
+
 msgid "Unballoon"
 msgstr "벌룬 해제"
 
@@ -19532,6 +19560,9 @@ msgstr "매입 송장 무효 처리"
 
 msgid "Void Receipt"
 msgstr "입고 무효 처리"
+
+msgid "Void Reimbursement"
+msgstr "환급 무효 처리"
 
 msgid "Void Sales Invoice"
 msgstr "매출 송장 무효 처리"

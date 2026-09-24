@@ -2016,6 +2016,19 @@ export const path = {
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
     refreshSession: "/refresh-session",
+    // Reimbursements — employee expense payables imported from a spend tool.
+    // The list lives under invoicing (it is an AP nav entry); the document is a
+    // full page of its own, because the coding-line editor does not fit the
+    // Drawer detail convention (see
+    // .ai/specs/2026-09-23-editable-imported-spend-documents.md).
+    reimbursement: (id: string) => generatePath(`${x}/reimbursements/${id}`),
+    reimbursementEdit: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/edit`),
+    reimbursementPost: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/post`),
+    reimbursements: `${x}/invoicing/reimbursements`,
+    reimbursementVoid: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/void`),
     releaseOperationBatches: `${x}/production/batches/release`,
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),

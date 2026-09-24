@@ -1419,6 +1419,9 @@ msgstr "添加项目"
 msgid "Add Line"
 msgstr "添加行"
 
+msgid "Add line item"
+msgstr "添加行项目"
+
 msgid "Add Line Item"
 msgstr "添加行项目"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "你确定要向此用户发送邀请吗？"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "确定要作废 {0}？这将过账一条反向分录，无法撤销。"
 
@@ -3766,6 +3770,9 @@ msgstr "折叠功能表"
 
 msgid "Collapse Labor"
 msgstr "折叠人工"
+
+msgid "Collapse line"
+msgstr "折叠行"
 
 msgid "Collapse Machine"
 msgstr "折叠机器"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "员工账户"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "员工报销应付"
 
 msgid "Employee Type"
 msgstr "员工类型"
@@ -7175,6 +7182,9 @@ msgstr "展开功能表"
 
 msgid "Expand Labor"
 msgstr "展开人工"
+
+msgid "Expand line"
+msgstr "展开行"
 
 msgid "Expand Machine"
 msgstr "展开机器"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "字母"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "员工费用报销应付账户。如未设置，则回退到应付款项"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速折旧产生的递延所得税的负债账户"
@@ -9699,6 +9709,9 @@ msgstr "行描述(可选)"
 
 msgid "Line Item Comparison"
 msgstr "行项目比较"
+
+msgid "Line items"
+msgstr "行项目"
 
 msgid "Line options"
 msgstr "行选项"
@@ -14045,6 +14058,15 @@ msgstr "注册失败"
 msgid "Registration Number"
 msgstr "注册号"
 
+msgid "Reimbursement Date"
+msgstr "报销日期"
+
+msgid "Reimbursement ID"
+msgstr "报销ID"
+
+msgid "Reimbursements"
+msgstr "报销"
+
 msgid "Reject"
 msgstr "拒绝"
 
@@ -15056,6 +15078,9 @@ msgstr "保存并关闭"
 
 msgid "Save and Overwrite"
 msgstr "保存并覆盖"
+
+msgid "Save and post"
+msgstr "保存并过账"
 
 msgid "Save applications"
 msgstr "保存应用"
@@ -18752,6 +18777,9 @@ msgstr "取消分配规则"
 msgid "Unassigned"
 msgstr "未分配"
 
+msgid "Unbalanced"
+msgstr "不平衡"
+
 msgid "Unballoon"
 msgstr "取消气球标注"
 
@@ -19532,6 +19560,9 @@ msgstr "作废采购发票"
 
 msgid "Void Receipt"
 msgstr "作废收据"
+
+msgid "Void Reimbursement"
+msgstr "作废报销"
 
 msgid "Void Sales Invoice"
 msgstr "作废销售发票"

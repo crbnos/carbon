@@ -1419,6 +1419,9 @@ msgstr "Ajouter un article"
 msgid "Add Line"
 msgstr "Ajouter une ligne"
 
+msgid "Add line item"
+msgstr "Ajouter une ligne d'article"
+
 msgid "Add Line Item"
 msgstr "Ajouter un article de ligne"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Êtes-vous sûr de vouloir envoyer une invitation à cet utilisateur ?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Êtes-vous sûr de vouloir invalider {0} ? Ceci comptabilisera une contrepassation et ne pourra pas être annulé."
 
@@ -3766,6 +3770,9 @@ msgstr "Réduire le tableau des fonctionnalités"
 
 msgid "Collapse Labor"
 msgstr "Réduire la main-d'œuvre"
+
+msgid "Collapse line"
+msgstr "Réduire la ligne"
 
 msgid "Collapse Machine"
 msgstr "Réduire Machine"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Comptes Employés"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Remboursements aux employés à payer"
 
 msgid "Employee Type"
 msgstr "Type d'employé"
@@ -7175,6 +7182,9 @@ msgstr "Développer le tableau des fonctionnalités"
 
 msgid "Expand Labor"
 msgstr "Développer Main-d'œuvre"
+
+msgid "Expand line"
+msgstr "Développer la ligne"
 
 msgid "Expand Machine"
 msgstr "Développer Machine"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Lettre"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Compte de passif pour les montants dus aux employés pour les remboursements de frais. Bascule vers Dettes fournisseurs s'il n'est pas défini"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Compte de passif pour les impôts différés des amortissements accélérés"
@@ -9699,6 +9709,9 @@ msgstr "Description de la ligne (optionnel)"
 
 msgid "Line Item Comparison"
 msgstr "Comparaison des articles"
+
+msgid "Line items"
+msgstr "Lignes d'articles"
 
 msgid "Line options"
 msgstr "Options de ligne"
@@ -14045,6 +14058,15 @@ msgstr "L'enregistrement a échoué"
 msgid "Registration Number"
 msgstr "Numéro d'enregistrement"
 
+msgid "Reimbursement Date"
+msgstr "Date de remboursement"
+
+msgid "Reimbursement ID"
+msgstr "ID de remboursement"
+
+msgid "Reimbursements"
+msgstr "Remboursements"
+
 msgid "Reject"
 msgstr "Rejeter"
 
@@ -15056,6 +15078,9 @@ msgstr "Enregistrer et fermer"
 
 msgid "Save and Overwrite"
 msgstr "Enregistrer et remplacer"
+
+msgid "Save and post"
+msgstr "Enregistrer et comptabiliser"
 
 msgid "Save applications"
 msgstr "Enregistrer les applications"
@@ -18752,6 +18777,9 @@ msgstr "Retirer la règle"
 msgid "Unassigned"
 msgstr "Non assigné"
 
+msgid "Unbalanced"
+msgstr "Déséquilibré"
+
 msgid "Unballoon"
 msgstr "Retirer le ballon"
 
@@ -19532,6 +19560,9 @@ msgstr "Invalider la facture d'achat"
 
 msgid "Void Receipt"
 msgstr "Invalider la réception"
+
+msgid "Void Reimbursement"
+msgstr "Invalider le remboursement"
 
 msgid "Void Sales Invoice"
 msgstr "Invalider la facture de vente"

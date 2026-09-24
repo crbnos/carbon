@@ -1419,6 +1419,9 @@ msgstr "Öğe Ekle"
 msgid "Add Line"
 msgstr "Satır Ekle"
 
+msgid "Add line item"
+msgstr "Satır ekle"
+
 msgid "Add Line Item"
 msgstr "Satır Ekle"
 
@@ -2539,6 +2542,7 @@ msgid "Are you sure you want to send an invite to this user?"
 msgstr "Bu kullanıcıya daveti göndermek istediğinizden emin misiniz?"
 
 #. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "Hükümsüz kılmak istediğinize emin misiniz {0}? Bu, bir mahsup yevmiye kaydı muhasebeleştirir ve geri alınamaz."
 
@@ -3766,6 +3770,9 @@ msgstr "Özellikler tablosunu daralt"
 
 msgid "Collapse Labor"
 msgstr "İşçilik Süresini Daralt"
+
+msgid "Collapse line"
+msgstr "Satırı daralt"
 
 msgid "Collapse Machine"
 msgstr "Makineyi Daralt"
@@ -6754,7 +6761,7 @@ msgid "Employee Accounts"
 msgstr "Çalışan Hesapları"
 
 msgid "Employee Reimbursements Payable"
-msgstr ""
+msgstr "Çalışan Geri Ödeme Borçları"
 
 msgid "Employee Type"
 msgstr "Çalışan Türü"
@@ -7175,6 +7182,9 @@ msgstr "Özellikler tablosunu genişlet"
 
 msgid "Expand Labor"
 msgstr "İşçilik Genişlet"
+
+msgid "Expand line"
+msgstr "Satırı genişlet"
 
 msgid "Expand Machine"
 msgstr "Makineyi Genişlet"
@@ -9649,7 +9659,7 @@ msgid "Letter"
 msgstr "Harf"
 
 msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
-msgstr ""
+msgstr "Çalışanlara ödenen gider geri ödemelerine ait borç tutarları için muhasebe hesabı. Ayarlanmadığında Borçlar hesabına geri düşer"
 
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "Hızlandırılmış amortisman nedeniyle ertelenen vergiler için borç hesabı"
@@ -9699,6 +9709,9 @@ msgstr "Satır açıklaması (isteğe bağlı)"
 
 msgid "Line Item Comparison"
 msgstr "Satır Kalemi Karşılaştırması"
+
+msgid "Line items"
+msgstr "Satır kalemleri"
 
 msgid "Line options"
 msgstr "Satır seçenekleri"
@@ -14045,6 +14058,15 @@ msgstr "Kayıt Başarısız Oldu"
 msgid "Registration Number"
 msgstr "Sicil Numarası"
 
+msgid "Reimbursement Date"
+msgstr "Geri Ödeme Tarihi"
+
+msgid "Reimbursement ID"
+msgstr "Geri Ödeme ID"
+
+msgid "Reimbursements"
+msgstr "Geri Ödemeler"
+
 msgid "Reject"
 msgstr "Reddet"
 
@@ -15056,6 +15078,9 @@ msgstr "Kaydet ve Kapat"
 
 msgid "Save and Overwrite"
 msgstr "Kaydet ve Üzerine Yaz"
+
+msgid "Save and post"
+msgstr "Kaydet ve muhasebeleştir"
 
 msgid "Save applications"
 msgstr "Uygulamaları kaydet"
@@ -18752,6 +18777,9 @@ msgstr "Kuralı kaldır"
 msgid "Unassigned"
 msgstr "Atanmamış"
 
+msgid "Unbalanced"
+msgstr "Dengesiz"
+
 msgid "Unballoon"
 msgstr "Balonu Kaldır"
 
@@ -19532,6 +19560,9 @@ msgstr "Alış faturasını hükümsüz kıl"
 
 msgid "Void Receipt"
 msgstr "Mal kabulünü hükümsüz kıl"
+
+msgid "Void Reimbursement"
+msgstr "Geri Ödemeyi Hükümsüz Kıl"
 
 msgid "Void Sales Invoice"
 msgstr "Satış faturasını hükümsüz kıl"
