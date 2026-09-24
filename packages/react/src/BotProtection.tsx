@@ -1,6 +1,6 @@
-import { Turnstile } from "@marsidev/react-turnstile";
+import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
 import { initBotId } from "botid/client/core";
-import { type ReactNode, useEffect, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useMode } from "./hooks/useMode";
 
 // Mirrors BotProtection in @carbon/auth/auth.server — the login loader passes
@@ -21,13 +21,26 @@ let botIdInitialized = false;
  *   render, nothing to wait for.
  * - Turnstile renders a widget; its token is single-use, so the form stays
  *   disabled until one arrives and again after it expires.
+ *
+ * Pass the form's latest response (`fetcher.data`) as `response`: the server
+ * spent the Turnstile token on that submit, so each response asks the widget
+ * for a fresh one — otherwise a retry after a failed login re-sends a spent
+ * token and fails the bot check.
  */
 export function useBotProtection(
   path: string,
-  config: BotProtectionConfig
+  config: BotProtectionConfig,
+  response?: unknown
 ): { token: string; ready: boolean; challenge: ReactNode } {
   const mode = useMode();
   const [token, setToken] = useState("");
+  const widget = useRef<TurnstileInstance>(null);
+
+  useEffect(() => {
+    if (response === undefined) return;
+    setToken("");
+    widget.current?.reset();
+  }, [response]);
 
   const provider = config?.provider;
   useEffect(() => {
@@ -51,6 +64,7 @@ export function useBotProtection(
     challenge: (
       <div className="w-full flex justify-center">
         <Turnstile
+          ref={widget}
           siteKey={config.siteKey}
           onSuccess={setToken}
           onError={() => setToken("")}

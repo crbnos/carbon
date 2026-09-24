@@ -247,7 +247,6 @@ export default function LoginRoute() {
     hasSsoAuth,
     botProtection
   } = useLoaderData<typeof loader>();
-  const bot = useBotProtection("/login", botProtection);
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -256,6 +255,7 @@ export default function LoginRoute() {
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);

@@ -126,13 +126,13 @@ export async function action({ request }: ActionFunctionArgs) {
 export default function LoginRoute() {
   const { hasOutlookAuth, hasGoogleAuth, botProtection } =
     useLoaderData<typeof loader>();
-  const bot = useBotProtection("/login", botProtection);
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({

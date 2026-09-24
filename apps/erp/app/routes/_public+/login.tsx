@@ -300,7 +300,6 @@ export default function LoginRoute() {
     hasSsoAuth,
     botProtection
   } = useLoaderData<typeof loader>();
-  const bot = useBotProtection("/login", botProtection);
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -327,6 +326,7 @@ export default function LoginRoute() {
   }, [logoutReason]);
 
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.mode) {
