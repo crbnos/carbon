@@ -514,8 +514,6 @@ describe("diffMethod — attributes", () => {
 });
 
 describe("getItemDemand", () => {
-  // Records every table read and the filters applied to it, and answers each
-  // read with the rows registered for that table.
   function mockClient(rowsByTable: Record<string, unknown[]>) {
     const reads: Array<{
       table: string;

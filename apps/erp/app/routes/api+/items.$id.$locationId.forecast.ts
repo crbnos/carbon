@@ -204,9 +204,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
-  // Reconcile the chart with the planning grid: the planning RPCs count
-  // planner projections as demand, so the chart must too. See
-  // `mergeDemandProjections` for the per-period rule.
   const demandForecast = mergeDemandProjections(
     demand.forecasts,
     demand.projections

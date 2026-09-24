@@ -1,21 +1,3 @@
-/**
- * Merge planner-authored demand projections into the item's demand-forecast
- * series for the planning chart.
- *
- * The planning RPCs (`get_production_planning`, `get_purchasing_planning`)
- * count actual + forecast + projection per period, so an item whose only
- * demand is a `demandProjection` is listed in the planning grid. The chart
- * reads the item forecast API instead, which historically read only
- * `demandActual` and `demandForecast` and charted such an item as having no
- * demand at all. This is the one place the two are reconciled.
- *
- * The chart assigns (does not accumulate) one "Demand Forecast" bucket per
- * period, so the result carries AT MOST ONE row that includes the projection
- * for any period: the first forecast row of that period absorbs it, and a
- * period with no forecast row gets a synthetic row built from the projection
- * (its `id` dropped so it cannot be mistaken for a `demandForecast` row).
- * Projections of zero or less contribute nothing.
- */
 export type DemandForecastLike = {
   periodId: string;
   forecastQuantity: number | null;

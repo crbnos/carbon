@@ -27,9 +27,6 @@ describe("mergeDemandProjections", () => {
   });
 
   it("charts a projection-only item: a period with no forecast row gets a synthetic row", () => {
-    // The regression: a Make item with no sales orders and nothing consuming
-    // it, whose only demand is a planner projection. The planning grid lists
-    // it; the chart must not report "no demand".
     const merged = mergeDemandProjections([], [projection("p1", 40)]);
 
     expect(merged).toHaveLength(1);
@@ -39,8 +36,6 @@ describe("mergeDemandProjections", () => {
       periodId: "p1",
       forecastQuantity: 40
     });
-    // The synthetic row is not a demandForecast row and must not carry the
-    // projection's id.
     expect(merged[0]).not.toHaveProperty("id");
   });
 
@@ -74,8 +69,6 @@ describe("mergeDemandProjections", () => {
   });
 
   it("applies a period's projection to only the first forecast row of that period", () => {
-    // The chart assigns one bucket per period; adding the projection to every
-    // row of the period would double count it once the chart picks the last.
     const merged = mergeDemandProjections(
       [forecast("p1", 10), { ...forecast("p1", 2), id: "df_p1_dup" }],
       [projection("p1", 5)]
