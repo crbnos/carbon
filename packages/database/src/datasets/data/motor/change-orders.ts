@@ -65,7 +65,7 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
       }
     ]
   },
-  // ── Lifecycle-only notices: no affected items yet (every change type spins a
+  // Lifecycle-only notices: no affected items yet (every change type spins a
   // method draft), so they exercise the stage flow + action tasks alone.
   {
     ref: "co:start",

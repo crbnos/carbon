@@ -356,7 +356,6 @@ async function seedInspections(ctx: Ctx): Promise<void> {
 
 type LotPlan = {
   documentId: string;
-  /** label → inspectionFeature id */
   featureIds: Record<string, string>;
   features: InspectionFeatureSpec[];
   aql: number;
@@ -531,8 +530,6 @@ async function jobOperationLot(
   };
 }
 
-// The lot row, its per-feature plans, the recorded grid and — once
-// dispositioned — the history row.
 async function insertLot(
   ctx: Ctx,
   spec: InspectionSpec,

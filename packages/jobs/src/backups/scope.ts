@@ -536,12 +536,9 @@ export async function purgeScopeViolations(
 }
 
 /**
- * SQL predicate: one of `table`'s NOT-NULL FKs points at a row that no longer
- * exists ANYWHERE — what `ON DELETE CASCADE` would have removed, had the restore
- * wipe not run under `session_replication_role='replica'`. Deliberately NOT
- * "outside company scope": a live cross-company reference is corruption the user
- * must confirm deleting (`purgeScopeViolations`), never something cleaned up
- * silently. `null` when the table has no FK that could dangle.
+ * Rows `ON DELETE CASCADE` would have removed, had the restore wipe not run under
+ * `session_replication_role='replica'`. Deliberately NOT "outside company scope":
+ * the user must confirm deleting a live cross-company reference (`purgeScopeViolations`).
  */
 export function buildDanglingPredicate(
   table: TableInfo,
@@ -565,10 +562,7 @@ export function buildDanglingPredicate(
   return sql.join(terms, sql` OR `);
 }
 
-/**
- * Delete this company's rows of `tables` whose NOT-NULL FK dangles (see
- * `buildDanglingPredicate`), children first. Run inside the restore transaction.
- */
+/** Children first; run inside the restore transaction. */
 export async function deleteDanglingRows(
   trx: Kysely<KyselyDatabase>,
   tables: TableInfo[],

@@ -63,8 +63,6 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
-// The front office keeps a small stock of the pump housing for walk-in
-// repair orders, and reorders the hydraulic cylinder it pairs with.
 export const HQ_PLANNING: HqPlanningSpec = {
   reorderItemIds: ["MCH-HSG-PUMP", "CYL-HYD-40"],
   demandProjections: [{ readableId: "MCH-HSG-PUMP", quantities: [2, 2, 3, 3] }]

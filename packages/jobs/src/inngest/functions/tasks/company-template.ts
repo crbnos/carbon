@@ -50,14 +50,12 @@ type TemplateMeta = {
   includeGroup?: boolean;
   /** Live phase progress, so a run that takes minutes doesn't look hung. */
   progress?: JobProgress | null;
-  /** Set when post-apply MRP/scheduling failed; the seeded data stands regardless. */
   planningError?: string | null;
-  /** Set when the pre-apply snapshot refused because the LIVE data has rows
-   *  whose NOT-NULL FK escapes company scope — the one failure with a recovery. */
+  /** The pre-apply snapshot refused over the LIVE data — the one recoverable failure. */
   reason?: "scope-violations" | null;
-  /** Per FK EDGE — the breakdown, never summable into a row count. */
+  /** Per FK edge — never sum into a row count. */
   violations?: ScopeViolation[] | null;
-  /** DISTINCT rows involved, per table — what the user is told. */
+  /** DISTINCT rows — the count the user is told. */
   violationRowsByTable?: Array<{ table: string; rows: number }> | null;
 };
 

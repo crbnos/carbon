@@ -381,12 +381,8 @@ export type CompanyTemplateRun = {
   /** Whether a pre-apply snapshot exists yet — the UI offers a revert retry on a
    *  stalled run only when there is actually something to put back. */
   hasSnapshot: boolean;
-  /** "scope-violations" = the pre-apply snapshot refused because the LIVE data
-   *  has rows escaping company scope — the one failure with a recovery. */
   reason: "scope-violations" | null;
-  /** Per-edge breakdown for the details popover. Never summed. */
   violations: ScopeViolationSummary[];
-  /** DISTINCT rows per table — sum this for anything a user reads. */
   violationRowsByTable: RowsByTable[];
 };
 

@@ -16,7 +16,6 @@ import type {
   UserAttributeCategorySpec
 } from "../../types.ts";
 
-// One preventive schedule per frequency, spread over the cell's work centers.
 export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   {
     key: "smt-nozzle-clean",
@@ -90,9 +89,8 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   }
 ];
 
-// Every status, severity, priority, source and OEE impact, plus the shapes the
-// maintenance KPIs and boards read: a failure on a production day, back-dated
-// completions, today's scheduled task, a machine down now, and one at HQ.
+// Shapes the maintenance KPIs and boards read: a failure on a production day,
+// back-dated completions, today's scheduled task, a machine down now, one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "smt-feeder-jam",
@@ -164,7 +162,7 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     actualStart: { offset: -11, time: "13:10:00" },
     actualEnd: { offset: -11, time: "15:05:00" },
     takesWorkCenterOffline: true,
-    // Two pounds instead of the kit's one — the dry guide took a full purge.
+    // Deliberately more than the kit's one pound.
     spareParts: [{ item: "CN-GREASE-EP", quantity: 2, shelf: "A1-L2" }],
     comments: ["Backlash on the master gearset after re-grease: 0.8 arcmin."]
   },
@@ -289,7 +287,6 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   }
 ];
 
-// The spares the MES dispatch page offers per work center.
 export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
   { workCenter: "Gearbox Bench", item: "CN-GREASE-EP", quantity: 2 },
   { workCenter: "Gearbox Bench", item: "BRG-CRB-100", quantity: 1 },
@@ -418,7 +415,6 @@ export const TRAININGS: TrainingSpec[] = [
   }
 ];
 
-// The past working week on the time clock, split around lunch on the last day.
 export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -5, clockIn: "07:02:00", clockOut: "15:34:00" },
   {
@@ -436,8 +432,7 @@ export const TIMECARDS: TimecardSpec[] = [
 // Clocked in before the first timer on the floor started this morning.
 export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:33:00" };
 
-// The cell lead's stations for the week around today — none on today itself,
-// so the MES schedule opens on every work center instead of one station.
+// None on today, so the MES schedule opens on every work center, not one station.
 export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
   { dayOffset: -2, workCenter: "CNC Mill Cell", shift: "First Shift" },
   { dayOffset: -1, workCenter: "Gearbox Bench", shift: "First Shift" },
@@ -490,7 +485,6 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
-// People › Attributes — the applying user's own profile values.
 export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
   {
     name: "Robot Cell Safety",
@@ -531,8 +525,6 @@ export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
   { item: "ROB-2000", prefix: "ROB2000-SN-", size: 4, next: 1 }
 ];
 
-// Label history on the plant's printer route: auto and manual prints, a
-// delivery failure, and its reprint waiting in the queue.
 export const PRINT_JOBS: PrintJobSpec[] = [
   {
     source: { kind: "Receipt", receipt: "receipt:bare-boards" },

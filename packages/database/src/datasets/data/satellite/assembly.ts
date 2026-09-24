@@ -8,7 +8,7 @@ export const satelliteAssembly: AssemblySpec = {
   name: "Radial Engine — Build Sequence",
   item: "SAT-1000",
   componentCount: 266,
-  // Systems integration — the Assembly operation of the SAT-1000 method.
+  // The Assembly operation of the SAT-1000 method.
   operation: 1,
   steps: [
     {

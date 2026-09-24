@@ -63,8 +63,6 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
-// Fort Wayne HQ stocks a few MTR-4500 service motors and the encoders field
-// techs swap most often.
 export const HQ_PLANNING: HqPlanningSpec = {
   reorderItemIds: ["MTR-4500", "ENC-INC-2048"],
   demandProjections: [{ readableId: "MTR-4500", quantities: [2, 2, 2, 3] }]

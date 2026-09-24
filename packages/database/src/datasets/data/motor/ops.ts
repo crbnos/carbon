@@ -16,7 +16,6 @@ import type {
   UserAttributeCategorySpec
 } from "../../types.ts";
 
-// One preventive schedule per frequency, spread over the plant's work centers.
 export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   {
     key: "winding-tension",
@@ -90,9 +89,8 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   }
 ];
 
-// Every status, severity, priority, source and OEE impact, plus the shapes the
-// maintenance KPIs and boards read: a failure on a production day, back-dated
-// completions, today's scheduled task, a machine down now, and one at HQ.
+// Shapes the maintenance KPIs and boards read: a failure on a production day,
+// back-dated completions, today's scheduled task, a machine down now, one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "winding-nozzle",
@@ -164,7 +162,7 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     actualStart: { offset: -10, time: "12:05:00" },
     actualEnd: { offset: -10, time: "13:40:00" },
     takesWorkCenterOffline: true,
-    // Two pounds instead of the kit's one — the hot bearing took a full purge.
+    // Deliberately more than the kit's one pound.
     spareParts: [{ item: "CN-BRG-GREASE", quantity: 2, shelf: "A2-L2" }],
     comments: ["Bearing housing after re-pack: 41 °C at full speed."]
   },
@@ -291,7 +289,6 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   }
 ];
 
-// The spares the MES dispatch page offers per work center.
 export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
   { workCenter: "Balancing Cell", item: "BRG-6206-C3", quantity: 2 },
   { workCenter: "Impregnation Oven", item: "FAN-AX-160", quantity: 1 },
@@ -423,7 +420,6 @@ export const TRAININGS: TrainingSpec[] = [
   }
 ];
 
-// The past working week on the time clock, split around lunch on the last day.
 export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -5, clockIn: "06:30:00", clockOut: "15:02:00" },
   { dayOffset: -4, clockIn: "06:28:00", clockOut: "15:05:00" },
@@ -441,8 +437,7 @@ export const TIMECARDS: TimecardSpec[] = [
 // Clocked in before the first timer on the floor started this morning.
 export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:29:00" };
 
-// The supervisor's stations for the week around today — none on today itself,
-// so the MES schedule opens on every work center instead of one station.
+// None on today, so the MES schedule opens on every work center, not one station.
 export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
   { dayOffset: -2, workCenter: "Winding Line 1", shift: "A Shift" },
   { dayOffset: -1, workCenter: "Motor Assembly Bench", shift: "A Shift" },
@@ -495,7 +490,6 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
-// People › Attributes — the applying user's own profile values.
 export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
   {
     name: "Winding & Electrical Safety",
@@ -537,8 +531,6 @@ export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
   { item: "MTR-4500", prefix: "MTR4500-SN-", size: 4, next: 0 }
 ];
 
-// Label history on the plant's printer route: auto and manual prints, a
-// delivery failure, and its reprint waiting in the queue.
 export const PRINT_JOBS: PrintJobSpec[] = [
   {
     source: { kind: "Receipt", receipt: "receipt:copperline-restock" },

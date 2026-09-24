@@ -22,8 +22,6 @@ export const JOBS: JobSpec[] = [
     releasedDateOffset: -297,
     priority: 3,
     assignee: "self",
-    // The floor's real mixed state: integration done, TVAC running, final
-    // inspection waiting on it.
     operationOverrides: [
       { order: 1, status: "Done" },
       { order: 2, status: "In Progress", assignee: "self" },
@@ -130,8 +128,7 @@ export const JOBS: JobSpec[] = [
     releasedDateOffset: -337
   },
 
-  // ── Floor load: short-routing subassembly jobs released over the last few
-  // weeks, so every work center has a queue and something running today.
+  // Released over the last few weeks so every work center has a queue and something running today.
   {
     key: "floor-eps-pcb",
     item: "PCB-EPS-R1",
@@ -253,7 +250,7 @@ export const JOBS: JobSpec[] = [
     priority: 11,
     operationOverrides: [{ order: 1, assignee: "self" }]
   },
-  // Released with no deadline — Priorities' Unscheduled column.
+  // No deadline, so it lands in Priorities' Unscheduled column.
   {
     key: "floor-harness",
     item: "HARNESS-001",
@@ -266,7 +263,6 @@ export const JOBS: JobSpec[] = [
     releasedDateOffset: -1,
     priority: 14
   },
-  // Make-to-stock: building shelf stock for the next bus, no customer order.
   {
     key: "stock-eps-pcb",
     item: "PCB-EPS-R1",
@@ -288,7 +284,7 @@ export const JOBS: JobSpec[] = [
     operationOverrides: [{ order: 1, assignee: "self" }]
   },
 
-  // ── Recently completed — the completion-time and estimates-vs-actuals KPIs.
+  // Feeds the completion-time and estimates-vs-actuals KPIs.
   {
     key: "done-adcs-pcb",
     item: "PCB-ADCS-R1",
@@ -420,9 +416,6 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
-// Material staging for the in-progress SAT-1000 job. The completed list moved
-// the structure kit's fasteners to the clean-room floor weeks ago; the open
-// list is today's pull for the next bus, short on bearing grease.
 export const PICKING_LISTS: PickingListSpec[] = [
   {
     key: "sat-kit-1",
@@ -477,9 +470,8 @@ export const satelliteProduction: ProductionData = {
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
   genealogyJobKey: "in-progress",
-  // The TVAC operation (position 2) is the one overridden to In Progress.
+  // Must match the operation overridden to In Progress.
   openEvent: { operationOrder: 2 },
-  // Two boards' reflow run together — the oven takes a mixed panel load.
   batch: {
     members: [
       { job: "floor-adcs-pcb", order: 1 },

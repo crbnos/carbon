@@ -34,17 +34,13 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "CN-GREASE-EP", qty: 6, shelf: "A1-L2" }
 ];
 
-// Lots/serials that back the tracked slice of the opening stock above, plus
-// the quality states a real stockroom carries: an encoder lot on hold pending
-// paperwork, a billet lot rejected at receiving, and an expiry-dated encoder
-// lot (paired with the itemShelfLife spec below).
+// Backs the tracked slice of the opening stock above.
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "ENC-ABS-19",
     entities: [
       { readableId: "LOT-ENC-2607", quantity: 8 },
       { readableId: "LOT-ENC-2608", quantity: 4, expiresOffset: 30 },
-      // Awaiting the vendor's factory calibration certificate before release.
       { readableId: "LOT-ENC-2609", quantity: 2, status: "On Hold" }
     ]
   },
@@ -62,9 +58,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
     entities: [
       { readableId: "LOT-AL6061-2608", quantity: 300 },
       { readableId: "LOT-AL6061-2609", quantity: 180 },
-      // Failed the incoming mill-cert hardness check — quarantined for MRB.
       { readableId: "LOT-AL6061-2610", quantity: 3, status: "Rejected" },
-      // Saw-cut billets left out in the wash bay — corroded, scrapped.
       {
         readableId: "LOT-AL6061-2604",
         quantity: 5,
@@ -81,14 +75,9 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   }
 ];
 
-// Absolute encoders carry a 1-year factory calibration certificate, with
-// LOT-ENC-2608 above expiring in 30 days so the expiry chips have something
-// amber to show.
+// LOT-ENC-2608 above expires in 30 days so the expiry chips show amber.
 export const SHELF_LIVES: ShelfLifeSpec[] = [{ item: "ENC-ABS-19", days: 365 }];
 
-// Kanbans (auto-replenishment cards): Buy cards for high-usage buy parts, a
-// Make card for the machined arm base, and a Transfer card feeding the
-// harness bench's point-of-use bin.
 export const KANBAN_ITEMS: KanbanItemSpec[] = [
   { item: "FST-M8-SS", qty: 200, supplier: "Precision Fasteners Co" },
   { item: "FST-M5-SS", qty: 100, supplier: "Precision Fasteners Co" },
@@ -149,8 +138,6 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
     ]
   },
   {
-    // August cycle count over the fastener aisle: two small variances (a
-    // missing bag of M8s, two bearings found loose behind the bin).
     key: "aug-cycle",
     status: "Posted",
     notes: "Cycle count — fastener & hardware bins",
@@ -190,8 +177,7 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
   }
 ];
 
-// Shelf → shelf moves inside the plant, one per status. Only the Completed one
-// (dated AFTER the posted count above) actually moved stock.
+// Only the Completed move changes stock, so it's dated after the posted count above.
 export const STOCK_TRANSFERS: StockTransferSpec[] = [
   {
     key: "st-completed",
@@ -219,8 +205,7 @@ export const STOCK_TRANSFERS: StockTransferSpec[] = [
   }
 ];
 
-// Plant → HQ transfers, one per status. HQ keeps a small engineering stash of
-// common hardware; it has no bins, so completed receipts land shelfless.
+// HQ has no bins, so completed receipts land shelfless.
 export const WAREHOUSE_TRANSFERS: WarehouseTransferSpec[] = [
   {
     key: "wt-completed",

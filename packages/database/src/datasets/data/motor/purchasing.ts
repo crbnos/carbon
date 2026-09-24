@@ -123,9 +123,6 @@ export const RFQ_HEADER: RfqHeaderSpec = {
   internalNotes: "Award on landed cost at 250 pcs unless the lot certs slip."
 };
 
-// Beside the Requested RFQ: a Draft for next quarter's bearings, and a cooling
-// fan RFQ cancelled before it went out when the TEFC redesign moved to an
-// integral fan.
 export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
   {
     ref: "prfq:bearings",
@@ -234,7 +231,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     exchangeRate: 1
   },
 
-  // ── Status matrix — the remaining purchaseOrderStatus values ──────────────
   {
     source: "direct",
     log: "purchase order — Planned (Meridian N45SH restock)",
@@ -267,7 +263,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     status: "Needs Approval",
     orderDateOffset: -1,
     lines: [
-      // The full hybrid-bearing lot for the 4500 line — over the $5,000 approval tier.
+      // Over the $5,000 approval tier.
       { item: "BRG-6206-HYB", purchaseQuantity: 160, supplierUnitPrice: 34 }
     ]
   },
@@ -283,7 +279,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── Receipt + invoice lifecycle — historical orders that closed out ───────
   {
     source: "direct",
     log: "purchase order — Completed, received in full and paid (Copperline)",
@@ -364,8 +359,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         }
       ]
     },
-    // The last 150 lb of bar failed the mill cert review at Lakeland; the
-    // order was closed short and a debit note issued against the billing.
     invoice: {
       ref: "pinvoice:debit-note",
       key: "debit-note",
@@ -387,7 +380,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "FST-M10-SS", purchaseQuantity: 200, supplierUnitPrice: 1.15 }
     ],
-    // Keyed in against the wrong packing list and voided before posting.
     receipt: {
       ref: "receipt:voided",
       status: "Voided",
@@ -490,10 +482,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     }
   },
 
-  // ── Outside processing — shafts out at Maumee for nitride ─────────────────
-  // Mirrors the OSP orders the create function raises from a job's outside
-  // operations: purchaseOrderType "Outside Processing" on the supplier with
-  // the supplierProcess, line = the processed part at the operation unit cost.
+  // Mirrors the OSP orders the create function raises from a job's outside operations.
   {
     source: "direct",
     log: "purchase order — Outside Processing, shaft nitride at Maumee",
@@ -505,7 +494,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [{ item: "SHF-9000", purchaseQuantity: 4, supplierUnitPrice: 48 }]
   },
 
-  // ── FX — the one EUR order, against the German ferrite house, unpaid ──────
   {
     source: "direct",
     log: "purchase order — EUR order, unpaid (Euromag ferrite segments)",
@@ -558,7 +546,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   }
 ];
 
-// One each of Draft / Expired / Declined — the RFQ trio above stays Active.
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "ironwood-hardware-blanket",
@@ -611,9 +598,8 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   }
 ];
 
-// Returns to vendor, one per modeled status. The completed one ships a
-// wrong-plating bolt lot back out of the hardware bin — dated after the
-// posted cycle count so the count's snapshot stays the opening balance.
+// The completed return is dated after the posted cycle count so the count's
+// snapshot stays the opening balance.
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "bolt-plating",
@@ -643,7 +629,7 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     dateOffset: 0,
     lines: [{ item: "TRM-BLK-6P", quantity: 3, unitPrice: 8.9 }]
   },
-  // Drafted while MRB weighs return-to-vendor for the thin Nomex rolls (quality's ncr:nomex-thin links this line).
+  // Stays Draft while MRB decides; quality's ncr:nomex-thin links this line.
   {
     key: "nomex-rtv",
     status: "Draft",

@@ -41,12 +41,8 @@ async function seedInspectionPlan(
   return documentId;
 }
 
-/**
- * Seeds an animated assembly instruction against a CAD model that ships with the
- * app. The `_templates/` paths are resolved by getDatasetAssetUrl rather than the
- * storage proxy, so there are no objects to upload and nothing to clean up — the
- * modelUpload row is a pointer at a bundled file, and the assembler never runs.
- */
+// `_templates/` paths resolve via getDatasetAssetUrl, not the storage proxy: the
+// modelUpload row points at a bundled file, so nothing is uploaded and the assembler never runs.
 async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
   const { industryId } = ctx.dataset;
   if (!industryId) return;
@@ -307,7 +303,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Revision ladder ────────────────────────────────────────────────────────
   // The active revision is the released one, so it goes to Production (locking
   // its BOM/BOP in the app). The rungs share its readableId and stay out of
   // ctx.refs.items so later tiers keep resolving the active revision.
@@ -350,7 +345,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Supersessions (live phase-out pairs) ──────────────────────────────────
   // PK is itemId ALONE — the row lives on the predecessor.
   ctx.log("supersessions");
   for (const spec of data.supersessions) {
@@ -371,7 +365,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Customer part numbers ──────────────────────────────────────────────────
   ctx.log("customer part numbers");
   for (const spec of data.customerParts) {
     await insertRow(ctx, "customerPartToItem", {
@@ -382,7 +375,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Customer price overrides ───────────────────────────────────────────────
   ctx.log("customer price overrides");
   for (const spec of data.priceOverrides) {
     const overrideId = await insertId(ctx, "customerItemPriceOverride", {
@@ -399,7 +391,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Pricing rules ──────────────────────────────────────────────────────────
   ctx.log("pricing rules");
   for (const spec of data.pricingRules) {
     await insertRow(ctx, "pricingRule", {
@@ -419,7 +410,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Configurable item ─────────────────────────────────────────────────────
   // requiresConfiguration is what shows the Configure button and the rules
   // panel; a rule's field is `${field}:${methodRowId}`, as the BoM/BoP
   // editors key it.
@@ -475,7 +465,6 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Enforcement rules (sales + storage families) ──────────────────────────
   ctx.log("enforcement rules");
   for (const spec of data.enforcementRules) {
     await seedEnforcementRule(ctx, spec);

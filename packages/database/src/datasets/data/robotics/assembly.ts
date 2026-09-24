@@ -8,7 +8,7 @@ export const roboticsAssembly: AssemblySpec = {
   name: "Koch Robot Arm — Final Assembly",
   item: "ROB-2000",
   componentCount: 163,
-  // Arm and controller integration — the Assembly operation of the ROB-2000 method.
+  // The Assembly operation of the ROB-2000 method.
   operation: 1,
   steps: [
     {

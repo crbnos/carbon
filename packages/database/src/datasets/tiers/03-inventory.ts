@@ -3,11 +3,8 @@ import { bootstrapIdByName } from "../helpers/bootstrap-lookup.ts";
 import { insertId, insertRow, need, nextSequence } from "../sql.ts";
 import type { Ctx, TrackedStockSpec } from "../types.ts";
 
-/**
- * Mirrors post-inventory-adjustment's full-entity Scrap: the entity keeps its
- * quantity, a Scrap activity consumes it and a Negative Adjmt. ledger row draws
- * it off the shelf. Tier 09 posts its cost row and scrap-account journal.
- */
+// Mirrors post-inventory-adjustment's full-entity Scrap (the entity keeps its
+// quantity). Tier 09 posts its cost row and scrap-account journal.
 async function scrapLot(
   ctx: Ctx,
   entity: TrackedStockSpec["entities"][number],
@@ -77,7 +74,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     });
   }
 
-  // Default shelf per stocked item at the plant: its first opening-stock bin.
   ctx.log("pick methods");
   const defaultShelf = new Map<string, string>();
   for (const entry of data.openingStock) {
@@ -125,7 +121,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Shelf life (Fixed Duration) on batch-tracked items ────────────────────
   ctx.log("item shelf lives");
   for (const shelfLife of data.shelfLives) {
     const itemRef = need(ctx.refs.items, shelfLife.item);
@@ -136,7 +131,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Kanbans (auto-replenishment cards) ────────────────────────────────────
   ctx.log("kanban cards");
   for (const kb of data.kanbanItems) {
     const itemRef = need(ctx.refs.items, kb.item);
@@ -171,7 +165,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Inventory counts ──────────────────────────────────────────────────────
   // Draft = the app's pre-snapshot state (bare lines). Posted mirrors
   // post-inventory-count: frozen quantities plus one adjustment ledger row per
   // variance, linked back through postedItemLedgerId.
@@ -243,7 +236,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     ctx.refs.documents[`ic:${count.key}`] = icId;
   }
 
-  // ── Stock transfers (shelf → shelf inside the plant) ──────────────────────
   // Completed mirrors post-stock-transfer's "inventory" case: a Direct Transfer
   // ledger pair per line. Draft/Released move nothing yet.
   ctx.log("stock transfers");
@@ -309,7 +301,6 @@ export async function runTier3(ctx: Ctx): Promise<void> {
     ctx.refs.documents[`st:${transfer.key}`] = stId;
   }
 
-  // ── Warehouse transfers (location → location) ─────────────────────────────
   // Completed mirrors post-shipment + post-receipt: a Transfer Shipment row out
   // of the from-shelf and a shelfless Transfer Receipt (HQ has no bins; the app
   // does the same), documentId = the READABLE transferId.

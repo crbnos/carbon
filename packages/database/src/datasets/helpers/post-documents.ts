@@ -22,9 +22,8 @@ import {
 } from "./posting-journals.ts";
 
 /**
- * Writes the GL (and the cost layers) the posting functions leave behind for
- * the documents tiers 04/05/09 seeded as posted, in their shape: journal +
- * lines, accountingPeriodId, the document's journalId where it has one.
+ * Writes the GL (and cost layers) the posting functions leave behind for the
+ * documents tiers 04/05/09 seeded as posted.
  */
 
 export type AccountingPeriodRange = {
@@ -82,7 +81,6 @@ export function periodFor(posting: PostingContext, date: string): string {
   return period.id;
 }
 
-/** Inserts a Posted journal and its lines; returns the journal id. */
 export async function insertPostingJournal(
   ctx: Ctx,
   posting: PostingContext,
@@ -274,11 +272,7 @@ async function postedReceiptLines(ctx: Ctx): Promise<PostedReceiptLine[]> {
   });
 }
 
-/**
- * post-purchase-invoice for every non-Draft invoice. The received share of a
- * line is what posted receipts of its PO line had brought in by the invoice's
- * posting date.
- */
+/** post-purchase-invoice for every non-Draft invoice. */
 export async function postPurchaseInvoices(
   ctx: Ctx,
   posting: PostingContext
@@ -368,9 +362,8 @@ export async function postPurchaseInvoices(
 }
 
 /**
- * Posted purchase receipts and sales shipments, in date order: each receipt
- * line opens a FIFO cost layer (post-receipt), each shipment draws on the
- * layers or the item's unitCost (calculateCOGS), and both get their journal.
+ * post-receipt and post-shipment in date order: receipts open FIFO layers that
+ * shipments then draw on (calculateCOGS).
  */
 export async function postInventoryDocuments(
   ctx: Ctx,
@@ -501,7 +494,6 @@ export async function postInventoryDocuments(
     );
   }
 
-  // ── Receipts: one Direct Cost layer per line, then the receipt's journal ──
   for (const layer of layers) {
     await insertRow(ctx, "costLedger", {
       itemLedgerType: "Purchase",
@@ -541,7 +533,7 @@ export async function postInventoryDocuments(
     });
   }
 
-  // ── Shipments: one Sale row per item (post-shipment), then the journal ──
+  // One Sale row per item, not per line, as post-shipment writes.
   const shipmentIds = [...new Set(shipments.map((s) => s.shipmentId))];
   for (const shipmentId of shipmentIds) {
     const own = shipments.filter(
@@ -591,7 +583,6 @@ export async function postInventoryDocuments(
     });
   }
 
-  // ── Scrap: the decrease's cost row, then its journal against the scrap account ──
   for (const scrap of scraps) {
     const cost = scrapCosts.get(scrap.itemLedgerId);
     // A zero-value movement posts nothing, as bookAdjustment.
@@ -685,7 +676,7 @@ export async function postMemos(
   }
 }
 
-/** post-payment's journal for one Posted payment, then payment.journalId. */
+/** post-payment's journal for one Posted payment. */
 export async function postPayment(
   ctx: Ctx,
   posting: PostingContext,

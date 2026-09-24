@@ -17,10 +17,8 @@ function message(err: unknown): string {
 }
 
 /**
- * Run MRP and the scheduler once over a freshly seeded company — the same calls
- * the MRP cron and `api+/schedule.ts` make. Must run after the seed commits (both
- * engines read over PostgREST and open their own transactions). Never throws:
- * planning is best-effort, and the 3-hourly MRP cron is the backstop.
+ * Same calls as the MRP cron and `api+/schedule.ts`. Must run after the seed commits
+ * (both engines read over PostgREST). Never throws: the 3-hourly MRP cron is the backstop.
  */
 export async function planDemoCompany({
   companyId,

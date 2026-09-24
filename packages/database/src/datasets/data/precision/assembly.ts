@@ -7,7 +7,7 @@ export const precisionAssembly: AssemblySpec = {
   name: "Extruder Toolhead — Final Assembly",
   item: "HMA-4000",
   componentCount: 70,
-  // Build the manifold assembly — the Assembly operation of the HMA-4000 method.
+  // The Assembly operation of the HMA-4000 method.
   operation: 1,
   steps: [
     {

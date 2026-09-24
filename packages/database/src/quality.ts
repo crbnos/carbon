@@ -789,7 +789,6 @@ export async function upsertInspectionMeasurement(
         measurementId = inserted.id;
       }
 
-      // Derive the sample's status from every plan feature's reading on it.
       const lotFeatures = await trx
         .selectFrom("inspectionSamplingPlan")
         .select(["inspectionFeatureId", "sampleSize"])

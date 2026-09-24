@@ -122,8 +122,6 @@ export const RFQ_HEADER: RfqHeaderSpec = {
   internalNotes: "Award on landed cost at 25 pcs unless lead time slips."
 };
 
-// Beside the Requested RFQ: a Draft for the next arm batch's drive train, and a
-// force-sensor RFQ cancelled before it went out when the cobot program slipped.
 export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
   {
     ref: "prfq:drivetrain",
@@ -228,7 +226,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     exchangeRate: 1
   },
 
-  // ── Status matrix — the remaining purchaseOrderStatus values ──────────────
   {
     source: "direct",
     log: "purchase order — Planned (Kestrel wrist motors)",
@@ -261,7 +258,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     status: "Needs Approval",
     orderDateOffset: -1,
     lines: [
-      // A quarter's billet for the arm bases — over the $5,000 approval tier.
+      // Over the $5,000 approval tier.
       {
         item: "MAT-AL6061-BIL",
         purchaseQuantity: 1200,
@@ -279,7 +276,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [{ item: "GBX-HD-50", purchaseQuantity: 2, supplierUnitPrice: 845 }]
   },
 
-  // ── Receipt + invoice lifecycle — historical orders that closed out ───────
   {
     source: "direct",
     log: "purchase order — Completed, received in full and paid (Northgate)",
@@ -360,8 +356,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         }
       ]
     },
-    // Two of four gear sets failed Torqline's outgoing backlash audit; the
-    // order was closed short and a debit note issued against the billing.
     invoice: {
       ref: "pinvoice:debit-note",
       key: "debit-note",
@@ -383,7 +377,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "FST-M5-SS", purchaseQuantity: 200, supplierUnitPrice: 0.55 }
     ],
-    // Keyed in against the wrong packing slip and voided before posting.
     receipt: {
       ref: "receipt:voided",
       status: "Voided",
@@ -486,10 +479,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     }
   },
 
-  // ── Outside processing — arm bases out at Kappa for hard anodize ──────────
-  // Mirrors the OSP orders the create function raises from a job's outside
-  // operations: purchaseOrderType "Outside Processing" on the supplier with
-  // the supplierProcess, line = the processed part at the operation unit cost.
+  // Mirrors the OSP orders the create function raises from a job's outside operations.
   {
     source: "direct",
     log: "purchase order — Outside Processing, hard anodize at Kappa",
@@ -503,7 +493,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── FX — the one EUR order, against the German drive house, unpaid ────────
   {
     source: "direct",
     log: "purchase order — EUR order, unpaid (Schwarzwald gear sets)",
@@ -545,7 +534,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   }
 ];
 
-// One each of Draft / Expired / Declined — the RFQ trio above stays Active.
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "pfc-annual-hardware",
@@ -598,9 +586,8 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   }
 ];
 
-// Returns to vendor, one per modeled status. The completed one ships warped
-// bare boards back out of the ESD cage — dated after the posted cycle count so
-// the count's snapshot stays the opening balance.
+// The completed return is dated after the posted cycle count so the count's
+// snapshot stays the opening balance.
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "pcb-warpage",
@@ -635,7 +622,7 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     dateOffset: 0,
     lines: [{ item: "DRV-SRV-400", quantity: 1, unitPrice: 420 }]
   },
-  // Drafted while MRB weighs return-to-vendor for the lost-motion gearbox (quality's ncr:gear-lost-motion links this line).
+  // Stays Draft while MRB decides; quality's ncr:gear-lost-motion links this line.
   {
     key: "gearbox-rtv",
     status: "Draft",

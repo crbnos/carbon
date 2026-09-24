@@ -4,12 +4,8 @@ import type { Ctx, ReturnCreditSpec } from "../types.ts";
 import { insertMemo } from "./memo.ts";
 
 /**
- * The memo a return's "Issue Credit" writes (createSalesReturnOrderCredit /
- * createPurchaseReturnOrderCredit): Credit for an RMA, Debit for a supplier
- * return, in the return order's currency and rate, one credit line per
- * credited return line, amount = Σ qty × unit price net of the line's restock
- * fee, rounded to the currency. A Posted one also carries post-memo's stamps;
- * tier 09 journals it with the other Posted memos.
+ * Mirrors "Issue Credit" (createSalesReturnOrderCredit / createPurchaseReturnOrderCredit).
+ * Tier 09 journals a Posted one with the other Posted memos.
  */
 export async function seedReturnCredit(
   ctx: Ctx,

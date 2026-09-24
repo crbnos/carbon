@@ -33,17 +33,13 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "CN-GREASE-001", qty: 3, shelf: "A1-L3" }
 ];
 
-// Lots/serials that back the tracked slice of the opening stock above, plus
-// the quality states a real stockroom carries: a lot on hold pending paperwork,
-// a rejected lot awaiting disposition, and an expiry-dated battery lot (paired
-// with the itemShelfLife spec below).
+// Backs the tracked slice of the opening stock above.
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "BAT-LIION-48V",
     entities: [
       { readableId: "LOT-BAT-2607", quantity: 2 },
       { readableId: "LOT-BAT-2608", quantity: 1, expiresOffset: 30 },
-      // Awaiting the vendor's cell-level test report before release.
       { readableId: "LOT-BAT-2609", quantity: 1, status: "On Hold" }
     ]
   },
@@ -61,9 +57,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
     entities: [
       { readableId: "LOT-AL7075-2608", quantity: 40 },
       { readableId: "LOT-AL7075-2609", quantity: 20 },
-      // Failed incoming hardness check — quarantined for MRB.
       { readableId: "LOT-AL7075-2610", quantity: 2, status: "Rejected" },
-      // Dropped off the forks at receiving — bent past flatness, scrapped.
       {
         readableId: "LOT-AL7075-2604",
         quantity: 4,
@@ -79,14 +73,11 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   }
 ];
 
-// Battery packs age: 1-year fixed shelf life, with LOT-BAT-2608 above expiring
-// in 30 days so the expiry chips have something amber to show.
+// LOT-BAT-2608 above expires in 30 days so the expiry chips show amber.
 export const SHELF_LIVES: ShelfLifeSpec[] = [
   { item: "BAT-LIION-48V", days: 365 }
 ];
 
-// Kanbans (auto-replenishment cards): Buy cards for high-usage buy parts, a
-// Make card for the machined frame, and a Transfer card feeding the clean room.
 export const KANBAN_ITEMS: KanbanItemSpec[] = [
   { item: "FST-M4-TI", qty: 200, supplier: "SpaceGrade Fasteners" },
   { item: "FST-M6-A286", qty: 100, supplier: "SpaceGrade Fasteners" },
@@ -147,8 +138,6 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
     ]
   },
   {
-    // August cycle count over the fastener aisle: two small variances (a
-    // missing bag of M4s, two bearings found loose behind the bin).
     key: "aug-cycle",
     status: "Posted",
     notes: "Cycle count — fastener & hardware bins",
@@ -188,8 +177,7 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
   }
 ];
 
-// Shelf → shelf moves inside the plant, one per status. Only the Completed one
-// (dated AFTER the posted count above) actually moved stock.
+// Only the Completed move changes stock, so it's dated after the posted count above.
 export const STOCK_TRANSFERS: StockTransferSpec[] = [
   {
     key: "st-completed",
@@ -217,8 +205,7 @@ export const STOCK_TRANSFERS: StockTransferSpec[] = [
   }
 ];
 
-// Plant → HQ transfers, one per status. HQ keeps a small engineering stash of
-// common hardware; it has no bins, so completed receipts land shelfless.
+// HQ has no bins, so completed receipts land shelfless.
 export const WAREHOUSE_TRANSFERS: WarehouseTransferSpec[] = [
   {
     key: "wt-completed",

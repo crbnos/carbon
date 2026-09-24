@@ -116,9 +116,6 @@ export const RFQ_HEADER: RfqHeaderSpec = {
   internalNotes: "Award on landed cost at 25 pcs unless lead time slips."
 };
 
-// Beside the Requested RFQ: a Draft still being put together for the next
-// propulsion build, and a star-tracker RFQ cancelled before it went out when
-// the program kept the flight-proven unit.
 export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
   {
     ref: "prfq:propulsion",
@@ -230,7 +227,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     exchangeRate: 1
   },
 
-  // ── Status matrix — the remaining purchaseOrderStatus values ──────────────
   {
     source: "direct",
     log: "purchase order — Planned (Deep Space RF reaction wheels)",
@@ -260,7 +256,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -1,
-    // A full laminate lot for the Block 2 buses — over the $5,000 approval tier.
+    // Over the $5,000 approval tier.
     lines: [
       { item: "MAT-CF-LAM", purchaseQuantity: 20, supplierUnitPrice: 315 }
     ]
@@ -277,7 +273,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── Receipt + invoice lifecycle — historical orders that closed out ───────
   {
     source: "direct",
     log: "purchase order — Completed, received in full and paid (CelestialElex)",
@@ -358,8 +353,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         }
       ]
     },
-    // Two of four tanks failed the weld X-ray at PropTech; the order was
-    // closed short and a debit note issued against the original billing.
     invoice: {
       ref: "pinvoice:debit-note",
       key: "debit-note",
@@ -381,7 +374,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "FST-M4-TI", purchaseQuantity: 250, supplierUnitPrice: 2.5 }
     ],
-    // Keyed in against the wrong cert paperwork and voided before posting.
     receipt: {
       ref: "receipt:voided",
       status: "Voided",
@@ -482,10 +474,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     }
   },
 
-  // ── Outside processing — frames out at AstroMill for hard anodize ─────────
-  // Mirrors the OSP orders the create function raises from a job's outside
-  // operations: purchaseOrderType "Outside Processing" on the supplier with
-  // the supplierProcess, line = the processed part at the operation unit cost.
+  // Mirrors the OSP orders the create function raises from a job's outside operations.
   {
     source: "direct",
     log: "purchase order — Outside Processing, anodize at AstroMill",
@@ -499,7 +488,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── FX — the one EUR order, against the German bearing house, unpaid ──────
   {
     source: "direct",
     log: "purchase order — EUR order, unpaid (Rheinland bearings)",
@@ -541,7 +529,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   }
 ];
 
-// One each of Draft / Expired / Declined — the RFQ trio above stays Active.
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "sgf-annual-fasteners",
@@ -594,9 +581,8 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   }
 ];
 
-// Returns to vendor, one per modeled status. The completed one ships plating
-// rejects back out of the fastener bin — dated after the posted cycle count so
-// the count's snapshot stays the opening balance.
+// The completed return is dated after the posted cycle count so the count's
+// snapshot stays the opening balance.
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "fastener-plating",
@@ -626,8 +612,7 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     dateOffset: 0,
     lines: [{ item: "MAT-CF-LAM", quantity: 1, unitPrice: 320 }]
   },
-  // Drafted while MRB weighs return-to-vendor for the thin-wall tank
-  // (quality's ncr:tank-wall links this line).
+  // Stays Draft while MRB decides; quality's ncr:tank-wall links this line.
   {
     key: "tank-wall-rtv",
     status: "Draft",

@@ -4,7 +4,6 @@ import type { Ctx, DayOffset } from "../types.ts";
 
 export type MemoInsert = {
   direction: "Credit" | "Debit";
-  /** customerId for a Credit memo, supplierId for a Debit one. */
   partyId: string;
   status: "Draft" | "Posted";
   dateOffset: DayOffset;
@@ -18,9 +17,8 @@ export type MemoInsert = {
 };
 
 /**
- * A memo header as the app leaves it: Draft is what Issue Credit writes; Posted
- * adds post-memo's stamps and reason account. Tier 09's postMemos journals
- * every Posted one afterwards.
+ * Draft is what Issue Credit writes; Posted adds post-memo's stamps. Tier 09's
+ * postMemos journals every Posted one afterwards.
  */
 export async function insertMemo(ctx: Ctx, memo: MemoInsert): Promise<string> {
   const isCredit = memo.direction === "Credit";

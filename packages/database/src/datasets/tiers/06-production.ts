@@ -28,8 +28,7 @@ type RootOperation = {
   order: number;
 };
 
-// Root operations in "order" order. Specs address them by 1-based position,
-// not raw order value, so 10/20/30 resolves the same as 1/2/3.
+// Specs address root ops by 1-based position, not raw order (10/20/30 = 1/2/3).
 async function rootOperations(
   ctx: Ctx,
   jobId: string
@@ -97,14 +96,12 @@ export async function runTier6(ctx: Ctx): Promise<void> {
       quantity: spec.quantity,
       quantityComplete: spec.quantityComplete ?? 0,
       scrapQuantity: 0,
-      // Make-to-stock jobs carry none of the three.
       customerId: optionalRef(ctx.refs.customers, spec.customer),
       salesOrderId: optionalRef(ctx.refs.documents, spec.salesOrder),
       salesOrderLineId: optionalRef(ctx.refs.documents, spec.salesOrderLine),
       priority: spec.priority,
       assignee: spec.assignee === "self" ? ctx.userId : null,
       deadlineType: spec.deadlineType ?? "Hard Deadline",
-      // A "No Deadline" job has no due date; the UI renders none on that path.
       dueDate:
         spec.dueDateOffset === undefined
           ? null
@@ -165,7 +162,6 @@ export async function runTier6(ctx: Ctx): Promise<void> {
   await seedPickingLists(ctx, data);
 }
 
-/** Operation overrides, quantities and notes; all address root ops by 1-based position. */
 async function applyOperationDepth(
   ctx: Ctx,
   jobId: string,
@@ -200,8 +196,7 @@ async function applyOperationDepth(
           `Seed: job "${spec.key}" operation ${override.order} is running, so it must be "In Progress" at a work center`
         );
       }
-      // The open timer MES's Active list, the work-center display and the
-      // board's running dot all read.
+      // MES's Active list, the work-center display and the board's running dot read this.
       await insertRow(ctx, "productionEvent", {
         jobOperationId: operation.id,
         type: override.running.type,
@@ -303,7 +298,7 @@ async function seedProductionEvents(
   }
 }
 
-/** An open Setup event (no endTime) — what makes MES's active-operation UI render. */
+// Without an open event (no endTime) MES's active-operation UI renders nothing.
 async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
   const jobId = need(ctx.refs.documents, `job:${data.eventsJobKey}`);
   const operations = await rootOperations(ctx, jobId);
@@ -325,11 +320,7 @@ async function seedOpenEvent(ctx: Ctx, data: ProductionData): Promise<void> {
   });
 }
 
-/**
- * As batch-operations' "create" with release: the process must be batchable,
- * the header adopts the members' shared work center, then the members are
- * stamped and the batch timer started.
- */
+// Mirrors batch-operations' "create" with release.
 async function seedBatch(ctx: Ctx, data: ProductionData): Promise<void> {
   const members: RootOperation[] = [];
   for (const member of data.batch.members) {
@@ -420,11 +411,6 @@ function estimateMs(time: number, unit: string, quantity: number): number {
   }
 }
 
-/**
- * A completed job's actuals: Setup, then Labor and Machine side by side, on
- * every staffed operation (subassemblies first), back to back from 07:00 UTC,
- * each closed by a Production quantity for the full operation quantity.
- */
 async function seedLoggedTime(
   ctx: Ctx,
   jobId: string,
@@ -492,7 +478,6 @@ async function seedLoggedTime(
       });
     }
     cursor = runStart.add({ seconds: Math.max(labor, machine) });
-    // What the operator records at the end of the run (the job's Quantities tab).
     if (quantity > 0) {
       await insertId(ctx, "productionQuantity", {
         jobOperationId: op.id,
@@ -511,10 +496,7 @@ async function seedLoggedTime(
   }
 }
 
-/**
- * What an operator typing through the Instructions tab leaves behind, on every
- * Done operation with steps. File steps need an upload, so they stay empty.
- */
+// File steps need an upload, so they stay empty.
 async function seedStepRecords(ctx: Ctx): Promise<void> {
   const steps = await rows<{
     id: string;
@@ -568,7 +550,6 @@ async function seedStepRecords(ctx: Ctx): Promise<void> {
           step.recordedAt ?? resolveTimestamp(ctx.anchor, -1, "15:00:00");
         break;
       default:
-        // Task, Checkbox, Inspection: ticked.
         record.booleanValue = true;
     }
     await insertRow(ctx, "jobOperationStepRecord", record);

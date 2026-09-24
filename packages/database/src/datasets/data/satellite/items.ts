@@ -132,8 +132,7 @@ export const BUY_PARTS: ItemSpec[] = [
     unitSalePrice: 27,
     leadTime: 10
   },
-  // Successor of VLV-SOLENOID-LP (see SUPERSESSIONS). Deliberately absent
-  // from every BOM: job creation and picking redirect to it live.
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
   {
     readableId: "VLV-SOLENOID-LP2",
     name: "Solenoid Valve Low-Pressure Gen2",
@@ -162,7 +161,7 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 320,
     unitOfMeasureCode: "EA",
     leadTime: 21,
-    // Partial classification: a laminate sheet has no honeycomb form/dim.
+    // Partially classified on purpose.
     material: {
       substance: "Carbon Fiber Composite",
       grade: "M55J",
@@ -184,7 +183,6 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 45,
     unitOfMeasureCode: "YD",
     leadTime: 7,
-    // Fully classified against the company taxonomy (foundation.ts).
     material: {
       substance: "Polyimide Film",
       form: "Film Roll",
@@ -428,7 +426,6 @@ export const METHODS: MakeMethodSpec[] = [
         order: 1,
         setupTime: 0.5,
         laborTime: 6,
-        // Autoclave cure of the substrate.
         machineTime: 4
       },
       {
@@ -878,9 +875,6 @@ export const CONFIGURATION: ConfigurationSpec = {
   ]
 };
 
-// ANT-PATCH-01 rev 0 is the released (Production) revision; rev A was
-// obsoleted after RF tuning issues, rev B is the wideband redesign, now in
-// prototype.
 export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "ANT-PATCH-01",
@@ -890,8 +884,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   }
 ];
 
-// The EPS board's flying-probe test is sampled against a plan of its own, so
-// the MES opens an inspection lot for it rather than a plain operation.
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
 export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "EPS-PCB-FPT",
@@ -919,9 +912,6 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   }
 ];
 
-// ITAR hardware ships only domestically; research institutions need program
-// office sign-off; flight electronics stay at the plant; tanks go on racks;
-// the clean room bay has to be in service to start an integration.
 export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
   {
     family: "sales",

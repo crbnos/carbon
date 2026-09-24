@@ -9,8 +9,7 @@ import type {
   RiskSpec
 } from "../../types.ts";
 
-// The templates the issues below were raised from (the new-issue form copies
-// source, required actions and MRB onto the issue).
+// The new-issue form copies source, required actions and MRB from these templates onto the issue.
 export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
   {
     key: "supplier-escape",
@@ -77,14 +76,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     quantity: 12,
     priority: "Medium"
   },
-  // ── Supplier escape: raised off the receiving inspection of the short
-  // Torqline gear-set delivery. Linked to Torqline, the exact PO line, and the
-  // inspection lot.
   {
     ref: "ncr:gear-lost-motion",
     items: [
       { item: "GBX-HD-80", quantity: 1, disposition: "Return to Supplier" },
-      // J2 drive modules on the floor built from the same Torqline lot.
       { item: "DRV-J2-MOD", quantity: 2 }
     ],
     assignee: "self",
@@ -127,7 +122,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       ]
     }
   },
-  // ── Customer complaint on a shipped spare drive, worked to closure.
   {
     ref: "ncr:drive-fault",
     items: [{ item: "DRV-SRV-400", quantity: 1, disposition: "Rework" }],
@@ -167,11 +161,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       }
     ]
   },
-  // ── A quarantined encoder lot waiting on disposition.
   {
     ref: "ncr:enc-lot",
     items: [{ item: "ENC-ABS-19", quantity: 2 }],
-    // Northgate shipped the lot — the supplier-quality KPI's issue this month.
+    // Feeds the supplier-quality KPI's issue this month.
     supplier: "Northgate Electronics",
     workflow: "incoming-hold",
     name: "Absolute encoder lot on hold — factory calibration certificate missing",
@@ -191,9 +184,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   }
 ];
 
-// Receiving inspection of the two gear sets Torqline delivered short. Lot of 2
-// at AQL 1.0 / level II resolves to code letter A, n = 2 — every set inspected.
-// One Receipt-usage plan for the bare controller boards, shared by both of its lots.
+// Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
   drawingNumber: "PCB-BARE-4L Fab Dwg Rev B",
   aql: 1.0,
@@ -266,7 +257,7 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Receiving inspection of the paid bare-board lot: 20 boards, AQL 1.0 → n = 5, all good.
+  // 20 boards at AQL 1.0 → n = 5.
   {
     source: "Receipt",
     ref: "insp:bare-boards",
@@ -319,7 +310,6 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Yesterday's delivery of the same board, still in the receiving queue.
   {
     source: "Receipt",
     ref: "insp:bare-boards-queue",
@@ -329,7 +319,6 @@ export const INSPECTIONS: InspectionSpec[] = [
     status: "Pending",
     samples: []
   },
-  // Final inspection has measured the first controller board of the floor job.
   {
     source: "Job Operation",
     ref: "insp:ctrl-fpt",

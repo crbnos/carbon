@@ -9,8 +9,7 @@ import type {
   RiskSpec
 } from "../../types.ts";
 
-// The templates the issues below were raised from (the new-issue form copies
-// source, required actions and MRB onto the issue).
+// The new-issue form copies source, required actions and MRB from these templates onto the issue.
 export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
   {
     key: "supplier-escape",
@@ -77,8 +76,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     quantity: 3,
     priority: "Medium"
   },
-  // ── Supplier escape: raised off the receiving inspection of the Midway
-  // needle-bearing delivery. Linked to Midway, the exact PO line, and the lot.
   {
     ref: "ncr:needle-od",
     items: [
@@ -87,7 +84,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
         quantity: 1,
         disposition: "Return to Supplier"
       },
-      // Pump housings being machined to take bearings from the same lot.
       { item: "MCH-HSG-PUMP", quantity: 4 }
     ],
     assignee: "self",
@@ -134,7 +130,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       ]
     }
   },
-  // ── Customer complaint on a posted spares shipment, worked to closure.
   {
     ref: "ncr:clevis-pins",
     items: [{ item: "PIN-CLEVIS-12", quantity: 12, disposition: "Rework" }],
@@ -174,11 +169,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       }
     ]
   },
-  // ── A held bearing lot waiting on disposition.
   {
     ref: "ncr:brg-lot",
     items: [{ item: "BRG-DBL-6205", quantity: 2 }],
-    // Midway shipped the lot — the supplier-quality KPI's issue this month.
+    // Feeds the supplier-quality KPI's issue this month.
     supplier: "Midway Bearing & Seal",
     workflow: "incoming-hold",
     name: "6205-2RS bearing lot on hold — grease-fill certificate missing, seal lip rolled",
@@ -199,9 +193,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   }
 ];
 
-// Receiving inspection of the ten HK1512 needle bearings Midway delivered. Lot
-// of 10 at AQL 1.0 / level II resolves to code letter B, n = 3.
-// The HK1512 Receipt-usage plan, shared by every lot of the bearing.
+// Lot of 10 at AQL 1.0 / level II → code letter B, n = 3.
 const NEEDLE_PLAN = {
   drawingNumber: "MW-HK1512 Rev B",
   aql: 1.0,
@@ -263,7 +255,7 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Receiving inspection of the PTFE bushings: 20 pieces, AQL 1.0 → n = 5, all good.
+  // 20 pieces at AQL 1.0 → n = 5.
   {
     source: "Receipt",
     ref: "insp:ptfe-bushings",
@@ -335,8 +327,6 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // The replacement needle bearings from the same delivery, waiting on the
-  // ring-gauge check the MRB asked for.
   {
     source: "Receipt",
     ref: "insp:needle-restock",
@@ -346,7 +336,6 @@ export const INSPECTIONS: InspectionSpec[] = [
     status: "Pending",
     samples: []
   },
-  // The drive-shaft job's CMM lot, opened ahead of the shafts returning from heat treat.
   {
     source: "Job Operation",
     ref: "insp:shaft-runout",

@@ -267,10 +267,7 @@ export async function nextSequence(ctx: Ctx, table: string): Promise<string> {
   return value;
 }
 
-/**
- * The next journalEntry id no journal of this company holds yet. Earlier seeds
- * rewound this counter while journals survived, so skip past any collision.
- */
+/** Earlier seeds rewound this counter while journals survived, so skip past any collision. */
 export async function nextJournalEntryId(ctx: Ctx): Promise<string> {
   for (let attempt = 0; attempt < 10_000; attempt++) {
     const candidate = await nextSequence(ctx, "journalEntry");

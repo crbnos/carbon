@@ -134,8 +134,7 @@ export const BUY_PARTS: ItemSpec[] = [
     unitSalePrice: 430,
     leadTime: 35
   },
-  // Successor of BSH-BRZ-2012 (see SUPERSESSIONS). Deliberately absent from
-  // every BOM: job creation and picking redirect to it live.
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
   {
     readableId: "BSH-PTFE-2012",
     name: "PTFE-Lined Composite Bushing 20 x 12",
@@ -156,7 +155,7 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 3.85,
     unitOfMeasureCode: "LB",
     leadTime: 10,
-    // Partial classification: extruded bar carries no company form/dimension.
+    // Partially classified on purpose.
     material: {
       substance: "Extruded Aluminum",
       grade: "6061-T6",
@@ -196,7 +195,6 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 2.75,
     unitOfMeasureCode: "LB",
     leadTime: 14,
-    // Fully classified against the company taxonomy (foundation.ts).
     material: {
       substance: "Chromoly Steel",
       form: "Turned & Polished Bar",
@@ -936,9 +934,6 @@ export const CONFIGURATION: ConfigurationSpec = {
   ]
 };
 
-// MCH-FLANGE-SS rev 0 is the released (Production) revision; rev A was
-// obsoleted after the bolt-pattern print change, rev B is the thin-profile
-// redesign, now in prototype.
 export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "MCH-FLANGE-SS",
@@ -948,8 +943,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   }
 ];
 
-// The drive shaft's post-harden check is sampled against a plan of its own,
-// so the MES opens an inspection lot for it rather than a plain operation.
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
 export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "SHAFT-DR-RUNOUT",
@@ -977,9 +971,6 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   }
 ];
 
-// Power units ship within North America; medical manifolds need a
-// cleanliness cert; bar stock is racked; bearings stay at the plant; the wire
-// EDM has to be in service to start a cut.
 export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
   {
     family: "sales",

@@ -241,7 +241,6 @@ async function assertWipeable(ctx: Ctx): Promise<void> {
   }
 }
 
-// The journal source types whose document the wipe deletes.
 const DOCUMENT_JOURNAL_SOURCES = [
   "Sales Invoice",
   "Purchase Invoice",
@@ -254,12 +253,9 @@ const DOCUMENT_JOURNAL_SOURCES = [
 ];
 
 /**
- * Posted journals cannot be deleted (journal_posted_immutable: "reverse it
- * instead"), but the documents they post are about to be. Void each one the
- * way the posting functions void their own — a negated "VOID" entry today,
- * the original left Posted (the tie-out and aging RPCs count Posted only) —
- * so the GL never carries balances for documents that no longer exist. Once
- * the documents are gone nothing links to either entry, so nothing is voided twice.
+ * Posted journals cannot be deleted (journal_posted_immutable), but their
+ * documents are about to be: void each as the posting functions do, so the GL
+ * carries no balances for documents that no longer exist.
  */
 async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
   const { client, companyId } = ctx;

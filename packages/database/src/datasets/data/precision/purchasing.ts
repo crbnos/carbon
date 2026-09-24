@@ -123,9 +123,6 @@ export const RFQ_HEADER: RfqHeaderSpec = {
     "Award on landed cost at 1,000 lb unless the mill lead time pushes past three weeks."
 };
 
-// Beside the Requested RFQ: a Draft for fixture hardware, and a hydraulic
-// cylinder RFQ cancelled before it went out when the customer dropped the
-// press-tooling job.
 export const LIFECYCLE_RFQS: LifecycleRfqSpec[] = [
   {
     ref: "prfq:fixture-hardware",
@@ -234,7 +231,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     exchangeRate: 1
   },
 
-  // ── Status matrix — the remaining purchaseOrderStatus values ──────────────
   {
     source: "direct",
     log: "purchase order — Planned (Rock River frame tube for the base weldment)",
@@ -266,7 +262,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     purchaseOrderType: "Purchase",
     status: "Needs Approval",
     orderDateOffset: -2,
-    // A season of cylinders for the Dominion build — over the $5,000 approval tier.
+    // Over the $5,000 approval tier.
     lines: [
       { item: "CYL-HYD-40", purchaseQuantity: 18, supplierUnitPrice: 289 }
     ]
@@ -283,7 +279,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── Receipt + invoice lifecycle — historical orders that closed out ───────
   {
     source: "direct",
     log: "purchase order — Completed, received in full and paid (Midway bearings)",
@@ -364,8 +359,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         }
       ]
     },
-    // 40 lb of the plate failed the mill-cert review at the dock; the order
-    // was closed short and a debit note issued against the original billing.
     invoice: {
       ref: "pinvoice:bluestem-debit",
       key: "debit-note",
@@ -387,7 +380,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     lines: [
       { item: "INS-HELI-M6", purchaseQuantity: 200, supplierUnitPrice: 0.68 }
     ],
-    // Keyed in against the wrong packing slip and voided before posting.
     receipt: {
       ref: "receipt:voided-inserts",
       status: "Voided",
@@ -498,10 +490,7 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     }
   },
 
-  // ── Outside processing — drive shafts out at Forge for induction harden ───
-  // Mirrors the OSP orders the create function raises from a job's outside
-  // operations: purchaseOrderType "Outside Processing" on the supplier with
-  // the supplierProcess, line = the processed part at the operation unit cost.
+  // Mirrors the OSP orders the create function raises from a job's outside operations.
   {
     source: "direct",
     log: "purchase order — Outside Processing, induction harden at Forge",
@@ -515,7 +504,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
     ]
   },
 
-  // ── FX — the one EUR order, against the German tool-steel house, unpaid ───
   {
     source: "direct",
     log: "purchase order — EUR order, unpaid (Bavaria Werkzeugstahl 4140 bar)",
@@ -568,7 +556,6 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
   }
 ];
 
-// One each of Draft / Expired / Declined — the RFQ trio above stays Active.
 export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   {
     key: "fastline-hardware-annual",
@@ -621,9 +608,8 @@ export const STANDALONE_SUPPLIER_QUOTES: StandaloneSupplierQuoteSpec[] = [
   }
 ];
 
-// Returns to vendor, one per modeled status. The completed one ships a batch
-// of nicked O-rings back out of the seal bin — dated after the posted cycle
-// count so the count's snapshot stays the opening balance.
+// The completed return is dated after the posted cycle count so the count's
+// snapshot stays the opening balance.
 export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
   {
     key: "oring-cut-lips",
@@ -658,7 +644,7 @@ export const PURCHASE_RETURNS: PurchaseReturnSpec[] = [
     dateOffset: 0,
     lines: [{ item: "MAT-SS316-PLT", quantity: 15, unitPrice: 6.2 }]
   },
-  // Drafted while MRB weighs return-to-vendor for the oversize needle bearing (quality's ncr:needle-od links this line).
+  // Stays Draft while MRB decides; quality's ncr:needle-od links this line.
   {
     key: "needle-od-rtv",
     status: "Draft",

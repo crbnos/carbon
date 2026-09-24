@@ -1,11 +1,6 @@
-// Pure validation of a Dataset's internal consistency: every string reference
-// must resolve against the dataset's own definitions, so a typo or an
-// unbalanced journal fails even when no database is running. DB-free (it
-// reads the bundled assembly graph.json sidecars from disk); the drift check
-// (`pnpm db:check:datasets`) covers the live schema.
-//
-// createContext builds every projection once (dataset-index.ts); each rule
-// reads them and reports. RULES order is the order violations are listed in.
+// Pure, DB-free validation of a Dataset's internal consistency (reads the bundled
+// assembly graph.json sidecars from disk); `pnpm db:check:datasets` covers the live
+// schema. RULES order is the order violations are listed in.
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
@@ -69,8 +64,6 @@ import type {
   SalesOpportunitySpec
 } from "./types.ts";
 
-// Status groupings, horizons and formats shared by more than one rule module.
-
 export const OPEN_JOB_STATUSES = new Set([
   "Planned",
   "Ready",
@@ -92,7 +85,6 @@ export const OPEN_EVENT_TIME = "08:00:00";
 
 export const TIME_OF_DAY = /^([01]\d|2[0-3]):[0-5]\d:[0-5]\d$/;
 
-/** Seconds since midnight for a UTC "HH:MM:SS", or null when malformed. */
 export function secondsOfDay(time: string): number | null {
   if (!TIME_OF_DAY.test(time)) return null;
   const [h, m, sec] = time.split(":").map(Number);
@@ -110,8 +102,6 @@ export function checkInstant(
 }
 
 export const COUNTRY_CODE = /^[A-Z]{2}$/;
-
-// Names the bootstrap seeds (seed.data.ts) that datasets may reference by name.
 
 export const PAYMENT_TERM_NAMES = new Set<string>(
   paymentTerms.map((pt) => pt.name)
@@ -134,7 +124,6 @@ export const CO_ACTION_NAMES = new Set<string>(
 export const UOM_CODES = new Set<string>(unitOfMeasures.map((u) => u.code));
 export const FAILURE_MODE_NAMES = new Set<string>(failureModes);
 
-// Bootstrap chart of accounts: posting-account number → class.
 export const ACCOUNT_CLASS_BY_NUMBER = new Map<string, AccountClass>(
   accounts.flatMap((a) =>
     !a.isGroup && a.number && a.class
@@ -149,16 +138,14 @@ export const CLOSE_TASK_DEFINITION_NAMES = new Set<string>(
   periodCloseTaskDefinitions.map((d) => d.name)
 );
 
-/** Settlement decimals money is compared at: USD, every seeded company's base currency. */
+/** USD is every seeded company's base currency. */
 export const USD_DECIMALS = currencies.find(
   (c) => c.code === "USD"
 )!.decimalPlaces;
 
 // Value sets every dataset must exhibit, so an edit can't silently drop a state
-// the docs screenshot. An enum-backed set is the generated DB enum minus its
-// `except` entries (each with its reason), so a new enum value fails every
-// dataset until one exhibits it or it is excluded here. The rest are sets the
-// DB types as free text.
+// the docs screenshot. Enum-backed sets are the DB enum minus `except`, so a new
+// enum value fails every dataset until one exhibits it or it is excluded here.
 
 type Enums = typeof Constants.public.Enums;
 
@@ -169,7 +156,6 @@ function enumValues<K extends keyof Enums>(
   return Constants.public.Enums[name].filter((value) => !(value in except));
 }
 
-/** `<scope>: no <what> "<value>" — every dataset must exhibit <tail>` */
 const matrix =
   (scope: string, what: string, tail = "the full required set") =>
   (value: string) =>
@@ -184,7 +170,6 @@ const NOT_AUTHORABLE = "the dataset types cannot author it";
 const OPTIONAL = "authorable, not required";
 
 export const COVERAGE = {
-  // ── Sales ──
   salesRfq: {
     values: enumValues("salesRfqStatus"),
     missing: matrix("sales status matrix", "salesRfq with status")
@@ -225,7 +210,6 @@ export const COVERAGE = {
       `sales invoices: no open invoice in the "${bucket}" receivables aging bucket`
   },
 
-  // ── Purchasing ──
   purchaseOrder: {
     values: enumValues("purchaseOrderStatus"),
     missing: matrix("purchasing status matrix", "purchaseOrder with status")
@@ -265,7 +249,6 @@ export const COVERAGE = {
     missing: (type) => `purchasing.approvalRequests: no ${type} request`
   },
 
-  // ── Foundation, inventory, production ──
   procedureStatus: {
     values: enumValues("procedureStatus"),
     missing: matrix(
@@ -295,7 +278,6 @@ export const COVERAGE = {
     )
   },
   jobOperationOverride: {
-    // Only the two mixed-floor states need an operationOverride.
     values: enumValues("jobOperationStatus", {
       Todo: "operationStatusFor derives it",
       Ready: "operationStatusFor derives it",
@@ -330,7 +312,6 @@ export const COVERAGE = {
     )
   },
 
-  // ── Quality ──
   ncrStatus: {
     values: enumValues("nonConformanceStatus"),
     missing: matrix("quality matrix", "nonConformance status")
@@ -388,7 +369,6 @@ export const COVERAGE = {
     missing: matrix("quality status matrix", "inspection lot with source")
   },
 
-  // ── Change orders ──
   changeOrderStatus: {
     values: enumValues("changeOrderStatus"),
     missing: matrix("change order matrix", "changeOrder status")
@@ -398,7 +378,6 @@ export const COVERAGE = {
     missing: matrix("change order matrix", "changeOrderActionTask status")
   },
 
-  // ── Accounting ──
   journalStatus: {
     values: enumValues("journalEntryStatus"),
     missing: (status) => `accounting.journalEntries: no "${status}" entry`
@@ -425,7 +404,6 @@ export const COVERAGE = {
     missing: (status) => `accounting.fixedAssets: no "${status}" asset`
   },
 
-  // ── Ops ──
   dispatchStatus: {
     values: enumValues("maintenanceDispatchStatus"),
     missing: matrix("ops matrix", "maintenance dispatch with status")
@@ -451,7 +429,6 @@ export const COVERAGE = {
     missing: matrix("workflow run matrix", "run with status")
   },
 
-  // ── Settings & people surfaces ──
   userAttributeType: {
     values: ["Date", "List", "User"],
     missing: (type) => `ops.userAttributeCategories: no ${type} attribute`
@@ -473,8 +450,6 @@ export const COVERAGE = {
     missing: (origin) => `ops.printJobs: no ${origin} job`
   },
 
-  // ── Commercial surfaces ──
-  /** Every rule shape a screen lists: Sales Rules, Storage Rules, Work Center › Rules. */
   enforcementRuleShape: {
     values: ["sales", "storage:item", "storage:workCenter"] as const,
     missing: (shape) =>
@@ -489,7 +464,6 @@ export const COVERAGE = {
 
 export type CoverageKey = keyof typeof COVERAGE;
 
-/** Every value each named set requires but `exhibited` lacks, in call order. */
 export function checkCoverage(
   fail: (message: string) => void,
   exhibited: Partial<Record<CoverageKey, ReadonlySet<string>>>
@@ -504,9 +478,6 @@ export type RuleShape = (typeof COVERAGE.enforcementRuleShape.values)[number];
 
 export const TRAINING_QUESTION_TYPES = enumValues("trainingQuestionType");
 
-// Journal math for authored (manual) journal entries.
-
-/** Class of a journal line's account, or undefined for an unknown number. */
 export function lineClass(line: JournalLineSpec): AccountClass | undefined {
   return line.accountClass ?? ACCOUNT_CLASS_BY_NUMBER.get(line.account ?? "");
 }
@@ -522,8 +493,7 @@ export function journalImbalance(entry: JournalEntrySpec): number {
   );
 }
 
-// The bundled assembly graph.json sidecars, read with node:fs (assets.ts needs
-// a bundler, so the validator cannot import them).
+// Read with node:fs: assets.ts needs a bundler, so the validator cannot import it.
 
 type GraphNode = {
   nodeId?: string;
@@ -571,23 +541,14 @@ export function loadAssemblyGraph(
   return { nodeIds, geometryHashes, componentCount: graph.componentCount };
 }
 
-// Method-tree walks over items.methods: what a job of an item copies.
-
 export type BomWalks = {
   methodByItem: Map<string, MakeMethodSpec>;
-  /**
-   * All components reachable from an item's method tree — the universe a
-   * job's jobMaterial rows are copied from, so the universe a picking line
-   * may name.
-   */
+  /** What a job's jobMaterial rows, and so a picking line, may name. */
   componentsOf(rootItem: string): Set<string>;
   rootOpCountOf(item: string): number;
   /** Root operations in the order the tier resolves 1-based positions against. */
   rootOpsOf(item: string): BopOperationSpec[];
-  /**
-   * Every operation copyMethodToJob gives a job of `item` beyond its root:
-   * each Make-to-Order subassembly's, recursively.
-   */
+  /** Ops copyMethodToJob adds beyond the root: each Make-to-Order subassembly's, recursively. */
   subassemblyOpsOf(item: string): BopOperationSpec[];
 };
 
@@ -645,19 +606,14 @@ export function bomWalks(
   };
 }
 
-// Every document ref a spec declares (`quote:novasat`, `job:in-progress`, …),
-// registered in tier order, as tier N's ctx.refs.documents holds them.
+// Document refs in tier registration order, as tier N's ctx.refs.documents holds them.
 
 export type DocumentRefs = {
-  /** A ref registered again after its first registration, in walk order. */
   duplicates: Array<{ where: string; ref: string }>;
-  /** Whether `ref` is among the first `seen` registrations. */
   has(ref: string, seen: number): boolean;
   /**
-   * How many registrations each reader sees — what ctx.refs.documents holds
-   * when its tier reaches it: an RMA, job or NCR sees every ref registered up
-   * to and including its own; risks see the whole quality slice, and workflow
-   * runs everything through accounting.
+   * Registrations visible when each reader's tier runs: an RMA, job or NCR sees
+   * refs up to its own; risks the whole quality slice; workflow all through accounting.
    */
   seenBy: {
     salesReturns: number[];
@@ -805,9 +761,6 @@ export function documentRefs(dataset: Dataset): DocumentRefs {
   };
 }
 
-// The shop floor as the MES board sees it: open operations per work center,
-// running timers and assignments, derived from the released jobs.
-
 export type FloorState = {
   openByWorkCenter: Map<string, number>;
   running: Set<string>;
@@ -912,12 +865,8 @@ export function floorState(
   };
 }
 
-// Net on-hand per (item, shelf) after every authored movement: opening stock,
-// scrapped lots, posted count variances, completed stock and warehouse
-// transfers, posted shipments, completed RMAs, posted receipts, completed
-// purchase returns, completed picking lists and completed maintenance
-// dispatches. A movement the slice's rule rejects (unknown shelf, tracked item,
-// missing bin) is left out, as the tier would never write it.
+// Net on-hand per (item, shelf). A movement its slice's rule rejects is left out,
+// as the tier would never write it.
 
 export const onHandKey = (item: string, shelf: string) => `${item} @ ${shelf}`;
 
@@ -1027,13 +976,9 @@ export function onHandLedger(
   return onHand;
 }
 
-// Tracked-entity readableIds the seed mints before production: on-hand lots /
-// serials (tier 03) and the lots posted batch receipt lines create (tier 05).
-
 export type LotRegistry = {
   onHandIds: Set<string>;
   receiptLotIds: Set<string>;
-  /** receiptLineKey of each posted batch line whose lotNumber was minted. */
   mintedReceiptLines: Set<string>;
 };
 
@@ -1070,9 +1015,6 @@ export function lotRegistry(
   return { onHandIds, receiptLotIds, mintedReceiptLines };
 }
 
-// Every projection the rules read, built once from the dataset alone.
-
-/** What `need(kind, …)` calls a missing name: `unknown <label> "<id>"`. */
 export const REF_LABELS = {
   item: "item",
   customer: "customer",
@@ -1081,7 +1023,6 @@ export const REF_LABELS = {
   ability: "ability",
   department: "department",
   workCenter: "work center",
-  /** Plant work centers plus the HQ one — maintenance may target either. */
   maintainedWorkCenter: "work center",
   warehouse: "warehouse",
   shelf: "shelf",
@@ -1112,7 +1053,6 @@ export type DatasetIndex = {
   activeSuppliers: Set<string>;
   bom: BomWalks;
   jobByKey: Map<string, JobSpec>;
-  /** Sales order ref → orderDateOffset. */
   orderDateByRef: Map<string, number>;
   documentRefs: DocumentRefs;
   onHand: Map<string, number>;
@@ -1227,13 +1167,11 @@ export type ValidationCtx = {
   readonly ix: DatasetIndex;
   readonly violations: string[];
   fail(message: string): void;
-  /** Fails `${where}: unknown <label> "<id>"` unless the dataset defines `id`. */
   need(kind: RefKind, where: string, id: string): void;
-  /** A known customer that also has a contact, which tier 01 seeds its location from. */
+  /** Also requires a contact: tier 01 seeds the customer's location from it. */
   needCustomer(where: string, name: string): void;
 };
 
-/** One slice's checks. Rules only read the index, so their order is report order. */
 export type Rule = (ctx: ValidationCtx) => void;
 
 export function createContext(dataset: Dataset): ValidationCtx {
@@ -1271,8 +1209,6 @@ export function uniqueDocumentRefs(ctx: ValidationCtx): void {
   }
 }
 
-// Foundation: parties, work centers, shifts, shelves, procedures, taxonomy.
-
 const MIN_PROCEDURES_WITH_PARAMETERS = 2;
 const MIN_PARTNERS = 2;
 
@@ -1280,7 +1216,6 @@ export function foundation(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const f = dataset.foundation;
 
-  // ── Foundation internal consistency ────────────────────────────────────────
   const nonEmpty: Array<[string, ReadonlyArray<unknown>]> = [
     ["foundation.departments", f.departments],
     ["foundation.abilities", f.abilities],
@@ -1416,7 +1351,6 @@ export function foundation(ctx: ValidationCtx): void {
     need("supplierType", `foundation.suppliers "${s.name}"`, s.type);
   }
 
-  // ── Party currency + payment terms ─────────────────────────────────────────
   for (const party of [...f.customers, ...f.suppliers]) {
     if (party.currencyCode && !/^[A-Z]{3}$/.test(party.currencyCode)) {
       fail(
@@ -1435,7 +1369,6 @@ export function foundation(ctx: ValidationCtx): void {
     fail(`foundation.suppliers: no supplier with currencyCode "EUR"`);
   }
 
-  // ── Holidays ───────────────────────────────────────────────────────────────
   const holidayOffsets = new Set<number>();
   for (const holiday of f.holidays) {
     if (!Number.isFinite(holiday.dateOffset)) {
@@ -1452,7 +1385,6 @@ export function foundation(ctx: ValidationCtx): void {
     holidayOffsets.add(holiday.dateOffset);
   }
 
-  // ── Tags ───────────────────────────────────────────────────────────────────
   for (const tag of f.tags) {
     if (!tag.name.trim()) fail(`foundation.tags: empty tag name`);
     if (!tag.table.trim()) {
@@ -1460,7 +1392,6 @@ export function foundation(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Material taxonomy internal refs ────────────────────────────────────────
   const taxonomy = f.materialTaxonomy;
   for (const type of taxonomy.types) {
     need(
@@ -1508,7 +1439,6 @@ export function foundation(ctx: ValidationCtx): void {
       contractor.ability
     );
   }
-  // ── Shifts: every work center staffed, the user's job resolvable ───────────
   const staffedWorkCenters = new Set<string>();
   const seenWorkCenterShifts = new Set<string>();
   for (const [wcName, shiftName] of f.workCenterShifts) {
@@ -1600,9 +1530,6 @@ export function foundation(ctx: ValidationCtx): void {
   checkCoverage(fail, { procedureStatus: seenProcedureStatuses });
 }
 
-// Items: methods, inspection plans, taxonomy classification, pricing,
-// configuration, revisions, batch properties.
-
 export function itemIdentity(ctx: ValidationCtx): void {
   const itemIds = new Set<string>();
   for (const [bucket, specs] of ctx.ix.itemBuckets) {
@@ -1624,7 +1551,6 @@ export function items(ctx: ValidationCtx): void {
     f.supplierProcesses.map((sp) => `sp:${sp.supplier}:${sp.process}`)
   );
 
-  // ── Items slice ────────────────────────────────────────────────────────────
   for (const method of dataset.items.methods) {
     const where = `items.methods "${method.readableId}"`;
     if (!makePartIds.has(method.readableId)) {
@@ -1660,7 +1586,6 @@ export function items(ctx: ValidationCtx): void {
     need("item", "items.supplierLinks", link.item);
   }
 
-  // ── In-process inspection plans ────────────────────────────────────────────
   if (dataset.items.inspectionPlans.length === 0) {
     fail(
       `items.inspectionPlans: empty — the MES inspection view needs an Inspection operation with a plan`
@@ -1708,14 +1633,12 @@ export function items(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Items depth ────────────────────────────────────────────────────────────
   const stockedItems = new Set(
     dataset.inventory.openingStock
       .filter((stock) => stock.qty > 0)
       .map((stock) => stock.item)
   );
 
-  // BOP tools must resolve to Tool-bucket items.
   for (const method of dataset.items.methods) {
     for (const op of method.bop) {
       for (const tool of op.tools ?? []) {
@@ -1728,7 +1651,6 @@ export function items(ctx: ValidationCtx): void {
     }
   }
 
-  // Material taxonomy classification resolves against THIS dataset's taxonomy.
   for (const [bucket, specs] of itemBuckets) {
     for (const spec of specs) {
       const classification = spec.material;
@@ -1881,7 +1803,6 @@ export function items(ctx: ValidationCtx): void {
 export function batchProperties(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const trackingByItem = ix.trackingByItem;
-  // Batch properties: every Batch-tracked item records at least one per-lot attribute.
   const batchPropertyLabels = new Set<string>();
   for (const property of dataset.items.batchProperties) {
     const where = `items.batchProperties "${property.item}" "${property.label}"`;
@@ -1911,9 +1832,6 @@ export function batchProperties(ctx: ValidationCtx): void {
     }
   }
 }
-
-// Inventory: opening and tracked stock, kanbans, counts, transfers, and the
-// net on-hand balance every slice's movements leave behind.
 
 export function openingStock(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
@@ -2020,7 +1938,6 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Inventory counts ───────────────────────────────────────────────────────
   const inventoryKeys = new Set<string>();
   const uniqueKey = (where: string, key: string) => {
     if (inventoryKeys.has(key)) fail(`${where}: duplicate key "${key}"`);
@@ -2060,7 +1977,6 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Stock transfers ────────────────────────────────────────────────────────
   for (const transfer of dataset.inventory.stockTransfers) {
     const where = `inventory.stockTransfers "${transfer.key}"`;
     uniqueKey(where, transfer.key);
@@ -2083,7 +1999,6 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Warehouse transfers ────────────────────────────────────────────────────
   for (const transfer of dataset.inventory.warehouseTransfers) {
     const where = `inventory.warehouseTransfers "${transfer.key}"`;
     uniqueKey(where, transfer.key);
@@ -2116,7 +2031,6 @@ export function trackedStockAndMovements(ctx: ValidationCtx): void {
 }
 
 export function netOnHand(ctx: ValidationCtx): void {
-  // ── Net on-hand ≥ 0 per (item, shelf), across every slice ──────────────────
   for (const [key, net] of ctx.ix.onHand) {
     if (net < 0) {
       ctx.fail(
@@ -2126,16 +2040,11 @@ export function netOnHand(ctx: ValidationCtx): void {
   }
 }
 
-// Sales: opportunities (RFQ → quote → order → shipment → invoice), status
-// orders, RMAs, and the sales status matrix.
-
 export function sales(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
   const f = dataset.foundation;
   const { isTracked } = ix;
 
-  // Statuses actually exhibited by this dataset's sales slice, checked against
-  // COVERAGE (required.ts) after every spec has been walked.
   const seenStatuses = {
     salesRfq: new Set<string>(),
     quote: new Set<string>(),
@@ -2282,7 +2191,6 @@ export function sales(ctx: ValidationCtx): void {
     checkOpportunity(`sales.releasedOrders[${index}]`, spec);
   }
 
-  // ── Sales returns (RMAs) ───────────────────────────────────────────────────
   const { documentRefs } = ix;
   for (const [rmaIndex, rma] of dataset.sales.salesReturns.entries()) {
     const where = `sales.salesReturns "${rma.key}"`;
@@ -2324,13 +2232,8 @@ export function sales(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Status matrix — every required sales status must be exhibited ─────────
   checkCoverage(fail, seenStatuses);
 }
-
-// The sales and purchasing screens beyond status coverage: the configurator,
-// "Assigned to me", quote creation dates, customer portals, bank accounts and
-// approvals.
 
 /** Sales/purchasing dashboards' "Assigned to me" needs a few of each. */
 const MIN_ASSIGNED_OPEN_DOCUMENTS = 2;
@@ -2389,7 +2292,6 @@ function checkBankAccount(
 export function commercial(ctx: ValidationCtx): void {
   const { dataset, fail, need, needCustomer } = ctx;
   const f = dataset.foundation;
-  // ── Configurator ──────────────────────────────────────────────────────────
   const cfg = dataset.items.configuration;
   const cfgWhere = `items.configuration "${cfg.item}"`;
   const method = dataset.items.methods.find((m) => m.readableId === cfg.item);
@@ -2480,7 +2382,6 @@ export function commercial(ctx: ValidationCtx): void {
     }
   };
 
-  // ── Quotes: creation dates, configured lines; assignees on open documents ─
   let configuredLines = 0;
   let recentQuotes = 0;
   const assigned = {
@@ -2652,7 +2553,6 @@ export function commercial(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Customer portals + bank accounts ──────────────────────────────────────
   const portals = dataset.sales.customerPortals;
   if (portals.length < MIN_CUSTOMER_PORTALS) {
     fail(
@@ -2696,7 +2596,6 @@ export function commercial(ctx: ValidationCtx): void {
     fail("purchasing.supplierBankAccounts: must not be empty");
   }
 
-  // ── Approvals ─────────────────────────────────────────────────────────────
   const poFloors = p.approvalRules
     .filter((rule) => rule.documentType === "purchaseOrder")
     .map((rule) => rule.lowerBoundAmount);
@@ -2804,12 +2703,9 @@ export function commercial(ctx: ValidationCtx): void {
   checkCoverage(fail, { approvalRequestType: requestTypes });
 }
 
-// Return orders: the Credits tab (memo) and the Issues tab (NCR link).
-
 export function returnOrders(ctx: ValidationCtx): void {
   const { dataset, fail } = ctx;
   const p = dataset.purchasing;
-  // ── Return orders: Credits tab (memo) and Issues tab (NCR link) ──────────
   const checkCredit = (
     where: string,
     ret: {
@@ -2950,9 +2846,6 @@ export function returnOrders(ctx: ValidationCtx): void {
   }
 }
 
-// Purchasing: RFQs and supplier quotes, purchase orders with their receipts
-// and invoices, purchase returns, and the purchasing status matrix.
-
 export function purchasing(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const f = dataset.foundation;
@@ -2964,8 +2857,6 @@ export function purchasing(ctx: ValidationCtx): void {
   const rfqItems = new Set(p.rfqLines.map((line) => line.item));
   for (const line of p.rfqLines) need("item", "purchasing.rfqLines", line.item);
 
-  // Statuses exhibited by the purchasing slice, checked against
-  // COVERAGE (required.ts) once every spec has been walked.
   const seenPurchasing = {
     purchaseOrder: new Set<string>(),
     receipt: new Set<string>(),
@@ -2974,8 +2865,6 @@ export function purchasing(ctx: ValidationCtx): void {
     supplierQuote: new Set<string>(),
     purchasingRfq: new Set<string>([p.rfqHeader.status])
   };
-  // Pending / Rejected / Inactive suppliers exist for the supplier list only,
-  // never for order flow.
   const { activeSuppliers, suppliersWithContacts } = ix;
   const needActiveSupplier = (where: string, name: string) => {
     need("supplier", where, name);
@@ -3033,7 +2922,6 @@ export function purchasing(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Draft / Closed RFQs ────────────────────────────────────────────────────
   for (const rfq of p.lifecycleRfqs) {
     const where = `purchasing.lifecycleRfqs "${rfq.ref}"`;
     seenPurchasing.purchasingRfq.add(rfq.status);
@@ -3062,7 +2950,6 @@ export function purchasing(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Standalone supplier quotes ─────────────────────────────────────────────
   for (const quote of p.standaloneSupplierQuotes) {
     const where = `purchasing.standaloneSupplierQuotes "${quote.key}"`;
     needActiveSupplier(where, quote.supplier);
@@ -3089,7 +2976,6 @@ export function purchasing(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Purchase orders ────────────────────────────────────────────────────────
   let eurPoCount = 0;
   let ospPoCount = 0;
   for (const [index, po] of p.purchaseOrders.entries()) {
@@ -3241,7 +3127,6 @@ export function purchasing(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Purchase returns ───────────────────────────────────────────────────────
   for (const ret of p.purchaseReturns) {
     const where = `purchasing.purchaseReturns "${ret.key}"`;
     needActiveSupplier(where, ret.supplier);
@@ -3268,12 +3153,8 @@ export function purchasing(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Status matrix — every required purchasing status must be exhibited ────
   checkCoverage(fail, seenPurchasing);
 }
-
-// Production: jobs and their timelines, the events job, picking lists, and
-// the genealogy lots tier 06 creates.
 
 /** Open jobs are due inside this window, so Priorities' week and month show them. */
 const OPEN_JOB_DUE_WINDOW = { min: -3, max: 21 } as const;
@@ -3290,8 +3171,6 @@ export function jobs(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;
   const { orderDateByRef } = ix;
   const { rootOpCountOf, rootOpsOf } = ix.bom;
-  // Order → release → completion, none of it after today; open work due in the
-  // Priorities window.
   const checkJobTimeline = (where: string, job: JobSpec) => {
     const released = job.releasedDateOffset;
     const completed = job.completedDateOffset;
@@ -3414,8 +3293,6 @@ export function jobs(ctx: ValidationCtx): void {
       );
     }
 
-    // Deadline discipline: "No Deadline" means exactly that — no due date;
-    // every other deadline type needs one.
     const deadlineType = job.deadlineType ?? "Hard Deadline";
     seenDeadlineTypes.add(deadlineType);
     if (deadlineType === "No Deadline" && job.dueDateOffset !== undefined) {
@@ -3516,7 +3393,6 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const { jobByKey, isTracked } = ix;
   const { componentsOf, rootOpCountOf } = ix.bom;
-  // ── Events-job depth: open event, rework ───────────────────────────────────
   const eventsJob = jobByKey.get(dataset.production.eventsJobKey);
   if (eventsJob) {
     const eventsOpCount = rootOpCountOf(eventsJob.item);
@@ -3528,7 +3404,6 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
       }
     };
     checkEventsOrder("openEvent", dataset.production.openEvent.operationOrder);
-    // The open timer belongs on the operation the floor is actually running.
     const openEventOverride = (eventsJob.operationOverrides ?? []).find(
       (override) =>
         override.order === dataset.production.openEvent.operationOrder
@@ -3552,7 +3427,6 @@ export function eventsJobAndPicking(ctx: ValidationCtx): void {
     if (!rework.reason.trim()) fail(`production.rework: empty reason`);
   }
 
-  // ── Picking lists ──────────────────────────────────────────────────────────
   const seenPickingStatuses = new Set<string>();
   const pickingKeys = new Set<string>();
   for (const list of dataset.production.pickingLists) {
@@ -3661,12 +3535,6 @@ export function genealogy(ctx: ValidationCtx): void {
   }
 }
 
-// The floor-level contract: volume, open work on every work center, running
-// timers, assignments, make-to-stock and recent completions, the batch, and
-// a reachable Inspection operation.
-
-// A floor worth demoing: volume, open work on every work center, running
-// timers, assignments, and recent completions for the production KPIs.
 export const MIN_JOBS = 18;
 const MIN_OPEN_OPERATIONS_PER_WORK_CENTER = 2;
 const MIN_RUNNING_WORK_CENTERS = 4;
@@ -3957,9 +3825,6 @@ export function floor(ctx: ValidationCtx): void {
   }
 }
 
-// The 3D assembly: its bundled graph, step materials / tools, and mappings.
-
-// The assembly detail's step panels and BOM tree.
 const MIN_ASSEMBLY_STEP_MATERIALS = 2;
 const MIN_ASSEMBLY_COMPONENT_MAPPINGS = 2;
 
@@ -3991,7 +3856,6 @@ export function assembly(ctx: ValidationCtx): void {
           }
         }
       }
-      // Step materials / tools and the BOM tree's component mappings.
       const bom =
         assembly.item === undefined
           ? new Set<string>()
@@ -4067,8 +3931,6 @@ export function assembly(ctx: ValidationCtx): void {
     }
   }
 }
-
-// Inspection lots and their samples.
 
 export function inspections(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
@@ -4280,9 +4142,6 @@ export function inspections(ctx: ValidationCtx): void {
   });
 }
 
-// Quality: issue workflows, non-conformances, quality documents, gauges,
-// risks, and the quality matrix. Inspection lots are rules/inspections.ts.
-
 const MIN_NCR_WORKFLOWS = 3;
 const MIN_WORKFLOW_LINKED_NCRS = 2;
 /** The quality dashboard's supplier KPI reads issues opened in the last month. */
@@ -4290,8 +4149,6 @@ const SUPPLIER_QUALITY_WINDOW_DAYS = 28;
 /** Dispositions the closeIssue path accepts without posting inventory value. */
 const CLOSED_NCR_DISPOSITIONS = new Set(["Use As Is", "Rework"]);
 
-// A completed task/approval carries its completion day, on/after the NCR
-// opened and never in the future.
 export function checkCompletion(
   fail: (message: string) => void,
   where: string,
@@ -4332,8 +4189,6 @@ export function quality(ctx: ValidationCtx): void {
     riskType: new Set<string>()
   };
 
-  // Direct POs by ref (supplier + line items) and sales order LINE refs by
-  // customer — what an NCR's PO-line / SO-line associations resolve against.
   const directPoByRef = new Map<
     string,
     { supplier: string; items: Set<string> }
@@ -4359,7 +4214,6 @@ export function quality(ctx: ValidationCtx): void {
   }
   const inspectionRefs = new Set(q.inspections.map((insp) => insp.ref));
 
-  // Issue workflows — the templates the new-issue form copies onto an NCR.
   const workflowByKey = new Map<string, (typeof q.workflows)[number]>();
   const workflowNames = new Set<string>();
   for (const workflow of q.workflows) {
@@ -4770,8 +4624,6 @@ export function quality(ctx: ValidationCtx): void {
   });
 }
 
-// Change orders and their action tasks.
-
 export function changeOrders(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const seenChangeOrderStatus = new Set<string>();
@@ -4830,9 +4682,6 @@ export function changeOrders(ctx: ValidationCtx): void {
   });
 }
 
-// Accounting: projects, the custom dimension, manual journals, memos,
-// payments and their settlements, the close checklist, FX rates, fixed assets.
-
 type InvoiceFacts = {
   party: string;
   /** Σ line quantity × price — what the salesInvoices/purchaseInvoices views total. */
@@ -4848,7 +4697,6 @@ export function accounting(ctx: ValidationCtx): void {
   const suppliers = ix.refs.supplier;
   const a = dataset.accounting;
 
-  // ── Keyed invoice registry (sinv:/pinv: refs the payments settle) ─────────
   const salesInvoices = new Map<string, InvoiceFacts>();
   for (const opp of [
     ...dataset.sales.opportunities,
@@ -4882,7 +4730,6 @@ export function accounting(ctx: ValidationCtx): void {
     sales ? salesInvoices : purchaseInvoices;
   const invoiceLabel = (sales: boolean, key: string) =>
     `${sales ? "sinv" : "pinv"}:${key}`;
-  // Settled principal per invoice label, and who settled it.
   const settled = new Map<string, number>();
   const partialDates = new Map<string, number[]>();
   const settle = (label: string, amount: number, dateOffset: number) => {
@@ -4890,7 +4737,6 @@ export function accounting(ctx: ValidationCtx): void {
     partialDates.set(label, [...(partialDates.get(label) ?? []), dateOffset]);
   };
 
-  // ── Projects ───────────────────────────────────────────────────────────────
   const projectKeys = new Set<string>();
   const projectNames = new Set<string>();
   for (const project of a.projects) {
@@ -4921,7 +4767,6 @@ export function accounting(ctx: ValidationCtx): void {
     fail("accounting.projects: no project codes a purchase invoice line");
   }
 
-  // ── Custom dimension ───────────────────────────────────────────────────────
   const custom = a.customDimension;
   if (BOOTSTRAP_DIMENSION_NAMES.has(custom.name)) {
     fail(
@@ -4935,7 +4780,6 @@ export function accounting(ctx: ValidationCtx): void {
     fail("accounting.customDimension: expected at least 2 values");
   }
 
-  // ── Journal entries ────────────────────────────────────────────────────────
   const journalEntryIds = new Set<string>();
   const seenJournalStatus = new Set<string>();
   let postedDimensionTags = 0;
@@ -5021,7 +4865,6 @@ export function accounting(ctx: ValidationCtx): void {
     fail("accounting.journalEntries: no Posted line carries a dimension tag");
   }
 
-  // ── Memos ──────────────────────────────────────────────────────────────────
   const memos = new Map<
     string,
     { party: string; direction: string; amount: number; dateOffset: number }
@@ -5078,7 +4921,6 @@ export function accounting(ctx: ValidationCtx): void {
   }
   checkCoverage(fail, { memoDirection: seenDirections });
 
-  // ── Payments + settlements ─────────────────────────────────────────────────
   const seenTypes = new Set<string>();
   const memoConsumed = new Map<string, number>();
   for (const payment of a.payments) {
@@ -5210,7 +5052,6 @@ export function accounting(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Period close checklist ─────────────────────────────────────────────────
   const seenTaskStatus = new Set<string>();
   const taskDefinitions = new Set<string>();
   for (const task of a.closeTasks) {
@@ -5227,7 +5068,6 @@ export function accounting(ctx: ValidationCtx): void {
   }
   checkCoverage(fail, { periodCloseTaskStatus: seenTaskStatus });
 
-  // ── Exchange-rate overrides ────────────────────────────────────────────────
   const eurPo = dataset.purchasing.purchaseOrders.find(
     (p) => p.source === "direct" && p.currencyCode === "EUR"
   );
@@ -5276,7 +5116,6 @@ export function accounting(ctx: ValidationCtx): void {
     fail("accounting.exchangeRateOverrides: no EUR rate for the FX showcase");
   }
 
-  // ── Fixed assets ───────────────────────────────────────────────────────────
   const seenAssetStatus = new Set<string>();
   for (const asset of a.fixedAssets) {
     const where = `accounting.fixedAssets "${asset.key}"`;
@@ -5359,11 +5198,7 @@ export function accounting(ctx: ValidationCtx): void {
   checkCoverage(fail, { fixedAssetStatus: seenAssetStatus });
 }
 
-// The GL tier 09 writes for posted documents, re-derived from the literals
-// with the same builders (helpers/posting-journals.ts): every journal must
-// balance, every posting date must sit in an Open period, and the documents
-// the invoicing screens need (aging buckets, Draft payments, one Opening
-// Balance, costed stock) must exist.
+// Re-derives tier 09's GL with its own builders (helpers/posting-journals.ts).
 
 // defaultReportRange: the current month plus the five before it — never shorter than this.
 const SCRAP_REPORT_MIN_OFFSET = -150;
@@ -5429,7 +5264,7 @@ export function postings(ctx: ValidationCtx): void {
     }
   };
 
-  // ── Stocked items carry a unit cost (valuation, COGS fallback) ────────────
+  // Stocked items carry a unit cost (valuation, COGS fallback).
   for (const [readableId, item] of items) {
     if ((item.trackingType ?? "Inventory") === "Non-Inventory") continue;
     if (!((item.standardCost ?? 0) > 0)) {
@@ -5439,7 +5274,6 @@ export function postings(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Sales invoices + shipments ─────────────────────────────────────────────
   const openByCustomer = new Set<string>();
   const seenBuckets = new Set<string>();
   for (const opp of [
@@ -5498,7 +5332,6 @@ export function postings(ctx: ValidationCtx): void {
   }
   checkCoverage(fail, { arAgingBucket: seenBuckets });
 
-  // ── Scrap write-offs (tier 03 lots, journaled by tier 09) ─────────────────
   const scrapOffsets = dataset.inventory.onHandTracked.flatMap((tracked) =>
     tracked.entities.flatMap((entity) =>
       entity.scrap ? [entity.scrap.dateOffset] : []
@@ -5527,7 +5360,6 @@ export function postings(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Purchase invoices + receipts ───────────────────────────────────────────
   const openBySupplier = new Set<string>();
   for (const po of dataset.purchasing.purchaseOrders) {
     if (po.source !== "direct") continue;
@@ -5588,7 +5420,6 @@ export function postings(ctx: ValidationCtx): void {
       openBySupplier.add(po.supplier);
   }
 
-  // ── Memos: tier 09's (discount reason accounts) and posted RMA credits ────
   for (const memo of a.memos) {
     check(`accounting.memos "${memo.key}"`, () =>
       memoJournal({
@@ -5625,7 +5456,6 @@ export function postings(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Payments: Posted journals; Draft ones wait on an open invoice ─────────
   const seenDraftTypes = new Set<string>();
   for (const payment of a.payments) {
     const where = `accounting.payments "${payment.key}"`;
@@ -5668,7 +5498,7 @@ export function postings(ctx: ValidationCtx): void {
   }
   checkCoverage(fail, { draftPaymentType: seenDraftTypes });
 
-  // ── Opening balance: exactly one Posted entry (a unique index) ────────────
+  // A unique index allows exactly one Posted opening balance.
   const openingBalances = a.journalEntries.filter(
     (entry) => entry.sourceType === "Opening Balance"
   );
@@ -5685,7 +5515,6 @@ export function postings(ctx: ValidationCtx): void {
     }
   }
 
-  // ── AR / AP billing addresses ──────────────────────────────────────────────
   for (const [side, address] of Object.entries(a.billingAddresses)) {
     const where = `accounting.billingAddresses.${side}`;
     if (!address.addressLine1 || !address.city || !address.postalCode) {
@@ -5704,15 +5533,11 @@ export function postings(ctx: ValidationCtx): void {
   }
 }
 
-// Ops: trainings, the time clock, suggestions and notes, and the seeded
-// workflow run history.
-
 const MIN_TIMECARDS = 5;
 
 export function workforce(ctx: ValidationCtx): void {
   const { dataset, fail } = ctx;
   const ops = dataset.ops;
-  // ── Trainings ──────────────────────────────────────────────────────────────
   const trainingNames = new Set<string>();
   const trainingStatuses = new Set<string>();
   let fullyCovered = false;
@@ -5802,7 +5627,6 @@ export function workforce(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Time clock: closed entries over the past week, never overlapping ──────
   if (ops.timecards.length < MIN_TIMECARDS) {
     fail(
       `ops.timecards: ${ops.timecards.length} entries — every dataset needs at least ${MIN_TIMECARDS}`
@@ -5833,7 +5657,6 @@ export function workforce(ctx: ValidationCtx): void {
     }
   }
 
-  // ── Suggestions and person notes ───────────────────────────────────────────
   if (ops.suggestions.length < 2) {
     fail("ops.suggestions: every dataset needs at least 2");
   }
@@ -5852,7 +5675,6 @@ export function workforce(ctx: ValidationCtx): void {
 
 export function workflowRuns(ctx: ValidationCtx): void {
   const { dataset, ix, fail } = ctx;
-  // ── Workflow run history ───────────────────────────────────────────────────
   // The definitions are a factory over ids the seed mints; placeholders are
   // enough to read their names, node ids and trigger events.
   const published = new Map(
@@ -5933,9 +5755,6 @@ export function workflowRuns(ctx: ValidationCtx): void {
   checkCoverage(fail, { workflowRunStatus: runStatuses });
 }
 
-// Maintenance: schedules, dispatches (and the shapes its KPIs need),
-// replacement parts, and the dispatch matrix.
-
 const MIN_MAINTENANCE_SCHEDULES = 3;
 /** Completed dispatches the maintenance KPIs' previous-period window picks up. */
 const BACKDATED_COMPLETION_WINDOW = { min: -55, max: -35 } as const;
@@ -5945,7 +5764,7 @@ const MAX_DOWN_OUTAGE_DAYS = 2;
 const MIN_REPLACEMENT_PARTS = 3;
 const OPEN_DISPATCH_STATUSES = new Set(["Open", "Assigned", "In Progress"]);
 
-/** A comparable ordinal for an InstantSpec (malformed times sort as midnight). */
+/** Malformed times sort as midnight. */
 function instantOrdinal(instant: InstantSpec): number {
   return instant.offset * 86_400 + (secondsOfDay(instant.time) ?? 0);
 }
@@ -5953,7 +5772,6 @@ function instantOrdinal(instant: InstantSpec): number {
 export function sparePartDrains(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need } = ctx;
   const { isTracked } = ix;
-  // ── Ops spare-part drains ──────────────────────────────────────────────────
   // A Completed dispatch issues its spare parts from a shelf (inventory-ledger.ts).
   for (const dispatch of dataset.ops.maintenanceDispatches) {
     for (const part of dispatch.spareParts ?? []) {
@@ -5998,7 +5816,6 @@ export function maintenance(ctx: ValidationCtx): void {
   }
   const hqWorkCenter = dataset.foundation.hqWorkCenter.name;
 
-  // ── Maintenance schedules ──────────────────────────────────────────────────
   if (ops.maintenanceSchedules.length < MIN_MAINTENANCE_SCHEDULES) {
     fail(
       `ops.maintenanceSchedules: ${ops.maintenanceSchedules.length} schedules — every dataset needs at least ${MIN_MAINTENANCE_SCHEDULES}`
@@ -6036,7 +5853,6 @@ export function maintenance(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Maintenance dispatches ─────────────────────────────────────────────────
   const seenDispatch = {
     status: new Set<string>(),
     severity: new Set<string>(),
@@ -6149,7 +5965,6 @@ export function maintenance(ctx: ValidationCtx): void {
       }
     }
   }
-  // ── Dispatch shapes the maintenance screens and KPIs need ─────────────────
   const dispatches = ops.maintenanceDispatches;
   const scheduleByKey = new Map(
     ops.maintenanceSchedules.map((schedule) => [schedule.key, schedule])
@@ -6261,7 +6076,6 @@ export function maintenance(ctx: ValidationCtx): void {
     );
   }
 
-  // ── Replacement parts ──────────────────────────────────────────────────────
   const partKeys = new Set<string>();
   for (const part of ops.replacementParts) {
     const where = `ops.replacementParts "${part.workCenter}" / "${part.item}"`;
@@ -6305,13 +6119,7 @@ export function maintenance(ctx: ValidationCtx): void {
   });
 }
 
-// The applying user as a floor person: one open clock-in that predates every
-// running timer, a week of manning-board stations, and an absence next week.
-
-/**
- * The applying user's manning-board days around today. Today itself is
- * excluded: a today row pre-filters the MES schedule to one work center.
- */
+/** Excludes today: a today row pre-filters the MES schedule to one work center. */
 const PEOPLE_ASSIGNMENT_WINDOW = { min: -2, max: 4 } as const;
 const MIN_PEOPLE_ASSIGNMENT_DAYS = 5;
 const MIN_PEOPLE_ASSIGNMENT_WORK_CENTERS = 3;
@@ -6418,9 +6226,6 @@ export function peopleAndTime(ctx: ValidationCtx): void {
   });
 }
 
-// Settings & people surfaces: attributes, custom fields, serial sequences,
-// print jobs.
-
 /** The cleanup job deletes completed print jobs after 30 days. */
 const PRINT_JOB_WINDOW = { min: -20, max: 0 } as const;
 const PRINTABLE_JOB_STATUSES = new Set([
@@ -6435,7 +6240,7 @@ function escapeRegExp(text: string): string {
   return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Every string literal in the dataset (workflow builders are functions — skipped). */
+/** Workflow builders are functions, so they are skipped. */
 function collectStrings(value: unknown, into: Set<string>): void {
   if (typeof value === "string") {
     into.add(value);
@@ -6451,7 +6256,6 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
   const { trackingByItem } = ix;
   const ops = dataset.ops;
 
-  // People › Attributes
   const attributeTypes = new Set<string>();
   const categoryNames = new Set<string>();
   ops.userAttributeCategories.forEach((category, index) => {
@@ -6491,7 +6295,6 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
   });
   checkCoverage(fail, { userAttributeType: attributeTypes });
 
-  // Settings › Custom Fields
   const fieldKeys = new Set<string>();
   ops.customFields.forEach((field, index) => {
     const where = `ops.customFields[${index}]`;
@@ -6517,8 +6320,6 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
     )
   });
 
-  // Settings › Serial Numbers — one sequence per Serial-tracked item, whose
-  // counter is past every serial the dataset already minted in its pattern.
   const datasetStrings = new Set<string>();
   collectStrings(dataset, datasetStrings);
   const sequenced = new Set<string>();
@@ -6557,7 +6358,6 @@ export function settingsSurfaces(ctx: ValidationCtx): void {
     }
   }
 
-  // Settings › Printing › Print Jobs
   const route = dataset.foundation.printerRoute;
   if (ops.printJobs.length > 0 && (!route || route.format !== "zpl")) {
     fail("ops.printJobs: need a zpl foundation.printerRoute to print against");
@@ -6742,7 +6542,6 @@ export function enforcementRules(ctx: ValidationCtx): void {
   const storageTypes = ix.refs.storageType;
   const customerTypes = ix.refs.customerType;
 
-  // ── Enforcement rules ─────────────────────────────────────────────────────
   const shapesSeen = new Set<string>();
   const salesSeverities = new Set<string>();
   const ruleNames = new Set<string>();
@@ -6810,8 +6609,6 @@ export function enforcementRules(ctx: ValidationCtx): void {
     salesRuleSeverity: salesSeverities
   });
 }
-
-// Planning: MRP demand, the demand order, and HQ's planning rows.
 
 export function planning(ctx: ValidationCtx): void {
   const { dataset, ix, fail, need, needCustomer } = ctx;

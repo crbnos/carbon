@@ -34,17 +34,13 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "CN-BRG-GREASE", qty: 12, shelf: "A2-L2" }
 ];
 
-// Lots/serials that back the tracked slice of the opening stock above, plus
-// the quality states a real stockroom carries: a magnet lot on hold pending
-// paperwork, a lamination lot rejected at incoming, and an expiry-dated magnet
-// wire lot (paired with the itemShelfLife spec below).
+// Backs the tracked slice of the opening stock above.
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "MAG-NDFB-45",
     entities: [
       { readableId: "LOT-MAG45-2607", quantity: 300 },
       { readableId: "LOT-MAG45-2608", quantity: 180 },
-      // Awaiting the vendor's magnetization flux report before release.
       { readableId: "LOT-MAG45-2609", quantity: 3, status: "On Hold" }
     ]
   },
@@ -71,9 +67,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
     entities: [
       { readableId: "LOT-M19-2606", quantity: 1400 },
       { readableId: "LOT-M19-2607", quantity: 1000 },
-      // Failed incoming burr-height check — quarantined for MRB.
       { readableId: "LOT-M19-2608", quantity: 3, status: "Rejected" },
-      // Coating flaked during a humidity excursion in storage — scrapped.
       {
         readableId: "LOT-M19-2601",
         quantity: 40,
@@ -97,15 +91,11 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   }
 ];
 
-// Enameled magnet wire ages: 9-month fixed shelf life on the solderability
-// cert, with LOT-CU18-2609 above expiring in 30 days so the expiry chips have
-// something amber to show.
+// LOT-CU18-2609 above expires in 30 days so the expiry chips show amber.
 export const SHELF_LIVES: ShelfLifeSpec[] = [
   { item: "MAT-CU-18AWG", days: 270 }
 ];
 
-// Kanbans (auto-replenishment cards): Buy cards for high-usage buy parts, a
-// Make card for the machined shaft, and a Transfer card feeding the winding crib.
 export const KANBAN_ITEMS: KanbanItemSpec[] = [
   { item: "FST-M6-SS", qty: 300, supplier: "Ironwood Fasteners" },
   { item: "FST-M10-SS", qty: 150, supplier: "Ironwood Fasteners" },
@@ -166,8 +156,6 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
     ]
   },
   {
-    // August cycle count over the hardware aisle: two small variances (a
-    // missing bag of M6 cap screws, two seals found loose behind the bin).
     key: "aug-cycle",
     status: "Posted",
     notes: "Cycle count — fastener & seal bins",
@@ -207,8 +195,7 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
   }
 ];
 
-// Shelf → shelf moves inside the plant, one per status. Only the Completed one
-// (dated AFTER the posted count above) actually moved stock.
+// Only the Completed move changes stock, so it's dated after the posted count above.
 export const STOCK_TRANSFERS: StockTransferSpec[] = [
   {
     key: "st-completed",
@@ -236,8 +223,7 @@ export const STOCK_TRANSFERS: StockTransferSpec[] = [
   }
 ];
 
-// Plant → HQ transfers, one per status. HQ keeps a small engineering stash of
-// common hardware; it has no bins, so completed receipts land shelfless.
+// HQ has no bins, so completed receipts land shelfless.
 export const WAREHOUSE_TRANSFERS: WarehouseTransferSpec[] = [
   {
     key: "wt-completed",

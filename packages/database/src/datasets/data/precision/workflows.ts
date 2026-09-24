@@ -507,9 +507,8 @@ export function buildPrecisionWorkflows(refs: {
   ];
 }
 
-// Run history for "Assign new sales orders": one run that assigned the order,
-// one whose assignee was rejected, and one queued while the workflow was
-// briefly unpublished (skipped at load, so no steps).
+// The queued run was skipped at load while the workflow was briefly unpublished,
+// so it has no steps.
 export const precisionWorkflows: WorkflowData = {
   build: buildPrecisionWorkflows,
   runs: [

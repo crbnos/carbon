@@ -1,11 +1,7 @@
 /**
- * Row-count floors verify.ts checks for the scratch company after the tiers run,
- * so a tier that silently writes nothing fails. Includes sync-interceptor tables;
- * counts are absolute, so bootstrap-filled tables include its rows.
- *
- * Floor = the smallest count any dataset produced (`// min` = that count when
- * min ≥ 20, floored at 80%). New table → measure and add it; removing data on
- * purpose → lower the floor. The global `period` table is shared, so omitted.
+ * Row-count floors, so a tier that silently writes nothing fails. Counts are absolute
+ * (bootstrap rows included). Floor = the smallest count any dataset produced
+ * (`// min` = that count when ≥ 20, floored at 80%). The shared `period` table is omitted.
  */
 export const COVERAGE_FLOORS: Record<string, number> = {
   ability: 6,
@@ -266,9 +262,8 @@ export const COVERAGE_FLOORS: Record<string, number> = {
 };
 
 /**
- * Tables with no `companyId`, counted through their owning row (`$1` = scratch
- * company id). Group-scoped dimension rows are exact: the scratch company gets
- * a fresh group.
+ * `$1` = scratch company id. Group-scoped dimension rows are exact: the scratch
+ * company gets a fresh group.
  */
 export const COVERAGE_SCOPES: Record<string, string> = {
   companyAccountsPayableBillingAddress: `id = $1`,

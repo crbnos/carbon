@@ -122,8 +122,6 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Potting Station", "Clean Room Assembly"]
 ];
 
-// Day shift staffs every cell; TVAC and the clean room run a swing shift too,
-// because a thermal cycle or a cure does not stop at 14:30.
 export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
   ["CNC Mill", "Day Shift"],
   ["TIG Welder Cell", "Day Shift"],
@@ -449,7 +447,6 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "AstroMill Machining", process: "Outside Processing" }
 ];
 
-// Outside shops the planner can load like an in-house cell.
 export const PARTNERS: PartnerSpec[] = [
   {
     supplier: "AstroMill Machining",
@@ -464,7 +461,6 @@ export const PARTNERS: PartnerSpec[] = [
   }
 ];
 
-// Headquarters' engineering lab — its bench equipment is maintained like the plant's.
 export const HQ_WORK_CENTER: WorkCenterSpec = {
   name: "Flatsat Test Lab",
   dept: "Engineering",
@@ -728,9 +724,8 @@ export const TAGS: TagSpec[] = [
   { name: "Calibrated", table: "tool" }
 ];
 
-// Company-scoped taxonomy rows. Names deliberately avoid the GLOBAL
-// substances/forms migrations seed (Steel, Aluminum, Sheet, Plate, …) so the
-// settings screens don't show duplicates.
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
 export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
   substances: [
     { name: "Carbon Fiber Composite", code: "CFRP" },

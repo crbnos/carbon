@@ -130,8 +130,6 @@ export const JOBS: JobSpec[] = [
     releasedDateOffset: -172
   },
 
-  // ── Floor load: short-routing machined and fabricated parts released over the
-  // last few weeks, so every cell has a queue and something running today.
   {
     key: "floor-flange",
     item: "MCH-FLANGE-SS",
@@ -265,7 +263,6 @@ export const JOBS: JobSpec[] = [
     releasedDateOffset: -1,
     priority: 14
   },
-  // Make-to-stock: end caps and pump housings for the next manifold builds.
   {
     key: "stock-endcap",
     item: "MCH-END-CAP",
@@ -287,7 +284,6 @@ export const JOBS: JobSpec[] = [
     priority: 7,
     operationOverrides: [{ order: 1, assignee: "self" }]
   },
-  // ── Recently completed — the completion-time and estimates-vs-actuals KPIs.
   {
     key: "done-flange",
     item: "MCH-FLANGE-SS",
@@ -420,9 +416,6 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
-// Material staging for the in-progress HMA-4000 job. The completed list kitted
-// the manifold hardware weeks ago; the open list is today's pull for the pump
-// housings, short on rod bushings.
 export const PICKING_LISTS: PickingListSpec[] = [
   {
     key: "hma-kit-1",
@@ -479,7 +472,6 @@ export const precisionProduction: ProductionData = {
   genealogyJobKey: "in-progress",
   // The hydro proof test (position 2) is the one overridden to In Progress.
   openEvent: { operationOrder: 2 },
-  // One passivation-and-deburr run for two small-part jobs.
   batch: {
     members: [
       { job: "floor-spacer", order: 2 },

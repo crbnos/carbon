@@ -7,7 +7,7 @@ export const motorAssembly: AssemblySpec = {
   name: "EV Drive Unit — Build Sequence",
   item: "MTR-9000",
   componentCount: 53,
-  // Rotor insertion and final build — the Assembly operation of the MTR-9000 method.
+  // The Assembly operation of the MTR-9000 method.
   operation: 1,
   steps: [
     {

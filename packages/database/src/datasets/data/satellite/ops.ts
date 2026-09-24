@@ -16,7 +16,6 @@ import type {
   UserAttributeCategorySpec
 } from "../../types.ts";
 
-// One preventive schedule per frequency, spread over the shop's work centers.
 export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   {
     key: "cleanroom-particles",
@@ -27,7 +26,7 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
     frequency: "Daily",
     priority: "Medium",
     estimatedDuration: 30,
-    // Today's count is already dispatched; the clean room is monitored every day.
+    // Today's count is already dispatched.
     nextDueOffset: 1
   },
   {
@@ -90,9 +89,8 @@ export const MAINTENANCE_SCHEDULES: MaintenanceScheduleSpec[] = [
   }
 ];
 
-// Every status, severity, priority, source and OEE impact, plus the shapes the
-// maintenance KPIs and boards read: a failure on a production day, back-dated
-// completions, today's scheduled task, a machine down now, and one at HQ.
+// Shapes the maintenance KPIs and boards read: a failure on a production day,
+// back-dated completions, today's scheduled task, a machine down now, one at HQ.
 export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   {
     key: "potting-needle",
@@ -164,8 +162,7 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
     actualStart: { offset: -9, time: "12:15:00" },
     actualEnd: { offset: -9, time: "17:05:00" },
     takesWorkCenterOffline: true,
-    // Two pounds instead of the kit's one — the leak took a full re-grease,
-    // which is why the next satellite kit is short of Krytox.
+    // Two pounds instead of the kit's one, which is why the next satellite kit is short of Krytox.
     spareParts: [{ item: "CN-GREASE-001", quantity: 2, shelf: "A1-L3" }],
     comments: ["Leak rate after re-seat: 2e-7 Torr·L/s — within spec."]
   },
@@ -290,7 +287,6 @@ export const MAINTENANCE_DISPATCHES: MaintenanceDispatchSpec[] = [
   }
 ];
 
-// The spares the MES dispatch page offers per work center.
 export const REPLACEMENT_PARTS: ReplacementPartSpec[] = [
   { workCenter: "TVAC Chamber 1", item: "CN-GREASE-001", quantity: 1 },
   { workCenter: "TIG Welder Cell", item: "VLV-SOLENOID-LP2", quantity: 1 },
@@ -409,7 +405,6 @@ export const TRAININGS: TrainingSpec[] = [
   }
 ];
 
-// The past working week on the time clock, split around lunch on the last day.
 export const TIMECARDS: TimecardSpec[] = [
   { dayOffset: -5, clockIn: "06:58:00", clockOut: "15:31:00" },
   { dayOffset: -4, clockIn: "07:04:00", clockOut: "15:36:00" },
@@ -427,8 +422,7 @@ export const TIMECARDS: TimecardSpec[] = [
 // Clocked in before the first timer on the floor started this morning.
 export const OPEN_TIMECARD: OpenTimecardSpec = { clockIn: "06:31:00" };
 
-// The supervisor's stations for the week around today — none on today itself,
-// so the MES schedule opens on every work center instead of one station.
+// None on today, so the MES schedule opens on every work center, not one station.
 export const PEOPLE_ASSIGNMENTS: PeopleAssignmentSpec[] = [
   { dayOffset: -2, workCenter: "CNC Mill", shift: "Day Shift" },
   { dayOffset: -1, workCenter: "TIG Welder Cell", shift: "Day Shift" },
@@ -481,7 +475,6 @@ export const NOTES: NoteSpec[] = [
   }
 ];
 
-// People › Attributes — the applying user's own profile values.
 export const USER_ATTRIBUTE_CATEGORIES: UserAttributeCategorySpec[] = [
   {
     name: "Flight Hardware Qualifications",
@@ -522,8 +515,6 @@ export const SERIAL_SEQUENCES: SerialSequenceSpec[] = [
   { item: "SAT-1000", prefix: "SAT1000-SN-", size: 4, next: 1 }
 ];
 
-// Label history on the plant's printer route: auto and manual prints, a
-// delivery failure, and its reprint waiting in the queue.
 export const PRINT_JOBS: PrintJobSpec[] = [
   {
     source: { kind: "Receipt", receipt: "receipt:bare-boards" },

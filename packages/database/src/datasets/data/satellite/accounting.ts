@@ -236,8 +236,6 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
     }
   },
   {
-    // The chart's opening position, so the balance sheet has cash, stock,
-    // plant and equity before the first posted document.
     ref: "journal:opening-balance",
     journalEntryId: "JE-SEED-006",
     description: "Opening balances — cutover from the legacy ledger",
@@ -305,9 +303,8 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
   }
 ];
 
-// Settles the lifecycle invoices: "paid" in full, "partial" by half, and
-// the Credit/Debit Note Issued invoices by their memos (zero-cash credit
-// applications, the way applyCreditsToInvoices records them).
+// Credit/Debit Note Issued invoices settle by their memos as zero-cash credit
+// applications, the way applyCreditsToInvoices records them.
 export const PAYMENTS: PaymentSpec[] = [
   {
     key: "orbsec-ach",
@@ -367,7 +364,6 @@ export const PAYMENTS: PaymentSpec[] = [
       { memoKey: "proptech-tanks", invoiceKey: "debit-note", amount: 6400 }
     ]
   },
-  // Entered but not yet applied or posted — the payment's apply table.
   {
     key: "draft-receipt",
     type: "Receipt",

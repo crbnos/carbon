@@ -248,7 +248,7 @@ async function seedRun(
   }
 }
 
-/** The triggering record's headline columns — what the loader's entity row carries. */
+/** Mirrors the loader's entity row for the triggering record. */
 async function triggerRow(
   ctx: Ctx,
   table: string,
@@ -266,7 +266,6 @@ async function triggerRow(
   );
 }
 
-/** `{ inputs, resolved }` — refs to the trigger resolve to its record, entity literals to their id. */
 function resolveInputs(
   inputs: Record<string, unknown>,
   triggerId: string,
@@ -297,7 +296,7 @@ function resolveInputs(
   return resolved;
 }
 
-/** What actions/update.ts settles with: the updated record, "Updated N field(s)." */
+/** Mirrors what actions/update.ts settles with. */
 function actionOutcome(
   node: Node,
   record: EntityValue

@@ -137,8 +137,7 @@ export const BUY_PARTS: ItemSpec[] = [
     unitSalePrice: 3.8,
     leadTime: 12
   },
-  // Successor of BRG-6206-C3 (see SUPERSESSIONS). Deliberately absent from
-  // every BOM: job creation and picking redirect to it live.
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
   {
     readableId: "BRG-6206-HYB",
     name: "Hybrid Ceramic Bearing 6206 (Si3N4 balls)",
@@ -159,7 +158,6 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 1.85,
     unitOfMeasureCode: "LB",
     leadTime: 28,
-    // Fully classified against the company taxonomy (foundation.ts).
     material: {
       substance: "Electrical Steel",
       form: "Lamination Coil",
@@ -178,8 +176,7 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 6.4,
     unitOfMeasureCode: "LB",
     leadTime: 21,
-    // Partial classification: magnet wire is graded and coated, not dimensioned
-    // like a coil — the spool length varies by put-up.
+    // Partially classified on purpose.
     material: {
       substance: "Enameled Copper",
       grade: "MW 35-C",
@@ -932,9 +929,6 @@ export const CONFIGURATION: ConfigurationSpec = {
   ]
 };
 
-// HSG-9000 rev 0 is the released (Production) revision; rev A was obsoleted
-// after casting porosity at the bearing bore, rev B adds the second gland boss
-// and is in prototype.
 export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "HSG-9000",
@@ -944,8 +938,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   }
 ];
 
-// The shaft's post-nitride check is sampled against a plan of its own, so the
-// MES opens an inspection lot for it rather than a plain operation.
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
 export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "SHF-9000-JOURNAL",
@@ -973,9 +966,6 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   }
 ];
 
-// The traction motor is export-licensed for North America; distributors buy
-// the 4500 by the pallet; magnets live in the cabinet; encoders stay at the
-// plant; the impregnation oven has to be in service to start a cure.
 export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
   {
     family: "sales",

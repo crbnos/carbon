@@ -1,12 +1,7 @@
 /**
- * Runs MRP and the scheduler over one company, as the demo template job does
- * after applying a dataset. `db:seed:dev` spawns this after its seed commits —
+ * Runs MRP and the scheduler over one company. `db:seed:dev` spawns it because
  * `@carbon/database` cannot import `@carbon/planning` (it depends on the database).
- *
  * Best-effort: exits 0 even when a step fails; 1 only on bad arguments.
- *
- * Usage:
- *   pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>
  */
 
 import { createRequire } from "node:module";

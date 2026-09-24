@@ -63,8 +63,6 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
-// Houston HQ keeps a small spares stock of its own: one make part it builds
-// ahead, one bought part it reorders.
 export const HQ_PLANNING: HqPlanningSpec = {
   reorderItemIds: ["EPS-001", "BAT-LIION-48V"],
   demandProjections: [{ readableId: "EPS-001", quantities: [1, 1, 2, 2] }]

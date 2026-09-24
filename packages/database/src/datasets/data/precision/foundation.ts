@@ -127,8 +127,6 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CMM Lab", "Final Inspection"]
 ];
 
-// Two production shifts on the machining cells; Saturday overtime runs the
-// two VMCs and the CMM, which is where a job shop's backlog piles up.
 export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
   ["VMC Cell 1", "First Shift"],
   ["VMC Cell 1", "Second Shift"],
@@ -483,7 +481,6 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Precision Gauge Services", process: "Final Inspection" }
 ];
 
-// Outside shops the planner can load like an in-house cell.
 export const PARTNERS: PartnerSpec[] = [
   {
     supplier: "Anvil Finishing Group",
@@ -497,7 +494,6 @@ export const PARTNERS: PartnerSpec[] = [
   }
 ];
 
-// Headquarters' own work center — maintained like the plant's.
 export const HQ_WORK_CENTER: WorkCenterSpec = {
   name: "Headquarters Toolroom",
   dept: "Machining",
@@ -774,9 +770,8 @@ export const TAGS: TagSpec[] = [
   { name: "Calibrated", table: "tool" }
 ];
 
-// Company-scoped taxonomy rows. Names deliberately avoid the GLOBAL
-// substances/forms migrations seed (Steel, Aluminum, Sheet, Plate, …) so the
-// settings screens don't show duplicates.
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
 export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
   substances: [
     { name: "Tool Steel", code: "TS" },

@@ -208,7 +208,6 @@ export const OPPORTUNITIES: SalesOpportunitySpec[] = [
     }
   },
 
-  // ── Status showcase — one lightweight opportunity per remaining state ──────
   {
     log: "opportunity 5 — RFQ draft (Wabash, spare housing sets)",
     ref: "opp:wabash-housing",
@@ -468,7 +467,6 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     }
   },
 
-  // ── Fulfillment lifecycle — posted, partial and voided shipments ──────────
   // Shipped items are well-stocked untracked buy parts (spares sold from the
   // shelf), so the ledger rows never overdraw a bin.
   {
@@ -557,7 +555,6 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
         }
       ]
     },
-    // Wrong carrier account keyed in — voided before anything left the dock.
     shipment: {
       ref: "shp:wabash-terminals",
       status: "Voided",
@@ -573,9 +570,7 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     }
   },
 
-  // ── Invoice lifecycle — one order+invoice per remaining status ────────────
-  // Modest spares invoices; accounting.ts settles "paid" and "partial" by their
-  // sinv keys.
+  // accounting.ts settles "paid" and "partial" by these sinv keys.
   {
     log: "sales invoice — Submitted (Halcyon shaft-seal spares)",
     ref: "opp:halcyon-seals",
@@ -808,7 +803,6 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
     }
   },
 
-  // ── Floor load — the stator, rotor and shaft work the floor is building ──
   // Each line has a job of its own in production.ts (open or just completed).
   {
     log: "sales order — In Progress (Ridgeline stator and rotor spares, floor load)",
@@ -925,9 +919,8 @@ export const RELEASED_ORDERS: SalesOpportunitySpec[] = [
   }
 ];
 
-// RMAs — one per modeled status, returning small quantities of the spares the
-// posted shipments above actually sent out. The Completed one books stock back
-// into the shelf it shipped from.
+// Quantities come from the posted shipments above; the Completed RMA books
+// stock back into the shelf it shipped from.
 export const SALES_RETURNS: SalesReturnSpec[] = [
   {
     key: "fan",

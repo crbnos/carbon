@@ -9,8 +9,7 @@ import type {
   RiskSpec
 } from "../../types.ts";
 
-// The templates the issues below were raised from (the new-issue form copies
-// source, required actions and MRB onto the issue).
+// The new-issue form copies source, required actions and MRB from these templates onto the issue.
 export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
   {
     key: "supplier-escape",
@@ -77,13 +76,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     quantity: 36,
     priority: "Medium"
   },
-  // ── Supplier escape: raised off the receiving inspection of the Copperline
-  // Nomex delivery. Linked to Copperline, the exact PO line, and the lot.
   {
     ref: "ncr:nomex-thin",
     items: [
       { item: "MAT-INS-NOMEX", quantity: 4, disposition: "Return to Supplier" },
-      // Coils being wound with slot liner cut from the same Nomex roll.
       { item: "COIL-9000", quantity: 6 }
     ],
     assignee: "self",
@@ -126,7 +122,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       ]
     }
   },
-  // ── Customer complaint on shipped spares, worked to closure.
   {
     ref: "ncr:fan-noise",
     items: [{ item: "FAN-AX-160", quantity: 1, disposition: "Rework" }],
@@ -166,11 +161,10 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       }
     ]
   },
-  // ── A quarantined magnet lot waiting on disposition.
   {
     ref: "ncr:mag-lot",
     items: [{ item: "MAG-NDFB-45", quantity: 3 }],
-    // Meridian shipped the lot — the supplier-quality KPI's issue this month.
+    // Feeds the supplier-quality KPI's issue this month.
     supplier: "Meridian Magnetics",
     workflow: "magnet-hold",
     name: "N45SH magnet lot on hold — flux report missing, low remanence on spot check",
@@ -191,10 +185,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   }
 ];
 
-// Receiving inspection of the 20 lb of Nomex 410 Copperline shipped with the
-// magnet wire. Lot of 20 at AQL 1.0 / level II resolves to code letter C,
-// n = 5 — five cut coupons, one from each spool layer.
-// The Nomex 410 Receipt-usage plan, shared by every lot of the material.
+// Lot of 20 at AQL 1.0 / level II → code letter C, n = 5.
 const NOMEX_PLAN = {
   drawingNumber: "SPEC-INS-410 Rev B",
   aql: 1.0,
@@ -272,7 +263,7 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Receiving inspection of the terminal blocks: 20 pieces, AQL 1.0 → n = 5, all good.
+  // 20 pieces at AQL 1.0 → n = 5.
   {
     source: "Receipt",
     ref: "insp:terminal-blocks",
@@ -344,7 +335,6 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // The replacement Nomex roll from the same delivery, waiting on its coupons.
   {
     source: "Receipt",
     ref: "insp:nomex-restock",
@@ -354,8 +344,6 @@ export const INSPECTIONS: InspectionSpec[] = [
     status: "Pending",
     samples: []
   },
-  // The rotor-shaft job's journal inspection, opened ahead of the shafts
-  // returning from grinding.
   {
     source: "Job Operation",
     ref: "insp:shaft-journal",

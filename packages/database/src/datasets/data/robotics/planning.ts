@@ -63,8 +63,6 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
-// Pittsburgh HQ holds a few spare controllers and servo drives for field
-// service swaps.
 export const HQ_PLANNING: HqPlanningSpec = {
   reorderItemIds: ["CTRL-100", "DRV-SRV-400"],
   demandProjections: [{ readableId: "CTRL-100", quantities: [1, 1, 1, 2] }]

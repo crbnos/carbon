@@ -87,7 +87,7 @@ export async function runTier5(ctx: Ctx): Promise<void> {
       }
     }
 
-    // Receipt. Draft/Voided are header+lines only; Posted mirrors post-receipt's
+    // Draft/Voided are header+lines only; Posted mirrors post-receipt's
     // PO branch: one Purchase Receipt ledger row per line into its toShelf. A
     // batch-tracked line mints its lot as update_receipt_line_batch_tracking does.
     if (spec.receipt) {
@@ -381,7 +381,6 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     if (spec.key === data.rfqWinningQuote) winningInteractionId = interactionId;
   }
 
-  // ── Standalone supplier quotes — no RFQ linkage ────────────────────────────
   // Same shape as a quote created from the supplier screen. No externalLink —
   // only finalize mints one, and none of these were finalized.
   for (const spec of data.standaloneSupplierQuotes) {
@@ -513,7 +512,6 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     ctx.refs.documents[`po:sq-${data.rfqWinningQuote}`] = poId;
   }
 
-  // ── Draft / Closed RFQs ────────────────────────────────────────────────────
   // Lines + suppliers only; neither was ever sent. Cancel clears the assignee.
   for (const spec of data.lifecycleRfqs) {
     ctx.log(`purchasing RFQ — ${spec.status}`);
@@ -551,7 +549,6 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Purchase returns (return to vendor) ────────────────────────────────────
   // Completed mirrors post-shipment's Purchase Return Order branch: a Posted
   // shipment plus one ledger row per line out of its fromShelf.
   if (data.purchaseReturns.length > 0) {
@@ -653,7 +650,6 @@ export async function runTier5(ctx: Ctx): Promise<void> {
 
   await seedApprovals(ctx);
 
-  // ── Supplier bank accounts ────────────────────────────────────────────────
   for (const spec of data.supplierBankAccounts) {
     await insertRow(ctx, "supplierBankAccount", {
       supplierId: need(ctx.refs.suppliers, spec.supplier, "supplier"),
@@ -670,7 +666,6 @@ export async function runTier5(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Status history — Draft → To Review → To Receive on the received PO ─────
   // Timestamps are staggered so the timeline reads as a real trail.
   if (historyPoId !== null && historyPoBase !== null) {
     ctx.log("purchase order status history");
@@ -689,10 +684,8 @@ export async function runTier5(ctx: Ctx): Promise<void> {
   }
 }
 
-// Approval tiers approved by the company's Admin employee-type group (plus the
-// applying user as default approver), and the Pending requests PO finalize and
-// supplier "Request approval" leave behind — what "Needs my approval", the PO
-// banner and the supplier Approval tab read.
+// Pending requests in the shape PO finalize and supplier "Request approval" leave;
+// "Needs my approval", the PO banner and the supplier Approval tab read them.
 async function seedApprovals(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.purchasing;
   ctx.log("approval rules + requests");

@@ -5,7 +5,7 @@ import { maybeOne, one } from "./sql.ts";
 /** Signed days relative to the dataset anchor. Negative = in the past. */
 export type DayOffset = number;
 
-/** A TIMESTAMPTZ as a day offset plus a UTC "HH:MM:SS" (resolveTimestamp). */
+/** `time` is a UTC "HH:MM:SS". */
 export type InstantSpec = { offset: DayOffset; time: string };
 
 export type ProcedureStepSpec = {
@@ -27,7 +27,6 @@ export type ProcedureStepSpec = {
   minValue?: number;
   maxValue?: number;
   listValues?: string[];
-  /** Accepted extensions for a "File" step. */
   fileTypes?: string[];
 };
 
@@ -35,7 +34,7 @@ export type ProcedureSpec = {
   name: string;
   process: string;
   description: string;
-  /** procedureParameter rows, written on every version (a new version copies them). */
+  /** Written on every version — a new version copies them. */
   parameters?: { key: string; value: string }[];
   versions: Array<{
     version: number;
@@ -66,9 +65,9 @@ export type CustomerSpec = {
   status: string;
   phone: string;
   website: string;
-  /** A currency bootstrap seeds (seed.data.ts). Defaults to "USD". */
+  /** Must be a currency bootstrap seeds. Defaults to "USD". */
   currencyCode?: string;
-  /** Bootstrap paymentTerm name. Defaults to Net 30. */
+  /** Defaults to Net 30. */
   paymentTerm?: string;
 };
 
@@ -79,9 +78,9 @@ export type SupplierSpec = {
   website: string;
   /** Omitted = Active, written explicitly (the column has no default). */
   status?: "Active" | "Inactive" | "Pending" | "Rejected";
-  /** A currency bootstrap seeds (seed.data.ts). Defaults to "USD". */
+  /** Must be a currency bootstrap seeds. Defaults to "USD". */
   currencyCode?: string;
-  /** Bootstrap paymentTerm name. Defaults to Net 30. */
+  /** Defaults to Net 30. */
   paymentTerm?: string;
 };
 
@@ -101,7 +100,6 @@ export type SupplierProcessSpec = {
   process: string;
 };
 
-/** partner — an outside supplier location qualified for an ability (Resources › Partners). */
 export type PartnerSpec = {
   /** A supplier with a supplierContact — its supplierLocation is the partner id. */
   supplier: string;
@@ -130,14 +128,11 @@ export type ShiftSpec = {
   sunday?: boolean;
 };
 
-/** The applying user's employeeJob — what People › Job and the Shift column show. */
 export type EmployeeJobSpec = {
   title: string;
-  /** One of FoundationData.departments. */
   department: string;
-  /** One of FoundationData.shifts; also the user's employeeShift. */
+  /** Also written as the user's employeeShift. */
   shift: string;
-  /** Hire date; in the past. */
   startDateOffset: DayOffset;
 };
 
@@ -192,14 +187,10 @@ export type HolidaySpec = {
 
 export type TagSpec = {
   name: string;
-  /** Entity list the tag is offered on, e.g. "operation", "material", "tool". */
   table: string;
 };
 
-/**
- * Company-scoped material taxonomy (bootstrap only seeds global rows). Children
- * name parents in THIS spec, never global rows, so validation needs no database.
- */
+/** Children name parents in THIS spec, never global rows, so validation needs no database. */
 export type MaterialTaxonomySpec = {
   substances: { name: string; code: string }[];
   forms: { name: string; code: string }[];
@@ -213,12 +204,8 @@ export type FoundationData = {
   departments: string[];
   abilities: string[];
   processes: ProcessSpec[];
-  /** At the plant, with every job. */
   workCenters: WorkCenterSpec[];
-  /**
-   * At headquarters (ctx.locationId), where the ERP's maintenance lists open by
-   * default. Carries maintenance only — no shift, process or operations.
-   */
+  /** Maintenance only (no shift, process or operations) — the ERP's maintenance lists open at HQ. */
   hqWorkCenter: WorkCenterSpec;
   customers: CustomerSpec[];
   customerContacts: CustomerContactSpec[];
@@ -268,10 +255,7 @@ export type ItemType =
   | "Service"
   | "Fixture";
 
-/**
- * Names resolve against the dataset's own taxonomy (tier 01's `mat*:<name>`
- * refs in ctx.refs.misc), never the global bootstrap rows.
- */
+/** Names resolve against the dataset's own taxonomy, never the global bootstrap rows. */
 export type MaterialClassificationSpec = {
   substance?: string;
   form?: string;
@@ -299,9 +283,7 @@ export type ItemSpec = {
   description?: string;
   /** Revision ladders seed inactive rungs. */
   active?: boolean;
-  /** Omitted = column default. */
   revisionStatus?: "Design" | "Prototype" | "Production" | "Obsolete";
-  /** Material items only. */
   material?: MaterialClassificationSpec;
 };
 
@@ -350,10 +332,9 @@ export type BopOperationSpec = {
   operationUnitCost?: number;
   /** key into ctx.refs.misc, e.g. "procedure:TVAC Qualification Test" */
   procedure?: string;
-  /** `tool` is the readableId of a seeded Tool item. */
   tools?: { tool: string; quantity: number }[];
   parameters?: { key: string; value: string }[];
-  /** InspectionPlanSpec.key — required on (and only on) an "Inspection" operation. */
+  /** Required on (and only on) an "Inspection" operation. */
   inspectionPlan?: string;
 };
 
@@ -365,9 +346,8 @@ export type MakeMethodSpec = {
 };
 
 /**
- * One `itemSupersession` row (keyed on the predecessor). The predecessor needs
- * opening stock so "Consume First" is demoable; the successor must stay out of
- * every BOM — job creation and picking redirect to it live.
+ * The predecessor needs opening stock so "Consume First" is demoable; the successor
+ * must stay out of every BOM — job creation and picking redirect to it live.
  */
 export type SupersessionSpec = {
   predecessor: string;
@@ -393,7 +373,7 @@ export type PriceOverrideSpec = {
   notes?: string;
 };
 
-/** One `pricingRule`. No customer, customer type or item = every sale. */
+/** No customer, customer type or item = every sale. */
 export type PricingRuleSpec = {
   name: string;
   ruleType: "Discount" | "Markup";
@@ -401,10 +381,8 @@ export type PricingRuleSpec = {
   /** Percent (0–100] for Percentage; a per-unit amount for Fixed. */
   amount: number;
   customer?: string;
-  /** One of FoundationData.customerTypes. */
   customerType?: string;
   items?: string[];
-  /** A quantity break: the rule applies from this line quantity up. */
   minQuantity?: number;
   priority?: number;
 };
@@ -417,21 +395,16 @@ export type ConfigurationParameterSpec = {
   listOptions?: string[];
 };
 
-/**
- * One `configurationRule`: a field of the item's method bound to rule code.
- * The app keys it `${field}:${methodRowId}`, so the tier resolves the row.
- */
+/** The app keys a rule `${field}:${methodRowId}`, so the tier resolves the row. */
 export type ConfigurationRuleSpec = {
-  /** A BOM line by its component, or a BOP operation by its 1-based position. */
+  /** `operation` is a 1-based BOP position. */
   target: { component: string } | { operation: number };
   field: "quantity" | "methodType" | "laborTime" | "setupTime" | "machineTime";
   /** Body of `configure(params)`; reads only this configuration's parameter keys. */
   code: string;
 };
 
-/** Makes a make part configurable: requiresConfiguration, parameters and rules. */
 export type ConfigurationSpec = {
-  /** readableId of a makePart. */
   item: string;
   group: string;
   parameters: ConfigurationParameterSpec[];
@@ -448,7 +421,7 @@ export type RuleOperator =
   | "gt"
   | "lt";
 
-/** A condition value; the named forms resolve to ids when the tier runs. */
+/** The object forms resolve to ids when the tier runs. */
 export type RuleConditionValue =
   | string
   | number
@@ -458,10 +431,7 @@ export type RuleConditionValue =
   | { customerTypes: string[] }
   | { location: "Plant" | "HQ" };
 
-/**
- * An `enforcementRule` in the `@carbon/utils` rules AST. The conditions state
- * what must hold: the rule fires when they do NOT (and when a field is unset).
- */
+/** Conditions state what must hold: the rule fires when they do NOT (and when a field is unset). */
 export type EnforcementRuleSpec = {
   name: string;
   description?: string;
@@ -473,7 +443,6 @@ export type EnforcementRuleSpec = {
   | {
       family: "sales";
       surfaces: ("quoteLine" | "salesOrderLine" | "salesInvoiceLine")[];
-      /** enforcementRuleItemAssignment rows. */
       items: string[];
     }
   | {
@@ -499,16 +468,11 @@ export type EnforcementRuleSpec = {
         | "materialIssue"
         | "materialReceive"
       )[];
-      /** enforcementRuleWorkCenterAssignment rows. */
       workCenters: string[];
     }
 );
 
-/**
- * Promotes the item's active revision to Production and adds inactive Obsolete
- * and next revisions, so every itemRevisionStatus shows. The new revisions are
- * not registered in ctx.refs.items — later tiers keep the active one.
- */
+/** The new revisions are not registered in ctx.refs.items — later tiers keep the active one. */
 export type RevisionLadderSpec = {
   item: string;
   /** Must differ from the active revision. */
@@ -518,13 +482,11 @@ export type RevisionLadderSpec = {
 };
 
 /**
- * An in-process inspection plan (inspectionDocument with no drawing file) for a
- * make part. The BOP picker lists only plans whose partId is the item, so the
- * receipt plans of quality.inspections cannot serve an operation.
+ * The BOP picker lists only plans whose partId is the item, so the receipt plans
+ * of quality.inspections cannot serve an operation.
  */
 export type InspectionPlanSpec = {
   key: string;
-  /** The make part the plan inspects — the item whose BOP names it. */
   item: string;
   drawingNumber: string;
   aql: number;
@@ -549,7 +511,6 @@ export type ItemsData = {
   revisionLadder: RevisionLadderSpec[];
   inspectionPlans: InspectionPlanSpec[];
   enforcementRules: EnforcementRuleSpec[];
-  /** Per-lot attributes a Batch-tracked item records (item › Purchasing tab). */
   batchProperties: BatchPropertySpec[];
   /**
    * Animated 3D work instructions built on a bundled CAD assembly, linked to
@@ -559,9 +520,8 @@ export type ItemsData = {
   assembly?: AssemblySpec;
 };
 
-/** A batchProperty row; sortOrder follows the item's authoring order. */
+/** sortOrder follows the item's authoring order. */
 export type BatchPropertySpec = {
-  /** A Batch-tracked item. */
   item: string;
   label: string;
   dataType: "text" | "numeric" | "boolean" | "list" | "date";
@@ -589,7 +549,6 @@ export type TrackedStockSpec = {
     scrap?: {
       /** Must hold the lot's opening stock. */
       shelf: string;
-      /** Bootstrap scrapReason name. */
       reason: string;
       dateOffset: DayOffset;
       comment: string;
@@ -599,7 +558,7 @@ export type TrackedStockSpec = {
   }>;
 };
 
-/** Fixed Duration itemShelfLife; the item must be Batch-tracked (expiry is per lot). */
+/** The item must be Batch-tracked (expiry is per lot). */
 export type ShelfLifeSpec = {
   item: string;
   days: number;
@@ -645,25 +604,18 @@ export type InventoryCountSpec = {
   lines: InventoryCountLineSpec[];
 };
 
-/**
- * Shelf → shelf move; Completed writes the paired itemLedger rows. Untracked
- * items only — tracked moves need per-entity splits the seed does not model.
- */
+/** Untracked items only — tracked moves need per-entity splits the seed does not model. */
 export type StockTransferSpec = {
   /** Registered in ctx.refs.documents as `st:<key>`. */
   key: string;
   status: "Draft" | "Released" | "Completed";
   fromShelf: string;
-  /** Must differ from fromShelf. */
   toShelf: string;
   dateOffset: DayOffset;
   lines: { item: string; quantity: number }[];
 };
 
-/**
- * Plant ⇄ HQ transfer. Completed writes a Transfer Shipment row out of each line's
- * fromShelf and a shelfless Transfer Receipt (HQ has no bins; the app does the same).
- */
+/** Completed writes a shelfless Transfer Receipt — HQ has no bins, and the app does the same. */
 export type WarehouseTransferSpec = {
   /** Registered in ctx.refs.documents as `wt:<key>`. */
   key: string;
@@ -715,9 +667,8 @@ export type SalesRfqSpec = {
   rfqDateOffset: DayOffset;
   expirationOffset?: DayOffset;
   externalNotes: string;
-  /** foundation.noQuoteReasons name; the column lives on the RFQ. Pair with "Closed". */
+  /** The column lives on the RFQ. Pair with "Closed". */
   noQuoteReason?: string;
-  /** salesRfq.assignee = the applying user. */
   assignee?: "self";
   lines: SalesRfqLineSpec[];
 };
@@ -730,7 +681,6 @@ export type SalesQuoteLineSpec = {
   sortOrder: number;
   /** Also supplies quoteLine.quantity — the two have to stay in step. */
   priceBreaks: readonly PriceBreak[];
-  /** quoteLine.configuration, keyed by the configurable item's parameter keys. */
   configuration?: Record<string, string | number | boolean>;
 };
 
@@ -805,7 +755,6 @@ export type SalesInvoiceSpec = {
   subtotal: number;
   totalAmount: number;
   dateIssuedOffset: DayOffset;
-  /** In the past on an Overdue invoice. */
   dueDateOffset?: DayOffset;
   lines: {
     /** ctx.refs.items key — also selects which order line the invoice covers. */
@@ -845,7 +794,6 @@ export type StaggeredDeliverySpec = {
 };
 
 export type SalesReturnLineSpec = {
-  /** An untracked item. */
   item: string;
   quantity: number;
   unitPrice: number;
@@ -854,15 +802,13 @@ export type SalesReturnLineSpec = {
 };
 
 /**
- * The memo "Issue Credit" writes for a return: memo linked by its return-order
- * id plus one credit line per credited return line, amount = Σ qty × unit
- * price (no restock fee). Only on a Completed return — the app caps credit at
- * what was received / shipped.
+ * Mirrors "Issue Credit": amount = Σ qty × unit price (no restock fee). Completed
+ * returns only — the app caps credit at what was received / shipped.
  */
 export type ReturnCreditSpec = {
   /** Draft is what Issue Credit leaves; Posted adds post-memo's stamps. */
   status: "Draft" | "Posted";
-  /** Memo date; on/after the return's dateOffset. */
+  /** On/after the return's dateOffset. */
   dateOffset: DayOffset;
   /** `line` is the 1-based return line number. */
   lines: { line: number; quantity: number }[];
@@ -877,18 +823,15 @@ export type SalesReturnSpec = {
   key: string;
   status: "Draft" | "To Receive" | "Completed";
   customer: string;
-  /** Bootstrap returnReason name, applied to every line (the column is per-line). */
+  /** Applied to every line (the column is per-line). */
   returnReason: string;
   /** Order date; also the receipt date when Completed. */
   dateOffset: DayOffset;
-  /** ctx.refs.documents key of the sales order the return trades against. */
   salesOrder?: string;
   lines: SalesReturnLineSpec[];
-  /** Credit memo (direction Credit) for the returned goods. */
   credit?: ReturnCreditSpec;
 };
 
-/** A `customerBankAccount` / `supplierBankAccount` row; numbers are visibly fake. */
 export type BankAccountSpec = {
   name: string;
   bankName: string;
@@ -934,10 +877,7 @@ export type RfqQuoteSpec = {
   }[];
 };
 
-/**
- * Supplier quote with no RFQ. The supplier needs a supplierContact — the quote
- * row takes the contact and location refs foundation seeds from it.
- */
+/** The supplier needs a supplierContact — the quote takes the contact and location refs foundation seeds from it. */
 export type StandaloneSupplierQuoteSpec = {
   /** Registered in ctx.refs.documents as `sq:<key>` (shared with RfqQuoteSpec keys). */
   key: string;
@@ -946,7 +886,6 @@ export type StandaloneSupplierQuoteSpec = {
   supplierReference: string;
   quotedOffset: DayOffset;
   assignee?: "self";
-  /** Negative on an Expired quote (validator-enforced). */
   expirationOffset: DayOffset;
   lines: {
     item: string;
@@ -966,10 +905,7 @@ export type RfqHeaderSpec = {
   assignee?: "self";
 };
 
-/**
- * Purchasing RFQ with no supplier quotes. Closed mirrors the app's Cancel RFQ
- * action taken before quotes were requested.
- */
+/** Closed mirrors the app's Cancel RFQ action taken before quotes were requested. */
 export type LifecycleRfqSpec = {
   /** ctx.refs.documents key this RFQ is stored under. */
   ref: string;
@@ -978,10 +914,8 @@ export type LifecycleRfqSpec = {
   expirationOffset: DayOffset;
   notes: string;
   internalNotes: string;
-  /** Quantity breaks suppliers are asked to price. */
   quantities: number[];
   lines: RfqLineSpec[];
-  /** Active suppliers the RFQ is addressed to. */
   suppliers: string[];
 };
 
@@ -1030,7 +964,6 @@ export type PurchaseInvoiceSpec = {
   subtotal: number;
   totalAmount: number;
   dateIssuedOffset: DayOffset;
-  /** In the past on an Overdue invoice. */
   dueDateOffset?: DayOffset;
   lines: {
     item: string;
@@ -1083,24 +1016,20 @@ export type PurchaseReturnSpec = {
   /** Order date; also the shipment date when Completed. */
   dateOffset: DayOffset;
   lines: {
-    /** An untracked item with stock to send back. */
     item: string;
     quantity: number;
     unitPrice: number;
     /** Required when Completed. */
     fromShelf?: string;
   }[];
-  /** Debit memo (the app's supplier-credit direction) for the shipped goods. */
+  /** A Debit memo — the app's supplier-credit direction. */
   credit?: ReturnCreditSpec;
 };
 
-/**
- * An enabled `approvalRule` tier. Approvers are the company's Admin
- * employee-type group plus the applying user as default approver.
- */
+/** Approvers are the company's Admin employee-type group plus the applying user as default approver. */
 export type ApprovalRuleSpec = {
   documentType: "purchaseOrder" | "supplier";
-  /** The tier floor; a supplier rule is amount-less, so 0. */
+  /** A supplier rule is amount-less, so 0. */
   lowerBoundAmount: number;
   escalationDays?: number;
 };
@@ -1164,11 +1093,11 @@ export type ProductionQuantitySpec = {
   order: number;
   type: "Production" | "Scrap" | "Rework";
   quantity: number;
-  /** Bootstrap scrapReason name; required on Scrap rows. */
+  /** Required on Scrap rows. */
   scrapReason?: string;
 };
 
-/** Operator chat message on a root operation (plain text, not TipTap). */
+/** Plain text, not TipTap. */
 export type OperationNoteSpec = {
   order: number;
   note: string;
@@ -1184,7 +1113,7 @@ export type JobSpec = {
   salesOrder?: string;
   salesOrderLine?: string;
   customer?: string;
-  /** job.priority; distinct across the dataset, required on released jobs. */
+  /** Distinct across the dataset; required on released jobs. */
   priority?: number;
   assignee?: "self";
   /** Omitted = "Hard Deadline". */
@@ -1262,17 +1191,12 @@ export type AssemblyStepSpec = {
    * graph — a step naming an absent node renders but animates nothing.
    */
   componentNodeIds: string[];
-  /** Components of the assembly item's BOM this step consumes. */
   materials?: { item: string; quantity: number }[];
-  /** Tool items. */
   tools?: { item: string; quantity: number }[];
 };
 
-/** assemblyComponentMapping: a distinct model component (leaf geometry) mapped to a BOM item. */
 export type AssemblyComponentMappingSpec = {
-  /** A leaf node's geometryHash in the bundled graph. */
   geometryHash: string;
-  /** A component of the assembly item's BOM. */
   item: string;
 };
 
@@ -1288,10 +1212,9 @@ export type AssemblySpec = {
   item?: string;
   /** Component total from the bundled graph, mirrored onto modelUpload. */
   componentCount: number;
-  /** 1-based BOP position of the item's "Assembly" operation the instruction plays on. */
+  /** 1-based BOP position of the item's "Assembly" operation. */
   operation: number;
   steps: AssemblyStepSpec[];
-  /** Model component ↔ BOM mappings (the instruction's BOM tree). */
   componentMappings: AssemblyComponentMappingSpec[];
 };
 
@@ -1319,7 +1242,6 @@ export type PickingListLineSpec = {
 export type PickingListSpec = {
   key: string;
   status: "In Progress" | "Completed";
-  /** JobSpec.key. */
   job: string;
   /** Due date of the list, and posting date of the Completed ledger pairs. */
   dateOffset: DayOffset;
@@ -1360,13 +1282,11 @@ export type NonConformanceTaskStatus =
 
 /** Mirrors the `create` edge function's nonConformanceTasks case; In Progress goes to the applying user. */
 export type NonConformanceActionTaskSpec = {
-  /** Bootstrap nonConformanceRequiredAction name, e.g. "Containment Action". */
   action: string;
   status: NonConformanceTaskStatus;
   dueDateOffset?: DayOffset;
   /** Required when Completed. */
   completedOffset?: DayOffset;
-  /** nonConformanceActionProcess — processes the (open) task reaches into. */
   processes?: string[];
 };
 
@@ -1386,7 +1306,6 @@ export type NonConformanceWorkflowSpec = {
   description: string;
   priority: "Low" | "Medium" | "High" | "Critical";
   source: "Internal" | "External";
-  /** Bootstrap nonConformanceRequiredAction names, in order. */
   requiredActions: string[];
   /** approvalRequirements = ["MRB"]. */
   mrb?: boolean;
@@ -1401,7 +1320,7 @@ export type NonConformanceSpec = {
   openDateOffset: DayOffset;
   quantity: number;
   priority: string;
-  /** Bootstrap nonConformanceType name. Omitted = the first row the DB returns. */
+  /** Omitted = the first row the DB returns. */
   type?: string;
   /** Also written as the TipTap `content` body. */
   description?: string;
@@ -1410,31 +1329,28 @@ export type NonConformanceSpec = {
   closeDateOffset?: DayOffset;
   /** `job` is a ctx.refs.documents key; the operation itself is resolved by query. */
   jobOperation?: { job: string };
-  /** nonConformanceItem rows — every issue names what it is about. `item` is a ctx.refs.items key. */
   items: {
     item: string;
     quantity: number;
     /** Omitted = Pending. A Closed issue has every row dispositioned. */
     disposition?: NonConformanceDisposition;
   }[];
-  /** nonConformance.assignee = the applying user; open issues only (close clears it). */
+  /** Open issues only (close clears it). */
   assignee?: "self";
-  /** quality.workflows key; the issue carries that workflow's source, actions and approvals. */
+  /** The issue carries that workflow's source, actions and approvals. */
   workflow?: string;
   /** An externalLink is minted by the sync interceptor. */
   supplier?: string;
-  /** Direct PO ref + the item selecting its line; the PO's supplier must be `supplier`. */
+  /** The PO's supplier must be `supplier`. */
   purchaseOrderLine?: { po: string; item: string };
   customer?: string;
   /** A `soline:` ref; its order's customer must be `customer`. */
   salesOrderLine?: string;
-  /** Lot/serial readableId (onHandTracked or a receipt lotNumber). */
   trackedEntity?: string;
-  /** quality.inspections ref. */
   inspection?: string;
-  /** RMA line the issue was raised from; the RMA's customer must be `customer`. */
+  /** The RMA's customer must be `customer`. */
   salesReturnLine?: { salesReturn: string; line: number };
-  /** Supplier-return line covering the issue's quantity; its supplier must be `supplier`. */
+  /** Covers the issue's quantity; its supplier must be `supplier`. */
   purchaseReturnLine?: {
     purchaseReturn: string;
     line: number;
@@ -1457,7 +1373,6 @@ export type NonConformanceSpec = {
 };
 
 export type InspectionFeatureSpec = {
-  /** Balloon number shown in the grid ("1", "2"). */
   label: string;
   description: string;
   nominalValue: string;
@@ -1466,21 +1381,16 @@ export type InspectionFeatureSpec = {
   unit: string;
 };
 
-/** One anonymous (non-serial) sample; its status must equal the engine's derivation. */
+/** Status must equal the engine's derivation. */
 export type InspectionSampleSpec = {
   status: "Passed" | "Failed";
   inspectedOffset: DayOffset;
-  /** One reading per measured feature (by label). */
   measurements: { feature: string; value: number }[];
 };
 
 type InspectionLotSpec = {
-  /** ctx.refs.documents key the inspection lot is stored under. */
   ref: string;
-  /**
-   * Pending / In Progress are open (the engine's per-sample recompute);
-   * Passed / Partial are dispositioned. "Partial" = some samples passed, some failed.
-   */
+  /** "Partial" = some samples passed, some failed. */
   status: "Pending" | "In Progress" | "Passed" | "Partial";
   /** Required iff dispositioned; on/after every sample's inspectedOffset. */
   dispositionOffset?: DayOffset;
@@ -1499,9 +1409,7 @@ type InspectionLotSpec = {
  */
 export type ReceiptInspectionSpec = InspectionLotSpec & {
   source: "Receipt";
-  /** Ref of a Posted receipt. */
   receipt: string;
-  /** An untracked line item on that receipt. */
   item: string;
   drawingNumber: string;
   /** Resolved sample size must be ≤ 5 so every sample is authored. */
@@ -1516,7 +1424,6 @@ export type ReceiptInspectionSpec = InspectionLotSpec & {
  */
 export type JobOperationInspectionSpec = InspectionLotSpec & {
   source: "Job Operation";
-  /** production.jobs key of a released job whose item's BOP has an Inspection operation. */
   job: string;
 };
 
@@ -1542,7 +1449,7 @@ export type QualityDocumentSpec = {
     description?: string;
     type: QualityDocumentStepType;
     required?: boolean;
-    /** Bootstrap unitOfMeasure code — required for (and only for) Measurement steps. */
+    /** Required for (and only for) Measurement steps. */
     unitOfMeasureCode?: string;
     minValue?: number;
     maxValue?: number;
@@ -1556,7 +1463,6 @@ export type QualityDocumentSpec = {
  */
 export type GaugeSpec = {
   key: string;
-  /** Bootstrap gaugeType name. */
   gaugeType: string;
   description: string;
   modelNumber?: string;
@@ -1671,7 +1577,6 @@ export type ChangeOrderTaskStatus =
 
 /** Instantiated as setChangeNoticeActionTasks does; In Progress goes to the applying user. */
 export type ChangeOrderActionTaskSpec = {
-  /** Bootstrap changeOrderRequiredAction name. */
   action: string;
   status: ChangeOrderTaskStatus;
   dueDateOffset?: DayOffset;
@@ -1683,19 +1588,16 @@ export type ChangeOrderSpec = {
   /** ctx.refs.documents key this change order is stored under. */
   ref: string;
   name: string;
-  /** Engineering / Manufacturing / Documentation. */
   type: string;
   status: string;
   openDateOffset: DayOffset;
   /** Empty on lifecycle-only notices — every change type spins a method draft. */
   affectedItems: AffectedItemSpec[];
-  /** Bootstrap changeOrderType name. */
   changeOrderType?: string;
   priority?: "Low" | "Medium" | "High" | "Critical";
   dueDateOffset?: DayOffset;
   /** Plain text → TipTap body. */
   reasonForChange?: string;
-  /** Quality NCR ref that raised it. */
   nonConformance?: string;
   actionTasks?: ChangeOrderActionTaskSpec[];
 };
@@ -1750,10 +1652,7 @@ export type AccountClass =
   | "Revenue"
   | "Expense";
 
-/**
- * GL account by class (the group's first posting account of that class) OR by a
- * bootstrap chart-of-accounts number, e.g. "6060".
- */
+/** A class resolves to the group's first posting account of that class. */
 export type JournalLineAccount =
   | { accountClass: AccountClass; account?: never }
   | { account: string; accountClass?: never };
@@ -1775,7 +1674,7 @@ export type JournalLineSpec = JournalLineAccount & {
   amount: number;
   quantity: number;
   journalLineReference: string;
-  /** journalLineDimension tags; the line must carry a unique journalLineReference. */
+  /** The line must carry a unique journalLineReference. */
   dimensions?: JournalLineDimensionSpec[];
 };
 
@@ -1799,7 +1698,6 @@ export type JournalEntrySpec = {
 export type PaymentSpec = {
   /** Registered in ctx.refs.documents as `payment:<key>`. */
   key: string;
-  /** Receipt = customer pays an AR invoice; Disbursement = we pay an AP invoice. */
   type: "Receipt" | "Disbursement";
   /** Omitted = "Posted". A Draft carries no applies and no credits. */
   status?: "Draft";
@@ -1813,7 +1711,7 @@ export type PaymentSpec = {
   reference: string;
   /** Cash applications; Σ amount must equal `amount`. invoiceKey → `sinv:`/`pinv:` by type. */
   applies: { invoiceKey: string; amount: number }[];
-  /** Memo applications, applyCreditsToInvoices shape; memoKey → accounting.memos key. */
+  /** applyCreditsToInvoices shape. */
   credits?: { memoKey: string; invoiceKey: string; amount: number }[];
 };
 
@@ -1866,7 +1764,6 @@ export type ExchangeRateOverrideSpec = {
   rate: number;
 };
 
-/** `companyAccounts{Receivable,Payable}BillingAddress` (id = companyId) — Settings › Sales / Purchasing. */
 export type BillingAddressSpec = {
   addressLine1: string;
   city: string;
@@ -1947,9 +1844,8 @@ export type MaintenanceDispatchSpec = {
   workCenter: string;
   /** Required iff source is "Scheduled": an ops.maintenanceSchedules key on the same work center. */
   schedule?: string;
-  /** Required iff source is "Non-Conformance": a quality NCR ref → nonConformanceId. */
+  /** Required iff source is "Non-Conformance". */
   nonConformance?: string;
-  /** Bootstrap maintenanceFailureMode name. */
   suspectedFailureMode?: string;
   /** Completed only. */
   actualFailureMode?: string;
@@ -1990,7 +1886,6 @@ export type TrainingSpec = {
   status: "Draft" | "Active" | "Archived";
   frequency: "Once" | "Quarterly" | "Annual";
   type: "Mandatory" | "Optional";
-  /** Free text, e.g. "45m". */
   estimatedDuration: string;
   /** Paragraphs → TipTap body. */
   content: string[];
@@ -2002,7 +1897,7 @@ export type TrainingSpec = {
   assignment?: { completedOffset?: DayOffset };
 };
 
-/** A closed timeCardEntry for ctx.userId: clock-in and clock-out on the same day. */
+/** Clock-in and clock-out on the same day. */
 export type TimecardSpec = {
   dayOffset: DayOffset;
   /** UTC "HH:MM:SS". */
@@ -2012,35 +1907,29 @@ export type TimecardSpec = {
   note?: string;
 };
 
-/** The applying user's clock-in today that has not clocked out yet. */
 export type OpenTimecardSpec = {
   /** UTC "HH:MM:SS" today; no later than the earliest running production event. */
   clockIn: string;
   note?: string;
 };
 
-/**
- * peopleAssignment for the applying user at the plant. Never today: a today
- * row pre-filters the MES schedule to that one work center.
- */
+/** Never today: a today row pre-filters the MES schedule to that one work center. */
 export type PeopleAssignmentSpec = {
   dayOffset: DayOffset;
   workCenter: string;
-  /** One of FoundationData.shifts. */
   shift: string;
   overtimeHours?: number;
   note?: string;
 };
 
-/** peopleAbsence for the applying user. */
 export type PeopleAbsenceSpec = {
   dayOffset: DayOffset;
-  /** One of FoundationData.shifts; omitted = the whole day. */
+  /** Omitted = the whole day. */
   shift?: string;
   note: string;
 };
 
-/** suggestion — the Topbar widget's row (path = the page it was sent from). */
+/** `path` = the page it was sent from. */
 export type SuggestionSpec = {
   suggestion: string;
   emoji: string;
@@ -2051,7 +1940,6 @@ export type SuggestionSpec = {
 /** Hangs on ctx.userId — only /x/person/:personId/notes reads the table. */
 export type NoteSpec = { text: string };
 
-/** workCenterReplacementPart — the parts list the MES dispatch page offers. */
 export type ReplacementPartSpec = {
   workCenter: string;
   item: string;
@@ -2059,7 +1947,7 @@ export type ReplacementPartSpec = {
   quantity: number;
 };
 
-/** attributeDataType.label — tiers resolve the id by this label. */
+/** Tiers resolve the attributeDataType id by this label. */
 export type AttributeDataTypeLabel =
   | "Yes/No"
   | "Date"
@@ -2071,10 +1959,7 @@ export type AttributeDataTypeLabel =
   | "Supplier"
   | "File";
 
-/**
- * A People › Attributes field and the applying user's value for it (the only
- * person the seed may name, so a User attribute points at them).
- */
+/** The applying user is the only person the seed may name, so a User attribute points at them. */
 export type UserAttributeSpec = {
   name: string;
   canSelfManage?: boolean;
@@ -2087,18 +1972,16 @@ export type UserAttributeSpec = {
   | { dataType: "Yes/No"; value: boolean }
 );
 
-/** userAttributeCategory — adopted by name on a re-apply (the wipe keeps it). */
+/** Adopted by name on a re-apply (the wipe keeps it). */
 export type UserAttributeCategorySpec = {
   name: string;
   emoji: string;
-  /** Visible to every employee, not just People admins. */
   public: boolean;
   attributes: UserAttributeSpec[];
 };
 
-/** customField — adopted by (table, name) on a re-apply (the wipe keeps it). */
+/** Adopted by (table, name) on a re-apply (the wipe keeps it). */
 export type CustomFieldSpec = {
-  /** A customFieldTable key: "part", "customer", "job", … */
   table: string;
   name: string;
   dataType: Exclude<AttributeDataTypeLabel, "File">;
@@ -2106,9 +1989,7 @@ export type CustomFieldSpec = {
   listOptions?: string[];
 };
 
-/** itemSerialSequence — what Settings › Serial Numbers lists and new jobs draw from. */
 export type SerialSequenceSpec = {
-  /** A Serial-tracked item. */
   item: string;
   prefix: string;
   suffix?: string;
@@ -2121,20 +2002,20 @@ export type SerialSequenceSpec = {
   next: number;
 };
 
-/** A label print against the dataset's printer route, as the print-job task leaves it. */
+/** As the print-job task leaves it. */
 export type PrintJobSpec = {
   source:
     | { kind: "Receipt"; receipt: string }
     | { kind: "Job"; job: string }
     | { kind: "StorageUnit"; shelf: string };
-  /** The item the label names (Receipt / Job); omitted for a storage-unit label. */
+  /** Omitted for a storage-unit label. */
   item?: string;
   status: "completed" | "failed" | "queued";
   origin: "auto" | "manual" | "reprint";
   /** createdAt; the cleanup job deletes completed jobs after 30 days. */
   at: InstantSpec;
   attempts: number;
-  /** Required iff failed — the delivery error. */
+  /** Required iff failed. */
   error?: string;
 };
 
@@ -2189,15 +2070,13 @@ export type WorkflowRunSpec = {
   /** Name of a `published: true` workflow from `build`. */
   workflow: string;
   status: "Succeeded" | "Failed" | "Skipped";
-  /** ctx.refs.documents key of the triggering record. */
   triggerRef: string;
-  /** When the event fired (createdAt); on or after the triggering record's date. */
+  /** createdAt; on or after the triggering record's date. */
   at: InstantSpec;
   /** Required iff Skipped: the engine's statusReason. */
   statusReason?: string;
   /** Non-trigger steps, in walk order. Empty iff Skipped. */
   steps: {
-    /** A non-trigger node id of the workflow's definition. */
     nodeId: string;
     status: "Succeeded" | "Failed";
     /** Required iff Failed — the executor's error string (detail stays null). */

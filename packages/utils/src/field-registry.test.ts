@@ -7,10 +7,8 @@ import {
   getFieldsForTargetType
 } from "./field-registry";
 
-// The demo datasets' validator keeps its own copy of the fields a seeded rule may
-// test (@carbon/database cannot import this package). Every field, shape and
-// operator it allows must be one the rule builder offers, or the seed writes
-// rules the app would refuse.
+// @carbon/database keeps its own copy of the seedable rule fields (it cannot import
+// this package); anything it allows must be offered here, or the seed writes rules the app refuses.
 const FIELDS_BY_SHAPE: Record<string, FieldDef[]> = {
   sales: getFieldsForSalesRules(),
   "storage:item": getFieldsForTargetType("item"),

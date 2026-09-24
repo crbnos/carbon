@@ -9,8 +9,7 @@ import type {
   RiskSpec
 } from "../../types.ts";
 
-// The templates the issues below were raised from (the new-issue form copies
-// source, required actions and MRB onto the issue).
+// The new-issue form copies source, required actions and MRB from these templates onto the issue.
 export const WORKFLOWS: NonConformanceWorkflowSpec[] = [
   {
     key: "supplier-escape",
@@ -75,8 +74,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     priority: "Medium",
     items: [{ item: "FST-M6-A286", quantity: 12 }]
   },
-  // ── Supplier escape: raised off the receiving inspection of the short tank
-  // delivery. Linked to PropTech, the exact PO line, and the inspection lot.
   {
     ref: "ncr:tank-wall",
     purchaseReturnLine: {
@@ -99,7 +96,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     inspection: "insp:tank",
     items: [
       { item: "TANK-TI-4L", quantity: 1, disposition: "Return to Supplier" },
-      // The propulsion module in the clean room built around a tank from the same lot.
       { item: "PROP-001", quantity: 1 }
     ],
     assignee: "self",
@@ -115,7 +111,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
         action: "Root Cause Analysis",
         status: "In Progress",
         dueDateOffset: 7,
-        // Girth-weld porosity: the RCA reaches into our own welding process too.
         processes: ["Clean Room Assembly"]
       },
       { action: "Corrective Action", status: "Pending", dueDateOffset: 21 }
@@ -129,7 +124,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       ]
     }
   },
-  // ── Customer complaint on shipped spares, worked to closure.
   {
     ref: "ncr:txrx-tvac",
     salesReturnLine: { salesReturn: "transponder", line: 1 },
@@ -169,7 +163,6 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
       }
     ]
   },
-  // ── A quarantined lot waiting on disposition.
   {
     ref: "ncr:bat-lot",
     name: "Li-ion battery lot quarantined — capacity drift on incoming cycle test",
@@ -184,7 +177,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
     priority: "Medium",
     trackedEntity: "LOT-BAT-2609",
     items: [{ item: "BAT-LIION-48V", quantity: 1 }],
-    // The cells came from CelestialElex — the supplier-quality KPI's issue this month.
+    // Feeds the supplier-quality KPI's issue this month.
     supplier: "CelestialElex",
     workflow: "incoming-hold",
     actionTasks: [
@@ -193,9 +186,7 @@ export const NON_CONFORMANCES: NonConformanceSpec[] = [
   }
 ];
 
-// Receiving inspection of the two tanks PropTech delivered short. Lot of 2 at
-// AQL 1.0 / level II resolves to code letter A, n = 2 — every tank inspected.
-// One Receipt-usage plan for the bare EPS boards, shared by both of its lots.
+// Lot of 2 at AQL 1.0 / level II → code letter A, n = 2.
 const BARE_BOARD_PLAN = {
   drawingNumber: "PCB-BARE-REV3 Fab Dwg Rev C",
   aql: 1.0,
@@ -268,7 +259,7 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Receiving inspection of the paid bare-board lot: 10 boards, AQL 1.0 → n = 3, all good.
+  // 10 boards at AQL 1.0 → n = 3.
   {
     source: "Receipt",
     ref: "insp:bare-boards",
@@ -305,7 +296,6 @@ export const INSPECTIONS: InspectionSpec[] = [
       }
     ]
   },
-  // Yesterday's delivery of the same board, still in the receiving queue.
   {
     source: "Receipt",
     ref: "insp:bare-boards-queue",
@@ -315,7 +305,6 @@ export const INSPECTIONS: InspectionSpec[] = [
     status: "Pending",
     samples: []
   },
-  // The QC bench has measured the first potted EPS board of the floor job.
   {
     source: "Job Operation",
     ref: "insp:eps-fpt",

@@ -9,10 +9,8 @@ import {
 import { resolveSamplingPlan, type SamplingResult } from "../../sampling.ts";
 import type { InspectionFeatureSpec, InspectionSampleSpec } from "../types.ts";
 
-/** The company default (companySettings.samplingStandard) every seed runs under. */
 export const SEED_SAMPLING_STANDARD = "ANSI_Z1_4" as const;
 
-/** The document default rule every seeded inspection plan carries. */
 export function inspectionPlan(spec: { aql: number }) {
   return {
     type: "AQL" as const,

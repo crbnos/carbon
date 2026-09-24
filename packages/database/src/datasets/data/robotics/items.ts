@@ -136,8 +136,7 @@ export const BUY_PARTS: ItemSpec[] = [
     unitSalePrice: 0.9,
     leadTime: 10
   },
-  // Successor of DRV-SRV-400 (see SUPERSESSIONS). Deliberately absent from
-  // every BOM: job creation and picking redirect to it live.
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
   {
     readableId: "DRV-SRV-400G2",
     name: "Servo Drive 400W EtherCAT Gen2",
@@ -174,7 +173,6 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 2.4,
     unitOfMeasureCode: "FOOT",
     leadTime: 14,
-    // Fully classified against the company taxonomy (foundation.ts).
     material: {
       substance: "Copper Conductor",
       form: "Cable Spool",
@@ -199,8 +197,7 @@ export const MATERIALS: ItemSpec[] = [
     standardCost: 78,
     unitOfMeasureCode: "EA",
     leadTime: 7,
-    // Partial classification: a paste jar has no jacket finish or profile
-    // dimension.
+    // Partially classified on purpose.
     material: {
       substance: "Solder Alloy",
       grade: "SAC305"
@@ -636,7 +633,6 @@ export const METHODS: MakeMethodSpec[] = [
         order: 2,
         laborTime: 5
       },
-      // Powered up in the cell before it ships or joins an arm.
       {
         process: "Robot Integration",
         workCenter: "Integration Cell 1",
@@ -887,8 +883,6 @@ export const CONFIGURATION: ConfigurationSpec = {
   ],
   rules: [
     {
-      // Heavy-payload cells ship without the standard gripper; the
-      // integrator supplies its own end-of-arm tooling.
       target: { component: "GRP-2F-80" },
       field: "quantity",
       code: "return params.payload_kg > 50 ? 0 : 1;"
@@ -901,9 +895,6 @@ export const CONFIGURATION: ConfigurationSpec = {
   ]
 };
 
-// GRP-JAW-80 rev 0 is the released (Production) revision; rev A was
-// obsoleted after jaw-face wear findings, rev B is the hardened-jaw redesign
-// still in prototype.
 export const REVISION_LADDER: RevisionLadderSpec[] = [
   {
     item: "GRP-JAW-80",
@@ -913,8 +904,7 @@ export const REVISION_LADDER: RevisionLadderSpec[] = [
   }
 ];
 
-// The motion board's flying-probe test is sampled against a plan of its own,
-// so the MES opens an inspection lot for it rather than a plain operation.
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
 export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   {
     key: "CTRL-PCB-FPT",
@@ -942,9 +932,6 @@ export const INSPECTION_PLANS: InspectionPlanSpec[] = [
   }
 ];
 
-// Collaborative arms are certified for North America only; research
-// institutes get the teaching license; ESD parts stay at the plant; bare
-// boards are binned; the SMT line has to be in service to start a run.
 export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
   {
     family: "sales",

@@ -2,10 +2,8 @@ import { maybeOne, quote } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
 /**
- * Id of a company-scoped lookup row by its name: a bootstrap row
- * (nonConformanceType, paymentTerm, scrapReason, …) or one tier 01 inserted
- * (the material taxonomy). Cached in ctx.refs.misc — never module scope, which
- * would leak across the drift check's four companies.
+ * Cached in ctx.refs.misc — never module scope, which would leak across the
+ * drift check's four companies.
  */
 export async function bootstrapIdByName(
   ctx: Ctx,

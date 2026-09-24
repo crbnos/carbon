@@ -12,10 +12,8 @@ import { Plural, Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { type RowsByTable, totalScopeRows } from "../../backups.service";
 
-// Confirms the irreversible delete behind "Remove corrupted data and …" — shared
-// by a failed restore (Backups) and a failed demo data apply, whose safety
-// snapshots refuse on the same out-of-scope rows. Callers own the copy that
-// differs (what happens after the delete) and the submit.
+// Shared by a failed restore and a failed demo data apply, whose safety snapshots
+// refuse on the same out-of-scope rows. Callers own the differing copy and the submit.
 export function PurgeCorruptedRowsModal({
   rowsByTable,
   description,
@@ -23,7 +21,6 @@ export function PurgeCorruptedRowsModal({
   onConfirm,
   onCancel
 }: {
-  /** DISTINCT rows per table — the title's count and the list both come from it. */
   rowsByTable: RowsByTable[];
   description: ReactNode;
   confirmLabel: ReactNode;

@@ -269,7 +269,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
       ctx.refs.documents[spec.order.ref] = orderId;
     }
 
-    // Shipment. Draft/Voided are header+lines only; Posted mirrors post-shipment's
+    // Draft/Voided are header+lines only; Posted mirrors post-shipment's
     // untracked branch: one Sales Shipment ledger row per line out of its fromShelf.
     let shipmentId: string | null = null;
     if (spec.shipment) {
@@ -455,7 +455,6 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     await insertOpportunity(spec);
   }
 
-  // ── Sales returns (RMAs) ───────────────────────────────────────────────────
   // Completed mirrors post-receipt's Sales Return Order branch: a Posted receipt
   // plus a Sales Return Receipt ledger row per line. A `credit` adds Issue
   // Credit's memo (helpers/return-credit.ts); tier 09 journals it if Posted.
@@ -570,7 +569,6 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Customer portals ──────────────────────────────────────────────────────
   // The portal form's insert: documentId = customerId. No fixed id —
   // externalLink's PK is global.
   ctx.log("customer portals");
@@ -583,7 +581,6 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Customer bank accounts ────────────────────────────────────────────────
   for (const spec of data.customerBankAccounts) {
     await insertRow(ctx, "customerBankAccount", {
       customerId: need(ctx.refs.customers, spec.customer, "customer"),
@@ -600,9 +597,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Status history — Draft → Confirmed → In Progress on one live order ─────
-  // The first opportunity whose order is In Progress; timestamps are staggered
-  // so the timeline reads as a real approval trail.
+  // Timestamps are staggered so the timeline reads as a real approval trail.
   const inProgress = [...data.opportunities, ...data.releasedOrders].find(
     (spec) => spec.order?.status === "In Progress"
   );
@@ -624,9 +619,7 @@ export async function runTier4(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Favorites — star the docs a demo user would have pinned ───────────────
-  // The Sent quote and the first released order. The job favorite is tier 06's
-  // — job refs do not exist yet.
+  // The job favorite is tier 06's — job refs do not exist yet.
   const sentQuote = data.opportunities.find(
     (spec) => spec.quote?.status === "Sent"
   );

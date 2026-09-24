@@ -34,17 +34,13 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "CN-DEBURR-MED", qty: 90, shelf: "B3-L1" }
 ];
 
-// Lots/serials that back the tracked slice of the opening stock above, plus
-// the quality states a real stockroom carries: a bearing lot on hold pending
-// paperwork, a rejected bar-stock lot awaiting disposition, and an aging
-// bearing lot (paired with the itemShelfLife spec below).
+// Backs the tracked slice of the opening stock above.
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "BRG-DBL-6205",
     entities: [
       { readableId: "LOT-BRG-2611", quantity: 16 },
       { readableId: "LOT-BRG-2612", quantity: 8, expiresOffset: 30 },
-      // Awaiting the vendor's grease-fill certificate before release.
       { readableId: "LOT-BRG-2613", quantity: 2, status: "On Hold" }
     ]
   },
@@ -64,9 +60,7 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
     entities: [
       { readableId: "LOT-AL6061-2610", quantity: 400 },
       { readableId: "LOT-AL6061-2611", quantity: 220 },
-      // Mill cert doesn't match the heat number — quarantined for MRB.
       { readableId: "LOT-AL6061-2612", quantity: 3, status: "Rejected" },
-      // Bar ends out of straightness after a rack collapse — scrapped.
       {
         readableId: "LOT-AL6061-2605",
         quantity: 6,
@@ -83,16 +77,11 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   }
 ];
 
-// Sealed bearings age: the grease fill carries a 1-year shelf life, with
-// LOT-BRG-2612 above expiring in 30 days so the expiry chips have something
-// amber to show.
+// LOT-BRG-2612 above expires in 30 days so the expiry chips show amber.
 export const SHELF_LIVES: ShelfLifeSpec[] = [
   { item: "BRG-DBL-6205", days: 365 }
 ];
 
-// Kanbans (auto-replenishment cards): Buy cards for high-usage buy parts, a
-// Make card for the machined spacer kit, and a Transfer card feeding the
-// deburr bench.
 export const KANBAN_ITEMS: KanbanItemSpec[] = [
   { item: "HW-SHCS-M6", qty: 250, supplier: "Fastline Industrial Supply" },
   { item: "HW-SHCS-M10", qty: 150, supplier: "Fastline Industrial Supply" },
@@ -153,9 +142,6 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
     ]
   },
   {
-    // August cycle count over the hardware aisle: two small variances (a
-    // couple of cap screws short in the bin, two dowels found loose behind
-    // the divider).
     key: "aug-cycle",
     status: "Posted",
     notes: "Cycle count — fastener & hardware bins",
@@ -195,8 +181,7 @@ export const INVENTORY_COUNTS: InventoryCountSpec[] = [
   }
 ];
 
-// Shelf → shelf moves inside the plant, one per status. Only the Completed one
-// (dated AFTER the posted count above) actually moved stock.
+// Only the Completed move changes stock, so it's dated after the posted count above.
 export const STOCK_TRANSFERS: StockTransferSpec[] = [
   {
     key: "st-completed",
@@ -224,8 +209,7 @@ export const STOCK_TRANSFERS: StockTransferSpec[] = [
   }
 ];
 
-// Plant → HQ transfers, one per status. HQ keeps a small engineering stash of
-// common hardware; it has no bins, so completed receipts land shelfless.
+// HQ has no bins, so completed receipts land shelfless.
 export const WAREHOUSE_TRANSFERS: WarehouseTransferSpec[] = [
   {
     key: "wt-completed",

@@ -274,8 +274,6 @@ export default function DemoDataRoute() {
     return () => clearInterval(id);
   }, [active, revalidator]);
 
-  // "Remove corrupted data and apply": hide the failed run and show the new apply
-  // optimistically; a refused purge puts the failed run back.
   const purgeFetcher = useFetcher<{ success: boolean; message: string }>();
   const [purgingRun, setPurgingRun] = useState<CompanyTemplateRun | null>(null);
   // The response a previous purge left on the fetcher — ignored, so a retry

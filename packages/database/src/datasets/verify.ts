@@ -59,7 +59,7 @@ export async function resolveCheckUserId(
   }
 }
 
-/** Tables below their COVERAGE_FLOORS count — a tier that inserts nothing raises no error on its own. */
+/** A tier that inserts nothing raises no error on its own. */
 export async function findCoverageShortfalls(
   client: PoolClient,
   companyId: string

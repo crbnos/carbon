@@ -111,13 +111,11 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     [companyId]
   );
 
-  // ── Accounting periods: trailing months, oldest Closed → Locked → Open ────
   // Before the journals, so the journal_check_period_open trigger vets every
   // seeded posting date against the seeded close state.
   const periods = await seedAccountingPeriods(ctx);
   const posting = await loadPostingContext(ctx, periods);
 
-  // ── Projects (+ project coding on one purchase invoice line) ──────────────
   for (const spec of data.projects) {
     ctx.log(`project ${spec.name}`);
     const projectId = await insertId(ctx, "project", {
@@ -145,7 +143,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── Dimensions: the bootstrap Project dimension + one Custom dimension ────
   // dimension/dimensionValue are companyGroup-scoped (no companyId), so the
   // dataset wipe never clears them — look up before inserting.
   const projectDimension = await maybeOne<{ id: string }>(
@@ -210,7 +207,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     };
   };
 
-  // ── Journal entries ────────────────────────────────────────────────────────
   for (const entry of data.journalEntries) {
     const journalId = await seedJournal(ctx, posting, entry, resolveAccount);
     for (const line of entry.lines) {
@@ -230,12 +226,10 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── GL of the posted documents tiers 04/05 seeded ─────────────────────────
   await postInventoryDocuments(ctx, posting);
   await postSalesInvoices(ctx, posting);
   await postPurchaseInvoices(ctx, posting);
 
-  // ── Memos (Posted; post-memo's journal below) ──────────────────────────────
   for (const spec of data.memos) {
     const isCredit = spec.direction === "Credit";
     const invoice = await one<{
@@ -274,7 +268,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   // Also journals the Posted return credits tier 04 wrote.
   await postMemos(ctx, posting);
 
-  // ── Payments + settlements + post-payment's journal ───────────────────────
   if (data.payments.length > 0 && !defaults.bankCashAccount) {
     throw new Error("Seed: accountDefault.bankCashAccount is not set");
   }
@@ -372,7 +365,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Exchange-rate overrides ──────────────────────────────────────────────────
   for (const spec of data.exchangeRateOverrides) {
     ctx.log(`exchange rate override ${spec.currencyCode}`);
     await insertMaybe(ctx, "exchangeRateOverride", {
@@ -465,7 +457,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
     }
   }
 
-  // ── AR / AP billing addresses ──────────────────────────────────────────────
   ctx.log("AR / AP billing addresses");
   await upsertBillingAddress(
     ctx,
@@ -503,7 +494,6 @@ export async function runTier9(ctx: Ctx): Promise<void> {
   }
 }
 
-/** Inserts (or adopts — journal survives the wipe) one entry plus any reversal. */
 async function seedJournal(
   ctx: Ctx,
   posting: PostingContext,
@@ -608,7 +598,7 @@ async function seedJournal(
   return je;
 }
 
-/** Oldest months Closed (close is sequential), then one Locked, the rest Open. */
+// Close is sequential: oldest months Closed, then one Locked, the rest Open.
 async function seedAccountingPeriods(
   ctx: Ctx
 ): Promise<AccountingPeriodRange[]> {
@@ -715,7 +705,6 @@ async function seedAccountingPeriods(
     }
   }
 
-  // ── Close checklist on the Locked period ──────────────────────────────────
   // Snapshot the bootstrap definitions the way getPeriodCloseChecklist
   // instantiates them; the rest of the checklist materializes on first view.
   const tasks = ctx.dataset.accounting.closeTasks;
@@ -764,7 +753,6 @@ async function seedAccountingPeriods(
   return seeded;
 }
 
-/** Settings › Sales / Purchasing billing addresses; keyed on the company id itself. */
 async function upsertBillingAddress(
   ctx: Ctx,
   table:

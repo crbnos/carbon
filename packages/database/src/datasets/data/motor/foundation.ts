@@ -143,8 +143,6 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CMM Inspection Bench", "Final Test & Inspection"]
 ];
 
-// A and B shifts on the winding and machining lines; the Saturday shift
-// catches up on dyno testing and final assembly.
 export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
   ["CNC Turning Cell", "A Shift"],
   ["CNC Turning Cell", "B Shift"],
@@ -494,7 +492,6 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Maumee Contract Machining", process: "Outside Processing" }
 ];
 
-// Outside shops the planner can load like an in-house cell.
 export const PARTNERS: PartnerSpec[] = [
   {
     supplier: "Maumee Contract Machining",
@@ -513,7 +510,6 @@ export const PARTNERS: PartnerSpec[] = [
   }
 ];
 
-// Headquarters' own work center — maintained like the plant's.
 export const HQ_WORK_CENTER: WorkCenterSpec = {
   name: "Prototype Winding Lab",
   dept: "Engineering",
@@ -902,9 +898,8 @@ export const TAGS: TagSpec[] = [
   { name: "Calibrated", table: "tool" }
 ];
 
-// Company-scoped taxonomy rows. Names deliberately avoid the GLOBAL
-// substances/forms migrations seed (Steel, Aluminum, Sheet, Plate, …) so the
-// settings screens don't show duplicates.
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
 export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
   substances: [
     { name: "Electrical Steel", code: "ESTL" },
@@ -923,7 +918,6 @@ export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
   grades: [
     { name: "M19", substance: "Electrical Steel" },
     { name: "M27", substance: "Electrical Steel" },
-    // NEMA MW 1000 build class for heavy-build polyester-imide magnet wire.
     { name: "MW 35-C", substance: "Enameled Copper" }
   ],
   finishes: [

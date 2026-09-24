@@ -17,16 +17,11 @@ import {
 import type { AccountClass } from "../types.ts";
 
 /**
- * The journals the posting functions write, built from plain facts so tier 09
- * (facts read back from the seeded rows) and the validator (facts from the
- * dataset literals) derive the SAME lines. Sales invoices, payments and memos
- * go through the edge functions' own pure builders; purchase invoices, receipts,
- * shipments and scrap copy their inline line shapes (post-purchase-invoice's
- * PO-line branch, post-receipt, post-shipment, post-inventory-adjustment). Base currency only, as every seeded
- * posted document is USD at rate 1.
+ * The posting functions' journals, built from plain facts so tier 09 and the
+ * validator derive the SAME lines. Base currency only: every seeded posted
+ * document is USD at rate 1.
  */
 
-/** An `accountDefault` column, or the memo's own `reasonAccount`. */
 export type PostingRole =
   | "receivablesAccount"
   | "payablesAccount"
@@ -42,7 +37,7 @@ export type PostingRole =
 
 export type DefaultPostingRole = Exclude<PostingRole, "reasonAccount">;
 
-/** The class each default must have — the posting functions refuse any other. */
+/** The posting functions refuse a default of any other class. */
 export const POSTING_ROLE_CLASS: Record<DefaultPostingRole, AccountClass> = {
   receivablesAccount: "Asset",
   payablesAccount: "Liability",
@@ -82,7 +77,6 @@ export type PostingLine = {
     | "Scrap";
   documentLineReference?: string | null;
   accrual?: boolean;
-  /** Lines of one group share a journalLineReference (the functions' nanoid()). */
   group: number;
 };
 
@@ -92,11 +86,7 @@ export type PostingJournal = {
   lines: PostingLine[];
 };
 
-/**
- * Debits minus credits under the posting functions' sign convention (a positive
- * amount debits an Asset/Expense account and credits the others); 0 when
- * balanced.
- */
+/** A positive amount debits an Asset/Expense account and credits the others. */
 export function signedNet(
   lines: readonly { accountClass: AccountClass; amount: number }[]
 ): number {
@@ -210,9 +200,8 @@ export function salesInvoiceJournal(args: {
 }
 
 /**
- * post-purchase-invoice, purchase-order lines: the received share clears GR/IR
- * at receipt cost, the rest accrues (GR/IR debit + AP, `accrual`). Seeded
- * invoices bill at the receipt price, so there is no price variance to split.
+ * post-purchase-invoice, PO lines. Seeded invoices bill at the receipt price, so
+ * there is no price variance to split.
  */
 export function purchaseInvoiceJournal(args: {
   invoiceReadableId: string;
@@ -220,7 +209,6 @@ export function purchaseInvoiceJournal(args: {
     quantity: number;
     unitCost: number;
     purchaseOrderLineId: string;
-    /** Posted receipts of this PO line on or before the invoice's posting date. */
     receivedQuantity: number;
     receiptUnitCost: number | null;
   }[];
@@ -533,10 +521,7 @@ export function scrapJournal(args: {
   };
 }
 
-/**
- * calculateCOGS for a FIFO item: draw the oldest layers with stock, then the
- * item's unitCost for whatever the layers do not cover. Mutates `remaining`.
- */
+/** calculateCOGS for a FIFO item. Mutates `remaining`. */
 export function consumeFifo(
   layers: { quantity: number; cost: number; remaining: number }[],
   quantity: number,

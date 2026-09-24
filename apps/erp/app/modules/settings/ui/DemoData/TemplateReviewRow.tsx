@@ -36,8 +36,7 @@ export function TemplateReviewRow({
   /** Hides the row for a keep/dismiss, which clear the marker asynchronously —
    *  a revert must NOT use this: it keeps running, and the row is what reports it. */
   onResolve: (templateRunId: string) => void;
-  /** Failed for scope violations: delete those rows (confirmed here) and re-apply.
-   *  The route submits, so it can put the run back if the purge is refused. */
+  /** The route submits, so it can put the run back if the purge is refused. */
   onPurgeAndApply: () => void;
 }) {
   const { t } = useLingui();

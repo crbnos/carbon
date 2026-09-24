@@ -11,8 +11,7 @@ import {
 } from "../sql.ts";
 import type { Ctx } from "../types.ts";
 
-// The currency codes a dataset references must exist for the company group —
-// bootstrap seeds the full ISO set, so a miss is a typo'd code, not a gap.
+// Bootstrap seeds the full ISO currency set, so a miss is a typo'd code, not a gap.
 async function assertCurrencyExists(ctx: Ctx, code: string): Promise<void> {
   const row = await maybeOne(
     ctx.client,
@@ -95,7 +94,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
   ctx.refs.locations.Plant = plantId;
   ctx.refs.locations.HQ = locationId;
 
-  // ── Shifts ────────────────────────────────────────────────────────────────
   // At the plant: the work-center shift picker, the scheduler and Resource
   // Planning all read the shifts of the work centers' own location.
   ctx.log("shifts");
@@ -291,8 +289,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Payment term ids ──────────────────────────────────────────────────────
-  // A party names a bootstrap term; Net 30 is the default.
   const netThirty = await one<{ id: string }>(
     client,
     `SELECT id FROM "paymentTerm" WHERE "companyId" = $1 AND name ILIKE '%net%30%' LIMIT 1`,
@@ -305,7 +301,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
       ? bootstrapIdByName(ctx, "paymentTerm", spec.paymentTerm)
       : Promise.resolve(netThirty.id);
 
-  // Currency codes referenced by any party must exist before the inserts.
   const currencyCodes = new Set<string>();
   for (const party of [...data.customers, ...data.suppliers]) {
     if (party.currencyCode) currencyCodes.add(party.currencyCode);
@@ -429,7 +424,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     ctx.refs.contacts[`sc:${sc.supplier}`] = scId;
   }
 
-  // ── Partners: a supplier location qualified for an ability ──────────────────
   ctx.log("partners");
   for (const partner of data.partners) {
     await insertRow(ctx, "partner", {
@@ -505,8 +499,7 @@ export async function runTier1(ctx: Ctx): Promise<void> {
 
   // ── Procedures (shop-floor work instructions) ─────────────────────────────
   // Two versions of the same name: the version menu groups on `name`, so the
-  // second version is what gives a procedure a readable history. Each version
-  // carries its authored status (Draft / Active / Archived).
+  // second version is what gives a procedure a readable history.
   ctx.log("procedures");
   for (const spec of data.procedures) {
     const processId = need(ctx.refs.processes, spec.process, "process");
@@ -561,7 +554,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Holidays ──────────────────────────────────────────────────────────────
   // insertMaybe: holiday is UNIQUE (date, companyId).
   ctx.log("holidays");
   for (const holiday of data.holidays) {
@@ -572,14 +564,12 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Tags ──────────────────────────────────────────────────────────────────
   // tag's PK is (name, table, companyId) — insertMaybe keeps re-seeds clean.
   ctx.log("tags");
   for (const tag of data.tags) {
     await insertMaybe(ctx, "tag", { name: tag.name, table: tag.table });
   }
 
-  // ── Material taxonomy ─────────────────────────────────────────────────────
   // Company-scoped rows only (unique keys treat global rows as distinct), so
   // insertMaybe + a lookup by name is idempotent. Parents land before children
   // (FKs); helpers/items.ts resolves an item's classification the same way.
@@ -642,7 +632,6 @@ export async function runTier1(ctx: Ctx): Promise<void> {
     });
   }
 
-  // ── Employee resource links ───────────────────────────────────────────────
   // The seeded user gets two abilities and their job's shift so the People
   // screens have a real member. insertMaybe: both are UNIQUE (employeeId, <resource>Id).
   ctx.log("employee links");

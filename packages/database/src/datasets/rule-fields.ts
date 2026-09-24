@@ -10,11 +10,8 @@ export type RuleValueKind =
   | "customerTypes"
   | "location";
 
-// The slice of the rule builder's field registry (@carbon/utils
-// field-registry.ts, which this package cannot import) the seed can author:
-// which fields each rule shape may test, with which operators, and the value
-// the tier knows how to resolve. Exported as `@carbon/database/dataset-rule-fields`
-// so `field-registry.test.ts` in @carbon/utils can pin it to the registry.
+// A copy of the rule builder's field registry slice the seed can author: this package
+// cannot import @carbon/utils, whose field-registry.test.ts pins it to the registry.
 export const RULE_FIELDS: Record<
   string,
   {

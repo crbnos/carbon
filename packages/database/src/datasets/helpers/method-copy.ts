@@ -10,26 +10,9 @@ import {
 import type { Ctx } from "../types.ts";
 
 /**
- * The seed's one copy of the `get-method` edge function: an item's make method
- * onto a job (`itemToJob`), a quote line (`itemToQuoteLine`), or another make
- * method (`makeMethodToMakeMethod`, a change notice's draft). The seed runs as
- * one SQL transaction and cannot invoke the edge function; without this a job
- * or quote line has a bare root make method and every BoM/BoP screen is empty.
- *
- * Per operation it carries what get-method carries:
- * - every column the target shares with methodOperation (workInstruction,
- *   procedure, inspection and assembly-instruction links, …);
- * - outside-processing rates from the supplier process, as
- *   `getRatesFromSupplierProcesses` computes them;
- * - tools always; the method's parameters only when the operation has no
- *   procedure. A job operation with a procedure takes the procedure's steps,
- *   parameters and content instead.
- * Materials are remapped onto the copied operations; job and quote copies
- * recurse into Make-to-Order subassemblies.
- *
- * Narrower on purpose: no configuration rules, no supersession redirect, no
- * assembly-instruction step expansion, and no method steps (no dataset
- * authors any).
+ * The seed's copy of the `get-method` edge function, which it cannot invoke from
+ * inside its one SQL transaction. Narrower on purpose: no configuration rules,
+ * supersession redirect, assembly-instruction step expansion or method steps.
  */
 
 export type JobOperationStatus =
@@ -73,8 +56,7 @@ const TABLES: Record<
   }
 };
 
-// The row's identity, its parent, tenancy + audit (re-stamped by insertId) and
-// generated columns. get-method gives job/quote rows fresh customFields.
+// get-method gives job/quote rows fresh customFields.
 const NEVER_COPIED = [
   "id",
   "makeMethodId",
@@ -113,12 +95,10 @@ type SourceMaterial = Row & {
   defaultStorageUnitId: string | null;
 };
 
-/** One make-method level of the target: its make method row and extended quantity. */
 type Level = { makeMethodId: string; quantity: number };
 
 type Target = {
   kind: Kind;
-  /** pickMethod location for a material's default shelf. */
   locationId: string | null;
   operation: (op: SourceOperation, level: Level) => Row;
   material: (
@@ -126,11 +106,7 @@ type Target = {
     operationId: string | null,
     level: Level
   ) => Row;
-  /**
-   * The child make method row the target's material-insert interceptor created
-   * for a Make-to-Order material. Absent for a method → method copy, which
-   * (like get-method's) copies one level.
-   */
+  /** Absent for a method → method copy, which (like get-method's) copies one level. */
   adoptChild?: (
     materialId: string,
     quantityPerParent: number
@@ -237,7 +213,7 @@ export async function copyMethodToQuoteLine(
   return copyTree(ctx, target, root, 1);
 }
 
-/** Copies one method's BoM/BoP onto another, as `copyMakeMethod` does in the app. */
+/** Mirrors the app's `copyMakeMethod`. */
 export async function copyMethodToMethod(
   ctx: Ctx,
   sourceMakeMethodId: string,
@@ -395,7 +371,6 @@ async function copyLevel(
   }
 }
 
-/** Returns methodOperation.id → the copied operation's id. */
 async function copyOperations(
   ctx: Ctx,
   target: Target,
@@ -409,8 +384,6 @@ async function copyOperations(
     tables.operation,
     target.kind === "method" ? NEVER_COPIED : [...NEVER_COPIED, "customFields"]
   );
-  // Supplier-process rates: the named supplier process, else the average over
-  // the process's supplier processes, else 0.
   const operations = await rows<SourceOperation>(
     ctx.client,
     `SELECT mo.*,
