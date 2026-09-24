@@ -125,7 +125,7 @@ Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SE
 `POSTHOG_*`, `CARBON_EDITION`, `CONTROLLED_ENVIRONMENT`, `DOMAIN`, `ERP_URL`/`MES_URL`,
 `NODE_ENV=production`, `VERCEL_ENV=production`, `VERCEL_URL` (set to the app host —
 there is no real Vercel deploy, this is just an env shim). ERP additionally gets
-`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `CLOUDFLARE_TURNSTILE_*`, `STRIPE_*`,
+`OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `STRIPE_*`,
 `SLACK_*`, `JIRA_*`, `QUICKBOOKS_*`, `XERO_*`, `ONSHAPE_*`, `RAMP_CLIENT_ID`,
 `RAMP_CLIENT_SECRET`, `AUTH_PROVIDERS`; MES is
 the leaner subset (no Stripe/Slack/Jira/QuickBooks/Xero/OpenAI). Autodesk vars are

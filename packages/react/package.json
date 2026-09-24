@@ -66,6 +66,7 @@
     "@visx/scale": "3.12.0",
     "@visx/shape": "3.12.0",
     "@visx/text": "3.12.0",
+    "botid": "catalog:",
     "class-variance-authority": "catalog:",
     "clsx": "2.1.1",
     "cmdk": "0.2.0",
@@ -121,7 +122,6 @@
   "peerDependencies": {
     "@internationalized/date": "catalog:",
     "@lingui/react": "catalog:",
-    "@marsidev/react-turnstile": "catalog:",
     "framer-motion": "catalog:",
     "react": "catalog:",
     "react-dom": "catalog:",
