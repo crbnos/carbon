@@ -8,7 +8,8 @@ export function mergeDemandProjections<
   TProjection extends DemandForecastLike & { id: string }
 >(
   forecasts: TForecast[],
-  projections: TProjection[]
+  projections: TProjection[],
+  periodOrder: string[] = []
 ): Array<TForecast | Omit<TProjection, "id">> {
   const projectionByPeriod = new Map<string, number>();
   for (const projection of projections) {
@@ -42,5 +43,10 @@ export function mergeDemandProjections<
     merged.push({ ...forecastFields, forecastQuantity: quantity });
   }
 
-  return merged;
+  if (periodOrder.length === 0) return merged;
+
+  const rank = new Map(periodOrder.map((periodId, index) => [periodId, index]));
+  const position = (row: DemandForecastLike) =>
+    rank.get(row.periodId) ?? periodOrder.length;
+  return [...merged].sort((a, b) => position(a) - position(b));
 }

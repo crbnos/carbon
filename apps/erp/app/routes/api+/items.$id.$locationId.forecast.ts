@@ -206,7 +206,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const demandForecast = mergeDemandProjections(
     demand.forecasts,
-    demand.projections
+    demand.projections,
+    periods.map((p) => p.id ?? "")
   );
 
   if (demand.actuals.length === 0 && demandForecast.length === 0) {

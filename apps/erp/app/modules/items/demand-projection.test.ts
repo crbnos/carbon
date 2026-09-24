@@ -106,7 +106,8 @@ describe("mergeDemandProjections", () => {
   it("interleaves periods correctly: forecast-only, both, and projection-only", () => {
     const merged = mergeDemandProjections(
       [forecast("p1", 10), forecast("p2", 20)],
-      [projection("p2", 5), projection("p3", 8)]
+      [projection("p2", 5), projection("p3", 8)],
+      ["p1", "p2", "p3"]
     );
 
     expect(merged.map((r) => [r.periodId, r.forecastQuantity])).toEqual([
@@ -114,5 +115,49 @@ describe("mergeDemandProjections", () => {
       ["p2", 25],
       ["p3", 8]
     ]);
+  });
+
+  it("places projection-only rows by the requested period sequence, not after the forecasts", () => {
+    const merged = mergeDemandProjections(
+      [forecast("p2", 20), forecast("p4", 40)],
+      [projection("p1", 5), projection("p3", 8)],
+      ["p1", "p2", "p3", "p4"]
+    );
+
+    expect(merged.map((r) => [r.periodId, r.forecastQuantity])).toEqual([
+      ["p1", 5],
+      ["p2", 20],
+      ["p3", 8],
+      ["p4", 40]
+    ]);
+  });
+
+  it("reorders forecast rows that arrive out of period sequence", () => {
+    const merged = mergeDemandProjections(
+      [forecast("p3", 30), forecast("p1", 10)],
+      [],
+      ["p1", "p2", "p3"]
+    );
+
+    expect(merged.map((r) => r.periodId)).toEqual(["p1", "p3"]);
+  });
+
+  it("keeps rows for periods outside the sequence after the ordered ones, in input order", () => {
+    const merged = mergeDemandProjections(
+      [forecast("zz", 1), forecast("p2", 20), forecast("yy", 2)],
+      [projection("p1", 5)],
+      ["p1", "p2"]
+    );
+
+    expect(merged.map((r) => r.periodId)).toEqual(["p1", "p2", "zz", "yy"]);
+  });
+
+  it("keeps insertion order when no period sequence is given", () => {
+    const merged = mergeDemandProjections(
+      [forecast("p2", 20)],
+      [projection("p1", 5)]
+    );
+
+    expect(merged.map((r) => r.periodId)).toEqual(["p2", "p1"]);
   });
 });
