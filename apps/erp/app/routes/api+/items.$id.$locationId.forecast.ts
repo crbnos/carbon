@@ -203,7 +203,42 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
-  if (demand.actuals.length === 0 && demand.forecasts.length === 0) {
+  // Merge planner-authored projections into the forecast series. The planning
+  // RPCs' demand_data counts actual + forecast + projection per period;
+  // without this arm an item whose only demand is a demandProjection charts
+  // zero demand here while the planning grid shows it. The chart assigns (not
+  // accumulates) one "Demand Forecast" bucket per period, so the merge keeps
+  // at most one forecast row per period.
+  const netProjectionByPeriod = new Map<string, number>();
+  for (const projection of demand.projections) {
+    const net = projection.forecastQuantity ?? 0;
+    if (net > 0) {
+      netProjectionByPeriod.set(
+        projection.periodId,
+        (netProjectionByPeriod.get(projection.periodId) ?? 0) + net
+      );
+    }
+  }
+
+  const mergedPeriodIds = new Set<string>();
+  const demandForecast = demand.forecasts.map((forecast) => {
+    const net = netProjectionByPeriod.get(forecast.periodId);
+    if (!net || mergedPeriodIds.has(forecast.periodId)) return forecast;
+    mergedPeriodIds.add(forecast.periodId);
+    return {
+      ...forecast,
+      forecastQuantity: (forecast.forecastQuantity ?? 0) + net
+    };
+  });
+  for (const projection of demand.projections) {
+    const net = netProjectionByPeriod.get(projection.periodId);
+    if (!net || mergedPeriodIds.has(projection.periodId)) continue;
+    mergedPeriodIds.add(projection.periodId);
+    const { id: _id, ...forecastFields } = projection;
+    demandForecast.push({ ...forecastFields, forecastQuantity: net });
+  }
+
+  if (demand.actuals.length === 0 && demandForecast.length === 0) {
     return data(
       defaultResponse,
       await flash(request, error(null, "Failed to load demand"))
@@ -224,7 +259,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     demand: demand.actuals,
-    demandForecast: demand.forecasts,
+    demandForecast,
     demandForecastSources: demandForecastSources.data ?? [],
     supply: [
       ...supply.actuals,
