@@ -19,8 +19,13 @@ import { formatDate } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useMemo } from "react";
-import { DocumentSourceBadge, EmployeeAvatar, Hyperlink } from "~/components";
+import { EmployeeAvatar, Hyperlink } from "~/components";
 import { useAuditLog } from "~/components/AuditLog";
+// Imported by PATH, deliberately not re-exported from `~/components`. This
+// component pulls the `@carbon/ee` barrel for the provider logo, and the
+// components barrel is imported by nearly every route — putting it there drags
+// the integrations registry into the chunk they all share.
+import DocumentSourceBadge from "~/components/DocumentSourceBadge";
 import { DimensionEntityTypeIcon } from "~/components/Icons";
 import { useCurrencyFormatter, useUser } from "~/hooks";
 import { getColor } from "~/modules/accounting/ui/JournalEntries/DimensionSelector";
