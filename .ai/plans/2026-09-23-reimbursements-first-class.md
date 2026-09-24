@@ -103,8 +103,8 @@
 - [x] Task 17: Reimbursement detail — edit mode
 - [x] Task 18: Post + Void action routes, with the totals guard
 - [x] Task 19: Nav entry under Accounts Payable
-- [ ] Task 20: Settlement target — models + service
-- [ ] Task 21: `post-payment` — reimbursement settlement arm
+- [x] Task 20: Settlement target — models + service
+- [x] Task 21: `post-payment` — reimbursement settlement arm
 - [ ] Task 22: Payment UI — employee payee + reimbursement apply target
 - [ ] Task 23: Ramp inbound — create a Draft `reimbursement`; never auto-post, never re-write
 - [ ] Task 24: `@carbon/ee` accounting — `reimbursement` entity type + plumbing

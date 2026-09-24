@@ -15,6 +15,22 @@ export function onAccountCreditDescription(isAR: boolean): string {
   return `${isAR ? "Accounts Receivable" : "Accounts Payable"} (on-account credit)`;
 }
 
+/** The description the employee-payable control line of a posted reimbursement
+ *  journal is written with, and the exact string a later payout reads back to
+ *  find the carrying value that reimbursement was originally booked at.
+ *
+ *  Same writer/reader contract as `onAccountCreditDescription`: on a mismatch
+ *  the lookup returns nothing and the payout falls back to the document total
+ *  converted at the header rate, which differs from the booked figure by the
+ *  per-line rounding dust — small, but it leaves a residual on the control
+ *  account that nothing will ever clear.
+ *
+ *  The WRITER (`post-reimbursement/build-reimbursement-journal.ts`) and the
+ *  READERS (`post-payment/post-payment-transaction.ts`, the ERP's
+ *  `invoicing.service.ts`) all reference this constant, so the description can
+ *  never drift on one side of the contract. */
+export const REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION = "Employee reimbursement payable";
+
 export type AccountingPostingRole = "Receivables" | "Payables" | "ShippingRevenue" | "SalesRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */

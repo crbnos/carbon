@@ -407,6 +407,10 @@ export const paymentValidator = z
     }),
     customerId: zfd.text(z.string().optional()),
     supplierId: zfd.text(z.string().optional()),
+    // An employee payee settles reimbursements only — it is never a trade
+    // party, which is the point of the segregated employee-payable control
+    // account. Mirrors the DB's widened `payment_party_check`.
+    employeeId: zfd.text(z.string().optional()),
     paymentDate: z.string().min(1, { message: "Payment date is required" }),
     currencyCode: z.string().min(1, { message: "Currency is required" }),
     exchangeRate: zfd.numeric(z.number().positive().default(1)),
@@ -419,10 +423,15 @@ export const paymentValidator = z
     reference: zfd.text(z.string().optional()),
     memo: zfd.text(z.string().optional())
   })
-  .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
-    message: "A payment requires exactly one customer or supplier",
-    path: ["customerId"]
-  });
+  .refine(
+    (d) =>
+      [d.customerId, d.supplierId, d.employeeId].filter(Boolean).length === 1,
+    {
+      message:
+        "A payment requires exactly one party (customer, supplier, or employee)",
+      path: ["customerId"]
+    }
+  );
 
 // ----------------------------------------------------------------------
 // Charges (Ramp spend-management sync)
@@ -509,10 +518,12 @@ export const invoiceSettlementBase = z.object({
   // Source: exactly one of a payment or a memo settles the target.
   paymentId: zfd.text(z.string().optional()),
   memoId: zfd.text(z.string().optional()),
-  // Target: exactly one of a sales invoice, purchase invoice, or memo.
+  // Target: exactly one of a sales invoice, purchase invoice, memo, or
+  // reimbursement.
   targetSalesInvoiceId: zfd.text(z.string().optional()),
   targetPurchaseInvoiceId: zfd.text(z.string().optional()),
   targetMemoId: zfd.text(z.string().optional()),
+  targetReimbursementId: zfd.text(z.string().optional()),
   sourceAmount: zfd.numeric(z.number().finite().nonnegative().optional()),
   appliedAmount: zfd.numeric(z.number().finite().nonnegative().default(0)),
   discountAmount: zfd.numeric(z.number().nonnegative().default(0)),
@@ -536,11 +547,12 @@ export const invoiceSettlementValidator = invoiceSettlementBase
       [
         d.targetSalesInvoiceId,
         d.targetPurchaseInvoiceId,
-        d.targetMemoId
+        d.targetMemoId,
+        d.targetReimbursementId
       ].filter(Boolean).length === 1,
     {
       message:
-        "Application must target exactly one document (sales invoice, purchase invoice, or memo)",
+        "Application must target exactly one document (sales invoice, purchase invoice, memo, or reimbursement)",
       path: ["targetSalesInvoiceId"]
     }
   )

@@ -389,3 +389,181 @@ databaseTest("intercompany invoice settlement retains its original control after
     assertEquals(lines.find((line) => line.accountId === f.account("control"))?.amount, -100);
   } finally { await f.cleanup(); }
 });
+
+// --- Employee reimbursement payouts -----------------------------------------
+
+databaseTest("a full employee payout settles the reimbursement, debiting the payable it was booked to", async () => {
+  const f = await paymentFixture();
+  try {
+    const reimbursementId = await f.reimbursement();
+    const paymentId = await f.reimbursementPayment({ reimbursementId });
+    const result = await postPaymentTransaction(f.db, {
+      ...f.args,
+      paymentId,
+    });
+    const row = await f.db.selectFrom("invoiceSettlement").selectAll().where(
+      "paymentId",
+      "=",
+      paymentId,
+    ).executeTakeFirstOrThrow();
+    // Exactly one target column is set, and the forged rates were overwritten.
+    assertEquals(row.targetReimbursementId, reimbursementId);
+    assertEquals(row.targetSalesInvoiceId, null);
+    assertEquals(row.targetPurchaseInvoiceId, null);
+    assertEquals(row.targetMemoId, null);
+    assertEquals(Number(row.appliedAmount), 620);
+    assertEquals(Number(row.sourceAmount), 620);
+    assertEquals(Number(row.targetExchangeRate), 1);
+    assertEquals(Number(row.sourceExchangeRate), 1);
+    assertEquals(Number(row.discountAmount), 0);
+    assertEquals(Number(row.writeOffAmount), 0);
+
+    const journalLines = await f.db.selectFrom("journalLine")
+      .innerJoin("account", "account.id", "journalLine.accountId")
+      .select([
+        "journalLine.accountId as accountId",
+        "journalLine.amount as amount",
+        "journalLine.description as description",
+        "account.class as class",
+      ]).where("journalLine.journalId", "=", result.journalId!).execute();
+    // Stored amounts are NATURAL-balance signed, so the bank credit and the
+    // payable debit BOTH store −620 and the journal does NOT sum to zero.
+    // Convert to true debit(+)/credit(−) space before asserting it balances:
+    // an asset/expense line's stored sign IS its debit sign, a
+    // liability/equity/revenue line's is inverted.
+    const signedDebit = journalLines.reduce(
+      (sum, line) =>
+        sum +
+        (line.class === "Asset" || line.class === "Expense"
+          ? Number(line.amount)
+          : -Number(line.amount)),
+      0,
+    );
+    assertEquals(signedDebit, 0);
+    const bank = journalLines.find((line) =>
+      line.accountId === f.account("bank")
+    );
+    const payable = journalLines.find((line) =>
+      line.accountId === f.account("employee-payable")
+    );
+    // Bank (Asset) CREDITED 620; employee payable (Liability) DEBITED 620.
+    assertEquals(Number(bank?.amount), -620);
+    assertEquals(Number(payable?.amount), -620);
+    assertEquals(payable?.description, "Employee Reimbursements Payable");
+    // Nothing lands on the AR control account the AR fixture uses.
+    assertEquals(
+      journalLines.some((line) => line.accountId === f.account("control")),
+      false,
+    );
+
+    const payment = await f.db.selectFrom("payment").select([
+      "status",
+      "journalId",
+    ]).where("id", "=", paymentId).executeTakeFirstOrThrow();
+    assertEquals(payment.status, "Posted");
+    assertEquals(payment.journalId, result.journalId);
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("a partial employee payout leaves the rest of the reimbursement outstanding", async () => {
+  const f = await paymentFixture();
+  try {
+    const reimbursementId = await f.reimbursement();
+    const first = await f.reimbursementPayment({
+      reimbursementId,
+      amount: 200,
+      appliedAmount: 200,
+    });
+    await postPaymentTransaction(f.db, { ...f.args, paymentId: first });
+    // The remainder is still settleable; over-paying it is not.
+    const rest = await f.reimbursementPayment({
+      reimbursementId,
+      amount: 420,
+      appliedAmount: 420,
+    });
+    await postPaymentTransaction(f.db, { ...f.args, paymentId: rest });
+    const rows = await f.db.selectFrom("invoiceSettlement").select([
+      "appliedAmount",
+      "sourceAmount",
+    ]).where("targetReimbursementId", "=", reimbursementId).execute();
+    assertEquals(
+      rows.reduce((sum, row) => sum + Number(row.appliedAmount), 0),
+      620,
+    );
+    const overpay = await f.reimbursementPayment({
+      reimbursementId,
+      amount: 1,
+      appliedAmount: 1,
+    });
+    await assertRejects(
+      () => postPaymentTransaction(f.db, { ...f.args, paymentId: overpay }),
+      Error,
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("an employee payout carrying a discount, a second target or a Draft reimbursement is refused", async () => {
+  const f = await paymentFixture();
+  try {
+    const reimbursementId = await f.reimbursement();
+    const withDiscount = await f.reimbursementPayment({
+      reimbursementId,
+      appliedAmount: 600,
+      discountAmount: 20,
+    });
+    await assertRejects(
+      () => postPaymentTransaction(f.db, { ...f.args, paymentId: withDiscount }),
+      Error,
+      "Unsupported payment settlement target",
+    );
+
+    // A second target cannot even be staged: `invoiceSettlement_target_check`
+    // is a DB CHECK that exactly one target column is set, so the in-function
+    // guard is defence in depth rather than the only barrier.
+    const secondTarget = await f.reimbursementPayment({ reimbursementId });
+    await assertRejects(
+      () =>
+        f.db.updateTable("invoiceSettlement").set({
+          targetSalesInvoiceId: f.invoiceId,
+        }).where("paymentId", "=", secondTarget).execute(),
+      Error,
+      "invoiceSettlement_target_check",
+    );
+
+    const draft = await f.reimbursement({ status: "Draft" });
+    const againstDraft = await f.reimbursementPayment({
+      reimbursementId: draft,
+    });
+    await assertRejects(
+      () => postPaymentTransaction(f.db, { ...f.args, paymentId: againstDraft }),
+      Error,
+      "status Draft",
+    );
+  } finally {
+    await f.cleanup();
+  }
+});
+
+databaseTest("a reimbursement whose stored payable disagrees with its posted journal refuses to pay out", async () => {
+  const f = await paymentFixture();
+  try {
+    // The row records `employee-payable` but the journal credited the
+    // liability to `control` — the payout must refuse rather than debit an
+    // account the liability was never booked to.
+    const reimbursementId = await f.reimbursement({
+      journalPayableAccountId: f.account("control"),
+    });
+    const paymentId = await f.reimbursementPayment({ reimbursementId });
+    await assertRejects(
+      () => postPaymentTransaction(f.db, { ...f.args, paymentId }),
+      Error,
+      "disagrees with its posted journal",
+    );
+  } finally {
+    await f.cleanup();
+  }
+});

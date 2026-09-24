@@ -22,6 +22,7 @@
 // taking the class from the resolved account is what makes a mis-classed
 // default fail loudly instead of posting the wrong side.
 
+import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "../shared/accounting-posting.ts";
 import { assertBalanced, EPSILON } from "../shared/precision.ts";
 import {
   assertExchangeRate,
@@ -189,7 +190,10 @@ export function buildReimbursementJournal(
   }
   pushLine("credit", classOf(payableAccountId), payableMagnitude, {
     accountId: payableAccountId,
-    description: "Employee reimbursement payable",
+    // The payout reader (`post-payment`) finds this line BY DESCRIPTION to
+    // recover the reimbursement's booked carrying value. Editing the literal
+    // here would silently stop it matching — so both sides share the constant.
+    description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   });
 
   // Defensive backstop: assert the entry balances in true debit/credit space.

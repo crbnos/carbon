@@ -28,6 +28,7 @@ import {
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
+  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
 } from "../shared/accounting-posting.ts";
 
 export type PostPaymentArgs = {
@@ -227,12 +228,32 @@ export function postPaymentTransaction(
     }
 
     const isAR = payment.customerId !== null;
-    const partyId = isAR ? payment.customerId : payment.supplierId;
+    // An employee payee is a reimbursement payout: always cash OUT against the
+    // employee-payable control account, so it is neither AR nor a refund, has
+    // no trade-party row, and has no on-account credit history to draw on.
+    // Resolved before the party check, which a three-way party can no longer
+    // satisfy as a boolean XOR.
+    const isReimbursement = payment.employeeId !== null;
+    const partyId = isReimbursement
+      ? payment.employeeId
+      : isAR
+      ? payment.customerId
+      : payment.supplierId;
     if (
-      !partyId || Boolean(payment.customerId) === Boolean(payment.supplierId)
-    ) throw new Error("Payment must have exactly one customer or supplier");
+      !partyId ||
+      [payment.customerId, payment.supplierId, payment.employeeId].filter(
+          Boolean,
+        ).length !== 1
+    ) {
+      throw new Error(
+        "A payment requires exactly one party (customer, supplier, or employee)",
+      );
+    }
     const cashIn = payment.paymentType === "Receipt";
-    const isRefund = cashIn !== isAR;
+    if (isReimbursement && cashIn) {
+      throw new Error("An employee payment must be a disbursement");
+    }
+    const isRefund = !isReimbursement && cashIn !== isAR;
     assertExchangeRate(Number(payment.exchangeRate));
     const company = await trx.selectFrom("company").select([
       "companyGroupId",
@@ -268,7 +289,9 @@ export function postPaymentTransaction(
           eb("appliedViaPaymentId", "=", paymentId),
         ])
       ).orderBy("id").execute();
-    const targetColumn = isRefund
+    const targetColumn = isReimbursement
+      ? "targetReimbursementId"
+      : isRefund
       ? "targetMemoId"
       : isAR
       ? "targetSalesInvoiceId"
@@ -276,12 +299,21 @@ export function postPaymentTransaction(
     for (const draft of drafts) {
       if (
         !draft[targetColumn] ||
-        (isRefund
+        (isReimbursement
+          // A reimbursement payout carries no other target, no memo/prior-
+          // credit funding source (an employee has neither), and no trade
+          // discount or write-off.
           ? draft.targetSalesInvoiceId || draft.targetPurchaseInvoiceId ||
+            draft.targetMemoId || draft.memoId || draft.sourcePaymentId ||
+            Number(draft.discountAmount) !== 0 ||
+            Number(draft.writeOffAmount) !== 0
+          : isRefund
+          ? draft.targetSalesInvoiceId || draft.targetPurchaseInvoiceId ||
+            draft.targetReimbursementId ||
             draft.memoId ||
             draft.sourcePaymentId || Number(draft.discountAmount) !== 0 ||
             Number(draft.writeOffAmount) !== 0
-          : draft.targetMemoId ||
+          : draft.targetMemoId || draft.targetReimbursementId ||
             (isAR ? draft.targetPurchaseInvoiceId : draft.targetSalesInvoiceId))
       ) throw new Error("Unsupported payment settlement target");
     }
@@ -298,7 +330,24 @@ export function postPaymentTransaction(
       )
         .where("id", "in", targetIds).orderBy("id").forUpdate().execute()
       : [];
-    const invoices = isRefund
+    // `payableAccountId` is stamped onto the row when the reimbursement posts,
+    // so the payout debits the account the liability was actually booked to —
+    // never today's `accountDefault`, which may have changed since.
+    const reimbursements = isReimbursement && targetIds.length
+      ? await trx.selectFrom("reimbursement").select([
+        "id",
+        "employeeId as partyId",
+        "status",
+        "currencyCode",
+        "exchangeRate",
+        "amount",
+        "payableAccountId",
+      ]).where("companyId", "=", companyId).where("id", "in", targetIds)
+        .orderBy("id").forUpdate().execute()
+      : [];
+    const invoices = isReimbursement
+      ? reimbursements
+      : isRefund
       ? refundMemos.map((memo) => ({
         ...memo,
         partyId: isAR ? memo.customerId : memo.supplierId,
@@ -322,7 +371,15 @@ export function postPaymentTransaction(
         ]).where("companyId", "=", companyId).where("id", "in", targetIds)
           .orderBy("id").forUpdate().execute())
       : [];
-    const totals = isRefund
+    const totals = isReimbursement
+      ? reimbursements.map((reimbursement) => ({
+        id: reimbursement.id,
+        totalAmount: toBaseAmount(
+          Number(reimbursement.amount),
+          Number(reimbursement.exchangeRate),
+        ),
+      }))
+      : isRefund
       ? refundMemos.map((memo) => ({
         id: memo.id,
         totalAmount: toBaseAmount(
@@ -372,16 +429,26 @@ export function postPaymentTransaction(
           "line.companyId",
           "=",
           companyId,
-        ).where("line.documentType", "=", isRefund ? "Memo" : "Invoice")
+        ).where(
+          "line.documentType",
+          "=",
+          isReimbursement ? "Reimbursement" : isRefund ? "Memo" : "Invoice",
+        )
         .where("line.documentId", "in", targetIds).where(
           "line.description",
           "in",
-          isAR ? RECEIVABLE_POSTING_DESCRIPTIONS : PAYABLE_POSTING_DESCRIPTIONS,
+          isReimbursement
+            ? [REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION]
+            : isAR
+            ? RECEIVABLE_POSTING_DESCRIPTIONS
+            : PAYABLE_POSTING_DESCRIPTIONS,
         )
         .where(
           "journal.sourceType",
           "=",
-          isRefund
+          isReimbursement
+            ? "Reimbursement"
+            : isRefund
             ? (isAR ? "Credit Memo" : "Debit Memo")
             : (isAR ? "Sales Invoice" : "Purchase Invoice"),
         ).where("journal.status", "=", "Posted").execute()
@@ -407,6 +474,30 @@ export function postPaymentTransaction(
         );
       }
     }
+    // The reimbursement row's OWN `payableAccountId` is authoritative for the
+    // payout's debit — read by id off the row, never re-resolved from
+    // `accountDefault` (which may have moved since the document posted) and
+    // never matched by account number or name. The journal read above still
+    // supplies the booked CARRYING value, and disagreeing with it means the
+    // row and the ledger have diverged, which must not post silently.
+    for (const reimbursement of reimbursements) {
+      // A Draft reimbursement has no stored payable yet — it is refused by the
+      // status check in the targets loop below, which says so far more usefully
+      // than "missing control account" would.
+      if (reimbursement.status !== "Posted") continue;
+      if (!reimbursement.payableAccountId) {
+        throw new Error(
+          "Reimbursement is missing its employee-payable control account",
+        );
+      }
+      const booked = targetControlById.get(reimbursement.id);
+      if (booked && booked !== reimbursement.payableAccountId) {
+        throw new Error(
+          "Reimbursement control account disagrees with its posted journal",
+        );
+      }
+      targetControlById.set(reimbursement.id, reimbursement.payableAccountId);
+    }
     const targets = new Map<
       string,
       { rate: number; remainingDocument: number; remainingBase: number }
@@ -417,7 +508,15 @@ export function postPaymentTransaction(
         invoice.currencyCode !== payment.currencyCode
       ) throw new Error("Invoice party/currency does not match payment");
       if (
-        invoice.status !== (isRefund ? "Posted" : isAR ? "Submitted" : "Open")
+        invoice.status !== (
+          isReimbursement
+            ? "Posted"
+            : isRefund
+            ? "Posted"
+            : isAR
+            ? "Submitted"
+            : "Open"
+        )
       ) {
         throw new Error(
           `Cannot settle invoice ${invoice.id} in status ${invoice.status}`,
@@ -452,6 +551,7 @@ export function postPaymentTransaction(
           carryingById,
           decimals,
           isAR,
+          isReimbursement,
         );
       if (remainingDocument < 0 || remainingBase < 0) {
         throw new Error("Target memo is over-applied");
@@ -565,7 +665,9 @@ export function postPaymentTransaction(
       });
     }
 
-    const sources = isRefund
+    // An employee holds no on-account credit: a reimbursement payout is always
+    // funded by the current disbursement, never by a prior overpayment.
+    const sources = isRefund || isReimbursement
       ? []
       : await trx.selectFrom("payment").selectAll().where(
         "companyId",
@@ -712,7 +814,17 @@ export function postPaymentTransaction(
       "=",
       companyId,
     ).executeTakeFirst();
-    const party = isAR
+    // An employee is neither a customer nor a supplier, so there is no trade
+    // party row and no party type to tag journal lines with — the same reason
+    // post-reimbursement writes no party dimension on the document's own
+    // journal.
+    const party = isReimbursement
+      ? await trx.selectFrom("employee").select([
+        sql<string | null>`NULL`.as("typeId"),
+        sql<string | null>`NULL`.as("intercompanyCompanyId"),
+      ]).where("id", "=", partyId).where("companyId", "=", companyId)
+        .executeTakeFirst()
+      : isAR
       ? await trx.selectFrom("customer").select([
         "customerTypeId as typeId",
         "intercompanyCompanyId",
@@ -726,9 +838,14 @@ export function postPaymentTransaction(
     if (!party) throw new Error("Payment counterparty not found");
     const normalized = allocation.applications.map((application) => ({
       ...application,
-      targetSalesInvoiceId: !isRefund && isAR ? application.targetId : null,
-      targetPurchaseInvoiceId: !isRefund && !isAR ? application.targetId : null,
-      targetMemoId: isRefund ? application.targetId : null,
+      targetSalesInvoiceId: !isRefund && !isReimbursement && isAR
+        ? application.targetId
+        : null,
+      targetPurchaseInvoiceId: !isRefund && !isReimbursement && !isAR
+        ? application.targetId
+        : null,
+      targetMemoId: isRefund && !isReimbursement ? application.targetId : null,
+      targetReimbursementId: isReimbursement ? application.targetId : null,
     }));
     let journalLines: ReturnType<typeof buildPaymentJournal>["lines"] = [];
     const expectedAccountClasses: Array<[string | null | undefined, string]> = [
@@ -757,7 +874,16 @@ export function postPaymentTransaction(
         discountAccountClass = discountAccount.class;
       }
       const accounts = {
-        controlAccountId: isAR
+        // For a reimbursement this drives ONLY the new on-account remainder
+        // (cash paid beyond what the payout applies) — every application
+        // carries its own `targetControlAccountId` from the reimbursement row.
+        // A brand-new employee credit has no prior document to read an account
+        // off, so the default is the right source here, with the same AP
+        // fallback post-reimbursement uses when the column is unset.
+        controlAccountId: isReimbursement
+          ? (defaults.employeeReimbursementsPayableAccount ??
+            defaults.payablesAccount)
+          : isAR
           ? (party.intercompanyCompanyId
             ? defaults.intercompanyReceivablesAccount
             : defaults.receivablesAccount)
@@ -797,6 +923,7 @@ export function postPaymentTransaction(
         paymentId,
         companyId,
         isAR,
+        isReimbursement,
         cashIn,
         totalAmount: Number(payment.totalAmount),
         exchangeRate: Number(payment.exchangeRate),
@@ -887,7 +1014,13 @@ export function postPaymentTransaction(
         const lines = await trx.insertInto("journalLine").values(
           journalLines.map((line) => ({ ...line, journalId: journal.id })),
         ).returning("id").execute();
-        const dimensions = await trx.selectFrom("dimension").select([
+        // A reimbursement payout has no trade party to tag, and the document's
+        // own journal (post-reimbursement) writes no party dimension either —
+        // so the two stay symmetric rather than the payout carrying a
+        // dimension the liability it clears never had.
+        const dimensions = isReimbursement ? [] : await trx.selectFrom(
+          "dimension",
+        ).select([
           "id",
           "entityType",
         ]).where("companyGroupId", "=", company.companyGroupId)

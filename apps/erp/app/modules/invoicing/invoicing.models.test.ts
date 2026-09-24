@@ -103,6 +103,40 @@ describe("paymentValidator", () => {
     });
     expect(r.success).toBe(false);
   });
+
+  it("accepts a Disbursement with an employee (reimbursement payout)", () => {
+    const r = paymentValidator.safeParse({
+      ...validReceipt,
+      paymentType: "Disbursement",
+      customerId: undefined,
+      employeeId: "emp1"
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it.each([
+    ["customer", { customerId: "cust1" }],
+    ["supplier", { supplierId: "supp1" }]
+  ])("rejects an employee payee alongside a %s", (_label, other) => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        paymentType: "Disbursement",
+        customerId: undefined,
+        employeeId: "emp1",
+        ...other
+      }).success
+    ).toBe(false);
+  });
+
+  it("rejects a payment with no party at all", () => {
+    expect(
+      paymentValidator.safeParse({
+        ...validReceipt,
+        customerId: undefined
+      }).success
+    ).toBe(false);
+  });
 });
 
 describe("invoiceSettlementValidator", () => {
@@ -143,6 +177,23 @@ describe("invoiceSettlementValidator", () => {
     const r = invoiceSettlementValidator.safeParse({
       ...validApp,
       targetSalesInvoiceId: undefined
+    });
+    expect(r.success).toBe(false);
+  });
+
+  it("accepts an application against a reimbursement", () => {
+    const r = invoiceSettlementValidator.safeParse({
+      ...validApp,
+      targetSalesInvoiceId: undefined,
+      targetReimbursementId: "reimb1"
+    });
+    expect(r.success).toBe(true);
+  });
+
+  it("rejects a reimbursement target alongside an invoice target", () => {
+    const r = invoiceSettlementValidator.safeParse({
+      ...validApp,
+      targetReimbursementId: "reimb1"
     });
     expect(r.success).toBe(false);
   });

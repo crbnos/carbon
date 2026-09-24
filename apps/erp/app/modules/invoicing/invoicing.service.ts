@@ -16,6 +16,7 @@ import {
   isEffectiveSettlement,
   PAYABLE_POSTING_DESCRIPTIONS,
   RECEIVABLE_POSTING_DESCRIPTIONS,
+  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   reduceInvoiceSettlements,
   remainingFundingSources,
   round,
@@ -1658,11 +1659,12 @@ export async function getInvoiceSettlements(
     salesInvoice: { invoiceId: string } | null;
     purchaseInvoice: { invoiceId: string } | null;
     targetMemo: { memoId: string } | null;
+    targetReimbursement: { reimbursementId: string } | null;
   };
   return fetchAllFromTable<Settlement>(
     client,
     "invoiceSettlement",
-    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId)",
+    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:targetReimbursementId(reimbursementId)",
     (query) =>
       query
         .eq("companyId", companyId)
@@ -2351,7 +2353,8 @@ export async function upsertPayment(
         {
           ...sanitize(payment),
           customerId: payment.customerId ?? null,
-          supplierId: payment.supplierId ?? null
+          supplierId: payment.supplierId ?? null,
+          employeeId: payment.employeeId ?? null
         }
       ])
       .select("id, paymentId")
@@ -2362,7 +2365,11 @@ export async function upsertPayment(
     .update({
       ...sanitize(payment),
       customerId: payment.customerId ?? null,
-      supplierId: payment.supplierId ?? null
+      supplierId: payment.supplierId ?? null,
+      // Explicit null, like the two trade parties: switching a Draft payment's
+      // payee must CLEAR the other two, or the widened one-of-three CHECK
+      // rejects the update.
+      employeeId: payment.employeeId ?? null
     })
     .eq("id", payment.id)
     .select("id, paymentId")
@@ -2598,6 +2605,126 @@ async function loadTransactionInvoices(
   );
 }
 
+/**
+ * The reimbursement counterpart of `loadTransactionInvoices`. A Posted
+ * reimbursement is a TARGET exactly like a payable invoice — a liability whose
+ * carrying value prior payouts draw down — so the balance arithmetic is the
+ * shared `invoiceRemainingAmounts`, with only the target column and the
+ * original-control lookup differing.
+ *
+ * `reimbursement.amount` is DOCUMENT currency (the `reimbursement` table has no
+ * base-currency total column, unlike the `salesInvoices`/`purchaseInvoices`
+ * views), so it is converted once here — `invoiceRemainingAmounts` expects a
+ * base-currency `totalAmount` and converts back to document itself.
+ */
+async function loadTransactionReimbursements(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  ids: string[],
+  currencyCode: string,
+  employeeId: string,
+  decimals: number
+) {
+  const reimbursements = await db
+    .selectFrom("reimbursement")
+    .select([
+      "id",
+      "status",
+      "exchangeRate",
+      "currencyCode",
+      "amount",
+      "employeeId"
+    ])
+    .where("companyId", "=", companyId)
+    .where("id", "in", ids)
+    .orderBy("id")
+    .forUpdate()
+    .execute();
+  for (const id of ids) {
+    const reimbursement = reimbursements.find((r) => r.id === id);
+    if (!reimbursement) throw new Error(`Reimbursement ${id} not found`);
+    if (reimbursement.employeeId !== employeeId)
+      throw new Error(
+        "A payment can only settle reimbursements for the same employee"
+      );
+    if (reimbursement.currencyCode !== currencyCode)
+      throw new Error("Reimbursement and payment currency must match");
+    // Only a Posted reimbursement has a booked payable to settle; a Draft has
+    // no journal and a Voided one has been reversed.
+    if (reimbursement.status !== "Posted")
+      throw new Error(`Reimbursement ${id} is not posted`);
+    assertExchangeRate(Number(reimbursement.exchangeRate));
+  }
+  const [settlements, controls] = await Promise.all([
+    db
+      .selectFrom("invoiceSettlement")
+      .innerJoin(
+        "payment as applyingPayment",
+        "applyingPayment.id",
+        "invoiceSettlement.paymentId"
+      )
+      .select([
+        "invoiceSettlement.targetSalesInvoiceId",
+        "invoiceSettlement.targetPurchaseInvoiceId",
+        "invoiceSettlement.targetReimbursementId",
+        "invoiceSettlement.sourceAmount",
+        "invoiceSettlement.appliedAmount",
+        "invoiceSettlement.discountAmount",
+        "invoiceSettlement.writeOffAmount"
+      ])
+      .where("invoiceSettlement.companyId", "=", companyId)
+      .where("invoiceSettlement.targetReimbursementId", "in", ids)
+      // A reimbursement is never settled by a memo, so a posted payment is the
+      // only source that can have taken effect.
+      .where("applyingPayment.companyId", "=", companyId)
+      .where("applyingPayment.status", "=", "Posted")
+      .execute(),
+    db
+      .selectFrom("journalLine")
+      .innerJoin("journal", "journal.id", "journalLine.journalId")
+      .select(["journalLine.documentId", "journalLine.amount"])
+      .where("journalLine.companyId", "=", companyId)
+      .where("journal.companyId", "=", companyId)
+      .where("journal.status", "=", "Posted")
+      .where("journal.sourceType", "=", "Reimbursement")
+      .where("journalLine.documentType", "=", "Reimbursement")
+      .where(
+        "journalLine.description",
+        "=",
+        REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
+      )
+      .where("journalLine.documentId", "in", ids)
+      .execute()
+  ]);
+  const controlAmounts = new Map<string, number>();
+  for (const line of controls)
+    if (line.documentId)
+      controlAmounts.set(
+        line.documentId,
+        (controlAmounts.get(line.documentId) ?? 0) + Number(line.amount)
+      );
+  return new Map(
+    reimbursements.map((r) => [
+      r.id,
+      {
+        ...invoiceRemainingAmounts(
+          {
+            id: r.id,
+            totalAmount: toBaseAmount(Number(r.amount), Number(r.exchangeRate)),
+            exchangeRate: Number(r.exchangeRate)
+          },
+          settlements,
+          controlAmounts,
+          decimals,
+          false,
+          true
+        ),
+        exchangeRate: Number(r.exchangeRate)
+      }
+    ])
+  );
+}
+
 /** Reserve both invoice applications and refunds against the same locked memo. */
 async function loadTransactionMemoConsumption(
   trx: Kysely<KyselyDatabase>,
@@ -2684,10 +2811,29 @@ export async function replaceInvoiceSettlements(
     assertExchangeRate(Number(payment.exchangeRate));
     const isAR = Boolean(payment.customerId);
     const cashIn = payment.paymentType === "Receipt";
-    const isRefund = cashIn !== isAR;
-    const partyId = isAR ? payment.customerId : payment.supplierId;
-    if (!partyId || Boolean(payment.customerId) === Boolean(payment.supplierId))
-      throw new Error("Payment must have exactly one customer or supplier");
+    // An employee payee is a reimbursement payout, never a trade settlement:
+    // it is always cash OUT against the employee-payable control account, so
+    // it is neither AR nor a refund and has no on-account credit history to
+    // draw on. Resolve it BEFORE the customer-XOR-supplier check, which a
+    // three-way party can no longer satisfy.
+    const isReimbursement = Boolean(payment.employeeId);
+    const isRefund = !isReimbursement && cashIn !== isAR;
+    const partyId = isReimbursement
+      ? payment.employeeId
+      : isAR
+        ? payment.customerId
+        : payment.supplierId;
+    if (
+      !partyId ||
+      [payment.customerId, payment.supplierId, payment.employeeId].filter(
+        Boolean
+      ).length !== 1
+    )
+      throw new Error(
+        "A payment requires exactly one party (customer, supplier, or employee)"
+      );
+    if (isReimbursement && cashIn)
+      throw new Error("An employee payment must be a disbursement");
     for (const app of args.applications) {
       if (
         app.sourceAmount != null &&
@@ -2700,21 +2846,140 @@ export async function replaceInvoiceSettlements(
         throw new Error("Funding source and FX are server-authoritative");
       if (app.sourceExchangeRate !== Number(payment.exchangeRate))
         throw new Error("Source exchange rate does not match the payment");
+      // A reimbursement payout takes no trade discount and no write-off —
+      // there is no negotiated settlement with an employee, and the AP
+      // discount/write-off accounts are supplier-scoped by class.
       if (
-        isRefund
+        isReimbursement &&
+        (!app.targetReimbursementId ||
+          app.targetSalesInvoiceId ||
+          app.targetPurchaseInvoiceId ||
+          app.targetMemoId ||
+          app.discountAmount !== 0 ||
+          app.writeOffAmount !== 0)
+      )
+        throw new Error(
+          "An employee payment targets reimbursements only, without discounts or write-offs"
+        );
+      if (
+        !isReimbursement &&
+        (isRefund
           ? !app.targetMemoId ||
             app.targetSalesInvoiceId ||
             app.targetPurchaseInvoiceId ||
+            app.targetReimbursementId ||
             app.discountAmount !== 0 ||
             app.writeOffAmount !== 0
           : app.targetMemoId ||
+            app.targetReimbursementId ||
             (isAR
               ? !app.targetSalesInvoiceId || app.targetPurchaseInvoiceId
-              : !app.targetPurchaseInvoiceId || app.targetSalesInvoiceId)
+              : !app.targetPurchaseInvoiceId || app.targetSalesInvoiceId))
       )
         throw new Error(
           "Payments target same-side invoices; refunds target reducing memos without adjustments"
         );
+    }
+    if (isReimbursement) {
+      const ids = [
+        ...new Set(args.applications.map((app) => app.targetReimbursementId!))
+      ].sort();
+      if (!ids.length) {
+        await trx
+          .deleteFrom("invoiceSettlement")
+          .where("paymentId", "=", args.paymentId)
+          .where("companyId", "=", args.companyId)
+          .execute();
+        return;
+      }
+      const reimbursements = await loadTransactionReimbursements(
+        trx,
+        args.companyId,
+        ids,
+        payment.currencyCode,
+        partyId,
+        currencyDecimals
+      );
+      const requests = new Map<string, FundingRequest>();
+      const dates = new Map<string, string>();
+      for (const app of args.applications) {
+        const id = app.targetReimbursementId!;
+        const target = reimbursements.get(id);
+        if (!target) throw new Error(`Reimbursement ${id} balance not found`);
+        if (app.targetExchangeRate !== target.exchangeRate)
+          throw new Error(
+            "Target exchange rate does not match the reimbursement"
+          );
+        // Paying the balance in full releases the exact document remainder, so
+        // a payout never strands a minor unit the base-rounded conversion
+        // would leave behind.
+        const sourceAmount =
+          app.sourceAmount ??
+          (app.appliedAmount === target.remainingBase
+            ? target.remainingDocument
+            : toDocumentAmount(
+                app.appliedAmount,
+                target.exchangeRate,
+                currencyDecimals
+              ));
+        const request = requests.get(id) ?? {
+          targetId: id,
+          targetExchangeRate: target.exchangeRate,
+          remainingDocument: target.remainingDocument,
+          remainingBase: target.remainingBase,
+          requestedDocumentPrincipal: 0,
+          discountAmount: 0,
+          writeOffAmount: 0
+        };
+        request.requestedDocumentPrincipal = toDocumentAmount(
+          request.requestedDocumentPrincipal + sourceAmount,
+          1,
+          currencyDecimals
+        );
+        requests.set(id, request);
+        dates.set(id, app.appliedDate);
+      }
+      const allocation = allocatePaymentFunding({
+        currentPayment: {
+          paymentId: payment.id,
+          postingDate: payment.paymentDate,
+          exchangeRate: Number(payment.exchangeRate),
+          remainingDocument: Number(payment.totalAmount),
+          remainingBase: toBaseAmount(
+            Number(payment.totalAmount),
+            Number(payment.exchangeRate)
+          )
+        },
+        // An employee has no on-account credit history to draw on: a
+        // reimbursement payout is always funded by the current disbursement.
+        priorSources: [],
+        requests: [...requests.values()],
+        currencyDecimals,
+        isAR: cashIn
+      });
+      await trx
+        .deleteFrom("invoiceSettlement")
+        .where("paymentId", "=", payment.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      if (allocation.applications.length)
+        await trx
+          .insertInto("invoiceSettlement")
+          .values(
+            allocation.applications.map(({ targetId, ...application }) => ({
+              ...application,
+              paymentId: payment.id,
+              targetReimbursementId: targetId,
+              targetSalesInvoiceId: null,
+              targetPurchaseInvoiceId: null,
+              targetMemoId: null,
+              appliedDate: dates.get(targetId)!,
+              createdBy: args.createdBy,
+              companyId: args.companyId
+            }))
+          )
+          .execute();
+      return;
     }
     if (isRefund) {
       const ids = [
