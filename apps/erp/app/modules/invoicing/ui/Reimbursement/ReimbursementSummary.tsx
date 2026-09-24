@@ -154,15 +154,25 @@ const ReimbursementSummary = ({
   return (
     <>
       <Card>
-        <CardHeader className="flex-row items-start justify-between gap-4">
-          <VStack spacing={2}>
+        {/*
+          `flex-wrap` + a shrink-proof right group: the SOURCE field carries the
+          provider's 36-character external id in a mono font, which cannot wrap,
+          so the right-hand group has an intrinsic width it will not give up.
+          VStack defaults to `w-full`, so the title block claimed the whole row,
+          squeezed the group below that width and the History button spilled
+          past the card's right edge. The title block takes only what it needs
+          (`w-auto`, `min-w-0` so it is the one that yields), and on a narrow
+          card the group wraps to its own line rather than bleeding off.
+        */}
+        <CardHeader className="flex-row flex-wrap items-start justify-between gap-4">
+          <VStack spacing={2} className="w-auto min-w-0">
             <CardTitle>{reimbursement.reimbursementId}</CardTitle>
             <HStack spacing={2}>
               <ReimbursementStatus status={reimbursement.status} />
               <EmployeeAvatar employeeId={reimbursement.employeeId} />
             </HStack>
           </VStack>
-          <HStack spacing={4} className="items-start">
+          <HStack spacing={4} className="items-start shrink-0">
             <DocumentSourceBadge
               integration={reimbursement.integration}
               externalId={mapping?.externalId}

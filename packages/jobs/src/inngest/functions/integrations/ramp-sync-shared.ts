@@ -112,11 +112,19 @@ export async function recordRampSyncFailures(
 }
 
 /**
- * Clear any prior `Warning` operation for records that synced successfully this
+ * Clear any prior failed operation for records that synced successfully this
  * run — a Ramp charge recoded and posted after an earlier failure must drop out
  * of the Sync Activity inbox (Ramp's inbound families re-evaluate every run,
  * unlike accounting journals whose disposition is permanent). Logged, never
  * thrown.
+ *
+ * An INBOUND run also clears `Pending`, because Sync Activity's Retry button
+ * moves a failed row back to `Pending` and nothing else ever queues inbound
+ * work: the pull families re-read every ready record and record terminal rows
+ * themselves. Clearing only `Warning` left a retried record that then synced
+ * sitting in the inbox as "Pending" forever. OUTBOUND keeps the
+ * `Warning`-only rule — there a `Pending` row is real queued work the push
+ * drain owns, and it may have been enqueued by a change made after this push.
  */
 export async function resolveRampSyncOperations(
   ctx: RampSyncContext,
@@ -133,7 +141,11 @@ export async function resolveRampSyncOperations(
       integration: RAMP_INTEGRATION_ID,
       entityType: args.entityType,
       direction: args.direction,
-      entityIds: args.entityIds
+      entityIds: args.entityIds,
+      statuses:
+        args.direction === "pull-from-accounting"
+          ? ["Warning", "Pending"]
+          : ["Warning"]
     });
     if (error) {
       console.error(
