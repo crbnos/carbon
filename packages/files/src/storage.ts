@@ -23,6 +23,10 @@ import {
 } from "@supabase/storage-js";
 
 export const LEGACY_PRIVATE_BUCKET = "private";
+// Ephemeral staging for uploads too big for a company bucket's per-object cap
+// (raw CAD, backup archives). 2.5 GB cap; stale objects are pruned by the
+// scheduled cleanup job. Object keys start with the companyId segment.
+export const TEMP_STAGING_BUCKET = "temp-staging";
 export const COMPANY_BUCKET_FILE_SIZE_LIMIT = 52428800; // 50 MB
 
 export const normalizeStorageSegment = (value: string) =>

@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { convertKbToString } from "@carbon/files";
+import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import {
   Button,
@@ -178,7 +178,7 @@ const CadModel = ({
       // (<=50 MB) to `private`.
       const toastId = toast.loading(`Uploading ${file.name}…`);
       const { error: uploadError } = await runUpload({
-        bucket: "temp-staging",
+        bucket: TEMP_STAGING_BUCKET,
         path: fileName,
         file
       });
