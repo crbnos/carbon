@@ -4930,10 +4930,6 @@ async function getMaterialPropertyValues(
   };
 }
 
-/**
- * Loads the name, code and parent of each property value set on a material.
- * System rows (companyId null) count alongside the company's own.
- */
 async function getMaterialPropertyLookups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5013,11 +5009,6 @@ async function getMaterialPropertyLookups(
   };
 }
 
-/**
- * Resolves and checks a set of property changes without writing anything (see
- * material-properties.ts for the rules). With generated material IDs on, also
- * derives the readable id and name.
- */
 async function planMaterialPropertyChanges(
   client: SupabaseClient<Database>,
   args: {
@@ -5080,13 +5071,8 @@ async function materialIdIsTaken(
   return { data: taken.data.length > 0, error: null };
 }
 
-/**
- * Proves the caller may update the material before a Kysely write, which
- * bypasses RLS: the same UPDATE through the caller's client has to match the
- * row. Material's UPDATE policy (parts_update in the company) is the one its
- * item and itemCost rows also grant. It sets only the audit columns the write
- * sets anyway.
- */
+// Kysely bypasses RLS, so the caller's client must be able to update the
+// material row first. Its policy (parts_update) also covers item and itemCost.
 async function requireMaterialUpdatable(
   client: SupabaseClient<Database>,
   args: { readableId: string; companyId: string; updatedBy: string }
@@ -5101,7 +5087,6 @@ async function requireMaterialUpdatable(
   return { error: probe.error };
 }
 
-/** A refusal raised inside a material transaction, rolled back and reported. */
 class MaterialRuleViolation extends Error {}
 
 function materialWriteError(error: unknown): ServiceError {
@@ -5114,10 +5099,6 @@ function materialWriteError(error: unknown): ServiceError {
   return code ? { code, message } : { message };
 }
 
-/**
- * Inside `trx`: property changes and a new readable id or name on the material
- * row and every revision's item row. Returns the readable id after.
- */
 async function writeMaterialIdentity(
   trx: KyselyTx,
   args: {
@@ -5182,10 +5163,7 @@ async function writeMaterialIdentity(
   return newReadableId;
 }
 
-/**
- * The sizes a material lacks, refused while it is open in a change notice as
- * New Revision is. Runs before any write so a refusal changes nothing.
- */
+/** Refused while the material is open in a change notice, as New Revision is. */
 async function getNewMaterialSizes(
   client: SupabaseClient<Database>,
   args: {
@@ -5486,7 +5464,6 @@ export async function upsertMaterial(
     "itemTrackingType",
     "unitOfMeasureCode"
   ]);
-  // A regenerated name is written to every revision below.
   if (plan.data.generated) itemUpdate.name = plan.data.generated.name;
 
   const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
@@ -5508,8 +5485,6 @@ export async function upsertMaterial(
   const updatedAt = datetime.timestamp();
   try {
     readableId = await db.transaction().execute(async (trx) => {
-      // Generated IDs follow the properties; hand-typed ones follow
-      // `readableId`.
       const saved = await writeMaterialIdentity(trx, {
         readableId,
         newReadableId: generatedIds.data
@@ -5575,7 +5550,6 @@ export async function upsertMaterial(
   if (shelfLife.error) return shelfLife;
 
   if (newSizes.length > 0) {
-    // Copied from the updated revision, the way New Revision copies one.
     const source = await getItem(client, itemId);
     if (source.error) return source;
     for (const size of newSizes) {
@@ -5622,8 +5596,6 @@ export async function updateMaterialProperties(
 ) {
   const { companyId, updatedBy } = material;
 
-  // Properties live on the material row every revision shares, so any
-  // revision's item id or the readable id itself identifies it.
   const item = await client
     .from("item")
     .select("readableId")
@@ -5673,7 +5645,6 @@ export async function updateMaterialProperties(
     }
   }
 
-  // The view names the grade, finish, dimension and type; add their ids.
   const row = await client
     .from("materials")
     .select("*")
@@ -5704,8 +5675,7 @@ export async function upsertMaterialDimension(
       })
 ) {
   if ("id" in materialDimension) {
-    // Never moves the row to another company: companyId only narrows the
-    // match (MCP stamps it on every call; the settings page omits it).
+    // companyId narrows the match; it must never move the row.
     const { id, companyId, ...update } = materialDimension;
     let query = client
       .from("materialDimension")
@@ -5738,8 +5708,7 @@ export async function upsertMaterialFinish(
       })
 ) {
   if ("id" in materialFinish) {
-    // Never moves the row to another company: companyId only narrows the
-    // match (MCP stamps it on every call; the settings page omits it).
+    // companyId narrows the match; it must never move the row.
     const { id, companyId, ...update } = materialFinish;
     let query = client
       .from("materialFinish")
@@ -5803,8 +5772,7 @@ export async function upsertMaterialGrade(
       })
 ) {
   if ("id" in materialGrade) {
-    // Never moves the row to another company: companyId only narrows the
-    // match (MCP stamps it on every call; the settings page omits it).
+    // companyId narrows the match; it must never move the row.
     const { id, companyId, ...update } = materialGrade;
     let query = client
       .from("materialGrade")
@@ -5889,8 +5857,7 @@ export async function upsertMaterialType(
       })
 ) {
   if ("id" in materialType) {
-    // Never moves the row to another company: companyId only narrows the
-    // match (MCP stamps it on every call; the settings page omits it).
+    // companyId narrows the match; it must never move the row.
     const { id, companyId, ...update } = materialType;
     let query = client
       .from("materialType")

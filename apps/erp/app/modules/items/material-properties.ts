@@ -28,7 +28,6 @@ export const noMaterialProperties: MaterialPropertyValues = {
   dimensionId: null
 };
 
-/** The name, code and parent of each property a material points at. */
 export type MaterialPropertyLookups = {
   substance: { name: string; code: string } | null;
   form: { name: string; code: string } | null;
