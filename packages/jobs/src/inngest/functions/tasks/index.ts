@@ -1,5 +1,6 @@
 export { assemblyConvertFunction } from "./assembly-convert";
 export { assemblyPlanFunction } from "./assembly-plan";
+export { changelogDispatchFunction } from "./changelog-dispatch";
 export { companyExportFunction } from "./company-export";
 export { companyImportFunction } from "./company-import";
 export {

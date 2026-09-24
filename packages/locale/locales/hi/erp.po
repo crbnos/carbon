@@ -3562,6 +3562,12 @@ msgstr "प्रकार बदलें"
 msgid "Changed By"
 msgstr "द्वारा परिवर्तित"
 
+msgid "Changelog"
+msgstr "परिवर्तन लॉग"
+
+msgid "Changelog newsletter"
+msgstr "परिवर्तन न्यूजलेटर"
+
 msgid "Changes"
 msgstr "परिवर्तन"
 

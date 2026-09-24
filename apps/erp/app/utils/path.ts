@@ -449,6 +449,9 @@ export const path = {
     cardTransactions: `${x}/invoicing/card-transactions`,
     cardTransactionVoid: (id: string) =>
       generatePath(`${x}/invoicing/card-transactions/${id}/void`),
+    // The docs' Subscribe popover links back to Account → Notifications on the
+    // reader's OWN instance, which it learns from the `?app=` hint.
+    changelog: withDocsHost("https://docs.carbon.ms/changelog"),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>

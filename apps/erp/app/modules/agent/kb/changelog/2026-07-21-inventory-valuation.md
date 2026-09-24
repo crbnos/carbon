@@ -1,0 +1,32 @@
+# Change notices
+
+> Draft an engineering change against real methods, review it as a diff, and release it so planning supersedes the versions it replaces. Plus inventory valuation, Service items, and assembly instructions.
+
+A `docs/reference/change-orders` groups the parts whose designs are changing, revises each one on a hidden draft, and releases them together — answering what changed, who owns it, and what the new version supersedes, without touching a live method until release. You pick the affected items, edit each one's real bill of materials and bill of process inside the notice, review it as a diff with new part properties highlighted, and link issues to it. Change notices live under Items → Change notices.
+
+## Inventory valuation and Service items
+
+The inventory valuation report ties on-hand stock to the ledger, and inventory adjustments post to the GL. Service is now a first-class item type. The accounting period close has a full lifecycle with a close checklist and posted-record immutability.
+
+- Assembly instructions on items.
+- Short-close purchase order lines, with partial goods-receipt visibility.
+- MES suggests a batch on issue and returns unused picks when a job completes.
+- Overhead absorption and account defaults improvements, with draft journals excluded from reports.
+- Raw materials and finished goods accounts.
+- Self-serve enrollment in the Implementation Hub.
+- A faster CAD pipeline with a progressive 3D viewer.
+- Top-level external notes are included in document emails.
+- Detail pages show the entity id in the breadcrumb.
+- Korean translation.
+- Academy: Engineering Change Orders video.
+
+- GAAP-correct journal entries for fixed asset registration and disposal.
+- Purchase price variance is no longer double-counted; the GL and cost subledger move together.
+- Default markup no longer overwrites set quote-line prices.
+- Subassemblies are scheduled by their item lead time.
+- Planning reads top-level demand projections.
+- Invoicing quantities are short-close aware.
+- Customer reference, salesperson, and engineering contact carry through to sales orders.
+- Selling a fixed asset no longer requires a method type.
+- The first tag can be created when none exist.
+- MES add-row suggestions prefer the pick-method order and clamp batch quantity.

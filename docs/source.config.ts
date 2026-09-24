@@ -31,6 +31,22 @@ export const guide = defineDocs({
   },
 });
 
+// The changelog. One file per dated entry (content/changelog/YYYY-MM-DD-slug.mdx);
+// Carbon deploys continuously with no versions, so `date` — not a version — is the
+// ordering key. `tags` label the affected areas (e.g. "accounting", "mes").
+export const changelog = defineDocs({
+  dir: "content/changelog",
+  docs: {
+    schema: pageSchema.extend({
+      date: z.string().date(),
+      tags: z.array(z.string()).default([]),
+      // Optional hero image (a path under /public, e.g. "/changelog/gantt.png"),
+      // rendered above the entry body like a Linear changelog card.
+      image: z.string().optional(),
+    }),
+  },
+});
+
 // Remove <AgentContext> blocks from the MDX AST before fumadocs' remark-structure
 // runs. AgentContext is agent-only: this keeps its content out of the rendered page
 // AND out of the site search index (structuredData). The in-app agent still receives
