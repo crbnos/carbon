@@ -110,6 +110,7 @@ describe("RilletProvider base URL + headers", () => {
     const provider = makeProvider();
     expect(provider.id).toBe(ProviderID.RILLET);
     expect(provider.capabilities).toEqual({
+      role: "accounting",
       transport: "rest",
       supportsWebhooks: true,
       supportsJournalPush: true,

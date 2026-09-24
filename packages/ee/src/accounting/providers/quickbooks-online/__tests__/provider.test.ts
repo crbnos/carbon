@@ -147,6 +147,7 @@ describe("QboProvider base URL", () => {
     const { provider } = makeProvider();
     expect(provider.id).toBe(ProviderID.QUICKBOOKS);
     expect(provider.capabilities).toEqual({
+      role: "accounting",
       transport: "rest",
       supportsWebhooks: false,
       supportsJournalPush: true,

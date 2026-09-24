@@ -3,6 +3,7 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
+import type { AccountingCapabilities } from "../../sync/capabilities";
 import type { AccountingProvider } from "../providers";
 import type {
   CounterpartSearchKeys,
@@ -91,32 +92,16 @@ export type ProviderConfig<T = unknown> = {
 
 /**
  * Static description of how a provider communicates and what it supports.
+ *
+ * Now an alias of the shared, role-discriminated surface in `../../sync/capabilities`
+ * so spend providers and accounting providers answer capability questions through
+ * ONE vocabulary. Accounting providers are the "accounting" arm; the name is kept
+ * because every existing declaration and import uses it.
+ *
+ * Read it through `resolveCapabilities()`, never directly: `XeroProvider`
+ * deliberately declares no capabilities object at all.
  */
-export interface ProviderCapabilities {
-  /**
-   * How the provider is reached: "rest" = Carbon calls the provider API
-   * synchronously; "bridge" = a third-party vendor bridge performs the calls.
-   */
-  transport: "rest" | "bridge";
-  /** Whether the provider can push change notifications to Carbon. */
-  supportsWebhooks: boolean;
-  /** Whether Carbon journals can be pushed as provider journal entries. */
-  supportsJournalPush: boolean;
-  /**
-   * Structural cap on how many dimension slots the provider's journal
-   * lines can carry (QBO: 2 — one ClassRef + one DepartmentRef; Xero: 2 —
-   * org-wide tracking-category limit). Absent = no structural cap
-   * (Rillet Fields are dimension-native).
-   */
-  maxJournalDimensionSlots?: number;
-  /**
-   * Entity kinds this provider can search for an existing counterpart before
-   * creating one (see `core/counterpart.ts`). Absent or empty = always create,
-   * which is the behaviour of a provider that has never implemented the search
-   * — so the capability is opt-in and declaring nothing regresses nothing.
-   */
-  searchableCounterparts?: ExternalIdentityKind[];
-}
+export type ProviderCapabilities = AccountingCapabilities;
 
 /**
  * One analytics field a provider can carry on pushed journal lines — a

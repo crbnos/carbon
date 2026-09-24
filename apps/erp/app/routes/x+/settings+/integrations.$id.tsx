@@ -49,6 +49,7 @@ import {
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { resolveCapabilities } from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -379,7 +380,9 @@ async function getProviderDimensionTargets(
             .filter((value) => !value.deactivated)
             .map((value) => ({ id: value.id, name: value.name }))
         })),
-        maxSlots: provider.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(provider.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }
@@ -411,7 +414,9 @@ async function getProviderDimensionTargets(
       return {
         supported: true,
         targets,
-        maxSlots: qbo.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(qbo.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }

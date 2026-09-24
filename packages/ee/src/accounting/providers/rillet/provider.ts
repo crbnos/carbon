@@ -386,6 +386,7 @@ export class RilletProvider extends BaseProvider {
   static id = ProviderID.RILLET;
 
   readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
     transport: "rest",
     supportsWebhooks: true,
     supportsJournalPush: true,

@@ -46,7 +46,8 @@
     "./workflows": "./src/workflows/index.ts",
     "./workflows.server": "./src/workflows.server.ts",
     "./workflows/help": "./src/workflows/catalog/help.generated.ts",
-    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts"
+    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts",
+    "./sync": "./src/sync/index.ts"
   },
   "private": true,
   "scripts": {

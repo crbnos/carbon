@@ -412,6 +412,7 @@ export class QboProvider extends BaseProvider {
   static id = ProviderID.QUICKBOOKS;
 
   readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
     transport: "rest",
     supportsWebhooks: false,
     supportsJournalPush: true,
