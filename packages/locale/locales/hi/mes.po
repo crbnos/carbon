@@ -642,6 +642,9 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "First due {0}"
 msgstr "पहली देय {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "पूर्ण करने से पहले हाइलाइट की गई मात्राओं को ठीक करें।"
+
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
@@ -1162,7 +1165,7 @@ msgstr "रोकें"
 msgid "Pick"
 msgstr "चुनें"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "पिकिंग {0}"
 

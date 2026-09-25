@@ -642,6 +642,9 @@ msgstr "Завершить с неподобранным материалом?"
 msgid "First due {0}"
 msgstr "Первый срок {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Исправьте выделенные количества перед завершением."
+
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
 
@@ -1162,7 +1165,7 @@ msgstr "Приостановить"
 msgid "Pick"
 msgstr "Выбрать"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Отобрать {0}"
 

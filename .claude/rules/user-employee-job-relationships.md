@@ -74,6 +74,16 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 
 ## Gotchas
 
+- **`user` RLS is company-scoped** (`20260924153817_user-rls-company-scope.sql`). A caller
+  sees themselves, users who share a `userToCompany` company, and, as an employee,
+  users with an `employee` / `customerAccount` / `supplierAccount` row in their company
+  (pending invites, deactivated people). Another user's row is writable only with
+  `users_update` in a company where that user has an active `userToCompany` row. INSERT
+  and DELETE are revoked from `anon`/`authenticated`, so they go through the service role.
+  A BEFORE UPDATE trigger (`guard_user_identity_columns`) rejects any API-role change to
+  `id`, `email`, `active`, `admin`, `developer` or `isConsoleOperator`. Sending those
+  columns unchanged is fine. Deleting a user also deletes its identity `group`
+  (`sync_delete_user_identity_group`).
 - `employee` and `employeeJob` share composite PK `(id, companyId)` and `id → user.id` — always scope
   queries by **both** id and companyId. A user has one employee/employeeJob row **per company**.
 - `userToCompany.role` (membership type) is distinct from `employeeType` (which permission set);

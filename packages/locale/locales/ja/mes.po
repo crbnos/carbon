@@ -642,6 +642,9 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "完了する前に、ハイライトされた数量を修正してください。"
+
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
 
@@ -1162,7 +1165,7 @@ msgstr "一時停止"
 msgid "Pick"
 msgstr "ピック"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "ピッキング {0}"
 

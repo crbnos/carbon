@@ -30,6 +30,11 @@ export {
   type WorkCenterAvailabilityInput
 } from "./scheduling/machine-availability.ts";
 export {
+  type QuoteLeadTimeForecast,
+  type QuoteLeadTimeScenario,
+  runQuoteLeadTimeWhatIf
+} from "./scheduling/quote-lead-time.ts";
+export {
   type ExpediteWhatIfResult,
   type LocationScheduleResult,
   type NewlyLateJob,

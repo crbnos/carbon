@@ -642,6 +642,9 @@ msgstr "Zakończyć bez wybranego materiału?"
 msgid "First due {0}"
 msgstr "Pierwszy termin {0}"
 
+msgid "Fix the highlighted quantities before completing."
+msgstr "Popraw podświetlone ilości przed sfinalizowaniem."
+
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniano o zakończeniu pracy?"
 
@@ -1162,7 +1165,7 @@ msgstr "Wstrzymaj"
 msgid "Pick"
 msgstr "Pobierz"
 
-#. placeholder {0}: m.required - m.issued
+#. placeholder {0}: round(m.required - m.issued)
 msgid "Pick {0}"
 msgstr "Pobierz {0}"
 

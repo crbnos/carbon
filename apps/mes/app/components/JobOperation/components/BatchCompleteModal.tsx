@@ -1,4 +1,10 @@
-import { Hidden, Submit, ValidatedForm } from "@carbon/form";
+import {
+  Hidden,
+  Submit,
+  useField,
+  useFormContext,
+  ValidatedForm
+} from "@carbon/form";
 import {
   Alert,
   AlertDescription,
@@ -19,6 +25,7 @@ import type { useFetcher } from "react-router";
 import type { z } from "zod";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import type { JobOperationBatch } from "~/services/operations.service";
+import { decimalInput } from "~/utils/display";
 import { path } from "~/utils/path";
 
 // Spreadsheet-style numeric cell — a bare input (no react-aria stepper arrows),
@@ -27,8 +34,58 @@ import { path } from "~/utils/path";
 const cellInputClass =
   "block h-full min-h-12 w-full bg-transparent px-3 text-right font-mono text-base tabular-nums outline-none transition-colors focus:ring-2 focus:ring-inset focus:ring-ring disabled:cursor-not-allowed disabled:opacity-40";
 
-const digitsOnly = (value: string) => value.replace(/[^0-9]/g, "");
 const toNumber = (value: string) => Number(value) || 0;
+
+// A spreadsheet cell wired to the ValidatedForm: it stays visually controlled by
+// the parent's local string state, but reads its validation error from the form
+// (keyed by the same `name` the zod path serializes to) so a bad quantity gets a
+// destructive ring + aria-invalid instead of failing silently on submit.
+function CellInput({
+  name,
+  value,
+  ariaLabel,
+  onChange
+}: {
+  name: string;
+  value: string;
+  ariaLabel: string;
+  onChange: (value: string) => void;
+}) {
+  const { error } = useField(name);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      name={name}
+      aria-label={ariaLabel}
+      aria-invalid={error ? true : undefined}
+      value={value}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => onChange(e.target.value)}
+      className={cn(
+        cellInputClass,
+        error && "ring-2 ring-inset ring-destructive"
+      )}
+    />
+  );
+}
+
+// One line under the table when any member quantity failed validation — the grid
+// cells only ring, so this names that something needs fixing.
+function BatchErrorSummary() {
+  const { fieldErrors } = useFormContext() as {
+    fieldErrors?: Record<string, string>;
+  };
+  const hasMemberError = Object.keys(fieldErrors ?? {}).some((key) =>
+    key.startsWith("members")
+  );
+  if (!hasMemberError) return null;
+  return (
+    <p className="mt-2 text-sm text-destructive">
+      <Trans>Fix the highlighted quantities before completing.</Trans>
+    </p>
+  );
+}
 
 // The batch completion form, opened from the batched operation view. Posts to
 // batch.$batchId.complete (the same action the retired batch page used), which
@@ -80,7 +137,7 @@ export function BatchCompleteModal({
   );
   const setRow = (i: number, key: "quantity" | "scrapQuantity", v: string) =>
     setRows((prev) =>
-      prev.map((r, idx) => (idx === i ? { ...r, [key]: digitsOnly(v) } : r))
+      prev.map((r, idx) => (idx === i ? { ...r, [key]: decimalInput(v) } : r))
     );
 
   const isExcludedRow = (i: number) =>
@@ -227,17 +284,11 @@ export function BatchCompleteModal({
                             !isLast && "border-b"
                           )}
                         >
-                          <input
-                            type="text"
-                            inputMode="numeric"
+                          <CellInput
                             name={`members[${i}].quantity`}
-                            aria-label={t`Quantity`}
+                            ariaLabel={t`Quantity`}
                             value={rows[i]?.quantity ?? ""}
-                            onFocus={(e) => e.currentTarget.select()}
-                            onChange={(e) =>
-                              setRow(i, "quantity", e.target.value)
-                            }
-                            className={cellInputClass}
+                            onChange={(v) => setRow(i, "quantity", v)}
                           />
                         </td>
                         <td
@@ -247,17 +298,11 @@ export function BatchCompleteModal({
                             !isLast && "border-b"
                           )}
                         >
-                          <input
-                            type="text"
-                            inputMode="numeric"
+                          <CellInput
                             name={`members[${i}].scrapQuantity`}
-                            aria-label={t`Scrap`}
+                            ariaLabel={t`Scrap`}
                             value={rows[i]?.scrapQuantity ?? ""}
-                            onFocus={(e) => e.currentTarget.select()}
-                            onChange={(e) =>
-                              setRow(i, "scrapQuantity", e.target.value)
-                            }
-                            className={cellInputClass}
+                            onChange={(v) => setRow(i, "scrapQuantity", v)}
                           />
                         </td>
                         {showLotColumn && (
@@ -279,6 +324,7 @@ export function BatchCompleteModal({
                 </tbody>
               </table>
             </div>
+            <BatchErrorSummary />
             <p className="mt-3 text-pretty text-xs text-muted-foreground">
               <Trans>
                 Leave an operation at 0 to skip it — it returns to the schedule

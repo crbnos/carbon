@@ -62,6 +62,8 @@ type Operation = z.infer<typeof jobOperationValidator> & {
   operationQuantity: number | null;
   targetQuantity: number | null;
   reworkId: string | null;
+  quantityComplete: number | null;
+  quantityScrapped: number | null;
 };
 
 type JobMaterial = NonNullable<
@@ -184,21 +186,13 @@ const JobEstimatesVsActuals = ({
     };
   };
 
-  const getCompleteQuantity = (operation: Operation) => {
-    const quantity = productionQuantities
-      .filter(
-        (pq) => pq.jobOperationId === operation.id && pq.type === "Production"
-      )
-      .reduce((acc, pq) => acc + pq.quantity, 0);
-    return quantity ?? 0;
-  };
+  // Read the operation's own totals, not a sum of productionQuantity rows: a
+  // desk "Mark as Complete" sets quantityComplete without writing any rows.
+  const getCompleteQuantity = (operation: Operation) =>
+    operation.quantityComplete ?? 0;
 
-  const getScrapQuantity = (operation: Operation) => {
-    const quantity = productionQuantities
-      .filter((pq) => pq.jobOperationId === operation.id && pq.type === "Scrap")
-      .reduce((acc, pq) => acc + pq.quantity, 0);
-    return quantity ?? 0;
-  };
+  const getScrapQuantity = (operation: Operation) =>
+    operation.quantityScrapped ?? 0;
 
   const getEmployeeIds = (
     operation: Operation,

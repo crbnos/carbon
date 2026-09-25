@@ -19,7 +19,12 @@ import {
   recordRampFamilyError
 } from "./ramp-sync-observability";
 import { loadRampPurchaseOrderLines } from "./ramp-sync-outbound-lines";
-import type { RampSyncContext } from "./ramp-sync-shared";
+import {
+  type FailItem,
+  type RampSyncContext,
+  recordRampSyncFailures,
+  resolveRampSyncOperations
+} from "./ramp-sync-shared";
 
 const OUTBOUND_PAGE_SIZE = 100;
 const PO_PUSH_STATUSES: Database["public"]["Enums"]["purchaseOrderStatus"][] = [
@@ -262,6 +267,7 @@ export async function syncRampOutbound(
             )
         );
         const failedIds = new Set<string>();
+        const poFailures: FailItem[] = [];
         for (const row of poRows) {
           try {
             const action = await pushPurchaseOrder(
@@ -287,12 +293,32 @@ export async function syncRampOutbound(
           } catch (poError) {
             result.purchaseOrders.failed += 1;
             failedIds.add(row.id);
+            poFailures.push({
+              id: row.id,
+              message:
+                poError instanceof Error ? poError.message : String(poError)
+            });
             console.error(
               `[RAMP SYNC] ${companyId}: purchase order ${row.purchaseOrderId} push failed`,
               poError
             );
           }
         }
+
+        // Sync Activity: record why each PO push failed, and clear a prior
+        // Warning for every PO that pushed (or archived) cleanly this run.
+        await recordRampSyncFailures(ctx, {
+          entityType: "purchaseOrder",
+          direction: "push-to-accounting",
+          failures: poFailures
+        });
+        await resolveRampSyncOperations(ctx, {
+          entityType: "purchaseOrder",
+          direction: "push-to-accounting",
+          entityIds: poRows
+            .filter((row) => !failedIds.has(row.id))
+            .map((row) => row.id)
+        });
 
         const cursorRows = poRows.filter(
           (row): row is typeof row & { updatedAt: string } =>
@@ -369,6 +395,7 @@ export async function syncRampOutbound(
       // Advance past EVERY fetched row (mapped / employee / pushed alike);
       // only a throw holds the cursor back.
       const failedIds = new Set<string>();
+      const invFailures: FailItem[] = [];
 
       const candidates = invRows.filter(
         (row) => row.id && !mappedInvoiceIds.has(row.id)
@@ -463,6 +490,13 @@ export async function syncRampOutbound(
           } catch (invoiceError) {
             result.invoices.failed += 1;
             failedIds.add(invoiceRowId);
+            invFailures.push({
+              id: invoiceRowId,
+              message:
+                invoiceError instanceof Error
+                  ? invoiceError.message
+                  : String(invoiceError)
+            });
             console.error(
               `[RAMP SYNC] ${companyId}: invoice ${
                 row.invoiceId ?? invoiceRowId
@@ -472,6 +506,22 @@ export async function syncRampOutbound(
           }
         }
       }
+
+      // Sync Activity: record why each draft-bill push failed, and clear a
+      // prior Warning for every fetched invoice that did not fail this run
+      // (pushed, already mapped, or employee-skipped).
+      await recordRampSyncFailures(ctx, {
+        entityType: "purchaseInvoice",
+        direction: "push-to-accounting",
+        failures: invFailures
+      });
+      await resolveRampSyncOperations(ctx, {
+        entityType: "purchaseInvoice",
+        direction: "push-to-accounting",
+        entityIds: invRows
+          .filter((row) => row.id && !failedIds.has(row.id))
+          .map((row) => row.id as string)
+      });
 
       // The keyset advances on `createdAt` (mapped into the cursor's timestamp
       // slot), since that is the column the invoice page is ordered by.

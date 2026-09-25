@@ -37,7 +37,13 @@ import {
   TabsTrigger,
   toast
 } from "@carbon/react";
-import { formatDate, getItemReadableId, SCALE_FORMAT } from "@carbon/utils";
+import {
+  formatDate,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  SCALE_FORMAT
+} from "@carbon/utils";
 import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import { useNumberFormatter } from "@react-aria/i18n";
@@ -340,9 +346,10 @@ export function IssueMaterialModal({
     if (!material) return 1;
     // Batch mode: one pick covers every member, so the default is the batch's
     // outstanding requirement — the member's own share would be split again
-    // across all members and satisfy none of them.
+    // across all members and satisfy none of them. Never rounded up to 1: the
+    // batch refuses a pick above its requirement (0.000072 KG, say).
     if (batchId && batchRemainingQuantity !== undefined) {
-      return Math.max(1, batchRemainingQuantity);
+      return batchRemainingQuantity || 1;
     }
     const perUnit = material.quantity ?? material.estimatedQuantity ?? 1;
     if (parentIdIsSerialized) {
@@ -1363,7 +1370,7 @@ export function IssueMaterialModal({
                         <FormNumberInput
                           name="quantity"
                           label="Quantity"
-                          minValue={0.01}
+                          minValue={INPUT_STEP.quantity}
                         />
                       </>
                     )}
@@ -1772,13 +1779,14 @@ export function IssueMaterialModal({
                                   <NumberField
                                     id={`quantity-${index}`}
                                     value={batch.quantity}
+                                    formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
                                       updateBatchNumber({
                                         ...batch,
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={INPUT_STEP.quantity}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id
@@ -1855,13 +1863,14 @@ export function IssueMaterialModal({
                                 <div className="w-24">
                                   <NumberField
                                     value={batch.quantity}
+                                    formatOptions={INPUT_FORMAT.quantity}
                                     onChange={(value) =>
                                       updateBatchNumber({
                                         ...batch,
                                         quantity: value
                                       })
                                     }
-                                    minValue={0.01}
+                                    minValue={INPUT_STEP.quantity}
                                     maxValue={
                                       batchOptions.find(
                                         (o) => o.value === batch.id

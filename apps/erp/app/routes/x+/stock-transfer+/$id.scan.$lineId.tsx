@@ -4,7 +4,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { TrackedEntityPicker, toast } from "@carbon/react";
+import {
+  TrackedEntityPicker,
+  type TrackedEntitySelection,
+  toast
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -21,10 +25,12 @@ import type { StockTransfer, StockTransferLine } from "~/modules/inventory";
 import {
   getAvailableTrackedEntities,
   getStockTransfer,
+  resolveStockTransferPickForward,
   stockTransferLineScanValidator
 } from "~/modules/inventory";
 import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -122,7 +128,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     stockTransferId,
     itemId,
     locationId,
-    trackedEntityId
+    trackedEntityId,
+    quantity,
+    storageUnitId
   } = validated.data;
 
   const [stockTransferLine, itemStorageUnitQuantities] = await Promise.all([
@@ -158,15 +166,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? "batch"
     : "serial";
 
-  // Prepare the payload for the post-stock-transfer function
+  // The edge function re-checks this under a row lock, but refusing an already-
+  // full line here avoids a round trip and a raw failure.
+  const forward = resolveStockTransferPickForward({
+    transferType,
+    quantity,
+    storageUnitId,
+    currentStorageUnitId,
+    lineQuantity: Number(stockTransferLine.data?.quantity ?? 0),
+    pickedQuantity: Number(stockTransferLine.data?.pickedQuantity ?? 0)
+  });
+  if (!forward.ok) {
+    return data(
+      { success: false, message: forward.message },
+      await flash(request, error(forward.message, forward.message))
+    );
+  }
+
+  // Prepare the payload for the post-stock-transfer function.
   const functionPayload: any = {
     type: transferType,
     stockTransferId,
     stockTransferLineId: lineId,
     trackedEntityId,
-    quantity:
-      transferType === "batch" ? (stockTransferLine.data?.quantity ?? 1) : 1,
-    fromStorageUnitId: currentStorageUnitId,
+    quantity: forward.quantity,
+    fromStorageUnitId: forward.fromStorageUnitId,
     locationId: locationId,
     userId,
     companyId
@@ -178,15 +202,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
 
   if (functionError) {
+    // The edge function returns its guard failures (over-pick, already picked)
+    // as a 400 with the real reason in the body; surface that, not the generic
+    // "non-2xx" wrapper text.
+    const message = await getEdgeFunctionErrorMessage(
+      functionError,
+      "Failed to pick line"
+    );
     return data(
-      { success: false, message: "Failed to pick line" },
-      await flash(
-        request,
-        error(
-          functionError.message || "Failed to pick line",
-          "Failed to pick line"
-        )
-      )
+      { success: false, message },
+      await flash(request, error(functionError, message))
     );
   }
 
@@ -280,14 +305,18 @@ export default function StockTransferScan() {
     [entities, pickedElsewhere]
   );
 
-  const onPick = (trackedEntityId: string) => {
+  const onPick = (selection: TrackedEntitySelection) => {
     fetcher.submit(
       {
         id: stockTransferLine.id!,
         stockTransferId: stockTransferLine.stockTransferId!,
-        trackedEntityId,
+        trackedEntityId: selection.trackedEntityId,
         itemId: stockTransferLine.itemId!,
-        locationId
+        locationId,
+        // Forward the picker's clamped quantity and chosen bin — the host
+        // picking-list scanner does the same.
+        quantity: selection.quantity,
+        storageUnitId: selection.storageUnitId ?? null
       },
       {
         method: "POST",
@@ -309,7 +338,7 @@ export default function StockTransferScan() {
       }
       nearExpiryWarningDays={nearExpiryWarningDays}
       expiredEntityPolicy={expiredEntityPolicy}
-      onSelect={(selection) => onPick(selection.trackedEntityId)}
+      onSelect={onPick}
       onClose={onClose}
     />
   );

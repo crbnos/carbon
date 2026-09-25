@@ -1,5 +1,4 @@
-import type { Edge, SeedWorkflow } from "../../tiers/workflow-definitions.ts";
-import type { WorkflowData } from "../../types.ts";
+import type { Edge, SeedWorkflow, WorkflowData } from "../../types.ts";
 
 // A factory, not a constant: every definition names ids that only exist once the seed has run.
 
@@ -508,6 +507,38 @@ export function buildMotorWorkflows(refs: {
   ];
 }
 
+// The queued run was skipped at load while the workflow was briefly unpublished,
+// so it has no steps.
 export const motorWorkflows: WorkflowData = {
-  build: buildMotorWorkflows
+  build: buildMotorWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:wabash-terminals",
+      at: { offset: -14, time: "11:26:03" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:halcyon-bolts",
+      at: { offset: -28, time: "15:54:41" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:ridgeline-bearings",
+      at: { offset: -21, time: "07:39:20" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
 };

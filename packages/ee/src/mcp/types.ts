@@ -84,8 +84,7 @@ export function withErrorHandling<T extends Record<string, unknown>>(
     } catch (error) {
       logger.error("Error in handler", {
         fallbackMessage,
-        error,
-        stack: error instanceof Error ? error.stack : "No stack"
+        error
       });
       return {
         content: [

@@ -1,3 +1,5 @@
+import { useCarbon } from "@carbon/auth";
+import { TEMP_STAGING_BUCKET } from "@carbon/files";
 import { useControlField } from "@carbon/form";
 import {
   Command,
@@ -28,6 +30,7 @@ export function BackupSourcePicker({
 }: {
   backups: { name: string; label: string | null; exportedAt: string | null }[];
 }) {
+  const { carbon } = useCarbon();
   const revalidator = useRevalidator();
   const [value, setValue] = useControlField<string>("source");
   const [open, setOpen] = useState(false);
@@ -54,11 +57,34 @@ export function BackupSourcePicker({
     setUploading(true);
     toast.info(`Uploading ${file.name}`);
     try {
-      // The server unpacks the archive into a fresh `exports/<name>/` folder so a
-      // cross-environment import has the data + media. Returns the folder name.
+      // Presigned upload straight to storage (the archive can exceed a
+      // serverless request body), then the server unpacks it into `exports/<name>/`.
+      const signRes = await fetch("/api/settings/backup-upload", {
+        method: "POST",
+        body: toFormData({ intent: "sign" })
+      });
+      if (!signRes.ok) {
+        toast.error(`Failed to upload: ${await signRes.text()}`);
+        return;
+      }
+      const { path, token } = (await signRes.json()) as {
+        path: string;
+        token: string;
+      };
+
+      const upload = await carbon.storage
+        .from(TEMP_STAGING_BUCKET)
+        .uploadToSignedUrl(path, token, file, {
+          contentType: "application/gzip"
+        });
+      if (upload.error) {
+        toast.error(`Failed to upload: ${upload.error.message}`);
+        return;
+      }
+
       const res = await fetch("/api/settings/backup-upload", {
         method: "POST",
-        body: file
+        body: toFormData({ intent: "unpack", path })
       });
       if (!res.ok) {
         toast.error(`Failed to upload: ${await res.text()}`);
@@ -146,4 +172,12 @@ export function BackupSourcePicker({
       </Popover>
     </>
   );
+}
+
+function toFormData(fields: Record<string, string>) {
+  const formData = new FormData();
+  for (const [key, value] of Object.entries(fields)) {
+    formData.append(key, value);
+  }
+  return formData;
 }

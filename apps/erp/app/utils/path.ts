@@ -546,6 +546,8 @@ export const path = {
     consumableRoot: `${x}/consumable`,
     consumableRules: (id: string) =>
       generatePath(`${x}/consumable/${id}/rules`),
+    consumableSales: (id: string) =>
+      generatePath(`${x}/consumable/${id}/sales`),
     consumableSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/consumable/${itemId}/purchasing/${id}`),
     consumableSuppliers: (id: string) =>
@@ -1446,6 +1448,7 @@ export const path = {
       generatePath(`${x}/material/${id}/quality`),
     materialRoot: `${x}/material`,
     materialRules: (id: string) => generatePath(`${x}/material/${id}/rules`),
+    materialSales: (id: string) => generatePath(`${x}/material/${id}/sales`),
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
@@ -1962,6 +1965,8 @@ export const path = {
       generatePath(`${x}/quote/${quoteId}/${id}/details`),
     quoteLineConfigure: (quoteId: string, lineId: string) =>
       generatePath(`${x}/quote/${quoteId}/${lineId}/configure`),
+    quoteLineLeadTime: (quoteId: string, lineId: string) =>
+      generatePath(`${x}/quote/${quoteId}/${lineId}/lead-time`),
     quoteLineMakeMethod: (
       quoteId: string,
       lineId: string,
@@ -2297,6 +2302,7 @@ export const path = {
     toolQuality: (id: string) => generatePath(`${x}/tool/${id}/quality`),
     toolRoot: `${x}/tool`,
     toolRules: (id: string) => generatePath(`${x}/tool/${id}/rules`),
+    toolSales: (id: string) => generatePath(`${x}/tool/${id}/sales`),
     toolSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
     toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),

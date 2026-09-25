@@ -6,7 +6,7 @@ Single sign-on hands control of Carbon sign-in to your own identity provider: Ok
 
 ## Requirements
 
-SSO is an Enterprise feature of your own `docs/platform/self-hosting` deployment (`CARBON_EDITION=enterprise`, which requires a `docs/platform/licensing`). Carbon Cloud sign-in is unaffected. Enable it through `docs/platform/self-hosting/environment-variables`:
+SSO is an Enterprise Edition (EE) feature of your own `docs/platform/self-hosting` deployment (`CARBON_EDITION=enterprise`, which requires a `docs/platform/licensing`). Carbon Cloud sign-in is unaffected. Enable it through `docs/platform/self-hosting/environment-variables`:
 
 Add `sso` to the comma-separated list of sign-in methods.
 Turns on the SAML engine in the auth service.

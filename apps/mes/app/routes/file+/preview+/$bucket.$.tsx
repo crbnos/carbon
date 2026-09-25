@@ -6,7 +6,8 @@ import {
   getCompanyPrivateBucket,
   getContentType,
   LEGACY_PRIVATE_BUCKET,
-  storage
+  storage,
+  TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -60,7 +61,11 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   const isPrivateBucket =
     bucket === getCompanyPrivateBucket(companyId) ||
     bucket === LEGACY_PRIVATE_BUCKET;
-  if (!isPrivateBucket && bucket !== "public" && bucket !== "temp-staging") {
+  if (
+    !isPrivateBucket &&
+    bucket !== "public" &&
+    bucket !== TEMP_STAGING_BUCKET
+  ) {
     return new Response(null, { status: 403 });
   }
 

@@ -1,0 +1,36 @@
+# Structural sums — satellite, scratch company dapnjkh860gjckkl52t0 (demo-audit@carbon.local), 2026-09-23, branch feat/demo-data-completeness
+# Queries (all WHERE "companyId" = <company>):
+#   methodMaterial: count(*), sum(quantity)
+#   methodOperation: count(*), sum("laborTime"), sum("setupTime"), sum("machineTime")   (old file's column order — its values 263.75|0|0 match laborTime)
+#   salesOrderLine: count(*), sum("saleQuantity");  quoteLinePrice: count(*)
+#   itemLedger: count(*), sum(quantity), then per (entryType, documentType)
+#   journalLine: count(*), sum(amount), then per account.class (journalLine.accountId -> account.id)
+#   journal balance: amount is signed by the account's natural balance (lib/utils.ts debit/credit),
+#     so per journal debit-minus-credit = sum(CASE class IN (Asset, Expense) THEN amount ELSE -amount) must be 0
+methodMaterial|51|258.375
+methodOperation|33|263.75|0.00|0.00
+salesOrderLine|23|752.00000
+quoteLinePrice|13
+itemLedger|38|1138
+  itemLedger|Positive Adjmt.|Sales Return Receipt|1|1
+  itemLedger|Positive Adjmt.|Purchase Receipt|3|14
+  itemLedger|Positive Adjmt.|Inventory Receipt|19|1173
+  itemLedger|Positive Adjmt.|Inventory Count|1|2
+  itemLedger|Negative Adjmt.|Sales Shipment|2|-4
+  itemLedger|Negative Adjmt.|Purchase Return Shipment|1|-40
+  itemLedger|Negative Adjmt.|Inventory Count|1|-2
+  itemLedger|Negative Adjmt.|Scrap|1|-4
+  itemLedger|Transfer|Transfer Shipment|1|-25
+  itemLedger|Transfer|Transfer Receipt|1|25
+  itemLedger|Transfer|Direct Transfer|6|0
+  itemLedger|Consumption|Maintenance Consumption|1|-2
+journalLine|10|3697000
+  journalLine|Asset|2|1798750
+  journalLine|Liability|3|48500
+  journalLine|Revenue|1|1800000
+  journalLine|Expense|4|49750
+  journal|JE-SEED-001|Draft|2|0
+  journal|JE-SEED-002|Posted|2|0
+  journal|JE-SEED-003|Posted|2|0
+  journal|JE-SEED-004|Reversed|2|0
+  journal|JE-SEED-005|Posted|2|0

@@ -8,6 +8,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import { resolveCountedEntity } from "./count-guards.ts";
 import {
   bookAdjustment,
   createAdjustmentJournal
@@ -308,10 +309,27 @@ serve(async (req: Request) => {
 
         // Tracked lines: apply the same delta to the entity's quantity (not a
         // set-to-counted) so movements since the snapshot aren't overwritten.
+        // Lock and read the live row so the guard sees the current quantity;
+        // a delta that would drive it negative means stock moved since the
+        // count, so we throw to roll back rather than clamp (which would desync
+        // the entity from the ledger delta already booked above). Landing on
+        // zero flips the lot Consumed.
         if (line.trackedEntityId) {
+          const entity = await trx
+            .selectFrom("trackedEntity")
+            .select(["quantity", "status"])
+            .where("id", "=", line.trackedEntityId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          const settled = resolveCountedEntity({
+            currentQuantity: Number(entity?.quantity ?? 0),
+            delta,
+            currentStatus: entity?.status ?? "Available",
+          });
           await trx
             .updateTable("trackedEntity")
-            .set((eb) => ({ quantity: eb("quantity", "+", delta) }))
+            .set({ quantity: settled.quantity, status: settled.status })
             .where("id", "=", line.trackedEntityId)
             .where("companyId", "=", companyId)
             .execute();

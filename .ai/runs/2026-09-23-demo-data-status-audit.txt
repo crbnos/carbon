@@ -1,0 +1,883 @@
+DEMO DATA STATUS-MATRIX AUDIT — final (satellite)
+Spec: .ai/specs/2026-09-22-demo-data-completeness.md §B; plan Task 14 step 2. Enum labels read from pg_enum for each column's type
+(generated types.ts Enums mirror pg_enum); workflowRun/workflowStepRun statuses from their CHECK constraints.
+
+GAPS FOUND ON THE FIRST AUDIT AND FIXED (all four datasets, validator-pinned):
+  purchasingRfq.status Draft, Closed   -> purchasing.lifecycleRfqs (Draft + Closed/cancelled RFQ); REQUIRED_PURCHASING_RFQ_STATUSES
+  trackedEntity.status Scrapped        -> scrapped lot w/ scrap posting (tier 03 scrapLot); REQUIRED_TRACKED_ENTITY_STATUSES
+  item.revisionStatus Prototype, Production -> ladder active rev promoted to Production, next rung Prototype; validator requires a Prototype rung
+
+Totals: 264 present, 103 absent — all absent classified (a) intentional; (b) open gaps: 0
+
+column                                   value                        state    classification
+--------------------------------------------------------------------------------------------------------------------------------------------
+salesRfq.status                          Draft                        present  
+salesRfq.status                          Ready for Quote              present  
+salesRfq.status                          Closed                       present  
+salesRfq.status                          Quoted                       present  
+quote.status                             Draft                        present  
+quote.status                             Sent                         present  
+quote.status                             Ordered                      present  
+quote.status                             Partial                      present  
+quote.status                             Lost                         present  
+quote.status                             Cancelled                    present  
+quote.status                             Expired                      present  
+quoteLine.status                         Not Started                  present  
+quoteLine.status                         In Progress                  present  
+quoteLine.status                         Complete                     present  
+quoteLine.status                         No Quote                     present  
+salesOrder.status                        Draft                        present  
+salesOrder.status                        Needs Approval               present  
+salesOrder.status                        Confirmed                    present  
+salesOrder.status                        In Progress                  present  
+salesOrder.status                        Completed                    present  
+salesOrder.status                        Invoiced                     present  
+salesOrder.status                        Cancelled                    present  
+salesOrder.status                        Closed                       present  
+salesOrder.status                        To Ship and Invoice          present  
+salesOrder.status                        To Ship                      present  
+salesOrder.status                        To Invoice                   present  
+salesOrderLine.status                    Ordered                      present  
+salesOrderLine.status                    In Progress                  present  
+salesOrderLine.status                    Completed                    present  
+shipment.status                          Draft                        present  
+shipment.status                          Pending                      absent   (a) transient — spec Autonomous Decision 8 (C4): 'Pending' shipment excluded
+shipment.status                          Posted                       present  
+shipment.status                          Voided                       present  
+shipment.sourceDocument                  Sales Order                  present  
+shipment.sourceDocument                  Sales Invoice                absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+shipment.sourceDocument                  Sales Return Order           absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+shipment.sourceDocument                  Purchase Order               absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+shipment.sourceDocument                  Purchase Invoice             absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+shipment.sourceDocument                  Purchase Return Order        present  
+shipment.sourceDocument                  Inbound Transfer             absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+shipment.sourceDocument                  Outbound Transfer            absent   (a) document-type column, outside §B; transfers are seeded as ledger pairs per spec §A tier-03 row, not shipment/receipt docs
+salesInvoice.status                      Draft                        present  
+salesInvoice.status                      Pending                      absent   (a) transient — Decision 8 (C4)
+salesInvoice.status                      Submitted                    present  
+salesInvoice.status                      Return                       absent   (a) outside §B (salesInvoice row lists Draft..Credit Note Issued); flow-only, mirrors C5's purchase 'Return' exclusion (Decision 9)
+salesInvoice.status                      Credit Note Issued           present  
+salesInvoice.status                      Paid                         present  
+salesInvoice.status                      Partially Paid               present  
+salesInvoice.status                      Overdue                      present  
+salesInvoice.status                      Voided                       present  
+salesReturnOrder.status                  Draft                        present  
+salesReturnOrder.status                  To Receive                   present  
+salesReturnOrder.status                  Completed                    present  
+salesReturnOrder.status                  Cancelled                    absent   (a) Decision 8 (C4): 'Cancelled' RMA out of scope
+purchasingRfq.status                     Draft                        present  
+purchasingRfq.status                     Requested                    present  
+purchasingRfq.status                     Closed                       present  
+supplierQuote.status                     Active                       present  
+supplierQuote.status                     Expired                      present  
+supplierQuote.status                     Draft                        present  
+supplierQuote.status                     Declined                     present  
+supplierQuote.status                     Cancelled                    absent   (a) Decision 9 (C5): 'Cancelled' quote flow-only (set by the RFQ cancel action)
+supplierQuote.supplierQuoteType          Purchase                     present  
+supplierQuote.supplierQuoteType          Return                       absent   (a) outside §B (supplierQuote row pins statuses only)
+supplierQuote.supplierQuoteType          Outside Processing           absent   (a) outside §B (supplierQuote row pins statuses only)
+purchaseOrder.status                     Draft                        present  
+purchaseOrder.status                     To Review                    present  
+purchaseOrder.status                     Rejected                     present  
+purchaseOrder.status                     To Receive                   present  
+purchaseOrder.status                     To Receive and Invoice       present  
+purchaseOrder.status                     To Invoice                   present  
+purchaseOrder.status                     Completed                    present  
+purchaseOrder.status                     Closed                       present  
+purchaseOrder.status                     Planned                      present  
+purchaseOrder.status                     Needs Approval               present  
+purchaseOrder.purchaseOrderType          Purchase                     present  
+purchaseOrder.purchaseOrderType          Return                       absent   (a) §B: 'types Purchase + Outside Processing' — Return type not in scope
+purchaseOrder.purchaseOrderType          Outside Processing           present  
+receipt.status                           Draft                        present  
+receipt.status                           Pending                      absent   (a) Decision 9 (C5): 'Pending' receipt transient
+receipt.status                           Posted                       present  
+receipt.status                           Voided                       present  
+receipt.sourceDocument                   Sales Order                  absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Sales Invoice                absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Sales Return Order           present  
+receipt.sourceDocument                   Purchase Order               present  
+receipt.sourceDocument                   Purchase Invoice             absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Purchase Return Order        absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Inbound Transfer             absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Outbound Transfer            absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Manufacturing Consumption    absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+receipt.sourceDocument                   Manufacturing Output         absent   (a) document-type column, outside §B (see shipment.sourceDocument)
+purchaseInvoice.status                   Draft                        present  
+purchaseInvoice.status                   Pending                      absent   (a) Decision 9 (C5)
+purchaseInvoice.status                   Open                         present  
+purchaseInvoice.status                   Return                       absent   (a) Decision 9 (C5): 'Return' invoice flow-only
+purchaseInvoice.status                   Debit Note Issued            present  
+purchaseInvoice.status                   Paid                         present  
+purchaseInvoice.status                   Partially Paid               present  
+purchaseInvoice.status                   Overdue                      present  
+purchaseInvoice.status                   Voided                       present  
+purchaseReturnOrder.status               Draft                        present  
+purchaseReturnOrder.status               To Ship                      present  
+purchaseReturnOrder.status               Completed                    present  
+purchaseReturnOrder.status               Cancelled                    absent   (a) Decision 9 (C5): 'Cancelled' return excluded
+job.status                               Draft                        present  
+job.status                               Ready                        present  
+job.status                               In Progress                  present  
+job.status                               Paused                       present  
+job.status                               Completed                    present  
+job.status                               Cancelled                    present  
+job.status                               Overdue                      absent   (a) deprecated stored status — UI derives it from dueDate (types.ts JobDeadlineType comment; §B 'all 8 seedable')
+job.status                               Due Today                    absent   (a) same as Overdue
+job.status                               Planned                      present  
+job.status                               Closed                       present  
+job.deadlineType                         No Deadline                  present  
+job.deadlineType                         ASAP                         present  
+job.deadlineType                         Soft Deadline                present  
+job.deadlineType                         Hard Deadline                present  
+jobOperation.status                      Canceled                     present  
+jobOperation.status                      Done                         present  
+jobOperation.status                      In Progress                  present  
+jobOperation.status                      Paused                       present  
+jobOperation.status                      Ready                        present  
+jobOperation.status                      Todo                         present  
+jobOperation.status                      Waiting                      present  
+jobOperationBatch.status                 Planned                      absent   (a) §B: 'one Active jobOperationBatch'
+jobOperationBatch.status                 Active                       present  
+jobOperationBatch.status                 Completing                   absent   (a) §B: 'one Active jobOperationBatch'
+jobOperationBatch.status                 Completed                    absent   (a) §B: 'one Active jobOperationBatch'
+productionQuantity.type                  Rework                       present  
+productionQuantity.type                  Scrap                        present  
+productionQuantity.type                  Production                   present  
+productionEvent.type                     Setup                        present  
+productionEvent.type                     Labor                        present  
+productionEvent.type                     Machine                      present  
+pickingList.status                       Draft                        absent   (a) §B: 'pickingList: In Progress + Completed'
+pickingList.status                       In Progress                  present  
+pickingList.status                       Completed                    present  
+pickingList.status                       Cancelled                    absent   (a) §B: 'pickingList: In Progress + Completed'
+pickingList.status                       Partial                      absent   (a) §B: 'pickingList: In Progress + Completed'
+pickingListLine.status                   Pending                      present  
+pickingListLine.status                   Picked                       present  
+pickingListLine.status                   Short                        present  
+pickingListLine.status                   Cancelled                    absent   (a) §B: 'lines Pending/Picked/Short'
+stockTransfer.status                     Draft                        present  
+stockTransfer.status                     Released                     present  
+stockTransfer.status                     In Progress                  absent   (a) spec §A tier-03 row: stockTransfer (Draft/Released/Completed)
+stockTransfer.status                     Completed                    present  
+warehouseTransfer.status                 Draft                        present  
+warehouseTransfer.status                 To Ship and Receive          absent   (a) spec §A tier-03 row: warehouseTransfer (Draft/To Ship/Completed)
+warehouseTransfer.status                 To Ship                      present  
+warehouseTransfer.status                 To Receive                   absent   (a) spec §A tier-03 row: warehouseTransfer (Draft/To Ship/Completed)
+warehouseTransfer.status                 Completed                    present  
+warehouseTransfer.status                 Cancelled                    absent   (a) spec §A tier-03 row: warehouseTransfer (Draft/To Ship/Completed)
+inventoryCount.status                    Draft                        present  
+inventoryCount.status                    Pending                      absent   (a) §B: 'inventoryCount: Draft + Posted'
+inventoryCount.status                    Posted                       present  
+trackedEntity.status                     Available                    present  
+trackedEntity.status                     Reserved                     present  
+trackedEntity.status                     On Hold                      present  
+trackedEntity.status                     Consumed                     present  
+trackedEntity.status                     Rejected                     present  
+trackedEntity.status                     Scrapped                     present  
+nonConformance.status                    Registered                   present  
+nonConformance.status                    In Progress                  present  
+nonConformance.status                    Closed                       present  
+nonConformance.priority                  Low                          present  
+nonConformance.priority                  Medium                       present  
+nonConformance.priority                  High                         present  
+nonConformance.priority                  Critical                     present  
+nonConformance.source                    Internal                     present  
+nonConformance.source                    External                     present  
+nonConformanceActionTask.status          Pending                      present  
+nonConformanceActionTask.status          In Progress                  present  
+nonConformanceActionTask.status          Completed                    present  
+nonConformanceActionTask.status          Skipped                      absent   (a) optional — validate.ts REQUIRED_NCR_* comment: nothing in the issue flow requires skipping a task
+inspection.status                        Pending                      absent   (a) Decision 11 (C7): lot seeded Partial; Failed validator-forbidden (would need a post-nonconformance write-off); §B asks Passed+Failed SAMPLES (present)
+inspection.status                        In Progress                  absent   (a) Decision 11 (C7): lot seeded Partial; Failed validator-forbidden (would need a post-nonconformance write-off); §B asks Passed+Failed SAMPLES (present)
+inspection.status                        Passed                       absent   (a) Decision 11 (C7): lot seeded Partial; Failed validator-forbidden (would need a post-nonconformance write-off); §B asks Passed+Failed SAMPLES (present)
+inspection.status                        Failed                       absent   (a) Decision 11 (C7): lot seeded Partial; Failed validator-forbidden (would need a post-nonconformance write-off); §B asks Passed+Failed SAMPLES (present)
+inspection.status                        Partial                      present  
+inspectionSample.status                  Pending                      absent   (a) §B: 'Passed + Failed samples'
+inspectionSample.status                  Passed                       present  
+inspectionSample.status                  Failed                       present  
+qualityDocument.status                   Draft                        present  
+qualityDocument.status                   Active                       present  
+qualityDocument.status                   Archived                     present  
+gauge.gaugeCalibrationStatus             Pending                      present  
+gauge.gaugeCalibrationStatus             In-Calibration               present  
+gauge.gaugeCalibrationStatus             Out-of-Calibration           present  
+gauge.gaugeStatus                        Active                       present  
+gauge.gaugeStatus                        Inactive                     present  
+gauge.gaugeRole                          Master                       present  
+gauge.gaugeRole                          Standard                     present  
+gaugeCalibrationRecord.inspectionStatus  Pass                         present  
+gaugeCalibrationRecord.inspectionStatus  Fail                         present  
+riskRegister.status                      Open                         present  
+riskRegister.status                      In Review                    present  
+riskRegister.status                      Mitigating                   present  
+riskRegister.status                      Closed                       present  
+riskRegister.status                      Accepted                     present  
+riskRegister.source                      Customer                     present  
+riskRegister.source                      General                      present  
+riskRegister.source                      Item                         present  
+riskRegister.source                      Job                          present  
+riskRegister.source                      Quote Line                   absent   (a) Decision 11 (C7): sources Customer/Supplier/Item/Job/General; §B '≥4 rows'
+riskRegister.source                      Supplier                     present  
+riskRegister.source                      Work Center                  absent   (a) Decision 11 (C7): sources Customer/Supplier/Item/Job/General; §B '≥4 rows'
+riskRegister.type                        Risk                         present  
+riskRegister.type                        Opportunity                  present  
+changeOrder.status                       Draft                        present  
+changeOrder.status                       Start                        present  
+changeOrder.status                       Engineering Complete         present  
+changeOrder.status                       Implementation               present  
+changeOrder.status                       Done                         present  
+changeOrder.status                       Cancelled                    present  
+changeOrder.priority                     Low                          present  
+changeOrder.priority                     Medium                       present  
+changeOrder.priority                     High                         present  
+changeOrder.priority                     Critical                     absent   (a) outside §B (changeOrder row pins the 6 statuses)
+changeOrder.type                         Engineering                  present  
+changeOrder.type                         Manufacturing                present  
+changeOrder.type                         Documentation                present  
+changeOrderActionTask.status             Pending                      present  
+changeOrderActionTask.status             In Progress                  present  
+changeOrderActionTask.status             Completed                    present  
+changeOrderActionTask.status             Skipped                      present  
+fixedAsset.status                        Draft                        present  
+fixedAsset.status                        Active                       present  
+fixedAsset.status                        Fully Depreciated            present  
+fixedAsset.status                        Disposed                     present  
+fixedAsset.depreciationMethod            Straight Line                present  
+fixedAsset.depreciationMethod            Declining Balance            absent   (a) outside §B (fixedAsset row pins statuses; UoP added by Decision 13)
+fixedAsset.depreciationMethod            Units of Production          present  
+journal.status                           Draft                        present  
+journal.status                           Posted                       present  
+journal.status                           Reversed                     present  
+journal.sourceType                       Manual                       present  
+journal.sourceType                       Purchase Receipt             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Purchase Invoice             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Purchase Return              absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Sales Invoice                absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Sales Shipment               absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Sales Return                 absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Transfer Receipt             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Inventory Adjustment         absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Production Order             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Job Consumption              absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Job Receipt                  absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Production Event             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Job Close                    absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Asset Depreciation           absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Asset Disposal               absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Payment                      absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Credit Memo                  absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Debit Memo                   absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Non-Conformance              absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Inbound Inspection           absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Opening Balance              absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Sales Return Receipt         absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Sales Return Shipment        absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Purchase Return Shipment     absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+journal.sourceType                       Card Transaction             absent   (a) posting-engine source types; journals are hand-authored Manual entries (Decision 13); <null> = the legacy JE-SEED-001
+accountingPeriod.status                  Inactive                     present  
+accountingPeriod.status                  Active                       present  
+accountingPeriod.closeStatus             Open                         present  
+accountingPeriod.closeStatus             Locked                       present  
+accountingPeriod.closeStatus             Closed                       present  
+payment.paymentType                      Receipt                      present  
+payment.paymentType                      Disbursement                 present  
+payment.status                           Draft                        absent   (a) §B: 'payment ×2 types' (both present); Draft/Voided outside §B
+payment.status                           Posted                       present  
+payment.status                           Voided                       absent   (a) §B: 'payment ×2 types' (both present); Draft/Voided outside §B
+memo.direction                           Credit                       present  
+memo.direction                           Debit                        present  
+memo.status                              Draft                        absent   (a) §B: 'memo ×2 directions' (both present); Draft/Voided outside §B
+memo.status                              Posted                       present  
+memo.status                              Voided                       absent   (a) §B: 'memo ×2 directions' (both present); Draft/Voided outside §B
+maintenanceDispatch.status               Open                         present  
+maintenanceDispatch.status               Assigned                     present  
+maintenanceDispatch.status               In Progress                  present  
+maintenanceDispatch.status               Completed                    present  
+maintenanceDispatch.status               Cancelled                    present  
+maintenanceDispatch.priority             Low                          present  
+maintenanceDispatch.priority             Medium                       present  
+maintenanceDispatch.priority             High                         present  
+maintenanceDispatch.priority             Critical                     present  
+maintenanceDispatch.severity             Preventive                   present  
+maintenanceDispatch.severity             Operator Performed           present  
+maintenanceDispatch.severity             Support Required             present  
+maintenanceDispatch.severity             OEM Required                 present  
+maintenanceDispatch.source               Scheduled                    present  
+maintenanceDispatch.source               Reactive                     present  
+maintenanceDispatch.source               Non-Conformance              present  
+maintenanceDispatch.oeeImpact            Down                         present  
+maintenanceDispatch.oeeImpact            Planned                      present  
+maintenanceDispatch.oeeImpact            Impact                       present  
+maintenanceDispatch.oeeImpact            No Impact                    present  
+maintenanceSchedule.frequency            Daily                        present  
+maintenanceSchedule.frequency            Weekly                       present  
+maintenanceSchedule.frequency            Monthly                      present  
+maintenanceSchedule.frequency            Quarterly                    present  
+maintenanceSchedule.frequency            Annual                       present  
+training.status                          Draft                        present  
+training.status                          Active                       present  
+training.status                          Archived                     absent   (a) §B: 'training ≥2 courses'; Decision 14 pins Active + Draft
+training.frequency                       Once                         present  
+training.frequency                       Quarterly                    absent   (a) outside §B
+training.frequency                       Annual                       present  
+training.type                            Mandatory                    present  
+training.type                            Optional                     present  
+trainingQuestion.type                    MultipleChoice               present  
+trainingQuestion.type                    TrueFalse                    present  
+trainingQuestion.type                    MultipleAnswers              present  
+trainingQuestion.type                    MatchingPairs                present  
+trainingQuestion.type                    Numerical                    present  
+workflowRun.status                       Queued                       absent   (a) engine-only transient/in-flight states; §B '≥3 terminal runs' (Decision 10)
+workflowRun.status                       Running                      absent   (a) engine-only transient/in-flight states; §B '≥3 terminal runs' (Decision 10)
+workflowRun.status                       Succeeded                    present  
+workflowRun.status                       Failed                       present  
+workflowRun.status                       Blocked                      absent   (a) engine-only transient/in-flight states; §B '≥3 terminal runs' (Decision 10)
+workflowRun.status                       Skipped                      present  
+workflowStepRun.status                   Running                      absent   (a) engine-only (Running) / condition-branch (Skipped) states; Decision 14 shapes
+workflowStepRun.status                   Succeeded                    present  
+workflowStepRun.status                   Failed                       present  
+workflowStepRun.status                   Skipped                      absent   (a) engine-only (Running) / condition-branch (Skipped) states; Decision 14 shapes
+supplier.supplierStatus                  Active                       present  
+supplier.supplierStatus                  Inactive                     present  
+supplier.supplierStatus                  Pending                      present  
+supplier.supplierStatus                  Rejected                     present  
+itemSupersession.supersessionMode        Consume First                present  
+itemSupersession.supersessionMode        Prefer New                   absent   (a) §B: 'itemSupersession 1 live pair' (Consume First, Task 4)
+itemSupersession.supersessionMode        Stock Only                   absent   (a) §B: 'itemSupersession 1 live pair' (Consume First, Task 4)
+itemSupersession.supersessionMode        No Stock                     absent   (a) §B: 'itemSupersession 1 live pair' (Consume First, Task 4)
+kanban.replenishmentSystem               Buy                          present  
+kanban.replenishmentSystem               Make                         present  
+kanban.replenishmentSystem               Transfer                     present  
+item.type                                Part                         present  
+item.type                                Material                     present  
+item.type                                Tool                         present  
+item.type                                Service                      present  
+item.type                                Consumable                   present  
+item.type                                Fixture                      absent   (a) outside §B (pre-existing catalog)
+item.replenishmentSystem                 Buy                          present  
+item.replenishmentSystem                 Make                         present  
+item.replenishmentSystem                 Buy and Make                 absent   (a) outside §B
+item.itemTrackingType                    Inventory                    present  
+item.itemTrackingType                    Non-Inventory                absent   (a) outside §B
+item.itemTrackingType                    Serial                       present  
+item.itemTrackingType                    Batch                        present  
+item.revisionStatus                      Design                       present  
+item.revisionStatus                      Prototype                    present  
+item.revisionStatus                      Production                   present  
+item.revisionStatus                      Obsolete                     present  
+salesReturnOrderLine.disposition         Conditional Acceptance       absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Deviation Accepted           absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Hold                         absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         No Action Required           absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Pending                      present  
+salesReturnOrderLine.disposition         Quarantine                   absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Repair                       absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Return to Supplier           absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Rework                       absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Scrap                        absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Use As Is                    absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+salesReturnOrderLine.disposition         Return to Customer           absent   (a) outside §B; Completed+Pending is a real app state — sales.service.ts setSalesReturnOrderLineDisposition: post-receipt auto-completes the RMA and 'disposition is a post-receipt decision'
+
+============================================================================================================================================
+RAW AUDIT OUTPUT (per-value row counts in brackets) + LIST-SCREEN COUNTS
+============================================================================================================================================
+Company: dapnjkh860gjckkl52t0 (demo-audit@carbon.local)   generated 2026-09-23T07:19Z
+
+################ STATUS MATRIX ################
+== salesRfq.status (salesRfqStatus)   [Closed=1 Draft=1 Quoted=1 Ready for Quote=1 ]
+   present  Draft
+   present  Ready for Quote
+   present  Closed
+   present  Quoted
+== quote.status (quoteStatus)   [Cancelled=1 Draft=1 Expired=1 Lost=1 Ordered=2 Partial=1 Sent=1 ]
+   present  Draft
+   present  Sent
+   present  Ordered
+   present  Partial
+   present  Lost
+   present  Cancelled
+   present  Expired
+== quoteLine.status (quoteLineStatus)   [Complete=7 In Progress=1 No Quote=1 Not Started=1 ]
+   present  Not Started
+   present  In Progress
+   present  Complete
+   present  No Quote
+== salesOrder.status (salesOrderStatus)   [Cancelled=1 Closed=3 Completed=1 Confirmed=2 Draft=1 In Progress=2 Invoiced=3 Needs Approval=1 To Invoice=2 To Ship=2 To Ship and Invoice=2 ]
+   present  Draft
+   present  Needs Approval
+   present  Confirmed
+   present  In Progress
+   present  Completed
+   present  Invoiced
+   present  Cancelled
+   present  Closed
+   present  To Ship and Invoice
+   present  To Ship
+   present  To Invoice
+== salesOrderLine.status (salesOrderLineStatus)   [Completed=9 In Progress=3 Ordered=11 ]
+   present  Ordered
+   present  In Progress
+   present  Completed
+== shipment.status (shipmentStatus)   [Draft=1 Posted=3 Voided=1 ]
+   present  Draft
+   ABSENT   Pending
+   present  Posted
+   present  Voided
+== shipment.sourceDocument (shipmentSourceDocument)   [Purchase Return Order=1 Sales Order=4 ]
+   present  Sales Order
+   ABSENT   Sales Invoice
+   ABSENT   Sales Return Order
+   ABSENT   Purchase Order
+   ABSENT   Purchase Invoice
+   present  Purchase Return Order
+   ABSENT   Inbound Transfer
+   ABSENT   Outbound Transfer
+== salesInvoice.status (salesInvoiceStatus)   [Credit Note Issued=1 Draft=1 Overdue=1 Paid=1 Partially Paid=1 Submitted=1 Voided=1 ]
+   present  Draft
+   ABSENT   Pending
+   present  Submitted
+   ABSENT   Return
+   present  Credit Note Issued
+   present  Paid
+   present  Partially Paid
+   present  Overdue
+   present  Voided
+== salesInvoices.status (text)   [Credit Note Issued=1 Draft=1 Overdue=1 Paid=1 Partially Paid=1 Submitted=1 Voided=1 ]
+== salesReturnOrder.status (salesReturnOrderStatus)   [Completed=1 Draft=1 To Receive=1 ]
+   present  Draft
+   present  To Receive
+   present  Completed
+   ABSENT   Cancelled
+== purchasingRfq.status (purchasingRfqStatus)   [Closed=1 Draft=1 Requested=1 ]
+   present  Draft
+   present  Requested
+   present  Closed
+== supplierQuote.status (supplierQuoteStatus)   [Active=3 Declined=1 Draft=1 Expired=1 ]
+   present  Active
+   present  Expired
+   present  Draft
+   present  Declined
+   ABSENT   Cancelled
+== supplierQuote.supplierQuoteType (purchaseOrderType)   [Purchase=6 ]
+   present  Purchase
+   ABSENT   Return
+   ABSENT   Outside Processing
+== purchaseOrder.status (purchaseOrderStatus)   [Closed=2 Completed=4 Draft=1 Needs Approval=1 Planned=1 Rejected=1 To Invoice=2 To Receive=3 To Receive and Invoice=1 To Review=1 ]
+   present  Draft
+   present  To Review
+   present  Rejected
+   present  To Receive
+   present  To Receive and Invoice
+   present  To Invoice
+   present  Completed
+   present  Closed
+   present  Planned
+   present  Needs Approval
+== purchaseOrder.purchaseOrderType (purchaseOrderType)   [Outside Processing=1 Purchase=16 ]
+   present  Purchase
+   ABSENT   Return
+   present  Outside Processing
+== receipt.status (receiptStatus)   [Draft=1 Posted=3 Voided=1 ]
+   present  Draft
+   ABSENT   Pending
+   present  Posted
+   present  Voided
+== receipt.sourceDocument (receiptSourceDocument)   [Purchase Order=4 Sales Return Order=1 ]
+   ABSENT   Sales Order
+   ABSENT   Sales Invoice
+   present  Sales Return Order
+   present  Purchase Order
+   ABSENT   Purchase Invoice
+   ABSENT   Purchase Return Order
+   ABSENT   Inbound Transfer
+   ABSENT   Outbound Transfer
+   ABSENT   Manufacturing Consumption
+   ABSENT   Manufacturing Output
+== purchaseInvoice.status (purchaseInvoiceStatus)   [Debit Note Issued=1 Draft=1 Open=1 Overdue=1 Paid=1 Partially Paid=1 Voided=1 ]
+   present  Draft
+   ABSENT   Pending
+   present  Open
+   ABSENT   Return
+   present  Debit Note Issued
+   present  Paid
+   present  Partially Paid
+   present  Overdue
+   present  Voided
+== purchaseInvoices.status (text)   [Debit Note Issued=1 Draft=1 Open=1 Overdue=1 Paid=1 Partially Paid=1 Voided=1 ]
+== purchaseReturnOrder.status (purchaseReturnOrderStatus)   [Completed=1 Draft=1 To Ship=1 ]
+   present  Draft
+   present  To Ship
+   present  Completed
+   ABSENT   Cancelled
+== job.status (jobStatus)   [Cancelled=1 Closed=1 Completed=1 Draft=1 In Progress=1 Paused=1 Planned=1 Ready=1 ]
+   present  Draft
+   present  Ready
+   present  In Progress
+   present  Paused
+   present  Completed
+   present  Cancelled
+   ABSENT   Overdue
+   ABSENT   Due Today
+   present  Planned
+   present  Closed
+== job.deadlineType (deadlineType)   [ASAP=1 Hard Deadline=5 No Deadline=1 Soft Deadline=1 ]
+   present  No Deadline
+   present  ASAP
+   present  Soft Deadline
+   present  Hard Deadline
+== jobOperation.status (jobOperationStatus)   [Canceled=2 Done=7 In Progress=1 Paused=5 Ready=53 Todo=12 Waiting=1 ]
+   present  Canceled
+   present  Done
+   present  In Progress
+   present  Paused
+   present  Ready
+   present  Todo
+   present  Waiting
+== jobOperationBatch.status (jobOperationBatchStatus)   [Active=1 ]
+   ABSENT   Planned
+   present  Active
+   ABSENT   Completing
+   ABSENT   Completed
+== productionQuantity.type (productionQuantityType)   [Production=1 Rework=1 Scrap=1 ]
+   present  Rework
+   present  Scrap
+   present  Production
+== productionEvent.type (productionEventType)   [Labor=2 Machine=2 Setup=3 ]
+   present  Setup
+   present  Labor
+   present  Machine
+== pickingList.status (pickingListStatus)   [Completed=1 In Progress=1 ]
+   ABSENT   Draft
+   present  In Progress
+   present  Completed
+   ABSENT   Cancelled
+   ABSENT   Partial
+== pickingListLine.status (pickingListLineStatus)   [Pending=1 Picked=2 Short=1 ]
+   present  Pending
+   present  Picked
+   present  Short
+   ABSENT   Cancelled
+== stockTransfer.status (stockTransferStatus)   [Completed=1 Draft=1 Released=1 ]
+   present  Draft
+   present  Released
+   ABSENT   In Progress
+   present  Completed
+== warehouseTransfer.status (warehouseTransferStatus)   [Completed=1 Draft=1 To Ship=1 ]
+   present  Draft
+   ABSENT   To Ship and Receive
+   present  To Ship
+   ABSENT   To Receive
+   present  Completed
+   ABSENT   Cancelled
+== inventoryCount.status (inventoryCountStatus)   [Draft=1 Posted=1 ]
+   present  Draft
+   ABSENT   Pending
+   present  Posted
+== trackedEntity.status (trackedEntityStatus)   [Available=10 Consumed=6 On Hold=1 Rejected=1 Reserved=32 Scrapped=1 ]
+   present  Available
+   present  Reserved
+   present  On Hold
+   present  Consumed
+   present  Rejected
+   present  Scrapped
+== nonConformance.status (nonConformanceStatus)   [Closed=1 In Progress=2 Registered=2 ]
+   present  Registered
+   present  In Progress
+   present  Closed
+== nonConformance.priority (nonConformancePriority)   [Critical=1 High=1 Low=1 Medium=2 ]
+   present  Low
+   present  Medium
+   present  High
+   present  Critical
+== nonConformance.source (nonConformanceSource)   [External=2 Internal=3 ]
+   present  Internal
+   present  External
+== nonConformanceActionTask.status (nonConformanceTaskStatus)   [Completed=4 In Progress=1 Pending=2 ]
+   present  Pending
+   present  In Progress
+   present  Completed
+   ABSENT   Skipped
+== inspection.status (inspectionStatusType)   [Partial=1 ]
+   ABSENT   Pending
+   ABSENT   In Progress
+   ABSENT   Passed
+   ABSENT   Failed
+   present  Partial
+== inspectionSample.status (inspectionSampleStatusType)   [Failed=1 Passed=1 ]
+   ABSENT   Pending
+   present  Passed
+   present  Failed
+== qualityDocument.status (qualityDocumentStatus)   [Active=1 Archived=1 Draft=1 ]
+   present  Draft
+   present  Active
+   present  Archived
+== gauge.gaugeCalibrationStatus (gaugeCalibrationStatus)   [In-Calibration=1 Out-of-Calibration=1 Pending=1 ]
+   present  Pending
+   present  In-Calibration
+   present  Out-of-Calibration
+== gauge.gaugeStatus (gaugeStatus)   [Active=2 Inactive=1 ]
+   present  Active
+   present  Inactive
+== gauge.gaugeRole (gaugeRole)   [Master=1 Standard=2 ]
+   present  Master
+   present  Standard
+== gaugeCalibrationRecord.inspectionStatus (inspectionStatus)   [Fail=1 Pass=3 ]
+   present  Pass
+   present  Fail
+== riskRegister.status (riskStatus)   [Accepted=1 Closed=1 In Review=1 Mitigating=1 Open=1 ]
+   present  Open
+   present  In Review
+   present  Mitigating
+   present  Closed
+   present  Accepted
+== riskRegister.source (riskSource)   [Customer=1 General=1 Item=1 Job=1 Supplier=1 ]
+   present  Customer
+   present  General
+   present  Item
+   present  Job
+   ABSENT   Quote Line
+   present  Supplier
+   ABSENT   Work Center
+== riskRegister.type (riskRegisterType)   [Opportunity=1 Risk=4 ]
+   present  Risk
+   present  Opportunity
+== changeOrder.status (changeOrderStatus)   [Cancelled=1 Done=1 Draft=1 Engineering Complete=1 Implementation=1 Start=1 ]
+   present  Draft
+   present  Start
+   present  Engineering Complete
+   present  Implementation
+   present  Done
+   present  Cancelled
+== changeOrder.priority (nonConformancePriority)   [High=1 Low=1 Medium=1 <null>=3 ]
+   present  Low
+   present  Medium
+   present  High
+   ABSENT   Critical
+== changeOrder.type (changeOrderTypeEnum)   [Documentation=1 Engineering=4 Manufacturing=1 ]
+   present  Engineering
+   present  Manufacturing
+   present  Documentation
+== changeOrderActionTask.status (changeOrderTaskStatus)   [Completed=2 In Progress=2 Pending=1 Skipped=1 ]
+   present  Pending
+   present  In Progress
+   present  Completed
+   present  Skipped
+== fixedAsset.status (fixedAssetStatus)   [Active=3 Disposed=1 Draft=1 Fully Depreciated=1 ]
+   present  Draft
+   present  Active
+   present  Fully Depreciated
+   present  Disposed
+== fixedAsset.depreciationMethod (depreciationMethod)   [Straight Line=5 Units of Production=1 ]
+   present  Straight Line
+   ABSENT   Declining Balance
+   present  Units of Production
+== journal.status (journalEntryStatus)   [Draft=1 Posted=3 Reversed=1 ]
+   present  Draft
+   present  Posted
+   present  Reversed
+== journal.sourceType (journalEntrySourceType)   [Manual=4 <null>=1 ]
+   present  Manual
+   ABSENT   Purchase Receipt
+   ABSENT   Purchase Invoice
+   ABSENT   Purchase Return
+   ABSENT   Sales Invoice
+   ABSENT   Sales Shipment
+   ABSENT   Sales Return
+   ABSENT   Transfer Receipt
+   ABSENT   Inventory Adjustment
+   ABSENT   Production Order
+   ABSENT   Job Consumption
+   ABSENT   Job Receipt
+   ABSENT   Production Event
+   ABSENT   Job Close
+   ABSENT   Asset Depreciation
+   ABSENT   Asset Disposal
+   ABSENT   Payment
+   ABSENT   Credit Memo
+   ABSENT   Debit Memo
+   ABSENT   Non-Conformance
+   ABSENT   Inbound Inspection
+   ABSENT   Opening Balance
+   ABSENT   Sales Return Receipt
+   ABSENT   Sales Return Shipment
+   ABSENT   Purchase Return Shipment
+   ABSENT   Card Transaction
+== accountingPeriod.status (accountingPeriodStatus)   [Active=1 Inactive=11 ]
+   present  Inactive
+   present  Active
+== accountingPeriod.closeStatus (periodCloseStatus)   [Closed=2 Locked=1 Open=9 ]
+   present  Open
+   present  Locked
+   present  Closed
+== payment.paymentType (paymentType)   [Disbursement=3 Receipt=3 ]
+   present  Receipt
+   present  Disbursement
+== payment.status (paymentStatus)   [Posted=6 ]
+   ABSENT   Draft
+   present  Posted
+   ABSENT   Voided
+== memo.direction (memoDirection)   [Credit=1 Debit=1 ]
+   present  Credit
+   present  Debit
+== memo.status (memoStatus)   [Posted=2 ]
+   ABSENT   Draft
+   present  Posted
+   ABSENT   Voided
+== maintenanceDispatch.status (maintenanceDispatchStatus)   [Assigned=1 Cancelled=1 Completed=1 In Progress=1 Open=1 ]
+   present  Open
+   present  Assigned
+   present  In Progress
+   present  Completed
+   present  Cancelled
+== maintenanceDispatch.priority (maintenanceDispatchPriority)   [Critical=1 High=1 Low=1 Medium=2 ]
+   present  Low
+   present  Medium
+   present  High
+   present  Critical
+== maintenanceDispatch.severity (maintenanceSeverity)   [OEM Required=1 Operator Performed=1 Preventive=2 Support Required=1 ]
+   present  Preventive
+   present  Operator Performed
+   present  Support Required
+   present  OEM Required
+== maintenanceDispatch.source (maintenanceSource)   [Non-Conformance=1 Reactive=2 Scheduled=2 ]
+   present  Scheduled
+   present  Reactive
+   present  Non-Conformance
+== maintenanceDispatch.oeeImpact (oeeImpact)   [Down=1 Impact=1 No Impact=1 Planned=2 ]
+   present  Down
+   present  Planned
+   present  Impact
+   present  No Impact
+== maintenanceSchedule.frequency (maintenanceFrequency)   [Annual=1 Daily=1 Monthly=1 Quarterly=1 Weekly=1 ]
+   present  Daily
+   present  Weekly
+   present  Monthly
+   present  Quarterly
+   present  Annual
+== training.status (trainingStatus)   [Active=2 Draft=1 ]
+   present  Draft
+   present  Active
+   ABSENT   Archived
+== training.frequency (trainingFrequency)   [Annual=1 Once=2 ]
+   present  Once
+   ABSENT   Quarterly
+   present  Annual
+== training.type (trainingType)   [Mandatory=2 Optional=1 ]
+   present  Mandatory
+   present  Optional
+== trainingQuestion.type (trainingQuestionType)   [MatchingPairs=1 MultipleAnswers=1 MultipleChoice=2 Numerical=2 TrueFalse=2 ]
+   present  MultipleChoice
+   present  TrueFalse
+   present  MultipleAnswers
+   present  MatchingPairs
+   present  Numerical
+== workflowRun.status (text CHECK)   [Failed=1 Skipped=1 Succeeded=1 ]
+   ABSENT   Queued
+   ABSENT   Running
+   present  Succeeded
+   present  Failed
+   ABSENT   Blocked
+   present  Skipped
+== workflowStepRun.status (text CHECK)   [Failed=1 Succeeded=3 ]
+   ABSENT   Running
+   present  Succeeded
+   present  Failed
+   ABSENT   Skipped
+== supplier.supplierStatus (supplierStatusType)   [Active=1 Inactive=1 <null>=7 Pending=1 Rejected=1 ]
+   present  Active
+   present  Inactive
+   present  Pending
+   present  Rejected
+== itemSupersession.supersessionMode (supersessionMode)   [Consume First=1 ]
+   present  Consume First
+   ABSENT   Prefer New
+   ABSENT   Stock Only
+   ABSENT   No Stock
+== kanban.replenishmentSystem (kanbanReplenishmentSystem)   [Buy=3 Make=1 Transfer=1 ]
+   present  Buy
+   present  Make
+   present  Transfer
+== item.type (itemType)   [Consumable=2 Material=6 Part=26 Service=1 Tool=2 ]
+   present  Part
+   present  Material
+   present  Tool
+   present  Service
+   present  Consumable
+   ABSENT   Fixture
+== item.replenishmentSystem (itemReplenishmentSystem)   [Buy=23 Make=14 ]
+   present  Buy
+   present  Make
+   ABSENT   Buy and Make
+== item.itemTrackingType (itemTrackingType)   [Batch=2 Inventory=33 Serial=2 ]
+   present  Inventory
+   ABSENT   Non-Inventory
+   present  Serial
+   present  Batch
+== item.revisionStatus (itemRevisionStatus)   [Design=34 Obsolete=1 Production=1 Prototype=1 ]
+   present  Design
+   present  Prototype
+   present  Production
+   present  Obsolete
+== salesReturnOrderLine.disposition (disposition)   [Pending=3 ]
+   ABSENT   Conditional Acceptance
+   ABSENT   Deviation Accepted
+   ABSENT   Hold
+   ABSENT   No Action Required
+   present  Pending
+   ABSENT   Quarantine
+   ABSENT   Repair
+   ABSENT   Return to Supplier
+   ABSENT   Rework
+   ABSENT   Scrap
+   ABSENT   Use As Is
+   ABSENT   Return to Customer
+
+ABSENT enum values (before classification): 103
+
+################ LIST-SCREEN COUNTS (views where the app lists from a view) ################
+  OK    Parts (parts)                                  23
+  OK    Materials (materials)                           6
+  OK    Tools (tools)                                   2
+  OK    Consumables (consumables)                       2
+  OK    Services (services)                             1
+  OK    Customers (customers)                           4
+  OK    Suppliers (suppliers)                          11
+  OK    Sales RFQs ("salesRfqs")                        4
+  OK    Quotes (quotes)                                 8
+  OK    Sales orders ("salesOrders")                   20
+  OK    Sales invoices ("salesInvoices")                7
+  OK    Shipments (shipment)                            5
+  OK    Sales returns ("salesReturnOrders")             3
+  OK    Purchasing RFQs ("purchasingRfqs")              3
+  OK    Supplier quotes ("supplierQuotes")              6
+  OK    Purchase orders ("purchaseOrders")             17
+  OK    Purchase invoices ("purchaseInvoices")          7
+  OK    Receipts (view) (receipts)                      5
+  OK    Receipts (table, list svc) (receipt)            5
+  OK    Purchase returns ("purchaseReturnOrders")       3
+  OK    Jobs (jobs)                                     8
+  OK    Picking lists ("pickingLists")                  2
+  OK    Stock transfers ("stockTransfer")               3
+  OK    Warehouse transfers ("warehouseTransfer")       3
+  OK    Inventory counts ("inventoryCount")             2
+  OK    Kanbans (kanbans)                               5
+  OK    Tracked entities ("trackedEntity")             51
+  OK    Issues (NCR) (issues)                           5
+  OK    Inspections (inspection)                        1
+  OK    Quality documents ("qualityDocuments")          2
+  OK    Gauges (gauges)                                 3
+  OK    Gauge calibrations ("gaugeCalibrationRecords")      4
+  OK    Risks ("riskRegisters")                         5
+  OK    Change orders ("changeOrders")                  6
+  OK    Maintenance dispatches ("maintenanceDispatch")      5
+  OK    Maintenance schedules ("maintenanceSchedule")      5
+  OK    Trainings (trainings)                           3
+  OK    Timecards ("timeCardEntry")                     6
+  OK    Fixed assets ("fixedAsset")                     6
+  OK    Journal entries ("journalEntries")              5
+  OK    Payments (payment)                              6
+  OK    Memos (memo)                                    2
+  OK    Accounting periods ("accountingPeriod")        12
+  OK    Workflow runs ("workflowRun")                   3
+  OK    Workflows (workflow)                            7

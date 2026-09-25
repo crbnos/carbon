@@ -25,6 +25,17 @@ many times — read the newest, not the first match.
 Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
 `.ai/plans/2026-08-19-schedule-in-process-node.md`.
 
+**Capable-to-promise on a quote** (`quote-lead-time.ts`,
+`runQuoteLeadTimeWhatIf`): the pure `WorkCenterSelector` is driven with SYNTHETIC
+ops built from a quote line's routing/BOM (`buildQuoteSimulation`), placed per
+quantity against TWO `buildFiniteContext` snapshots — queued (`excludeJobIds:
+[]`) and front-of-queue (whole batch excluded, like the expedite what-if). A
+purchased/short-stock material sets the optional `materialReadyAt` floor on its
+consuming op (never set on jobs, so live scheduling is unchanged). Persists
+nothing; `buildFiniteContext` + `loadAvailabilityWindows` were lifted out of the
+engine into `finite-context.ts` so the engine and this what-if cannot drift.
+Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
+
 ## Where it lives
 
 - **Orchestration:** `packages/planning/src/scheduling/run-schedule.ts`
@@ -531,3 +542,8 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   not even notify — it only re-sequences `workCenterId` + `priority`. The dates board
   notifies (`notifyScheduleInputsChanged`), and the debounced wave regenerates the whole
   location. The MES board is display/drag-only.
+- The selector MUTATES each context's reservation arrays as it places, so the quote
+  what-if runs every simulation on a `cloneFiniteContext` copy (`quote-lead-time.ts`) —
+  reusing one context across quantities/scenarios would let earlier runs' placements
+  bleed into later ones. One `WorkCenterSelector` instance is fine (it resets
+  `plannedReservations` per call), but the CONTEXT must be cloned per run.

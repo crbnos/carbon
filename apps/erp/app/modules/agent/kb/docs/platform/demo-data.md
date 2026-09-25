@@ -2,7 +2,9 @@
 
 > Fill a company with a realistic industry story, so every screen has something in it, and put back exactly what was there before with one click.
 
-Demo data fills a company with a full, coherent industry story: items with BOMs and routings, customers and suppliers, quotes, orders, jobs, inspections, change orders and ledger entries. Every list screen has rows and every detail screen opens, which makes it the fastest way to explore Carbon, demo it, or test against realistic data. You apply it from **Settings → Demo Data**, or pick it at sign-up as **"Use a demo template"**.
+Demo data fills a company with a full, coherent industry story: items with BOMs and routings, customers and suppliers, quotes, orders and returns, jobs and picking lists, inspections, non-conformances and gauges, change orders, maintenance and training, timecards, the accounting side with posted journals, payments and accounting periods, and a busy shop floor with its schedule and material plan.
+
+Every list screen has rows and every detail screen opens, which makes it the fastest way to explore Carbon, demo it, or test against realistic data. You apply it from **Settings → Demo Data**, or pick it at sign-up as **"Use a demo template"**.
 
 ## The templates
 
@@ -15,11 +17,27 @@ Each template tells one industry's story, end to end, across sales, purchasing, 
 
 Every seeded date is relative to the day you apply the template, so the company always looks live: recent orders, jobs in progress, upcoming due dates. Parts come with real thumbnails, and each industry includes a 3D assembly you can open in the viewer.
 
+Records show up in the statuses you meet in daily work, not only the happy path. You get lost and expired quotes, partly shipped orders, paid and partially paid invoices, voided receipts, closed accounting periods, and workflows with succeeded, failed and skipped runs in their history.
+
+The stock movements and payment settlements behind those statuses are filled in too, so on-hand quantities and invoice balances agree. Every posted invoice, payment, memo, receipt and shipment also carries its journal entry, so the income statement, balance sheet and receivables aging show real numbers.
+
+The shop floor looks like a working day. Jobs are due over the next three weeks across every work center, some operations are running right now, and a few jobs finished recently.
+
+You are the employee on the floor: you get a job, a shift, people assignments and an open time card. Sales and storage rules, purchase approval rules with requests waiting for you, and customer portals are set up as well. The templates add no uploaded files, so `docs/reference/documents` starts empty.
+
 Demo data is seeded fresh from Carbon's own dataset definitions each time, not imported from a stored backup file. That's why it always matches the current version of the app. To stand a company up from another company's actual data, use a `docs/platform/backups` instead.
 
 ## Apply a template
 
 On **Settings → Demo Data**, the "Apply a demo template" card lists the templates; select **"Apply"** on one. It is safe to try on a company that already has data: Carbon saves a copy of your current data first, then replaces it with the demo story. The page shows each phase as it runs, from **"Saving a copy of your current data"** through **"Adding demo records"**, and it keeps running if you leave the page.
+
+Right after the demo data is applied, Carbon runs MRP and scheduling once over the company in the background. That run is what fills Material Planning, Demand Forecasts, Scheduling and Priorities, so those screens can take a moment longer than the rest. If it fails, the demo data still stands and MRP catches up on its regular run every three hours.
+
+Two kinds of records can never be deleted, so Carbon refuses to apply a template over them and writes nothing.
+
+A company with intercompany customers or suppliers fails with "Seed: this company trades with other companies in its group (N intercompany customer/supplier record(s)). Demo data can only be applied to a company without intercompany partners."
+
+A company with posted card transactions fails with "Seed: this company has N posted or voided card transaction(s), which cannot be deleted. Demo data can only be applied to a company without posted card transactions."
 
 When it finishes, the **"Demo data applied"** card asks you to decide:
 
@@ -58,6 +76,21 @@ Only one demo-data change can be open per company. Resolve the pending one first
 
 ### Applying failed with an error
 Applying is all-or-nothing: a failure writes no rows and your data is unchanged. The card shows the job's error next to "Failed"; Dismiss clears it, and you can apply again.
+
+### Applying failed with "Seed: this company trades with other companies in its group"
+Expected refusal. The company has customers or suppliers linked to another company in its group (intercompany partners), which the demo-data wipe cannot remove. Nothing was written. Apply the template to a company without intercompany partners.
+
+### Applying failed with "Seed: this company has N posted or voided card transaction(s)"
+Expected refusal. Posted and voided card transactions cannot be deleted, so the demo-data wipe cannot clear the company. Nothing was written. Apply the template to a company without posted card transactions.
+
+### Material Planning, Scheduling or Priorities are empty right after applying
+Planning runs as a separate background step once the demo data is committed: MRP for the company, then scheduling for every location with Ready, In Progress or Paused jobs. Give it a moment. If that step failed, the demo data stays and MRP fills in on its regular run every three hours.
+
+### The Webhooks, API keys or Audit log screens are empty after applying
+Expected. Templates never seed credentials, webhooks or audit history, and applying a template leaves any existing webhooks and API keys in place.
+
+### The Documents list is empty after applying a template
+Expected. Templates seed records, not files: no uploads are added, so Documents and file attachments stay empty. Part thumbnails and the 3D assembly ship with the app rather than as uploaded files.
 
 ### The demo dates look recent — is that real activity?
 Yes, by design: every seeded date is relative to the day the template was applied, so the company always looks live with recent orders and jobs in progress.

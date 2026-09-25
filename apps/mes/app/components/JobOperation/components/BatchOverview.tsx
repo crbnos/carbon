@@ -19,7 +19,7 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { formatDate, groupBy } from "@carbon/utils";
+import { formatDate, groupBy, round } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Fragment, Suspense, useCallback, useState } from "react";
@@ -645,7 +645,7 @@ export function BatchOverview({
                             leftIcon={<LuGitBranchPlus />}
                             onClick={() => onIssue(pickFrom)}
                           >
-                            <Trans>Pick {m.required - m.issued}</Trans>
+                            <Trans>Pick {round(m.required - m.issued)}</Trans>
                           </Button>
                         ) : null;
                         return (

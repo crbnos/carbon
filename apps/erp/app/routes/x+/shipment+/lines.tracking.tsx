@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { round } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 
@@ -159,7 +160,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (trackingType === "batch") {
     const quantity = Number(formData.get("quantity"));
 
-    if (trackedEntity.quantity < quantity) {
+    // Rounded: a lot holding 0.020000000000000018 after an earlier split has
+    // enough for a 0.02 assignment, and a raw compare rejects it.
+    if (round(trackedEntity.quantity) < round(quantity)) {
       return data(
         { success: false, error: "Batch has insufficient quantity" },
         await flash(request, error("Batch has insufficient quantity"))

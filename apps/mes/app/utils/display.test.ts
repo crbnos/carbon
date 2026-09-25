@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import type { DisplayDispatch, DisplaySchedule } from "./display";
 import {
+  decimalInput,
   formatElapsed,
   formatRelativeDue,
   getInitials,
@@ -391,5 +392,28 @@ describe("getProgress", () => {
   it("returns null when there is no quantity to measure against", () => {
     expect(getProgress(5, 0)).toBeNull();
     expect(getProgress(5, null)).toBeNull();
+  });
+});
+
+describe("decimalInput", () => {
+  it("keeps a valid decimal", () => {
+    expect(decimalInput("0.5")).toBe("0.5");
+  });
+
+  it("keeps only the first decimal point", () => {
+    expect(decimalInput("1.2.3")).toBe("1.23");
+  });
+
+  it("strips non-numeric characters", () => {
+    expect(decimalInput("abc")).toBe("");
+    expect(decimalInput("1a2b")).toBe("12");
+  });
+
+  it("truncates the fraction to 5 decimal places", () => {
+    expect(decimalInput("1.1234567")).toBe("1.12345");
+  });
+
+  it("leaves a whole number untouched", () => {
+    expect(decimalInput("42")).toBe("42");
   });
 });

@@ -79,7 +79,9 @@ export const rampSyncFunction = inngest.createFunction(
       baseCurrency: company.data.baseCurrencyCode,
       companyGroupId: company.data.companyGroupId,
       decimalsCache: new Map(),
-      exchangeRateCache: new Map()
+      exchangeRateCache: new Map(),
+      createdBy: integrationRow.data?.updatedBy ?? "system",
+      trigger: event.data.reason === "webhook" ? "webhook" : "event"
     };
     const cardLiabilityAccountId = metadata.cardLiabilityAccountId;
     const entityId = metadata.entityId;

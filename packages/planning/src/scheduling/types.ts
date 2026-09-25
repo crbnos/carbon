@@ -54,6 +54,12 @@ export type BaseOperation = {
    */
   operationLeadTime?: number | null;
   /**
+   * Earliest instant this op's material is available (epoch ms). Only set by
+   * the quote lead-time what-if for ops that consume a purchased part; never
+   * set on job operations, so live scheduling is unchanged.
+   */
+  materialReadyAt?: number;
+  /**
    * Manufacturing lead time (in business days) of the make method's item that
    * this operation belongs to. Applied only at assembly boundaries so a
    * subassembly is scheduled to finish this many days before its parent

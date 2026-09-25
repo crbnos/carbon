@@ -58,9 +58,13 @@ async function convergeRamp(
   }
 
   // OAuth creates the credential-bearing integration row before the user maps
-  // the two accounts required by the card families. Establish connectivity,
-  // but do not push master data or launch finance until that setup is complete.
-  if (!metadata.cardLiabilityAccountId || !metadata.statementBankAccountId) {
+  // the card liability account that every card journal credits. Establish
+  // connectivity, but do not push master data or launch finance until that one
+  // required account exists. statementBankAccountId is NOT required here — it is
+  // only the offset for statement payments and transfers, and each of those
+  // families self-gates on it (skipping when unset). Coupling it here blocked
+  // card-charge sync on an account card charges never touch.
+  if (!metadata.cardLiabilityAccountId) {
     return;
   }
 
@@ -252,6 +256,18 @@ export async function rampHealthcheck(
     companyId
   );
   if (!integration) return false;
+
+  // A connected Ramp with no card liability account is not functional:
+  // convergeRamp returns early (no chart-of-accounts push, no sync) and the
+  // card-transaction sync gate skips every family without it. Report it as
+  // unhealthy rather than showing a green badge over a sync that silently does
+  // nothing — the required-field gap was invisible in the UI otherwise.
+  // statementBankAccountId is intentionally NOT checked: it is optional (only
+  // statement-payment/transfer sync needs it), so its absence is a healthy
+  // "that family is off", not a broken connection.
+  if (!integration.metadata.cardLiabilityAccountId) {
+    return false;
+  }
 
   try {
     await integration.client.getBusiness();

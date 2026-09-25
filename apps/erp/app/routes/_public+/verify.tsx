@@ -5,7 +5,9 @@ import {
   signInWithEmail
 } from "@carbon/auth/auth.server";
 import {
+  isPlatformSignupDisabled,
   isSelfSignupBlockedForEmail,
+  PLATFORM_SIGNUP_DISABLED_MESSAGE,
   SELF_SIGNUP_BLOCKED_MESSAGE
 } from "@carbon/auth/self-signup.server";
 import {
@@ -98,6 +100,14 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       { success: false, message: SELF_SIGNUP_BLOCKED_MESSAGE },
       await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+    );
+  }
+  // Same defense for the platform toggle: a code sent moments before the
+  // administrator switched sign-ups off must not still create an account.
+  if (await isPlatformSignupDisabled()) {
+    return data(
+      { success: false, message: PLATFORM_SIGNUP_DISABLED_MESSAGE },
+      await flash(request, error(null, PLATFORM_SIGNUP_DISABLED_MESSAGE))
     );
   }
 

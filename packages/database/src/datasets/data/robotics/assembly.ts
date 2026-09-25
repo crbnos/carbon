@@ -8,12 +8,16 @@ export const roboticsAssembly: AssemblySpec = {
   name: "Koch Robot Arm — Final Assembly",
   item: "ROB-2000",
   componentCount: 163,
+  // The Assembly operation of the ROB-2000 method.
+  operation: 1,
   steps: [
     {
       title: "Bolt the base to the work plate",
       instruction:
         "Fix the base down and check it sits flat — rock it by hand at all four corners. Every joint above this one inherits whatever tilt is left here, and it cannot be dialled out later in software.",
-      componentNodeIds: ["cf90798128911226"]
+      componentNodeIds: ["cf90798128911226"],
+      materials: [{ item: "ARM-BASE-001", quantity: 1 }],
+      tools: [{ item: "TL-TORQUE-M1", quantity: 1 }]
     },
     {
       title: "Fit the two XL-430 shoulder servos",
@@ -31,7 +35,8 @@ export const roboticsAssembly: AssemblySpec = {
       title: "Join the upper arm link",
       instruction:
         "Fit the XL430-to-XL330 link, feeding the servo cable through the channel as you close it rather than after. A cable pulled through a closed link chafes at the horn and shorts the bus.",
-      componentNodeIds: ["fdd2780db5fa1b6c"]
+      componentNodeIds: ["fdd2780db5fa1b6c"],
+      materials: [{ item: "ARM-LINK-001", quantity: 1 }]
     },
     {
       title: "Fit the three XL-330 arm servos",
@@ -47,7 +52,8 @@ export const roboticsAssembly: AssemblySpec = {
       title: "Fit the wrist rotation link",
       instruction:
         "Seat the rotation link and leave a service loop in the cable at the joint. Rotate the wrist lock to lock and watch the loop — it should take up slack, never go taut.",
-      componentNodeIds: ["120fdac57f58744e"]
+      componentNodeIds: ["120fdac57f58744e"],
+      materials: [{ item: "ARM-WRIST-001", quantity: 1 }]
     },
     {
       title: "Fit the forearm straight link",
@@ -59,7 +65,26 @@ export const roboticsAssembly: AssemblySpec = {
       title: "Fit the gripper and check jaw travel",
       instruction:
         "Mount the gripper last. Drive the jaws fully open and fully closed and confirm they meet flat with no gap at the tips. Record the closed position — it is the zero the pick routine is taught against.",
-      componentNodeIds: ["ad6addc72d92757d"]
+      componentNodeIds: ["ad6addc72d92757d"],
+      materials: [{ item: "GRP-2F-80", quantity: 1 }],
+      tools: [{ item: "TL-BACKLASH-J1", quantity: 1 }]
+    }
+  ],
+  componentMappings: [
+    // model part "base"
+    {
+      geometryHash: "13562648413b92f63ad77c04833a3a757353ddef",
+      item: "ARM-BASE-001"
+    },
+    // model part "shoulder rotation"
+    {
+      geometryHash: "10c9c4af8e4ca9b6d41e06869b58d452d3e959f6",
+      item: "ARM-LINK-001"
+    },
+    // model part "gripper moving side"
+    {
+      geometryHash: "a1dc775aa04c0362311a3e2ecd1c67ae859ff91d",
+      item: "GRP-2F-80"
     }
   ]
 };

@@ -3020,19 +3020,13 @@ export async function setPickingListLineTrackedEntity(
 
   const result = await client.functions.invoke("post-picking", { body });
   if (result.error) {
-    const ctx = (result.error as { context?: Response })?.context;
-    let message = "Failed to pick material";
-    if (ctx && typeof ctx.json === "function") {
-      try {
-        const parsed = await ctx.clone().json();
-        if (parsed?.message) message = parsed.message;
-      } catch {
-        /* fall through */
-      }
-    } else if ((result.error as { message?: string }).message) {
-      message = (result.error as { message: string }).message;
-    }
-    return { data: null, error: message };
+    return {
+      data: null,
+      error: await getEdgeFunctionErrorMessage(
+        result.error,
+        "Failed to pick material"
+      )
+    };
   }
 
   return { data: { id: args.pickingListLineId }, error: null };
@@ -4027,19 +4021,13 @@ export async function pickPickingListLine(
     const result = await client.functions.invoke("post-picking", { body });
 
     if (result.error) {
-      const ctx = (result.error as { context?: Response })?.context;
-      let message = "Failed to pick material";
-      if (ctx && typeof ctx.json === "function") {
-        try {
-          const parsed = await ctx.clone().json();
-          if (parsed?.message) message = parsed.message;
-        } catch {
-          /* fall through */
-        }
-      } else if ((result.error as { message?: string }).message) {
-        message = (result.error as { message: string }).message;
-      }
-      return { data: null, error: message };
+      return {
+        data: null,
+        error: await getEdgeFunctionErrorMessage(
+          result.error,
+          "Failed to pick material"
+        )
+      };
     }
   }
 

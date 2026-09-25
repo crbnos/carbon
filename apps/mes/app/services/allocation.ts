@@ -3,6 +3,7 @@
  * can be unit-tested without booting env validation. Re-exported from
  * `inventory.service.ts` for call sites.
  */
+import { round } from "@carbon/utils";
 
 export type SuggestedAllocationLot = {
   trackedEntityId: string;
@@ -87,7 +88,10 @@ export function greedyFillAllocation(
   quantity: number
 ): SuggestedAllocationLot[] {
   const picks: SuggestedAllocationLot[] = [];
-  let remaining = quantity;
+  // Round at each step so a spilled remainder is a clean 5dp quantity: filling
+  // 1 from a 0.98 lot leaves round(1 - 0.98) = 0.02, not 0.020000000000000018,
+  // and the last lot's take is that exact 0.02.
+  let remaining = round(quantity);
   for (const lot of pool) {
     if (remaining <= 0) break;
     const available = Number(lot.availableQuantity ?? 0);
@@ -101,7 +105,7 @@ export function greedyFillAllocation(
       storageUnitId: lot.storageUnitId ?? null,
       storageUnitName: lot.storageUnitName ?? null
     });
-    remaining -= take;
+    remaining = round(remaining - take);
   }
   return picks;
 }

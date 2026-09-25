@@ -55,3 +55,11 @@ better protect our clients and our systems.
 - We strive to resolve all problems as quickly as possible, and we would like
   to play an active role in the ultimate publication on the problem after it
   is resolved.
+
+## Credits
+
+Thank you to the following people for responsibly disclosing security issues
+to us:
+
+- [@heraldi](https://github.com/heraldi)
+- [security@s9s.de](mailto:security@s9s.de)

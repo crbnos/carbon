@@ -2,10 +2,10 @@ import type {
   GenealogyAssemblySpec,
   GenealogyInputSpec,
   JobSpec,
+  PickingListSpec,
   ProductionData,
   ShiftEventSpec
 } from "../../types.ts";
-import { motorAssembly } from "./assembly.ts";
 
 export const JOBS: JobSpec[] = [
   {
@@ -17,8 +17,31 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:ridgeline",
     salesOrderLine: "soline:ridgeline:mtr",
     customer: "Ridgeline Drive Systems",
-    dueDateOffset: -167,
-    releasedDateOffset: -297
+    deadlineType: "Hard Deadline",
+    dueDateOffset: 6,
+    releasedDateOffset: -297,
+    priority: 3,
+    assignee: "self",
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "In Progress", assignee: "self" },
+      { order: 3, status: "Waiting" }
+    ],
+    quantities: [
+      { order: 1, type: "Production", quantity: 1 },
+      { order: 1, type: "Scrap", quantity: 2, scrapReason: "Defective" },
+      { order: 2, type: "Rework", quantity: 1 }
+    ],
+    operationNotes: [
+      {
+        order: 1,
+        note: "Bearing fit measured at 12 microns interference on units 1-3 — arbor press logs attached to the traveler for the Ridgeline data package."
+      },
+      {
+        order: 2,
+        note: "Loaded dyno run at 75% torque holding steady. Winding temp plateaued at 96C, well inside the Class H limit — thermal soak continues overnight."
+      }
+    ]
   },
   {
     key: "ready",
@@ -28,8 +51,10 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:halcyon",
     salesOrderLine: "soline:halcyon:mtr",
     customer: "Halcyon Aerospace Actuation",
-    dueDateOffset: -153,
-    releasedDateOffset: -251
+    deadlineType: "ASAP",
+    dueDateOffset: 14,
+    releasedDateOffset: -4,
+    priority: 10
   },
   {
     key: "planned",
@@ -39,7 +64,9 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:planned",
     salesOrderLine: "soline:planned",
     customer: "Cardinal Motorworks",
-    dueDateOffset: -90
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 18,
+    priority: 12
   },
   {
     key: "draft",
@@ -49,7 +76,7 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:draft",
     salesOrderLine: "soline:draft",
     customer: "Wabash Industrial Supply",
-    dueDateOffset: -125
+    deadlineType: "No Deadline"
   },
   {
     key: "paused",
@@ -59,8 +86,9 @@ export const JOBS: JobSpec[] = [
     salesOrder: "so:paused",
     salesOrderLine: "soline:paused",
     customer: "Ridgeline Drive Systems",
-    dueDateOffset: -139,
-    releasedDateOffset: -266
+    dueDateOffset: 9,
+    releasedDateOffset: -266,
+    priority: 6
   },
   {
     key: "completed",
@@ -98,6 +126,215 @@ export const JOBS: JobSpec[] = [
     customer: "Wabash Industrial Supply",
     dueDateOffset: -314,
     releasedDateOffset: -337
+  },
+
+  // Released over the last few weeks so every cell has a queue and something running today.
+  {
+    key: "floor-stator",
+    item: "STA-4500",
+    status: "In Progress",
+    quantity: 4,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:stator",
+    customer: "Ridgeline Drive Systems",
+    dueDateOffset: 2,
+    releasedDateOffset: -6,
+    priority: 2,
+    assignee: "self",
+    operationOverrides: [
+      { order: 1, status: "Done" },
+      { order: 2, status: "Done" },
+      {
+        order: 3,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Machine", startTimeOfDay: "07:30:00" }
+      },
+      { order: 4, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-lam-rotor",
+    item: "LAM-STK-ROT",
+    status: "Ready",
+    quantity: 12,
+    salesOrder: "so:floor-halcyon",
+    salesOrderLine: "soline:floor-halcyon:lam-rotor",
+    customer: "Halcyon Aerospace Actuation",
+    dueDateOffset: 5,
+    releasedDateOffset: -2,
+    priority: 4,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-shaft",
+    item: "SHF-9000",
+    status: "In Progress",
+    quantity: 8,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:shaft",
+    customer: "Ridgeline Drive Systems",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 12,
+    releasedDateOffset: -9,
+    priority: 8,
+    assignee: "self",
+    operationOverrides: [
+      {
+        order: 1,
+        status: "In Progress",
+        assignee: "self",
+        running: { type: "Setup", startTimeOfDay: "06:45:00" }
+      },
+      { order: 2, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-coil",
+    item: "COIL-9000",
+    status: "In Progress",
+    quantity: 6,
+    salesOrder: "so:floor-halcyon",
+    salesOrderLine: "soline:floor-halcyon:coil",
+    customer: "Halcyon Aerospace Actuation",
+    dueDateOffset: 7,
+    releasedDateOffset: -5,
+    priority: 5,
+    operationOverrides: [
+      {
+        order: 1,
+        status: "In Progress",
+        running: { type: "Labor", startTimeOfDay: "08:15:00" }
+      },
+      { order: 2, status: "Waiting" }
+    ]
+  },
+  {
+    key: "floor-termbox",
+    item: "TRM-BOX-9000",
+    status: "In Progress",
+    quantity: 10,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:termbox",
+    customer: "Ridgeline Drive Systems",
+    deadlineType: "ASAP",
+    dueDateOffset: 0,
+    releasedDateOffset: -1,
+    priority: 1,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  {
+    key: "floor-housing",
+    item: "HSG-9000",
+    status: "Ready",
+    quantity: 4,
+    salesOrder: "so:floor-halcyon",
+    salesOrderLine: "soline:floor-halcyon:housing",
+    customer: "Halcyon Aerospace Actuation",
+    dueDateOffset: 21,
+    releasedDateOffset: -3,
+    priority: 13
+  },
+  {
+    key: "floor-rotor",
+    item: "ROT-9000",
+    status: "Ready",
+    quantity: 2,
+    salesOrder: "so:floor-halcyon",
+    salesOrderLine: "soline:floor-halcyon:rotor",
+    customer: "Halcyon Aerospace Actuation",
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 16,
+    releasedDateOffset: -4,
+    priority: 11,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  // No deadline, so it lands in Priorities' Unscheduled column.
+  {
+    key: "floor-lam-stator",
+    item: "LAM-STK-STA",
+    status: "Ready",
+    quantity: 6,
+    salesOrder: "so:floor-halcyon",
+    salesOrderLine: "soline:floor-halcyon:lam-stator",
+    customer: "Halcyon Aerospace Actuation",
+    deadlineType: "No Deadline",
+    releasedDateOffset: -1,
+    priority: 14
+  },
+  {
+    key: "stock-lam-stator",
+    item: "LAM-STK-STA",
+    status: "Ready",
+    quantity: 16,
+    dueDateOffset: 11,
+    releasedDateOffset: -2,
+    priority: 9
+  },
+  {
+    key: "stock-termbox",
+    item: "TRM-BOX-9000",
+    status: "In Progress",
+    quantity: 20,
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 9,
+    releasedDateOffset: -3,
+    priority: 7,
+    operationOverrides: [{ order: 1, assignee: "self" }]
+  },
+  // Feeds the completion-time and estimates-vs-actuals KPIs.
+  {
+    key: "done-coil",
+    item: "COIL-9000",
+    status: "Completed",
+    quantity: 4,
+    quantityComplete: 4,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:coil",
+    customer: "Ridgeline Drive Systems",
+    dueDateOffset: -8,
+    releasedDateOffset: -16,
+    completedDateOffset: -11,
+    loggedTime: { startOffset: -14, efficiency: 0.92 }
+  },
+  {
+    key: "done-lam-rotor",
+    item: "LAM-STK-ROT",
+    status: "Completed",
+    quantity: 10,
+    quantityComplete: 10,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:lam-rotor",
+    customer: "Ridgeline Drive Systems",
+    dueDateOffset: -20,
+    releasedDateOffset: -28,
+    completedDateOffset: -24,
+    loggedTime: { startOffset: -27, efficiency: 1.18 }
+  },
+  {
+    key: "done-rotor",
+    item: "ROT-9000",
+    status: "Completed",
+    quantity: 1,
+    quantityComplete: 1,
+    salesOrder: "so:floor-ridgeline",
+    salesOrderLine: "soline:floor-ridgeline:rotor",
+    customer: "Ridgeline Drive Systems",
+    dueDateOffset: -2,
+    releasedDateOffset: -12,
+    completedDateOffset: -4,
+    loggedTime: { startOffset: -9, efficiency: 1.07 }
+  },
+  // Rotor insertion is still ahead, so the assembly bench has a build to play the 3D sequence on.
+  {
+    key: "stock-mtr",
+    item: "MTR-9000",
+    status: "Ready",
+    quantity: 1,
+    deadlineType: "Soft Deadline",
+    dueDateOffset: 19,
+    releasedDateOffset: -2,
+    priority: 15
   }
 ];
 
@@ -187,12 +424,75 @@ export const GENEALOGY_ASSEMBLY: GenealogyAssemblySpec = {
   }
 };
 
+export const PICKING_LISTS: PickingListSpec[] = [
+  {
+    key: "mtr-kit-1",
+    status: "Completed",
+    job: "in-progress",
+    dateOffset: -20,
+    lines: [
+      {
+        item: "FST-M6-SS",
+        quantityRequired: 36,
+        quantityPicked: 36,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      },
+      {
+        item: "FST-M10-SS",
+        quantityRequired: 24,
+        quantityPicked: 24,
+        status: "Picked",
+        fromShelf: "A1-L1"
+      }
+    ]
+  },
+  {
+    key: "mtr-kit-2",
+    status: "In Progress",
+    job: "in-progress",
+    dateOffset: -2,
+    lines: [
+      {
+        item: "BRG-6308-C3",
+        quantityRequired: 2,
+        quantityPicked: 0,
+        status: "Pending",
+        fromShelf: "A2-L1"
+      },
+      {
+        item: "CN-BRG-GREASE",
+        quantityRequired: 1,
+        quantityPicked: 0,
+        status: "Short",
+        fromShelf: "A2-L2"
+      }
+    ]
+  }
+];
+
 export const motorProduction: ProductionData = {
-  assembly: motorAssembly,
   jobs: JOBS,
   shifts: SHIFTS,
   genealogyInputs: GENEALOGY_INPUTS,
   genealogyAssembly: GENEALOGY_ASSEMBLY,
   eventsJobKey: "in-progress",
-  genealogyJobKey: "in-progress"
+  genealogyJobKey: "in-progress",
+  // Must match the operation overridden to In Progress.
+  openEvent: { operationOrder: 2 },
+  batch: {
+    members: [
+      { job: "floor-termbox", order: 1 },
+      { job: "stock-termbox", order: 1 }
+    ],
+    running: { type: "Machine", startTimeOfDay: "07:00:00" }
+  },
+  rework: {
+    quantity: 1,
+    reason:
+      "Loaded dyno run flagged bearing noise on unit 3 — return it to the assembly bench for a drive-end bearing re-fit.",
+    targetOperationOrder: 1,
+    triggeredAtOperationOrder: 2
+  },
+  pickingLists: PICKING_LISTS
 };

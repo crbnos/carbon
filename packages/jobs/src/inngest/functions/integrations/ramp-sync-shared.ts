@@ -1,6 +1,13 @@
 import type { Database } from "@carbon/database";
-import type { createMappingService } from "@carbon/ee/accounting";
 import {
+  clearResolvedSyncOperations,
+  type createMappingService,
+  insertTerminalSyncOperation,
+  type SyncOperationDirection,
+  type SyncOperationTrigger
+} from "@carbon/ee/accounting";
+import {
+  buildRampIdempotencyKey,
   parseVerifiedRampMinorAmount,
   type RampIntegrationMetadata,
   rampMinorAmountToMajor,
@@ -40,7 +47,103 @@ export type RampSyncContext = {
   companyGroupId: string | null;
   decimalsCache: Map<string, number>;
   exchangeRateCache: Map<string, number>;
+  /** User the recorded sync operations are attributed to (integration configurer, else "system"). */
+  createdBy: string;
+  /** How this sync run was triggered — stamped on recorded sync operations. */
+  trigger: SyncOperationTrigger;
 };
+
+const RAMP_INTEGRATION_ID = "ramp";
+
+/**
+ * Record each failed/skipped sync item as a terminal `Warning` operation on the
+ * shared `accountingSyncOperation` ledger, so the integration's Sync Activity
+ * tab shows WHY a Ramp record did not come through instead of it vanishing into
+ * the Inngest logs. Idempotent per (entityType, entityId, direction): a
+ * persistently-failing record does not stack rows. Failures to record are
+ * logged, never thrown — observability must not fail the sync.
+ */
+export async function recordRampSyncFailures(
+  ctx: RampSyncContext,
+  args: {
+    entityType: string;
+    direction: SyncOperationDirection;
+    failures: FailItem[];
+  }
+): Promise<void> {
+  for (const failure of args.failures) {
+    // Observability is strictly best-effort: a record that throws (or returns
+    // an error) must never fail or pollute the family sync result.
+    try {
+      const { error } = await insertTerminalSyncOperation(ctx.client, {
+        companyId: ctx.companyId,
+        integration: RAMP_INTEGRATION_ID,
+        entityType: args.entityType,
+        entityId: failure.id,
+        direction: args.direction,
+        trigger: ctx.trigger,
+        status: "Warning",
+        errorCode: "RAMP_SYNC_FAILED",
+        errorMessage: failure.message,
+        idempotencyKey: buildRampIdempotencyKey({
+          companyId: ctx.companyId,
+          operation: `sync-fail:${args.entityType}:${args.direction}`,
+          scope: failure.id
+        }),
+        createdBy: ctx.createdBy
+      });
+      if (error) {
+        console.error(
+          `[RAMP SYNC] ${ctx.companyId}: failed to record ${args.entityType} sync failure for ${failure.id}`,
+          error
+        );
+      }
+    } catch (recordError) {
+      console.error(
+        `[RAMP SYNC] ${ctx.companyId}: recording ${args.entityType} sync failure for ${failure.id} threw`,
+        recordError
+      );
+    }
+  }
+}
+
+/**
+ * Clear any prior `Warning` operation for records that synced successfully this
+ * run — a Ramp charge recoded and posted after an earlier failure must drop out
+ * of the Sync Activity inbox (Ramp's inbound families re-evaluate every run,
+ * unlike accounting journals whose disposition is permanent). Logged, never
+ * thrown.
+ */
+export async function resolveRampSyncOperations(
+  ctx: RampSyncContext,
+  args: {
+    entityType: string;
+    direction: SyncOperationDirection;
+    entityIds: string[];
+  }
+): Promise<void> {
+  // Best-effort: clearing a resolved Warning must never fail the sync.
+  try {
+    const { error } = await clearResolvedSyncOperations(ctx.client, {
+      companyId: ctx.companyId,
+      integration: RAMP_INTEGRATION_ID,
+      entityType: args.entityType,
+      direction: args.direction,
+      entityIds: args.entityIds
+    });
+    if (error) {
+      console.error(
+        `[RAMP SYNC] ${ctx.companyId}: failed to clear resolved ${args.entityType} sync operations`,
+        error
+      );
+    }
+  } catch (resolveError) {
+    console.error(
+      `[RAMP SYNC] ${ctx.companyId}: clearing resolved ${args.entityType} sync operations threw`,
+      resolveError
+    );
+  }
+}
 
 export async function verifyCostCenters(
   ctx: RampSyncContext,

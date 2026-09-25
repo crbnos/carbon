@@ -79,8 +79,11 @@ providers, which own the data and mirror it out.
   category "Spend Management", active only when public `RAMP_CLIENT_ID` is configured).
   The UI connection is the production OAuth `oauth` block; the form carries no customer
   client credentials. `RampSettingsSchema` is flat: optional `entityId`, account mapping
-  (`cardLiabilityAccountId` + `statementBankAccountId` **required**;
-  `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional), and five sync toggles
+  (`cardLiabilityAccountId` is the ONLY **required** account — every card journal credits
+  it, and it is the one side of the double entry Carbon cannot invent; `statementBankAccountId`,
+  `cashbackIncomeAccountId`, `reimbursementBankAccountId` optional — `statementBankAccountId`
+  is only the offset for statement payments/transfers, and those families self-gate on it),
+  and five sync toggles
   (`pullTransactions`,
   `pullBills`, `pullReimbursements`, `pushPurchaseOrders`, `pushInvoices`, all default
   `"true"`). Renders `SetupInstructions` with the webhook URL
@@ -156,9 +159,11 @@ for stored-data compatibility, but the settings UI exposes only OAuth Connect.
 
 `convergeRamp` runs on install and every settings save. It validates credentials with
 `client.getBusiness()`, ensures the accounting connection, and best-effort registers the
-webhook first. A fresh OAuth callback has no required accounts, so it returns here: it does
-**not** push master data or start financial sync before both `cardLiabilityAccountId` and
-`statementBankAccountId` exist. Once configured, it validates an optional `entityId`, pushes
+webhook first. A fresh OAuth callback has no required account, so it returns here: it does
+**not** push master data or start financial sync before `cardLiabilityAccountId` exists
+(`statementBankAccountId` is NOT required here — it only offsets statement payments/transfers,
+and each of those families self-gates on it; coupling it here used to block card-charge sync
+on an account card charges never touch). Once configured, it validates an optional `entityId`, pushes
 CoA/cost centers, and fires `trigger("ramp-sync", {companyId, reason})`. A reconnect whose
 atomic OAuth patch preserved valid mappings may therefore converge immediately. The trigger
 uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the dependency direction.
@@ -228,8 +233,11 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
 - `rampOnUninstall` best-effort deletes the webhook and the accounting connection
   (tolerating already-gone), then `clearRampConnectionState` removes connection/webhook
   ids and the webhook secret without disturbing OAuth credentials/settings/cursors.
-  `rampHealthcheck` = `getBusiness()` succeeds AND at least one
-  accounting connection is `linked`/`active`/`connected`.
+  `rampHealthcheck` = `cardLiabilityAccountId` is set AND `getBusiness()` succeeds AND at
+  least one accounting connection is `linked`/`active`/`connected`. A connected-but-unmapped
+  Ramp reads **unhealthy** rather than a green badge over a sync that silently does nothing;
+  `statementBankAccountId` is deliberately NOT checked (its absence is a healthy "that family
+  is off", not a broken connection).
 
 ## Metadata (`companyIntegration.metadata`, id `ramp`)
 
@@ -463,6 +471,38 @@ company with an ACTIVE `ramp` integration and fires one `carbon/ramp-sync`
 (`reason: "sweep"`) each. **Webhooks are latency; the sweep is correctness** — a missed or
 disabled webhook delivery becomes ≤1h of staleness, never permanent loss. `ramp-sync` is
 idempotent, so re-firing is safe.
+
+## Sync Activity (failure observability)
+
+Every family records a **`Warning`** row on the shared `accountingSyncOperation` ledger
+for each failed/skipped item, and clears it when that item later syncs — so a coded-but-
+unrecognized charge shows up in the integration's **Sync Activity** tab with its reason
+instead of vanishing into the Inngest logs. A successfully-synced item is NOT recorded (it
+already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab is a
+"what didn't come through, and why" inbox, not a full audit log.
+
+- `recordRampSyncFailures(ctx, {entityType, direction, failures})` and
+  `resolveRampSyncOperations(ctx, {entityType, direction, entityIds})`
+  (`ramp-sync-shared.ts`) are the two write points, called once per family after its
+  drain. Both are **strictly best-effort** — every error (thrown OR returned) is swallowed
+  and logged; observability must never fail or pollute a family's sync result. `ctx` gained
+  `createdBy` (`integration.updatedBy ?? "system"`) and `trigger` (`webhook` vs `event`).
+- entityType/direction per family: card charges `cardTransaction`, transfers `transfer`,
+  cashbacks `cashback`, bills `bill`, bill payments `billPayment`, reimbursements
+  `reimbursement`, repayments `repayment` — all `pull-from-accounting`; PO push
+  `purchaseOrder` and draft-bill push `purchaseInvoice` — `push-to-accounting`. entityId is
+  the Ramp id inbound, the Carbon record id outbound (direction disambiguates the tuple).
+- Records are `Warning` because a Ramp failure is a config hole (`Warning` is what the tab's
+  `failingCount` badge counts) via the ee `insertTerminalSyncOperation`. Unlike accounting
+  journals — whose disposition is permanent — a Ramp inbound family RE-EVALUATES every run, so
+  the resolve-on-success delete (`clearResolvedSyncOperations`, ee `operations.ts`) is what
+  drops a recoded-and-posted charge out of the inbox. `mapped`/already-synced items also
+  resolve, so a fixed item that is now skipped-as-mapped still clears its old Warning.
+- The **Sync Activity tab renders for Ramp** (`producesSyncOperations` in the ERP
+  `integrations.$id.tsx` loader — accounting category OR Ramp), with the accounting-only
+  tie-out/reconciliation surfaces kept gated on `isAccountingInstalled`. Retention/compaction
+  needs nothing new — Ramp rows live in the same `accountingSyncOperation` table the nightly
+  passes already sweep.
 
 ## cardTransaction schema (migration `20260919152233_ramp-integration.sql`)
 

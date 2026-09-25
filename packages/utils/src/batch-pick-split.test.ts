@@ -94,6 +94,27 @@ describe("splitPickAcrossMembers", () => {
     ).toThrow(/No member operation still requires this item/);
   });
 
+  // 24 mg and 48 mg of an additive held in KG: finer than the 5-digit scale a
+  // quantity input accepts, so 0.000072 itself can never be picked.
+  it("compares a sub-scale requirement at internal scale", () => {
+    const members = [
+      { jobOperationId: "a", remaining: 0.000024 },
+      { jobOperationId: "b", remaining: 0.000048 }
+    ];
+    const shares = splitPickAcrossMembers(members, 0.00007);
+    expect(sum(shares)).toBeCloseTo(0.00007, 10);
+    expect(() => splitPickAcrossMembers(members, 1)).toThrow(
+      "Pick of 1 exceeds the batch's remaining requirement of 0.00007"
+    );
+    // What is left once the pickable 0.00007 is issued counts as covered.
+    expect(() =>
+      splitPickAcrossMembers(
+        [{ jobOperationId: "a", remaining: 0.000004 }],
+        0.00001
+      )
+    ).toThrow(/No member operation still requires this item/);
+  });
+
   it("rejects a non-positive pick quantity", () => {
     expect(() =>
       splitPickAcrossMembers([{ jobOperationId: "a", remaining: 5 }], 0)

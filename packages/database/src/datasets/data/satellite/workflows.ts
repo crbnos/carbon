@@ -1,5 +1,4 @@
-import type { Edge, SeedWorkflow } from "../../tiers/workflow-definitions.ts";
-import type { WorkflowData } from "../../types.ts";
+import type { Edge, SeedWorkflow, WorkflowData } from "../../types.ts";
 
 // A factory, not a constant: every definition names ids that only exist once the seed has run.
 
@@ -508,4 +507,38 @@ export function buildSeedWorkflows(refs: {
   ];
 }
 
-export const satelliteWorkflows: WorkflowData = { build: buildSeedWorkflows };
+// The queued run was skipped at load while the workflow was briefly unpublished,
+// so it has no steps.
+export const satelliteWorkflows: WorkflowData = {
+  build: buildSeedWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:apex-valves",
+      at: { offset: -14, time: "15:02:11" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:polar-fasteners",
+      at: { offset: -28, time: "10:47:33" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:orbsec-thrusters",
+      at: { offset: -21, time: "09:15:04" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
+};

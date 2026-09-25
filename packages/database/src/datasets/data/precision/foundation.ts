@@ -1,13 +1,19 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
+  HolidaySpec,
+  MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
   ProcedureStepSpec,
   ShelfSpec,
   ShiftSpec,
-  WarehouseSpec
+  TagSpec,
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -120,6 +126,29 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Finish & Assembly Bench", "Mechanical Assembly"],
   ["CMM Lab", "Final Inspection"]
 ];
+
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["VMC Cell 1", "First Shift"],
+  ["VMC Cell 1", "Second Shift"],
+  ["VMC Cell 1", "Saturday Overtime"],
+  ["VMC Cell 2", "First Shift"],
+  ["VMC Cell 2", "Second Shift"],
+  ["VMC Cell 2", "Saturday Overtime"],
+  ["Turning Cell", "First Shift"],
+  ["Turning Cell", "Second Shift"],
+  ["Wire EDM Cell", "First Shift"],
+  ["Fab & Weld Bay", "First Shift"],
+  ["Finish & Assembly Bench", "First Shift"],
+  ["CMM Lab", "First Shift"],
+  ["CMM Lab", "Saturday Overtime"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Machining Supervisor",
+  department: "Machining",
+  shift: "First Shift",
+  startDateOffset: -1460
+};
 
 export const PLANT: PlantSpec = {
   name: "Meridian Machining Plant",
@@ -329,6 +358,37 @@ export const SUPPLIERS = [
     type: "Services",
     phone: "+1-608-555-0770",
     website: "https://precisiongauge.com"
+  },
+  // Status showcases + the EUR vendor. None of these may be referenced by
+  // purchasing data — they exist so every supplier status renders somewhere.
+  {
+    name: "Old Mill Steel Supply",
+    type: "Materials",
+    phone: "+1-563-555-0880",
+    website: "https://oldmillsteel.com",
+    status: "Inactive" as const
+  },
+  {
+    name: "Prairie Anodizing",
+    type: "Finishing",
+    phone: "+1-217-555-0990",
+    website: "https://prairieanodizing.com",
+    status: "Pending" as const
+  },
+  {
+    name: "Cutrate Carbide",
+    type: "Tooling",
+    phone: "+1-773-555-1010",
+    website: "https://cutratecarbide.com",
+    status: "Rejected" as const
+  },
+  {
+    name: "Bavaria Werkzeugstahl GmbH",
+    type: "Materials",
+    phone: "+49-89-555-1120",
+    website: "https://bavaria-werkzeugstahl.de",
+    status: "Active" as const,
+    currencyCode: "EUR"
   }
 ];
 
@@ -381,6 +441,34 @@ export const SUPPLIER_CONTACTS = [
     lastName: "Lundqvist",
     email: "blundqvist@precisiongauge.com",
     title: "Calibration Manager"
+  },
+  {
+    supplier: "Old Mill Steel Supply",
+    firstName: "Chuck",
+    lastName: "Danvers",
+    email: "cdanvers@oldmillsteel.com",
+    title: "Sales Manager"
+  },
+  {
+    supplier: "Prairie Anodizing",
+    firstName: "Maya",
+    lastName: "Sandoval",
+    email: "msandoval@prairieanodizing.com",
+    title: "Business Development"
+  },
+  {
+    supplier: "Cutrate Carbide",
+    firstName: "Lonnie",
+    lastName: "Pratt",
+    email: "lpratt@cutratecarbide.com",
+    title: "Account Executive"
+  },
+  {
+    supplier: "Bavaria Werkzeugstahl GmbH",
+    firstName: "Franziska",
+    lastName: "Huber",
+    email: "f.huber@bavaria-werkzeugstahl.de",
+    title: "Export Sales"
   }
 ];
 
@@ -392,6 +480,27 @@ export const SUPPLIER_PROCESSES = [
   { supplier: "Anvil Finishing Group", process: "Deburr & Finish" },
   { supplier: "Precision Gauge Services", process: "Final Inspection" }
 ];
+
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Anvil Finishing Group",
+    ability: "Deburr & Finishing",
+    hoursPerWeek: 32
+  },
+  {
+    supplier: "Precision Gauge Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  }
+];
+
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Headquarters Toolroom",
+  dept: "Machining",
+  ability: "CNC Milling",
+  laborRate: 78,
+  machineRate: 35
+};
 
 export const CONTRACTORS = [
   {
@@ -459,10 +568,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "CNC Milling",
     description:
       "Second-operation milling of the 6061 pump housing, including the bearing bore.",
+    parameters: [
+      { key: "Bearing bore", value: "Ø 42.000 +0.016 / −0 mm" },
+      { key: "Spindle speed, finish bore", value: "3,200 rpm" },
+      { key: "Coolant concentration", value: "6–8 %" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify the first-operation part against the traveler",
@@ -481,7 +595,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: PUMP_HOUSING_OP2_STEPS_V2 }
+      { version: 2, status: "Active", steps: PUMP_HOUSING_OP2_STEPS_V2 }
     ]
   },
   {
@@ -492,7 +606,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage the kit at the assembly bench",
@@ -538,6 +652,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Final Inspection",
     description:
       "CMM report and certificate of conformance against the customer-supplied print.",
+    parameters: [
+      { key: "CMM program", value: "PRG-HSG-OP2 Rev D" },
+      { key: "Lab temperature", value: "20 ± 1 °C" },
+      { key: "Report format", value: "AS9102 FAI form 3" }
+    ],
     versions: [
       {
         version: 1,
@@ -572,6 +691,26 @@ export const PROCEDURES: ProcedureSpec[] = [
             type: "Task",
             instruction:
               "Print the CMM report, attach it to the CoC and file both against the job before release to shipping."
+          },
+          {
+            name: "Stamp inspection completion time",
+            type: "Timestamp",
+            instruction:
+              "Record the moment final inspection completes — the CoC ship date and the customer's dock date are measured from here."
+          },
+          {
+            name: "Upload the FAIR package",
+            type: "File",
+            instruction:
+              "Upload the AS9102 first-article inspection report and the raw CMM export against the job record.",
+            fileTypes: ["pdf", "csv"]
+          },
+          {
+            name: "Final workmanship inspection",
+            type: "Inspection",
+            instruction:
+              "Inspect deburred edges, anodize coverage and thread condition under magnification. Photograph any finding before release to shipping.",
+            required: false
           }
         ]
       }
@@ -616,11 +755,73 @@ export const NO_QUOTE_REASONS = [
   "Material Not Sourced"
 ];
 
+// Offsets are positive (upcoming) and distinct — holiday has UNIQUE (date).
+export const HOLIDAYS: HolidaySpec[] = [
+  { name: "Shop Anniversary Day", dateOffset: 40 },
+  { name: "IMTS Week Shutdown", dateOffset: 100 },
+  { name: "Year-End Maintenance Shutdown", dateOffset: 160 }
+];
+
+export const TAGS: TagSpec[] = [
+  { name: "Tight Tolerance", table: "operation" },
+  { name: "First Article Required", table: "procedure" },
+  { name: "GD&T Certified", table: "training" },
+  { name: "Certs Required", table: "material" },
+  { name: "Calibrated", table: "tool" }
+];
+
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
+export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
+  substances: [
+    { name: "Tool Steel", code: "TS" },
+    // Backs the bar-stock classifications on MAT-4140-BAR and MAT-AL6061-BAR
+    // (items.ts).
+    { name: "Chromoly Steel", code: "CRMO" },
+    { name: "Extruded Aluminum", code: "EXAL" }
+  ],
+  forms: [
+    { name: "Ground Flat Stock", code: "GFS" },
+    { name: "Turned & Polished Bar", code: "TGP" }
+  ],
+  types: [
+    {
+      name: "Tool Steel Ground Flat Stock",
+      code: "TS-GFS",
+      substance: "Tool Steel",
+      form: "Ground Flat Stock"
+    },
+    {
+      name: "Chromoly TG&P Bar",
+      code: "CRMO-TGP",
+      substance: "Chromoly Steel",
+      form: "Turned & Polished Bar"
+    }
+  ],
+  grades: [
+    { name: "A2", substance: "Tool Steel" },
+    { name: "D2", substance: "Tool Steel" },
+    { name: "4140 Pre-Hard", substance: "Chromoly Steel" },
+    { name: "6061-T6", substance: "Extruded Aluminum" }
+  ],
+  finishes: [
+    { name: "Precision Ground", substance: "Tool Steel" },
+    { name: "Rust-Preventive Oil", substance: "Chromoly Steel" },
+    { name: "Mill Finish", substance: "Extruded Aluminum" }
+  ],
+  dimensions: [
+    { name: '1/2" x 2"', form: "Ground Flat Stock", isMetric: false },
+    { name: '3/4" x 3"', form: "Ground Flat Stock", isMetric: false },
+    { name: '2.500" dia', form: "Turned & Polished Bar", isMetric: false }
+  ]
+};
+
 export const precisionFoundation: FoundationData = {
   departments: DEPT_NAMES,
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -636,12 +837,18 @@ export const precisionFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,
   printerRoute: PRINTER_ROUTE,
+  holidays: HOLIDAYS,
+  tags: TAGS,
+  materialTaxonomy: MATERIAL_TAXONOMY,
   defaultShippingMethod: "UPS Ground",
   contractorAgency: CONTRACTOR_AGENCY,
   partyAddressCity: "Rockford",

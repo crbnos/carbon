@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
@@ -15,6 +16,7 @@ import {
   backupNameFromSource,
   bindValue,
   canSetReplicationRole,
+  deleteDanglingRows,
   ExportScopeViolationError,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
@@ -37,6 +39,8 @@ import {
 import { buildCompanyBackup } from "./company-export";
 
 const INSERT_CHUNK_SIZE = 200;
+
+const log = getLogger("jobs", "company-restore");
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
@@ -203,6 +207,26 @@ export async function wipeAndLoad(
         done: t + 1,
         total: loadTables.length
       });
+    }
+
+    // Kept identity rows whose parent the wipe removed (replica mode skipped the
+    // cascade) would fail every later export. A foreign restore already wiped them.
+    if (!remap) {
+      const dangling = await deleteDanglingRows(
+        trx,
+        catalog.tables.filter(
+          (t) => isUserScopedIdentityTable(t) && t.scopeColumn === "companyId"
+        ),
+        byName,
+        companyId,
+        targetGroupId
+      );
+      if (dangling.length > 0) {
+        log.warn("Restore: removed identity rows left dangling by the wipe", {
+          companyId,
+          deleted: dangling
+        });
+      }
     }
   });
 

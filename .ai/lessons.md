@@ -518,6 +518,20 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** any new SECURITY DEFINER function that calls pg_net/`net.http_post` or is meant to be trigger/cron-only (`packages/database/supabase/migrations/`). Trigger functions returning `trigger` are not RPC-exposed (safe in public), but VOID/scalar helpers are.
 
+**Update (2026-09-24):** pg_net is not required. On `supabase/postgres:15.14.1.112`, a plain
+`LANGUAGE sql` function (`select 1`) with `REVOKE EXECUTE … FROM PUBLIC, anon, authenticated`
+segfaults the backend (signal 11) when called under `SET ROLE authenticated` or `anon`. This was
+reproduced in a fresh container of that image. A missing table privilege, a `RAISE`, and "must be owner"
+are all ordinary errors. So `REVOKE EXECUTE` on any function in `public` is itself an unauthenticated DoS
+(`POST /rest/v1/rpc/<fn>`). Gate API access INSIDE the function instead, and raise on
+`current_setting('role', true) IN ('anon','authenticated')` without the permission — see
+`assert_audit_log_access` in `20260924171942_audit-log-company-scope.sql`. When you test a revoke, use a
+throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared dev database. The crash
+restarts every backend. `20260924192316_api-function-guards-not-revokes.sql` replaced the six existing public-function
+revokes (integration secrets, `upsert_company_integration_patch`, the job-completion helpers). A nested
+helper of a SECURITY DEFINER function cannot use the role-GUC guard, because `current_setting('role')`
+still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER` instead.
+
 ## The local Inngest dev server (v1.19.4) can't handle `debounce` — it errors on every debounce item
 
 **Context:** The push-based event-queue drainer (`packages/jobs/src/inngest/functions/events/queue.ts`) was configured with `debounce: { period: "2s", timeout: "10s" }` to coalesce bursts of `carbon/event-queue.process` wake events into one run.
@@ -2208,3 +2222,52 @@ load-bearing only for the old one.
 **Applies to:** `packages/files/src/storage.ts` (`CompanyBucket`), its ~60 call
 sites across `apps/erp`, `apps/mes`, `packages/{jobs,ee,lib}`, and any future
 change to a helper whose result is destructured widely.
+
+## Lingui: a ternary inside t`` bakes the English words as runtime values
+
+**Context:** Building the quote lead-time modal, plural labels were written as
+`` t`${days} ${days === 1 ? "day" : "days"}` `` and
+`` t`${n} ${n === 1 ? "operation has" : "operations have"} no time standards` ``.
+
+**Problem:** Lingui extracts that as `{0} {1} no time standards` — the "day"/
+"days"/"operation has"/"operations have" strings are computed at runtime and
+passed in as PLACEHOLDER VALUES, never as translatable text. So every locale's
+`msgstr` still contains the English word, `linguito check` stays green (nothing
+is "missing"), and a French user reads "5 days", not "5 jours". The defect is
+invisible to the missing-translation gate because the placeholder IS filled.
+
+**Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
+`t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
+one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
+non-JSX). The whole phrase with `#` goes in each branch
+(`one="# operation has no time standards"`), so the words are extracted and
+translated. After adding one, re-run `lingui:extract` + `/translate` — the new
+ICU msgid needs its own filled `msgstr` per locale (locales with more CLDR
+categories, e.g. Polish/Russian `few`/`many`, get the extra branches).
+
+**Applies to:** any `apps/{erp,mes}/app` or `packages/{react,form}/src` string
+with a count-dependent word; grep `? "` inside `` t` `` templates when reviewing
+i18n.
+
+---
+
+**Context:** A security report: any signed-in user could read, create, update and delete every
+`public."user"` row through PostgREST. The policy was `FOR ALL USING
+(has_any_company_permission('users_update'))`, and a self-serve signup holds `users_update` in
+its own company.
+
+**Problem:** `has_any_company_permission(claim)` answers "does the caller hold this permission
+ANYWHERE?" It never relates the row to a company, so any policy built on it alone is
+cross-tenant. A table with no `companyId` (`user`) cannot use the standard four-policy template,
+so the shortcut looked reasonable.
+
+**Rule:** Never gate a policy on `has_any_company_permission`. Every policy must connect the ROW
+to a company in `get_companies_with_employee_role()` or
+`get_companies_with_employee_permission(...)`. For tables without `companyId`, go through a
+membership table (`userToCompany`, `employee`, …), as `20260924153817` does. When a global
+row is shared by several tenants, also pin the columns no single tenant owns (a BEFORE UPDATE
+guard on `current_user IN ('anon','authenticated')`), and revoke INSERT/DELETE from the API
+roles when only the server writes them. Also check `pg_policies` for `qual = 'true'`.
+
+**Applies to:** `packages/database/supabase/migrations/**` RLS on global tables (`user`,
+`userPermission`, `group`), and any review of an RLS helper.
