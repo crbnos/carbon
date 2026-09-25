@@ -96,6 +96,10 @@ msgstr "{0} को हटाया नहीं जा सकता क्यो
 msgid "{0} cells with deltas"
 msgstr "{0} अंतर वाली कोशिकाएँ"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} उपयोग किया गया"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -1715,6 +1719,9 @@ msgstr "सभी समय"
 msgid "All tools"
 msgstr "सभी उपकरण"
 
+msgid "All types"
+msgstr "सभी प्रकार"
+
 msgid "All Types"
 msgstr "सभी प्रकार"
 
@@ -2585,6 +2592,9 @@ msgstr "इसके अनुसार:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "कंपनी के मालिक के रूप में, आप स्वामित्व किसी अन्य कर्मचारी को स्थानांतरित कर सकते हैं। यह उन्हें बिलिंग और प्रशासनिक सेटिंग्स तक पूर्ण पहुंच देगा।"
 
+msgid "ASAP"
+msgstr "जितनी जल्दी संभव हो"
+
 msgid "Ascending"
 msgstr "आरोही"
 
@@ -2656,6 +2666,9 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
+msgid "Assign"
+msgstr "असाइन करें"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -2664,6 +2677,9 @@ msgstr "को असाइन करें"
 
 msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
+
+msgid "Assign to..."
+msgstr "को असाइन करें..."
 
 msgid "Assigned"
 msgstr "नियुक्त"
@@ -3821,6 +3837,9 @@ msgstr "कंपनियां"
 msgid "Company"
 msgstr "कंपनी"
 
+msgid "Company default"
+msgstr "कंपनी डिफ़ॉल्ट"
+
 msgid "Company group"
 msgstr "कंपनी समूह"
 
@@ -4118,6 +4137,12 @@ msgstr "उपभोग्य सामग्री"
 
 msgid "Consumables"
 msgstr "उपभोग्य सामग्री"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "पूर्वानुमान को पीछे की ओर उपयोग करें (सप्ताह)"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "पूर्वानुमान को आगे की ओर उपयोग करें (सप्ताह)"
 
 msgid "Consumed"
 msgstr "उपभोग किया गया"
@@ -5232,6 +5257,9 @@ msgstr "छुट्टी"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "दिन-प्रतिदिन के प्रश्न और लॉन्च के बाद हाइपरकेयर"
+
+msgid "days"
+msgstr "दिन"
 
 msgid "Days"
 msgstr "दिन"
@@ -7940,6 +7968,9 @@ msgstr "किसी भी चीज़ के लिए। वे सही �
 msgid "Forecast"
 msgstr "पूर्वानुमान"
 
+msgid "Forecast Consumption"
+msgstr "पूर्वानुमान खपत"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "पूर्वानुमान विधि: <0>{0}</0>। यह पंक्ति कार्यरत जॉब से व्युत्पन्न नहीं की गई थी, इसलिए कोई मूल स्रोत उपलब्ध नहीं है।"
@@ -8869,6 +8900,9 @@ msgstr "समूह से विरासत में मिली: क्य
 msgid "Inherited from the parent group."
 msgstr "मूल समूह से विरासत में मिला।"
 
+msgid "inherits {inheritedName}"
+msgstr "{inheritedName} से विरासत"
+
 msgid "Input"
 msgstr "इनपुट"
 
@@ -9710,7 +9744,7 @@ msgid "Lines"
 msgstr "पंक्तियाँ"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "एक बार क्रय आदेश की प्राप्ति पोस्ट किए जाने के बाद यहां पंक्तियां दिखाई देंगी, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य आपूर्तिकर्ता रिटर्न पर अधिकृत नहीं हैं। एक अंधी रिटर्न के लिए पंक्ति आइटम जोड़ें का उपयोग करें।"
+msgstr "एक क्रय आदेश प्राप्ति पोस्ट किए जाने के बाद पंक्तियां यहां दिखाई देती हैं, और केवल उन मात्राओं के लिए जो किसी अन्य आपूर्तिकर्ता रिटर्न पर पहले से अधिकृत नहीं हैं। ब्लाइंड रिटर्न के लिए पंक्ति आइटम जोड़ें का उपयोग करें।"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "पंक्तियाँ यहाँ दिखाई देती हैं जब विक्रय आदेश की शिपमेंट पोस्ट की जाती है, और केवल उन मात्राओं के लिए जो पहले से किसी अन्य RMA पर अधिकृत नहीं हैं। एक अंधी रिटर्न के लिए पंक्ति मद जोड़ें का उपयोग करें।"
@@ -10638,6 +10672,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRP केवल तभी किसी मौजूदा आदेश को स्थानांतरित करने का सुझाव देता है जब इसकी तारीख इतने दिनों से सख्ती से अधिक हो। छोटे अंतराल कार्यसूची को शांत रखने के लिए दबाए जाते हैं।"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
@@ -10646,6 +10683,9 @@ msgstr "एक ही समय में इस प्रक्रिया प
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
+
+msgid "My actions"
+msgstr "मेरी कार्रवाइयां"
 
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
@@ -11115,6 +11155,9 @@ msgstr "कोई खाता आपकी खोज से मेल नही
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
 
+msgid "No actions assigned to you"
+msgstr "आपको कोई कार्रवाई असाइन नहीं की गई है"
+
 msgid "No actions found."
 msgstr "कोई कार्य नहीं मिला।"
 
@@ -11432,6 +11475,9 @@ msgstr "अभी तक कोई भुगतान नहीं।"
 msgid "No planned or recorded time."
 msgstr "कोई नियोजित या दर्ज समय नहीं।"
 
+msgid "No planning actions"
+msgstr "कोई योजना कार्रवाइयां नहीं"
+
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
 
@@ -11505,7 +11551,7 @@ msgid "No results found"
 msgstr "कोई परिणाम नहीं मिला"
 
 msgid "No returnable lines for this customer"
-msgstr "इस ग्राहक के लिए कोई लौटाई जा सकने वाली पंक्तियां नहीं"
+msgstr "इस ग्राहक के लिए कोई रिटर्न योग्य पंक्तियां नहीं"
 
 msgid "No returnable lines for this supplier"
 msgstr "इस आपूर्तिकर्ता के लिए कोई रिटर्न योग्य पंक्तियाँ नहीं"
@@ -12839,6 +12885,12 @@ msgstr "योजनाबद्ध समय"
 
 msgid "Planning"
 msgstr "योजना"
+
+msgid "Planning Actions"
+msgstr "योजना कार्रवाइयां"
+
+msgid "Planning Ownership"
+msgstr "योजना स्वामित्व"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "योजना राउंड इस संख्या के पूरे गुणज तक पुनः भरण का सुझाव दिया।"
@@ -14406,6 +14458,9 @@ msgstr "मरम्मत की आवश्यकता है"
 msgid "Requires staffing"
 msgstr "स्टाफिंग आवश्यक है"
 
+msgid "Reschedule Tolerance"
+msgstr "पुनर्निर्धारण सहनशीलता"
+
 msgid "Reserve floor"
 msgstr "रिज़र्व फ़्लोर"
 
@@ -14463,6 +14518,12 @@ msgstr "संसाधन"
 
 msgid "Resources"
 msgstr "संसाधन"
+
+msgid "Responsible employee"
+msgstr "जिम्मेदार कर्मचारी"
+
+msgid "Responsible Employee"
+msgstr "जिम्मेदार कर्मचारी"
 
 msgid "Restock"
 msgstr "पुनः स्टॉक करें"
@@ -14647,6 +14708,12 @@ msgstr "समीक्षा और बनाएं"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
+
+msgid "Review on Job"
+msgstr "जॉब पर समीक्षा"
+
+msgid "Review on PO"
+msgstr "PO पर समीक्षा"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि के तुलन पत्र और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही दिखते हैं। यह एक मैनुअल हस्ताक्षर बंद है — समीक्षा के बाद इसे पूरा करें।"
@@ -15247,7 +15314,7 @@ msgid "Search by linear issue title..."
 msgstr "Linear समस्या शीर्षक द्वारा खोजें..."
 
 msgid "Search by receipt, PO, or item"
-msgstr "प्राप्ति, PO, या आइटम द्वारा खोजें"
+msgstr "प्राप्ति, PO या आइटम द्वारा खोजें"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "शिपमेंट, विक्रय आदेश, या आइटम के अनुसार खोजें"
@@ -15497,7 +15564,7 @@ msgid "Select operations"
 msgstr "ऑपरेशन चुनें"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "इस आपूर्तिकर्ता से रिटर्न करने के लिए पोस्ट की गई प्राप्ति पंक्तियां चुनें।"
+msgstr "इस आपूर्तिकर्ता से वापसी के लिए पोस्ट की गई प्राप्ति पंक्तियों को चुनें।"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "इस ग्राहक को भेजी गई शिपमेंट पंक्तियों को रिटर्न के लिए चुनें।"
@@ -15696,7 +15763,7 @@ msgid "Session locked"
 msgstr "सत्र लॉक किया गया"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "इस रिटर्न पर एक ग्राहक सेट करें शिपमेंट से जोड़ने के लिए।"
+msgstr "शिपमेंट से जोड़ने के लिए इस वापसी पर एक ग्राहक सेट करें।"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "प्राप्ति से जोड़ने के लिए इस रिटर्न पर एक आपूर्तिकर्ता सेट करें।"
@@ -16657,6 +16724,9 @@ msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "अंतिम MRP रन द्वारा सुझाया गया। लागू करने से अप्रतिबद्ध आपूर्ति पर कार्य होता है; भेजे गए आदेश समीक्षा के लिए लिंक करते हैं।"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"
@@ -19790,6 +19860,9 @@ msgstr "जब {name} परिवर्तन होता है"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "जब किसी तैयार उत्पाद की शेल्फ लाइफ को गणना के लिए सेट किया जाता है, तो चुनें कि गणना को कौन सी उपयोग की गई इनपुट प्रदान करती हैं।"
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "जब कोई विक्रय आदेश या जॉब किसी ऐसे सप्ताह में आता है जिसमें कोई शेष पूर्वानुमान नहीं है, तो यह इस कई सप्ताह पीछे और फिर आगे के पूर्वानुमान का उपभोग करता है, मांग को दोहरी गणना करने के बजाय। नेटिंग को एक ही सप्ताह तक सीमित करने के लिए दोनों को 0 पर सेट करें।"
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "जब एक सीरियल या बैच समाप्त हो जाता है, और उपयोग के बाद क्या होता है — एक कंपनी नीति सतर्क, अवरुद्ध, या ब्लॉकविदअधिग्रहण हो सकती है।"
 
@@ -19978,6 +20051,9 @@ msgstr "कौन किस पर प्रशिक्षण पाता ह�
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "किसे कोटेशन, आदेश, और क्रय को अनुमोदन करना है — और कब"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "MRP योजना कार्यों का मालिक कौन है। स्थान कंपनी डिफ़ॉल्ट से विरासत में लेते हैं; आइटम समूह अपने स्थान से विरासत में लेते हैं। सबसे विशिष्ट असाइनमेंट लागू होता है, और प्रत्येक आइटम अपने योजना टैब पर मान अधिरोप कर सकता है।"
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "रखरखाव कार्य के लिए सूचना कौन प्राप्त करे?"

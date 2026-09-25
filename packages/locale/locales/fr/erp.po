@@ -96,6 +96,10 @@ msgstr "{0} ne peut pas être supprimé car il est encore utilisé par {where}. 
 msgid "{0} cells with deltas"
 msgstr "{0} cellules avec écarts"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} consommé"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -1402,7 +1406,7 @@ msgid "Add from library…"
 msgstr "Ajouter à partir de la bibliothèque…"
 
 msgid "Add from receipt"
-msgstr "Ajouter depuis une réception"
+msgstr "Ajouter d'une réception"
 
 msgid "Add from shipment"
 msgstr "Ajouter depuis l'expédition"
@@ -1714,6 +1718,9 @@ msgstr "Tous les temps"
 
 msgid "All tools"
 msgstr "Tous les outils"
+
+msgid "All types"
+msgstr "Tous les types"
 
 msgid "All Types"
 msgstr "Tous les types"
@@ -2585,6 +2592,9 @@ msgstr "Au :"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "En tant que propriétaire de la société, vous pouvez transférer la propriété à un autre employé. Cela lui donnera un accès complet à la facturation et aux paramètres d'administration."
 
+msgid "ASAP"
+msgstr "Dès que possible"
+
 msgid "Ascending"
 msgstr "Croissant"
 
@@ -2656,6 +2666,9 @@ msgstr "Actifs"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Actifs, passifs et capitaux propres à une date"
 
+msgid "Assign"
+msgstr "Attribuer"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Attribuer des imprimantes aux sites. L'expédition, la réception et les postes de travail héritent du paramètre par défaut du site sauf s'ils sont remplacés."
 
@@ -2664,6 +2677,9 @@ msgstr "Attribuer à"
 
 msgid "Assign to Groups"
 msgstr "Attribuer à des groupes"
+
+msgid "Assign to..."
+msgstr "Attribuer à..."
 
 msgid "Assigned"
 msgstr "Assigné"
@@ -3821,6 +3837,9 @@ msgstr "Entreprises"
 msgid "Company"
 msgstr "Société"
 
+msgid "Company default"
+msgstr "Valeur par défaut de la société"
+
 msgid "Company group"
 msgstr "Groupe de sociétés"
 
@@ -4118,6 +4137,12 @@ msgstr "consommables"
 
 msgid "Consumables"
 msgstr "Consommables"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "Consommer les prévisions en arrière (semaines)"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "Consommer les prévisions en avant (semaines)"
 
 msgid "Consumed"
 msgstr "Consommé"
@@ -5232,6 +5257,9 @@ msgstr "Jour de repos"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Questions quotidiennes et hypercare après le lancement"
+
+msgid "days"
+msgstr "jours"
 
 msgid "Days"
 msgstr "Jours"
@@ -7940,6 +7968,9 @@ msgstr "pour n'importe quoi. Ils vont faire intervenir la bonne personne."
 msgid "Forecast"
 msgstr "Prévision"
 
+msgid "Forecast Consumption"
+msgstr "Consommation des prévisions"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Méthode de prévision : <0>{0}</0>. Cette ligne n'a pas été dérivée des ordres de fabrication actifs, donc aucune source parent n'est disponible."
@@ -8869,6 +8900,9 @@ msgstr "Hérité du groupe : si ce compte se ferme sur le report à nouveau (pro
 msgid "Inherited from the parent group."
 msgstr "Hérité du groupe parent."
 
+msgid "inherits {inheritedName}"
+msgstr "hérite de {inheritedName}"
+
 msgid "Input"
 msgstr "Entrée"
 
@@ -9710,7 +9744,7 @@ msgid "Lines"
 msgstr "Lignes"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "Les lignes apparaissent ici une fois qu'une réception de bon de commande a été comptabilisée, et uniquement pour les quantités non déjà autorisées sur un autre retour fournisseur. Utilisez Ajouter un article de ligne pour un retour en aveugle."
+msgstr "Les lignes apparaissent ici une fois qu'une réception de bon de commande a été comptabilisée, et uniquement pour les quantités non déjà autorisées sur un autre retour fournisseur. Utilisez Ajouter une ligne d'article pour un retour en aveugle."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "Les lignes apparaissent ici une fois qu'une expédition de commande client a été comptabilisée, et uniquement pour les quantités non déjà autorisées sur un autre RMA. Utilisez Ajouter article de ligne pour un retour en aveugle."
@@ -10638,6 +10672,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planification)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRP ne suggère de déplacer une commande existante que lorsque sa date dépasse strictement ce nombre de jours. Les écarts plus petits sont supprimés pour garder la liste de travail calme."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP s'exécute automatiquement toutes les 3 heures, mais vous pouvez l'exécuter manuellement ici."
 
@@ -10646,6 +10683,9 @@ msgstr "Plusieurs ordres de fabrication peuvent s'exécuter sur ce procédé en 
 
 msgid "Must be in the same location"
 msgstr "Doit être au même endroit"
+
+msgid "My actions"
+msgstr "Mes actions"
 
 msgid "My Documents"
 msgstr "Mes Documents"
@@ -11115,6 +11155,9 @@ msgstr "Aucun compte ne correspond à votre recherche"
 msgid "No action needed"
 msgstr "Aucune action requise"
 
+msgid "No actions assigned to you"
+msgstr "Aucune action attribuée à vous"
+
 msgid "No actions found."
 msgstr "Aucune action trouvée."
 
@@ -11431,6 +11474,9 @@ msgstr "Aucun paiement pour le moment."
 
 msgid "No planned or recorded time."
 msgstr "Aucun temps planifié ou enregistré."
+
+msgid "No planning actions"
+msgstr "Aucune action de planification"
 
 msgid "No planning data"
 msgstr "Aucune donnée de planification"
@@ -12839,6 +12885,12 @@ msgstr "Temps planifié"
 
 msgid "Planning"
 msgstr "Planification"
+
+msgid "Planning Actions"
+msgstr "Actions de planification"
+
+msgid "Planning Ownership"
+msgstr "Responsabilité de planification"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Les cycles de planification ont suggéré un réapprovisionnement jusqu'à un multiple entier de ce nombre."
@@ -14406,6 +14458,9 @@ msgstr "Nécessite une réparation"
 msgid "Requires staffing"
 msgstr "Nécessite du personnel"
 
+msgid "Reschedule Tolerance"
+msgstr "Tolérance de reprogrammation"
+
 msgid "Reserve floor"
 msgstr "Plancher de réserve"
 
@@ -14463,6 +14518,12 @@ msgstr "ressources"
 
 msgid "Resources"
 msgstr "Ressources"
+
+msgid "Responsible employee"
+msgstr "Employé responsable"
+
+msgid "Responsible Employee"
+msgstr "Employé responsable"
 
 msgid "Restock"
 msgstr "Réapprovisionnement"
@@ -14647,6 +14708,12 @@ msgstr "Examiner et créer"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Examinez les modifications de chaque article, puis confirmez — la libération ne peut pas être annulée."
+
+msgid "Review on Job"
+msgstr "Revue sur l'ordre de fabrication"
+
+msgid "Review on PO"
+msgstr "Revue sur le bon de commande"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Examinez le bilan et le compte de résultat de la période et confirmez que les chiffres semblent corrects. C'est une approbation manuelle — marquez-le comme fait une fois que vous les avez examinés."
@@ -15696,7 +15763,7 @@ msgid "Session locked"
 msgstr "Session verrouillée"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "Définissez un client sur ce retour pour ajouter depuis une expédition."
+msgstr "Définissez un client sur ce retour pour ajouter à partir d'une expédition."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "Définir un fournisseur sur ce retour pour ajouter à partir d'une réception."
@@ -16657,6 +16724,9 @@ msgstr "Suggérer une correspondance"
 
 msgid "Suggest with AI"
 msgstr "Suggérer avec l'IA"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "Suggéré par la dernière exécution du MRP. L'application agit sur l'approvisionnement non engagé ; les commandes envoyées renvoient à la révision."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Commandes suggérées que vous n'avez pas encore passées."
@@ -19790,6 +19860,9 @@ msgstr "Quand {name} change"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Quand la durée de conservation d'un produit fini est définie sur Calculée, choisissez quelles entrées consommées alimentent le calcul."
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "Lorsqu'une commande client ou un ordre de fabrication arrive dans une semaine sans prévision restante, il consomme la prévision de jusqu'à ce nombre de semaines en arrière, puis en avant, au lieu de compter deux fois les besoins. Définissez les deux à 0 pour limiter la compensation à la même semaine."
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Quand un numéro de série ou un lot de production expire, et ce qui se passe en cas d'utilisation après — une politique de société peut Avertir, Bloquer, ou Bloquer avec remplacement."
 
@@ -19978,6 +20051,9 @@ msgstr "Qui reçoit une formation sur quoi, dans quel format. Votre rôle : prot
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Qui doit approuver les devis, les commandes et les achats — et quand"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "Qui possède les actions de planification du MRP. Les sites héritent de la valeur par défaut de la société ; les groupes d'articles héritent de celle de leur site. L'affectation la plus spécifique prime, et chaque article peut la remplacer sur son onglet Planification."
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Qui devrait recevoir des notifications pour les interventions de maintenance ?"

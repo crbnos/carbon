@@ -22,6 +22,7 @@ import {
   LuSheet,
   LuShieldCheck,
   LuShoppingCart,
+  LuUserCog,
   LuUsers,
   LuWebhook,
   LuWorkflow,
@@ -89,6 +90,12 @@ export default function useSettingsSubmodules() {
             to: path.to.logos,
             role: "employee",
             icon: <LuImage />
+          },
+          {
+            name: t`Planning`,
+            to: path.to.planningSettings,
+            role: "employee",
+            icon: <LuUserCog />
           },
           {
             name: t`Printing`,

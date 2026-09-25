@@ -34,6 +34,7 @@ import type {
   getMaintenanceSchedule,
   getMaintenanceScheduleItems,
   getMaintenanceSchedules,
+  getPlanningActions,
   getProcedure,
   getProcedureParameters,
   getProcedureSteps,
@@ -195,6 +196,10 @@ export type Procedure = NonNullable<
 
 export type ProductionPlanningItem = NonNullable<
   Awaited<ReturnType<typeof getProductionPlanning>>["data"]
+>[number];
+
+export type PlanningAction = NonNullable<
+  Awaited<ReturnType<typeof getPlanningActions>>["data"]
 >[number];
 
 export type ScrapReason = NonNullable<

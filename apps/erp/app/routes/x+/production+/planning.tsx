@@ -7,7 +7,11 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import type { ProductionPlanningItem } from "~/modules/production";
-import { getProductionPlanning } from "~/modules/production";
+import {
+  getPlanningActions,
+  getProductionPlanning
+} from "~/modules/production";
+import PlanningActionsTable from "~/modules/production/ui/Planning/PlanningActionsTable";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
@@ -49,19 +53,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  const items = await getProductionPlanning(
-    client,
-    locationId,
-    companyId,
-    periods.map((p) => p.id),
-    {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
-  );
+  const [items, planningActions] = await Promise.all([
+    getProductionPlanning(
+      client,
+      locationId,
+      companyId,
+      periods.map((p) => p.id),
+      {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters
+      }
+    ),
+    // the persisted MRP action worklist — deliberately NOT driven by the
+    // grid's URL filters/sorts (those name grid columns)
+    getPlanningActions(client, {
+      companyId,
+      locationId,
+      kind: "Make",
+      search: null,
+      limit: 500,
+      offset: 0
+    })
+  ]);
 
   if (items.error) {
     redirect(
@@ -73,6 +89,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     items: (items.data ?? []) as ProductionPlanningItem[],
     count: items.count ?? 0,
+    planningActions: planningActions.data ?? [],
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -82,7 +99,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function ProductionPlanningRoute() {
-  const { items, count, locationId, periods } = useLoaderData<typeof loader>();
+  const { items, count, locationId, periods, planningActions } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -93,12 +111,22 @@ export default function ProductionPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <ProductionPlanningTable
-            data={items}
-            count={count}
-            locationId={locationId}
-            periods={periods}
-          />
+          <div className="flex flex-col h-full">
+            <PlanningActionsTable
+              actions={planningActions}
+              kind="Make"
+              locationId={locationId}
+              updatePath={path.to.bulkUpdateProductionPlanning}
+            />
+            <div className="flex-1 min-h-0">
+              <ProductionPlanningTable
+                data={items}
+                count={count}
+                locationId={locationId}
+                periods={periods}
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <Outlet />
       </ResizablePanelGroup>

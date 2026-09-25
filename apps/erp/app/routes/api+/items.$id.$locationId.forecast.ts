@@ -204,9 +204,23 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     })
   ]);
 
+  // Merge planner-authored projections into the forecast series, NET of MRP
+  // forecast consumption: the planning RPCs' demand_data counts
+  // GREATEST(forecastQuantity - consumedQuantity, 0) per projection, and the
+  // chart must agree with the grid. Netting happens here, before the shared
+  // merge, so mergeDemandProjections stays a plain per-period merge.
+  const netProjections = demand.projections.map(
+    ({ consumedQuantity, ...projection }) => ({
+      ...projection,
+      forecastQuantity: Math.max(
+        (projection.forecastQuantity ?? 0) - (consumedQuantity ?? 0),
+        0
+      )
+    })
+  );
   const demandForecast = mergeDemandProjections(
     demand.forecasts,
-    demand.projections,
+    netProjections,
     periods.map((p) => p.id ?? "")
   );
 

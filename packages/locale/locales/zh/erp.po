@@ -96,6 +96,10 @@ msgstr "{0} 仍被 {where} 使用，无法删除。请先将这些记录更改�
 msgid "{0} cells with deltas"
 msgstr "{0} 个单元格有差异"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} 已消耗"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -1715,6 +1719,9 @@ msgstr "所有时间"
 msgid "All tools"
 msgstr "所有工具"
 
+msgid "All types"
+msgstr "所有类型"
+
 msgid "All Types"
 msgstr "所有类型"
 
@@ -2585,6 +2592,9 @@ msgstr "截至："
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "作为公司所有者，您可以将所有权转移给另一名员工。这将给予他们对账单和管理设置的完全访问权限。"
 
+msgid "ASAP"
+msgstr "尽快"
+
 msgid "Ascending"
 msgstr "升序"
 
@@ -2656,6 +2666,9 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
+msgid "Assign"
+msgstr "分配"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -2664,6 +2677,9 @@ msgstr "分配给"
 
 msgid "Assign to Groups"
 msgstr "分配给组"
+
+msgid "Assign to..."
+msgstr "分配给..."
 
 msgid "Assigned"
 msgstr "已分配"
@@ -3821,6 +3837,9 @@ msgstr "公司"
 msgid "Company"
 msgstr "公司"
 
+msgid "Company default"
+msgstr "公司默认值"
+
 msgid "Company group"
 msgstr "公司集团"
 
@@ -4118,6 +4137,12 @@ msgstr "耗材"
 
 msgid "Consumables"
 msgstr "耗材"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "向后消耗预测（周数）"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "向前消耗预测（周数）"
 
 msgid "Consumed"
 msgstr "已消耗"
@@ -5232,6 +5257,9 @@ msgstr "休息日"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日常问题和上线后的超级护理"
+
+msgid "days"
+msgstr "天"
 
 msgid "Days"
 msgstr "天数"
@@ -7940,6 +7968,9 @@ msgstr "用于任何事项。他们会调配合适的人员。"
 msgid "Forecast"
 msgstr "预测"
 
+msgid "Forecast Consumption"
+msgstr "预测消耗"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "预测方法: <0>{0}</0>。此行不是从活跃工单派生的，因此没有可用的父源。"
@@ -8869,6 +8900,9 @@ msgstr "从公司继承：此账户是结转至未分配利润（收益）还是
 msgid "Inherited from the parent group."
 msgstr "从父组继承。"
 
+msgid "inherits {inheritedName}"
+msgstr "继承自 {inheritedName}"
+
 msgid "Input"
 msgstr "输入"
 
@@ -9710,7 +9744,7 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "采购订单收货已过账后，行将显示在此处，并且仅限于尚未在另一个供应商退货中授权的数量。使用添加行项目进行盲退货。"
+msgstr "采购订单收货过账后，行才会在此显示，且仅针对尚未在其他供应商退货上授权的数量。盲目退货请使用添加行项目。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "销售订单发货已过账后，行将显示在此处，仅适用于尚未在另一个RMA中授权的数量。对于盲目退货，请使用添加行项目。"
@@ -10638,6 +10672,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRP 仅在现有订单的日期严格偏离超过此天数时建议移动它。较小的间隙被抑制以保持工作清单的安静。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
@@ -10646,6 +10683,9 @@ msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机�
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
+
+msgid "My actions"
+msgstr "我的计划行动"
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -11115,6 +11155,9 @@ msgstr "没有账户与您的搜索匹配"
 msgid "No action needed"
 msgstr "无需操作"
 
+msgid "No actions assigned to you"
+msgstr "没有分配给您的计划行动"
+
 msgid "No actions found."
 msgstr "未找到操作。"
 
@@ -11432,6 +11475,9 @@ msgstr "还没有付款。"
 msgid "No planned or recorded time."
 msgstr "没有计划或记录的时间。"
 
+msgid "No planning actions"
+msgstr "没有计划行动"
+
 msgid "No planning data"
 msgstr "没有计划数据"
 
@@ -11505,7 +11551,7 @@ msgid "No results found"
 msgstr "未找到结果"
 
 msgid "No returnable lines for this customer"
-msgstr "此客户没有可退货行。"
+msgstr "此客户无可退货行"
 
 msgid "No returnable lines for this supplier"
 msgstr "此供应商没有可退货的行"
@@ -12839,6 +12885,12 @@ msgstr "已计划时间"
 
 msgid "Planning"
 msgstr "计划"
+
+msgid "Planning Actions"
+msgstr "计划行动"
+
+msgid "Planning Ownership"
+msgstr "计划所有权"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "计划将建议的补货数量舍入至该数字的整数倍。"
@@ -14406,6 +14458,9 @@ msgstr "需要维修"
 msgid "Requires staffing"
 msgstr "需要人工配置"
 
+msgid "Reschedule Tolerance"
+msgstr "重新安排容差"
+
 msgid "Reserve floor"
 msgstr "储备下限"
 
@@ -14463,6 +14518,12 @@ msgstr "资源"
 
 msgid "Resources"
 msgstr "资源"
+
+msgid "Responsible employee"
+msgstr "负责员工"
+
+msgid "Responsible Employee"
+msgstr "负责员工"
 
 msgid "Restock"
 msgstr "补货"
@@ -14647,6 +14708,12 @@ msgstr "查看和创建"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
+
+msgid "Review on Job"
+msgstr "工单上的评审"
+
+msgid "Review on PO"
+msgstr "采购订单上的评审"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "评审期间的资产负债表和利润表，并确认数字正确。这是手动签核——一旦您评审完毕即标记为完成。"
@@ -15497,7 +15564,7 @@ msgid "Select operations"
 msgstr "选择工序"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "选择从此供应商的已过账收货行以退货。"
+msgstr "从该供应商选择已过账的收货行以退货。"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "从该客户的已过账发货行中选择要退货的"
@@ -15696,7 +15763,7 @@ msgid "Session locked"
 msgstr "会话已锁定"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "在此退货中设置客户以从发货添加。"
+msgstr "在此退货上设置客户以从发货中添加。"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "为此退货指定供应商以从其收货中添加"
@@ -16006,7 +16073,7 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "在供应商列表、供应商表单和下拉菜单上显示可读的供应商 ID 列。无论哪种方式，供应商在内部仍然可以被识别。"
 
 msgid "Show available batch numbers"
-msgstr "显示可用的生产批次号"
+msgstr "显示可用批次号"
 
 msgid "Show available tracking numbers"
 msgstr "显示可用的跟踪号码"
@@ -16657,6 +16724,9 @@ msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "由最后一次MRP运行建议。应用作用于未提交的供应；发送的订单链接以供评审。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -19790,6 +19860,9 @@ msgstr "当 {name} 更改时"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "当销售订单或工单进入某一周（该周没有剩余预测）时，它将从之前最多指定周数及之后消耗预测，而不是重复计算需求。将两者设置为0可将净额限制在同一周。"
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"
 
@@ -19978,6 +20051,9 @@ msgstr "谁接受什么培训，采用什么形式。你的职责：尽早在你
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "谁必须审批报价单、订单和采购——以及何时"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "MRP计划行动的所有者。地点继承公司默认值；物料组继承其地点。最具体的分配优先，每个物料可以在其计划选项卡上覆盖。"
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "谁应该接收与维护相关的维护工单的通知？"

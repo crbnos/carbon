@@ -6,6 +6,8 @@ import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
+import { getPlanningActions } from "~/modules/production";
+import PlanningActionsTable from "~/modules/production/ui/Planning/PlanningActionsTable";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import { getPurchasingPlanning } from "~/modules/purchasing";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
@@ -49,19 +51,31 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  const items = await getPurchasingPlanning(
-    client,
-    locationId,
-    companyId,
-    periods.map((p) => p.id),
-    {
-      search,
-      limit,
-      offset,
-      sorts,
-      filters
-    }
-  );
+  const [items, planningActions] = await Promise.all([
+    getPurchasingPlanning(
+      client,
+      locationId,
+      companyId,
+      periods.map((p) => p.id),
+      {
+        search,
+        limit,
+        offset,
+        sorts,
+        filters
+      }
+    ),
+    // the persisted MRP action worklist — deliberately NOT driven by the
+    // grid's URL filters/sorts (those name grid columns)
+    getPlanningActions(client, {
+      companyId,
+      locationId,
+      kind: "Buy",
+      search: null,
+      limit: 500,
+      offset: 0
+    })
+  ]);
 
   if (items.error) {
     redirect(
@@ -73,6 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   return {
     items: (items.data ?? []) as PurchasingPlanningItem[],
     count: items.count ?? 0,
+    planningActions: planningActions.data ?? [],
     periods,
     locationId,
     // Planned-order date defaults are business dates on the plant's calendar —
@@ -82,7 +97,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function PurchasingPlanningRoute() {
-  const { items, count, locationId, periods } = useLoaderData<typeof loader>();
+  const { items, count, locationId, periods, planningActions } =
+    useLoaderData<typeof loader>();
 
   return (
     <VStack spacing={0} className="h-full ">
@@ -93,12 +109,22 @@ export default function PurchasingPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <PurchasingPlanningTable
-            data={items}
-            count={count}
-            locationId={locationId}
-            periods={periods}
-          />
+          <div className="flex flex-col h-full">
+            <PlanningActionsTable
+              actions={planningActions}
+              kind="Buy"
+              locationId={locationId}
+              updatePath={path.to.bulkUpdatePurchasingPlanning}
+            />
+            <div className="flex-1 min-h-0">
+              <PurchasingPlanningTable
+                data={items}
+                count={count}
+                locationId={locationId}
+                periods={periods}
+              />
+            </div>
+          </div>
         </ResizablePanel>
         <Outlet />
       </ResizablePanelGroup>

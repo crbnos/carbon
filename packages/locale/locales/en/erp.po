@@ -96,6 +96,10 @@ msgstr "{0} cannot be deleted because it is still in use by {where}. Change thos
 msgid "{0} cells with deltas"
 msgstr "{0} cells with deltas"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} consumed"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -1715,6 +1719,9 @@ msgstr "All Time"
 msgid "All tools"
 msgstr "All tools"
 
+msgid "All types"
+msgstr "All types"
+
 msgid "All Types"
 msgstr "All Types"
 
@@ -2585,6 +2592,9 @@ msgstr "As of:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 
+msgid "ASAP"
+msgstr "ASAP"
+
 msgid "Ascending"
 msgstr "Ascending"
 
@@ -2656,6 +2666,9 @@ msgstr "Assets"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
 
+msgid "Assign"
+msgstr "Assign"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 
@@ -2664,6 +2677,9 @@ msgstr "Assign To"
 
 msgid "Assign to Groups"
 msgstr "Assign to Groups"
+
+msgid "Assign to..."
+msgstr "Assign to..."
 
 msgid "Assigned"
 msgstr "Assigned"
@@ -3821,6 +3837,9 @@ msgstr "Companies"
 msgid "Company"
 msgstr "Company"
 
+msgid "Company default"
+msgstr "Company default"
+
 msgid "Company group"
 msgstr "Company group"
 
@@ -4118,6 +4137,12 @@ msgstr "consumables"
 
 msgid "Consumables"
 msgstr "Consumables"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "Consume forecast backward (weeks)"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "Consume forecast forward (weeks)"
 
 msgid "Consumed"
 msgstr "Consumed"
@@ -5232,6 +5257,9 @@ msgstr "Day off"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Day-to-day questions and hypercare after launch"
+
+msgid "days"
+msgstr "days"
 
 msgid "Days"
 msgstr "Days"
@@ -7940,6 +7968,9 @@ msgstr "for anything. They'll pull in the right person."
 msgid "Forecast"
 msgstr "Forecast"
 
+msgid "Forecast Consumption"
+msgstr "Forecast Consumption"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
@@ -8868,6 +8899,9 @@ msgstr "Inherited from the group: whether this account closes to retained earnin
 
 msgid "Inherited from the parent group."
 msgstr "Inherited from the parent group."
+
+msgid "inherits {inheritedName}"
+msgstr "inherits {inheritedName}"
 
 msgid "Input"
 msgstr "Input"
@@ -10638,6 +10672,9 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (planning)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP runs automatically every 3 hours, but you can run it manually here."
 
@@ -10646,6 +10683,9 @@ msgstr "Multiple jobs can run on this process at the same time — e.g. a laser 
 
 msgid "Must be in the same location"
 msgstr "Must be in the same location"
+
+msgid "My actions"
+msgstr "My actions"
 
 msgid "My Documents"
 msgstr "My Documents"
@@ -11115,6 +11155,9 @@ msgstr "No accounts match your search"
 msgid "No action needed"
 msgstr "No action needed"
 
+msgid "No actions assigned to you"
+msgstr "No actions assigned to you"
+
 msgid "No actions found."
 msgstr "No actions found."
 
@@ -11431,6 +11474,9 @@ msgstr "No payments yet."
 
 msgid "No planned or recorded time."
 msgstr "No planned or recorded time."
+
+msgid "No planning actions"
+msgstr "No planning actions"
 
 msgid "No planning data"
 msgstr "No planning data"
@@ -12839,6 +12885,12 @@ msgstr "Planned time"
 
 msgid "Planning"
 msgstr "Planning"
+
+msgid "Planning Actions"
+msgstr "Planning Actions"
+
+msgid "Planning Ownership"
+msgstr "Planning Ownership"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "Planning rounds suggested replenishment up to a whole multiple of this number."
@@ -14406,6 +14458,9 @@ msgstr "Requires Repair"
 msgid "Requires staffing"
 msgstr "Requires staffing"
 
+msgid "Reschedule Tolerance"
+msgstr "Reschedule Tolerance"
+
 msgid "Reserve floor"
 msgstr "Reserve floor"
 
@@ -14463,6 +14518,12 @@ msgstr "resources"
 
 msgid "Resources"
 msgstr "Resources"
+
+msgid "Responsible employee"
+msgstr "Responsible employee"
+
+msgid "Responsible Employee"
+msgstr "Responsible Employee"
 
 msgid "Restock"
 msgstr "Restock"
@@ -14647,6 +14708,12 @@ msgstr "Review & create"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
+
+msgid "Review on Job"
+msgstr "Review on Job"
+
+msgid "Review on PO"
+msgstr "Review on PO"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
@@ -16657,6 +16724,9 @@ msgstr "Suggest Match"
 
 msgid "Suggest with AI"
 msgstr "Suggest with AI"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Suggested orders you haven't placed yet."
@@ -19790,6 +19860,9 @@ msgstr "When {name} changes"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 
@@ -19978,6 +20051,9 @@ msgstr "Who gets trained on what, in what format. Your part: protect the hands-o
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "Who has to approve quotes, orders, and purchases — and when"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "Who should receive notifications for maintenance-related dispatches?"

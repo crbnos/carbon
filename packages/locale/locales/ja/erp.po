@@ -96,6 +96,10 @@ msgstr "{0}は{where}でまだ使用されているため削除できません�
 msgid "{0} cells with deltas"
 msgstr "{0}個のデルタを持つセル"
 
+#. placeholder {0}: formatQuantity(consumed)
+msgid "{0} consumed"
+msgstr "{0} 消費済"
+
 #. placeholder {0}: line.creditableQuantity
 #. placeholder {1}: line.quantityCredited
 #. placeholder {2}: line.quantityShipped
@@ -1715,6 +1719,9 @@ msgstr "すべての期間"
 msgid "All tools"
 msgstr "すべてのツール"
 
+msgid "All types"
+msgstr "すべてのタイプ"
+
 msgid "All Types"
 msgstr "すべてのタイプ"
 
@@ -2585,6 +2592,9 @@ msgstr "以下の日付時点:"
 msgid "As the company owner, you can transfer ownership to another employee. This will give them full access to billing and administrative settings."
 msgstr "会社責任者として、別の従業員に所有権を譲渡できます。これにより、請求とシステム管理の設定への完全なアクセス権が与えられます。"
 
+msgid "ASAP"
+msgstr "ASAP"
+
 msgid "Ascending"
 msgstr "昇順"
 
@@ -2656,6 +2666,9 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
+msgid "Assign"
+msgstr "割り当て"
+
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -2664,6 +2677,9 @@ msgstr "割り当て先"
 
 msgid "Assign to Groups"
 msgstr "グループに割り当て"
+
+msgid "Assign to..."
+msgstr "割り当て先..."
 
 msgid "Assigned"
 msgstr "割り当て済み"
@@ -3821,6 +3837,9 @@ msgstr "企業"
 msgid "Company"
 msgstr "会社"
 
+msgid "Company default"
+msgstr "会社のデフォルト"
+
 msgid "Company group"
 msgstr "会社グループ"
 
@@ -4118,6 +4137,12 @@ msgstr "消耗品"
 
 msgid "Consumables"
 msgstr "消耗品"
+
+msgid "Consume forecast backward (weeks)"
+msgstr "予測の遡及消費 (週)"
+
+msgid "Consume forecast forward (weeks)"
+msgstr "予測の先行消費 (週)"
 
 msgid "Consumed"
 msgstr "消費済み"
@@ -5232,6 +5257,9 @@ msgstr "休日"
 
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日々の質問とローンチ後のハイパーケア"
+
+msgid "days"
+msgstr "日"
 
 msgid "Days"
 msgstr "日数"
@@ -7940,6 +7968,9 @@ msgstr "何でも構いません。彼らが適切な人を連れてきます。
 msgid "Forecast"
 msgstr "予測"
 
+msgid "Forecast Consumption"
+msgstr "予測消費"
+
 #. placeholder {0}: forecastMethod ?? "unknown"
 msgid "Forecast method: <0>{0}</0>. This row was not derived from active jobs, so no parent sources are available."
 msgstr "予測方法：<0>{0}</0>。この行は稼働中の製造指図から派生していないため、親のソースは利用できません。"
@@ -8869,6 +8900,9 @@ msgstr "グループから継承：このアカウントが利益剰余金 (収�
 msgid "Inherited from the parent group."
 msgstr "親グループから継承。"
 
+msgid "inherits {inheritedName}"
+msgstr "継承 {inheritedName}"
+
 msgid "Input"
 msgstr "入力"
 
@@ -9710,7 +9744,7 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "発注書の入荷が転記済になると、ここに明細が表示されます。ただし、他の仕入先返品で既に承認されていない数量のみです。その他の返品の場合は「明細を追加」を使用してください。"
+msgstr "発注書入荷が転記されると、明細がここに表示され、別の仕入先リターンで既に承認されていない数量のみが対象です。ブラインドリターンの場合は「明細を追加」を使用してください。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "受注出荷が転記された後に、別のRMAで既に認可されていない数量のみが表示されます。目隠し返品の場合は「明細を追加」を使用してください。"
@@ -10638,6 +10672,9 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
+msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
+msgstr "MRPは、既存の注文のスケジュール日がこの日数を超えてずれている場合のみ、変更を提案します。より小さいズレは作業リストの静寂を保つために抑制されます。"
+
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
 
@@ -10646,6 +10683,9 @@ msgstr "複数の製造指図がこの工法上で同時に実行できます—
 
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
+
+msgid "My actions"
+msgstr "マイアクション"
 
 msgid "My Documents"
 msgstr "マイドキュメント"
@@ -11115,6 +11155,9 @@ msgstr "検索に一致するアカウントがありません"
 msgid "No action needed"
 msgstr "対応は不要です"
 
+msgid "No actions assigned to you"
+msgstr "割り当てられたアクションがありません"
+
 msgid "No actions found."
 msgstr "アクションが見つかりません。"
 
@@ -11432,6 +11475,9 @@ msgstr "まだ支払いはありません。"
 msgid "No planned or recorded time."
 msgstr "計画時間または記録時間がありません。"
 
+msgid "No planning actions"
+msgstr "計画アクションなし"
+
 msgid "No planning data"
 msgstr "計画データなし"
 
@@ -11505,7 +11551,7 @@ msgid "No results found"
 msgstr "検索結果が見つかりません"
 
 msgid "No returnable lines for this customer"
-msgstr "この得意先の返品対象明細がありません"
+msgstr "この得意先に返却可能な明細がありません"
 
 msgid "No returnable lines for this supplier"
 msgstr "この仕入先に返品対象の明細がありません。"
@@ -12839,6 +12885,12 @@ msgstr "予定時間"
 
 msgid "Planning"
 msgstr "計画"
+
+msgid "Planning Actions"
+msgstr "計画アクション"
+
+msgid "Planning Ownership"
+msgstr "計画所有権"
 
 msgid "Planning rounds suggested replenishment up to a whole multiple of this number."
 msgstr "計画ラウンドは、この数の整数倍まで補充を提案しました。"
@@ -14406,6 +14458,9 @@ msgstr "修理が必要"
 msgid "Requires staffing"
 msgstr "スタッフが必要"
 
+msgid "Reschedule Tolerance"
+msgstr "スケジュール変更許容値"
+
 msgid "Reserve floor"
 msgstr "予備床"
 
@@ -14463,6 +14518,12 @@ msgstr "リソース"
 
 msgid "Resources"
 msgstr "リソース"
+
+msgid "Responsible employee"
+msgstr "責任従業員"
+
+msgid "Responsible Employee"
+msgstr "担当従業員"
 
 msgid "Restock"
 msgstr "補充"
@@ -14647,6 +14708,12 @@ msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
+
+msgid "Review on Job"
+msgstr "製造指図のレビュー"
+
+msgid "Review on PO"
+msgstr "発注書のレビュー"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
@@ -15497,7 +15564,7 @@ msgid "Select operations"
 msgstr "工程を選択"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "この仕入先からの転記済入荷明細を返品するために選択してください。"
+msgstr "この仕入先からの転記済入荷明細を返品として選択してください。"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "この得意先への転記済出荷明細を選択して返品する"
@@ -15696,7 +15763,7 @@ msgid "Session locked"
 msgstr "セッションがロック中"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "この返品に得意先を設定して出荷から追加してください。"
+msgstr "出荷から追加するにはこのリターンに得意先を設定してください。"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "この返品に仕入先を設定して入荷から追加"
@@ -16657,6 +16724,9 @@ msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
+
+msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
+msgstr "最後のMRP実行により提案されました。適用はコミット前の供給に対して機能し、送付済み注文はレビューにリンクします。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -19790,6 +19860,9 @@ msgstr "{name}が変更されるとき"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "完成品の保存期間が「計算」に設定されている場合、計算に使用される消費材料を選択してください。"
 
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
+msgstr "受注または製造指図が残りの予測がない週に到着した場合、所要量の二重計算を回避するため、最大この数の週前後から予測を消費します。ネッティングを同じ週に限定するには、両方を0に設定してください。"
+
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "シリアルまたはバッチが期限切れになるとき、およびその後使用された場合に何が起こるか — 会社のポリシーは警告、ブロック、またはブロック上書きできます。"
 
@@ -19978,6 +20051,9 @@ msgstr "誰が何をどのような形式で訓練を受けるか。あなたの
 
 msgid "Who has to approve quotes, orders, and purchases — and when"
 msgstr "見積、注文、購買の承認が必要な人と時期"
+
+msgid "Who owns MRP planning actions. Locations inherit the company default; item groups inherit their location. The most specific assignment wins, and each item can override on its Planning tab."
+msgstr "MRP計画アクションの所有者。拠点は会社のデフォルトを継承し、品目グループはそれらの拠点を継承します。最も具体的な割り当てが優先され、各品目は計画タブで上書きできます。"
 
 msgid "Who should receive notifications for maintenance-related dispatches?"
 msgstr "保全関連の保全指示の通知を受け取る必要があるのは誰ですか？"
