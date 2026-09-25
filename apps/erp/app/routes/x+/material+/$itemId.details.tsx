@@ -35,6 +35,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // A new size is a new item revision, so it also needs create.
+  if (validation.data.sizes?.length) {
+    await requirePermissions(request, { create: "parts" });
+  }
+
   const updateMaterial = await upsertMaterial(client, getDatabaseClient(), {
     ...validation.data,
     id: itemId,

@@ -5406,12 +5406,7 @@ export async function upsertMaterial(
 
     const materialInsert = await client.from("material").upsert({
       id: readableId,
-      materialFormId: material.materialFormId,
-      materialSubstanceId: material.materialSubstanceId,
-      finishId: material.finishId,
-      gradeId: material.gradeId,
-      dimensionId: material.dimensionId,
-      materialTypeId: material.materialTypeId,
+      ...plan.data.next,
       companyId: material.companyId,
       createdBy: material.createdBy,
       customFields: material.customFields
