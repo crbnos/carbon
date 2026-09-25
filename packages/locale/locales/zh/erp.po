@@ -8613,6 +8613,9 @@ msgstr "I（放宽检验）"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "我有合理的理由相信该个人是根据 22 CFR 120.62 定义的美国人"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "我仍在工作"
 
@@ -9421,6 +9424,12 @@ msgstr "保留"
 
 msgid "Keep Current"
 msgstr "保持当前"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "继续编辑"
@@ -18710,6 +18719,9 @@ msgstr "输入 '{' 以表示变量"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "输入 {TRIGGER} 以插入变量"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "输入消息..."
 
@@ -20283,6 +20295,9 @@ msgstr "您的客户列表"
 
 msgid "Your customer-facing price lists"
 msgstr "您面向客户的价格表"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "您的数据可访问且相对干净"

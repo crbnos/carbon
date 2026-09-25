@@ -41,7 +41,7 @@ A company with posted card transactions fails with "Seed: this company has N pos
 
 When it finishes, the **"Demo data applied"** card asks you to decide:
 
-- **"Keep"** accepts the demo data.
+- **"Keep"** accepts the demo data and permanently deletes the saved copy of your previous data, so it can't be reverted afterwards. Carbon asks you to type **"I understand, keep the demo data"** to confirm.
 - **"Revert"** puts back exactly what was here before.
 
 The choice stays open until you make it, and only one demo-data change can be in flight per company. Applying is all-or-nothing: if anything fails partway, no rows are written and the card shows the error with a **"Dismiss"** button.

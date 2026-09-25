@@ -20,6 +20,7 @@ import {
 import { formatElapsed } from "~/modules/settings/ui/Backups/format";
 import { path } from "~/utils/path";
 import { totalScopeRows } from "../../backups.service";
+import { KeepDemoDataModal } from "./KeepDemoDataModal";
 
 /** A run with no completion after this long is treated as stalled, and offered a
  *  revert retry — the job's own crash handler can't fire if the process died. */
@@ -56,6 +57,7 @@ export function TemplateReviewRow({
   const scopeViolations =
     run.status === "failed" && run.reason === "scope-violations";
   const [confirmPurge, setConfirmPurge] = useState(false);
+  const [confirmKeep, setConfirmKeep] = useState(false);
   useEffect(() => {
     // Any status but `ready` means the server has taken over the story —
     // including `failed`, where the optimistic spinner must not hide the error.
@@ -179,7 +181,7 @@ export function TemplateReviewRow({
                   <Button
                     isLoading={submitting}
                     isDisabled={submitting}
-                    onClick={() => submit("keep")}
+                    onClick={() => setConfirmKeep(true)}
                   >
                     <Trans>Keep</Trans>
                   </Button>
@@ -237,6 +239,16 @@ export function TemplateReviewRow({
                 ))}
             </HStack>
           </HStack>
+
+          {confirmKeep && (
+            <KeepDemoDataModal
+              onCancel={() => setConfirmKeep(false)}
+              onConfirm={() => {
+                setConfirmKeep(false);
+                submit("keep");
+              }}
+            />
+          )}
 
           {confirmPurge && (
             <PurgeCorruptedRowsModal

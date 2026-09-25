@@ -8613,6 +8613,9 @@ msgstr "I (réduit)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "J'ai une base raisonnable de croire que cet individu est une personne des États-Unis tel que défini dans 22 CFR 120.62"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Je travaille toujours"
 
@@ -9421,6 +9424,12 @@ msgstr "Conserver"
 
 msgid "Keep Current"
 msgstr "Conserver les paramètres actuels"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "Continuer l'édition"
@@ -18710,6 +18719,9 @@ msgstr "Tapez '{' pour une variable"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Tapez {TRIGGER} pour insérer une variable"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "Tapez un message..."
 
@@ -20279,6 +20291,9 @@ msgstr "Votre liste de clients"
 
 msgid "Your customer-facing price lists"
 msgstr "Vos listes de prix destinées aux clients"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Vos données sont accessibles et raisonnablement propres"

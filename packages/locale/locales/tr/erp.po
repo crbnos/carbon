@@ -8613,6 +8613,9 @@ msgstr "I (Gevşetilmiş)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "Bu kişinin 22 CFR 120.62'de tanımlanan şekilde ABD vatandaşı olduğuna inanmak için makul bir temelem var"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Hala Çalışıyorum"
 
@@ -9421,6 +9424,12 @@ msgstr "Tut"
 
 msgid "Keep Current"
 msgstr "Mevcut Tut"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "Düzenlemeye devam et"
@@ -18710,6 +18719,9 @@ msgstr "Bir değişken için '{' yazın"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Bir değişken eklemek için {TRIGGER} yazın"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "Bir mesaj yaz..."
 
@@ -20279,6 +20291,9 @@ msgstr "Müşteri listeniz"
 
 msgid "Your customer-facing price lists"
 msgstr "Müşterilerinize sunduğunuz fiyat listeleri"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Verileriniz erişilebilir ve makul ölçüde temizdir"
