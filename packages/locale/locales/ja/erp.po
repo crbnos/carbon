@@ -8613,6 +8613,9 @@ msgstr "I(ゆるい検査)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "まだ働いています"
 
@@ -9421,6 +9424,12 @@ msgstr "保持"
 
 msgid "Keep Current"
 msgstr "現在の設定を保持"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "編集を続ける"
@@ -18710,6 +18719,9 @@ msgstr "変数のために '{' を入力してください"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "変数を挿入するために {TRIGGER} を入力してください"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "メッセージを入力..."
 
@@ -20279,6 +20291,9 @@ msgstr "あなたの得意先リスト"
 
 msgid "Your customer-facing price lists"
 msgstr "顧客向けの価格表"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"

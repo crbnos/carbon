@@ -8613,6 +8613,9 @@ msgstr "I (ослабленный)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "У меня есть разумные основания полагать, что это лицо является лицом США, как определено в 22 CFR 120.62"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "Я всё ещё работаю"
 
@@ -9421,6 +9424,12 @@ msgstr "Сохранить"
 
 msgid "Keep Current"
 msgstr "Сохранить текущие"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "Продолжить редактирование"
@@ -18710,6 +18719,9 @@ msgstr "Введите '{' для переменной"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "Введите {TRIGGER} для вставки переменной"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "Введите сообщение..."
 
@@ -20279,6 +20291,9 @@ msgstr "Ваш список покупателей"
 
 msgid "Your customer-facing price lists"
 msgstr "Ваши ценовые списки для клиентов"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "Ваши данные доступны и находятся в относительно чистом виде"

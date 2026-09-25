@@ -8613,6 +8613,9 @@ msgstr "I (수월한 검사)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
 
@@ -9421,6 +9424,12 @@ msgstr "유지"
 
 msgid "Keep Current"
 msgstr "현재 값 유지"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "계속 편집"
@@ -18710,6 +18719,9 @@ msgstr "변수의 경우 '{'를 입력하세요."
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
 
@@ -20279,6 +20291,9 @@ msgstr "고객 목록"
 
 msgid "Your customer-facing price lists"
 msgstr "고객 대상 가격표"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"

@@ -8613,6 +8613,9 @@ msgstr "I (शिथिल)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "मेरे पास यह मानने का उचित आधार है कि यह व्यक्ति 22 CFR 120.62 में परिभाषित अनुसार एक U.S. व्यक्ति है"
 
+msgid "I understand, keep the demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
@@ -9421,6 +9424,12 @@ msgstr "रखें"
 
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "संपादन जारी रखें"
@@ -18710,6 +18719,9 @@ msgstr "एक variable के लिए '{' दर्ज करें"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "एक variable insert करने के लिए {TRIGGER} दर्ज करें"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
@@ -20283,6 +20295,9 @@ msgstr "आपकी ग्राहक सूची"
 
 msgid "Your customer-facing price lists"
 msgstr "आपकी ग्राहक-सामना करने वाली मूल्य सूचियाँ"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"
