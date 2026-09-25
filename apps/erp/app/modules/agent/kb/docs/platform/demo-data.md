@@ -50,10 +50,10 @@ If a revert seems stuck, the card says so after a few minutes and offers "Retry 
 
 ## Demo data at sign-up
 
-The same templates power onboarding. When Carbon staff create a new company, the data step asks **"How would you like to start?"**:
+The same templates power onboarding. When anyone creates a new company, the data step asks **"How would you like to start?"**:
 
   - **Use a demo template**: Sets up sample customers, suppliers, parts and orders for the industry you pick. They appear shortly after you finish.
-  - **Restore from a backup**: Sets the new company up from an uploaded Carbon `docs/platform/backups` of another company.
+  - **Restore from a backup**: Sets the new company up from an uploaded `docs/platform/backups` of another Carbon company environment. Carbon staff only.
   - **I don't need data**: Starts with a clean, empty environment.
 
 Choosing a template then asks **"Which best describes your company?"** and seeds the matching industry. See `docs/reference/onboarding` for the rest of the wizard.

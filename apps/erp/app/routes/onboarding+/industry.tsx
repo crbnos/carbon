@@ -278,7 +278,8 @@ export default function OnboardingIndustry() {
           {
             value: "import" as const,
             title: "Restore from a backup",
-            description: "Set up from a Carbon backup of another company",
+            description:
+              "Set up from a backup of another Carbon company environment",
             icon: <LuUpload className="h-5 w-5" />
           }
         ]
