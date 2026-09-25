@@ -103,10 +103,15 @@ the service loads the rows they read and writes what they decide.
   an UPDATE through the caller's client (material's policy is parts_update in the company, which
   also grants the item and itemCost rows). A taken readable id is refused on rename and on create.
 - `upsertMaterial` updates write only the keys present on the payload (a present-but-undefined key,
-  a cleared form field, clears); `active` is never touched; `postingGroupId`/`unitCost` go to
+  a cleared form field, clears). The MCP schema requires `name`, `replenishmentSystem`,
+  `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode`, so those are always sent. With
+  `materialGeneratedIds` on, a sent `name` is ignored (`materialItemUpdateFields`): the name is
+  derived and written to every revision. `active` is never touched; `postingGroupId`/`unitCost` go to
   `itemCost`; `readableId` renames when ids are hand-typed; `sizes` adds a revision per new size
   via `createRevision` after the transaction, refused before any write while the material is open
-  in a change notice.
+  in a change notice. The pick method and shelf life are also written after the transaction, so a
+  failure there leaves the transaction's writes in place. An update by readable id is refused when
+  the material has several revisions (sizes are revisions); pass the item id.
 - `materialDimension`, `materialFinish`, `materialGrade` and `materialType` have no audit columns,
   so their MCP tools inject only `companyId` (`INJECT_AUTH_OVERRIDES` in
   `scripts/lib/service-metadata.ts`). Their update branch filters by `companyId` when given and

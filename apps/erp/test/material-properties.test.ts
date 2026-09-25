@@ -3,6 +3,7 @@ import {
   checkMaterialProperties,
   clearsSubstanceOrShape,
   generateMaterialIdentity,
+  materialItemUpdateFields,
   type MaterialPropertyLookups,
   type MaterialPropertyValues,
   noMaterialProperties,
@@ -185,6 +186,11 @@ describe("generated material IDs", () => {
     ).toBeNull();
   });
 
+  it("ignores a sent name, which is derived instead", () => {
+    expect(materialItemUpdateFields(true)).not.toContain("name");
+    expect(materialItemUpdateFields(false)).toContain("name");
+  });
+
   it("refuses clearing a substance or shape that is set, not setting one", () => {
     expect(
       clearsSubstanceOrShape(ALUMINUM_PLATE, {
@@ -203,15 +209,14 @@ describe("generated material IDs", () => {
 
 describe("sentMaterialProperties", () => {
   it("absent keeps, undefined, null and empty string clear", () => {
-    expect(
-      sentMaterialProperties({
-        gradeId: undefined,
-        finishId: null,
-        dimensionId: "",
-        materialFormId: "plate",
-        name: "ignored"
-      })
-    ).toEqual({
+    const payload = {
+      gradeId: undefined,
+      finishId: null,
+      dimensionId: "",
+      materialFormId: "plate",
+      name: "ignored"
+    };
+    expect(sentMaterialProperties(payload)).toEqual({
       gradeId: null,
       finishId: null,
       dimensionId: null,

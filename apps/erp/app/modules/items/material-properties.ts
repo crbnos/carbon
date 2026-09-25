@@ -50,24 +50,49 @@ export const generatedIdsNeedSubstanceAndShape =
  * cleared form field) counts as sent and clears; an absent key (an API caller
  * editing some fields) is left alone.
  */
-export function sentFields<K extends string>(
-  source: object,
+export function sentFields<T extends object, K extends keyof T & string>(
+  source: T,
   fields: readonly K[]
-): Partial<Record<K, any>> {
-  const sent: Partial<Record<K, any>> = {};
+): SentFields<T, K> {
+  const sent: SentFields<T, K> = {};
   for (const field of fields) {
     if (field in source) {
-      sent[field] = (source as Record<string, unknown>)[field] ?? null;
+      sent[field] = (source[field] ?? null) as SentFields<T, K>[K];
     }
   }
   return sent;
 }
 
+/** A sent field that may be undefined arrives as null, which clears it. */
+export type SentFields<T, K extends keyof T> = {
+  [P in K]?: undefined extends T[P] ? Exclude<T[P], undefined> | null : T[P];
+};
+
+/**
+ * The item columns a material update copies from its payload. With generated
+ * IDs the name is derived from the properties and written to every revision,
+ * so a sent name is ignored.
+ */
+export function materialItemUpdateFields(generatedIds: boolean) {
+  return [
+    ...(generatedIds ? [] : (["name"] as const)),
+    "description",
+    "mpn",
+    "replenishmentSystem",
+    "defaultMethodType",
+    "itemTrackingType",
+    "unitOfMeasureCode"
+  ] as const;
+}
+
 /** sentFields for the property ids, where an empty string clears like null. */
 export function sentMaterialProperties(
-  source: object
+  source: Partial<Record<MaterialPropertyField, string | null>>
 ): Partial<MaterialPropertyValues> {
-  const sent = sentFields(source, materialPropertyFields);
+  const sent: Partial<MaterialPropertyValues> = sentFields(
+    source,
+    materialPropertyFields
+  );
   for (const field of materialPropertyFields) {
     if (sent[field] === "") sent[field] = null;
   }

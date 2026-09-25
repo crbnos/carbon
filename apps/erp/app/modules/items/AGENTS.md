@@ -62,7 +62,8 @@ pnpm --filter @carbon/erp test
 
 - `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` / `getService` — item reads by type (RPCs `get_part_details`, `get_material_details`, `get_service_details`, etc.)
 - `upsertService` — creates/updates a Service item; always `itemTrackingType = 'Non-Inventory'` (never shipped/received/stocked), replenishment `Buy` or `Make` only. The `service` row is keyed by `item.readableId` (like tool/material). Legacy `service.serviceType` is defaulted and no longer read.
-- `upsertMaterial(client, db, material)` — creates/updates material with taxonomy FKs and `item`/`material` linkage; an update writes only the keys sent and never touches `active`
+- `upsertPart` / `upsertTool` / `upsertConsumable` / `upsertService` — an update takes `companyId` and an `id` that is the item uuid or the readable id; it writes the item row by uuid and the typed row by `readableId + companyId` (`updateTypedItem`), and an update that matches no row returns an error. A readable id shared by several revisions is refused.
+- `upsertMaterial(client, db, material)` — creates/updates material with taxonomy FKs and `item`/`material` linkage; an update writes only the keys sent and never touches `active`. Over MCP `name`, `replenishmentSystem`, `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode` are required, so they are always sent; with generated material IDs a sent `name` is ignored
 - `updateMaterialProperties(client, db, material)` — the one path for substance/form/type/finish/grade/dimension changes (properties panel, `upsertMaterial`, MCP): dependent resets, pick-list checks, generated-ID renames in one transaction. See `.claude/rules/material-tables.md`
 - `getMakeMethods` / `getMethodMaterials` / `getMethodOperations` / `getMethodTreeArray` — BOM/routing reads
 - `copyItem` / `copyMakeMethod` — duplicates via edge function
