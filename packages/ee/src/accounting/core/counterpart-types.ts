@@ -7,13 +7,12 @@
  * a prior system imported it. Creating a second one pollutes the customer's
  * vendor master and, for AP, posts bills against the wrong counterparty.
  *
- * Two of the three accounting providers already guard against this on the push
- * path — Xero searches contacts by name before creating
- * (`providers/xero/entities/contact.ts`), QuickBooks queries `DisplayName`
- * (`providers/quickbooks-online/entities/vendor.ts`) — and Ramp does the same
- * for spend vendors (`ramp/lib/spend.ts`). Rillet does not. These types are the
- * shared vocabulary those four implementations collapse onto; the ladder itself
- * lives in `./counterpart.ts`.
+ * Xero, QuickBooks and Ramp each guarded against this independently, with three
+ * different answers to "what counts as a match?" and to "what do we do when two
+ * records answer?"; Rillet did not guard at all. These types are the shared
+ * vocabulary they collapse onto, and the ladder itself lives in
+ * `./counterpart.ts`. All three accounting providers route through it today;
+ * Ramp's spend-vendor search (`ramp/lib/spend.ts`) is still its own copy.
  *
  * Pure types — no client, no env, browser-safe.
  */

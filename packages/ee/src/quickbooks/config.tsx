@@ -23,7 +23,32 @@ export const QuickBooks = defineIntegration({
     redirectUri: "/api/integrations/quickbooks/oauth",
     scopes: ["com.intuit.quickbooks.accounting"],
     tokenUrl: "https://oauth.platform.intuit.com/oauth2/v1/tokens/bearer"
-  }
+  },
+  actions: [
+    {
+      id: "import-master-data",
+      label: "Import customers & vendors",
+      description:
+        "Pull the customers and vendors already in QuickBooks Online into Carbon and link them, so documents Carbon posts later reuse the original QuickBooks Online records instead of creating duplicates",
+      endpoint:
+        "/api/integrations/master-sync?provider=quickbooks&direction=pull-from-accounting&entities=customers,vendors"
+    },
+    {
+      id: "push-master-data",
+      label: "Push customers, vendors & items",
+      description:
+        "Send every Carbon customer, vendor and item that has no QuickBooks Online counterpart yet",
+      endpoint:
+        "/api/integrations/master-sync?provider=quickbooks&direction=push-to-accounting"
+    },
+    {
+      id: "backfill-journals",
+      label: "Backfill journal postings",
+      description:
+        "Record or enqueue a sync operation for every journal posted since the posting sync start date. The half-hourly sweep already covers the last 7 days; this covers the history behind it",
+      endpoint: "/api/integrations/journal-backfill?provider=quickbooks"
+    }
+  ]
 });
 
 /**

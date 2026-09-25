@@ -4,7 +4,14 @@
  * One shared implementation of a decision three providers had independently
  * reinvented (Xero contacts by name, QuickBooks by `DisplayName`, Ramp spend
  * vendors by `external_vendor_id` then name) and a fourth had simply skipped
- * (Rillet, which creates unconditionally).
+ * (Rillet, which created unconditionally).
+ *
+ * How wide the candidate set is stays the PROVIDER's business, and it differs:
+ * Rillet has no search endpoint, so it lists the org and every rung is live;
+ * Xero and QuickBooks query by name, so their candidates are name-bounded and
+ * name is the only rung that can decide. Widening those means widening the
+ * query, not passing more keys — a set already filtered to one name cannot be
+ * resolved by email.
  *
  * The ladder, strongest key first:
  *

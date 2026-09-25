@@ -114,7 +114,8 @@ describe("RilletProvider base URL + headers", () => {
       transport: "rest",
       supportsWebhooks: true,
       supportsJournalPush: true,
-      searchableCounterparts: ["customer", "vendor"]
+      searchableCounterparts: ["customer", "vendor"],
+      importableEntities: ["customer", "vendor"]
     });
   });
 });

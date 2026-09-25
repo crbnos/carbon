@@ -180,11 +180,12 @@ export function providerSupportsIncrementalPull<T extends BaseProvider>(
 /**
  * Whether this provider can search for an existing counterpart of `kind`.
  *
- * BOTH conditions are required, and the `?? []` default is load-bearing:
- * `XeroProvider` deliberately declares no `capabilities` object at all, so an
- * absent declaration must read as "no search" rather than throwing. A provider
- * that implements the method but does not list the kind is treated as not
- * supporting it — declaring the kind is the opt-in.
+ * BOTH conditions are required, and the `?? []` default is load-bearing: a
+ * provider that declares no `capabilities` object must read as "no search"
+ * rather than throwing. A provider that implements the method but does not list
+ * the kind is treated as not supporting it — declaring the kind is the opt-in,
+ * so a half-wired provider creates duplicates loudly rather than searching with
+ * a shape nobody reviewed.
  */
 export function providerSupportsCounterpartSearch<T extends BaseProvider>(
   provider: T,
@@ -196,13 +197,35 @@ export function providerSupportsCounterpartSearch<T extends BaseProvider>(
   );
 }
 
+/**
+ * Whether this provider can enumerate every remote record of `kind` for the
+ * master-data import. Same both-conditions rule as
+ * `providerSupportsCounterpartSearch`: the method must exist AND the kind must
+ * be declared, so a half-wired provider reports "cannot import" rather than
+ * importing nothing and calling it success.
+ */
+export function providerSupportsMasterDataImport<T extends BaseProvider>(
+  provider: T,
+  kind: ExternalIdentityKind
+): provider is T & Required<Pick<BaseProvider, "listRemoteEntityIds">> {
+  return (
+    typeof provider.listRemoteEntityIds === "function" &&
+    (provider.capabilities?.importableEntities ?? []).includes(kind)
+  );
+}
+
 export abstract class BaseProvider {
   static id: ProviderID;
 
   /**
    * Optional capability declaration. When absent, callers should assume a
-   * REST provider (`transport: "rest"`) — the default for all providers
-   * that predate this field (e.g. Xero).
+   * REST provider (`transport: "rest"`) — see `CAPABILITY_DEFAULTS`. All three
+   * accounting providers declare one today; the optionality is what keeps a
+   * new provider compiling before its capabilities are worked out.
+   *
+   * Declaring the object opts OUT of every default: an omitted field then
+   * asserts the default value rather than "unknown". `maxJournalDimensionSlots`
+   * is the one that bites — omitted, it means "no cap".
    */
   readonly capabilities?: ProviderCapabilities;
 
@@ -227,6 +250,18 @@ export abstract class BaseProvider {
     kind: ExternalIdentityKind,
     keys: CounterpartSearchKeys
   ): Promise<RemoteCandidate[]>;
+
+  /**
+   * Optional: every remote id of a master-data kind, for the one-shot import
+   * (`jobs/.../accounting-master-sync.ts`). Enumeration, not search — see
+   * `capabilities.importableEntities`, which must list the kind for this to be
+   * called.
+   *
+   * Returns ids only. The import enqueues them as `pull-from-accounting` ledger
+   * operations and the drain re-fetches each through the syncer, so handing
+   * back whole records here would be a second, divergent read path.
+   */
+  listRemoteEntityIds?(kind: ExternalIdentityKind): Promise<string[]>;
 
   abstract getSyncConfig<T extends AccountingEntityType>(
     entity: T

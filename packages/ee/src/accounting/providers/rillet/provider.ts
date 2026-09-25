@@ -247,7 +247,7 @@ export function buildRilletIdempotencyKey(args: {
  * pulls one on its own.
  *
  * `customer` and `vendor` are still pullable ON DEMAND: the "Import
- * customers & vendors" action (`rillet-import-contacts`) enqueues explicit
+ * customers & vendors" action (`accounting-master-sync`) enqueues explicit
  * `pull-from-accounting` ledger operations, which the drain routes to the
  * syncer's pull path regardless of this direction — the same override the
  * inbound webhook path uses. `owner: "carbon"` below is what keeps that
@@ -395,7 +395,10 @@ export class RilletProvider extends BaseProvider {
     // matches its spend vendors. Declaring these opts Rillet into the shared
     // ladder (core/counterpart.ts), so a Carbon supplier whose Rillet twin a
     // human typed in links instead of duplicating.
-    searchableCounterparts: ["customer", "vendor"]
+    searchableCounterparts: ["customer", "vendor"],
+    // The same two lists back the master-data import; Rillet has no
+    // search-by-name endpoint, so listing IS how it answers both questions.
+    importableEntities: ["customer", "vendor"]
   };
 
   /** No cap: /invoice-payments `updated.gt` reaches arbitrarily far back. */
@@ -822,6 +825,21 @@ export class RilletProvider extends BaseProvider {
       }));
     }
 
+    return [];
+  }
+
+  /**
+   * Every remote id of a master-data kind, for the one-shot import. Reuses the
+   * SAME memoized lists the counterpart ladder drains, so an import that then
+   * pushes costs one pass per entity type rather than two.
+   */
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    if (kind === "customer") {
+      return (await this.listCustomers()).map((customer) => customer.id);
+    }
+    if (kind === "vendor") {
+      return (await this.listVendors()).map((vendor) => vendor.id);
+    }
     return [];
   }
 

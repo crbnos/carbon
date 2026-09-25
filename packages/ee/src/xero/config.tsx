@@ -79,10 +79,27 @@ export const Xero = defineIntegration({
   },
   actions: [
     {
-      id: "sync-data",
-      label: "Run Initial Sync",
-      description: "Runs the initial backfill for the selected entities above",
-      endpoint: "/api/integrations/xero/backfill"
+      id: "import-master-data",
+      label: "Import customers & vendors",
+      description:
+        "Pull the customers and vendors already in Xero into Carbon and link them, so documents Carbon posts later reuse the original Xero records instead of creating duplicates",
+      endpoint:
+        "/api/integrations/master-sync?provider=xero&direction=pull-from-accounting&entities=customers,vendors"
+    },
+    {
+      id: "push-master-data",
+      label: "Push customers, vendors & items",
+      description:
+        "Send every Carbon record that has no Xero counterpart yet, for the entities selected above",
+      endpoint:
+        "/api/integrations/master-sync?provider=xero&direction=push-to-accounting"
+    },
+    {
+      id: "backfill-journals",
+      label: "Backfill journal postings",
+      description:
+        "Record or enqueue a sync operation for every journal posted since the posting sync start date. The half-hourly sweep already covers the last 7 days; this covers the history behind it",
+      endpoint: "/api/integrations/journal-backfill?provider=xero"
     }
   ]
 });

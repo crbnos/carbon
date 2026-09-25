@@ -29,8 +29,9 @@ import {
 } from "./functions/events";
 import { extractDocumentFunction } from "./functions/extraction";
 import {
-  accountingBackfillFunction,
   accountingConsolidationFunction,
+  accountingJournalBackfillFunction,
+  accountingMasterSyncFunction,
   accountingOutboundSweepFunction,
   accountingPullSweepFunction,
   accountingReconciliationFunction,
@@ -41,7 +42,6 @@ import {
   paperlessPartsFunction,
   rampSweepFunction,
   rampSyncFunction,
-  rilletImportContactsFunction,
   slackDocumentAssignmentUpdateFunction,
   slackDocumentCreatedFunction,
   slackDocumentStatusUpdateFunction,
@@ -158,12 +158,12 @@ export const functions = [
   jiraSyncFunction,
   linearSyncFunction,
   paperlessPartsFunction,
-  accountingBackfillFunction,
+  accountingJournalBackfillFunction,
+  accountingMasterSyncFunction,
   accountingConsolidationFunction,
   accountingOutboundSweepFunction,
   accountingReconciliationFunction,
   accountingPullSweepFunction,
-  rilletImportContactsFunction,
   onshapeBackfillFunction,
   onshapeRevisionSyncFunction,
   rampSyncFunction,

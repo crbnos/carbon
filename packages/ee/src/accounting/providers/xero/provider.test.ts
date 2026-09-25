@@ -342,3 +342,120 @@ describe("buildXeroSyncConfig — Carbon-owned master + documents", () => {
     );
   });
 });
+
+describe("XeroProvider counterpart candidates", () => {
+  it("searches contacts by exact name and maps them to candidates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Contacts: [
+          { ContactID: "contact-1", Name: "Acme Tooling" },
+          // No ContactID — Xero has nothing to link to, so it is not a candidate.
+          { Name: "Acme Tooling" }
+        ]
+      })
+    );
+
+    const candidates = await makeProvider().findRemoteCandidates("vendor", {
+      name: "Acme Tooling"
+    });
+
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]))).toBe(
+      'https://api.xero.com/api.xro/2.0/Contacts?where=Name=="Acme Tooling"'
+    );
+    expect(candidates).toEqual([
+      { remoteId: "contact-1", name: "Acme Tooling" }
+    ]);
+  });
+
+  it("escapes double quotes in the where filter", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    await makeProvider().findRemoteCandidates("customer", {
+      name: 'The "Big" Co'
+    });
+
+    expect(decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]))).toContain(
+      'Name=="The \\"Big\\" Co"'
+    );
+  });
+
+  it("throws rather than reporting no match when the search fails", async () => {
+    // Returning [] here would read as "no such contact" and create a duplicate.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
+
+    await expect(
+      makeProvider().findRemoteCandidates("vendor", { name: "Acme" })
+    ).rejects.toThrow();
+  });
+
+  it("does not call Xero without a name, or for an unsupported kind", async () => {
+    const provider = makeProvider();
+
+    expect(
+      await provider.findRemoteCandidates("vendor", { name: "  " })
+    ).toEqual([]);
+    expect(
+      await provider.findRemoteCandidates("account", { name: "Acme" })
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("XeroProvider master-data enumeration", () => {
+  it("filters customers and suppliers separately, not with listContacts' OR", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        Contacts: [
+          { ContactID: "c-1", Name: "Acme" },
+          { Name: "no id — nothing to link to" }
+        ]
+      })
+    );
+
+    const ids = await makeProvider().listRemoteEntityIds("customer");
+
+    const url = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url).toContain("where=IsCustomer==true");
+    // The OR filter would import supplier-only contacts as Carbon customers.
+    expect(url).not.toContain("IsSupplier");
+    expect(ids).toEqual(["c-1"]);
+  });
+
+  it("uses the supplier filter for vendors", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    await makeProvider().listRemoteEntityIds("vendor");
+
+    const url = decodeURIComponent(String(fetchMock.mock.calls[0]?.[0]));
+    expect(url).toContain("where=IsSupplier==true");
+    expect(url).not.toContain("IsCustomer");
+  });
+
+  it("pages until a short page and stops", async () => {
+    const full = Array.from({ length: 100 }, (_, i) => ({
+      ContactID: `c-${i}`,
+      Name: `Contact ${i}`
+    }));
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: full }));
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Contacts: [{ ContactID: "c-100", Name: "Last" }] })
+    );
+
+    const ids = await makeProvider().listRemoteEntityIds("customer");
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(decodeURIComponent(String(fetchMock.mock.calls[1]?.[0]))).toContain(
+      "page=2"
+    );
+    expect(ids).toHaveLength(101);
+  });
+
+  it("throws on a failed page rather than returning a partial list", async () => {
+    // A partial list read as complete silently imports a subset.
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
+
+    await expect(
+      makeProvider().listRemoteEntityIds("customer")
+    ).rejects.toThrow();
+  });
+});

@@ -151,7 +151,9 @@ describe("QboProvider base URL", () => {
       transport: "rest",
       supportsWebhooks: false,
       supportsJournalPush: true,
-      maxJournalDimensionSlots: 2
+      maxJournalDimensionSlots: 2,
+      searchableCounterparts: ["customer", "vendor"],
+      importableEntities: ["customer", "vendor"]
     });
   });
 });
@@ -700,5 +702,82 @@ describe("buildQboSyncConfig — Carbon-owned master + documents", () => {
     expect(applied.entities.purchaseOrder).toEqual(
       DEFAULT_SYNC_CONFIG.entities.purchaseOrder
     );
+  });
+});
+
+describe("QboProvider counterpart candidates", () => {
+  it("queries the kind's entity by DisplayName and maps the rows", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [
+            { Id: "42", DisplayName: "Acme Tooling" },
+            // No Id — nothing to link to, so not a candidate.
+            { DisplayName: "Acme Tooling" }
+          ]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const candidates = await provider.findRemoteCandidates("vendor", {
+      name: "Acme Tooling"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Vendor WHERE DisplayName = 'Acme Tooling'"
+    );
+    expect(candidates).toEqual([{ remoteId: "42", name: "Acme Tooling" }]);
+  });
+
+  it("escapes single quotes in the WHERE clause", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ QueryResponse: {} }));
+
+    const { provider } = makeProvider();
+    await provider.findRemoteCandidates("customer", {
+      name: "O'Brien Metals"
+    });
+
+    expect(requestUrl(0)).toContain(
+      "SELECT * FROM Customer WHERE DisplayName = 'O\\'Brien Metals'"
+    );
+  });
+
+  it("does not call QBO without a name, or for an unsupported kind", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.findRemoteCandidates("vendor", { name: "" })).toEqual(
+      []
+    );
+    expect(
+      await provider.findRemoteCandidates("item", { name: "Widget" })
+    ).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+});
+
+describe("QboProvider master-data enumeration", () => {
+  it("selects the kind's entity unfiltered and returns its ids", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({
+        QueryResponse: {
+          Vendor: [{ Id: "1", DisplayName: "A" }, { DisplayName: "no id" }]
+        }
+      })
+    );
+
+    const { provider } = makeProvider();
+    const ids = await provider.listRemoteEntityIds("vendor");
+
+    expect(requestUrl(0)).toContain("SELECT * FROM Vendor");
+    expect(requestUrl(0)).not.toContain("WHERE");
+    expect(ids).toEqual(["1"]);
+  });
+
+  it("returns nothing, without calling QBO, for a kind it cannot enumerate", async () => {
+    const { provider } = makeProvider();
+
+    expect(await provider.listRemoteEntityIds("item")).toEqual([]);
+    expect(fetchMock).not.toHaveBeenCalled();
   });
 });

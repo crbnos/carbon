@@ -42,6 +42,14 @@ type SharedCapabilities = {
    * creating one (`accounting/core/counterpart.ts`). Empty = always create.
    */
   searchableCounterparts?: ExternalIdentityKind[];
+  /**
+   * Entity kinds this provider can ENUMERATE — every remote record of that
+   * kind, for the one-shot master-data import. A different question from
+   * `searchableCounterparts`: Xero and QuickBooks can look a name up without
+   * being able to hand back the whole book cheaply, and a provider may well
+   * enumerate vendors but not items. Empty = the import has nothing to pull.
+   */
+  importableEntities?: ExternalIdentityKind[];
 };
 
 export type AccountingCapabilities = SharedCapabilities & {
@@ -81,10 +89,9 @@ export type SyncProviderCapabilities =
 /**
  * A provider's capabilities with every optional field resolved.
  *
- * Every read goes through here rather than `provider.capabilities?.x`, because
- * `XeroProvider` deliberately declares no `capabilities` object at all — the
- * documented "absent = legacy REST provider" default. Reading the raw field
- * gives `undefined` for Xero on every question.
+ * Every read goes through here rather than `provider.capabilities?.x`: the
+ * declaration is optional, so the raw field answers `undefined` to every
+ * question for any provider that has not declared one.
  */
 export type ResolvedCapabilities = Required<
   Pick<SharedCapabilities, "transport" | "supportsWebhooks">
@@ -92,6 +99,7 @@ export type ResolvedCapabilities = Required<
   role: "accounting" | "spend";
   externalAddressing: Partial<Record<ExternalIdentityKind, ExternalAddressing>>;
   searchableCounterparts: ExternalIdentityKind[];
+  importableEntities: ExternalIdentityKind[];
   supportsJournalPush: boolean;
   maxJournalDimensionSlots?: number;
   ownsRemoteCodingSurface: boolean;
@@ -110,6 +118,7 @@ export const CAPABILITY_DEFAULTS: ResolvedCapabilities = {
   supportsJournalPush: true,
   externalAddressing: { account: "code" },
   searchableCounterparts: [],
+  importableEntities: [],
   ownsRemoteCodingSurface: true,
   ownsLedgerFamilies: []
 };
@@ -127,7 +136,8 @@ export function resolveCapabilities(
       ...CAPABILITY_DEFAULTS.externalAddressing,
       ...(declared.externalAddressing ?? {})
     },
-    searchableCounterparts: declared.searchableCounterparts ?? []
+    searchableCounterparts: declared.searchableCounterparts ?? [],
+    importableEntities: declared.importableEntities ?? []
   };
 
   if (declared.role === "spend") {

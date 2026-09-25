@@ -1,4 +1,9 @@
 import { getLogger } from "@carbon/logger";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -27,37 +32,22 @@ import { parseDotnetDate, type Xero } from "./models";
 
 const logger = getLogger("ee", "accounting", "xero");
 
-export interface ListContactsOptions {
-  page?: number;
-  modifiedSince?: Date;
-  includeArchived?: boolean;
-  summaryOnly?: boolean;
-}
-
-export interface ListContactsResponse {
-  contacts: Xero.Contact[];
-  hasMore: boolean;
-  page: number;
-}
-
-export interface ListItemsOptions {
-  page?: number;
-  modifiedSince?: Date;
-}
-
-export interface ListItemsResponse {
-  items: Xero.Item[];
-  hasMore: boolean;
-  page: number;
-}
-
 /**
  * Xero's org-wide limit: at most 2 ACTIVE tracking categories, so at most
- * 2 dimension slots. Kept as an exported constant (not on `capabilities`)
- * because XeroProvider deliberately leaves `capabilities` undeclared —
- * absent capabilities = legacy REST provider for the drain.
+ * 2 dimension slots. Exported because the dimension settings read it directly;
+ * `XeroProvider.capabilities` now declares the same constant rather than
+ * repeating the literal.
  */
 export const XERO_MAX_JOURNAL_DIMENSION_SLOTS = 2;
+
+/** Xero returns 100 contacts per page; a short page is the last one. */
+const XERO_CONTACTS_PAGE_SIZE = 100;
+
+/**
+ * Page cap on the master-data import. 100 pages is 10,000 contacts — past that
+ * the import is the wrong tool and the ordinary push sync should carry it.
+ */
+const XERO_IMPORT_MAX_PAGES = 100;
 
 /** Dimension slot target prefix: `tracking:<TrackingCategoryID>`. */
 const XERO_TRACKING_TARGET_PREFIX = "tracking:";
@@ -210,11 +200,26 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   static id = ProviderID.XERO;
 
   /**
-   * Undeclared on purpose: absent capabilities = legacy REST provider (the
-   * documented default in core/types.ts) — the drain treats Xero exactly
-   * as before the field existed.
+   * Xero declared nothing here until it joined the counterpart ladder, which
+   * reads `searchableCounterparts` off this object. Declaring one field means
+   * declaring them all honestly: every omitted field now reads as an assertion
+   * rather than as "undeclared". `maxJournalDimensionSlots` in particular MUST
+   * be present — omitting it from a declared object means "no cap", which is
+   * false for Xero.
+   *
+   * `externalAddressing` is left out deliberately: the resolver's documented
+   * default is `account: "code"`, which is exactly Xero's `AccountCode`.
    */
-  readonly capabilities?: ProviderCapabilities;
+  readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
+    transport: "rest",
+    supportsWebhooks: true,
+    supportsJournalPush: true,
+    maxJournalDimensionSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS,
+    // One Xero Contact backs both, and ContactSyncer serves both entity types.
+    searchableCounterparts: ["customer", "vendor"],
+    importableEntities: ["customer", "vendor"]
+  };
 
   /**
    * No cap: `/Payments` with `If-Modified-Since` reaches arbitrarily far back,
@@ -268,6 +273,47 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     redirectUri: string
   ): Promise<ProviderCredentials> {
     return this.auth.exchangeCode(code, redirectUri);
+  }
+
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`).
+   *
+   * Xero has a real search endpoint, so this queries by name instead of listing
+   * the org the way Rillet must. That makes **name the only rung it can
+   * answer**: the candidate set is already filtered to one name, so populating
+   * an email or tax number on these candidates could never change the outcome.
+   * Widening the ladder for Xero means widening this `where`, not adding fields
+   * below.
+   *
+   * Throws on a failed search rather than returning `[]`. The old private
+   * `findRemoteContactByName` swallowed the error and returned null, which the
+   * caller read as "no such contact" and created a duplicate — a transient 500
+   * permanently polluting the customer's contact list. A throw parks the
+   * operation and retries instead, matching Rillet and QBO.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    if (kind !== "customer" && kind !== "vendor") return [];
+
+    const name = keys.name?.trim();
+    if (!name) return [];
+
+    // Xero where filters double-quote string values and escape inner quotes.
+    const escaped = name.replace(/"/g, '\\"');
+    const result = await this.request<{ Contacts: Xero.Contact[] }>(
+      "GET",
+      `/Contacts?where=Name=="${escaped}"`
+    );
+
+    if (result.error) throwXeroApiError("search contacts", result);
+
+    return (result.data?.Contacts ?? []).flatMap((contact) =>
+      contact.ContactID
+        ? [{ remoteId: contact.ContactID, name: contact.Name ?? null }]
+        : []
+    );
   }
 
   async request<T>(
@@ -680,76 +726,50 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
    * List all contacts from Xero with pagination support.
    * Xero returns 100 contacts per page by default.
    */
-  async listContacts(
-    options?: ListContactsOptions
-  ): Promise<ListContactsResponse> {
-    const page = options?.page ?? 1;
-    const params = new URLSearchParams();
-    params.set("page", String(page));
-
-    if (options?.summaryOnly) {
-      params.set("summarizeErrors", "true");
-    }
-
-    if (options?.includeArchived) {
-      params.set("includeArchived", "true");
-    }
-
-    // Only fetch contacts that are customers or suppliers — skip
-    // contacts that are neither (e.g. plain address book entries)
-    params.set("where", "IsCustomer==true OR IsSupplier==true");
-
-    const headers: Record<string, string> = {};
-    if (options?.modifiedSince) {
-      headers["If-Modified-Since"] = options.modifiedSince.toUTCString();
-    }
-
-    const response = await this.request<{ Contacts: Xero.Contact[] }>(
-      "GET",
-      `/Contacts?${params.toString()}`,
-      { headers }
-    );
-
-    if (response.error || !response.data?.Contacts) {
-      return { contacts: [], hasMore: false, page };
-    }
-
-    const contacts = response.data.Contacts;
-    // Xero returns 100 contacts per page - if we get exactly 100, there may be more
-    const hasMore = contacts.length === 100;
-
-    return { contacts, hasMore, page };
-  }
-
   /**
-   * List all items from Xero with pagination support.
-   * Xero returns 100 items per page by default.
+   * Every remote id of a master-data kind, for the one-shot import.
+   *
+   * Deliberately NOT `listContacts`, whose filter is
+   * `IsCustomer==true OR IsSupplier==true`: importing "customers" through that
+   * would create Carbon customers out of supplier-only contacts. A Xero contact
+   * that is genuinely both appears under both kinds, which is correct — the
+   * mapping row is keyed by entity type, so one contact legitimately backs a
+   * Carbon customer and a Carbon supplier.
    */
-  async listItems(options?: ListItemsOptions): Promise<ListItemsResponse> {
-    const page = options?.page ?? 1;
-    const params = new URLSearchParams();
-    params.set("page", String(page));
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    const filter =
+      kind === "customer"
+        ? "IsCustomer==true"
+        : kind === "vendor"
+          ? "IsSupplier==true"
+          : null;
+    if (!filter) return [];
 
-    const headers: Record<string, string> = {};
-    if (options?.modifiedSince) {
-      headers["If-Modified-Since"] = options.modifiedSince.toUTCString();
+    const ids: string[] = [];
+
+    for (let page = 1; page <= XERO_IMPORT_MAX_PAGES; page++) {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("where", filter);
+
+      const response = await this.request<{ Contacts: Xero.Contact[] }>(
+        "GET",
+        `/Contacts?${params.toString()}`
+      );
+
+      // Throws rather than stopping short: a partial list read as complete
+      // silently imports a subset and reports success.
+      if (response.error) throwXeroApiError("list contacts", response);
+
+      const contacts = response.data?.Contacts ?? [];
+      for (const contact of contacts) {
+        if (contact.ContactID) ids.push(contact.ContactID);
+      }
+
+      if (contacts.length < XERO_CONTACTS_PAGE_SIZE) break;
     }
 
-    const response = await this.request<{ Items: Xero.Item[] }>(
-      "GET",
-      `/Items?${params.toString()}`,
-      { headers }
-    );
-
-    if (response.error || !response.data?.Items) {
-      return { items: [], hasMore: false, page };
-    }
-
-    const items = response.data.Items;
-    // Xero returns 100 items per page - if we get exactly 100, there may be more
-    const hasMore = items.length === 100;
-
-    return { items, hasMore, page };
+    return ids;
   }
 
   // =================================================================

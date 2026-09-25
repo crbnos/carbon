@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import type { Accounting } from "../../../core/types";
 import type { Qbo } from "../models";
 import {
@@ -341,11 +342,18 @@ export class QboVendorSyncer extends QboEntitySyncer<
     data: Omit<Qbo.Vendor, QboWriteOmit>,
     localId: string
   ): Promise<string> {
-    let existingRemoteId = await this.getRemoteId(localId);
-
-    if (!existingRemoteId && data.DisplayName) {
-      existingRemoteId = await this.findRemoteVendorByName(data.DisplayName);
-    }
+    // Already mapped, or already on QBO under a name we have never linked:
+    // one shared ladder decides (`core/counterpart.ts`), so ambiguity creates
+    // rather than guessing. QBO DisplayNames are unique, so the search below is
+    // exact — a backfill against a populated QBO company links instead of
+    // colliding.
+    const { remoteId: existingRemoteId } =
+      await resolveOrCreateRemoteCounterpart({
+        provider: this.qboProvider,
+        kind: "vendor",
+        keys: { name: data.DisplayName ?? null },
+        existingRemoteId: await this.getRemoteId(localId)
+      });
 
     try {
       if (!existingRemoteId) {
@@ -376,18 +384,5 @@ export class QboVendorSyncer extends QboEntitySyncer<
       if (nameExists) throw nameExists;
       throw error;
     }
-  }
-
-  private async findRemoteVendorByName(name: string): Promise<string | null> {
-    const matches = await this.qboProvider.query<Qbo.Vendor>(
-      "Vendor",
-      `DisplayName = '${escapeQboQueryValue(name)}'`
-    );
-
-    const match = matches[0];
-    if (!match) return null;
-
-    this.rememberRemoteEntity(match);
-    return match.Id;
   }
 }

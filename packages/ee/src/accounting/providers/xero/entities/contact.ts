@@ -1,4 +1,5 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
 import { createMappingService } from "../../../core/external-mapping";
 import { type Accounting, BaseEntitySyncer } from "../../../core/types";
 import { throwXeroApiError } from "../../../core/utils";
@@ -630,13 +631,10 @@ export class ContactSyncer extends BaseEntitySyncer<
     data: Xero.Contact,
     localId: string
   ): Promise<string> {
-    let existingRemoteId = await this.getRemoteId(localId);
-
-    // Smart match: if no mapping exists, search Xero by name before creating.
-    // Xero enforces unique contact names across all active contacts.
-    if (!existingRemoteId && data.Name) {
-      existingRemoteId = await this.findRemoteContactByName(data.Name);
-    }
+    const existingRemoteId = await this.resolveExistingContact(
+      localId,
+      data.Name
+    );
 
     const contacts = existingRemoteId
       ? [{ ...data, ContactID: existingRemoteId }]
@@ -663,21 +661,29 @@ export class ContactSyncer extends BaseEntitySyncer<
   }
 
   /**
-   * Search Xero for an existing contact by exact name match.
-   * Used for smart matching during backfill when no ID mapping exists yet.
+   * The mapping row, else Xero searched by name — through the one shared ladder
+   * (`core/counterpart.ts`).
+   *
+   * BOTH the single and batch paths route here. They used to disagree: the
+   * batch path looked at the mapping alone, so the very backfill this matching
+   * exists for created duplicates whenever it ran batched.
+   *
+   * Xero enforces unique names across ACTIVE contacts, so an exact-name hit is
+   * a real identity. Two hits (an archived twin) are ambiguous, and the ladder
+   * creates rather than guessing — which surfaces as Xero's own duplicate-name
+   * refusal instead of silently linking to the archived record.
    */
-  private async findRemoteContactByName(name: string): Promise<string | null> {
-    // Xero where filter requires double-quoting string values and escaping quotes
-    const escapedName = name.replace(/"/g, '\\"');
-    const result = await this.xeroProvider.request<{
-      Contacts: Xero.Contact[];
-    }>("GET", `/Contacts?where=Name=="${escapedName}"`);
-
-    if (!result.error && result.data?.Contacts?.[0]?.ContactID) {
-      return result.data.Contacts[0].ContactID;
-    }
-
-    return null;
+  private async resolveExistingContact(
+    localId: string,
+    name: string | undefined
+  ): Promise<string | null> {
+    const { remoteId } = await resolveOrCreateRemoteCounterpart({
+      provider: this.xeroProvider,
+      kind: this.entityType === "vendor" ? "vendor" : "customer",
+      keys: { name: name ?? null },
+      existingRemoteId: await this.getRemoteId(localId)
+    });
+    return remoteId;
   }
 
   protected async upsertRemoteBatch(
@@ -693,7 +699,10 @@ export class ContactSyncer extends BaseEntitySyncer<
     const localIdOrder: string[] = [];
 
     for (const { localId, payload } of data) {
-      const existingRemoteId = await this.getRemoteId(localId);
+      const existingRemoteId = await this.resolveExistingContact(
+        localId,
+        payload.Name
+      );
       contacts.push(
         existingRemoteId
           ? ({ ...payload, ContactID: existingRemoteId } as Xero.Contact)

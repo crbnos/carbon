@@ -23,13 +23,24 @@ export const MASTER_DATA_UNMAPPED_LIMIT = 200;
  */
 export const MASTER_DATA_ITEM_UNMAPPED_LIMIT = 500;
 
+/**
+ * Master-data entity type → the table its rows live in.
+ *
+ * `vendor` reads `supplier` — the one pairing where the names differ, and the
+ * single reason this map exists rather than each caller passing the entity type
+ * twice. Shared by the outbound sweep and the one-shot master sync.
+ */
+export const MASTER_DATA_TABLES = {
+  customer: "customer",
+  vendor: "supplier",
+  item: "item"
+} as const;
+
+export type MasterDataEntityType = keyof typeof MASTER_DATA_TABLES;
+
 export type MasterDataSweepTarget = {
-  entityType: Extract<
-    ReconcileRef["entityType"],
-    "customer" | "vendor" | "item"
-  >;
-  /** NOTE: `vendor` reads `supplier` — the one pairing where the names differ. */
-  table: "customer" | "supplier" | "item";
+  entityType: Extract<ReconcileRef["entityType"], MasterDataEntityType>;
+  table: (typeof MASTER_DATA_TABLES)[MasterDataEntityType];
   limit: number;
   hourlyOnly: boolean;
 };
@@ -37,19 +48,19 @@ export type MasterDataSweepTarget = {
 export const MASTER_DATA_SWEEP_TARGETS: readonly MasterDataSweepTarget[] = [
   {
     entityType: "customer",
-    table: "customer",
+    table: MASTER_DATA_TABLES.customer,
     limit: MASTER_DATA_UNMAPPED_LIMIT,
     hourlyOnly: false
   },
   {
     entityType: "vendor",
-    table: "supplier",
+    table: MASTER_DATA_TABLES.vendor,
     limit: MASTER_DATA_UNMAPPED_LIMIT,
     hourlyOnly: false
   },
   {
     entityType: "item",
-    table: "item",
+    table: MASTER_DATA_TABLES.item,
     limit: MASTER_DATA_ITEM_UNMAPPED_LIMIT,
     hourlyOnly: true
   }

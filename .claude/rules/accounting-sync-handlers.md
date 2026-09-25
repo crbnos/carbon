@@ -37,8 +37,8 @@ These live in `packages/jobs/src/inngest/functions/integrations/` (+ `events/syn
 | `sync-external-accounting` | `carbon/sync-external-accounting` | `sync-external-accounting.ts` | `sync-external-accounting`; fired by the inbound webhooks — `webhook.xero.ts`, `webhook.rillet.$companyId.ts`, `webhook.quickbooks.$companyId.ts` |
 | `accounting-pull-sweep` | — | `accounting-pull-sweep.ts` | cron `*/30 * * * *`; iterates every active integration that implements `SupportsIncrementalPull` (`listChanges`) — the **INBOUND correctness guarantee** behind the webhooks (webhooks are latency, not correctness) |
 | `accounting-outbound-sweep` | — | `accounting-outbound-sweep.ts` | cron `15,45 * * * *` (offset from the pull sweep) — the **OUTBOUND correctness guarantee** (v4 Pillar B); see the sweep section below |
-| `accounting-backfill` | `carbon/accounting-backfill` | `accounting-backfill.ts` | `accounting-backfill` |
-| `rillet-import-contacts` | `carbon/rillet-import-contacts` | `rillet-import-contacts.ts` | the Rillet integration's **Import customers & vendors** action; the only on-demand PULL of master data — see the Rillet contact import section below |
+| `accounting-master-sync` | `carbon/accounting-master-sync` | `accounting-master-sync.ts` | `accounting-master-sync`; the **Import customers & vendors** / **Push customers, vendors & items** actions on every accounting integration — see the master data sync section below |
+| `accounting-journal-backfill` | `carbon/accounting-journal-backfill` | `accounting-journal-backfill.ts` | `accounting-journal-backfill`; the **Backfill journal postings** action. Repairs journal dispositions back to `postingSync.syncFromDate` — the history behind the outbound sweep's 7-day window |
 | `accounting-consolidation` | — | `accounting-consolidation.ts` | cron `0 2 * * *`; pushes one aggregated provider journal per posting date for daily-consolidation configs (drains hold those journal ops for it) |
 | `accounting-reconciliation` | — | `accounting-reconciliation.ts` | cron `0 3 * * 1` (Mondays 03:00 UTC) — presence drift check + `accountingSyncTieOut` writer; see the tie-out section below |
 | `event-handler-sync` | `carbon/event-sync` | `events/sync.ts` | the SYNC event-system handler (see event-system.md) — DB writes -> push to the provider |
@@ -528,24 +528,46 @@ is dead config for Rillet only, left in place for the capped providers.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
 </content>
 
-## Rillet contact import (on-demand pull)
+## One-shot master data sync (`accounting-master-sync`)
 
-`rillet-import-contacts.ts` + `apps/erp/app/routes/api+/integrations.rillet.import-contacts.ts`,
-reached from the **Import customers & vendors** action on the Rillet integration
-settings page (`actions` in `packages/ee/src/rillet/config.tsx`).
+`accounting-master-sync.ts` + `apps/erp/app/routes/api+/integrations.master-sync.ts`,
+reached from the **Import customers & vendors** and **Push customers, vendors & items**
+actions declared on ALL THREE accounting descriptors (`packages/ee/src/{rillet,xero,quickbooks}/config.tsx`).
+Provider and direction ride the query string, because `IntegrationActionButton` POSTs the
+descriptor's `endpoint` with no body.
 
-Seeds Carbon from a Rillet organization that already has contacts, and — the actual
-point — writes the `externalIntegrationMapping` rows. `RilletCustomerSyncer.upsertRemote`
-resolves `getRemoteId(localId)` before writing, so once a Carbon customer is linked, a
-sales invoice raised in Carbon PUTs the ORIGINAL Rillet customer instead of creating a
+It replaced two mirror-image jobs. `accounting-backfill` (Xero-only route) pushed
+unmapped Carbon records out, and also carried a journal-disposition phase — now the
+separate `accounting-journal-backfill` — plus two PULL phases that could never run: they
+gated on the entity's configured `direction`, and all three providers force master data to
+`push-to-accounting` / `owner: "carbon"`, so `shouldPull` was always false.
+`rillet-import-contacts` existed precisely BECAUSE of that, enqueueing
+`pull-from-accounting` operations explicitly.
+
+Seeds Carbon from a provider organization that already has contacts, and — the actual
+point — writes the `externalIntegrationMapping` rows. `upsertRemote` resolves
+`getRemoteId(localId)` before writing, so once a Carbon customer is linked, a sales
+invoice raised in Carbon updates the ORIGINAL remote customer instead of creating a
 second one. Same for vendors and bills.
 
-- The job lists customers and vendors in ONE step (Rillet cursors expire after 2 h and
-  are never resumed), then enqueues `pull-from-accounting` ledger operations in batches
-  of `IMPORT_BATCH_SIZE` and drains each batch through the shared `drainSyncOperations`.
-  `concurrency: { key: "event.data.companyId", limit: 1 }` — two concurrent imports would
-  race on the name-match ladder below.
-- **Direction is NOT changed.** `buildRilletSyncConfig` still forces
+- **Enumeration is a provider capability, not a branch.** `provider.listRemoteEntityIds(kind)`
+  plus `capabilities.importableEntities` (`providerSupportsMasterDataImport` requires both,
+  like the counterpart ladder). Rillet reuses its memoized org lists; Xero pages `/Contacts`
+  with `IsCustomer==true` / `IsSupplier==true` SEPARATELY (its `listContacts` OR-filter would
+  have made Carbon customers out of supplier-only contacts); QBO runs an unfiltered
+  `SELECT * FROM Customer|Vendor`. A kind a provider cannot enumerate is reported as
+  `notAttempted` rather than importing nothing and reporting success.
+- **`direction` is a payload field, not a config read.** A pull here is a person overriding
+  the automatic direction on purpose. A PUSH still respects the configured direction — an
+  entity set pull-only must stay pull-only.
+- The job lists per entity type in ONE step (Rillet cursors expire after 2 h and are never
+  resumed), then enqueues ledger operations in `batchSize` chunks and drains each through
+  the shared `drainSyncOperations`. `concurrency: { key: "event.data.companyId", limit: 1 }`
+  — two concurrent runs would race on the name-match ladder below.
+- A `RatelimitError` propagates out of the step so Inngest retries with backoff; the
+  idempotency keys absorb the re-enqueue. (The old push path wrapped its drain in a helper
+  that awaited `step.sleep` from INSIDE a `step.run` — a nested-step violation, removed.)
+- **Direction is NOT changed.** Every provider's `build*SyncConfig` still forces
   `push-to-accounting` / `owner: "carbon"` for both entities, so no sweep, webhook or
   event pulls a contact on its own. The ledger row's own `direction` is what routes the
   drain to `pullBatchFromAccounting` — the same override the inbound webhook path uses.
@@ -558,7 +580,7 @@ second one. Same for vendors and bills.
   A name match onto a supplier/customer already linked to a DIFFERENT Rillet record
   THROWS (named ids, visible in Sync Activity) rather than silently re-pointing the
   mapping.
-- `RilletEntitySyncer` is now Rillet plumbing only; the pull rejections moved to
+- Rillet specifics: `RilletEntitySyncer` is Rillet plumbing only; the pull rejections moved to
   `RilletPushOnlyEntitySyncer`, which `RilletItemSyncer` and `RilletTransactionSyncer`
   extend. Customer and vendor extend `RilletEntitySyncer` and implement
   `mapToLocal`/`upsertLocal`.

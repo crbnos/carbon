@@ -32,7 +32,7 @@ import {
  * pulls a customer on its own. The PULL half exists for the explicit
  * "Import customers & vendors" action, which enqueues
  * `pull-from-accounting` ledger operations directly
- * (`rillet-import-contacts`). That is also why `owner: "carbon"` matters:
+ * (`accounting-master-sync`). That is also why `owner: "carbon"` matters:
  * `pullBatchFromAccounting` skips an ALREADY-LINKED record, so re-running
  * the import never lets Rillet overwrite a Carbon-owned customer.
  *

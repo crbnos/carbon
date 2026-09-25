@@ -33,10 +33,10 @@ sweep (Task 6).**
 - [x] Task 2: Write the pure resolution ladder + unit tests
 - [x] Task 3: Implement `findRemoteCandidates` for Rillet vendor + customer
 - [x] Task 4: Route the Rillet push path through the ladder
-- [~] Task 5: Migrate Xero and QuickBooks onto the shared ladder — **BLOCKED, see below**
+- [x] Task 5: Migrate Xero and QuickBooks onto the shared ladder — done 2026-09-24 (the recorded blocker did not survive re-reading; see below)
 - [x] Task 6: Add master data to the outbound sweep
-- [~] Task 7: Unify the two one-shot jobs into `accounting-master-sync` — **BLOCKED, stop condition fired**
-- [~] Task 8: Expose the import action on every accounting provider — blocked behind Task 7
+- [x] Task 7: Unify the two one-shot jobs into `accounting-master-sync` — done 2026-09-24 via option (b)
+- [x] Task 8: Expose the import action on every accounting provider — done 2026-09-24
 - [~] Task 9: Full-suite verification — gates green; browser step BLOCKED (local DB down)
 
 ## Dependencies
@@ -279,6 +279,158 @@ results in an UPDATE and a mapping row — not a create.
 
 ## Task 5: Migrate Xero and QuickBooks onto the shared ladder
 
+> **UNBLOCKED and done 2026-09-24. No shared-interface change was needed.**
+>
+> The recorded blocker rested on a false premise. It claimed QBO's
+> `findRemoteVendorByName` cached the matched entity's `SyncToken` so the follow-up
+> update could skip a GET, and that the resolver therefore had to return the matched
+> `RemoteCandidate` with an opaque `raw` payload. Re-reading the code:
+>
+> - `updateWithSyncTokenRetry` calls `fetchCurrent()` **unconditionally** before it
+>   updates. The name-match's cached SyncToken was never used to avoid a GET.
+> - `rememberRemoteEntity(match)` is overwritten by `rememberRemoteEntity(created)`
+>   or `rememberRemoteEntity(updated)` a few lines later on every path through
+>   `upsertRemote`. Its only surviving effect — seeding `linkEntities`'
+>   `remoteUpdatedAt` — is re-supplied by the write's own response.
+>
+> So the cache was dead weight, and `{ remoteId, decision }` is sufficient.
+> `RemoteCandidate` gained no `raw` field, and the resolver is unchanged.
+>
+> **Deliberate behaviour changes, both toward the ladder's doctrine:**
+>
+> 1. **Ambiguity creates instead of taking `[0]`.** Unreachable for QBO
+>    (`DisplayName` is unique) and for Xero among ACTIVE contacts. If an archived
+>    Xero twin ever makes it reachable, the create surfaces as Xero's own
+>    duplicate-name refusal — a visible Failed op — rather than a silent link to the
+>    archived record.
+> 2. **A failed search now throws instead of reading as "no match".** Xero's
+>    `findRemoteContactByName` swallowed the error and returned null, so a transient
+>    500 created a duplicate contact permanently. QBO and Rillet already failed
+>    closed; Xero now matches them. The operation parks and retries instead.
+>
+> **Two things found and fixed along the way, neither in the original plan:**
+>
+> - **Xero's batch path bypassed name matching entirely.** `upsertRemoteBatch`
+>   consulted the mapping row only, so the very backfill this matching exists for
+>   created duplicates whenever it ran batched. Both paths now route through one
+>   private `resolveExistingContact`.
+> - **`escapeQboQueryValue` had to move.** It lived in `entities/shared.ts`, which
+>   imports `../provider` — so the provider could not import it. Extracted to the
+>   leaf `quickbooks-online/query.ts` and re-exported from `shared.ts`, the same
+>   shape as the Rillet `references.ts` extraction.
+>
+> **On Xero's capabilities object:** declaring one opts OUT of every default, so an
+> omitted field asserts the default rather than "unknown". `maxJournalDimensionSlots`
+> therefore had to be declared (omitted, it means "no cap", which is false for Xero);
+> it references the existing `XERO_MAX_JOURNAL_DIMENSION_SLOTS` constant rather than
+> repeating the literal. Three doc comments across `core/types.ts`,
+> `sync/capabilities.ts` and `counterpart-types.ts` cited Xero as the
+> capability-less provider and are now updated.
+>
+> **Keys passed: `name` only, for both providers.** Unlike Rillet — which has no
+> search endpoint and so lists the org, making every rung live — Xero and QBO query
+> by name, which bounds the candidate set to one name. An email or tax-id rung over
+> a name-bounded set can only re-confirm the same record or find nothing, so passing
+> those keys would change the reported rung and nothing else. Widening the ladder
+> for these two means widening the query; that is a real behaviour change and was
+> left out of scope.
+>
+> **Gates:** `@carbon/ee` + `@carbon/jobs` + `erp` typecheck, `pnpm run lint`
+> (37/37), `pnpm run test` (31/31, 1654 ee tests). New HTTP-boundary tests stub
+> `fetch` only and pin both providers' query shape, escaping, error behaviour and
+> no-op cases — the same class of bug as the Rillet `email` vs `emails[]` shape
+> mismatch this slice already hit.
+>
+> **Not verified in a browser** — same blocker as the rest of slice 1: no accounting
+> provider is connected to the local dev company.
+
+
+**Depends on:** Task 2
+**Files:**
+- Modify: `packages/ee/src/accounting/providers/rillet/provider.ts` — add
+  `findRemoteCandidates` and declare `searchableCounterparts: ["vendor", "customer"]`
+  on `capabilities` (lines 375-382)
+- Copy from (precedent): `packages/ee/src/accounting/providers/rillet/provider.ts`
+  `listVendors` / `listCustomers` as used by
+  `packages/jobs/src/inngest/functions/integrations/rillet-import-contacts.ts:134-138`
+
+**Steps:**
+1. Add `searchableCounterparts: ["vendor", "customer"]` to the existing
+   `readonly capabilities: ProviderCapabilities` object.
+2. Implement `findRemoteCandidates(kind, keys)`:
+   - `kind === "vendor"` → `listVendors()`; `kind === "customer"` → `listCustomers()`;
+     anything else → `return []`.
+   - Map each remote row to a `RemoteCandidate`, reading its Carbon reference through
+     the existing `readCarbonExternalReference` helper
+     (`providers/rillet/entities/shared.ts`) so the `carbonReference` rung works.
+   - Cache the drained list per `(kind)` on the provider instance for the lifetime of
+     one sync run, the same way `rillet-import-contacts.ts:109` caches instead of
+     re-scanning per batch.
+3. **If `listCustomers`/`listVendors` do not exist with those exact names, STOP and
+   report — do not invent an endpoint.** The lesson at `.ai/lessons.md` ("Rillet AP
+   payment pull assumed an org-wide `GET /bill-payments`") is precisely this failure.
+
+**Verify:**
+```bash
+pnpm exec turbo run typecheck --filter=@carbon/ee
+# Expected: exit 0
+pnpm --filter @carbon/ee test -- rillet
+# Expected: existing Rillet tests still pass (no behaviour change yet — the
+# capability is declared but nothing calls it until Task 4).
+```
+
+**Out of scope:** changing `upsertRemote`.
+
+---
+
+## Task 4: Route the Rillet push path through the ladder
+
+**Depends on:** Task 3
+**Files:**
+- Modify: `packages/ee/src/accounting/providers/rillet/entities/vendor.ts` —
+  `upsertRemote` (around line 533)
+- Modify: `packages/ee/src/accounting/providers/rillet/entities/customer.ts` — the
+  equivalent `upsertRemote`
+- Modify: both files' class-header comments, which currently state "no name-matching
+  lookup before create" — that statement becomes false
+- Copy from (precedent):
+  `packages/ee/src/accounting/providers/quickbooks-online/entities/vendor.ts:344-355`
+  (the `existingRemoteId ??= match` then create-or-update shape)
+
+**Steps:**
+1. In `upsertRemote`, after `const existingRemoteId = await this.getRemoteId(localId)`
+   and before the create branch, call `resolveOrCreateRemoteCounterpart` with
+   `kind: "vendor"` (or `"customer"`), `existingRemoteId`, and `keys` built from the
+   mapped write payload: `name`, `taxId` and `email` if the payload carries them,
+   `carbonReference: carbonExternalReference(localId)`.
+2. When it returns a `remoteId`, take the **update** branch (PUT the existing record)
+   and write the mapping row via the syncer's existing `linkEntities` path, exactly as
+   an update would. When it returns null, keep today's create-with-idempotency-key path
+   unchanged.
+3. Update both header comments to describe the ladder and cite
+   `core/counterpart.ts`.
+4. Do NOT remove the `carbon` external reference or the create `Idempotency-Key` —
+   they remain the guards against Carbon double-creating, which the ladder does not
+   replace.
+
+**Verify:**
+```bash
+pnpm --filter @carbon/ee test -- rillet
+# Expected: all existing Rillet vendor/customer tests pass.
+pnpm exec turbo run typecheck --filter=@carbon/ee
+# Expected: exit 0
+```
+Then add one regression test in
+`packages/ee/src/accounting/providers/rillet/entities/__tests__/` asserting that a
+supplier with no mapping, where `findRemoteCandidates` returns one same-named vendor,
+results in an UPDATE and a mapping row — not a create.
+
+**Out of scope:** Xero, QuickBooks, the sweep.
+
+---
+
+## Task 5: Migrate Xero and QuickBooks onto the shared ladder
+
 > **BLOCKED 2026-09-24 — the shared interface cannot express what QBO needs.**
 >
 > Two findings from reading the code before writing any:
@@ -406,29 +558,79 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs
 
 ## Task 7: Unify the two one-shot jobs into `accounting-master-sync`
 
-> **BLOCKED 2026-09-24 — this task's own stop condition fired.**
+> **DONE 2026-09-24 — took option (b), and the split turned out bigger than either
+> option described.**
 >
-> `accounting-backfill` is NOT a master-data job. Besides the contacts and items
-> pull phases it carries a `backfill-journal-dispositions` step
-> (`accounting-backfill.ts:195-364`) that resolves posting policy, enqueues journal
-> operations and records terminal dispositions. Collapsing it into an
-> `accounting-master-sync` would either delete that phase or drag journal
-> backfill into a job named for master data.
+> The stop condition was right that `accounting-backfill` is not a master-data job.
+> Reading it fully found two more things:
 >
-> The task needs re-planning, and the re-plan has a real design choice in it:
+> 1. **Its two PULL phases were unreachable.** They gated on the entity's configured
+>    `direction` via `shouldPull`, and every provider's `build*SyncConfig` forces
+>    `customer`/`vendor`/`item` to `push-to-accounting` / `owner: "carbon"`. So
+>    `shouldPull` was always false — ~320 lines that could never run. That is also
+>    exactly WHY `rillet-import-contacts` had to exist: it enqueues
+>    `pull-from-accounting` operations explicitly, overriding the direction.
+> 2. **The three push phases were copy-pasted per entity type**, ~135 lines each
+>    differing only in the entity name and its table.
 >
-> - **(a) Narrow the task** — `accounting-master-sync` absorbs only
->   `rillet-import-contacts` (the pull direction) and generalises it across
->   providers; `accounting-backfill` keeps its journal phase and its master-data
->   push phases stay where they are. Smallest change, but the "two mirror-image
->   halves" duplication this task exists to remove only half goes away.
-> - **(b) Split `accounting-backfill` first** — extract its journal-disposition
->   phase into `accounting-journal-backfill`, then collapse what remains with
->   `rillet-import-contacts`. Correct end state, but it is now two refactors and
->   it touches the Xero backfill route customers use.
+> **What shipped**
 >
-> Recommend (b), sequenced as its own slice. Nothing regresses meanwhile: both
-> jobs work, and the Rillet import button is unaffected.
+> - `accounting-journal-backfill.ts` — phase 0 extracted verbatim as its own
+>   provider-agnostic job. It had only ever been reachable by clicking Xero's
+>   "Run Initial Sync" button, so on QBO and Rillet journal-disposition repair
+>   beyond the sweep's 7-day window did not exist at all.
+> - `accounting-master-sync.ts` — one job, `direction` as a payload field, one loop
+>   over entity types instead of three copies. Net ~1400 lines deleted.
+> - `provider.listRemoteEntityIds(kind)` + `capabilities.importableEntities`, with
+>   `providerSupportsMasterDataImport` requiring both — the same both-conditions rule
+>   as the counterpart ladder. This is what keeps the job free of provider branching,
+>   per the "never `if (rillet) else if (quickbooks)`" constraint. Implemented on all
+>   three: Rillet reuses its memoized org lists, QBO runs an unfiltered `SELECT`, Xero
+>   pages `/Contacts`.
+> - `MASTER_DATA_TABLES` extracted in `master-data-targets.ts` so the `vendor` →
+>   `supplier` pairing has one definition shared with Task 6's sweep.
+>
+> **Judgement calls worth reviewing**
+>
+> - **Xero's enumeration does NOT reuse `listContacts`.** That method's filter is
+>   `IsCustomer==true OR IsSupplier==true`, so importing "customers" through it would
+>   have created Carbon customers out of supplier-only contacts. `listRemoteEntityIds`
+>   pages each kind separately. A contact that is genuinely both appears under both,
+>   which is correct — the mapping row is keyed by entity type.
+> - **A `withRateLimitRetry` helper was deleted, not carried over.** It awaited
+>   `step.sleep` from INSIDE a `step.run` — a nested-step violation. A `RatelimitError`
+>   now propagates so Inngest retries with backoff, which is what the pull path
+>   already did.
+> - **`XeroProvider.listContacts` / `listItems` deleted** along with their four
+>   option/response interfaces: the dead pull phases were their only callers.
+> - **PULL ignores the configured direction; PUSH respects it.** Asking to import is
+>   deliberately overriding the automatic direction; asking to push is asking the
+>   automatic direction to catch up, so a pull-only entity stays pull-only.
+> - **A kind a provider cannot enumerate reports `notAttempted` with a reason**
+>   rather than importing nothing and returning success.
+>
+> **Task 8 shipped with it.** Two provider-agnostic routes
+> (`integrations.master-sync.ts`, `integrations.journal-backfill.ts`) replace the two
+> per-provider ones. Parameters ride the QUERY STRING because
+> `IntegrationActionButton` POSTs `action.endpoint` with no body — worth knowing
+> before designing any future action. All three accounting descriptors now declare the
+> same three actions: Import customers & vendors, Push customers/vendors/items,
+> Backfill journal postings. Xero's existing "Entities to Sync" switches still drive
+> its push selection; the other two fall through to all-three defaults. No `/translate`
+> run — these descriptor strings are plain (the existing Rillet action was too), not
+> Lingui macros.
+>
+> **Docs synced:** `.claude/rules/accounting-sync-handlers.md` (job table + the section,
+> retitled from "Rillet contact import"), `packages/ee/AGENTS.md`, and two stale code
+> comments in the Rillet provider/customer syncer.
+>
+> **Gates:** ee + jobs + lib + erp + checks typecheck, `pnpm run lint` (37/37),
+> `pnpm run test` (31/31). New `fetch`-boundary tests pin Xero's per-kind filters,
+> its paging and its throw-on-partial-page, and QBO's unfiltered select.
+>
+> **Not verified in a browser** — no accounting provider is connected locally, so no
+> button has been clicked. This is the largest untested surface in the slice: three
+> new actions on three providers, and two jobs that replaced working ones.
 
 
 **Depends on:** none (independent of Tasks 1–6)

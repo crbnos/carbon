@@ -1,5 +1,10 @@
 import { createHash } from "node:crypto";
 import { z } from "zod";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -26,6 +31,7 @@ import {
   type QboCreatePayload,
   type QboUpdatePayload
 } from "./models";
+import { escapeQboQueryValue } from "./query";
 
 const QBO_PRODUCTION_HOST = "https://quickbooks.api.intuit.com";
 const QBO_SANDBOX_HOST = "https://sandbox-quickbooks.api.intuit.com";
@@ -417,7 +423,9 @@ export class QboProvider extends BaseProvider {
     supportsWebhooks: false,
     supportsJournalPush: true,
     // One ClassRef + one DepartmentRef per journal line — 2 fixed slots
-    maxJournalDimensionSlots: 2
+    maxJournalDimensionSlots: 2,
+    searchableCounterparts: ["customer", "vendor"],
+    importableEntities: ["customer", "vendor"]
   };
 
   http: HTTPClient;
@@ -521,6 +529,54 @@ export class QboProvider extends BaseProvider {
    * the results with STARTPOSITION/MAXRESULTS until a short page signals
    * the end. `maxResults` is the page size, capped at QBO's limit of 1000.
    */
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`).
+   *
+   * QBO has a real search endpoint, so this queries by `DisplayName` instead of
+   * listing the company the way Rillet must. That makes **name the only rung it
+   * can answer**: the candidate set is already filtered to one name, so
+   * populating an email or tax id on these candidates could never change the
+   * outcome. Widening the ladder for QBO means widening this WHERE clause, not
+   * adding fields below.
+   *
+   * Throws on a failed query rather than returning `[]` — "the search failed"
+   * must not read as "no match exists", which would create a duplicate vendor
+   * in the customer's master data. `query` throws, so this is the default.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    const entity =
+      kind === "customer" ? "Customer" : kind === "vendor" ? "Vendor" : null;
+    if (!entity) return [];
+
+    const name = keys.name?.trim();
+    if (!name) return [];
+
+    const rows = await this.query<Qbo.Customer | Qbo.Vendor>(
+      entity,
+      `DisplayName = '${escapeQboQueryValue(name)}'`
+    );
+
+    return rows
+      .filter((row) => Boolean(row.Id))
+      .map((row) => ({ remoteId: row.Id, name: row.DisplayName ?? null }));
+  }
+
+  /**
+   * Every remote id of a master-data kind, for the one-shot import. `query`
+   * pages internally, so an unfiltered SELECT drains the whole list.
+   */
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    const entity =
+      kind === "customer" ? "Customer" : kind === "vendor" ? "Vendor" : null;
+    if (!entity) return [];
+
+    const rows = await this.query<Qbo.Customer | Qbo.Vendor>(entity);
+    return rows.flatMap((row) => (row.Id ? [row.Id] : []));
+  }
+
   async query<T>(
     entity: string,
     where?: string,

@@ -568,11 +568,15 @@ export type Events = {
     data: Record<string, never>;
   };
 
-  // Accounting backfill
-  "carbon/accounting-backfill": {
+  // One-shot master-data sync for any accounting provider, in either
+  // direction: push unmapped Carbon records out, or import what the provider
+  // already has and link it. Replaces the per-provider `accounting-backfill`
+  // (Xero) and `rillet-import-contacts` (Rillet) events.
+  "carbon/accounting-master-sync": {
     data: {
       companyId: string;
       provider: string;
+      direction: "push-to-accounting" | "pull-from-accounting";
       batchSize?: number;
       entityTypes?: {
         customers?: boolean;
@@ -582,15 +586,12 @@ export type Events = {
     };
   };
 
-  // Rillet contact import (the integration's "Import customers & vendors"
-  // action): pull Rillet Customers and Vendors into Carbon and link them
-  "carbon/rillet-import-contacts": {
+  // Journal posting-disposition repair back to postingSync.syncFromDate —
+  // the history behind the outbound sweep's 7-day window.
+  "carbon/accounting-journal-backfill": {
     data: {
       companyId: string;
-      entityTypes?: {
-        customers?: boolean;
-        vendors?: boolean;
-      };
+      provider: string;
     };
   };
 
