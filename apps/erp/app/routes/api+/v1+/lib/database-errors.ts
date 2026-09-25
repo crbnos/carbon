@@ -1,4 +1,5 @@
 import type { FunctionsError, PostgrestError } from "@supabase/supabase-js";
+import { SERVICE_RULE_ERROR_CODE } from "~/utils/supabase";
 
 export type SupabaseFailure = PostgrestError | FunctionsError;
 
@@ -49,4 +50,16 @@ export function publicDatabaseError(
   error: SupabaseFailure | null | undefined
 ): string {
   return DATABASE_ERROR_MESSAGES[classifyDatabaseFailure(error)];
+}
+
+/** A service's own refusal (`ruleError`), whose message is safe to show. */
+export function isServiceRuleError(
+  error: unknown
+): error is { code: string; message: string } {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    "code" in error &&
+    error.code === SERVICE_RULE_ERROR_CODE
+  );
 }

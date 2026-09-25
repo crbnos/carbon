@@ -332,6 +332,12 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
     one. It used to interpolate `JSON.stringify(error)`, which handed a caller the
     column, constraint and value out of the PostgREST body, and later an edge
     function's own text — CWE-209 either way.
+  - The one exception is a service's own refusal: an error built with
+    `ruleError(message)` (`~/utils/supabase`, code `CARBON_RULE`) is written for
+    the caller, so `isServiceRuleError` lets `callOperation` return its message
+    as an `execution` error. Return one for a broken business rule a caller can
+    fix ("Grade X is not a grade of substance Y"); never wrap a database error
+    in it.
   - The **full detail is logged** instead (`logger.error("Operation failed", …)` in
     `call.server.ts`) with the operation name, the classification, the raw Supabase
     error, and — for an edge function — the message read off the unread `Response`

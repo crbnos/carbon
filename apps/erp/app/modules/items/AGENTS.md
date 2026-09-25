@@ -62,7 +62,8 @@ pnpm --filter @carbon/erp test
 
 - `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` / `getService` — item reads by type (RPCs `get_part_details`, `get_material_details`, `get_service_details`, etc.)
 - `upsertService` — creates/updates a Service item; always `itemTrackingType = 'Non-Inventory'` (never shipped/received/stocked), replenishment `Buy` or `Make` only. The `service` row is keyed by `item.readableId` (like tool/material). Legacy `service.serviceType` is defaulted and no longer read.
-- `upsertMaterial` — creates/updates material with taxonomy FKs and `item`/`material` linkage
+- `upsertMaterial(client, db, material)` — creates/updates material with taxonomy FKs and `item`/`material` linkage; an update writes only the keys sent and never touches `active`
+- `updateMaterialProperties(client, db, material)` — the one path for substance/form/type/finish/grade/dimension changes (properties panel, `upsertMaterial`, MCP): dependent resets, pick-list checks, generated-ID renames in one transaction. See `.claude/rules/material-tables.md`
 - `getMakeMethods` / `getMethodMaterials` / `getMethodOperations` / `getMethodTreeArray` — BOM/routing reads
 - `copyItem` / `copyMakeMethod` — duplicates via edge function
 - `createRevision` / `activateMethodVersion` — revision and version management

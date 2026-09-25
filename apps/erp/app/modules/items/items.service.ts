@@ -19,7 +19,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
@@ -86,6 +86,19 @@ import {
   type toolValidator,
   type unitOfMeasureValidator
 } from "./items.models";
+import {
+  checkMaterialProperties,
+  clearsSubstanceOrShape,
+  generatedIdsNeedSubstanceAndShape,
+  generateMaterialIdentity,
+  type MaterialPropertyLookups,
+  type MaterialPropertyValues,
+  materialPropertyFields,
+  noMaterialProperties,
+  resolveMaterialProperties,
+  sentFields,
+  sentMaterialProperties
+} from "./material-properties";
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
@@ -3287,6 +3300,66 @@ async function cascadeSourcingAndMethodTypeToMethodMaterials(
     .execute();
 }
 
+/**
+ * Resolves the item row that an update to a typed item (part, material, tool,
+ * consumable, service) addresses. `item` is keyed by uuid while the typed
+ * tables are keyed by the item's readable id plus companyId, so writing the
+ * pair needs both keys. Accepts either one: the uuid every read tool and
+ * route hands out, or the readable id a person types. A readable id shared by
+ * several revisions is refused rather than guessed.
+ */
+async function resolveTypedItemForUpdate(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    type: Database["public"]["Enums"]["itemType"];
+  }
+): Promise<
+  | { data: { id: string; readableId: string }; error: null }
+  | { data: null; error: PostgrestError | { message: string; code?: string } }
+> {
+  const byId = await client
+    .from("item")
+    .select("id, readableId")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type)
+    .maybeSingle();
+  if (byId.error) return { data: null, error: byId.error };
+  if (byId.data) return { data: byId.data, error: null };
+
+  const byReadableId = await client
+    .from("item")
+    .select("id, readableId")
+    .eq("readableId", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type);
+  if (byReadableId.error) return { data: null, error: byReadableId.error };
+  if (byReadableId.data.length === 1) {
+    return { data: byReadableId.data[0], error: null };
+  }
+  if (byReadableId.data.length > 1) {
+    return {
+      data: null,
+      error: ruleError(
+        `${args.type} ${args.id} has ${byReadableId.data.length} revisions; pass the item id of the revision to update`
+      )
+    };
+  }
+  // PGRST116 is what a `.single()` miss reports, so the API layer maps this to
+  // its "no matching record" message instead of the generic failure text.
+  return {
+    data: null,
+    error: { code: "PGRST116", message: `${args.type} ${args.id} not found` }
+  };
+}
+
+/**
+ * Creates a consumable (item row and consumable row) or updates one; on update
+ * `id` is the item id (uuid) or the consumable's readable id and the write is
+ * a full replace, so omitted optional fields are cleared.
+ */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
   consumable:
@@ -3296,6 +3369,7 @@ export async function upsertConsumable(
         customFields?: Json;
       })
     | (z.infer<typeof consumableValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3373,8 +3447,15 @@ export async function upsertConsumable(
     return newConsumable;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: consumable.id,
+    companyId: consumable.companyId,
+    type: "Consumable"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: consumable.name,
     description: consumable.description,
     replenishmentSystem: consumable.replenishmentSystem,
@@ -3388,35 +3469,47 @@ export async function upsertConsumable(
     customFields: consumable.customFields
   };
 
+  // item is keyed by uuid, consumable by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateConsumable] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: consumable.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", consumable.id),
+      .eq("id", itemId)
+      .eq("companyId", consumable.companyId)
+      .select("id")
+      .single(),
     client
       .from("consumable")
       .update({
         ...sanitize(consumableUpdate),
+        updatedBy: consumable.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", consumable.id)
+      .eq("id", readableId)
+      .eq("companyId", consumable.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updateConsumable.error) return updateConsumable;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
     storageUnitId: consumable.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
+    companyId: consumable.companyId,
     mode: consumable.shelfLifeMode,
     days: consumable.shelfLifeDays,
     triggerProcessId: consumable.shelfLifeTriggerProcessId,
@@ -3425,7 +3518,7 @@ export async function upsertConsumable(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateConsumable;
+  return updateItem;
 }
 
 /**
@@ -3571,6 +3664,11 @@ export async function resolveItemIdFromExtractedText(
   return matchItemIdByText(client, companyId, candidates);
 }
 
+/**
+ * Creates a part (item row and part row) or updates one; on update `id` is the
+ * item id (uuid) or the part's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
@@ -3580,6 +3678,7 @@ export async function upsertPart(
         customFields?: Json;
       })
     | (z.infer<typeof partValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3673,8 +3772,15 @@ export async function upsertPart(
     return newPart;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: part.id,
+    companyId: part.companyId,
+    type: "Part"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: part.name,
     description: part.description,
     replenishmentSystem: part.replenishmentSystem,
@@ -3688,35 +3794,47 @@ export async function upsertPart(
     customFields: part.customFields
   };
 
+  // item is keyed by uuid, part by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updatePart] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: part.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", part.id),
+      .eq("id", itemId)
+      .eq("companyId", part.companyId)
+      .select("id")
+      .single(),
     client
       .from("part")
       .update({
         ...sanitize(partUpdate),
+        updatedBy: part.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", part.id)
+      .eq("id", readableId)
+      .eq("companyId", part.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updatePart.error) return updatePart;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
     storageUnitId: part.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
+    companyId: part.companyId,
     mode: part.shelfLifeMode,
     days: part.shelfLifeDays,
     triggerProcessId: part.shelfLifeTriggerProcessId,
@@ -3725,7 +3843,7 @@ export async function upsertPart(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updatePart;
+  return updateItem;
 }
 
 export async function updateItem(
@@ -4771,8 +4889,350 @@ export async function setMethodOperationToolStepLink(
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 
+type MaterialPropertyPlan = {
+  changed: Partial<MaterialPropertyValues>;
+  generated: { readableId: string; name: string } | null;
+};
+
+type ServiceError = PostgrestError | { message: string; code?: string };
+
+async function materialIdsAreGenerated(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<
+  { data: boolean; error: null } | { data: null; error: ServiceError }
+> {
+  const settings = await client
+    .from("companySettings")
+    .select("materialGeneratedIds")
+    .eq("id", companyId)
+    .single();
+  if (settings.error) return { data: null, error: settings.error };
+  return { data: settings.data.materialGeneratedIds === true, error: null };
+}
+
+async function getMaterialPropertyValues(
+  client: SupabaseClient<Database>,
+  readableId: string,
+  companyId: string
+): Promise<
+  | { data: MaterialPropertyValues; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const material = await client
+    .from("material")
+    .select(materialPropertyFields.join(", "))
+    .eq("id", readableId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (material.error) return { data: null, error: material.error };
+  if (!material.data) {
+    return {
+      data: null,
+      error: { code: "PGRST116", message: `Material ${readableId} not found` }
+    };
+  }
+  return {
+    data: material.data as unknown as MaterialPropertyValues,
+    error: null
+  };
+}
+
+async function getMaterialPropertyLookups(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: MaterialPropertyValues
+): Promise<
+  | { data: MaterialPropertyLookups; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const visible = `companyId.eq.${companyId},companyId.is.null`;
+  const none = { data: null, error: null };
+  const [substance, form, type, finish, grade, dimension] = await Promise.all([
+    values.materialSubstanceId
+      ? client
+          .from("materialSubstance")
+          .select("name, code")
+          .eq("id", values.materialSubstanceId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.materialFormId
+      ? client
+          .from("materialForm")
+          .select("name, code")
+          .eq("id", values.materialFormId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.materialTypeId
+      ? client
+          .from("materialType")
+          .select("name, code, materialSubstanceId, materialFormId")
+          .eq("id", values.materialTypeId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.finishId
+      ? client
+          .from("materialFinish")
+          .select("name, materialSubstanceId")
+          .eq("id", values.finishId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.gradeId
+      ? client
+          .from("materialGrade")
+          .select("name, materialSubstanceId")
+          .eq("id", values.gradeId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.dimensionId
+      ? client
+          .from("materialDimension")
+          .select("name, materialFormId")
+          .eq("id", values.dimensionId)
+          .or(visible)
+          .maybeSingle()
+      : none
+  ]);
+
+  const error = [substance, form, type, finish, grade, dimension].find(
+    (result) => result.error
+  )?.error;
+  if (error) return { data: null, error };
+
+  return {
+    data: {
+      substance: substance.data,
+      form: form.data,
+      type: type.data,
+      finish: finish.data,
+      grade: grade.data,
+      dimension: dimension.data
+    },
+    error: null
+  };
+}
+
+async function planMaterialPropertyChanges(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    current: MaterialPropertyValues;
+    changes: Partial<MaterialPropertyValues>;
+    generatedIds: boolean;
+  }
+): Promise<
+  | { data: MaterialPropertyPlan; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const { next, changed } = resolveMaterialProperties(
+    args.current,
+    args.changes
+  );
+  if (Object.keys(changed).length === 0) {
+    return { data: { changed, generated: null }, error: null };
+  }
+  if (args.generatedIds && clearsSubstanceOrShape(args.current, next)) {
+    return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
+  }
+
+  const lookups = await getMaterialPropertyLookups(
+    client,
+    args.companyId,
+    next
+  );
+  if (lookups.error) return { data: null, error: lookups.error };
+
+  const invalid = checkMaterialProperties(args.current, next, lookups.data);
+  if (invalid) return { data: null, error: ruleError(invalid) };
+
+  return {
+    data: {
+      changed,
+      generated: args.generatedIds
+        ? generateMaterialIdentity(next, lookups.data)
+        : null
+    },
+    error: null
+  };
+}
+
+async function materialIdIsTaken(
+  client: SupabaseClient<Database>,
+  readableId: string,
+  companyId: string
+): Promise<
+  { data: boolean; error: null } | { data: null; error: ServiceError }
+> {
+  const taken = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId)
+    .eq("type", "Material")
+    .limit(1);
+  if (taken.error) return { data: null, error: taken.error };
+  return { data: taken.data.length > 0, error: null };
+}
+
+// Kysely bypasses RLS, so the caller's client must be able to update the
+// material row first. Its policy (parts_update) also covers item and itemCost.
+async function requireMaterialUpdatable(
+  client: SupabaseClient<Database>,
+  args: { readableId: string; companyId: string; updatedBy: string }
+): Promise<{ error: ServiceError | null }> {
+  const probe = await client
+    .from("material")
+    .update({ updatedBy: args.updatedBy, updatedAt: datetime.timestamp() })
+    .eq("id", args.readableId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+  return { error: probe.error };
+}
+
+class MaterialRuleViolation extends Error {}
+
+function materialWriteError(error: unknown): ServiceError {
+  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  return code ? { code, message } : { message };
+}
+
+async function writeMaterialIdentity(
+  trx: KyselyTx,
+  args: {
+    readableId: string;
+    newReadableId?: string;
+    name?: string;
+    companyId: string;
+    updatedBy: string;
+    changes: Partial<MaterialPropertyValues>;
+  }
+): Promise<string> {
+  const { readableId, companyId, updatedBy, changes } = args;
+  const newReadableId = args.newReadableId ?? readableId;
+  const renamed = newReadableId !== readableId;
+  if (!newReadableId) {
+    throw new MaterialRuleViolation("Material ID cannot be empty");
+  }
+  if (!renamed && args.name === undefined && !Object.keys(changes).length) {
+    return readableId;
+  }
+
+  const updatedAt = datetime.timestamp();
+  if (renamed) {
+    const taken = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("readableId", "=", newReadableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .executeTakeFirst();
+    if (taken) {
+      throw new MaterialRuleViolation(
+        `Material ${newReadableId} already exists`
+      );
+    }
+  }
+
+  const material = await trx
+    .updateTable("material")
+    .set({ ...changes, id: newReadableId, updatedBy, updatedAt })
+    .where("id", "=", readableId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(material.numUpdatedRows) !== 1) {
+    throw new MaterialRuleViolation(`Material ${readableId} not found`);
+  }
+
+  if (renamed || args.name !== undefined) {
+    await trx
+      .updateTable("item")
+      .set({
+        readableId: newReadableId,
+        ...(args.name !== undefined ? { name: args.name } : {}),
+        updatedBy,
+        updatedAt
+      })
+      .where("readableId", "=", readableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .execute();
+  }
+  return newReadableId;
+}
+
+/** Refused while the material is open in a change notice, as New Revision is. */
+async function getNewMaterialSizes(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    readableId: string;
+    companyId: string;
+    sizes: string[];
+  }
+): Promise<
+  { data: string[]; error: null } | { data: null; error: ServiceError }
+> {
+  const existing = await client
+    .from("item")
+    .select("revision")
+    .eq("readableId", args.readableId)
+    .eq("companyId", args.companyId)
+    .eq("type", "Material");
+  if (existing.error) return { data: null, error: existing.error };
+
+  const revisions = new Set(existing.data.map((item) => item.revision));
+  const sizes = [...new Set(args.sizes)].filter(
+    (size) => size && !revisions.has(size)
+  );
+  if (sizes.length === 0) return { data: [], error: null };
+
+  const open = await findChangeNoticesForItem(client, {
+    itemId: args.itemId,
+    companyId: args.companyId,
+    statuses: changeNoticeOpenStatuses
+  });
+  if (open.error) {
+    return {
+      data: null,
+      error: { message: "Could not check open change notices for this item" }
+    };
+  }
+  if (open.data.length > 0) {
+    const ids = open.data.map((co) => co.changeOrderId).join(", ");
+    return {
+      data: null,
+      error: ruleError(
+        `This item is open in change notice ${ids}. Release it to create new revisions.`
+      )
+    };
+  }
+  return { data: sizes, error: null };
+}
+
+/**
+ * Creates a material or updates one by item id or readable id; an update keeps
+ * any optional field it leaves out, and `sizes` adds a revision per new size.
+ * Property changes follow updateMaterialProperties: dependents reset, picks
+ * are checked against their substance and shape, and with generated material
+ * IDs on the readable id and name are derived from the properties (any `id`
+ * or `name` sent for them is replaced). `readableId` renames a material when
+ * IDs are typed by hand. An update's material, item and item cost writes land
+ * together or not at all.
+ */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   material:
     | (z.infer<typeof materialValidator> & {
         companyId: string;
@@ -4781,11 +5241,49 @@ export async function upsertMaterial(
         sizes?: string[];
       })
     | (z.infer<typeof materialValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  const generatedIds = await materialIdsAreGenerated(
+    client,
+    material.companyId
+  );
+  if (generatedIds.error) return generatedIds;
+
   if ("createdBy" in material) {
+    const plan = await planMaterialPropertyChanges(client, {
+      companyId: material.companyId,
+      current: noMaterialProperties,
+      changes: sentMaterialProperties(material),
+      generatedIds: generatedIds.data
+    });
+    if (plan.error) return plan;
+    if (generatedIds.data && !plan.data.generated) {
+      return {
+        data: null,
+        error: ruleError(generatedIdsNeedSubstanceAndShape)
+      };
+    }
+    const readableId = plan.data.generated?.readableId ?? material.id;
+    const name = plan.data.generated?.name ?? material.name;
+
+    // An existing id would take the new item rows as extra revisions and
+    // overwrite its material row; sizes on an update add revisions instead.
+    const taken = await materialIdIsTaken(
+      client,
+      readableId,
+      material.companyId
+    );
+    if (taken.error) return taken;
+    if (taken.data) {
+      return {
+        data: null,
+        error: ruleError(`Material ${readableId} already exists`)
+      };
+    }
+
     // Collect every newly-created item id across the sizes / no-sizes
     // branches so the shelf-life policy can be applied uniformly.
     const newItemIds: string[] = [];
@@ -4796,9 +5294,10 @@ export async function upsertMaterial(
           client
             .from("item")
             .insert({
-              readableId: material.id,
-              name: material.name,
+              readableId,
+              name,
               description: material.description,
+              mpn: material.mpn,
               type: "Material",
               replenishmentSystem: material.replenishmentSystem,
               defaultMethodType: material.defaultMethodType,
@@ -4844,9 +5343,10 @@ export async function upsertMaterial(
       const itemInsert = await client
         .from("item")
         .insert({
-          readableId: material.id,
-          name: material.name,
+          readableId,
+          name,
           description: material.description,
+          mpn: material.mpn,
           type: "Material",
           replenishmentSystem: material.replenishmentSystem,
           defaultMethodType: material.defaultMethodType,
@@ -4899,7 +5399,7 @@ export async function upsertMaterial(
     }
 
     const materialInsert = await client.from("material").upsert({
-      id: material.id,
+      id: readableId,
       materialFormId: material.materialFormId,
       materialSubstanceId: material.materialSubstanceId,
       finishId: material.finishId,
@@ -4916,7 +5416,7 @@ export async function upsertMaterial(
     const newMaterial = await client
       .from("materials")
       .select("*")
-      .eq("readableId", material.id)
+      .eq("readableId", readableId)
       .eq("companyId", material.companyId);
 
     return {
@@ -4925,56 +5425,130 @@ export async function upsertMaterial(
     };
   }
 
-  const itemUpdate = {
+  const { companyId, updatedBy } = material;
+  const item = await resolveTypedItemForUpdate(client, {
     id: material.id,
-    name: material.name,
-    description: material.description,
-    replenishmentSystem: material.replenishmentSystem,
-    defaultMethodType: material.defaultMethodType,
-    itemTrackingType: material.itemTrackingType,
-    unitOfMeasureCode: material.unitOfMeasureCode,
-    active: true
-  };
+    companyId,
+    type: "Material"
+  });
+  if (item.error) return item;
+  const itemId = item.data.id;
+  let readableId = item.data.readableId;
 
-  const materialUpdate = {
-    materialFormId: material.materialFormId,
-    materialSubstanceId: material.materialSubstanceId,
-    finishId: material.finishId,
-    gradeId: material.gradeId,
-    dimensionId: material.dimensionId,
-    materialTypeId: material.materialTypeId,
-    customFields: material.customFields
-  };
+  // Everything that can be refused is checked before the first write.
+  const current = await getMaterialPropertyValues(
+    client,
+    readableId,
+    companyId
+  );
+  if (current.error) return current;
 
-  const [updateItem, updateMaterial] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", material.id),
-    client
-      .from("material")
-      .update({
-        ...sanitize(materialUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", material.id)
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId,
+    current: current.data,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return plan;
+
+  let newSizes: string[] = [];
+  if (material.sizes?.length) {
+    const sizes = await getNewMaterialSizes(client, {
+      itemId,
+      readableId,
+      companyId,
+      sizes: material.sizes
+    });
+    if (sizes.error) return sizes;
+    newSizes = sizes.data;
+  }
+
+  const itemUpdate = sentFields(material, [
+    "name",
+    "description",
+    "mpn",
+    "replenishmentSystem",
+    "defaultMethodType",
+    "itemTrackingType",
+    "unitOfMeasureCode"
   ]);
+  if (plan.data.generated) itemUpdate.name = plan.data.generated.name;
 
-  if (updateItem.error) return updateItem;
+  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
+    {};
+  if ("postingGroupId" in material) {
+    costUpdate.itemPostingGroupId = material.postingGroupId || null;
+  }
+  if (typeof material.unitCost === "number") {
+    costUpdate.unitCost = material.unitCost;
+  }
+
+  const permitted = await requireMaterialUpdatable(client, {
+    readableId,
+    companyId,
+    updatedBy
+  });
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  const updatedAt = datetime.timestamp();
+  try {
+    readableId = await db.transaction().execute(async (trx) => {
+      const saved = await writeMaterialIdentity(trx, {
+        readableId,
+        newReadableId: generatedIds.data
+          ? plan.data.generated?.readableId
+          : material.readableId || undefined,
+        name: plan.data.generated?.name,
+        companyId,
+        updatedBy,
+        changes: plan.data.changed
+      });
+
+      await trx
+        .updateTable("item")
+        .set({ ...itemUpdate, updatedBy, updatedAt })
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if ("customFields" in material) {
+        await trx
+          .updateTable("material")
+          .set({ customFields: material.customFields ?? null, updatedAt })
+          .where("id", "=", saved)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      // The item insert trigger creates the itemCost row, so this updates it.
+      if (Object.keys(costUpdate).length > 0) {
+        const cost = await trx
+          .updateTable("itemCost")
+          .set({ ...costUpdate, updatedBy, updatedAt })
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (Number(cost.numUpdatedRows) !== 1) {
+          throw new MaterialRuleViolation(`Item cost for ${itemId} not found`);
+        }
+      }
+      return saved;
+    });
+  } catch (error) {
+    return { data: null, error: materialWriteError(error) };
+  }
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
+    itemId,
+    userId: updatedBy,
     storageUnitId: material.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
+    itemId,
+    userId: updatedBy,
+    companyId,
     mode: material.shelfLifeMode,
     days: material.shelfLifeDays,
     triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -4983,9 +5557,119 @@ export async function upsertMaterial(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateMaterial;
+  if (newSizes.length > 0) {
+    const source = await getItem(client, itemId);
+    if (source.error) return source;
+    for (const size of newSizes) {
+      const revision = await createRevision(client, {
+        item: source.data,
+        revision: size,
+        createdBy: updatedBy
+      });
+      if (revision.error) return revision;
+    }
+  }
+
+  return client
+    .from("item")
+    .select("id, readableId, readableIdWithRevision, revision, name")
+    .eq("id", itemId)
+    .single();
 }
 
+/**
+ * Changes a material's substance, shape, type, finish, grade or dimension by
+ * item id or readable id, as the item properties panel does. Omitted
+ * properties keep their value; null or an empty string clears one. A new
+ * substance clears finish, grade and type, and a new shape clears dimension
+ * and type, unless the same call sets them. Grade and finish must belong to
+ * the substance, dimension to the shape, and type to both. With generated
+ * material IDs on, every revision's readable id and name are regenerated once
+ * the material has a substance and a shape.
+ */
+export async function updateMaterialProperties(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  material: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    materialSubstanceId?: string | null;
+    materialFormId?: string | null;
+    materialTypeId?: string | null;
+    finishId?: string | null;
+    gradeId?: string | null;
+    dimensionId?: string | null;
+  }
+) {
+  const { companyId, updatedBy } = material;
+
+  const item = await client
+    .from("item")
+    .select("readableId")
+    .eq("id", material.id)
+    .eq("companyId", companyId)
+    .eq("type", "Material")
+    .maybeSingle();
+  if (item.error) return item;
+  let readableId = item.data?.readableId ?? material.id;
+
+  const [current, generatedIds] = await Promise.all([
+    getMaterialPropertyValues(client, readableId, companyId),
+    materialIdsAreGenerated(client, companyId)
+  ]);
+  if (current.error) return current;
+  if (generatedIds.error) return generatedIds;
+
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId,
+    current: current.data,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return plan;
+
+  if (Object.keys(plan.data.changed).length > 0) {
+    const permitted = await requireMaterialUpdatable(client, {
+      readableId,
+      companyId,
+      updatedBy
+    });
+    if (permitted.error) return { data: null, error: permitted.error };
+
+    try {
+      readableId = await db.transaction().execute((trx) =>
+        writeMaterialIdentity(trx, {
+          readableId,
+          newReadableId: plan.data.generated?.readableId,
+          name: plan.data.generated?.name,
+          companyId,
+          updatedBy,
+          changes: plan.data.changed
+        })
+      );
+    } catch (error) {
+      return { data: null, error: materialWriteError(error) };
+    }
+  }
+
+  const row = await client
+    .from("materials")
+    .select("*")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId)
+    .single();
+  if (row.error) return row;
+  return {
+    data: { ...row.data, ...current.data, ...plan.data.changed },
+    error: null
+  };
+}
+
+/**
+ * Creates a dimension (a named size) for a material shape, or updates the one
+ * whose `id` is sent; a new dimension's id is generated.
+ */
 export async function upsertMaterialDimension(
   client: SupabaseClient<Database>,
   materialDimension:
@@ -4995,18 +5679,18 @@ export async function upsertMaterialDimension(
       })
     | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialDimension) {
-    return (
-      client
-        .from("materialDimension")
-        .update(sanitize(materialDimension))
-        // @ts-ignore
-        .eq("id", materialDimension.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialDimension;
+    let query = client
+      .from("materialDimension")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
 
   return client
@@ -5016,6 +5700,10 @@ export async function upsertMaterialDimension(
     .single();
 }
 
+/**
+ * Creates a finish for a material substance, or updates the one whose `id` is
+ * sent; a new finish's id is generated.
+ */
 export async function upsertMaterialFinish(
   client: SupabaseClient<Database>,
   materialFinish:
@@ -5024,18 +5712,18 @@ export async function upsertMaterialFinish(
       })
     | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialFinish) {
-    return (
-      client
-        .from("materialFinish")
-        .update(sanitize(materialFinish))
-        // @ts-ignore
-        .eq("id", materialFinish.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialFinish;
+    let query = client
+      .from("materialFinish")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialFinish")
@@ -5076,6 +5764,10 @@ export async function upsertMaterialForm(
   );
 }
 
+/**
+ * Creates a grade for a material substance, or updates the one whose `id` is
+ * sent; a new grade's id is generated.
+ */
 export async function upsertMaterialGrade(
   client: SupabaseClient<Database>,
   materialGrade:
@@ -5084,18 +5776,18 @@ export async function upsertMaterialGrade(
       })
     | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialGrade) {
-    return (
-      client
-        .from("materialGrade")
-        .update(sanitize(materialGrade))
-        // @ts-ignore
-        .eq("id", materialGrade.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialGrade;
+    let query = client
+      .from("materialGrade")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialGrade")
@@ -5157,6 +5849,10 @@ export async function getMaterialTypeList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
+/**
+ * Creates a material type for a substance and shape pair, or updates the one
+ * whose `id` is sent; a new type's id is generated.
+ */
 export async function upsertMaterialType(
   client: SupabaseClient<Database>,
   materialType:
@@ -5165,18 +5861,18 @@ export async function upsertMaterialType(
       })
     | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialType) {
-    return (
-      client
-        .from("materialType")
-        .update(sanitize(materialType))
-        // @ts-ignore
-        .eq("id", materialType.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialType;
+    let query = client
+      .from("materialType")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialType")
@@ -5217,6 +5913,11 @@ export async function upsertMaterialSubstance(
   );
 }
 
+/**
+ * Creates a service (item row and service row) or updates one; on update `id`
+ * is the item id (uuid) or the service's readable id and the write is a full
+ * replace, so omitted optional fields are cleared.
+ */
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
@@ -5226,6 +5927,7 @@ export async function upsertService(
         customFields?: Json;
       })
     | (z.infer<typeof serviceValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5288,15 +5990,15 @@ export async function upsertService(
     return newService;
   }
 
-  const item = await client
-    .from("item")
-    .select("readableId, companyId")
-    .eq("id", service.id)
-    .single();
+  const item = await resolveTypedItemForUpdate(client, {
+    id: service.id,
+    companyId: service.companyId,
+    type: "Service"
+  });
   if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
 
   const itemUpdate = {
-    id: service.id,
     name: service.name,
     description: service.description,
     replenishmentSystem: service.replenishmentSystem,
@@ -5310,27 +6012,36 @@ export async function upsertService(
     customFields: service.customFields
   };
 
+  // item is keyed by uuid, service by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateService] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: service.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", service.id),
-    // service.id is the item uuid; the service row is keyed by readableId
+      .eq("id", itemId)
+      .eq("companyId", service.companyId)
+      .select("id")
+      .single(),
     client
       .from("service")
       .update({
         ...sanitize(serviceUpdate),
+        updatedBy: service.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", item.data.readableId ?? "")
-      .eq("companyId", item.data.companyId ?? "")
+      .eq("id", readableId)
+      .eq("companyId", service.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
-  return updateService;
+  if (updateService.error) return updateService;
+  return updateItem;
 }
 
 export async function upsertUnitOfMeasure(
@@ -5363,6 +6074,11 @@ export async function upsertUnitOfMeasure(
     .single();
 }
 
+/**
+ * Creates a tool (item row and tool row) or updates one; on update `id` is the
+ * item id (uuid) or the tool's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertTool(
   client: SupabaseClient<Database>,
   tool:
@@ -5372,6 +6088,7 @@ export async function upsertTool(
         customFields?: Json;
       })
     | (z.infer<typeof toolValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5451,8 +6168,15 @@ export async function upsertTool(
     return newTool;
   }
 
-  const itemUpdate = {
+  const item = await resolveTypedItemForUpdate(client, {
     id: tool.id,
+    companyId: tool.companyId,
+    type: "Tool"
+  });
+  if (item.error) return item;
+  const { id: itemId, readableId } = item.data;
+
+  const itemUpdate = {
     name: tool.name,
     description: tool.description,
     replenishmentSystem: tool.replenishmentSystem,
@@ -5466,35 +6190,47 @@ export async function upsertTool(
     customFields: tool.customFields
   };
 
+  // item is keyed by uuid, tool by readableId + companyId. Each update
+  // selects its row back so a miss fails instead of reporting success.
   const [updateItem, updateTool] = await Promise.all([
     client
       .from("item")
       .update({
         ...sanitize(itemUpdate),
+        updatedBy: tool.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", tool.id),
+      .eq("id", itemId)
+      .eq("companyId", tool.companyId)
+      .select("id")
+      .single(),
     client
       .from("tool")
       .update({
         ...sanitize(toolUpdate),
+        updatedBy: tool.updatedBy,
         updatedAt: datetime.timestamp()
       })
-      .eq("id", tool.id)
+      .eq("id", readableId)
+      .eq("companyId", tool.companyId)
+      .select("id")
+      .single()
   ]);
 
   if (updateItem.error) return updateItem;
+  if (updateTool.error) return updateTool;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
     storageUnitId: tool.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
+    companyId: tool.companyId,
     mode: tool.shelfLifeMode,
     days: tool.shelfLifeDays,
     triggerProcessId: tool.shelfLifeTriggerProcessId,
@@ -5503,7 +6239,7 @@ export async function upsertTool(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateTool;
+  return updateItem;
 }
 
 /**
