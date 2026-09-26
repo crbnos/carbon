@@ -619,6 +619,9 @@ msgstr "A depreciation method that charges a fixed percentage of remaining book 
 msgid "A depreciation method that charges an equal amount each period across the asset's useful life."
 msgstr "A depreciation method that charges an equal amount each period across the asset's useful life."
 
+msgid "A FAIR number from outside Carbon"
+msgstr "A FAIR number from outside Carbon"
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "A file named {0} already exists — delete or rename it first"
@@ -714,6 +717,9 @@ msgstr "A negotiated price pinned for a specific item — by customer, customer 
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr "A new revision is issued under the same number. Earlier revisions stay downloadable."
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "A new revision will be created using a copy of the current revision"
@@ -1089,6 +1095,12 @@ msgstr "Acceptance"
 
 msgid "Acceptance passed"
 msgstr "Acceptance passed"
+
+msgid "Acceptance Report"
+msgstr "Acceptance Report"
+
+msgid "Acceptance Report Number"
+msgstr "Acceptance Report Number"
 
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
@@ -1507,6 +1519,9 @@ msgstr "Add Requirement"
 msgid "Add Risk"
 msgstr "Add Risk"
 
+msgid "Add Row"
+msgstr "Add Row"
+
 msgid "Add rule"
 msgstr "Add rule"
 
@@ -1589,6 +1604,9 @@ msgstr "Adding demo records"
 
 msgid "Adding..."
 msgstr "Adding..."
+
+msgid "Additional Changes"
+msgstr "Additional Changes"
 
 msgid "Address"
 msgstr "Address"
@@ -2078,8 +2096,17 @@ msgstr "Approvals"
 msgid "Approve"
 msgstr "Approve"
 
+msgid "Approve first article?"
+msgstr "Approve first article?"
+
+msgid "Approved"
+msgstr "Approved"
+
 msgid "Approved By"
 msgstr "Approved By"
+
+msgid "Approved By (Customer)"
+msgstr "Approved By (Customer)"
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
@@ -2216,6 +2243,10 @@ msgstr "Are you sure you want to delete {0} from this operation? This cannot be 
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Are you sure you want to delete {0}?"
+
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -2729,6 +2760,9 @@ msgstr "At least one condition must match"
 msgid "At operation completion"
 msgstr "At operation completion"
 
+msgid "Attach Certificate"
+msgstr "Attach Certificate"
+
 msgid "Attach File"
 msgstr "Attach File"
 
@@ -2963,6 +2997,9 @@ msgstr "Base material — e.g. steel vs aluminum"
 
 msgid "Base Price"
 msgstr "Base Price"
+
+msgid "Baseline First Article"
+msgstr "Baseline First Article"
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Basic ERP, MES, and QMS functionality"
@@ -3521,6 +3558,9 @@ msgstr "Centralized Billing Address"
 msgid "Cert Version"
 msgstr "Cert Version"
 
+msgid "Certificate"
+msgstr "Certificate"
+
 msgid "Certificate added"
 msgstr "Certificate added"
 
@@ -3529,6 +3569,9 @@ msgstr "Certificate deleted"
 
 msgid "Certificate Number"
 msgstr "Certificate Number"
+
+msgid "Certificate of Conformance Number"
+msgstr "Certificate of Conformance Number"
 
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
@@ -3631,6 +3674,9 @@ msgstr "Check the item ledger for any items with a negative on-hand quantity as 
 
 msgid "Check your email"
 msgstr "Check your email"
+
+msgid "Checking first articles and certificates…"
+msgstr "Checking first articles and certificates…"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Checking Stripe for this customer…"
@@ -4486,6 +4532,9 @@ msgstr "Corrections"
 msgid "Corrective action"
 msgstr "Corrective action"
 
+msgid "Corrective Action"
+msgstr "Corrective Action"
+
 msgid "cost center"
 msgstr "cost center"
 
@@ -4533,6 +4582,9 @@ msgstr "Costing method"
 
 msgid "Costing Method"
 msgstr "Costing Method"
+
+msgid "COTS"
+msgstr "COTS"
 
 msgid "Could not analyze cropped region"
 msgstr "Could not analyze cropped region"
@@ -4893,6 +4945,9 @@ msgstr "Created work center"
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 
@@ -5040,6 +5095,12 @@ msgstr "Customer"
 
 msgid "Customer Accounts"
 msgstr "Customer Accounts"
+
+msgid "Customer Approval"
+msgstr "Customer Approval"
+
+msgid "Customer Approval Verification"
+msgstr "Customer Approval Verification"
 
 msgid "Customer contact"
 msgstr "Customer contact"
@@ -5612,6 +5673,9 @@ msgstr "Delete Failure Mode"
 msgid "Delete file"
 msgstr "Delete file"
 
+msgid "Delete First Article"
+msgstr "Delete First Article"
+
 msgid "Delete Group"
 msgstr "Delete Group"
 
@@ -5946,6 +6010,9 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
+msgid "Design Change"
+msgstr "Design Change"
+
 msgid "Designator"
 msgstr "Designator"
 
@@ -6100,6 +6167,9 @@ msgstr "Disposed"
 msgid "Disposition"
 msgstr "Disposition"
 
+msgid "Disposition the inspection before verifying"
+msgstr "Disposition the inspection before verifying"
+
 msgid "Dispositions"
 msgstr "Dispositions"
 
@@ -6150,6 +6220,9 @@ msgstr "Document Type"
 
 msgid "Document:"
 msgstr "Document:"
+
+msgid "Documented Nonconformance"
+msgstr "Documented Nonconformance"
 
 msgid "Documents"
 msgstr "Documents"
@@ -6247,6 +6320,9 @@ msgstr "Drawing replaced. Balloon placements were removed; feature rows are unch
 
 msgid "Drawing revision"
 msgstr "Drawing revision"
+
+msgid "Drawing Revision"
+msgstr "Drawing Revision"
 
 msgid "Drop shipment"
 msgstr "Drop shipment"
@@ -6685,6 +6761,12 @@ msgstr "Edit Receipt"
 msgid "Edit Revision"
 msgstr "Edit Revision"
 
+msgid "Edit row"
+msgstr "Edit row"
+
+msgid "Edit Row"
+msgstr "Edit Row"
+
 msgid "Edit rule"
 msgstr "Edit rule"
 
@@ -6810,6 +6892,9 @@ msgstr "Email notifications are not included in your company's current plan; ema
 
 msgid "Email notifications not configured"
 msgstr "Email notifications not configured"
+
+msgid "Email to customer"
+msgstr "Email to customer"
 
 msgid "Emails"
 msgstr "Emails"
@@ -7378,6 +7463,9 @@ msgstr "Extended Price"
 msgid "External"
 msgstr "External"
 
+msgid "External Baseline"
+msgstr "External Baseline"
+
 msgid "External Delta"
 msgstr "External Delta"
 
@@ -7413,6 +7501,12 @@ msgstr "Extra information sent with the request, such as an authorization key; h
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Extra tags for slicing your GL reporting"
+
+msgid "FAI Complete (Verified)"
+msgstr "FAI Complete (Verified)"
+
+msgid "FAI Report"
+msgstr "FAI Report"
 
 msgid "Fail"
 msgstr "Fail"
@@ -7799,6 +7893,9 @@ msgstr "Failure Mode"
 msgid "Failure Modes"
 msgstr "Failure Modes"
 
+msgid "FAIR"
+msgstr "FAIR"
+
 msgid "Favorite"
 msgstr "Favorite"
 
@@ -7942,8 +8039,15 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 msgid "First Article"
 msgstr "First Article"
 
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr "First article due for {0}"
+
 msgid "First Article Inspection"
 msgstr "First Article Inspection"
+
+msgid "First Articles"
+msgstr "First Articles"
 
 msgid "First light, {name}."
 msgstr "First light, {name}."
@@ -8036,6 +8140,12 @@ msgstr "form"
 msgid "Form"
 msgstr "Form"
 
+msgid "Form 1: Part Number Accountability"
+msgstr "Form 1: Part Number Accountability"
+
+msgid "Form 2: Product Accountability"
+msgstr "Form 2: Product Accountability"
+
 msgid "Format"
 msgstr "Format"
 
@@ -8101,6 +8211,9 @@ msgstr "From Storage Unit"
 msgid "Fulfillment Location"
 msgstr "Fulfillment Location"
 
+msgid "Full"
+msgstr "Full"
+
 msgid "Full name"
 msgstr "Full name"
 
@@ -8109,6 +8222,9 @@ msgstr "Full setup and migrations"
 
 msgid "Fully Depreciated"
 msgstr "Fully Depreciated"
+
+msgid "Functional Test Procedure Number"
+msgstr "Functional Test Procedure Number"
 
 msgid "FX G/L"
 msgstr "FX G/L"
@@ -8913,6 +9029,9 @@ msgstr "Incoterm"
 msgid "Incoterm Location"
 msgstr "Incoterm Location"
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr "Index of Parts and Sub-assemblies"
+
 msgid "Indirect"
 msgstr "Indirect"
 
@@ -8981,6 +9100,9 @@ msgstr "Inspection document"
 
 msgid "Inspection Level"
 msgstr "Inspection Level"
+
+msgid "Inspection Method Change"
+msgstr "Inspection Method Change"
 
 msgid "Inspection Plan"
 msgstr "Inspection Plan"
@@ -9261,6 +9383,9 @@ msgstr "Issue"
 msgid "Issue (material)"
 msgstr "Issue (material)"
 
+msgid "Issue Certificate of Conformance"
+msgstr "Issue Certificate of Conformance"
+
 msgid "Issue Credit"
 msgstr "Issue Credit"
 
@@ -9302,6 +9427,9 @@ msgstr "Issue Workflows"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
+
+msgid "Issue…"
+msgstr "Issue…"
 
 msgid "Issued"
 msgstr "Issued"
@@ -9531,6 +9659,9 @@ msgstr "Key"
 
 msgid "Keyboard shortcuts"
 msgstr "Keyboard shortcuts"
+
+msgid "Kind"
+msgstr "Kind"
 
 msgid "Kind of record"
 msgstr "Kind of record"
@@ -9916,6 +10047,9 @@ msgstr "Location"
 msgid "Location / Item"
 msgstr "Location / Item"
 
+msgid "Location Change"
+msgstr "Location Change"
+
 msgid "Location Name"
 msgstr "Location Name"
 
@@ -10175,6 +10309,12 @@ msgstr "Manufacturing"
 msgid "manufacturing is blocked"
 msgstr "manufacturing is blocked"
 
+msgid "Manufacturing Process Reference"
+msgstr "Manufacturing Process Reference"
+
+msgid "Manufacturing Source Change"
+msgstr "Manufacturing Source Change"
+
 msgid "Map accounts"
 msgstr "Map accounts"
 
@@ -10305,6 +10445,9 @@ msgstr "material"
 msgid "Material"
 msgstr "Material"
 
+msgid "Material Change"
+msgstr "Material Change"
+
 msgid "Material condition"
 msgstr "Material condition"
 
@@ -10352,6 +10495,12 @@ msgstr "material item"
 
 msgid "Material item"
 msgstr "Material item"
+
+msgid "Material or Process"
+msgstr "Material or Process"
+
+msgid "Material or Process Name"
+msgstr "Material or Process Name"
 
 msgid "Material Planning"
 msgstr "Material Planning"
@@ -10742,6 +10891,9 @@ msgstr "My Documents"
 msgid "My Saved View"
 msgstr "My Saved View"
 
+msgid "N/A"
+msgstr "N/A"
+
 msgid "Name"
 msgstr "Name"
 
@@ -10754,11 +10906,17 @@ msgstr "Names fill in wherever those roles are referenced across the hub."
 msgid "Native CAD integration (for example Onshape)"
 msgstr "Native CAD integration (for example Onshape)"
 
+msgid "Natural or Man-made Event"
+msgstr "Natural or Man-made Event"
+
 msgid "Navigate"
 msgstr "Navigate"
 
 msgid "Navigation"
 msgstr "Navigation"
+
+msgid "NC Program Change"
+msgstr "NC Program Change"
 
 msgid "NCRs by Type"
 msgstr "NCRs by Type"
@@ -10901,6 +11059,9 @@ msgstr "New Failure Mode"
 msgid "New Field"
 msgstr "New Field"
 
+msgid "New First Article"
+msgstr "New First Article"
+
 msgid "New Fixed Asset"
 msgstr "New Fixed Asset"
 
@@ -11041,6 +11202,9 @@ msgstr "New RFQ"
 
 msgid "New RMA"
 msgstr "New RMA"
+
+msgid "New Row"
+msgstr "New Row"
 
 msgid "New rule"
 msgstr "New rule"
@@ -11268,6 +11432,12 @@ msgstr "No calibration records found"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "No capacity reservations to visualize. Schedule a job to see work-center load."
 
+msgid "No certificate on file"
+msgstr "No certificate on file"
+
+msgid "No certificate on file for {name}"
+msgstr "No certificate on file for {name}"
+
 msgid "No certificates on this line yet."
 msgstr "No certificates on this line yet."
 
@@ -11448,6 +11618,9 @@ msgstr "No matching operations"
 msgid "No materials"
 msgstr "No materials"
 
+msgid "No materials, special processes or functional tests yet."
+msgstr "No materials, special processes or functional tests yet."
+
 msgid "No new notifications"
 msgstr "No new notifications"
 
@@ -11617,6 +11790,9 @@ msgstr "No rules assigned"
 msgid "No scheduled work in this window"
 msgstr "No scheduled work in this window"
 
+msgid "No serial number"
+msgstr "No serial number"
+
 msgid "No serial numbers selected yet."
 msgstr "No serial numbers selected yet."
 
@@ -11745,6 +11921,12 @@ msgstr "Non-working days that scheduling and capacity respect"
 
 msgid "None"
 msgstr "None"
+
+msgid "None — a detail part."
+msgstr "None — a detail part."
+
+msgid "None approved"
+msgstr "None approved"
 
 msgid "Normal"
 msgstr "Normal"
@@ -12365,6 +12547,9 @@ msgstr "Orders"
 msgid "Orders submitted"
 msgstr "Orders submitted"
 
+msgid "Organization Name"
+msgstr "Organization Name"
+
 msgid "Origin"
 msgstr "Origin"
 
@@ -12558,11 +12743,20 @@ msgstr "Part ID"
 msgid "Part is configured for manufacturing"
 msgstr "Part is configured for manufacturing"
 
+msgid "Part Name"
+msgstr "Part Name"
+
 msgid "Part Number"
 msgstr "Part Number"
 
+msgid "Part Revision"
+msgstr "Part Revision"
+
 msgid "Part Supersession"
 msgstr "Part Supersession"
+
+msgid "Part Type"
+msgstr "Part Type"
 
 msgid "Partial"
 msgstr "Partial"
@@ -13244,6 +13438,9 @@ msgstr "process"
 msgid "Process"
 msgstr "Process"
 
+msgid "Process Change"
+msgstr "Process Change"
+
 msgid "Process Name"
 msgstr "Process Name"
 
@@ -13288,6 +13485,9 @@ msgstr "Production events"
 
 msgid "Production Events"
 msgstr "Production Events"
+
+msgid "Production Lapse"
+msgstr "Production Lapse"
 
 msgid "Production planning"
 msgstr "Production planning"
@@ -13860,6 +14060,9 @@ msgstr "Rate used for equity account translation in consolidation (IAS 21). Leav
 msgid "Ratio"
 msgstr "Ratio"
 
+msgid "Raw material, special processes and functional tests"
+msgstr "Raw material, special processes and functional tests"
+
 msgid "Raw Materials"
 msgstr "Raw Materials"
 
@@ -13934,6 +14137,9 @@ msgstr "Reason for declining (Optional)"
 
 msgid "Reason for skipping (required)"
 msgstr "Reason for skipping (required)"
+
+msgid "Reason for Update"
+msgstr "Reason for Update"
 
 msgid "Reasons"
 msgstr "Reasons"
@@ -14068,6 +14274,9 @@ msgstr "Record deleted"
 msgid "Record inspections tied to a part and a job"
 msgstr "Record inspections tied to a part and a job"
 
+msgid "Record Results"
+msgstr "Record Results"
+
 msgid "Record type"
 msgstr "Record type"
 
@@ -14107,6 +14316,9 @@ msgstr "Refresh"
 msgid "Refresh exchange rate"
 msgstr "Refresh exchange rate"
 
+msgid "Refresh from Traceability"
+msgstr "Refresh from Traceability"
+
 msgid "Refund from Supplier"
 msgstr "Refund from Supplier"
 
@@ -14142,6 +14354,15 @@ msgstr "Registration failed"
 
 msgid "Registration Number"
 msgstr "Registration Number"
+
+msgid "Reissue"
+msgstr "Reissue"
+
+msgid "Reissue Certificate of Conformance"
+msgstr "Reissue Certificate of Conformance"
+
+msgid "Reissue…"
+msgstr "Reissue…"
 
 msgid "Reject"
 msgstr "Reject"
@@ -14767,6 +14988,9 @@ msgstr "Review"
 msgid "Review & create"
 msgstr "Review & create"
 
+msgid "Review before issuing"
+msgstr "Review before issuing"
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Review each item's changes, then confirm — releasing can't be undone."
 
@@ -14778,6 +15002,9 @@ msgstr "Review the suggested matches before applying. These are a best guess —
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Review the warnings below, then post the count to apply the adjustments."
+
+msgid "Reviewed (Approved)"
+msgstr "Reviewed (Approved)"
 
 msgid "Revision"
 msgstr "Revision"
@@ -15703,6 +15930,9 @@ msgstr "Self-serve reference at docs.carbon.ms"
 msgid "Send"
 msgstr "Send"
 
+msgid "Send {number}"
+msgstr "Send {number}"
+
 msgid "Send Invite"
 msgstr "Send Invite"
 
@@ -15718,11 +15948,18 @@ msgstr "Send to Carbon"
 msgid "Send Via"
 msgstr "Send Via"
 
+msgid "Send…"
+msgstr "Send…"
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Sends this document for approval before it can go active."
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr "Sent {0}"
 
 msgid "Sent complete date"
 msgstr "Sent complete date"
@@ -15738,6 +15975,10 @@ msgstr "Sequential"
 
 msgid "Serial"
 msgstr "Serial"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr "Serial {0}"
 
 msgid "Serial / Batch"
 msgstr "Serial / Batch"
@@ -16222,6 +16463,10 @@ msgstr "Sign-off review before moving to the next step"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr "Signed {0}"
+
 msgid "Signed in as {name}"
 msgstr "Signed in as {name}"
 
@@ -16405,6 +16650,9 @@ msgstr "Spare Part Cost"
 
 msgid "Spec"
 msgstr "Spec"
+
+msgid "Special Process Supplier Code"
+msgstr "Special Process Supplier Code"
 
 msgid "Specific Customer"
 msgstr "Specific Customer"
@@ -16693,6 +16941,9 @@ msgstr "Stripe has no customer for this Carbon customer yet. Posting will create
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Style of kanban output to show in the Kanban table"
 
+msgid "Sub-assembly"
+msgstr "Sub-assembly"
+
 msgid "Sub-assembly expiries only"
 msgstr "Sub-assembly expiries only"
 
@@ -16830,6 +17081,9 @@ msgstr "Supplier Accounts"
 
 msgid "Supplier added and selected"
 msgstr "Supplier added and selected"
+
+msgid "Supplier Code"
+msgstr "Supplier Code"
 
 msgid "Supplier contact"
 msgstr "Supplier contact"
@@ -17222,6 +17476,9 @@ msgstr "Terms of Service"
 msgid "Test"
 msgstr "Test"
 
+msgid "Test Procedure"
+msgstr "Test Procedure"
+
 msgid "Test run"
 msgstr "Test run"
 
@@ -17361,6 +17618,9 @@ msgstr "The category this customer belongs to (OEM, distributor, end-user, inter
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr "The certificate is signed by you and stored with the shipment."
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 
@@ -17486,6 +17746,12 @@ msgstr "The file you uploaded and the mappings you've made will be lost."
 
 msgid "the first 3 to 4 weeks"
 msgstr "the first 3 to 4 weeks"
+
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "The fixed number of units to inspect from the front of each lot, regardless of lot size."
@@ -18580,6 +18846,9 @@ msgstr "Tool Details"
 msgid "Tool ID"
 msgstr "Tool ID"
 
+msgid "Tooling Change"
+msgstr "Tooling Change"
+
 msgid "tools"
 msgstr "tools"
 
@@ -19402,6 +19671,9 @@ msgstr "Verification failed"
 
 msgid "Verified"
 msgstr "Verified"
+
+msgid "Verified By"
+msgstr "Verified By"
 
 msgid "Verify"
 msgstr "Verify"
@@ -20387,6 +20659,9 @@ msgstr "You received this item"
 
 msgid "You received this lot"
 msgstr "You received this lot"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
 
 msgid "You're live on Carbon"
 msgstr "You're live on Carbon"

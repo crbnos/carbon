@@ -311,6 +311,7 @@
   "no-raw-rounding::apps/erp/app/modules/agent/ui/greetings.ts::return GREETINGS[Math.floor(Math.random() * GREETINGS.length)]();",
   "no-raw-rounding::apps/erp/app/modules/documents/documents.service.ts::size = Math.round(converted.data.size / 1024);",
   "no-raw-rounding::apps/erp/app/modules/documents/ui/Documents/DocumentCreateForm.tsx::formData.append(\"size\", Math.round(size / 1024).toString());",
+  "no-raw-rounding::apps/erp/app/modules/inventory/inventory.server.tsx::size: Math.round(pdf.byteLength / 1024),",
   "no-raw-rounding::apps/erp/app/modules/inventory/ui/Inventory/InventoryStorageUnits.tsx::Math.round(",
   "no-raw-rounding::apps/erp/app/modules/inventory/ui/Receipts/ReceiptLines.tsx::formData.append(\"size\", Math.round(file.size / 1024).toString());",
   "no-raw-rounding::apps/erp/app/modules/inventory/ui/Traceability/utils.ts::if (q >= 1000) return `${(q / 1000).toFixed(1)}k`;",

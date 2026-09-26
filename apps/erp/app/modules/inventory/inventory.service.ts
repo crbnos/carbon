@@ -1,14 +1,22 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   type LinesideClaim,
   linesideCredit
 } from "@carbon/database/picked-consumption";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
+import type { CertificateOfConformanceLine } from "@carbon/documents/pdf";
 import { storage } from "@carbon/files";
+import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import {
+  datetime,
+  formatAddressLines,
+  formatCityStatePostalCode,
+  formatDate,
+  formatQuantity
+} from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -23,6 +31,13 @@ import {
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
+import {
+  getCertificationLineage,
+  getComplianceStatementsForShipment,
+  getFirstArticleDue
+} from "../quality/quality.service";
+import type { ConformityDetails } from "./certificateOfConformance";
+import { buildConformityDetails } from "./certificateOfConformance";
 import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
@@ -53,6 +68,8 @@ import {
   resolvePickTarget,
   splitConsumeFirstPick
 } from "./supersession-pick";
+
+const logger = getLogger("erp", "inventory");
 
 export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
@@ -1276,6 +1293,554 @@ export async function getShipmentLineTracking(
     .select("*")
     .eq("attributes ->> Shipment Line", shipmentLineId)
     .eq("companyId", companyId);
+}
+
+/** Issued Certificate of Conformance revisions of a shipment, newest first. */
+export async function getCertificatesOfConformance(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shipmentId: string
+) {
+  return client
+    .from("certificateOfConformance")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("shipmentId", shipmentId)
+    .order("revision", { ascending: false });
+}
+
+/**
+ * Who a shipment's certificate goes to and whether the customer requires one:
+ * the shipment's customer (the sales order's for Sales Order shipments), the
+ * default contact (the order's contact, else the customer's shipping
+ * contact) and the customer's shipping requirements.
+ */
+export async function getCertificateOfConformanceDefaults(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shipmentId: string
+): Promise<
+  | {
+      data: {
+        customerId: string | null;
+        defaultContactId: string | null;
+        shippingCustomerContactId: string | null;
+        requiresCertificateOfConformance: boolean;
+      };
+      error: null;
+    }
+  | { data: null; error: PostgrestError | { message: string } }
+> {
+  const shipment = await client
+    .from("shipment")
+    .select("sourceDocument, sourceDocumentId, customerId")
+    .eq("id", shipmentId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (shipment.error) return { data: null, error: shipment.error };
+  if (!shipment.data) {
+    return { data: null, error: { message: "Shipment not found" } };
+  }
+
+  let customerId = shipment.data.customerId;
+  let salesOrderContactId: string | null = null;
+  if (
+    shipment.data.sourceDocument === "Sales Order" &&
+    shipment.data.sourceDocumentId
+  ) {
+    const salesOrder = await client
+      .from("salesOrder")
+      .select("customerId, customerContactId")
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (salesOrder.error) return { data: null, error: salesOrder.error };
+    customerId = salesOrder.data?.customerId ?? customerId;
+    salesOrderContactId = salesOrder.data?.customerContactId ?? null;
+  }
+
+  if (!customerId) {
+    return {
+      data: {
+        customerId: null,
+        defaultContactId: null,
+        shippingCustomerContactId: null,
+        requiresCertificateOfConformance: false
+      },
+      error: null
+    };
+  }
+
+  const shipping = await client
+    .from("customerShipping")
+    .select("shippingCustomerContactId, requiresCertificateOfConformance")
+    .eq("customerId", customerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (shipping.error) return { data: null, error: shipping.error };
+
+  const shippingCustomerContactId =
+    shipping.data?.shippingCustomerContactId ?? null;
+  return {
+    data: {
+      customerId,
+      defaultContactId: salesOrderContactId ?? shippingCustomerContactId,
+      shippingCustomerContactId,
+      requiresCertificateOfConformance:
+        shipping.data?.requiresCertificateOfConformance ?? false
+    },
+    error: null
+  };
+}
+
+export type CertificateOfConformanceShipmentData = {
+  shipment: {
+    id: string;
+    shipmentId: string;
+    status: Database["public"]["Enums"]["shipmentStatus"];
+    sourceDocument:
+      | Database["public"]["Enums"]["shipmentSourceDocument"]
+      | null;
+    customerId: string | null;
+    /** The sales order's customer contact (Sales Order shipments). */
+    salesOrderCustomerContactId: string | null;
+  };
+  customer: { name: string; address: string[] };
+  purchaseOrderNumber: string | null;
+  lines: CertificateOfConformanceLine[];
+  conformity: ConformityDetails;
+  warnings: {
+    faiDue: { itemReadableId: string; reason: string }[];
+    missingCertificates: string[];
+  };
+};
+
+type CertificateOfConformanceDataResult =
+  | { data: CertificateOfConformanceShipmentData; error: null }
+  | { data: null; error: { message: string } };
+
+/**
+ * Everything a shipment's AS9163 Certificate of Conformance prints, except
+ * what the renderer resolves itself (company, template, certificate header),
+ * plus the warnings the issue dialog shows. Reads only; one query per table.
+ */
+export async function getCertificateOfConformanceData(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  shipmentId: string,
+  options: { locale: string; reasonForUpdate?: string | null }
+): Promise<CertificateOfConformanceDataResult> {
+  const fail = (
+    message: string,
+    error?: unknown
+  ): CertificateOfConformanceDataResult => {
+    if (error) {
+      logger.error(message, { shipmentId, error });
+    }
+    return { data: null, error: { message } };
+  };
+
+  const [shipment, shipmentLines, tracked] = await Promise.all([
+    client
+      .from("shipment")
+      .select(
+        "id, shipmentId, status, sourceDocument, sourceDocumentId, customerId"
+      )
+      .eq("id", shipmentId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("shipmentLine")
+      .select(
+        "id, lineId, itemId, shippedQuantity, unitOfMeasure, createdAt, item(readableId, name, revision, replenishmentSystem)"
+      )
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId)
+      .gt("shippedQuantity", 0)
+      .order("createdAt")
+      .order("id"),
+    fetchAllFromTable<{
+      id: string;
+      readableId: string | null;
+      quantity: number;
+      expirationDate: string | null;
+      attributes: Json;
+    }>(
+      client,
+      "trackedEntity",
+      "id, readableId, quantity, expirationDate, attributes",
+      (query) =>
+        query
+          .eq("attributes ->> Shipment", shipmentId)
+          .eq("companyId", companyId)
+          .order("id")
+    )
+  ]);
+
+  if (shipment.error) return fail("Failed to load shipment", shipment.error);
+  if (!shipment.data) return fail("Shipment not found");
+  if (shipmentLines.error) {
+    return fail("Failed to load shipment lines", shipmentLines.error);
+  }
+  if (tracked.error) {
+    return fail("Failed to load shipment tracking", tracked.error);
+  }
+
+  // ── source document: customer, ship-to, PO ─────────────────────────────
+  let customerId = shipment.data.customerId;
+  let customerLocationId: string | null = null;
+  let purchaseOrderNumber: string | null = null;
+  let salesOrderCustomerContactId: string | null = null;
+  let salesOrderId: string | null = null;
+
+  if (
+    shipment.data.sourceDocument === "Sales Order" &&
+    shipment.data.sourceDocumentId
+  ) {
+    const salesOrder = await client
+      .from("salesOrder")
+      .select(
+        "id, customerId, customerLocationId, customerReference, customerContactId"
+      )
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (salesOrder.error) {
+      return fail("Failed to load sales order", salesOrder.error);
+    }
+    if (salesOrder.data) {
+      salesOrderId = salesOrder.data.id;
+      customerId = salesOrder.data.customerId ?? customerId;
+      customerLocationId = salesOrder.data.customerLocationId;
+      purchaseOrderNumber = salesOrder.data.customerReference;
+      salesOrderCustomerContactId = salesOrder.data.customerContactId;
+    }
+  } else if (
+    shipment.data.sourceDocument === "Sales Invoice" &&
+    shipment.data.sourceDocumentId
+  ) {
+    const salesInvoice = await client
+      .from("salesInvoice")
+      .select("customerId, locationId, customerReference")
+      .eq("id", shipment.data.sourceDocumentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (salesInvoice.error) {
+      return fail("Failed to load sales invoice", salesInvoice.error);
+    }
+    if (salesInvoice.data) {
+      customerId = salesInvoice.data.customerId ?? customerId;
+      customerLocationId = salesInvoice.data.locationId;
+      purchaseOrderNumber = salesInvoice.data.customerReference;
+    }
+  }
+
+  const lines = shipmentLines.data ?? [];
+  const itemIds = [...new Set(lines.map((line) => line.itemId))];
+  const lineIds = lines.map((line) => line.id);
+  const salesOrderLineIds = lines
+    .map((line) => line.lineId)
+    .filter((id): id is string => !!id);
+
+  // Entities written against this shipment, grouped by the line they left on.
+  const entitiesByLine = new Map<string, typeof tracked.data>();
+  for (const entity of tracked.data) {
+    const attributes = (entity.attributes ?? {}) as Record<string, unknown>;
+    const lineId = attributes["Shipment Line"];
+    if (typeof lineId !== "string" || !lineIds.includes(lineId)) continue;
+    const group = entitiesByLine.get(lineId) ?? [];
+    group.push(entity);
+    entitiesByLine.set(lineId, group);
+  }
+  const shippedEntities = [...entitiesByLine.values()].flat();
+  const trackedEntityIds = shippedEntities.map((entity) => entity.id);
+
+  const [
+    customer,
+    customerLocation,
+    customerShipping,
+    salesOrderLines,
+    lineage,
+    approvedFairs,
+    ncrShipmentLines,
+    ncrTrackedEntities,
+    statements,
+    settings,
+    firstArticleSlots,
+    timeZone
+  ] = await Promise.all([
+    customerId
+      ? client
+          .from("customer")
+          .select("name")
+          .eq("id", customerId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    customerLocationId
+      ? client
+          .from("customerLocation")
+          .select(
+            "address(addressLine1, addressLine2, city, stateProvince, postalCode, countryCode)"
+          )
+          .eq("id", customerLocationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    customerId
+      ? client
+          .from("customerShipping")
+          .select("requiresFirstArticle")
+          .eq("customerId", customerId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null }),
+    // Every line of the order, so a shipped line's position is its place in
+    // the order (sortOrder is sparse after reordering).
+    salesOrderId && salesOrderLineIds.length > 0
+      ? client
+          .from("salesOrderLines")
+          .select("id, sortOrder, customerPartId, customerPartRevision")
+          .eq("salesOrderId", salesOrderId)
+          .order("sortOrder", { ascending: true })
+          .order("id")
+      : Promise.resolve({ data: [], error: null }),
+    trackedEntityIds.length > 0
+      ? getCertificationLineage(client, companyId, { trackedEntityIds })
+      : Promise.resolve({ data: [], error: null }),
+    itemIds.length > 0
+      ? client
+          .from("firstArticleInspection")
+          .select("itemId, approvedAt, inspection(inspectionId)")
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("itemId", itemIds)
+          .order("approvedAt", { ascending: false, nullsFirst: false })
+          .order("id")
+      : Promise.resolve({ data: [], error: null }),
+    lineIds.length > 0
+      ? client
+          .from("nonConformanceShipmentLine")
+          .select("nonConformanceId")
+          .eq("companyId", companyId)
+          .in("shipmentLineId", lineIds)
+      : Promise.resolve({ data: [], error: null }),
+    trackedEntityIds.length > 0
+      ? client
+          .from("nonConformanceTrackedEntity")
+          .select("nonConformanceId")
+          .eq("companyId", companyId)
+          .in("trackedEntityId", trackedEntityIds)
+      : Promise.resolve({ data: [], error: null }),
+    getComplianceStatementsForShipment(client, companyId, {
+      customerId,
+      itemIds
+    }),
+    client
+      .from("companySettings")
+      .select("requireFirstArticle")
+      .eq("id", companyId)
+      .maybeSingle(),
+    itemIds.length > 0
+      ? client
+          .from("itemInspectionDocumentAssignment")
+          .select("itemId")
+          .eq("companyId", companyId)
+          .eq("usage", "First Article")
+          .in("itemId", itemIds)
+      : Promise.resolve({ data: [], error: null }),
+    getCompanyTimeZone(client, companyId)
+  ]);
+
+  const readError =
+    customer.error ??
+    customerLocation.error ??
+    customerShipping.error ??
+    salesOrderLines.error ??
+    lineage.error ??
+    approvedFairs.error ??
+    ncrShipmentLines.error ??
+    ncrTrackedEntities.error ??
+    statements.error ??
+    settings.error ??
+    firstArticleSlots.error;
+  if (readError) {
+    return fail("Failed to load certificate of conformance data", readError);
+  }
+
+  // ── nonconformances: the NCRs' dispositions of the shipped items ───────
+  const nonConformanceIds = [
+    ...new Set([
+      ...(ncrShipmentLines.data ?? []).map((row) => row.nonConformanceId),
+      ...(ncrTrackedEntities.data ?? []).map((row) => row.nonConformanceId)
+    ])
+  ];
+  const nonConformances =
+    nonConformanceIds.length > 0
+      ? await client
+          .from("nonConformance")
+          .select("nonConformanceId, nonConformanceItem(itemId, disposition)")
+          .eq("companyId", companyId)
+          .in("id", nonConformanceIds)
+          .order("nonConformanceId")
+      : { data: [], error: null };
+  if (nonConformances.error) {
+    return fail("Failed to load nonconformances", nonConformances.error);
+  }
+  const shippedItemIds = new Set(itemIds);
+  const nonconformances = (nonConformances.data ?? []).flatMap((ncr) => {
+    const dispositions = [
+      ...new Set(
+        (ncr.nonConformanceItem ?? [])
+          .filter((item) => shippedItemIds.has(item.itemId))
+          .map((item) => item.disposition)
+      )
+    ];
+    return dispositions.length > 0
+      ? dispositions.map((disposition) => ({
+          nonConformanceId: ncr.nonConformanceId,
+          disposition
+        }))
+      : [{ nonConformanceId: ncr.nonConformanceId, disposition: null }];
+  });
+
+  // ── lines (fields 7–12) ────────────────────────────────────────────────
+  const orderLines = salesOrderLines.data ?? [];
+  const orderLineById = new Map(
+    orderLines.map((line, index) => [line.id, { ...line, position: index + 1 }])
+  );
+  const locale = options.locale;
+
+  const certificateLines: CertificateOfConformanceLine[] = lines.map(
+    (line, index) => {
+      const orderLine = line.lineId ? orderLineById.get(line.lineId) : null;
+      const itemReadableId = line.item?.readableId ?? "";
+      const position = orderLine?.position ?? index + 1;
+      return {
+        itemNumber: `${position} / ${orderLine?.customerPartId ?? itemReadableId}`,
+        quantity: `${formatQuantity(line.shippedQuantity, locale)} ${line.unitOfMeasure}`,
+        description: line.item?.name ?? "",
+        revision:
+          orderLine?.customerPartRevision || line.item?.revision || "N/C",
+        traceability: (entitiesByLine.get(line.id) ?? []).map((entity) => ({
+          id: entity.readableId ?? entity.id,
+          quantity: formatQuantity(entity.quantity, locale)
+        })),
+        remarks: null
+      };
+    }
+  );
+
+  // ── FAIRs: latest approved per shipped item (read newest first) ────────
+  const itemReadableIds = new Map(
+    lines.map((line) => [line.itemId, line.item?.readableId ?? ""])
+  );
+  const latestFair = new Map<string, string>();
+  for (const fair of approvedFairs.data ?? []) {
+    const identifier = fair.inspection?.inspectionId;
+    if (!identifier || latestFair.has(fair.itemId)) continue;
+    latestFair.set(fair.itemId, identifier);
+  }
+
+  const lineageRows = lineage.data ?? [];
+  const conformity = buildConformityDetails({
+    lots: shippedEntities.map((entity) => ({
+      readableId: entity.readableId ?? entity.id,
+      expirationDate: entity.expirationDate
+    })),
+    fairs: [...latestFair.entries()].map(([itemId, fairId]) => ({
+      itemReadableId: itemReadableIds.get(itemId) ?? "",
+      fairId
+    })),
+    lineage: lineageRows,
+    nonconformances,
+    statements: statements.data ?? [],
+    reasonForUpdate: options.reasonForUpdate ?? null,
+    formatDate: (date) => formatDate(date, undefined, locale)
+  });
+
+  // ── warnings: FAI due where a requirement switch applies ───────────────
+  // A company or customer switch covers every MADE shipped item (a bought
+  // part has no first article of ours); a First Article plan slot covers its
+  // item whatever the switches say.
+  const switchOn =
+    (settings.data?.requireFirstArticle ?? false) ||
+    (customerShipping.data?.requiresFirstArticle ?? false);
+  const slotted = new Set(
+    (firstArticleSlots.data ?? []).map((row) => row.itemId)
+  );
+  const faiScope = [
+    ...new Set(
+      lines
+        .filter(
+          (line) =>
+            slotted.has(line.itemId) ||
+            (switchOn && line.item?.replenishmentSystem !== "Buy")
+        )
+        .map((line) => line.itemId)
+    )
+  ];
+  const faiDue: { itemReadableId: string; reason: string }[] = [];
+  if (faiScope.length > 0) {
+    const due = await getFirstArticleDue(client, companyId, {
+      itemIds: faiScope,
+      today: datetime.today(timeZone).toString()
+    });
+    if (due.error) {
+      return fail("Failed to evaluate first article status", due.error);
+    }
+    for (const itemId of faiScope) {
+      const status = due.data[itemId];
+      if (status?.due) {
+        faiDue.push({
+          itemReadableId: itemReadableIds.get(itemId) ?? itemId,
+          reason: status.reason ?? ""
+        });
+      }
+    }
+  }
+
+  const missingCertificates = [
+    ...new Set(
+      lineageRows
+        .filter((row) => row.missing)
+        .map((row) =>
+          row.supplierName ? `${row.name} (${row.supplierName})` : row.name
+        )
+    )
+  ];
+
+  const address = customerLocation.data?.address;
+  const addressLines = address
+    ? [
+        formatAddressLines(address.addressLine1, address.addressLine2),
+        formatCityStatePostalCode(
+          address.city,
+          address.stateProvince,
+          address.postalCode
+        ),
+        address.countryCode ?? ""
+      ].filter((part) => part.length > 0)
+    : [];
+
+  return {
+    data: {
+      shipment: {
+        id: shipment.data.id,
+        shipmentId: shipment.data.shipmentId,
+        status: shipment.data.status,
+        sourceDocument: shipment.data.sourceDocument,
+        customerId,
+        salesOrderCustomerContactId
+      },
+      customer: { name: customer.data?.name ?? "", address: addressLines },
+      purchaseOrderNumber,
+      lines: certificateLines,
+      conformity,
+      warnings: { faiDue, missingCertificates }
+    },
+    error: null
+  };
 }
 
 export async function getShippingMethod(

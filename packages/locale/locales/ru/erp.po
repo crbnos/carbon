@@ -619,6 +619,9 @@ msgstr "Метод амортизации, который списывает ф�
 msgid "A depreciation method that charges an equal amount each period across the asset's useful life."
 msgstr "Метод амортизации, который списывает равную сумму каждый период в течение срока полезного использования актива."
 
+msgid "A FAIR number from outside Carbon"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "Файл с именем {0} уже существует — удалите или переименуйте его сначала"
@@ -714,6 +717,9 @@ msgstr "Согласованная цена, установленная для �
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "Для каждого поставщика будет создан новый заказ на покупку. Кроме того, вы можете выбрать существующий черновик заказа на покупку поставщика, чтобы добавить к нему внешние операции."
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr ""
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "Новая ревизия будет создана на основе копии текущей ревизии"
@@ -1089,6 +1095,12 @@ msgstr "Приемка"
 
 msgid "Acceptance passed"
 msgstr "Приемка пройдена"
+
+msgid "Acceptance Report"
+msgstr ""
+
+msgid "Acceptance Report Number"
+msgstr ""
 
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
@@ -1507,6 +1519,9 @@ msgstr "Добавить требование"
 msgid "Add Risk"
 msgstr "Добавить риск"
 
+msgid "Add Row"
+msgstr ""
+
 msgid "Add rule"
 msgstr "Добавить правило"
 
@@ -1589,6 +1604,9 @@ msgstr "Добавление демо-записей"
 
 msgid "Adding..."
 msgstr "Добавление..."
+
+msgid "Additional Changes"
+msgstr ""
 
 msgid "Address"
 msgstr "Адрес"
@@ -2078,8 +2096,17 @@ msgstr "Утверждения"
 msgid "Approve"
 msgstr "Утвердить"
 
+msgid "Approve first article?"
+msgstr ""
+
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "Одобрено"
+
+msgid "Approved By (Customer)"
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "Приблизительно — получено из запланированных дат; нет резервирования мощности для этой строки."
@@ -2216,6 +2243,10 @@ msgstr "Вы уверены, что хотите удалить {0} из это�
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "Вы уверены, что хотите удалить {0}?"
+
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -2729,6 +2760,9 @@ msgstr "По крайней мере одно условие должно сов
 msgid "At operation completion"
 msgstr "При завершении операции"
 
+msgid "Attach Certificate"
+msgstr ""
+
 msgid "Attach File"
 msgstr "Прикрепить файл"
 
@@ -2963,6 +2997,9 @@ msgstr "Основной материал — например, сталь ил�
 
 msgid "Base Price"
 msgstr "Базовая цена"
+
+msgid "Baseline First Article"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "Базовая функциональность ERP, MES и QMS"
@@ -3521,6 +3558,9 @@ msgstr "Централизованный адрес выставления сч�
 msgid "Cert Version"
 msgstr "Версия сертификата"
 
+msgid "Certificate"
+msgstr ""
+
 msgid "Certificate added"
 msgstr ""
 
@@ -3529,6 +3569,9 @@ msgstr ""
 
 msgid "Certificate Number"
 msgstr "Номер сертификата"
+
+msgid "Certificate of Conformance Number"
+msgstr ""
 
 msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
@@ -3631,6 +3674,9 @@ msgstr "Проверьте реестр номенклатуры на налич
 
 msgid "Check your email"
 msgstr "Проверьте вашу почту"
+
+msgid "Checking first articles and certificates…"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "Проверка Stripe для этого покупателя…"
@@ -4486,6 +4532,9 @@ msgstr "Исправления"
 msgid "Corrective action"
 msgstr "Корректирующее действие"
 
+msgid "Corrective Action"
+msgstr ""
+
 msgid "cost center"
 msgstr "центр затрат"
 
@@ -4533,6 +4582,9 @@ msgstr "Метод калькуляции"
 
 msgid "Costing Method"
 msgstr "Метод калькуляции"
+
+msgid "COTS"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "Не удалось проанализировать обрезанный регион"
@@ -4893,6 +4945,9 @@ msgstr "Рабочий центр создан"
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "Создает черновик кредит-ноты поставщика для отправленных количеств, которые еще не были скредитованы"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "Создает 12 ежемесячных периодов для финансового года. Уже существующие периоды сохраняются."
 
@@ -5040,6 +5095,12 @@ msgstr "Покупатель"
 
 msgid "Customer Accounts"
 msgstr "Счета покупателя"
+
+msgid "Customer Approval"
+msgstr ""
+
+msgid "Customer Approval Verification"
+msgstr ""
 
 msgid "Customer contact"
 msgstr "Контактное лицо покупателя"
@@ -5612,6 +5673,9 @@ msgstr "Удалить режим отказа"
 msgid "Delete file"
 msgstr "Удалить файл"
 
+msgid "Delete First Article"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "Удалить группу"
 
@@ -5946,6 +6010,9 @@ msgstr "Описание изменения"
 msgid "Description of Issue"
 msgstr "Описание проблемы"
 
+msgid "Design Change"
+msgstr ""
+
 msgid "Designator"
 msgstr ""
 
@@ -6100,6 +6167,9 @@ msgstr "Выбыл"
 msgid "Disposition"
 msgstr "Решение"
 
+msgid "Disposition the inspection before verifying"
+msgstr ""
+
 msgid "Dispositions"
 msgstr "Решения"
 
@@ -6150,6 +6220,9 @@ msgstr "Тип документа"
 
 msgid "Document:"
 msgstr "Документ:"
+
+msgid "Documented Nonconformance"
+msgstr ""
 
 msgid "Documents"
 msgstr "Документы"
@@ -6246,6 +6319,9 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
 
 msgid "Drawing revision"
+msgstr ""
+
+msgid "Drawing Revision"
 msgstr ""
 
 msgid "Drop shipment"
@@ -6685,6 +6761,12 @@ msgstr "Изменить Поступление"
 msgid "Edit Revision"
 msgstr "Изменить Ревизию"
 
+msgid "Edit row"
+msgstr ""
+
+msgid "Edit Row"
+msgstr ""
+
 msgid "Edit rule"
 msgstr "Изменить правило"
 
@@ -6810,6 +6892,9 @@ msgstr "Уведомления по электронной почте не вк�
 
 msgid "Email notifications not configured"
 msgstr "Уведомления по электронной почте не настроены"
+
+msgid "Email to customer"
+msgstr ""
 
 msgid "Emails"
 msgstr "Письма"
@@ -7378,6 +7463,9 @@ msgstr "Расширенная цена"
 msgid "External"
 msgstr "Внешние"
 
+msgid "External Baseline"
+msgstr ""
+
 msgid "External Delta"
 msgstr "Внешняя разница"
 
@@ -7413,6 +7501,12 @@ msgstr "Дополнительная информация, отправляем�
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "Дополнительные теги для разбора отчетности главной книги"
+
+msgid "FAI Complete (Verified)"
+msgstr ""
+
+msgid "FAI Report"
+msgstr ""
 
 msgid "Fail"
 msgstr "Не годен"
@@ -7799,6 +7893,9 @@ msgstr "Режим отказа"
 msgid "Failure Modes"
 msgstr "Режимы отказа"
 
+msgid "FAIR"
+msgstr ""
+
 msgid "Favorite"
 msgstr "Избранное"
 
@@ -7942,7 +8039,14 @@ msgstr "Завершение отклоняется до тех пор, пока
 msgid "First Article"
 msgstr ""
 
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr ""
+
 msgid "First Article Inspection"
+msgstr ""
+
+msgid "First Articles"
 msgstr ""
 
 msgid "First light, {name}."
@@ -8036,6 +8140,12 @@ msgstr "форма"
 msgid "Form"
 msgstr "Форма"
 
+msgid "Form 1: Part Number Accountability"
+msgstr ""
+
+msgid "Form 2: Product Accountability"
+msgstr ""
+
 msgid "Format"
 msgstr "Формат"
 
@@ -8101,6 +8211,9 @@ msgstr "Из единицы хранения"
 msgid "Fulfillment Location"
 msgstr "Площадка отгрузки"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "Полное имя"
 
@@ -8109,6 +8222,9 @@ msgstr "Полная наладка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
+
+msgid "Functional Test Procedure Number"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "Прибыль/убыток по курсу"
@@ -8913,6 +9029,9 @@ msgstr "Инкотермс"
 msgid "Incoterm Location"
 msgstr "Место поставки по Инкотермс"
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr ""
+
 msgid "Indirect"
 msgstr "Косвенный"
 
@@ -8981,6 +9100,9 @@ msgstr "Документ контроля"
 
 msgid "Inspection Level"
 msgstr "Уровень контроля"
+
+msgid "Inspection Method Change"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "План контроля"
@@ -9261,6 +9383,9 @@ msgstr "Проблема"
 msgid "Issue (material)"
 msgstr "Выпуск (материал)"
 
+msgid "Issue Certificate of Conformance"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "Выдать кредит"
 
@@ -9302,6 +9427,9 @@ msgstr "Рабочие процессы проблем"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "Рабочие процессы для несоответствий определяют предустановленные значения. Например, у вас может быть рабочий процесс 8D или рабочий процесс локализации."
+
+msgid "Issue…"
+msgstr ""
 
 msgid "Issued"
 msgstr "Выдано"
@@ -9531,6 +9659,9 @@ msgstr "Ключ"
 
 msgid "Keyboard shortcuts"
 msgstr "Сочетания клавиш"
+
+msgid "Kind"
+msgstr ""
 
 msgid "Kind of record"
 msgstr "Тип записи"
@@ -9916,6 +10047,9 @@ msgstr "Местоположение"
 msgid "Location / Item"
 msgstr "Местоположение / Товар"
 
+msgid "Location Change"
+msgstr ""
+
 msgid "Location Name"
 msgstr "Название местоположения"
 
@@ -10175,6 +10309,12 @@ msgstr "Производство"
 msgid "manufacturing is blocked"
 msgstr "Производство заблокировано"
 
+msgid "Manufacturing Process Reference"
+msgstr ""
+
+msgid "Manufacturing Source Change"
+msgstr ""
+
 msgid "Map accounts"
 msgstr "Сопоставить счета"
 
@@ -10305,6 +10445,9 @@ msgstr "Материал"
 msgid "Material"
 msgstr "Материал"
 
+msgid "Material Change"
+msgstr ""
+
 msgid "Material condition"
 msgstr ""
 
@@ -10352,6 +10495,12 @@ msgstr "номенклатура материала"
 
 msgid "Material item"
 msgstr "Номенклатура материала"
+
+msgid "Material or Process"
+msgstr ""
+
+msgid "Material or Process Name"
+msgstr ""
 
 msgid "Material Planning"
 msgstr "Планирование материалов"
@@ -10742,6 +10891,9 @@ msgstr "Мои документы"
 msgid "My Saved View"
 msgstr "Мой сохраненный вид"
 
+msgid "N/A"
+msgstr ""
+
 msgid "Name"
 msgstr "Имя"
 
@@ -10754,11 +10906,17 @@ msgstr "Имена заполняются везде, где эти роли у�
 msgid "Native CAD integration (for example Onshape)"
 msgstr "Встроенная интеграция CAD (например Onshape)"
 
+msgid "Natural or Man-made Event"
+msgstr ""
+
 msgid "Navigate"
 msgstr "Навигация"
 
 msgid "Navigation"
 msgstr "Навигация"
+
+msgid "NC Program Change"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "NCRs по типам"
@@ -10901,6 +11059,9 @@ msgstr "Новый режим отказа"
 msgid "New Field"
 msgstr "Новое поле"
 
+msgid "New First Article"
+msgstr ""
+
 msgid "New Fixed Asset"
 msgstr "Новое основное средство"
 
@@ -11041,6 +11202,9 @@ msgstr "Новый RFQ"
 
 msgid "New RMA"
 msgstr "Новая RMA"
+
+msgid "New Row"
+msgstr ""
 
 msgid "New rule"
 msgstr "Новое правило"
@@ -11268,6 +11432,12 @@ msgstr "Записи о калибровке не найдены"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
 
+msgid "No certificate on file"
+msgstr ""
+
+msgid "No certificate on file for {name}"
+msgstr ""
+
 msgid "No certificates on this line yet."
 msgstr ""
 
@@ -11448,6 +11618,9 @@ msgstr "Нет совпадающих операций"
 msgid "No materials"
 msgstr "Нет материалов"
 
+msgid "No materials, special processes or functional tests yet."
+msgstr ""
+
 msgid "No new notifications"
 msgstr "Нет новых уведомлений"
 
@@ -11617,6 +11790,9 @@ msgstr "Нет назначенных правил"
 msgid "No scheduled work in this window"
 msgstr "Нет запланированной работы в этом окне"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "Серийные номера ещё не выбраны."
 
@@ -11745,6 +11921,12 @@ msgstr "Нерабочие дни, которые учитываются при 
 
 msgid "None"
 msgstr "Нет"
+
+msgid "None — a detail part."
+msgstr ""
+
+msgid "None approved"
+msgstr ""
 
 msgid "Normal"
 msgstr "Обычный"
@@ -12365,6 +12547,9 @@ msgstr "Заказы"
 msgid "Orders submitted"
 msgstr "Заказы отправлены"
 
+msgid "Organization Name"
+msgstr ""
+
 msgid "Origin"
 msgstr "Источник"
 
@@ -12558,11 +12743,20 @@ msgstr "ID детали"
 msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
 
+msgid "Part Name"
+msgstr ""
+
 msgid "Part Number"
 msgstr "Номер детали"
 
+msgid "Part Revision"
+msgstr ""
+
 msgid "Part Supersession"
 msgstr "Замещение деталей"
+
+msgid "Part Type"
+msgstr ""
 
 msgid "Partial"
 msgstr "Частично"
@@ -13244,6 +13438,9 @@ msgstr "процессы"
 msgid "Process"
 msgstr "Процесс"
 
+msgid "Process Change"
+msgstr ""
+
 msgid "Process Name"
 msgstr "Название процесса"
 
@@ -13288,6 +13485,9 @@ msgstr "События производства"
 
 msgid "Production Events"
 msgstr "События производства"
+
+msgid "Production Lapse"
+msgstr ""
 
 msgid "Production planning"
 msgstr "Планирование производства"
@@ -13860,6 +14060,9 @@ msgstr "Курс, используемый для пересчета счето�
 msgid "Ratio"
 msgstr "Коэффициент"
 
+msgid "Raw material, special processes and functional tests"
+msgstr ""
+
 msgid "Raw Materials"
 msgstr "Сырьё и материалы"
 
@@ -13934,6 +14137,9 @@ msgstr "Причина отказа (Необязательно)"
 
 msgid "Reason for skipping (required)"
 msgstr "Причина пропуска (требуется)"
+
+msgid "Reason for Update"
+msgstr ""
 
 msgid "Reasons"
 msgstr "Причины"
@@ -14068,6 +14274,9 @@ msgstr "Запись удалена"
 msgid "Record inspections tied to a part and a job"
 msgstr "Зарегистрировать контроль, связанный с деталью и производственным заказом"
 
+msgid "Record Results"
+msgstr ""
+
 msgid "Record type"
 msgstr "Тип записи"
 
@@ -14107,6 +14316,9 @@ msgstr "Обновить"
 msgid "Refresh exchange rate"
 msgstr "Обновить валютный курс"
 
+msgid "Refresh from Traceability"
+msgstr ""
+
 msgid "Refund from Supplier"
 msgstr "Возврат от Поставщика"
 
@@ -14142,6 +14354,15 @@ msgstr "Регистрация не удалась"
 
 msgid "Registration Number"
 msgstr "Регистрационный номер"
+
+msgid "Reissue"
+msgstr ""
+
+msgid "Reissue Certificate of Conformance"
+msgstr ""
+
+msgid "Reissue…"
+msgstr ""
 
 msgid "Reject"
 msgstr "Отклонить"
@@ -14767,6 +14988,9 @@ msgstr "Рассмотрение"
 msgid "Review & create"
 msgstr "Просмотр и создание"
 
+msgid "Review before issuing"
+msgstr ""
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Рассмотреть изменения каждой номенклатуры, затем подтвердить — выпуск нельзя отменить."
 
@@ -14778,6 +15002,9 @@ msgstr "Рассмотреть предложенные совпадения п�
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "Рассмотреть предупреждения ниже, затем провести подсчет чтобы применить корректировки."
+
+msgid "Reviewed (Approved)"
+msgstr ""
 
 msgid "Revision"
 msgstr "Ревизия"
@@ -15703,6 +15930,9 @@ msgstr "Справочная информация для самостоятел�
 msgid "Send"
 msgstr "Отправить"
 
+msgid "Send {number}"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "Отправить приглашение"
 
@@ -15718,11 +15948,18 @@ msgstr "Отправить в Carbon"
 msgid "Send Via"
 msgstr "Отправить через"
 
+msgid "Send…"
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "Отправка дефектных единиц на более раннюю операцию для исправления вместо их утилизации."
 
 msgid "Sends this document for approval before it can go active."
 msgstr "Отправляет этот документ на утверждение перед тем, как он сможет стать активным."
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr ""
 
 msgid "Sent complete date"
 msgstr "Дата отправки выполнена"
@@ -15738,6 +15975,10 @@ msgstr "Последовательный"
 
 msgid "Serial"
 msgstr "Серийный"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr ""
 
 msgid "Serial / Batch"
 msgstr "Серийный номер / Партия"
@@ -16222,6 +16463,10 @@ msgstr "Подтверждение рассмотрения перед пере�
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "Утверждения, которые должны быть записаны перед закрытием этой проблемы; в дополнение к тем, которые требуются рабочим процессом."
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "Вы вошли как {name}"
 
@@ -16405,6 +16650,9 @@ msgstr "Себестоимость запасной части"
 
 msgid "Spec"
 msgstr "Тех. условия"
+
+msgid "Special Process Supplier Code"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "Конкретный Покупатель"
@@ -16693,6 +16941,9 @@ msgstr "Stripe еще не имеет покупателя для этого п�
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "Стиль вывода канбана для отображения в таблице Канбана"
 
+msgid "Sub-assembly"
+msgstr ""
+
 msgid "Sub-assembly expiries only"
 msgstr "Только сроки действия подсборок"
 
@@ -16830,6 +17081,9 @@ msgstr "Учетные записи поставщиков"
 
 msgid "Supplier added and selected"
 msgstr "Поставщик добавлен и выбран"
+
+msgid "Supplier Code"
+msgstr ""
 
 msgid "Supplier contact"
 msgstr "Контактное лицо поставщика"
@@ -17222,6 +17476,9 @@ msgstr "Условия обслуживания"
 msgid "Test"
 msgstr "Тест"
 
+msgid "Test Procedure"
+msgstr ""
+
 msgid "Test run"
 msgstr "Тестовый запуск"
 
@@ -17361,6 +17618,9 @@ msgstr "Категория, к которой принадлежит этот п
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "Категория, к которой принадлежит этот поставщик (сырье, услуги, контрактный производитель); определяет счета GL по умолчанию и группировки отчетов."
 
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr ""
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "Код, напечатанный на карточке канбана, который операторы сканируют, чтобы отметить производственный заказ завершенным; автоматически генерируется, если оставлено пусто."
 
@@ -17486,6 +17746,12 @@ msgstr "Загруженный файл и созданные сопоставл
 
 msgid "the first 3 to 4 weeks"
 msgstr "первые 3–4 недели"
+
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr ""
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "Фиксированное количество единиц для проверки с передней части каждой партии, независимо от размера партии."
@@ -18580,6 +18846,9 @@ msgstr "Детали инструмента"
 msgid "Tool ID"
 msgstr "ID инструмента"
 
+msgid "Tooling Change"
+msgstr ""
+
 msgid "tools"
 msgstr "Инструменты"
 
@@ -19402,6 +19671,9 @@ msgstr "Ошибка проверки"
 
 msgid "Verified"
 msgstr "Проверено"
+
+msgid "Verified By"
+msgstr ""
 
 msgid "Verify"
 msgstr "Проверить"
@@ -20383,6 +20655,9 @@ msgstr "Вы получили этот товар"
 
 msgid "You received this lot"
 msgstr "Вы получили эту партию"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "Вы работаете на Carbon"

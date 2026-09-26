@@ -619,6 +619,9 @@ msgstr "一种折旧方法，每期对剩余账面价值收取固定百分比—
 msgid "A depreciation method that charges an equal amount each period across the asset's useful life."
 msgstr "一种折旧方法，在资产的使用年限内每期收取等额费用。"
 
+msgid "A FAIR number from outside Carbon"
+msgstr ""
+
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
 msgstr "文件 {0} 已存在 — 请先删除或重新命名"
@@ -714,6 +717,9 @@ msgstr "为特定物料约定的固定价格——按客户、客户类型或所
 
 msgid "A new purchase order will be created for each supplier. Alternatively, you can choose an existing draft purchase order for the supplier to add the outside operations to."
 msgstr "将为每个供应商创建一个新的采购订单。或者，您可以选择供应商的现有草稿采购订单以向其添加外协工序。"
+
+msgid "A new revision is issued under the same number. Earlier revisions stay downloadable."
+msgstr ""
 
 msgid "A new revision will be created using a copy of the current revision"
 msgstr "将使用当前修订版的副本创建新的修订版"
@@ -1089,6 +1095,12 @@ msgstr "验收"
 
 msgid "Acceptance passed"
 msgstr "验收合格"
+
+msgid "Acceptance Report"
+msgstr ""
+
+msgid "Acceptance Report Number"
+msgstr ""
 
 #. placeholder {0}: formatDate(certification.certifiedAt)
 msgid "Accepted {0}"
@@ -1507,6 +1519,9 @@ msgstr "添加要求"
 msgid "Add Risk"
 msgstr "添加风险"
 
+msgid "Add Row"
+msgstr ""
+
 msgid "Add rule"
 msgstr "添加规则"
 
@@ -1589,6 +1604,9 @@ msgstr "正在添加演示记录"
 
 msgid "Adding..."
 msgstr "添加中..."
+
+msgid "Additional Changes"
+msgstr ""
 
 msgid "Address"
 msgstr "地址"
@@ -2078,8 +2096,17 @@ msgstr "审批"
 msgid "Approve"
 msgstr "审批"
 
+msgid "Approve first article?"
+msgstr ""
+
+msgid "Approved"
+msgstr ""
+
 msgid "Approved By"
 msgstr "批准人"
+
+msgid "Approved By (Customer)"
+msgstr ""
 
 msgid "Approximate — derived from scheduled dates; no capacity reservation exists for this row."
 msgstr "近似 — 由计划日期推导；此行不存在产能预留。"
@@ -2216,6 +2243,10 @@ msgstr "你确定要从此操作中删除 {0} 吗？此操作无法撤销。"
 #. placeholder {0}: selectedGroup.name
 msgid "Are you sure you want to delete {0}?"
 msgstr "你确定要删除 {0} 吗？"
+
+#. placeholder {0}: lot.inspectionId
+msgid "Are you sure you want to delete {0}? Its inspection is deleted with it. This cannot be undone."
+msgstr ""
 
 #. placeholder {0}: getQuoteDisplayId( routeData?.quote )
 #. placeholder {0}: getQuoteDisplayId( selectedQuotation )
@@ -2729,6 +2760,9 @@ msgstr "至少一个条件必须匹配"
 msgid "At operation completion"
 msgstr "在操作完成时"
 
+msgid "Attach Certificate"
+msgstr ""
+
 msgid "Attach File"
 msgstr "附加文件"
 
@@ -2963,6 +2997,9 @@ msgstr "基础材料 — 例如 钢 与 铝"
 
 msgid "Base Price"
 msgstr "基础价格"
+
+msgid "Baseline First Article"
+msgstr ""
 
 msgid "Basic ERP, MES, and QMS functionality"
 msgstr "基本的 ERP、MES 和 QMS 功能"
@@ -3521,6 +3558,9 @@ msgstr "集中式账单地址"
 msgid "Cert Version"
 msgstr "证书版本"
 
+msgid "Certificate"
+msgstr ""
+
 msgid "Certificate added"
 msgstr ""
 
@@ -3529,6 +3569,9 @@ msgstr ""
 
 msgid "Certificate Number"
 msgstr "证书编号"
+
+msgid "Certificate of Conformance Number"
+msgstr ""
 
 msgid "Certificate uploaded"
 msgstr "证书已上传"
@@ -3631,6 +3674,9 @@ msgstr "检查物料分类账以查找期末现有数量为负的任何物料 �
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
+
+msgid "Checking first articles and certificates…"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
@@ -4486,6 +4532,9 @@ msgstr "纠正"
 msgid "Corrective action"
 msgstr "纠正措施"
 
+msgid "Corrective Action"
+msgstr ""
+
 msgid "cost center"
 msgstr "成本中心"
 
@@ -4533,6 +4582,9 @@ msgstr "成本核算方法"
 
 msgid "Costing Method"
 msgstr "成本核算方法"
+
+msgid "COTS"
+msgstr ""
 
 msgid "Could not analyze cropped region"
 msgstr "无法分析裁剪区域"
@@ -4893,6 +4945,9 @@ msgstr "已创建工作中心"
 msgid "Creates a draft supplier credit memo for the shipped quantities that have not been credited yet"
 msgstr "为尚未贷项的已发货数量创建供应商贷项备忘录草稿"
 
+msgid "Creates an AS9102 first article inspection for one part of a job, inspected against the part's first article plan."
+msgstr ""
+
 msgid "Creates the 12 monthly periods for a fiscal year. Periods that already exist are kept."
 msgstr "为会计年度创建12个每月期间。已有期间保留不变。"
 
@@ -5040,6 +5095,12 @@ msgstr "客户"
 
 msgid "Customer Accounts"
 msgstr "客户账户"
+
+msgid "Customer Approval"
+msgstr ""
+
+msgid "Customer Approval Verification"
+msgstr ""
 
 msgid "Customer contact"
 msgstr "客户联系人"
@@ -5612,6 +5673,9 @@ msgstr "删除故障模式"
 msgid "Delete file"
 msgstr "删除文件"
 
+msgid "Delete First Article"
+msgstr ""
+
 msgid "Delete Group"
 msgstr "删除群组"
 
@@ -5946,6 +6010,9 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Design Change"
+msgstr ""
+
 msgid "Designator"
 msgstr ""
 
@@ -6100,6 +6167,9 @@ msgstr "已处置"
 msgid "Disposition"
 msgstr "处置"
 
+msgid "Disposition the inspection before verifying"
+msgstr ""
+
 msgid "Dispositions"
 msgstr "处置"
 
@@ -6150,6 +6220,9 @@ msgstr "文件类型"
 
 msgid "Document:"
 msgstr "文件:"
+
+msgid "Documented Nonconformance"
+msgstr ""
 
 msgid "Documents"
 msgstr "文档"
@@ -6246,6 +6319,9 @@ msgid "Drawing replaced. Balloon placements were removed; feature rows are uncha
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
 msgid "Drawing revision"
+msgstr ""
+
+msgid "Drawing Revision"
 msgstr ""
 
 msgid "Drop shipment"
@@ -6685,6 +6761,12 @@ msgstr "编辑收据"
 msgid "Edit Revision"
 msgstr "编辑修订版本"
 
+msgid "Edit row"
+msgstr ""
+
+msgid "Edit Row"
+msgstr ""
+
 msgid "Edit rule"
 msgstr "编辑规则"
 
@@ -6810,6 +6892,9 @@ msgstr "电子邮件通知不包含在贵公司的当前计划中；如果启用
 
 msgid "Email notifications not configured"
 msgstr "电子邮件通知未配置"
+
+msgid "Email to customer"
+msgstr ""
 
 msgid "Emails"
 msgstr "电子邮件"
@@ -7378,6 +7463,9 @@ msgstr "扩展价格"
 msgid "External"
 msgstr "外部"
 
+msgid "External Baseline"
+msgstr ""
+
 msgid "External Delta"
 msgstr "外部差异"
 
@@ -7413,6 +7501,12 @@ msgstr "与请求一起发送的额外信息，例如授权密钥；标头值在
 
 msgid "Extra tags for slicing your GL reporting"
 msgstr "用于切分总账报告的额外标签"
+
+msgid "FAI Complete (Verified)"
+msgstr ""
+
+msgid "FAI Report"
+msgstr ""
 
 msgid "Fail"
 msgstr "不合格"
@@ -7799,6 +7893,9 @@ msgstr "故障模式"
 msgid "Failure Modes"
 msgstr "故障模式"
 
+msgid "FAIR"
+msgstr ""
+
 msgid "Favorite"
 msgstr "收藏"
 
@@ -7942,7 +8039,14 @@ msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 msgid "First Article"
 msgstr ""
 
+#. placeholder {0}: item.itemReadableId
+msgid "First article due for {0}"
+msgstr ""
+
 msgid "First Article Inspection"
+msgstr ""
+
+msgid "First Articles"
 msgstr ""
 
 msgid "First light, {name}."
@@ -8036,6 +8140,12 @@ msgstr "形状"
 msgid "Form"
 msgstr "表单"
 
+msgid "Form 1: Part Number Accountability"
+msgstr ""
+
+msgid "Form 2: Product Accountability"
+msgstr ""
+
 msgid "Format"
 msgstr "格式"
 
@@ -8101,6 +8211,9 @@ msgstr "从存储单元"
 msgid "Fulfillment Location"
 msgstr "发货地点"
 
+msgid "Full"
+msgstr ""
+
 msgid "Full name"
 msgstr "全名"
 
@@ -8109,6 +8222,9 @@ msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "已提足折旧"
+
+msgid "Functional Test Procedure Number"
+msgstr ""
 
 msgid "FX G/L"
 msgstr "外汇损益"
@@ -8913,6 +9029,9 @@ msgstr "贸易术语"
 msgid "Incoterm Location"
 msgstr "贸易术语地点"
 
+msgid "Index of Parts and Sub-assemblies"
+msgstr ""
+
 msgid "Indirect"
 msgstr "间接"
 
@@ -8981,6 +9100,9 @@ msgstr "检验文件"
 
 msgid "Inspection Level"
 msgstr "检验水平"
+
+msgid "Inspection Method Change"
+msgstr ""
 
 msgid "Inspection Plan"
 msgstr "检验计划"
@@ -9261,6 +9383,9 @@ msgstr "问题"
 msgid "Issue (material)"
 msgstr "领料（原材料）"
 
+msgid "Issue Certificate of Conformance"
+msgstr ""
+
 msgid "Issue Credit"
 msgstr "发放信用"
 
@@ -9302,6 +9427,9 @@ msgstr "问题工作流"
 
 msgid "Issue workflows defined the preset values for an issue. For example, you can have an 8D workflow or a containment workflow."
 msgstr "领料工作流定义了领料的预设值。例如，您可以创建 8D 工作流或围堵工作流。"
+
+msgid "Issue…"
+msgstr ""
 
 msgid "Issued"
 msgstr "已发放"
@@ -9531,6 +9659,9 @@ msgstr "钥匙"
 
 msgid "Keyboard shortcuts"
 msgstr "键盘快捷键"
+
+msgid "Kind"
+msgstr ""
 
 msgid "Kind of record"
 msgstr "记录类型"
@@ -9916,6 +10047,9 @@ msgstr "位置"
 msgid "Location / Item"
 msgstr "位置 / 物品"
 
+msgid "Location Change"
+msgstr ""
+
 msgid "Location Name"
 msgstr "位置名称"
 
@@ -10175,6 +10309,12 @@ msgstr "制造"
 msgid "manufacturing is blocked"
 msgstr "生产受阻"
 
+msgid "Manufacturing Process Reference"
+msgstr ""
+
+msgid "Manufacturing Source Change"
+msgstr ""
+
 msgid "Map accounts"
 msgstr "映射科目"
 
@@ -10305,6 +10445,9 @@ msgstr "原材料"
 msgid "Material"
 msgstr "原材料"
 
+msgid "Material Change"
+msgstr ""
+
 msgid "Material condition"
 msgstr ""
 
@@ -10352,6 +10495,12 @@ msgstr "原材料物料"
 
 msgid "Material item"
 msgstr "原材料物料"
+
+msgid "Material or Process"
+msgstr ""
+
+msgid "Material or Process Name"
+msgstr ""
 
 msgid "Material Planning"
 msgstr "物料规划"
@@ -10742,6 +10891,9 @@ msgstr "我的文档"
 msgid "My Saved View"
 msgstr "我的保存视图"
 
+msgid "N/A"
+msgstr ""
+
 msgid "Name"
 msgstr "名称"
 
@@ -10754,11 +10906,17 @@ msgstr "名称会在整个中心内引用这些角色的任何地方填入。"
 msgid "Native CAD integration (for example Onshape)"
 msgstr "原生 CAD 集成（例如 Onshape）"
 
+msgid "Natural or Man-made Event"
+msgstr ""
+
 msgid "Navigate"
 msgstr "导航"
 
 msgid "Navigation"
 msgstr "导航"
+
+msgid "NC Program Change"
+msgstr ""
 
 msgid "NCRs by Type"
 msgstr "按类型分类的NCR"
@@ -10901,6 +11059,9 @@ msgstr "新故障模式"
 msgid "New Field"
 msgstr "新字段"
 
+msgid "New First Article"
+msgstr ""
+
 msgid "New Fixed Asset"
 msgstr "新固定资产"
 
@@ -11041,6 +11202,9 @@ msgstr "新建 RFQ"
 
 msgid "New RMA"
 msgstr "新建RMA"
+
+msgid "New Row"
+msgstr ""
 
 msgid "New rule"
 msgstr "新规则"
@@ -11268,6 +11432,12 @@ msgstr "未找到校准记录"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "没有产能预留可显示。计划一项任务以查看工作中心负荷。"
 
+msgid "No certificate on file"
+msgstr ""
+
+msgid "No certificate on file for {name}"
+msgstr ""
+
 msgid "No certificates on this line yet."
 msgstr ""
 
@@ -11448,6 +11618,9 @@ msgstr "没有匹配的操作"
 msgid "No materials"
 msgstr "无物料"
 
+msgid "No materials, special processes or functional tests yet."
+msgstr ""
+
 msgid "No new notifications"
 msgstr "没有新通知"
 
@@ -11617,6 +11790,9 @@ msgstr "没有已分配的规则"
 msgid "No scheduled work in this window"
 msgstr "此时间窗内无排程工作"
 
+msgid "No serial number"
+msgstr ""
+
 msgid "No serial numbers selected yet."
 msgstr "尚未选择序列号。"
 
@@ -11745,6 +11921,12 @@ msgstr "不工作日，排班和产能规划会考虑这些日期"
 
 msgid "None"
 msgstr "无"
+
+msgid "None — a detail part."
+msgstr ""
+
+msgid "None approved"
+msgstr ""
 
 msgid "Normal"
 msgstr "正常"
@@ -12365,6 +12547,9 @@ msgstr "订单"
 msgid "Orders submitted"
 msgstr "订单已提交"
 
+msgid "Organization Name"
+msgstr ""
+
 msgid "Origin"
 msgstr "来源"
 
@@ -12558,11 +12743,20 @@ msgstr "零件ID"
 msgid "Part is configured for manufacturing"
 msgstr "零件已配置用于制造"
 
+msgid "Part Name"
+msgstr ""
+
 msgid "Part Number"
 msgstr "零件编号"
 
+msgid "Part Revision"
+msgstr ""
+
 msgid "Part Supersession"
 msgstr "零件替代"
+
+msgid "Part Type"
+msgstr ""
 
 msgid "Partial"
 msgstr "部分"
@@ -13244,6 +13438,9 @@ msgstr "流程"
 msgid "Process"
 msgstr "工艺"
 
+msgid "Process Change"
+msgstr ""
+
 msgid "Process Name"
 msgstr "流程名称"
 
@@ -13288,6 +13485,9 @@ msgstr "生产事件"
 
 msgid "Production Events"
 msgstr "生产事件"
+
+msgid "Production Lapse"
+msgstr ""
 
 msgid "Production planning"
 msgstr "生产计划"
@@ -13860,6 +14060,9 @@ msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空
 msgid "Ratio"
 msgstr "比率"
 
+msgid "Raw material, special processes and functional tests"
+msgstr ""
+
 msgid "Raw Materials"
 msgstr "原材料"
 
@@ -13934,6 +14137,9 @@ msgstr "拒绝原因（可选）"
 
 msgid "Reason for skipping (required)"
 msgstr "跳过原因（必填）"
+
+msgid "Reason for Update"
+msgstr ""
 
 msgid "Reasons"
 msgstr "原因"
@@ -14068,6 +14274,9 @@ msgstr "记录已删除"
 msgid "Record inspections tied to a part and a job"
 msgstr "记录与零件和工作相关的检验"
 
+msgid "Record Results"
+msgstr ""
+
 msgid "Record type"
 msgstr "记录类型"
 
@@ -14107,6 +14316,9 @@ msgstr "刷新"
 msgid "Refresh exchange rate"
 msgstr "刷新汇率"
 
+msgid "Refresh from Traceability"
+msgstr ""
+
 msgid "Refund from Supplier"
 msgstr "来自供应商的退款"
 
@@ -14142,6 +14354,15 @@ msgstr "注册失败"
 
 msgid "Registration Number"
 msgstr "注册号"
+
+msgid "Reissue"
+msgstr ""
+
+msgid "Reissue Certificate of Conformance"
+msgstr ""
+
+msgid "Reissue…"
+msgstr ""
 
 msgid "Reject"
 msgstr "拒绝"
@@ -14767,6 +14988,9 @@ msgstr "评审"
 msgid "Review & create"
 msgstr "查看和创建"
 
+msgid "Review before issuing"
+msgstr ""
+
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
 
@@ -14778,6 +15002,9 @@ msgstr "应用前评审建议的匹配。这些是最佳猜测——确认每个
 
 msgid "Review the warnings below, then post the count to apply the adjustments."
 msgstr "评审下方的警告，然后过账计数以应用调整。"
+
+msgid "Reviewed (Approved)"
+msgstr ""
 
 msgid "Revision"
 msgstr "修订版"
@@ -15703,6 +15930,9 @@ msgstr "自助参考文档，位于 docs.carbon.ms"
 msgid "Send"
 msgstr "发送"
 
+msgid "Send {number}"
+msgstr ""
+
 msgid "Send Invite"
 msgstr "发送邀请"
 
@@ -15718,11 +15948,18 @@ msgstr "发送至 Carbon"
 msgid "Send Via"
 msgstr "通过以下方式发送"
 
+msgid "Send…"
+msgstr ""
+
 msgid "Sending defective units back to an earlier operation to be corrected instead of scrapping them."
 msgstr "将有缺陷的单位送回较早的操作进行更正，而不是报废。"
 
 msgid "Sends this document for approval before it can go active."
 msgstr "在文件启用前发送进行审批。"
+
+#. placeholder {0}: formatDate( certificate.lastSentAt, undefined, locale )
+msgid "Sent {0}"
+msgstr ""
 
 msgid "Sent complete date"
 msgstr "发送完成日期"
@@ -15738,6 +15975,10 @@ msgstr "顺序"
 
 msgid "Serial"
 msgstr "序列号"
+
+#. placeholder {0}: detail.serialNumber
+msgid "Serial {0}"
+msgstr ""
 
 msgid "Serial / Batch"
 msgstr "序列号 / 批次"
@@ -16222,6 +16463,10 @@ msgstr "在进入下一步骤前进行签署评审"
 msgid "Sign-offs that must be recorded before this issue can be closed; in addition to any required by the workflow."
 msgstr "必须在此问题关闭前记录的签核；除工作流要求的外。"
 
+#. placeholder {0}: formatDate( certificate.signedAt, undefined, locale )
+msgid "Signed {0}"
+msgstr ""
+
 msgid "Signed in as {name}"
 msgstr "以 {name} 身份登录"
 
@@ -16405,6 +16650,9 @@ msgstr "备件成本"
 
 msgid "Spec"
 msgstr "规范"
+
+msgid "Special Process Supplier Code"
+msgstr ""
 
 msgid "Specific Customer"
 msgstr "特定客户"
@@ -16693,6 +16941,9 @@ msgstr "Stripe还没有该Carbon客户对应的客户。过账将在您的连接
 msgid "Style of kanban output to show in the Kanban table"
 msgstr "看板输出在看板表中显示的样式"
 
+msgid "Sub-assembly"
+msgstr ""
+
 msgid "Sub-assembly expiries only"
 msgstr "仅子组件过期日期"
 
@@ -16830,6 +17081,9 @@ msgstr "供应商账户"
 
 msgid "Supplier added and selected"
 msgstr "供应商已添加并选中"
+
+msgid "Supplier Code"
+msgstr ""
 
 msgid "Supplier contact"
 msgstr "供应商联系人"
@@ -17222,6 +17476,9 @@ msgstr "服务条款"
 msgid "Test"
 msgstr "测试"
 
+msgid "Test Procedure"
+msgstr ""
+
 msgid "Test run"
 msgstr "测试运行"
 
@@ -17361,6 +17618,9 @@ msgstr "此客户所属的类别（OEM、分销商、最终用户、内部）；
 msgid "The category this supplier belongs to (raw-material, services, contract-manufacturer); drives default GL accounts and reporting groupings."
 msgstr "此供应商所属的类别（原材料、服务、合同制造商）；确定默认GL账户和报告分组。"
 
+msgid "The certificate is signed by you and stored with the shipment."
+msgstr ""
+
 msgid "The code printed on the kanban card that operators scan to mark the job complete; auto-generated when left blank."
 msgstr "打印在看板卡上的代码，操作员扫码以标记工单完成；留空时自动生成。"
 
@@ -17486,6 +17746,12 @@ msgstr "您上传的文件和已完成的映射将会丢失。"
 
 msgid "the first 3 to 4 weeks"
 msgstr "前3到4周"
+
+msgid "The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr ""
+
+msgid "The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked."
+msgstr ""
 
 msgid "The fixed number of units to inspect from the front of each lot, regardless of lot size."
 msgstr "从每批前面检查的固定单位数，与批量大小无关。"
@@ -18580,6 +18846,9 @@ msgstr "工具详情"
 msgid "Tool ID"
 msgstr "工具ID"
 
+msgid "Tooling Change"
+msgstr ""
+
 msgid "tools"
 msgstr "工具"
 
@@ -19402,6 +19671,9 @@ msgstr "验证失败"
 
 msgid "Verified"
 msgstr "已验证"
+
+msgid "Verified By"
+msgstr ""
 
 msgid "Verify"
 msgstr "验证"
@@ -20387,6 +20659,9 @@ msgstr "您收到了此项目"
 
 msgid "You received this lot"
 msgstr "你收到了这批货"
+
+msgid "You verified this first article. AS9102 recommends a different approver. Approve anyway?"
+msgstr ""
 
 msgid "You're live on Carbon"
 msgstr "您已在 Carbon 上线"
