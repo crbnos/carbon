@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "Выберите Внутренний или Внешний элемент размера для характеристик MMC/LMC"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Выберите параметр размера для характеристик MMC/LMC"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Функциональное испытание"
 
 msgid "Functional Test Procedure Number"
 msgstr "Номер процедуры функциональной проверки"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Задание"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "Производственный заказ удален"
 
 msgid "Job ID"
 msgstr "ID задания"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Товары типа \"Make\" не могут быть выставлены счетом напрямую. Измените метод на \"Pick\" для продолжения."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Метод производства удален"
 
 msgid "Make Method Version"
 msgstr "Версия метода производства"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Тех. условия"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Специальный процесс"
 
 msgid "Special Process Supplier Code"
 msgstr "Код поставщика специального процесса"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "Метод производства производственного заказа больше не существует, поэтому индекс не может быть рассчитан."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Положение производственного заказа в очереди графика его площадки — дробное число, которое Carbon вычисляет из срока выполнения и типа крайнего срока, а не рейтинг «Низкий/Высокий»."

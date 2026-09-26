@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "आकार की आंतरिक या बाहरी विशेषता MMC/LMC विशेषताओं के लिए चुनें"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC विशेषताओं के लिए आकार विशेषता चुनें"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "पूर्ण मूल्यह्रासित"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "कार्यात्मक परीक्षण"
 
 msgid "Functional Test Procedure Number"
 msgstr "कार्यकारी परीक्षण कार्यविधि संख्या"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Job"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "जॉब हटा दिया गया"
 
 msgid "Job ID"
 msgstr "जॉब आईडी"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "निर्माण आइटम को सीधे चालान नहीं किया जा सकता। जारी रखने के लिए विधि को पिकिंग में बदलें।"
 
 msgid "Make method removed"
-msgstr ""
+msgstr "निर्माण विधि हटा दी गई"
 
 msgid "Make Method Version"
 msgstr "निर्माण विधि संस्करण"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "विनिर्देश"
 
 msgid "Special Process"
-msgstr ""
+msgstr "विशेष प्रक्रिया"
 
 msgid "Special Process Supplier Code"
 msgstr "विशेष प्रक्रिया आपूर्तिकर्ता कोड"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "जॉब की निर्माण विधि अब मौजूद नहीं है, इसलिए सूचकांक प्राप्त नहीं किया जा सकता है।"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "जॉब की अपने स्थान की शेड्यूल पंक्ति में स्थिति — एक अंशीय संख्या जो Carbon नियत तिथि और समय सीमा प्रकार से परिकलित करता है, कोई निम्न/उच्च रेटिंग नहीं।"

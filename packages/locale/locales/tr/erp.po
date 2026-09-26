@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "MMC/LMC karakteristikleri için boyut özelliğinin Dahili veya Harici olmasını seçiniz"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC özellikleri için boyut özelliğini seçin"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Fonksiyonel Test"
 
 msgid "Functional Test Procedure Number"
 msgstr "İşlevsel Test Prosedürü Numarası"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "İş"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "İş emri silindi"
 
 msgid "Job ID"
 msgstr "İş Emri Kimliği"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Üretim ürünleri doğrudan faturalandırılamaz. Devam etmek için yöntemi Seçime değiştirin."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Üretim yöntemi kaldırıldı"
 
 msgid "Make Method Version"
 msgstr "Üretim Yöntemi Sürümü"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Spesifikasyon"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Özel Proses"
 
 msgid "Special Process Supplier Code"
 msgstr "Özel Proses Tedarikçi Kodu"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Bu dış işleme satırının kapsadığı işlem, işi; satırın alındığı bu işi karşı operasyonu kapatır."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "İş emrinin Üretim yöntemi artık mevcut değil, bu nedenle indeks türetilemiyor."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "İşin konumunun planlama kuyruğundaki konumu — Carbon'un son tarih ve deadline türünden hesapladığı kesirli bir sayı, Düşük/Yüksek bir puanlama değil."

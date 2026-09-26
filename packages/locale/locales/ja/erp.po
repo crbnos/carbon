@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "MMC/LMC特性の寸法の社内または社外特性を選択する"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC特性のサイズフィーチャーを選択"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "完全償却済み"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "機能テスト"
 
 msgid "Functional Test Procedure Number"
 msgstr "機能テスト手順書番号"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "ジョブ"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "製造指図を削除しました"
 
 msgid "Job ID"
 msgstr "ジョブID"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "内製品目は直接請求できません。方法をピッキングに変更して続行してください。"
 
 msgid "Make method removed"
-msgstr ""
+msgstr "製造方法が削除されました"
 
 msgid "Make Method Version"
 msgstr "製造方法バージョン"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "仕様"
 
 msgid "Special Process"
-msgstr ""
+msgstr "特別工法"
 
 msgid "Special Process Supplier Code"
 msgstr "特別工法仕入先コード"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "製造指図の製造方法が存在しないため、インデックスを導出できません。"
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "このジョブのロケーション内のスケジュール順序での位置。Carbonが期日と期限タイプから計算した小数値で、低/高レーティングではありません。"

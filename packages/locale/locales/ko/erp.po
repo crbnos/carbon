@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "MMC/LMC 특성에 대해 내부 또는 외부 크기 특성을 선택하세요"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC 특성을 위한 크기 특징 선택"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "상각 완료"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "기능 시험"
 
 msgid "Functional Test Procedure Number"
 msgstr "기능 테스트 절차서 번호"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "작업"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "작업 지시가 삭제되었습니다"
 
 msgid "Job ID"
 msgstr "작업 ID"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "사내 생산 품목은 직접 송장 발행할 수 없습니다. 계속하려면 방법을 피킹으로 변경하세요."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "생산 방법이 제거되었습니다"
 
 msgid "Make Method Version"
 msgstr "생산 방법 버전"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "사양"
 
 msgid "Special Process"
-msgstr ""
+msgstr "특수 공법"
 
 msgid "Special Process Supplier Code"
 msgstr "특수 공법 공급업체 코드"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "작업 지시의 생산 방법이 더 이상 존재하지 않으므로 색인을 생성할 수 없습니다."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "작업 지시가 해당 사업장의 일정 대기열에서의 위치로, Carbon이 마감일과 마감일 유형으로부터 계산한 소수점 이하 숫자이며, 낮음/높음 등급이 아닙니다."

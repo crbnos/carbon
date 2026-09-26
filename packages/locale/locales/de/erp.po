@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Wählen Sie, wie Sie Positionen zu dieser Rückgabe hinzufügen möchten."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "Wählen Sie das interne oder externe Größenmerkmal für MMC/LMC-Merkmale"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Wählen Sie das Größenmerkmal für MMC/LMC-Merkmale"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Vollständig abgeschrieben"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Funktionsprüfung"
 
 msgid "Functional Test Procedure Number"
 msgstr "Funktionsprüfverfahrens-Nummer"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Job"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "Fertigungsauftrag gelöscht"
 
 msgid "Job ID"
 msgstr "Auftrags-ID"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Eigenfertigung-Artikel können nicht direkt fakturiert werden. Ändern Sie die Bereitstellungsart zu Kommissionierung, um fortzufahren."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Fertigungsmethode entfernt"
 
 msgid "Make Method Version"
 msgstr "Fertigungsmethode-Version"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Spezifikation"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Spezialverfahren"
 
 msgid "Special Process Supplier Code"
 msgstr "Sonderprozess-Lieferantenkennummer"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der Beleg der Zeile schließt die Operation gegen diesen Auftrag."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "Die Fertigungsmethode des Fertigungsauftrags existiert nicht mehr, daher kann der Index nicht abgeleitet werden."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Die Position des Fertigungsauftrags in der Terminplanwarteschlange des Standorts — eine Dezimalzahl, die Carbon aus dem Fälligkeitsdatum und dem Termintyp berechnet, keine Hoch/Niedrig-Bewertung."

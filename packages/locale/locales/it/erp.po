@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Scegli come aggiungere righe a questo reso."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "Scegli la caratteristica Interna o Esterna di dimensione per le caratteristiche MMC/LMC"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Scegli la caratteristica dimensionale per le caratteristiche MMC/LMC"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Prova funzionale"
 
 msgid "Functional Test Procedure Number"
 msgstr "Numero della Procedura di Prova Funzionale"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Lavoro"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "Ordine di produzione eliminato"
 
 msgid "Job ID"
 msgstr "ID Lavoro"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Gli articoli Make non possono essere fatturati direttamente. Cambia il metodo in Pick per continuare."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Metodo di produzione rimosso"
 
 msgid "Make Method Version"
 msgstr "Versione Metodo di Produzione"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Specifica"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Processo speciale"
 
 msgid "Special Process Supplier Code"
 msgstr "Codice Fornitore Processo Speciale"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Il lavoro la cui operazione copre questa riga di lavorazione esterna; la ricevuta della riga chiude l'operazione su questo lavoro."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "Il metodo di produzione dell'ordine di produzione non esiste più, quindi l'indice non può essere derivato."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "La posizione del lavoro nella coda di pianificazione della sua ubicazione — un numero frazionario che Carbon calcola dalla data di scadenza e dal tipo di scadenza, non una valutazione Basso/Alto."

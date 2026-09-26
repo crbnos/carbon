@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Wybierz sposób dodania pozycji do tego zwrotu."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "Wybierz cechę wewnętrzną lub zewnętrzną wielkości dla charakterystyk MMC/LMC"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Wybierz cechę wielkości dla charakterystyk MMC/LMC"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Całkowicie zamortyzowane"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Test funkcjonalny"
 
 msgid "Functional Test Procedure Number"
 msgstr "Numer Procedury Testowania Funkcjonalnego"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Zadanie"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "Zlecenie produkcyjne usunięte"
 
 msgid "Job ID"
 msgstr "ID zadania"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Artykuły Produkcji nie mogą być bezpośrednio zafakturowane. Zmień metodę na Pobranie, aby kontynuować."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Metoda produkcji usunięta"
 
 msgid "Make Method Version"
 msgstr "Wersja metody produkcji"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Specyfikacja"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Proces specjalny"
 
 msgid "Special Process Supplier Code"
 msgstr "Kod dostawcy specjalnego procesu"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Zadanie, którego operacja pokrywa ta linia przetwarzania zewnętrznego; rachunek linii zamyka operację dla tego zadania."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "Metoda produkcji zlecenia już nie istnieje, dlatego nie można wyprowadzić indeksu."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Pozycja zadania w kolejce harmonogramu jego lokalizacji — liczba ułamkowa, którą Carbon oblicza na podstawie daty terminu i typu terminu, a nie oceny Niska/Wysoka."

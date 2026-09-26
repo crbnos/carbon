@@ -3719,7 +3719,7 @@ msgid "Choose how to add lines to this return."
 msgstr "Choisissez comment ajouter des lignes à ce retour."
 
 msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
-msgstr ""
+msgstr "Choisir la caractéristique de taille Interne ou Externe pour les caractéristiques MMC/LMC"
 
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Choisissez la caractéristique de taille pour les caractéristiques MMC/LMC"
@@ -8243,7 +8243,7 @@ msgid "Fully Depreciated"
 msgstr "Totalement amorti"
 
 msgid "Functional Test"
-msgstr ""
+msgstr "Test Fonctionnel"
 
 msgid "Functional Test Procedure Number"
 msgstr "Numéro de Procédure d'Essai Fonctionnel"
@@ -9562,7 +9562,7 @@ msgid "Job"
 msgstr "Tâche"
 
 msgid "Job deleted"
-msgstr ""
+msgstr "Ordre de fabrication supprimé"
 
 msgid "Job ID"
 msgstr "ID de travail"
@@ -10260,7 +10260,7 @@ msgid "Make items cannot be invoiced directly. Change method to Pick to continue
 msgstr "Les articles de fabrication ne peuvent pas être facturés directement. Changez la méthode en Prélèvement pour continuer."
 
 msgid "Make method removed"
-msgstr ""
+msgstr "Méthode de fabrication supprimée"
 
 msgid "Make Method Version"
 msgstr "Version de la méthode de fabrication"
@@ -16689,7 +16689,7 @@ msgid "Spec"
 msgstr "Spec"
 
 msgid "Special Process"
-msgstr ""
+msgstr "Procédé Spécial"
 
 msgid "Special Process Supplier Code"
 msgstr "Code fournisseur de procédé spécial"
@@ -17896,7 +17896,7 @@ msgid "The job whose operation this outside-processing line covers; the line's r
 msgstr "Le travail dont l'opération couvre cette ligne de traitement externe; le reçu de la ligne ferme l'opération contre ce travail."
 
 msgid "The job's make method no longer exists, so the index cannot be derived."
-msgstr ""
+msgstr "La méthode de fabrication de l'ordre de fabrication n'existe plus, donc l'indice ne peut pas être dérivé."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "La position de l'ordre de fabrication dans la file de planification de son site — un nombre fractionnaire que Carbon calcule à partir de la date d'échéance et du type d'échéance, pas une cote Faible/Élevé."
