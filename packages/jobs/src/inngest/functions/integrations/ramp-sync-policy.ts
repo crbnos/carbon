@@ -1,31 +1,13 @@
-import type { RampIntegrationMetadata } from "@carbon/ee/ramp.server";
-
-export type RampInboundFamily =
-  | "transactions"
-  | "transfers"
-  | "cashbacks"
-  | "bills"
-  | "billPayments"
-  | "reimbursements"
-  | "repayments";
-
-export function isRampInboundFamilyEnabled(
-  family: RampInboundFamily,
-  sync: RampIntegrationMetadata["sync"]
-): boolean {
-  switch (family) {
-    case "transactions":
-    case "transfers":
-    case "cashbacks":
-      return sync.pullTransactions;
-    case "bills":
-    case "billPayments":
-      return sync.pullBills;
-    case "reimbursements":
-    case "repayments":
-      return sync.pullReimbursements;
-  }
-}
+/**
+ * The inbound-family gate moved to `@carbon/ee/ramp.server` (`lib/modes.ts`) when
+ * install modes landed: it now consults the MODE's ceiling as well as the stored
+ * toggles, and the ceiling is defined with the mode. Re-exported here so the
+ * family modules' imports are unchanged.
+ */
+export {
+  isRampInboundFamilyEnabled,
+  type RampInboundFamily
+} from "@carbon/ee/ramp.server";
 
 export function isRampEntityInScope(
   configuredEntityId: string | undefined,

@@ -105,13 +105,6 @@ export const Rillet = defineIntegration({
         "Send every Carbon customer, vendor and item that has no Rillet counterpart yet",
       endpoint:
         "/api/integrations/master-sync?provider=rillet&direction=push-to-accounting"
-    },
-    {
-      id: "backfill-journals",
-      label: "Backfill journal postings",
-      description:
-        "Record or enqueue a sync operation for every journal posted since the posting sync start date. The half-hourly sweep already covers the last 7 days; this covers the history behind it",
-      endpoint: "/api/integrations/journal-backfill?provider=rillet"
     }
   ]
 });

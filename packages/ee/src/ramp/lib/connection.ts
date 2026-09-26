@@ -4,6 +4,13 @@ import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { RAMP_ENVIRONMENT } from "../environment";
 import { buildRampIdempotencyKey, RampClient } from "./client";
 import {
+  CARBON_PROVIDER_NAME,
+  isCarbonConnection,
+  linkedConnections,
+  type RampConnection,
+  RampSeatConflictError
+} from "./connection-status";
+import {
   RampAccountingConnectionSchema,
   type RampCredentials,
   type RampCursors,
@@ -36,9 +43,26 @@ export const RAMP = "ramp";
  * Read the RAW stored (secret-free) metadata for the company's Ramp integration.
  * Returns `null` when the integration is not installed or not active.
  */
+/**
+ * `includeInactive` exists for TEARDOWN only.
+ *
+ * The uninstall route deactivates the row BEFORE calling `onUninstall`, so a
+ * read that requires `active` returns null inside the very hook whose job is to
+ * tear down the remote side — which silently made `rampOnUninstall`'s webhook and
+ * accounting-connection deletes dead code, leaving both alive at Ramp forever
+ * (found during the push-only verification, 2026-09-25). An orphaned connection
+ * keeps holding Ramp's single accounting seat, which is the exact failure
+ * push-only mode exists to prevent.
+ *
+ * Every other caller must keep the default: an inactive integration must not
+ * sync, push, or report health.
+ */
+export type RampMetadataReadOptions = { includeInactive?: boolean };
+
 export async function readStoredRampMetadata(
   serviceRole: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  options: RampMetadataReadOptions = {}
 ): Promise<Record<string, unknown> | null> {
   const { data, error } = await serviceRole
     .from("companyIntegration")
@@ -47,7 +71,8 @@ export async function readStoredRampMetadata(
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (error || !data || !data.active) return null;
+  if (error || !data) return null;
+  if (!data.active && !options.includeInactive) return null;
   return (data.metadata as Record<string, unknown> | null) ?? {};
 }
 
@@ -132,9 +157,10 @@ async function persistRefreshedRampTokens(
  */
 export async function getRampIntegration(
   serviceRole: SupabaseClient<Database>,
-  companyId: string
+  companyId: string,
+  options: RampMetadataReadOptions = {}
 ): Promise<{ client: RampClient; metadata: RampIntegrationMetadata } | null> {
-  const stored = await readStoredRampMetadata(serviceRole, companyId);
+  const stored = await readStoredRampMetadata(serviceRole, companyId, options);
   if (!stored) return null;
 
   const resolved = await resolveIntegrationSecrets(
@@ -168,7 +194,19 @@ export async function getRampIntegration(
 export async function exchangeRampOAuthCode(
   code: string,
   redirectUri: string
-): Promise<Extract<RampCredentials, { type: "oauth2" }>> {
+): Promise<{
+  credentials: Extract<RampCredentials, { type: "oauth2" }>;
+  /**
+   * The scopes the token response ACTUALLY returned, when it said.
+   *
+   * RFC 6749 §3.3 lets an authorization server issue NARROWER scope than
+   * requested, and requires it to include `scope` when it does. So the requested
+   * list is an intention and this is the fact — recording the intention would
+   * make the UI claim capabilities the grant may not carry. Undefined when the
+   * response omitted it (which, per §3.3, means "as requested").
+   */
+  grantedScopes?: string[];
+}> {
   const clientId = process.env.RAMP_CLIENT_ID;
   const clientSecret = process.env.RAMP_CLIENT_SECRET;
   if (!clientId || !clientSecret) {
@@ -185,11 +223,14 @@ export async function exchangeRampOAuthCode(
   );
   const tokens = await client.exchangeAuthorizationCode(code, redirectUri);
   return {
-    type: "oauth2",
-    accessToken: tokens.accessToken,
-    refreshToken: tokens.refreshToken,
-    expiresAt: tokens.expiresAt,
-    environment: RAMP_ENVIRONMENT
+    credentials: {
+      type: "oauth2",
+      accessToken: tokens.accessToken,
+      refreshToken: tokens.refreshToken,
+      expiresAt: tokens.expiresAt,
+      environment: RAMP_ENVIRONMENT
+    },
+    grantedScopes: tokens.scope?.split(" ").filter(Boolean)
   };
 }
 
@@ -208,9 +249,50 @@ export async function ensureRampConnection(
   const { client, metadata } = integration;
   if (metadata.connectionId) return { connectionId: metadata.connectionId };
 
+  /**
+   * Ramp permits exactly ONE accounting connection, and `POST /accounting/connection`
+   * RETURNS THE INCUMBENT rather than refusing when one already exists — verified
+   * live 2026-09-26, where a provider-mode install against a business whose seat
+   * was held by another system stored that system's connection id as its own.
+   *
+   * Carbon then believed it held the seat: it would push the chart of accounts,
+   * cost centers and projects into someone else's connection, confirm syncs
+   * against it, show a green healthcheck — and on uninstall DELETE it, which is
+   * the "worst possible uninstall side effect" this file already warns about.
+   *
+   * So look before creating. An incumbent that is not Carbon's is a refusal with
+   * an actionable message, not something to adopt.
+   */
+  let existing: RampConnection[] = [];
+  try {
+    existing = linkedConnections(await client.getAccountingConnections());
+  } catch {
+    // Unreadable: fall through to the create, whose response is checked below.
+    // A transient read failure must not block an otherwise valid install.
+  }
+
+  const incumbent = existing.find(
+    (connection) => !isCarbonConnection(connection)
+  );
+  const ownExisting = existing.find(isCarbonConnection);
+
+  if (ownExisting?.id) {
+    // Carbon's own connection already exists — adopt it. This is the documented
+    // re-install / fresh-database case that previously needed a manual metadata
+    // edit to recover from.
+    await patchRampConnection(serviceRole, companyId, ownExisting.id);
+    return { connectionId: ownExisting.id };
+  }
+
+  if (incumbent) {
+    throw new RampSeatConflictError(
+      incumbent.remote_provider_name ?? undefined
+    );
+  }
+
   const connection = RampAccountingConnectionSchema.parse(
     await client.createAccountingConnection(
-      { remote_provider_name: "Carbon" },
+      { remote_provider_name: CARBON_PROVIDER_NAME },
       // Entity-scoped idempotency key — one accounting connection per company, so
       // a retried install cannot create a second one at Ramp.
       buildRampIdempotencyKey({
@@ -220,6 +302,17 @@ export async function ensureRampConnection(
       })
     )
   );
+
+  // The create can still hand back an incumbent the read above missed (it may
+  // have failed, or the seat may have been taken in between). Storing an id
+  // without checking whose it is is the whole bug.
+  if (
+    connection.remote_provider_name &&
+    !isCarbonConnection(connection as RampConnection)
+  ) {
+    throw new RampSeatConflictError(connection.remote_provider_name);
+  }
+
   const connectionId = connection.connection_id ?? connection.id;
   if (!connectionId) {
     throw new Error("Ramp did not return a connection id");

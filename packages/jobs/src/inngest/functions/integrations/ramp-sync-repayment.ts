@@ -74,7 +74,7 @@ export async function syncRampRepayments(
   const integrationRow = { data: { updatedAt: integrationUpdatedAt } };
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
   // Repayments ride the same expense-recording gate as reimbursements.
-  if (!isRampInboundFamilyEnabled("repayments", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled("repayments", metadata)) {
     return result;
   }
   if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {

@@ -3,8 +3,12 @@ import {
   qboSyncerRegistry,
   REQUIRED_SYNC_SUBSCRIPTIONS,
   rilletSyncerRegistry,
+  SpendProviderID,
+  type SyncerRegistry,
+  type SyncProviderID,
   xeroSyncerRegistry
 } from "@carbon/ee/accounting";
+import { rampSyncerRegistry } from "@carbon/ee/ramp/entities";
 import { describe, expect, it } from "vitest";
 import { getEntityTypesForTable } from "./sync-tables";
 
@@ -20,14 +24,41 @@ import { getEntityTypesForTable } from "./sync-tables";
  * removed a mapping a subscription still relies on.
  */
 
-const SYNCER_REGISTRIES = {
+const SYNCER_REGISTRIES: Record<SyncProviderID, SyncerRegistry> = {
   [ProviderID.XERO]: xeroSyncerRegistry,
   [ProviderID.QUICKBOOKS]: qboSyncerRegistry,
-  [ProviderID.RILLET]: rilletSyncerRegistry
-} as const;
+  [ProviderID.RILLET]: rilletSyncerRegistry,
+  // A spend provider is held to the same invariant — its subscriptions run on
+  // the same handler, registry and drain.
+  [SpendProviderID.RAMP]: rampSyncerRegistry
+};
+
+const SYNC_PROVIDER_IDS: SyncProviderID[] = [
+  ...Object.values(ProviderID),
+  ...Object.values(SpendProviderID)
+];
+
+/** The check itself, so the negative fixture below exercises the real rule. */
+function findDeadLetters(
+  registry: SyncerRegistry,
+  tables: ReadonlyArray<{ table: string }>
+): string[] {
+  const dead: string[] = [];
+  for (const { table } of tables) {
+    const entityTypes = getEntityTypesForTable(table);
+    if (entityTypes.length === 0) {
+      dead.push(`${table} → no entity type`);
+      continue;
+    }
+    for (const entityType of entityTypes) {
+      if (!registry[entityType]) dead.push(`${table} → ${entityType}`);
+    }
+  }
+  return dead;
+}
 
 describe("REQUIRED_SYNC_SUBSCRIPTIONS ↔ TABLE_TO_ENTITY_MAP ↔ syncer registries", () => {
-  for (const providerId of Object.values(ProviderID)) {
+  for (const providerId of SYNC_PROVIDER_IDS) {
     describe(providerId, () => {
       const registry = SYNCER_REGISTRIES[providerId];
 
@@ -52,4 +83,20 @@ describe("REQUIRED_SYNC_SUBSCRIPTIONS ↔ TABLE_TO_ENTITY_MAP ↔ syncer registr
       }
     });
   }
+
+  it("fails a provider that subscribes to a table it registers no syncer for", () => {
+    // The negative fixture: without this, a bug that made `findDeadLetters`
+    // always return [] would leave every assertion above passing vacuously.
+    expect(
+      findDeadLetters(rampSyncerRegistry, [{ table: "purchaseOrder" }])
+    ).toEqual([]);
+
+    expect(
+      findDeadLetters(rampSyncerRegistry, [{ table: "salesInvoice" }])
+    ).toEqual(["salesInvoice → invoice"]);
+
+    expect(
+      findDeadLetters(rampSyncerRegistry, [{ table: "notATable" }])
+    ).toEqual(["notATable → no entity type"]);
+  });
 });

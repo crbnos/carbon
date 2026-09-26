@@ -16,7 +16,9 @@ export async function loadIntegrationTopology(
 ): Promise<IntegrationTopology> {
   const rows = await client
     .from("companyIntegration")
-    .select("id, active")
+    // `metadata` carries the install mode, which is what decides a spend
+    // provider's capabilities — without it push-only resolves as provider.
+    .select("id, active, metadata")
     .eq("companyId", companyId);
 
   return resolveIntegrationTopology(rows.data ?? []);

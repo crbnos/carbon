@@ -284,3 +284,71 @@ describe("RampClient pagination", () => {
     expect(pages.flat().map((tx) => tx.id)).toEqual(["tx-1", "tx-2", "tx-3"]);
   });
 });
+
+describe("findPurchaseOrderByExternalId", () => {
+  /**
+   * `external_id` is the only way to recognise a purchase order Carbon created:
+   * Ramp normalizes `purchase_order_number` (it stores `"PO000002"` as `"2"` and
+   * appends a dedup suffix to others — both verified live 2026-09-26), so the
+   * number can never be matched on.
+   *
+   * Without this lookup a purchase order Carbon had pushed but lost the mapping
+   * for was PERMANENTLY unsyncable: the create is refused with
+   * `400 DEVELOPER_7063 "Purchase order number already exists"`, the mapping is
+   * still missing, and every later attempt repeats it forever.
+   */
+  function stubPurchaseOrders(rows: unknown[]) {
+    const calls: string[] = [];
+    const fetchMock = vi.fn(async (url: unknown) => {
+      if (isTokenRequest(url)) {
+        return mockResponse({ access_token: "tok", expires_in: 3600 });
+      }
+      calls.push(String(url));
+      return mockResponse({ data: rows, page: { next: null } });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+    return calls;
+  }
+
+  it("finds the purchase order carrying the external id", async () => {
+    stubPurchaseOrders([{ id: "ramp-po-1", external_id: "po_abc" }]);
+
+    const client = new RampClient(credentials);
+
+    expect(await client.findPurchaseOrderByExternalId("po_abc")).toEqual({
+      id: "ramp-po-1"
+    });
+  });
+
+  it("sends the external id as a query filter, url-encoded", async () => {
+    const calls = stubPurchaseOrders([]);
+    const client = new RampClient(credentials);
+
+    await client.findPurchaseOrderByExternalId("po_a b/c");
+
+    expect(calls[0]).toContain("/developer/v1/purchase-orders?external_id=");
+    expect(calls[0]).toContain(encodeURIComponent("po_a b/c"));
+  });
+
+  it("refuses a row whose external id does not actually match", async () => {
+    // The endpoint IGNORES an unsupported query parameter and returns the full
+    // first page rather than erroring, so a future API change that dropped the
+    // filter would hand back an unrelated purchase order. Adopting it would
+    // point Carbon's mapping at someone else's document, so the value is
+    // re-checked rather than trusted.
+    stubPurchaseOrders([
+      { id: "ramp-po-other", external_id: "po_someone_else" },
+      { id: "ramp-po-nulled", external_id: null }
+    ]);
+
+    const client = new RampClient(credentials);
+
+    expect(await client.findPurchaseOrderByExternalId("po_abc")).toBeNull();
+  });
+
+  it("returns null when nothing matches", async () => {
+    stubPurchaseOrders([]);
+    const client = new RampClient(credentials);
+    expect(await client.findPurchaseOrderByExternalId("po_abc")).toBeNull();
+  });
+});

@@ -30,7 +30,6 @@ import { type Database, fetchAllFromTable } from "@carbon/database";
 import {
   AccountingAuthError,
   type AccountingEntityType,
-  type AccountingProvider,
   type BatchSyncResult,
   CHARGE_CREDIT_PROVIDERS,
   type ChargePolicyInput,
@@ -54,6 +53,7 @@ import {
   type SyncOperation,
   type SyncOperationDirection,
   type SyncOperationTrigger,
+  type SyncProvider,
   type SyncResult,
   skipOperation
 } from "@carbon/ee/accounting";
@@ -548,12 +548,15 @@ export type EffectivePostingState = {
  */
 export function applyEffectivePostingState(
   integrationMetadata: unknown,
-  topology: IntegrationTopology
+  topology: IntegrationTopology,
+  /** Whose config this is — a family's OWNER keeps it. See `applyLedgerDelegation`. */
+  integrationId?: string
 ): EffectivePostingState {
   const applied = applyLedgerDelegation({
     settings: resolvePostingSyncSettings(integrationMetadata),
     syncConfig: resolveSyncConfig(integrationMetadata),
-    topology
+    topology,
+    integrationId
   });
   return { settings: applied.settings, syncConfig: applied.syncConfig };
 }
@@ -932,7 +935,7 @@ export async function drainSyncOperations(args: {
   database: SyncContext["database"];
   companyId: string;
   integration: string;
-  provider: AccountingProvider;
+  provider: SyncProvider;
   /**
    * `metadata` of the companyIntegration row (already loaded by every
    * caller via getAccountingIntegration) — required so no drain path can

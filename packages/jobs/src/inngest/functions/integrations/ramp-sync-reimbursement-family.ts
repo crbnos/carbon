@@ -29,7 +29,7 @@ export async function syncRampReimbursements(
 ): Promise<FamilyResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("reimbursements", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled("reimbursements", metadata)) {
     return result;
   }
 

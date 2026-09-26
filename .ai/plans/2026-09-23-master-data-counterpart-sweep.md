@@ -614,8 +614,16 @@ pnpm exec turbo run typecheck --filter=@carbon/jobs
 > per-provider ones. Parameters ride the QUERY STRING because
 > `IntegrationActionButton` POSTs `action.endpoint` with no body — worth knowing
 > before designing any future action. All three accounting descriptors now declare the
-> same three actions: Import customers & vendors, Push customers/vendors/items,
-> Backfill journal postings. Xero's existing "Entities to Sync" switches still drive
+> same TWO actions: Import customers & vendors, Push customers/vendors/items.
+>
+> A third action, Backfill journal postings, was added and then REMOVED the next day
+> on Brad's challenge: it enqueues a push for every journal posted since
+> `postingSync.syncFromDate`, so a fresh connection whose account mapping is not yet
+> complete would park a wall of `UNMAPPED_ACCOUNTS` warnings — every one retryable,
+> but it reads as broken. The job and its route survive; only the button is gone.
+> Re-add it behind a `getAccountsBlockingSync` gate if it is ever wanted in the UI.
+>
+> Xero's existing "Entities to Sync" switches still drive
 > its push selection; the other two fall through to all-three defaults. No `/translate`
 > run — these descriptor strings are plain (the existing Rillet action was too), not
 > Lingui macros.

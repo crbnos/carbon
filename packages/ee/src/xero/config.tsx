@@ -93,13 +93,6 @@ export const Xero = defineIntegration({
         "Send every Carbon record that has no Xero counterpart yet, for the entities selected above",
       endpoint:
         "/api/integrations/master-sync?provider=xero&direction=push-to-accounting"
-    },
-    {
-      id: "backfill-journals",
-      label: "Backfill journal postings",
-      description:
-        "Record or enqueue a sync operation for every journal posted since the posting sync start date. The half-hourly sweep already covers the last 7 days; this covers the history behind it",
-      endpoint: "/api/integrations/journal-backfill?provider=xero"
     }
   ]
 });

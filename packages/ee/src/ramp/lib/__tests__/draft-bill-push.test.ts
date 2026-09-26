@@ -80,9 +80,9 @@ describe("pushInvoiceDraftBill (draft-only, coded from the posted journal)", () 
       { createDraftBill, submitDraftBill } as unknown as RampClient,
       invoice,
       {
-        pushedAccountIds: new Set(["acct_expense"]),
-        pushedCostCenterIds: new Set(["cc_ga"]),
-        pushedProjectIds: new Set<string>()
+        pushedAccountIds: new Map([["acct_expense", "acct_expense"]]),
+        pushedCostCenterIds: new Map([["cc_ga", "cc_ga"]]),
+        pushedProjectIds: new Map<string, string>()
       }
     );
 
@@ -145,9 +145,9 @@ describe("pushInvoiceDraftBill (draft-only, coded from the posted journal)", () 
       { createDraftBill } as unknown as RampClient,
       { ...invoice, supplier: { ...supplier, name: null } },
       {
-        pushedAccountIds: new Set<string>(),
-        pushedCostCenterIds: new Set<string>(),
-        pushedProjectIds: new Set<string>()
+        pushedAccountIds: new Map<string, string>(),
+        pushedCostCenterIds: new Map<string, string>(),
+        pushedProjectIds: new Map<string, string>()
       }
     );
 

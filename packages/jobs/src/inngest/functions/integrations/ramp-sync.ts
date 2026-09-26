@@ -5,8 +5,13 @@
  * business workflows while this entry point preserves the deployed function id,
  * trigger, step ids, result shape, and failure-notification contract.
  */
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { createMappingService } from "@carbon/ee/accounting";
+import {
+  createMappingService,
+  ensureProviderSubscriptions,
+  SpendProviderID
+} from "@carbon/ee/accounting";
 import {
   getRampIntegration,
   pushChartOfAccounts,
@@ -24,7 +29,6 @@ import {
   syncRampTransfers
 } from "./ramp-sync-card";
 import { countRampSyncFailures } from "./ramp-sync-observability";
-import { syncRampOutbound } from "./ramp-sync-outbound";
 import { syncRampReimbursements } from "./ramp-sync-reimbursement-family";
 import { syncRampRepayments } from "./ramp-sync-repayment";
 import type { RampSyncContext } from "./ramp-sync-shared";
@@ -85,6 +89,13 @@ export const rampSyncFunction = inngest.createFunction(
     };
     const cardLiabilityAccountId = metadata.cardLiabilityAccountId;
     const entityId = metadata.entityId;
+
+    // Self-healing, mirroring the accounting outbound sweep: an install that
+    // predates the event-engine move — or one whose rows were lost — gets its
+    // SYNC subscriptions converged here rather than only in the install hook.
+    await step.run("ramp-subscriptions", () =>
+      ensureProviderSubscriptions(client, companyId, SpendProviderID.RAMP)
+    );
 
     const coaResult = await step.run("ramp-chart-of-accounts", async () => {
       try {
@@ -174,9 +185,6 @@ export const rampSyncFunction = inngest.createFunction(
         integrationRow.data?.updatedAt
       )
     );
-    const outboundResult = await step.run("ramp-outbound", () =>
-      syncRampOutbound(ctx, ramp, integrationRow.data?.updatedAt)
-    );
 
     const totalFailed = countRampSyncFailures([
       coaResult,
@@ -188,9 +196,7 @@ export const rampSyncFunction = inngest.createFunction(
       billResult,
       billPaymentResult,
       reimbursementResult,
-      repaymentResult,
-      outboundResult.purchaseOrders,
-      outboundResult.invoices
+      repaymentResult
     ]);
 
     if (totalFailed > 0) {
@@ -230,8 +236,7 @@ export const rampSyncFunction = inngest.createFunction(
       bills: billResult,
       billPayments: billPaymentResult,
       reimbursements: reimbursementResult,
-      repayments: repaymentResult,
-      outbound: outboundResult
+      repayments: repaymentResult
     };
   }
 );

@@ -5,10 +5,10 @@ import {
   deleteEventSystemSubscription
 } from "@carbon/database/event";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { ProviderID } from "./models";
+import { ProviderID, SpendProviderID, type SyncProviderID } from "./models";
 
 /**
- * The event-system subscriptions each accounting provider's OUTBOUND sync
+ * The event-system subscriptions each sync provider's OUTBOUND sync
  * requires (subscription name `${providerId}-sync`, handlerType SYNC).
  *
  * Single source of truth (v4 spec, Pillar A): install hooks, integration
@@ -61,7 +61,7 @@ const JOURNAL_SUBSCRIPTION: RequiredSyncSubscription = {
 };
 
 export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
-  ProviderID,
+  SyncProviderID,
   RequiredSyncSubscription[]
 > = {
   [ProviderID.RILLET]: [
@@ -88,10 +88,27 @@ export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
     // payment write-back: push on the transition to Posted/Voided. Inbound
     // payments still ride the CDC pull sweep + webhook.
     { table: "payment", operations: ["INSERT", "UPDATE"] }
+  ],
+  /**
+   * Ramp is a SPEND provider: it mirrors Carbon's purchase orders and its open
+   * payables, and nothing else. No `customer`/`item`/`journal` — Ramp is not a
+   * ledger — and no DELETE, because a spend platform's document lifecycle is
+   * not Carbon's to retract (a handed-off draft bill has no delete endpoint at
+   * all).
+   *
+   * Ramp's INBOUND families (card charges, reimbursements, bill payments) are
+   * deliberately absent: they key off Ramp's own `SYNC_READY` status feed and
+   * batched confirm protocol, which has no Carbon row event to subscribe to.
+   * They stay on the `ramp-sync` cron, the same outbound-events /
+   * inbound-sweep split the accounting providers already run.
+   */
+  [SpendProviderID.RAMP]: [
+    { table: "purchaseOrder", operations: ["INSERT", "UPDATE"] },
+    { table: "purchaseInvoice", operations: ["INSERT", "UPDATE"] }
   ]
 };
 
-export function getSyncSubscriptionName(providerId: ProviderID): string {
+export function getSyncSubscriptionName(providerId: SyncProviderID): string {
   return `${providerId}-sync`;
 }
 
@@ -113,7 +130,7 @@ export type EnsureSubscriptionsResult = {
 export async function ensureProviderSubscriptions(
   client: SupabaseClient<Database>,
   companyId: string,
-  providerId: ProviderID
+  providerId: SyncProviderID
 ): Promise<EnsureSubscriptionsResult> {
   const required = REQUIRED_SYNC_SUBSCRIPTIONS[providerId];
   const name = getSyncSubscriptionName(providerId);

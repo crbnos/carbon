@@ -422,12 +422,12 @@ export type RampSyncFlags = z.infer<typeof RampSyncFlagsSchema>;
 
 export const RampCursorsSchema = z
   .object({
-    repaymentsRepaidAt: z.string().optional(),
-    // Outbound cursors remain strings so one atomic metadata-path patch can
-    // persist the full keyset. New values encode [updatedAt, id]; legacy bare
-    // timestamps remain valid and are replayed inclusively during migration.
-    purchaseOrderPushUpdatedAt: z.string().optional(),
-    invoicePushUpdatedAt: z.string().optional()
+    // Inbound only. The outbound push cursors
+    // (`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`) were dropped when
+    // purchase orders and bills moved onto the event engine — the ledger is the
+    // idempotency now, not a keyset. Values stored by earlier installs are
+    // simply ignored; no migration strips them.
+    repaymentsRepaidAt: z.string().optional()
   })
   .optional();
 
@@ -458,6 +458,25 @@ export const RampIntegrationMetadataSchema = z
     cashbackIncomeAccountId: z.string().optional(),
     reimbursementBankAccountId: z.string().optional(),
     entityId: z.string().optional(),
+    /**
+     * The install mode, stamped from the signed OAuth state at connect time.
+     * ABSENT on every install that predates modes, which resolves to
+     * `"provider"` — today's behaviour — via `resolveRampMode`.
+     */
+    syncMode: z.enum(["provider", "push-only"]).optional(),
+    /**
+     * The scopes the token response ACTUALLY returned, not the set requested.
+     * RFC 6749 §3.3 permits an authorization server to issue narrower scope than
+     * asked for, and it must then say so in `scope`.
+     */
+    grantedScopes: z.array(z.string()).optional(),
+    /**
+     * Which system holds Ramp's accounting connection (its
+     * `remote_provider_name`). In push-only this should NOT be Carbon; the
+     * healthcheck reports the mismatch rather than failing the connect, because
+     * the customer may connect the other provider afterwards.
+     */
+    accountingConnectionProvider: z.string().optional(),
     connectionId: z.string().optional(),
     webhookId: z.string().optional(),
     webhookSecret: z.string().optional(),

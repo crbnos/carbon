@@ -156,7 +156,8 @@ export async function reconcileEntities(args: {
   // two lines.
   const { settings, syncConfig } = applyEffectivePostingState(
     args.integrationMetadata,
-    args.topology
+    args.topology,
+    args.providerId
   );
   // Always-on: automated postings sync whenever an accounting integration is
   // connected — the old settings.enabled master gate is gone. The entity flag

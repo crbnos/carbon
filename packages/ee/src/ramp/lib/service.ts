@@ -16,6 +16,7 @@ export {
 } from "./chart-of-accounts";
 export {
   advanceRampCursor,
+  buildRampClient,
   clearRampConnectionMetadata,
   ensureRampConnection,
   exchangeRampOAuthCode,

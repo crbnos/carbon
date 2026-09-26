@@ -240,7 +240,9 @@ pnpm exec turbo run typecheck --filter=@carbon/ee
 **Files:**
 - Modify: `packages/ee/src/ramp/lib/spend.ts` — add `linkAccountingVendor`; leave
   `resolveOrCreateRampSpendVendor`'s `external_vendor_id` behaviour **unchanged**
-- Modify: `packages/ee/src/ramp/entities/bill.ts` and `purchase-order.ts`
+- Modify: `packages/ee/src/ramp/entities/bill.ts` and `purchase-order.ts` — these are
+  the WIRE adapters since slice 3; anything that is a statement about Carbon's data
+  rather than Ramp's payload belongs in `packages/ee/src/spend/*-source.ts` instead
 
 **Steps:**
 1. **`external_vendor_id` stays as Carbon's own handle.** Ramp documents it as

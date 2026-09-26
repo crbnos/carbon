@@ -5,6 +5,7 @@ import {
   toTransactionCurrencyLines
 } from "../../accounting/core/document-costing";
 import type { ExternalIntegrationMappingService } from "../../accounting/core/external-mapping";
+import type { SpendVendorParty } from "../../spend/parties";
 import { buildRampIdempotencyKey, type RampClient } from "./client";
 import { buildLineCodingSelections } from "./coding";
 import { RAMP } from "./connection";
@@ -69,24 +70,12 @@ export type RampInvoicePush = {
  * and a `contact.email` are what `POST /vendors` requires to CREATE one; without
  * both, only matching an existing Ramp vendor is possible.
  */
-export type RampVendorSupplier = {
-  id: string;
-  name: string | null;
-  country: string | null;
-  contact: {
-    email: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    phone: string | null;
-  } | null;
-  address: {
-    line1: string | null;
-    line2: string | null;
-    city: string | null;
-    stateProvince: string | null;
-    postalCode: string | null;
-  } | null;
-};
+/**
+ * Alias of the shared `SpendVendorParty` — one definition of "the Carbon
+ * supplier identity a spend platform needs", loaded by `spend/parties.ts`. Kept
+ * under the Ramp name because it is this module's public contract.
+ */
+export type RampVendorSupplier = SpendVendorParty;
 
 export type RampPurchaseOrderBatch = {
   purchaseOrderIds: Map<string, string>;
@@ -216,7 +205,19 @@ export async function resolveOrCreateRampSpendVendor(
   client: RampClient,
   supplier: RampVendorSupplier,
   companyId?: string,
-  batch?: RampPurchaseOrderBatch
+  batch?: RampPurchaseOrderBatch,
+  opts?: {
+    /**
+     * Rethrow Ramp's rejection instead of returning null.
+     *
+     * A PO's `vendor_id` is OPTIONAL, so swallowing is right there — the PO
+     * still pushes. A BILL requires one, so swallowing turns Ramp's actual
+     * complaint ("state is required", "invalid email", …) into a generic
+     * "supplier has no Ramp spend vendor" that nobody can act on, with the real
+     * cause reaching only a server console.
+     */
+    surfaceCreateError?: boolean;
+  }
 ): Promise<string | null> {
   const existing = batch
     ? batch.vendorIds.get(supplier.id)
@@ -304,6 +305,7 @@ export async function resolveOrCreateRampSpendVendor(
       `[RAMP] failed to create Ramp spend vendor for supplier "${name}" (${supplier.id})`,
       createError
     );
+    if (opts?.surfaceCreateError) throw createError;
     return null;
   }
 
@@ -457,9 +459,9 @@ export async function pushInvoiceDraftBill(
   client: RampClient,
   invoice: RampInvoicePush & { supplier: RampVendorSupplier },
   pushed: {
-    pushedAccountIds: ReadonlySet<string>;
-    pushedCostCenterIds: ReadonlySet<string>;
-    pushedProjectIds: ReadonlySet<string>;
+    pushedAccountIds: ReadonlyMap<string, string>;
+    pushedCostCenterIds: ReadonlyMap<string, string>;
+    pushedProjectIds: ReadonlyMap<string, string>;
   }
 ): Promise<"pushed" | "skipped"> {
   // A bill REQUIRES a `vendor_id`, so a supplier we can't match/create a Ramp

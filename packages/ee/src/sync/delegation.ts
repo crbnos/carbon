@@ -84,6 +84,21 @@ export function applyLedgerDelegation(args: {
   settings: PostingSyncSettings;
   syncConfig: GlobalSyncConfig;
   topology: IntegrationTopology;
+  /**
+   * WHOSE configuration this is.
+   *
+   * A family is delegated AWAY from Carbon's accounting provider and TO another
+   * integration — so the delegate must keep pushing the documents it was handed.
+   * Without this, resolving Ramp's own config disabled Ramp's bill entity,
+   * because Ramp owns `ap`: the spend platform stopped receiving the very
+   * documents the delegation exists to route to it. Observed live 2026-09-26 —
+   * no bill operation was enqueued at all, while purchase orders (no family)
+   * pushed normally.
+   *
+   * Optional so existing accounting-provider callers are unaffected: they never
+   * own a delegated family, so passing their id changes nothing.
+   */
+  integrationId?: string;
 }): DelegationResult {
   const families = { ...args.settings.families };
   const entities = { ...args.syncConfig.entities };
@@ -91,6 +106,11 @@ export function applyLedgerDelegation(args: {
 
   for (const [family, owner] of Object.entries(args.topology.ledgerOwnership)) {
     if (owner.kind !== "external") continue;
+    // The owner keeps its own family. Delegation redirects a family to this
+    // integration; it must not also switch it off here.
+    if (args.integrationId && owner.integrationId === args.integrationId) {
+      continue;
+    }
     const key = family as LedgerFamilyKey;
     delegated.push({ family: key, integrationId: owner.integrationId });
 

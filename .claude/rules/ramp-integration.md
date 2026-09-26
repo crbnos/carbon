@@ -224,29 +224,158 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   Standalone invoices use a bare delivery; a single-PO bill preserves the mapped order's
   delivery metadata. The demo sandbox's bills and reimbursements were uncoded when this was
   implemented, so the complete inbound pull still needs live verification.
-- `ensureRampConnection` only CREATES (when `metadata.connectionId` is unset). A fresh Carbon
-  DB pointed at a Ramp business that already has a Carbon connection (a re-install, a new
-  worktree against the sandbox) fails the install hook — adopt the existing connection id
-  (`GET /accounting/connection`) into `metadata.connectionId` by hand until it self-heals.
+- `ensureRampConnection` reads the live connections before creating: it ADOPTS an
+  existing Carbon one (so the re-install / fresh-worktree case self-heals — this no
+  longer needs a manual metadata edit) and REFUSES a seat held by anyone else. See
+  "The single seat is contested" below.
 - `ensureRampWebhook` is idempotent (skips when `metadata.webhookId` set); on create it
   writes `webhookId` and the vaulted `webhookSecret` together through `patchRampWebhook`.
-- `rampOnUninstall` best-effort deletes the webhook and the accounting connection
-  (tolerating already-gone), then `clearRampConnectionState` removes connection/webhook
+- `rampOnUninstall` best-effort deletes the webhook, and the accounting connection
+  **only when `rampOwnsCodingSurface`** — in push-only that connection belongs to the
+  other accounting provider and deleting it would silently break THEIR sync. (It
+  reads with `{ includeInactive: true }`; see "Uninstall tears down the REMOTE side"
+  below for why that is required rather than defensive.) Then
+  `clearRampConnectionState` removes connection/webhook
   ids and the webhook secret without disturbing OAuth credentials/settings/cursors.
-  `rampHealthcheck` = `cardLiabilityAccountId` is set AND `getBusiness()` succeeds AND at
-  least one accounting connection is `linked`/`active`/`connected`. A connected-but-unmapped
+  `rampHealthcheck` = `getBusiness()` succeeds AND at least one accounting connection
+  is `linked`/`active`/`connected` — held by ANYONE, since in push-only the seat is
+  the other system's — AND, **only when Carbon owns the coding surface**,
+  `cardLiabilityAccountId` is set (push-only posts no card journal, and the settings
+  form does not even offer the field). A connected-but-unmapped
   Ramp reads **unhealthy** rather than a green badge over a sync that silently does nothing;
   `statementBankAccountId` is deliberately NOT checked (its absence is a healthy "that family
   is off", not a broken connection).
 
+## Install modes: `provider` vs `push-only`
+
+Ramp permits exactly ONE connected accounting system. So the customer chooses,
+BEFORE consent, whether Carbon takes that seat — and the choice decides which
+scopes are even requested, which is why it cannot be changed without reinstalling.
+
+`Ramp.modes` declares both (`packages/ee/src/ramp/config.tsx`); the profiles live
+in `lib/modes.ts` (`RAMP_MODE_PROFILES`) and are the CEILING — a settings toggle
+narrows them, never widens.
+
+| | `provider` (default, and what an install with no stored mode resolves to) | `push-only` |
+|---|---|---|
+| `ownsRemoteCodingSurface` | true | **false** |
+| `ownsLedgerFamilies` | `[]` | **`["ap"]`** → `ledgerOwnership.ap` is EXTERNAL |
+| inbound ceiling | all seven families | **`billPayments` only** |
+| outbound ceiling | PO + bill | PO + bill |
+| scopes | `RAMP_OAUTH_SCOPES` | `RAMP_PUSH_ONLY_OAUTH_SCOPES` — no `accounting:write`, no `item_receipts:write` |
+
+`rampOwnsCodingSurface(metadata)` is the ONE gate behind every `accounting:write`
+call; the list it must stay in step with is in its doc comment. `metadata.syncMode`
+is stamped from the SIGNED OAuth state by the connect route
+(`api+/integrations.$id.connect.ts`), never a query parameter.
+
+**Ramp has no token-revocation endpoint** (confirmed against `llms-api.txt` and the
+OpenAPI spec). A reinstall therefore cannot narrow a previously granted scope set,
+so a push-only install may still HOLD `accounting:write`. The accepted position is
+that Carbon never USES it — which is why the gate is a predicate over every call
+site rather than a reliance on Ramp refusing.
+
+### Verified live 2026-09-26 (`.ai/runs/2026-09-26-ramp-push-only-verification.md`)
+
+On a REAL push-only grant (10 scopes, no `accounting:write`):
+
+- `GET /accounting/all-connections` → **200**. A push-only token CAN read the
+  connection list, so peer detection and the healthcheck work without the write
+  scope. (This was an open question through the whole design.)
+- `DELETE /accounting/connection` → **403 `DEVELOPER_7100`**. The write half is
+  refused, so a push-only install cannot tear down the connection — correct, it is
+  not Carbon's, and what the uninstall guard already encodes.
+
+### The single seat is contested — `ensureRampConnection` must look first
+
+`POST /accounting/connection` **RETURNS THE INCUMBENT** when the seat is already
+taken; it does not refuse. Storing the returned id blind made a provider-mode
+install adopt ANOTHER system's connection (live, 2026-09-26): Carbon then believed
+it held the seat, and would have pushed masters into that connection, confirmed
+syncs against it, shown a green healthcheck, and DELETED it on uninstall.
+
+So `ensureRampConnection` now reads `all-connections` first:
+
+- a live connection whose `remote_provider_name` is **Carbon** → adopt it (this is
+  also the documented reinstall / fresh-database self-heal),
+- a live connection belonging to anyone else → throw `RampSeatConflictError`
+  (`RAMP_SEAT_CONFLICT_CODE`), which the OAuth callback maps to the
+  `seat-conflict` error copy naming the two real remedies,
+- the CREATE response is re-checked the same way, so a seat taken between the read
+  and the write is still caught.
+
+### Connection status is load-bearing — `lib/connection-status.ts`
+
+`DELETE /accounting/connection` returns 204 but does **not remove the record**. It
+leaves a tombstone that still carries the old provider's name:
+
+```json
+{ "status": "unlinked", "is_active": false, "settings": null,
+  "remote_provider_name": "Carbon" }
+```
+
+So any business that has ever connected keeps a named, dead row forever. One leaf
+module owns the reading of it — `isConnectionLinked`, `extractConnections`,
+`linkedConnections`, `resolveConnectedProviderName`, `isCarbonConnection`,
+`CARBON_PROVIDER_NAME` — shared by the healthcheck, the OAuth callback and
+`ensureRampConnection`, because two of them previously disagreed and the callback's
+unfiltered read reported a disconnected system as the current ledger holder.
+
+`metadata.accountingConnectionProvider` is refreshed by `convergeRamp` on every
+install and settings save, but ONLY when Carbon is not the seat-holder (in provider
+mode it is noise). A failed read leaves the stored value alone — "Carbon could not
+ask" is not "nobody is connected". `resolveInstallMode` omits it entirely in
+provider mode, where showing a peer contradicts the badge beside it.
+
+### Uninstall tears down the REMOTE side — and needs `includeInactive`
+
+`integrations.deactivate.$id.tsx` deactivates the row BEFORE calling `onUninstall`,
+and `readStoredRampMetadata` rejects an inactive row. The whole remote-teardown
+block in `rampOnUninstall` was therefore dead code: every uninstall left the Ramp
+webhook delivering and **left Carbon holding Ramp's accounting seat**. Both reads
+take `{ includeInactive: true }` on that path only; every other caller keeps the
+default, because an inactive integration must not sync, push, or report health.
+
+### Mode-dependent UI
+
+Nothing branches on `id === "ramp"`. Two declarative hooks on the descriptor do it:
+
+- **`IntegrationSetting.availableWhen(capabilities)`** — the settings form resolves
+  THIS install's capabilities via `resolveInstallCapabilities` and drops gated-out
+  settings before grouping, so a group left empty disappears with them. Ramp gates
+  the four GL-account settings and the three `pull*` toggles on
+  `ownsRemoteCodingSurface`. A gated-out setting's stored value is PRESERVED (the
+  save merges over existing metadata) and stays inert because the runtime checks
+  the ceiling before the toggle.
+- **`resolveInstallMode(metadata)`** → `{ id, detail? }` — drives the read-only
+  mode badge, and selects the MODE's own `description` / `shortDescription` for the
+  drawer and the card. The integration-level copy is mode-NEUTRAL on purpose; it
+  used to be provider-mode copy, which told a push-only customer Carbon pulls their
+  charges into the ledger and to map GL accounts on a tab that mode does not render.
+  `setupInstructions` receives the resolved `mode` for the same reason.
+
+`cardLiabilityAccountId` is `.optional()` in `RampSettingsSchema` because
+requiredness depends on the mode, which the schema cannot see; it is enforced in
+`convergeRamp` and `rampHealthcheck`, both behind `rampOwnsCodingSurface`.
+
+**Known gap:** gating `pullBills` also hides the toggle for the one inbound family
+push-only still runs (bill payments) — one stored toggle covers bills AND their
+payments, and its label describes the bills half. Splitting it needs a metadata
+migration.
+
 ## Metadata (`companyIntegration.metadata`, id `ramp`)
 
-`RampIntegrationMetadata`: `credentials` (access/refresh/client secrets vaulted and resolved on read),
+`RampIntegrationMetadata`: `syncMode` (the install mode — see above; absent
+resolves to `provider`), `grantedScopes` (what the token response ACTUALLY
+granted, RFC 6749 §3.3, never what was requested), `accountingConnectionProvider`
+(refreshed per the rules above), `credentials` (access/refresh/client secrets vaulted and resolved on read),
 `cardLiabilityAccountId`, `statementBankAccountId`, `cashbackIncomeAccountId`,
 `reimbursementBankAccountId`, `entityId`, `connectionId`, `webhookId`, `webhookSecret`,
 `sync` (the five flags), and **`cursors`**:
-`cursors.repaymentsRepaidAt`, `cursors.purchaseOrderPushUpdatedAt`,
-`cursors.invoicePushUpdatedAt`.
+`cursors.repaymentsRepaidAt` — the only one left. The outbound push cursors
+(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`) were dropped when purchase
+orders and bills moved onto the event engine; the `accountingSyncOperation` ledger is
+the idempotency now. Values stored by earlier installs are ignored, not migrated.
 
 All Ramp writes go through `upsert_company_integration_patch`, exposed by
 `patchIntegrationState` and the operation-specific functions in `lib/state.ts`. The RPC is
@@ -264,7 +393,8 @@ reintroduce raw read/merge/write or a whole-object Vault replacement.
 `concurrency: { key companyId, limit 1 }`). It creates `RampSyncContext`, runs the fixed
 `step.run` sequence, totals failures, and notifies. Business workflows live in
 `ramp-sync-card.ts`, `ramp-sync-bill.ts`, `ramp-sync-reimbursement-family.ts`,
-`ramp-sync-repayment.ts`, and `ramp-sync-outbound.ts`; shared tenant/currency/file helpers
+and `ramp-sync-repayment.ts` (outbound no longer lives here — see below); shared
+tenant/currency/file helpers
 live in `ramp-sync-shared.ts`. Pure policy and cursor contracts remain in their dedicated
 files. Transactional staging/resume lives in `ramp-sync-card-stage.ts`,
 `ramp-sync-bill-stage.ts` (with PO-line policy in `ramp-sync-bill-po.ts`),
@@ -283,7 +413,10 @@ total. Durable steps remain, in order:
 | `ramp-bill-payments` | paid bills' `payment` | AP `payment` + `invoiceSettlement` | `BILL_PAYMENT_SYNC` |
 | `ramp-reimbursements` | reimbursements `SYNC_READY` | Draft `reimbursement` (employee party) | `REIMBURSEMENT_SYNC` |
 | `ramp-repayments` | repayments (`from_repaid_at` cursor) | `charge` Repayment | *(no Ramp confirm)* |
-| `ramp-outbound` | Carbon POs + posted invoices | Ramp POs (archived on Completed/Closed) + coded Ramp DRAFT bills (never submitted) | *(no confirm)* |
+| `ramp-subscriptions` | — | converges Ramp's SYNC event subscriptions (self-healing, mirrors the accounting outbound sweep) | *(n/a)* |
+
+**Outbound is no longer a `ramp-sync` step.** Purchase orders and draft bills push
+through the shared event engine — see "Outbound: on the event engine" below.
 
 Card families use `stageOrResumeRampCharge` to advisory-lock the company/Ramp id
 and atomically create or resume the **Draft** `charge`, lines, and mapping before
@@ -374,8 +507,8 @@ confirm 422'd on one of these and was only `console.error`'d, so synced transact
 the family's step output as `confirmError`. A family confirms whatever it managed to gather
 **even if its own drain threw partway** (the confirm is outside the drain's try/catch). An
 empty batch is skipped.
-**Repayments and the outbound families have no Ramp confirm** — their idempotency IS the
-`externalIntegrationMapping` / the cursor.
+**Repayments have no Ramp confirm** — their idempotency IS the
+`externalIntegrationMapping` / the cursor. The outbound families left this job entirely.
 
 ### Idempotency (mapping-guarded)
 
@@ -437,15 +570,76 @@ is a free string; only its documented lowercase `ach` value is supported, using 
 bank offset. Missing or unverified funding (including `STATEMENT_CREDIT`) fails visibly and
 holds the cursor before that item instead of selecting an account by fallback.
 
-### Outbound: the draft-bill-only rule
+### Outbound: on the event engine
 
-`ramp-outbound` (gated by `pushPurchaseOrders` / `pushInvoices`) is cursor-driven
-(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`). These string metadata slots hold
-JSON-encoded `[updatedAt,id]` keysets; legacy timestamp-only values replay their boundary
-inclusively. Each page advances only across its contiguous successful prefix, so a failed
-row and every row after it remain eligible on the next run. Failed supplier or supplier-type
-lookups are failures, not missing/excluded suppliers, and cannot advance either cursor.
+Purchase orders and draft bills push through the SAME event engine, ledger, reconciler and
+drain as the accounting providers — `event-handler-sync` → `reconcileEntities` →
+`drainSyncOperations` → `SyncFactory`. The cursor-paged `ramp-sync-outbound` sweep, its
+keyset helpers and its two metadata cursors are gone.
 
+- **Ramp is a `SyncProvider`.** `RampProvider` (`ee/src/ramp/lib/provider.ts`) declares
+  `role: "spend"` capabilities and resolves its sync config through `buildSpendSyncConfig`
+  (`ee/src/spend/sync-config.ts`), which starts from everything disabled and enables only
+  what a ceiling AND the stored `pushPurchaseOrders` / `pushInvoices` toggles permit. The
+  ceiling always wins — that is what push-only mode will constrain.
+- **The Carbon-side half is provider-neutral and lives in `ee/src/spend/`** — the same
+  convention the accounting providers use (`document-costing.ts`,
+  `sales-invoice-source.ts`, `card-charge-source.ts` each feed three adapters):
+  `push-only-syncer.ts`, `parties.ts` (supplier / purchasing contact / address),
+  `purchase-order-source.ts`, `bill-source.ts`, `gates.ts` (eligibility) and
+  `sync-config.ts`. Adding a second spend platform means writing adapters, not
+  re-deriving any of this.
+- **The WIRE lives in `ee/src/ramp/entities/`** (`purchase-order.ts`, `bill.ts`),
+  registered with `SyncFactory` under `SpendProviderID.RAMP` by `entities/index.ts`.
+  `@carbon/jobs` side-effect-imports `@carbon/ee/ramp/entities` from `sync-provider.ts`
+  so the registration runs; without it the drain resolves a provider with no registry.
+  Rules that are genuinely Ramp's stay here and say so — the draft bill is create-once
+  BECAUSE a Ramp draft has no delete endpoint, so a platform that can retract one could
+  update instead.
+- **`resolveSyncProvider`** (`jobs/.../integrations/sync-provider.ts`) is the ONE place
+  that branches accounting vs spend. The event handler and drain call it instead of
+  assuming every provider id is an accounting provider.
+- **Subscriptions**: `REQUIRED_SYNC_SUBSCRIPTIONS[ramp]` = `purchaseOrder` +
+  `purchaseInvoice`, INSERT/UPDATE only. Converged by the install/update hooks and by the
+  `ramp-subscriptions` step of `ramp-sync`, so existing installs self-heal.
+- **A bill reads the `purchaseInvoices` VIEW, not the table** (`spend/bill-source.ts`).
+  The view derives status: a fully settled invoice reads `Paid` there while the table
+  still stores `Open`, and `Partially Paid`/`Overdue` exist only in the view. Reading the
+  table would hand Ramp bills that are already paid. Pinned by `spend/gates.test.ts`.
+- **A PO line pushes `supplierUnitPrice` (document currency), never the generated
+  `unitPrice`** (company base), and `currencyCode` falls back to the company's base
+  currency — it is NULL on an order raised in the company's own currency and Ramp
+  requires a currency on create. Both live-verified 2026-09-25.
+- A Carbon purchase invoice can carry both a `rillet`/`bill` and a `ramp`/`bill` operation
+  — the ledger key is `(companyId, integration, entityType, entityId)`.
+
+- **`purchase_order_number` is NOT an identity, and Ramp mutates it.** It stores
+  `"PO000002"` as `"2"` and suffixes a number with no numeric tail
+  (`"CARBONPROBE-ZZZ"` → `"CARBONPROBE-ZZZ-1"`), both verified live 2026-09-26.
+  `external_id` (the Carbon purchase-order id) is the identity, and
+  `findPurchaseOrderByExternalId` is how a purchase order Carbon already pushed is
+  recognised before creating a duplicate — without it a lost mapping made the
+  document PERMANENTLY unsyncable (`400 DEVELOPER_7063` on every retry, forever).
+  The `?external_id=` filter is honoured; an unsupported parameter on this endpoint
+  is IGNORED and returns the full first page, which is how the filter was confirmed.
+  The normalization is: a bare `<alpha-prefix><digits>` is reduced to the digits
+  (`PO-000004` too — a separator does not help), while anything with content AFTER
+  the digits is kept whole (`PO000004-1` verbatim, `PO000004-A` → `PO000004-A-1`).
+  Omitting the field lets Ramp assign from its own sequence. Uniqueness is on the
+  normalized value, and **archived purchase orders release their number**.
+  Because of that normalization a bare Carbon readable id collides with purchase
+  orders already in the customer's Ramp account (`PO000004` → `4`) and is refused on
+  a FIRST push, permanently. `toRampPurchaseOrderNumber` therefore appends `-1`
+  unconditionally — `PO000004-1` is stored verbatim and cannot collide, since its
+  uniqueness follows from the Carbon id's. Unconditional rather than a retry, so the
+  number a customer sees never depends on what else is in their Ramp account.
+  Caveats: the transform could not be reduced to a rule (`PO-2026-003` → `2026-3`
+  but `PO000004-1` untouched), so this is verified for the DEFAULT `PO`+6-digit
+  sequence and not guaranteed for a customized one; and purchase orders pushed
+  before the fix keep their reduced number, because PATCH does not resend it.
+- **`vendor_id` is CREATE-only.** A PATCH carrying it is rejected whole with
+  `422 DEVELOPER_7001 {"vendor_id": ["Unknown field."]}`, so the line items in the
+  same request never land. PATCH sends `line_items` only.
 - **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
   bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO. Each local page
@@ -475,6 +669,22 @@ lookups are failures, not missing/excluded suppliers, and cannot advance either 
   `POST /bills/drafts/{id}/submit` needs payment method + payee contact (per-vendor Ramp
   bill-pay config Carbon doesn't own; verified `400 BILL_PAY_7145`). PDF attach
   (`POST /bills/drafts/{id}/attachments`) is a deferred follow-up, NOT a create-body field.
+- **Coding uses the SEAT-HOLDER's identifiers.** `field_option_external_id` is the
+  Carbon `account.id` only while Carbon holds Ramp's accounting seat and published
+  the options itself. When another system holds it, Ramp's options are THAT
+  system's — verified live 2026-09-26 with Rillet connected, where ZERO of Ramp's
+  147 GL options were keyed by a Carbon `acct_` id (Ramp exposes only the current
+  connection's accounts). `RampProvider.codingIdentityIntegrationId`, set from the
+  topology's `identityScope` in `resolveSyncProvider`, tells the bill syncer which
+  integration's mappings to read and to emit their `externalId`; `SpendPushedCoding`
+  is a `Carbon id -> wire id` MAP for this reason, not a membership set. A draft
+  pushed this way reads back with `provider_name: "RILLET"`.
+  `GET /developer/v1/bills/drafts/{id}` DOES exist and returns the stored coding,
+  which is how this was confirmed.
+- **A delegated family's OWNER keeps its own entities.** `applyLedgerDelegation`
+  takes the `integrationId` whose config is being resolved; without it, resolving
+  Ramp's config disabled Ramp's `bill` entity (Ramp owns `ap` in push-only), so the
+  spend platform never received the documents the delegation routes to it.
 - **No bill archive-on-settlement**: a Ramp draft has no delete endpoint
   (`DELETE /bills/drafts/{id}` → 405; `DELETE /bills/{id}` on a draft id → 404), so a
   handed-off draft is not retracted when its Carbon invoice settles — Ramp owns the bill's

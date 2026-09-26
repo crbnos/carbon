@@ -457,7 +457,7 @@ async function syncRampCardFamily<TItem extends RampCardListItem>(
 ): Promise<FamilyResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled(config.family, metadata.sync)) {
+  if (!isRampInboundFamilyEnabled(config.family, metadata)) {
     return result;
   }
   const gate = config.gate(ctx, cardLiabilityAccountId);

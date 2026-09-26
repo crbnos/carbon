@@ -23,17 +23,158 @@ Rillet run (`accounting-pull-sweep`, cron `*/30`).
 **This touches shipped, live-verified code.** PO push and draft-bill push were verified
 live on 2026-09-11. Task 10 re-runs that verification and is not optional.
 
+## Outcome (2026-09-25)
+
+Tasks 1–9 done, all gates green (ee + jobs + erp + checks typecheck, lint 37/37,
+test 31/31). Task 10 is the only thing left and it is the one that matters — this
+slice rewrote code that was live-verified on 2026-09-11.
+
+Deviations from the plan, all deliberate:
+
+- **No `raw`/fourth lifecycle hook was needed for PO archive.** `shouldSync` is
+  async and can return a skip reason, so it refuses a settled PO that was never
+  pushed; `mapToRemote` carries the archive intent to `upsertRemote`.
+- **Task 5's status set was 2 in the plan, 3 in the code** (`Open`,
+  `Partially Paid`, `Overdue`). The code won.
+- **The bill syncer reads the `purchaseInvoices` VIEW, not the table.** The view
+  DERIVES status — a fully settled invoice reads `Paid` there while the table
+  still stores `Open`. Reading the table would have handed Ramp bills that were
+  already paid. This was caught before it shipped, not after.
+- **Task 7 step 2's assumption was wrong**: `purchaseOrder` routes to
+  `reconcileMasterData`, not `reconcileDocument`. That is the same path Xero and
+  QBO's PO push already take, so it was left alone.
+- **The keyset cursor module was deleted entirely** — all four helpers were
+  orphaned once the sweep went, not just the two the plan named.
+- **Subscription convergence runs in three places**, matching the accounting
+  providers: install hook, settings save, and a new `ramp-subscriptions` step in
+  `ramp-sync` so existing installs self-heal.
+- **`resolveSyncProvider`** (`jobs/.../integrations/sync-provider.ts`) is the one
+  place that branches accounting vs spend; the event handler and drain call it.
+  `@carbon/ee/ramp/entities` is side-effect-imported there so `SyncFactory`
+  registration runs.
+
+## Live verification (2026-09-25, Ramp SANDBOX, company `daphdosqs0g046qdc4ig`)
+
+**Purchase orders: fully verified.** A Carbon write fired the event, which flowed
+subscription → `event-handler-sync` → `resolveSyncProvider` → `RampProvider` →
+`SyncFactory` → `RampPurchaseOrderSyncer` → live Ramp API, in ~10 seconds:
+
+- **Create** — Ramp PO `01a0d96d-43cf-77e6-be12-a1f817330dda`, ledger op `Completed`,
+  `externalIntegrationMapping` row written.
+- **Re-push** — same remote id returned, still exactly ONE mapping. No duplicate.
+- **Archive on Completed** — `Completed`, remote id preserved.
+
+**Two real bugs this caught, both now fixed:**
+
+1. **Dropped base-currency fallback.** The old sweep built its push payload with
+   `currencyCode ?? ctx.baseCurrency`; the port used `purchaseOrder.currencyCode`
+   directly, which is NULL for an order raised in the company's own currency. Ramp
+   REQUIRES `currency` on create, so every base-currency PO would have failed. The
+   syncer now reads `company.baseCurrencyCode` as the fallback.
+2. **`archivePurchaseOrder` sent no JSON body** — Ramp answers
+   `400 DEVELOPER_7011 "The request does not contain a JSON body"`. This is
+   PRE-EXISTING (`lib/client.ts`, untouched by this slice): the archive path was
+   simply never exercised from the old cursor sweep, so it had never surfaced.
+   Now sends `{}` and archives successfully.
+
+A third omission was caught before testing: `RampPurchaseOrderLocal` had no
+`updatedAt`, so `BaseEntitySyncer`'s unchanged-since-last-sync bailout compared
+against `undefined` and every event would have re-PATCHed Ramp.
+
+**Bills: fully verified.** AP000001 was posted through the UI (creating its
+"Purchase Invoice" journal and flipping it to payable), which fired the event:
+
+- **Create** — Ramp draft bill `ba14e6fb-b8d0-4b2c-ba0d-f066e116b05d`, op `Completed`,
+  mapping written. The Ramp spend vendor was created on the way
+  (`28982db6-69d0-4c71-ba38-3e6b7e1c8759`).
+- **Re-push** — same remote id, still exactly ONE mapping. No duplicate, which matters
+  more here than for POs: a Ramp draft has no delete endpoint, so a duplicate would be
+  unfixable.
+
+Setup the dev data needed, in case it is repeated: `companySettings.accountingEnabled`
+must be on (it was); the invoice's supplier needs `purchasingContactId` set to a contact
+carrying an email (it was unset — the contact and its email already existed) and a
+location with a country (and a state, for US); then Post the invoice.
+
+Incidentally confirms the view-vs-table fix is load-bearing: after posting, the TABLE
+reads `Open` while the VIEW reads `Overdue`.
+
+**Two more real bugs this caught:**
+
+3. **Dates were sent as JS `Date`s.** `dateIssued`/`dateDue` are `date` columns, and
+   Kysely's pg driver decodes those to JS `Date`s, which JSON-serialize as full
+   timestamps — Ramp answers `422 DEVELOPER_7001 "Not a valid date"`. The old push read
+   them through PostgREST, which already returned strings, so THE PORT INTRODUCED THIS.
+   Now normalized through the existing `toPostingDateString`. Every draft-bill push
+   would have failed.
+4. **`resolveOrCreateRampSpendVendor` swallowed Ramp's rejection** (`console.error` +
+   return null), so the bill failed with a generic "supplier has no Ramp spend vendor"
+   and the actual cause reached only a server console — which is how bug 3 stayed
+   invisible for three attempts. Swallowing is correct for a PO (its `vendor_id` is
+   optional, so the PO still pushes); a bill cannot push without one. Added
+   `surfaceCreateError`, which the bill syncer passes.
+
+**Gap this surfaced (pre-existing, not introduced):** a PO that exists in Ramp but has
+no Carbon mapping fails FOREVER with `400 DEVELOPER_7063 "Purchase order number
+already exists"`. PO000001–4 are in this state on the sandbox (an earlier push, then
+the local DB was reseeded). The old sweep had the identical hole. The fix is the same
+doctrine as slice 1's counterpart ladder — look the PO up by `external_id` before
+creating — and is NOT in this slice.
+
+**Environment note:** PO000003 was finalized (Draft → To Receive and Invoice) through
+the UI during this test and left that way; finalize is not reversible from the UI.
+
+## Follow-up: extracted the provider-neutral half (2026-09-25)
+
+Tasks 4/5 were written Ramp-first. Measured afterwards: **870 lines across the
+three Ramp entity files, of which only ~38 touched the Ramp wire** — so ~80% would
+have been duplicated verbatim by a second spend platform. The accounting side had
+already solved this (`document-costing.ts`, `sales-invoice-source.ts`,
+`card-charge-source.ts` each feed three adapters); the spend side simply had not
+followed the house pattern.
+
+Extracted to `packages/ee/src/spend/`, no behaviour change:
+
+| Module | What it owns |
+|---|---|
+| `push-only-syncer.ts` | `SpendPushOnlyEntitySyncer` — pull rejections + the sequential batch |
+| `parties.ts` | supplier / purchasing contact / address, incl. "prefer an address with a country" |
+| `purchase-order-source.ts` | PO + lines + base-currency fallback + `supplierUnitPrice` |
+| `bill-source.ts` | the `purchaseInvoices` VIEW read, employee exclusion, costed lines, pushed-coding sets |
+| `gates.ts` | which documents are eligible |
+
+Result: Ramp 870 → **413 lines**; shared core 669. `ramp/entities/shared.ts` is down
+to 33 lines — just the API-client accessor.
+
+**Deliberately NOT extracted: capability axes.** `archivesSettledPurchaseOrders`,
+`billLifecycle: "create-once"`, `requiresVendorOn` are tempting flags, but inventing
+them from ONE implementation encodes Ramp's shape under a generic name. They stay as
+documented rules inside the adapter (the draft bill is create-once BECAUSE a Ramp
+draft has no delete endpoint) until a second provider can falsify them. The loader
+extraction needs no such justification — those functions are Carbon-side whether or
+not a second platform ever exists.
+
+**Re-verified live after the refactor:** bill push `Completed` with the same remote id
+`ba14e6fb…` and still exactly one mapping; PO push still fails with the known
+pre-existing `DEVELOPER_7063`. Identical to pre-refactor. Plus `spend/gates.test.ts`
+(new), full suite 31/31, lint 37/37.
+
+Downstream plans updated: slice 4 Task 7 (item receipts) now specifies
+`spend/item-receipt-source.ts` + a wire-only `ramp/entities/item-receipt.ts`; slice 5
+notes the two Ramp files are wire adapters; the spec's file-layout section describes
+both halves.
+
 ## Progress
-- [ ] Task 1: Widen `SyncProviderID` and the `SyncFactory` registry key
-- [ ] Task 2: Widen `SyncContext.provider` to a `SyncProvider` interface
-- [ ] Task 3: Add `RampProvider` + `buildSpendSyncConfig`
-- [ ] Task 4: Port the purchase-order push to a syncer
-- [ ] Task 5: Port the draft-bill push to a syncer
-- [ ] Task 6: Register the spend subscription set
-- [ ] Task 7: Teach `event-handler-sync` to resolve a sync provider
-- [ ] Task 8: Delete `ramp-sync-outbound.ts` and its cursors
-- [ ] Task 9: Extend the subscription-mapping invariant test
-- [ ] Task 10: Re-verify the live two-way integration
+- [x] Task 1: Widen `SyncProviderID` and the `SyncFactory` registry key
+- [x] Task 2: Widen `SyncContext.provider` to a `SyncProvider` interface
+- [x] Task 3: Add `RampProvider` + `buildSpendSyncConfig`
+- [x] Task 4: Port the purchase-order push to a syncer
+- [x] Task 5: Port the draft-bill push to a syncer
+- [x] Task 6: Register the spend subscription set
+- [x] Task 7: Teach `event-handler-sync` to resolve a sync provider
+- [x] Task 8: Delete `ramp-sync-outbound.ts` and its cursors
+- [x] Task 9: Extend the subscription-mapping invariant test
+- [x] Task 10: Re-verify the live two-way integration — BOTH paths verified live 2026-09-25
 
 ## Dependencies
 - Task 2 needs Task 1. Task 3 needs Task 2.

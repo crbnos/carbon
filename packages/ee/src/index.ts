@@ -30,6 +30,17 @@ export type {
 } from "./types";
 
 import type { SyncProviderCapabilities } from "./sync/capabilities";
+
+// Re-exported for the settings form, which resolves THIS install's capabilities to
+// decide whether a setting is reachable (`IntegrationSetting.availableWhen`).
+// Both are pure — no server env is touched by importing them.
+export {
+  CAPABILITY_DEFAULTS,
+  type ResolvedCapabilities,
+  resolveCapabilities,
+  type SyncProviderCapabilities
+} from "./sync/capabilities";
+
 import {
   buildIntegrationTopology,
   type CompanyIntegrationRow,
@@ -114,7 +125,14 @@ export const getProviderDescriptors = (): ProviderDescriptor[] =>
             role,
             capabilities: (
               integration as { capabilities?: SyncProviderCapabilities }
-            ).capabilities
+            ).capabilities,
+            resolveInstallCapabilities: (
+              integration as {
+                resolveInstallCapabilities?: (
+                  metadata: unknown
+                ) => SyncProviderCapabilities | undefined;
+              }
+            ).resolveInstallCapabilities
           }
         ]
       : [];

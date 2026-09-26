@@ -25,11 +25,7 @@ import {
   getPostgresConnectionPool
 } from "@carbon/database/client";
 import { EventSchema } from "@carbon/database/event";
-import {
-  getAccountingIntegration,
-  getProviderIntegration,
-  ProviderID
-} from "@carbon/ee/accounting";
+import { ProviderID, SpendProviderID } from "@carbon/ee/accounting";
 import { groupBy } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { z } from "zod";
@@ -44,6 +40,7 @@ import {
   type ReconcileSummary,
   reconcileEntities
 } from "../integrations/reconcile-executor";
+import { resolveSyncProvider } from "../integrations/sync-provider";
 import { loadIntegrationTopology } from "../integrations/topology";
 import { getEntityTypeFromTable } from "./sync-tables";
 
@@ -51,7 +48,9 @@ const SyncRecordSchema = z.object({
   event: EventSchema,
   companyId: z.string(),
   handlerConfig: z.object({
-    provider: z.nativeEnum(ProviderID)
+    // Any sync provider, not just accounting: Ramp's outbound pushes run on
+    // this handler too (its subscriptions carry `provider: "ramp"`).
+    provider: z.union([z.nativeEnum(ProviderID), z.nativeEnum(SpendProviderID)])
   })
 });
 
@@ -136,11 +135,20 @@ export const syncFunction = inngest.createFunction(
           };
 
           try {
-            const integration = await getAccountingIntegration(
+            const resolved = await resolveSyncProvider(
               client,
               companyId,
-              provider as ProviderID
+              provider
             );
+            if (!resolved) {
+              for (const r of records) {
+                stepSummary.skipped.push({
+                  recordId: r.event.recordId,
+                  reason: `Integration '${provider}' is not connected`
+                });
+              }
+              return stepSummary;
+            }
 
             const seen = new Set<string>();
             const refs: ReconcileRef[] = [];
@@ -187,8 +195,10 @@ export const syncFunction = inngest.createFunction(
               database: kysely,
               companyId,
               providerId: provider,
-              integrationMetadata: integration.metadata,
-              createdBy: getSyncOperationActor(integration),
+              integrationMetadata: resolved.metadata,
+              createdBy: getSyncOperationActor({
+                updatedBy: resolved.updatedBy
+              }),
               scope: reconcileScope,
               refs
             });
@@ -231,26 +241,27 @@ export const syncFunction = inngest.createFunction(
       const drainSummary = (await step.run(
         `drain-${companyId}-${provider}`,
         async () => {
-          const integration = await getAccountingIntegration(
+          const resolved = await resolveSyncProvider(
             client,
             companyId,
-            provider as ProviderID
+            provider
           );
-
-          const providerInstance = getProviderIntegration(
-            client,
-            companyId,
-            provider as ProviderID,
-            integration.metadata
-          );
+          if (!resolved)
+            return {
+              claimed: 0,
+              completed: 0,
+              failed: 0,
+              skipped: 0,
+              groups: []
+            };
 
           return drainSyncOperations({
             client,
             database: kysely,
             companyId,
             integration: provider,
-            provider: providerInstance,
-            integrationMetadata: integration.metadata
+            provider: resolved.provider,
+            integrationMetadata: resolved.metadata
           });
         }
       )) as DrainSummary;

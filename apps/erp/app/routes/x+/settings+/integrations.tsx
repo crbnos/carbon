@@ -1,6 +1,5 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { issueOAuthState } from "@carbon/auth/oauth-state.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
@@ -28,7 +27,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "settings"
   });
 
@@ -43,16 +42,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const items = integrations.data.map((i) => ({
-    id: i.id!,
-    active: i.active!,
-    health: i.health
-  }));
-
-  const rampOAuthState = await issueOAuthState({
-    integrationId: "ramp",
-    userId,
-    companyId
+  const items = integrations.data.map((i) => {
+    // Resolve the install mode HERE, server-side, and send only its id. The
+    // card needs it to show copy that matches what this install actually does;
+    // shipping the whole `metadata` to the browser to achieve that would hand
+    // out credential-adjacent state for every integration.
+    const config = availableIntegrations.find((c) => c.id === i.id) as
+      | { resolveInstallMode?: (m: unknown) => { id: string } | undefined }
+      | undefined;
+    return {
+      id: i.id!,
+      active: i.active!,
+      health: i.health,
+      installMode: i.active
+        ? config?.resolveInstallMode?.(i.metadata)?.id
+        : undefined
+    };
   });
 
   // Which role slots are taken. The database refuses a second active
@@ -68,17 +73,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
       items.find((i) => i.active && ids.has(i.id))?.id ?? null;
   }
 
-  return data(
-    {
-      integrations: items,
-      activeRoles,
-      // Existing OAuth callbacks still receive a server-generated correlation
-      // value. Ramp uses the browser-bound, single-use value below.
-      state: crypto.randomUUID(),
-      oauthStates: { ramp: rampOAuthState.state }
-    },
-    { headers: { "Set-Cookie": rampOAuthState.cookie } }
-  );
+  return data({
+    integrations: items,
+    activeRoles
+    // No OAuth state here. Every OAuth install now starts at
+    // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
+    // single-use state — strictly better than the unsigned correlation value this
+    // used to hand out, and the only place that can know the chosen mode.
+  });
 }
 
 export default function IntegrationsRoute() {

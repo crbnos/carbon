@@ -30,11 +30,15 @@ const ROWS = [
   { id: "ramp", active: true }
 ];
 
-function apply(families: Array<"ar" | "ap" | "creditMemo" | "vendorCredit">) {
+function apply(
+  families: Array<"ar" | "ap" | "creditMemo" | "vendorCredit">,
+  integrationId?: string
+) {
   return applyLedgerDelegation({
     settings: resolvePostingSyncSettings(null),
     syncConfig: resolveSyncConfig(null),
-    topology: buildIntegrationTopology(ROWS, [RILLET, ramp(families)])
+    topology: buildIntegrationTopology(ROWS, [RILLET, ramp(families)]),
+    integrationId
   });
 }
 
@@ -127,5 +131,45 @@ describe("applyLedgerDelegation", () => {
 
   it("marks the settings as delegation-applied", () => {
     expect(apply([]).settings.ledgerDelegationApplied).toBe(true);
+  });
+});
+
+describe("the owner of a delegated family keeps it", () => {
+  /**
+   * Delegation redirects a family TO an integration. Resolving that
+   * integration's own configuration must not then switch the family off, or the
+   * delegate stops receiving the documents the delegation exists to route to it.
+   *
+   * Observed live 2026-09-26: with Ramp in push-only (owning `ap`) and Rillet
+   * installed, reconciling for RAMP disabled Ramp's own `bill` entity, so no bill
+   * operation was ever enqueued — while purchase orders, which belong to no
+   * ledger family, pushed normally.
+   */
+  it("disables the AP entities for everyone EXCEPT ramp", () => {
+    // Rillet's config: AP is delegated away, so its bill entity is off.
+    expect(apply(["ap"], "rillet").syncConfig.entities.bill?.enabled).toBe(
+      false
+    );
+    // Ramp's own config: it OWNS ap, so its bill entity stays on.
+    expect(apply(["ap"], "ramp").syncConfig.entities.bill?.enabled).not.toBe(
+      false
+    );
+  });
+
+  it("still reports the family as delegated for the owner", () => {
+    // The owner keeps its ENTITIES; the family modes are unchanged for it too,
+    // but the delegation itself is not erased — a caller inspecting `delegated`
+    // is asking "who owns this", not "is it off for me".
+    const asOwner = apply(["ap"], "ramp");
+    expect(asOwner.delegated.map((d) => d.family)).not.toContain("ap");
+    expect(apply(["ap"], "rillet").delegated).toEqual([
+      { family: "ap", integrationId: "ramp" }
+    ]);
+  });
+
+  it("is unchanged for callers that pass no integration id", () => {
+    // Every accounting-provider caller predates this argument and never owns a
+    // delegated family, so omitting it must behave exactly as before.
+    expect(apply(["ap"]).syncConfig.entities.bill?.enabled).toBe(false);
   });
 });

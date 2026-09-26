@@ -499,16 +499,27 @@ signal, not a posting trigger.
 No vendor documents a split GR/IR — every integration studied avoids it by keeping both
 legs in one ledger — so this is Carbon's own position and the spec owns it.
 
-### 7. Item receipts
+### 7. Item receipts — DROPPED (2026-09-25)
 
-`POST /developer/v1/item-receipts` needs only `item_receipts:write` and takes
-`purchase_order_id`, `item_receipt_number`, `received_at`, and
-`item_receipt_line_items[].purchase_order_line_item_id`. Carbon owns receiving and the
-GL does not; Ramp's three-way match is "bill, PO and item receipt reference the same
-line items". Pushing PO + item receipt makes that match work against real manufacturing
-receipts — a capability neither platform can produce alone, and the industry-standard
-answer to the GR/IR problem (Coupa → SAP works because the receipt event reaches the
-system that posts both legs). The `receipt` table already has an event trigger.
+**Designed here, built in slice 4, then removed the same day.** The argument below was
+three-way match, and it does not hold: Carbon pushes the PO with
+`three_way_match_enabled: false`, a value the research note records as a guess to
+satisfy a required field ("a product decision — likely `false`"), not a finding. Both
+cannot be the reason.
+
+The only justification that would have survived is GR/IR — Carbon accrues
+goods-received/invoice-received, the seat-holding system posts AP, and only it can clear
+the accrual, and only if the receipt reaches it. But Carbon pushes to the spend platform,
+not to the accounting provider, and **whether the platform relays item receipts to its
+connected provider was never verified**. That is the question to answer first if this is
+ever revisited; everything else is downstream of it.
+
+Consequence: push-only's scope set is a strict SUBSET of provider mode's.
+`packages/ee/src/ramp/scopes.test.ts` pins that. Note this was NOT driven by the Ramp
+Developer Console — Carbon's app is already configured for `item_receipts:write`, so the
+"manual console step" an earlier draft of this spec claimed was never a real cost. Not
+requesting the scope is a deliberate choice: do not ask a customer to consent to a write
+scope Carbon never exercises.
 
 ### 8. Master data: one resolution ladder, and a sweep
 
@@ -866,10 +877,30 @@ The widening, smallest-blast-radius first:
   stored toggles can only narrow further, and `direction` is always
   `push-to-accounting`. **This is the piece that makes the mode gating generic** —
   `isEntityPushEnabled` then governs the spend integration with no new gate.
-- **`packages/ee/src/ramp/entities/`** (new) — `purchaseOrder.ts`, `itemReceipt.ts`,
-  `bill.ts` as `BaseEntitySyncer` subclasses, plus `rampSyncerRegistry` +
+- **`packages/ee/src/spend/`** (new) — the provider-NEUTRAL half of every spend push,
+  following the convention the accounting providers already use (`document-costing.ts`,
+  `sales-invoice-source.ts`, `card-charge-source.ts` each feed three adapters):
+  `push-only-syncer.ts` (`SpendPushOnlyEntitySyncer` — a spend platform's outbound
+  documents are push-only by construction, because its inbound families arrive through
+  its own status feed with no Carbon row event to hang a syncer on), `parties.ts` (the
+  supplier / purchasing-contact / address load), `purchase-order-source.ts`,
+  `bill-source.ts`, `item-receipt-source.ts`, `gates.ts` (which documents are eligible)
+  and `sync-config.ts`. Every one of these is a statement about CARBON's schema and
+  lifecycle, so a second platform shares them unchanged.
+- **`packages/ee/src/ramp/entities/`** (new) — `purchase-order.ts`, `item-receipt.ts`,
+  `bill.ts`: the WIRE only. Payload field names, idempotency mechanics, the coding
+  selection shape, and rules that are genuinely the platform's (Ramp's draft bill is
+  create-once BECAUSE a Ramp draft has no delete endpoint). Plus `rampSyncerRegistry` +
   `SyncFactory.register(...)` in the barrel, mirroring `providers/rillet/index.ts`.
   These absorb the bodies of today's `pushPurchaseOrder` / `pushInvoiceDraftBill`.
+
+  **Measured on the slice-3 landing:** 870 lines written Ramp-first became 413 lines of
+  Ramp plus a shared core — only ~38 lines touched the Ramp wire. A second platform
+  (Brex, Navan, Airbase) reimplements the adapters and nothing else. What was
+  deliberately NOT abstracted is the capability axes (`archivesSettledPurchaseOrders`,
+  `billLifecycle`, `requiresVendorOn`): inventing them from one implementation encodes
+  Ramp's shape under a generic name. They stay as documented rules in the adapter until
+  a second provider can falsify them.
 - **`packages/ee/src/accounting/core/subscriptions.ts`** — `REQUIRED_SYNC_SUBSCRIPTIONS`
   keys on `SyncProviderID` and gains the spend entry; `ensureProviderSubscriptions`
   converges it on install, settings save and sweep, unchanged otherwise.

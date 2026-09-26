@@ -3,6 +3,7 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildRampIdempotencyKey } from "./client";
 import { getRampIntegration } from "./connection";
+import { rampOwnsCodingSurface } from "./modes";
 
 // /********************************************************\
 // *                    Sync confirms                      *
@@ -41,6 +42,16 @@ export async function confirmSyncs(
 
   const integration = await getRampIntegration(serviceRole, companyId);
   if (!integration) return;
+
+  // `POST /accounting/syncs` needs `accounting:write`, which a push-only install
+  // does not hold — and confirming is the SEAT-HOLDER's job anyway: the sync
+  // status Carbon would be clearing belongs to whichever system Ramp is
+  // connected to. Push-only still pulls bill payments, so this path IS reached;
+  // without the gate every run would 403.
+  //
+  // Skipping is safe: idempotency here is the `externalIntegrationMapping`, not
+  // the confirm — the same reason repayments have never confirmed.
+  if (!rampOwnsCodingSurface(integration.metadata)) return;
 
   const { client } = integration;
 

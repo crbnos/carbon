@@ -2,7 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
-import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  integrations as availableIntegrations,
+  getIntegrationConfigById,
+  type IntegrationID,
+  resolveIntegrationTopology
+} from "@carbon/ee";
 import {
   buildDimensionValueMappingEntityId,
   buildRilletFieldTarget,
@@ -49,7 +54,11 @@ import {
 import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
-import { resolveCapabilities } from "@carbon/ee/sync";
+import {
+  LEDGER_FAMILY_KEYS,
+  type LedgerFamilyKey,
+  resolveCapabilities
+} from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -999,11 +1008,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
+
+  /**
+   * GL families another installed integration posts, so the Posting tab can stop
+   * offering a control that has no effect.
+   *
+   * Read from the topology rather than from this integration's own metadata: the
+   * delegation is declared by the SPEND install's mode (Ramp in push-only owns
+   * `ap`) while the select being locked belongs to the ACCOUNTING integration, so
+   * the two are never the same row. `applyLedgerDelegation` already overrides the
+   * stored value at the decision — without this the tab offers a setting the
+   * engine ignores.
+   *
+   * Keyed by family over `LEDGER_FAMILY_KEYS`, never a hard-coded "ap": a spend
+   * platform that delegates AR or a memo family needs no change here.
+   */
+  let delegatedFamilies: Partial<Record<LedgerFamilyKey, string>> = {};
+  if (isAccountingInstalled) {
+    const integrationRows = await client
+      .from("companyIntegration")
+      // `metadata` carries the install mode, which is what decides a spend
+      // provider's capabilities — without it push-only resolves as provider.
+      .select("id, active, metadata")
+      .eq("companyId", companyId);
+    const topology = resolveIntegrationTopology(integrationRows.data ?? []);
+    delegatedFamilies = Object.fromEntries(
+      LEDGER_FAMILY_KEYS.flatMap((family) => {
+        const owner = topology.ledgerOwnership[family];
+        if (owner.kind !== "external") return [];
+        // Name the owner the way the customer knows it, falling back to the id
+        // so an unregistered integration still explains the lock.
+        const name =
+          getIntegrationConfigById(owner.integrationId as IntegrationID)
+            ?.name ?? owner.integrationId;
+        return [[family, name] as const];
+      })
+    );
+  }
   const mappedAccountCount =
     accountMapping?.mappings.filter((mapping) => mapping.externalId).length ??
     0;
   const postingSync = resolvedPostingSettings
     ? {
+        delegatedFamilies,
         settings: {
           families: resolvedPostingSettings.families,
           sourceTypes: resolvedPostingSettings.sourceTypes,
@@ -1847,6 +1894,7 @@ export default function IntegrationRoute() {
           settings={postingSync.settings}
           policy={postingSync.policy}
           mappingReadiness={postingSync.mappingReadiness}
+          delegatedFamilies={postingSync.delegatedFamilies}
         />
       )
     });

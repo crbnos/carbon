@@ -3,7 +3,10 @@ import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type z from "zod";
-import type { AccountingCapabilities } from "../../sync/capabilities";
+import type {
+  AccountingCapabilities,
+  SyncProviderCapabilities
+} from "../../sync/capabilities";
 import type { AccountingProvider } from "../providers";
 import type {
   CounterpartSearchKeys,
@@ -37,7 +40,8 @@ import type {
   SyncOperationDirectionSchema,
   SyncOperationSchema,
   SyncOperationStatusSchema,
-  SyncOperationTriggerSchema
+  SyncOperationTriggerSchema,
+  SyncProviderID
 } from "./models";
 import { JournalEntrySyncError } from "./posting";
 import { AccountingApiError, withTriggersDisabled } from "./utils";
@@ -214,6 +218,37 @@ export function providerSupportsMasterDataImport<T extends BaseProvider>(
   );
 }
 
+/**
+ * The entity types the sync engine dispatches on.
+ *
+ * An alias, not a rename: `AccountingEntityType` is load-bearing in ~200 places
+ * and the naming debt is deliberately deferred. New role-agnostic code should
+ * say `SyncEntityType`, so the eventual rename is a deletion rather than a
+ * sweep.
+ */
+export type SyncEntityType = AccountingEntityType;
+
+/**
+ * The provider surface the sync engine itself depends on — role-agnostic.
+ *
+ * `BaseProvider` is the accounting-side base class; this is the structural
+ * subset `SyncFactory` and `BaseEntitySyncer` actually use, so a spend platform
+ * can satisfy it without inheriting accounting-shaped machinery. Every concrete
+ * syncer still narrows back to its own client (`this.qboProvider`,
+ * `this.rilletProvider`, …) for API calls, exactly as it already did.
+ *
+ * `authenticate` is deliberately omitted: its signature is `any[]` and no
+ * shared caller invokes it.
+ */
+export interface SyncProvider {
+  readonly id: SyncProviderID;
+  readonly capabilities?: SyncProviderCapabilities;
+  getSyncConfig<T extends SyncEntityType>(
+    entity: T
+  ): GlobalSyncConfig["entities"][T];
+  validate(auth: ProviderCredentials): Promise<boolean>;
+}
+
 export abstract class BaseProvider {
   static id: ProviderID;
 
@@ -380,7 +415,7 @@ export interface AccountingEntity<
 export interface SyncContext {
   database: Kysely<KyselyDatabase>;
   companyId: string;
-  provider: AccountingProvider;
+  provider: SyncProvider;
   config: EntityConfig;
   entityType: AccountingEntityType;
 }
@@ -450,7 +485,7 @@ export abstract class BaseEntitySyncer<
 {
   protected database: Kysely<KyselyDatabase>;
   protected companyId: string;
-  protected provider: AccountingProvider;
+  protected provider: SyncProvider;
   protected config: EntityConfig;
   protected entityType: AccountingEntityType;
   protected mappingService: ExternalIntegrationMappingService;

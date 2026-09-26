@@ -32,7 +32,15 @@ export type ProviderRole = "accounting" | "spend";
 export type ProviderDescriptor = {
   integrationId: string;
   role: ProviderRole;
+  /** Static capabilities — correct when every install behaves the same way. */
   capabilities?: SyncProviderCapabilities;
+  /**
+   * Capabilities resolved from ONE install's stored metadata, for providers
+   * offering install modes. Returning undefined falls back to `capabilities`.
+   */
+  resolveInstallCapabilities?: (
+    metadata: unknown
+  ) => SyncProviderCapabilities | undefined;
 };
 
 /** Who posts a GL family: Carbon, or an external system that owns it. */
@@ -71,6 +79,14 @@ export type IntegrationTopology = {
 export type CompanyIntegrationRow = {
   id: string;
   active?: boolean | null;
+  /**
+   * The row's stored `metadata`, for providers whose capabilities depend on the
+   * INSTALL rather than the integration — a spend platform installed in
+   * push-only mode owns a ledger family that the same platform in provider mode
+   * does not. Omit it and such a provider resolves to its descriptor default,
+   * which is the pre-modes behaviour.
+   */
+  metadata?: unknown;
 };
 
 const CARBON: LedgerOwner = { kind: "carbon" };
@@ -87,9 +103,20 @@ function pickActive(
   // so taking the first is not a tiebreak — it is the only one there can be.
   const row = rows.find((r) => r.active === true && byId.has(r.id));
   if (!row) return null;
+
+  const descriptor = byId.get(row.id);
+  // An install-resolved declaration wins over the descriptor's static one. This
+  // is what makes a MODE able to own a ledger family: the same integration
+  // installed two ways must answer differently, and only the row knows which
+  // way it was installed. The resolver is injected on the descriptor, so this
+  // core still imports no provider.
+  const declared =
+    descriptor?.resolveInstallCapabilities?.(row.metadata) ??
+    descriptor?.capabilities;
+
   return {
     integrationId: row.id,
-    capabilities: resolveCapabilities(byId.get(row.id)?.capabilities)
+    capabilities: resolveCapabilities(declared)
   };
 }
 
@@ -105,9 +132,9 @@ export function buildIntegrationTopology(
   const spend = pickActive(rows, descriptors, "spend");
 
   // Ledger ownership. A family is external only when the installed spend
-  // integration's mode declares it. Nothing declares any today, so every family
-  // resolves to Carbon and behaviour is unchanged — that is the point of this
-  // slice. Push-only mode is what first populates ownsLedgerFamilies.
+  // integration's MODE declares it — Ramp in push-only owns `ap`, the same
+  // integration in provider mode owns nothing. An install with no stored mode
+  // resolves to provider, so existing installs are untouched.
   const owned = new Set(spend?.capabilities.ownsLedgerFamilies ?? []);
   const ledgerOwnership = Object.fromEntries(
     LEDGER_FAMILY_KEYS.map((family) => [

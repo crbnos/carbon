@@ -19,6 +19,22 @@ export enum ProviderID {
 }
 
 /**
+ * Spend-management platforms. A separate enum from `ProviderID` rather than a
+ * member of it: the two roles answer different questions, and every existing
+ * `ProviderID` consumer means "an accounting provider" — widening that enum
+ * would silently make each of them wrong.
+ */
+export enum SpendProviderID {
+  RAMP = "ramp"
+}
+
+/**
+ * Any provider the sync engine can dispatch for. `SyncFactory` is keyed on
+ * this; almost everything else should keep naming the role it actually means.
+ */
+export type SyncProviderID = ProviderID | SpendProviderID;
+
+/**
  * Schemas for shared provider entities and credentials.
  */
 
