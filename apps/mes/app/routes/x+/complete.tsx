@@ -111,6 +111,22 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // An Inspection operation completes only through its inspection, never a
+  // quantity posted here.
+  if (jobOperation.data.operationType === "Inspection") {
+    log.warn("Refused to complete an Inspection operation directly", {
+      jobOperationId: jobOperation.data.id,
+      companyId
+    });
+    return data(
+      {},
+      await flash(request, {
+        ...error(null, "Record this operation through its inspection"),
+        flash: "error"
+      })
+    );
+  }
+
   // Mirror the DB auto-Done predicate (sync_update_job_operation_quantities,
   // 20260807090629): scrap does NOT count toward targetQuantity — the op is
   // finished only once GOOD (+ reworked) quantity reaches the target.
