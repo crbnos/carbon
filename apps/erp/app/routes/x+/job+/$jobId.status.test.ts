@@ -56,6 +56,11 @@ vi.mock("~/modules/production", () => ({
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
+vi.mock("~/modules/quality/firstArticle.server", () => ({
+  afterJobsReleased: vi.fn(async () => {
+    events.push("afterJobsReleased");
+  })
+}));
 // The Release dialog goes through the shared releaseJobs path; delegate its
 // status flip to the mocked updateJobStatus so the ordering guard still sees it.
 vi.mock("~/modules/production/production.server", async () => {
@@ -146,6 +151,7 @@ function setup() {
           status: "Draft",
           manufacturingBlocked: false,
           missingAssemblies: [],
+          firstArticlesWithoutPlan: [],
           outsideOperationsWithoutSupplier: []
         }
       ],
@@ -236,6 +242,7 @@ describe("Job release status action", () => {
             missingAssemblies: [
               { makeMethodId: "mm-2", description: "Bracket" }
             ],
+            firstArticlesWithoutPlan: [],
             outsideOperationsWithoutSupplier: []
           }
         ],
@@ -249,6 +256,99 @@ describe("Job release status action", () => {
     expect(updateJobStatus).not.toHaveBeenCalled();
     expect(runLocationSchedule).not.toHaveBeenCalled();
     expect(success).not.toHaveBeenCalled();
+  });
+
+  it("refuses release when a part needing a first article has no plan", async () => {
+    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+      data: {
+        jobs: [
+          {
+            id: "job-1",
+            jobId: "J000001",
+            status: "Draft",
+            manufacturingBlocked: false,
+            missingAssemblies: [],
+            firstArticlesWithoutPlan: [
+              {
+                makeMethodId: "mm-1",
+                itemId: "item-1",
+                description: "P-1001 Rev B"
+              }
+            ],
+            outsideOperationsWithoutSupplier: []
+          }
+        ],
+        suppliers: []
+      },
+      error: null
+    });
+
+    await expect(runRelease()).rejects.toBeInstanceOf(Response);
+
+    expect(error).toHaveBeenCalledWith(
+      null,
+      "Assign a first article plan for P-1001 Rev B"
+    );
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
+  });
+});
+
+describe("Job plain Ready status action", () => {
+  function readyRequest() {
+    const body = new FormData();
+    body.set("status", "Ready");
+    return new Request("http://localhost/x/job/job-1/status", {
+      method: "POST",
+      body
+    });
+  }
+
+  function withPriorStatus(client: { from: any }, status: string) {
+    client.from.mockImplementation(() =>
+      makeChain({
+        data: {
+          status,
+          item: { itemReplenishment: { manufacturingBlocked: false } }
+        },
+        error: null
+      })
+    );
+  }
+
+  it("creates first articles after releasing a Draft job", async () => {
+    const { client } = setup();
+    withPriorStatus(client, "Draft");
+
+    await expect(
+      action({
+        request: readyRequest(),
+        params: { jobId: "job-1" },
+        context: {}
+      } as any)
+    ).rejects.toBeInstanceOf(Response);
+
+    expect(getJobReleaseReadiness).toHaveBeenCalledOnce();
+    expect(events.indexOf("updateJobStatus")).toBeLessThan(
+      events.indexOf("afterJobsReleased")
+    );
+  });
+
+  it("resuming a Paused job neither re-checks readiness nor creates first articles", async () => {
+    const { client } = setup();
+    withPriorStatus(client, "Paused");
+
+    await expect(
+      action({
+        request: readyRequest(),
+        params: { jobId: "job-1" },
+        context: {}
+      } as any)
+    ).rejects.toBeInstanceOf(Response);
+
+    expect(getJobReleaseReadiness).not.toHaveBeenCalled();
+    expect(events).toContain("updateJobStatus");
+    expect(events).not.toContain("afterJobsReleased");
   });
 });
 

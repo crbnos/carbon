@@ -52,6 +52,29 @@ export type FirstArticleNeed = {
   create: boolean;
 };
 
+/**
+ * An item's revision, or null when it has none. Carbon stores "no revision" as
+ * '0' (or ''), matching the `readableIdWithRevision` generated column.
+ */
+export function firstArticleItemRevision(
+  revision: string | null | undefined
+): string | null {
+  return revision && revision !== "0" ? revision : null;
+}
+
+/**
+ * How a make method's part is named in first article messages — "P-1001 Rev B",
+ * or the bare part number when the item has no revision. The release blocker
+ * and the generator both use it, so they describe a part identically.
+ */
+export function formatFirstArticlePartDescription(
+  readableId: string,
+  revision: string | null | undefined
+): string {
+  const itemRevision = firstArticleItemRevision(revision);
+  return itemRevision ? `${readableId} Rev ${itemRevision}` : readableId;
+}
+
 /** A YYYY-MM-DD date, or the (UTC) calendar day of an ISO timestamp. */
 function toDay(value: string): CalendarDate {
   return /^\d{4}-\d{2}-\d{2}$/.test(value)

@@ -23,6 +23,8 @@ import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
   type FirstArticleNeed,
   type FirstArticleNeedInput,
+  firstArticleItemRevision,
+  formatFirstArticlePartDescription,
   resolveFirstArticleNeeds
 } from "./first-article.ts";
 import type {
@@ -1483,18 +1485,6 @@ type FirstArticleItem = {
   name: string;
 };
 
-// Carbon stores "no revision" as '0' (or ''), matching the
-// `readableIdWithRevision` generated column.
-function itemRevision(revision: string | null): string | null {
-  return revision && revision !== "0" ? revision : null;
-}
-
-/** "P-1001 Rev B", or the bare part number when the item has no revision. */
-function firstArticleDescription(item: FirstArticleItem): string {
-  const revision = itemRevision(item.revision);
-  return revision ? `${item.readableId} Rev ${revision}` : item.readableId;
-}
-
 type FirstArticleContext = {
   input: FirstArticleNeedInput;
   job: {
@@ -1673,7 +1663,10 @@ async function loadFirstArticleContext(
       makeMethods: makeMethods.map((makeMethod) => ({
         jobMakeMethodId: makeMethod.id,
         itemId: makeMethod.itemId,
-        description: firstArticleDescription(makeMethod),
+        description: formatFirstArticlePartDescription(
+          makeMethod.readableId,
+          makeMethod.revision
+        ),
         firstArticlePlanId: slotByItem.get(makeMethod.itemId) ?? null,
         partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
         latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
@@ -1998,7 +1991,7 @@ export async function createFirstArticleInspections(
             partName: item.name,
             partRevision:
               customerPart?.customerPartRevision ||
-              itemRevision(item.revision) ||
+              firstArticleItemRevision(item.revision) ||
               "N/C",
             drawingNumber: plan.drawingNumber,
             drawingRevision: plan.drawingRevision,

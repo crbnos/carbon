@@ -16,6 +16,7 @@ import {
   updateJobStatus
 } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
+import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -49,12 +50,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Ready from Draft/Planned is a release; from Paused it is a resume, which
+  // neither re-checks release readiness nor creates first articles.
+  let isRelease = false;
   if (status === "Ready") {
     const { data } = await client
       .from("job")
-      .select("item(itemReplenishment(manufacturingBlocked))")
+      .select("status, item(itemReplenishment(manufacturingBlocked))")
       .eq("id", id)
       .single();
+    isRelease = data?.status === "Draft" || data?.status === "Planned";
 
     if (data?.item?.itemReplenishment?.manufacturingBlocked) {
       throw redirect(
@@ -68,8 +73,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // re-checking what the dialog checked, then one schedule run for the location.
   if (status === "Ready" && shouldSchedule) {
     const readiness = await getJobReleaseReadiness(client, [id], companyId);
-    const missing = readiness.data?.jobs[0]?.missingAssemblies ?? [];
-    if (readiness.error || missing.length > 0) {
+    const job = readiness.data?.jobs[0];
+    const missing = job?.missingAssemblies ?? [];
+    const withoutPlan = job?.firstArticlesWithoutPlan ?? [];
+    if (readiness.error || missing.length > 0 || withoutPlan.length > 0) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(
@@ -78,9 +85,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
             readiness.error,
             readiness.error
               ? "Failed to validate job"
-              : `Assign an operation to each assembly before releasing: ${missing
-                  .map((m) => m.description)
-                  .join(", ")}`
+              : missing.length > 0
+                ? `Assign an operation to each assembly before releasing: ${missing
+                    .map((m) => m.description)
+                    .join(", ")}`
+                : firstArticlePlanRefusal(withoutPlan)
           )
         )
       );
@@ -131,6 +140,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
       requestReferrer(request) ?? path.to.job(id),
       await flash(request, success("Updated job status"))
     );
+  }
+
+  // A plain Ready post (no Release dialog) that releases the job: a part that
+  // needs a first article but has no plan to inspect against refuses it here
+  // too, so no release path skips the blocker.
+  if (isRelease) {
+    const readiness = await getJobReleaseReadiness(client, [id], companyId);
+    const withoutPlan = readiness.data?.jobs[0]?.firstArticlesWithoutPlan ?? [];
+    if (readiness.error || withoutPlan.length > 0) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(
+            readiness.error,
+            readiness.error
+              ? "Failed to validate job"
+              : firstArticlePlanRefusal(withoutPlan)
+          )
+        )
+      );
+    }
   }
 
   if (["Planned", "Ready"].includes(status)) {
@@ -205,6 +236,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (isRelease) {
+    await afterJobsReleased(getDatabaseClient(), client, {
+      jobIds: [id],
+      companyId,
+      userId
+    });
+  }
+
   if (status === "Planned" && shouldSchedule) {
     try {
       const purchaseOrdersBySupplierId = JSON.parse(
@@ -256,6 +295,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     requestReferrer(request) ?? path.to.job(id),
     await flash(request, success("Updated job status"))
   );
+}
+
+function firstArticlePlanRefusal(parts: { description: string }[]) {
+  return `Assign a first article plan for ${parts
+    .map((part) => part.description)
+    .join(", ")}`;
 }
 
 // Forecast-first scheduling regenerates the whole location the job is in,

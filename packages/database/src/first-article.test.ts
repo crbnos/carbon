@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   evaluateFirstArticleDue,
   type FirstArticleNeedInput,
+  formatFirstArticlePartDescription,
   resolveFirstArticleNeeds
 } from "./first-article";
 
@@ -202,5 +203,16 @@ describe("resolveFirstArticleNeeds", () => {
         ["sub", false, true]
       ]
     );
+  });
+});
+
+describe("formatFirstArticlePartDescription", () => {
+  it("names the revision, and leaves it out when the item has none", () => {
+    expect(formatFirstArticlePartDescription("P-1001", "B")).toBe(
+      "P-1001 Rev B"
+    );
+    expect(formatFirstArticlePartDescription("P-1001", "0")).toBe("P-1001");
+    expect(formatFirstArticlePartDescription("P-1001", "")).toBe("P-1001");
+    expect(formatFirstArticlePartDescription("P-1001", null)).toBe("P-1001");
   });
 });

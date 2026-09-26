@@ -1,6 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  type FirstArticleNeedInput,
+  formatFirstArticlePartDescription,
+  resolveFirstArticleNeeds
+} from "@carbon/database/first-article";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { storage } from "@carbon/files";
@@ -10,6 +15,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  datetime,
   groupBy,
   nameSimilarity,
   scrapAllowance,
@@ -2748,6 +2754,9 @@ export type JobReleaseReadiness = {
     status: (typeof jobStatus)[number] | null;
     manufacturingBlocked: boolean;
     missingAssemblies: { makeMethodId: string; description: string }[];
+    // Make methods whose part needs a first article at release but resolves
+    // no inspection plan — the generator would have nothing to inspect against.
+    firstArticlesWithoutPlan: FirstArticleWithoutPlan[];
     // Outside operations release cannot put on a PO: the process has no
     // supplier, or several and none chosen on the operation.
     outsideOperationsWithoutSupplier: {
@@ -2764,6 +2773,236 @@ export type JobReleaseReadiness = {
   }[];
 };
 
+export type FirstArticleWithoutPlan = {
+  makeMethodId: string;
+  itemId: string;
+  description: string;
+};
+
+// The release blocker half of AS9102 generation: per job, the make methods
+// that need a first article but resolve no plan. The inputs mirror
+// `loadFirstArticleNeedInput` (@carbon/database/quality) over supabase-js, and
+// the decision is the shared `resolveFirstArticleNeeds`, so the blocker and the
+// generator can never disagree about a part. One query per table for any
+// number of jobs.
+async function getFirstArticlesWithoutPlan(
+  client: SupabaseClient<Database>,
+  jobs: { id: string; customerId: string | null }[],
+  companyId: string
+): Promise<{
+  data: Map<string, FirstArticleWithoutPlan[]>;
+  error: PostgrestError | null;
+}> {
+  const result = new Map<string, FirstArticleWithoutPlan[]>();
+  const customerIds = [
+    ...new Set(
+      jobs.map((job) => job.customerId).filter((id): id is string => !!id)
+    )
+  ];
+  const [settings, customerShipping] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("requireFirstArticle")
+      .eq("id", companyId)
+      .maybeSingle(),
+    customerIds.length
+      ? client
+          .from("customerShipping")
+          .select("customerId, requiresFirstArticle")
+          .in("customerId", customerIds)
+          .eq("companyId", companyId)
+      : { data: [], error: null }
+  ]);
+  const switchError = settings.error ?? customerShipping.error;
+  if (switchError) return { data: result, error: switchError };
+
+  const companyRequires = settings.data?.requireFirstArticle ?? false;
+  const requiringCustomers = new Set(
+    (customerShipping.data ?? [])
+      .filter((row) => row.requiresFirstArticle)
+      .map((row) => row.customerId)
+  );
+  // The part's own First Article slot IS a plan, so a part with no plan can
+  // only be required by a switch: jobs no switch covers can never block.
+  const inScope = jobs.filter(
+    (job) =>
+      companyRequires ||
+      (!!job.customerId && requiringCustomers.has(job.customerId))
+  );
+  if (inScope.length === 0) return { data: result, error: null };
+
+  const [company, makeMethods] = await Promise.all([
+    client.from("company").select("timezone").eq("id", companyId).single(),
+    client
+      .from("jobMakeMethod")
+      .select("id, jobId, itemId, item(readableId, revision)")
+      .in(
+        "jobId",
+        inScope.map((job) => job.id)
+      )
+      .eq("companyId", companyId)
+      .order("createdAt")
+      .order("id")
+  ]);
+  const loadError = company.error ?? makeMethods.error;
+  if (loadError) return { data: result, error: loadError };
+  if (!makeMethods.data?.length) return { data: result, error: null };
+
+  const timezone = company.data?.timezone ?? "UTC";
+  const today = datetime.today(timezone).toString();
+  const itemIds = [...new Set(makeMethods.data.map((m) => m.itemId))];
+
+  const [slots, partPlans, approvals, lots] = await Promise.all([
+    client
+      .from("itemInspectionDocumentAssignment")
+      .select("itemId, inspectionDocumentId")
+      .eq("usage", "First Article")
+      .in("itemId", itemIds)
+      .eq("companyId", companyId),
+    client
+      .from("inspectionDocument")
+      .select("id, partId")
+      .in("partId", itemIds)
+      .eq("companyId", companyId)
+      .order("id"),
+    client
+      .from("firstArticleInspection")
+      .select("itemId, approvedAt")
+      .eq("status", "Approved")
+      .not("approvedAt", "is", null)
+      .in("itemId", itemIds)
+      .eq("companyId", companyId)
+      .order("approvedAt", { ascending: false }),
+    client
+      .from("inspection")
+      .select("sourceDocumentLineId")
+      .eq("sourceDocument", "First Article")
+      .in(
+        "sourceDocumentLineId",
+        makeMethods.data.map((m) => m.id)
+      )
+      .eq("companyId", companyId)
+  ]);
+  const needError =
+    slots.error ?? partPlans.error ?? approvals.error ?? lots.error;
+  if (needError) return { data: result, error: needError };
+
+  const slotByItem = new Map(
+    (slots.data ?? []).map((slot) => [slot.itemId, slot.inspectionDocumentId])
+  );
+  const partPlansByItem = new Map<string, string[]>();
+  for (const plan of partPlans.data ?? []) {
+    if (!plan.partId) continue;
+    partPlansByItem.set(plan.partId, [
+      ...(partPlansByItem.get(plan.partId) ?? []),
+      plan.id
+    ]);
+  }
+  const approvedAtByItem = new Map<string, string>();
+  for (const approval of approvals.data ?? []) {
+    if (approval.approvedAt && !approvedAtByItem.has(approval.itemId)) {
+      approvedAtByItem.set(approval.itemId, approval.approvedAt);
+    }
+  }
+  const lotMakeMethodIds = new Set(
+    (lots.data ?? []).map((lot) => lot.sourceDocumentLineId)
+  );
+
+  const inputFor = (
+    jobId: string,
+    customerId: string | null,
+    lastCompletedJobDate: (itemId: string) => string | null
+  ): FirstArticleNeedInput => ({
+    companyRequiresFirstArticle: companyRequires,
+    customerRequiresFirstArticle:
+      !!customerId && requiringCustomers.has(customerId),
+    today,
+    makeMethods: makeMethods.data
+      .filter((makeMethod) => makeMethod.jobId === jobId)
+      .map((makeMethod) => ({
+        jobMakeMethodId: makeMethod.id,
+        itemId: makeMethod.itemId,
+        description: formatFirstArticlePartDescription(
+          makeMethod.item?.readableId ?? makeMethod.itemId,
+          makeMethod.item?.revision
+        ),
+        firstArticlePlanId: slotByItem.get(makeMethod.itemId) ?? null,
+        partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
+        latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
+        lastCompletedJobDate: lastCompletedJobDate(makeMethod.itemId),
+        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id)
+      }))
+  });
+
+  // The last completed job only decides a Production Lapse, which only blocks
+  // a part with no plan and an approved FAI (without one it is a New Part and
+  // due anyway). So that read is limited to those parts, and to jobs completed
+  // from the day before the part's earliest approval: an earlier job falls on
+  // an earlier business day than the approval and cannot make it stale.
+  const lapseItemIds = [
+    ...new Set(
+      inScope.flatMap((job) =>
+        resolveFirstArticleNeeds(inputFor(job.id, job.customerId, () => null))
+          .filter(
+            (need) => need.planId === null && approvedAtByItem.has(need.itemId)
+          )
+          .map((need) => need.itemId)
+      )
+    )
+  ];
+  // YYYY-MM-DD strings sort chronologically.
+  const [completedSince] = lapseItemIds
+    .flatMap((itemId) => {
+      const approvedAt = approvedAtByItem.get(itemId);
+      return approvedAt
+        ? [
+            datetime
+              .businessDay(approvedAt, "UTC")
+              .subtract({ days: 1 })
+              .toString()
+          ]
+        : [];
+    })
+    .sort();
+  const completedJobs = completedSince
+    ? await client
+        .from("job")
+        .select("id, itemId, completedDate")
+        .in("status", ["Completed", "Closed"])
+        .gte("completedDate", completedSince)
+        .in("itemId", lapseItemIds)
+        .eq("companyId", companyId)
+        .order("completedDate", { ascending: false })
+    : { data: [], error: null };
+  if (completedJobs.error) return { data: result, error: completedJobs.error };
+
+  for (const job of inScope) {
+    const needs = resolveFirstArticleNeeds(
+      inputFor(job.id, job.customerId, (itemId) => {
+        const last = (completedJobs.data ?? []).find(
+          (completed) =>
+            completed.itemId === itemId &&
+            completed.id !== job.id &&
+            !!completed.completedDate
+        );
+        return last?.completedDate
+          ? datetime.businessDay(last.completedDate, timezone).toString()
+          : null;
+      })
+    );
+    const blocked = needs
+      .filter((need) => need.blocked)
+      .map((need) => ({
+        makeMethodId: need.jobMakeMethodId,
+        itemId: need.itemId,
+        description: need.description
+      }));
+    if (blocked.length > 0) result.set(job.id, blocked);
+  }
+
+  return { data: result, error: null };
+}
+
 // What stands between these jobs and release, read in one query per table for
 // any number of jobs. The job Release dialog and batch release both read it, so
 // a job released through a batch is held to the job page's rules.
@@ -2779,7 +3018,7 @@ export async function getJobReleaseReadiness(
     client
       .from("job")
       .select(
-        "id, jobId, status, item(itemReplenishment(manufacturingBlocked))"
+        "id, jobId, status, customerId, item(itemReplenishment(manufacturingBlocked))"
       )
       .in("id", jobIds)
       .eq("companyId", companyId),
@@ -2807,6 +3046,13 @@ export async function getJobReleaseReadiness(
   const failed =
     jobs.error ?? roots.error ?? materials.error ?? operations.error;
   if (failed) return { data: null, error: failed };
+
+  const firstArticles = await getFirstArticlesWithoutPlan(
+    client,
+    jobs.data ?? [],
+    companyId
+  );
+  if (firstArticles.error) return { data: null, error: firstArticles.error };
 
   const outsideOperationIds = (operations.data ?? [])
     .filter((op) => op.operationType === "Outside Processing")
@@ -2934,6 +3180,7 @@ export async function getJobReleaseReadiness(
               ? job.jobId
               : (descriptionByMakeMethod.get(makeMethodId) ?? makeMethodId)
         })),
+        firstArticlesWithoutPlan: firstArticles.data.get(job.id) ?? [],
         outsideOperationsWithoutSupplier: (
           withoutSupplierByJob[job.id] ?? []
         ).map(({ op, supplier }) => ({
