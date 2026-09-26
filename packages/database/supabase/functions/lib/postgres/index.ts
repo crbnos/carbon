@@ -49,6 +49,40 @@ const poolCache = new Map<number, Pool>();
  *  would arrive as a string where the generated types promise a number. */
 const NUMERIC_OID = 1700;
 
+/** DATE. Both drivers parse `YYYY-MM-DD` into a JS `Date` at LOCAL midnight
+ *  (`postgres-date`: "Force YYYY-MM-DD dates to be parsed as local time"), where
+ *  the generated types promise a string — `KyselyDatabase` is
+ *  `KyselifyDatabase<SupabaseDatabase>`, so `purchaseInvoice.dateIssued` is
+ *  `string | null` to the compiler and a `Date` at runtime.
+ *
+ *  That gap is invisible to typecheck BY CONSTRUCTION: assigning the `Date` into
+ *  something already declared `string` is exactly what the compiler has been told
+ *  to expect. It has shipped as a bug at least twice — a `.slice` crash on the
+ *  Rillet payment push, and every Ramp draft bill rejected
+ *  `422 "Not a valid date"` because a `Date` JSON-serializes as a full timestamp.
+ *  The scar tissue is ~16 `instanceof Date` guards and ~34 `toPostingDateString`
+ *  calls defending against a value the types said could not occur.
+ *
+ *  Identity, not a reformat: Postgres' wire text for a DATE is `2026-09-15`,
+ *  byte-identical to what PostgREST returns, so the Kysely and Supabase clients
+ *  now agree.
+ *
+ *  **Deliberately NOT applied to the timestamp OIDs** (1114 / 1184), even though
+ *  they carry the same mismatch. Postgres sends `2026-09-15 16:36:52.677+00`
+ *  (space-separated, `+00`) where PostgREST sends
+ *  `2026-09-15T16:36:52.677+00:00`. An identity parser there would make the two
+ *  clients return differently-shaped strings for one column — still `string`, no
+ *  longer interchangeable. Fixing those needs a normalizing parser and its own
+ *  verification pass.
+ *
+ *  `date[]` (OID 1182) is unaffected: node-postgres' array parser calls
+ *  `postgres-date` directly rather than the registered element parser. There are
+ *  no `date[]` columns in the schema today. */
+const DATE_OID = 1082;
+
+/** The raw wire text, unchanged — see DATE_OID. */
+const identity = (value: string): string => value;
+
 /** The deno-postgres constructor shape. "pg" resolves to node-postgres types in
  *  the Node build, so the Deno branch has to describe its own driver — but it
  *  describes it PROPERLY: the TLS block below is the one place a typo silently
@@ -68,21 +102,25 @@ type DenoPoolConstructor = new (
   size: number
 ) => Pool;
 
-/** node-postgres keeps type parsers in a PROCESS-GLOBAL registry, so this is
+/** node-postgres keeps type parsers in a PROCESS-GLOBAL registry, so these are
  *  registered once at module load rather than as a side effect of constructing a
  *  pool — a factory that reconfigures global state on every call is a trap for
  *  whoever calls it next. No-ops on Deno, whose driver takes per-pool decoders
- *  (see `controls` below) and exposes no `types` namespace. */
-function registerNodeNumericParser(): void {
-  (
+ *  (see `controls` below) and exposes no `types` namespace. The two registries
+ *  MUST stay in step, or Node and the edge runtime decode the same column
+ *  differently. */
+function registerNodeTypeParsers(): void {
+  const types = (
     pg as unknown as {
       types?: {
         setTypeParser: (oid: number, fn: (v: string) => unknown) => void;
       };
     }
-  ).types?.setTypeParser(NUMERIC_OID, Number);
+  ).types;
+  types?.setTypeParser(NUMERIC_OID, Number);
+  types?.setTypeParser(DATE_OID, identity);
 }
-registerNodeNumericParser();
+registerNodeTypeParsers();
 
 export function getPostgresConnectionPool(connections: number): Pool {
   const cached = poolCache.get(connections);
@@ -122,9 +160,10 @@ function createPostgresConnectionPool(connections: number): Pool {
         port: u.port || 5432,
         database: u.pathname.replace(/^\//, "") || undefined,
         controls: {
-          // The driver applies this element-wise to numeric[] via the base-type
-          // fallback, so arrays decode too.
-          decoders: { [NUMERIC_OID]: Number },
+          // The driver applies these element-wise to array types via the
+          // base-type fallback, so arrays decode too. Must mirror
+          // `registerNodeTypeParsers` exactly.
+          decoders: { [NUMERIC_OID]: Number, [DATE_OID]: identity },
         },
       };
       if (sslmode) {

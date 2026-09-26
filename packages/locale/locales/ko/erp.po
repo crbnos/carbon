@@ -200,6 +200,10 @@ msgstr "{0} 입고 · {1} 크레딧 완료"
 msgid "{0} registered"
 msgstr "{0} 등록됨"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0}은(는) 원장이 다음에 의해 보유되고 있다고 보고합니다"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 행"
@@ -299,6 +303,9 @@ msgstr "교육과정 {count}개"
 
 msgid "{days}d"
 msgstr "{days}일"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "{delegatedTo}가(이) 이를 귀사의 원장에 게시하므로 Carbon은 이를 푸시하지 않습니다. 변경되는 경우에 대비하여 저장된 선택 사항이 유지됩니다."
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
@@ -1923,6 +1930,9 @@ msgstr "다른 지출 통합이 이미 활성화되어 있습니다"
 
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "이것이 중첩되는 다른 보관 단위 (예: 랙 내의 빈); 같은 사업장에 있어야 함"
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "다른 시스템이 Ramp에 회계 시스템으로 연결되어 있습니다"
 
 msgid "Any item group"
 msgstr "모든 품목 그룹"
@@ -3650,6 +3660,9 @@ msgstr "인쇄된 작업 이동표에 나타날 내용을 선택하십시오."
 
 msgid "Choose your style"
 msgstr "스타일을 선택하세요"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "연결할 때 선택되었으며 이 설치에 대해 고정되어 있습니다. 변경하려면 제거한 후 다른 모드로 다시 연결하세요."
 
 msgid "City"
 msgstr "도시"
@@ -8380,6 +8393,9 @@ msgstr "안내된 실행"
 msgid "Handle recurring and reversing journal entries"
 msgstr "반복 및 역분개 전표 처리"
 
+msgid "Handled by {delegatedTo}"
+msgstr "{delegatedTo}에서 처리됨"
+
 msgid "Hands-on"
 msgstr "밀착형"
 
@@ -8601,6 +8617,9 @@ msgstr "저희의 협업 방식"
 
 msgid "How We Work Together"
 msgstr "저희가 함께 일하는 방식"
+
+msgid "How will you use {integrationName}?"
+msgstr "{integrationName}을(를) 어떻게 사용하시겠습니까?"
 
 msgid "How your company's process maps to Carbon"
 msgstr "당신의 회사의 공법이 Carbon에 어떻게 매핑되는지"
@@ -13766,6 +13785,9 @@ msgstr "문제는 일찍, 명확하게 제기하세요. 2주 차에 언급된 �
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Ramp은 하나만 허용합니다. Ramp에서 다른 시스템을 연결 해제하거나, \"Another system posts my ledger\"를 선택하여 Carbon을 다시 연결하세요."
+
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp에서 연결을 승인했지만 저장하지 못했습니다. 다시 연결해 보세요."
 
@@ -18057,6 +18079,9 @@ msgstr "이 백업을 완료할 수 없습니다."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "이후에는 변경할 수 없습니다 — {integrationName}은(는) 연결된 회계 시스템을 하나만 허용하므로, 선택에 따라 Carbon이 수행할 수 있는 작업이 결정됩니다. 전환하려면 제거한 후 다시 연결해야 합니다."
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."

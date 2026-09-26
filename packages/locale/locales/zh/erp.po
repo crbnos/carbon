@@ -200,6 +200,10 @@ msgstr "{0} 已收货 · {1} 已开贷项"
 msgid "{0} registered"
 msgstr "{0}已登记"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0}报告账本由以下机构持有"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
@@ -299,6 +303,9 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
 msgid "{days}d"
 msgstr "{days}天"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送它。您保存的选择将被保留，以防情况发生变化。"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
@@ -1923,6 +1930,9 @@ msgstr "另一个支出集成已处于活跃状态"
 
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "此存储单元嵌套在其中的另一个存储单元（例如，架内的料箱）；必须在同一地点"
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "另一个系统已连接到 Ramp 作为其会计系统"
 
 msgid "Any item group"
 msgstr "任何项目组"
@@ -3650,6 +3660,9 @@ msgstr "选择打印工单流转卡上显示的内容。"
 
 msgid "Choose your style"
 msgstr "选择您的风格"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "在连接时选择并为此安装固定。要更改它，请卸载并以不同模式重新连接。"
 
 msgid "City"
 msgstr "城市"
@@ -8380,6 +8393,9 @@ msgstr "引导式实施"
 msgid "Handle recurring and reversing journal entries"
 msgstr "处理循环和冲销凭证"
 
+msgid "Handled by {delegatedTo}"
+msgstr "由 {delegatedTo} 处理"
+
 msgid "Hands-on"
 msgstr "动手实践"
 
@@ -8601,6 +8617,9 @@ msgstr "我们如何合作"
 
 msgid "How We Work Together"
 msgstr "我们如何合作"
+
+msgid "How will you use {integrationName}?"
+msgstr "你将如何使用 {integrationName}？"
 
 msgid "How your company's process maps to Carbon"
 msgstr "您的公司流程如何映射到 Carbon"
@@ -13766,6 +13785,9 @@ msgstr "尽早提出问题，直言不讳地提出。第2周发现的问题很�
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Ramp 仅允许一个。在 Ramp 中断开另一个系统的连接，或重新连接 Carbon 并选择\"另一个系统发布我的账本\"。"
+
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp 已授权此连接，但保存失败。请重新连接。"
 
@@ -18057,6 +18079,9 @@ msgstr "无法完成此备份。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "此备份尚未检查。还原运行时将发现任何差异。"
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "这无法在之后更改 — {integrationName} 仅允许一个连接的会计系统，因此您的选择决定了 Carbon 被允许执行的操作。要切换，您需要卸载并重新连接。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "此 Carbon 实例缺少 Onshape 的 OAuth 凭据。请让管理员进行设置。"

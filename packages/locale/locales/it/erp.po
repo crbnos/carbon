@@ -200,6 +200,10 @@ msgstr "{0} ricevuto · {1} accreditato"
 msgid "{0} registered"
 msgstr "{0} registrato"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0} segnala che il libro mastro è gestito da"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} righe"
@@ -299,6 +303,9 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 
 msgid "{days}d"
 msgstr "{days}g"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "${delegatedTo} pubblica questo nel tuo libro mastro, quindi Carbon non lo invia. La tua scelta salvata viene mantenuta nel caso in cui ciò cambi."
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
@@ -1923,6 +1930,9 @@ msgstr "Un'altra integrazione di spesa è già attiva"
 
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "Un'altra unità di stoccaggio dentro la quale questa è annidata (p. es. un contenitore in un portacenere); deve essere nella stessa ubicazione."
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "Un altro sistema è connesso a Ramp come suo sistema di contabilità"
 
 msgid "Any item group"
 msgstr "Qualsiasi gruppo articoli"
@@ -3650,6 +3660,9 @@ msgstr "Scegli cosa appare sul cartellino di produzione stampato."
 
 msgid "Choose your style"
 msgstr "Scegli il tuo stile"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "Scelto quando ti sei connesso ed è fisso per questa installazione. Per modificarlo, disinstalla e riconnettiti in una modalità diversa."
 
 msgid "City"
 msgstr "Città"
@@ -8380,6 +8393,9 @@ msgstr "Implementazione guidata"
 msgid "Handle recurring and reversing journal entries"
 msgstr "Gestisci registrazioni di prima nota ricorrenti e di storno"
 
+msgid "Handled by {delegatedTo}"
+msgstr "Gestito da {delegatedTo}"
+
 msgid "Hands-on"
 msgstr "Pratico"
 
@@ -8601,6 +8617,9 @@ msgstr "Come Lavoriamo"
 
 msgid "How We Work Together"
 msgstr "Come Lavoriamo Insieme"
+
+msgid "How will you use {integrationName}?"
+msgstr "Come utilizzerai {integrationName}?"
 
 msgid "How your company's process maps to Carbon"
 msgstr "Come i processi della tua azienda si mappano su Carbon"
@@ -13766,6 +13785,9 @@ msgstr "segnalalo presto e segnalalo chiaramente. Un problema identificato nella
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Ramp consente solo uno. Disconnetti l'altro sistema in Ramp, oppure connetti di nuovo Carbon scegliendo \"Another system posts my ledger\"."
+
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp ha autorizzato la connessione, ma non è stato possibile salvarla. Prova a connetterti di nuovo."
 
@@ -18057,6 +18079,9 @@ msgstr "Non è stato possibile completare questo backup."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Questo backup non è stato ancora verificato. Le eventuali differenze vengono rilevate quando il ripristino viene eseguito."
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "Non può essere modificato in seguito — {integrationName} consente un solo sistema contabile connesso, quindi la scelta determina cosa Carbon è autorizzato a fare. Per cambiare, dovresti disinstallare e riconnettere."
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "A questa istanza di Carbon mancano le credenziali OAuth di Onshape. Chiedi a un amministratore di configurarle."

@@ -200,6 +200,10 @@ msgstr "{0} 受領 · {1} 返金済み"
 msgid "{0} registered"
 msgstr "{0}登録済み"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0}は台帳が以下に保持されていると報告しています"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
@@ -299,6 +303,9 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 
 msgid "{days}d"
 msgstr "{days}日"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
@@ -1923,6 +1930,9 @@ msgstr "別の支出統合が既にアクティブです"
 
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "この保管ユニットがネストされる別の保管ユニット（例：ラック内のビン）。同じ拠点にある必要があります"
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "別のシステムがRampの会計システムとして接続されています"
 
 msgid "Any item group"
 msgstr "任意のアイテムグループ"
@@ -3650,6 +3660,9 @@ msgstr "印刷された製造指図現品票に表示される内容を選択し
 
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "接続時に選択され、このインストール用に固定されています。変更するには、アンインストールして別のモードで再接続してください。"
 
 msgid "City"
 msgstr "市区町村"
@@ -8380,6 +8393,9 @@ msgstr "ガイド付き実施"
 msgid "Handle recurring and reversing journal entries"
 msgstr "繰り返しおよび逆仕訳の処理"
 
+msgid "Handled by {delegatedTo}"
+msgstr "{delegatedTo}によって処理されています"
+
 msgid "Hands-on"
 msgstr "ハンズオン"
 
@@ -8601,6 +8617,9 @@ msgstr "私たちの働き方"
 
 msgid "How We Work Together"
 msgstr "私たちの働き方"
+
+msgid "How will you use {integrationName}?"
+msgstr "{integrationName}をどのように使用しますか？"
 
 msgid "How your company's process maps to Carbon"
 msgstr "あなたの会社のプロセスがCarbonにどのようにマップされるか"
@@ -13766,6 +13785,9 @@ msgstr "早期に報告し、明確に報告してください。2週目に特�
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Rampは1つのみ許可しています。Rampで他のシステムを切断するか、「別のシステムが私の台帳を投稿する」を選択してCarbonに再度接続してください。"
+
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -18057,6 +18079,9 @@ msgstr "このバックアップを完了できませんでした。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "これは後で変更することはできません — {integrationName}は接続できる会計システムが1つだけに限定されているため、この選択はCarbonが実行できることを決定します。切り替えるには、アンインストールして再度接続する必要があります。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"

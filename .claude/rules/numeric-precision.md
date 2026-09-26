@@ -181,13 +181,35 @@ literal is.
 counts, pagination, lead-time buckets, AQL ladders, geometry) live in the
 `@carbon/checks` baseline, not in exemption lists.
 
-## Runtime NUMERIC decoding
+## Runtime type decoding (NUMERIC and DATE)
 
-Both Postgres drivers decode NUMERIC (OID 1700) to JS numbers so runtime
-matches the generated types: node-postgres via `setTypeParser`, deno-postgres
-(v0.19.x, aliased `"pg"` in `functions/deno.json`) via `controls.decoders` —
-both registered in `functions/lib/postgres/index.ts`. Existing `Number(...)`
-coercions are harmless no-ops; float8 columns still arrive as strings.
+Both Postgres drivers are configured so runtime matches the generated types:
+node-postgres via `setTypeParser`, deno-postgres (v0.19.x, aliased `"pg"` in
+`functions/deno.json`) via `controls.decoders` — both in
+`functions/lib/postgres/index.ts`, and they MUST stay in step or Node and the
+edge runtime decode the same column differently.
+
+- **NUMERIC (1700) → `Number`.** Existing `Number(...)` coercions are harmless
+  no-ops; float8 columns still arrive as strings.
+- **DATE (1082) → the raw `YYYY-MM-DD` string.** The drivers otherwise parse it
+  into a JS `Date` at LOCAL midnight (`postgres-date`: "Force YYYY-MM-DD dates to
+  be parsed as local time") while `KyselyDatabase` declares `string`. Typecheck
+  cannot see that gap — assigning the `Date` into a field already declared
+  `string` is what the compiler expects — and it shipped as a bug twice (a
+  `.slice` crash on the Rillet payment push; every Ramp draft bill rejected
+  `422 "Not a valid date"` because a `Date` JSON-serializes as a full timestamp).
+  Identity is exact here: Postgres' DATE wire text is byte-identical to what
+  PostgREST returns, so the Kysely and Supabase clients agree.
+  `toPostingDateString` and the ~16 `instanceof Date` guards still compile and
+  still pass strings through — they are now belt-and-braces, not load-bearing.
+
+**The timestamp OIDs (1114 / 1184) are deliberately LEFT as `Date`s** even though
+they carry the same mismatch. Postgres sends `2026-09-15 16:36:52.677+00` where
+PostgREST sends `2026-09-15T16:36:52.677+00:00`; an identity parser there would
+make the two clients return differently-shaped strings for one column. Fixing
+those needs a normalizing parser and its own verification pass.
+
+Pinned by `packages/database/src/postgres-type-parsers.test.ts`.
 
 ## Conformance
 

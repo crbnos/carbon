@@ -200,6 +200,10 @@ msgstr "{0} erhalten · {1} gutgeschrieben"
 msgid "{0} registered"
 msgstr "{0} registriert"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0} meldet, dass das Ledger von"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} Zeilen"
@@ -299,6 +303,9 @@ msgstr "{count, plural, one {# Kurs} other {# Kurse}}"
 
 msgid "{days}d"
 msgstr "{days}T"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "{delegatedTo} bucht dies in Ihr Ledger, daher schiebt Carbon es nicht. Ihre gespeicherte Auswahl wird beibehalten, falls sich dies ändert."
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} von {total} Phasen abgeschlossen"
@@ -1923,6 +1930,9 @@ msgstr "Eine andere Ausgabenintegration ist bereits aktiv"
 
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "Eine weitere Lagereinheit, in die diese Einheit verschachtelt ist (z. B. ein Lagerplatz innerhalb eines Regals); muss sich am gleichen Standort befinden."
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "Ein anderes System ist mit Ramp als Buchhaltungssystem verbunden"
 
 msgid "Any item group"
 msgstr "Beliebige Artikelgruppe"
@@ -3650,6 +3660,9 @@ msgstr "Wählen Sie, was auf der gedruckten Laufkarte erscheint."
 
 msgid "Choose your style"
 msgstr "Wählen Sie Ihren Stil"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "Gewählt bei der Verbindung und für diese Installation festgelegt. Um dies zu ändern, deinstallieren Sie und verbinden Sie sich erneut in einem anderen Modus."
 
 msgid "City"
 msgstr "Stadt"
@@ -8380,6 +8393,9 @@ msgstr "Geführte Umsetzung"
 msgid "Handle recurring and reversing journal entries"
 msgstr "Wiederkehrende und stornierte Buchungssätze verwalten"
 
+msgid "Handled by {delegatedTo}"
+msgstr "Wird bearbeitet von {delegatedTo}"
+
 msgid "Hands-on"
 msgstr "Praktisch"
 
@@ -8601,6 +8617,9 @@ msgstr "Wie wir arbeiten"
 
 msgid "How We Work Together"
 msgstr "Wie wir zusammenarbeiten"
+
+msgid "How will you use {integrationName}?"
+msgstr "Wie werden Sie {integrationName} nutzen?"
 
 msgid "How your company's process maps to Carbon"
 msgstr "Wie die Prozesse Ihres Unternehmens zu Carbon passen"
@@ -13766,6 +13785,9 @@ msgstr "Sprechen Sie es früh an und sprechen Sie es deutlich an. Ein Problem, d
 msgid "Ramp"
 msgstr "Ramp"
 
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Ramp erlaubt nur eine Verbindung. Trennen Sie das andere System in Ramp, oder verbinden Sie Carbon erneut und wählen Sie „Another system posts my ledger\"."
+
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp hat die Verbindung autorisiert, sie konnte jedoch nicht gespeichert werden. Versuchen Sie erneut, die Verbindung herzustellen."
 
@@ -18057,6 +18079,9 @@ msgstr "Diese Sicherung konnte nicht abgeschlossen werden."
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Diese Sicherung wurde noch nicht überprüft. Alle Unterschiede werden beim Ausführen der Wiederherstellung gefunden."
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "Dies kann später nicht mehr geändert werden — {integrationName} erlaubt nur ein verbundenes Buchhaltungssystem, daher bestimmt die Wahl, was Carbon tun darf. Um zu wechseln, müssten Sie die Anwendung deinstallieren und erneut verbinden."
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Dieser Carbon-Instanz fehlen die Onshape-OAuth-Anmeldedaten. Bitten Sie einen Administrator, sie einzurichten."
