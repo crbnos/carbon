@@ -28,13 +28,13 @@ import { sanitize } from "~/utils/supabase";
 import type {
   accountsPayableBillingAddressValidator,
   accountsReceivableBillingAddressValidator,
-  companyValidator,
   itemSerialSequenceValidator,
   kanbanOutputTypes,
   purchasePriceUpdateTimingTypes,
   sequenceValidator,
   subsidiaryValidator
 } from "./settings.models";
+import { companyValidator } from "./settings.models";
 
 const PUBLIC_STORAGE_URL_PREFIX = `${SUPABASE_URL}/storage/v1/object/public/public/`;
 
@@ -897,10 +897,18 @@ export async function updateCompanyWithBaseCurrencyChange(
     updatedBy: string;
   }
 ) {
+  // An explicit allow-list of the company form's fields, never the caller's
+  // object: Kysely bypasses RLS and the API passes `company` through with
+  // whatever keys were sent, so a spread would reach any column of the row.
+  const allowed = new Set<string>(Object.keys(companyValidator.shape));
+  const fields = Object.fromEntries(
+    Object.entries(sanitize(company)).filter(([key]) => allowed.has(key))
+  ) as Partial<z.infer<typeof companyValidator>>;
+
   return db.transaction().execute(async (trx) => {
     await trx
       .updateTable("company")
-      .set(sanitize(company))
+      .set({ ...fields, updatedBy: company.updatedBy })
       .where("id", "=", companyId)
       .execute();
     await trx

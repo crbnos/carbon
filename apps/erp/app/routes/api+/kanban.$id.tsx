@@ -52,16 +52,7 @@ async function handleKanban({
   userId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
-  if (
-    kanban.data?.replenishmentSystem === "Make" &&
-    kanban.data?.jobReadableId
-  ) {
-    return {
-      data: path.to.api.kanbanCollision(id),
-      error: null
-    };
-  }
+  const kanban = await getKanban(client, id, companyId);
 
   if (kanban.error || !kanban.data) {
     return {
@@ -70,10 +61,10 @@ async function handleKanban({
     };
   }
 
-  if (kanban.data.companyId !== companyId) {
+  if (kanban.data.replenishmentSystem === "Make" && kanban.data.jobReadableId) {
     return {
-      data: null,
-      error: "Kanban is not active"
+      data: path.to.api.kanbanCollision(id),
+      error: null
     };
   }
 
@@ -439,7 +430,9 @@ async function handleKanban({
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
+    await requirePermissions(request, {
+      role: "employee"
+    });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

@@ -5,6 +5,10 @@ import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
 import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import {
+  assertCompanyRecords,
+  RecordNotFoundError,
+} from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
@@ -132,6 +136,39 @@ serve(async (req: Request) => {
     const client = await requirePermissions(req, companyId, userId, {
       update: "inventory",
     });
+
+    // The service-role client proves the caller may act in companyId, not that
+    // the ids below belong to it — each lands on this company's ledger rows or
+    // journal dimensions, and their single-column FKs accept any company's row.
+    await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+    await assertCompanyRecords(
+      db,
+      "storageUnit",
+      [storageUnitId, originalStorageUnitId],
+      companyId,
+      "Storage unit"
+    );
+    await assertCompanyRecords(
+      db,
+      "scrapReason",
+      [scrapReasonId],
+      companyId,
+      "Scrap reason"
+    );
+    // A trackedEntityId that exists nowhere is legitimate: the app mints the id
+    // (nanoid) for a NEW serial/batch and this function inserts it. One that
+    // belongs to another company is not — the paths below would write ledger
+    // rows pointing at it (the insert only fails by accident of the id-only PK).
+    if (trackedEntityId) {
+      const existing = await db
+        .selectFrom("trackedEntity")
+        .select("companyId")
+        .where("id", "=", trackedEntityId)
+        .executeTakeFirst();
+      if (existing && existing.companyId !== companyId) {
+        throw new RecordNotFoundError("Tracked entity not found");
+      }
+    }
 
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const nowIso = new Date().toISOString();

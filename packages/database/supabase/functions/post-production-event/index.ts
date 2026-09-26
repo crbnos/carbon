@@ -63,7 +63,8 @@ serve(async (req: Request) => {
         .from("productionEvent")
         .select("*, jobOperation!inner(jobId, processId)")
         .eq("id", productionEventId)
-        .single(),
+        .eq("companyId", companyId)
+        .maybeSingle(),
       getDefaultPostingGroup(client, companyId),
       client
         .from("dimension")
@@ -74,6 +75,10 @@ serve(async (req: Request) => {
     ]);
 
     if (productionEvent.error) throw new Error("Failed to fetch production event");
+    // Service-role client: a production event outside companyId is a 404.
+    if (!productionEvent.data) {
+      return errorResponse("Production event not found", 404);
+    }
     if (accountDefaults?.error || !accountDefaults?.data) {
       throw new Error("Error getting account defaults");
     }

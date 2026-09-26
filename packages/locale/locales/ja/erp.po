@@ -246,6 +246,10 @@ msgstr "{0}個の値"
 msgid "{0} values missing"
 msgstr "{0}個の値が見つかりません"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} は {name} として保存されます"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}日"
@@ -538,8 +542,11 @@ msgstr "90日"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "このプロセスの\"一致必須\"ルールにより、これらはバッチを共有できません"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "4 桁の PIN は、作業者が作成されるときに生成されます。"
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "バッチには少なくとも 1 つの工程が必要です。バッチ全体を分割するには、代わりに [分割] を使用してください。"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon実行のデータ移行 — あなたが自分のデータをロードします"
@@ -1382,6 +1389,9 @@ msgstr "会社を追加"
 
 msgid "Add condition"
 msgstr "条件を追加"
+
+msgid "Add Console Operator"
+msgstr "コンソールオペレーターを追加"
 
 msgid "Add Contractor"
 msgstr "外部作業者を追加"
@@ -3286,6 +3296,10 @@ msgstr "唯一の有効な休止を無効にすることはできません。別
 msgid "Can't download this file"
 msgstr "このファイルをダウンロードできません"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "名前が {0} のファイルはアップロードできません"
+
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -4101,6 +4115,9 @@ msgstr "コンソールモードが有効です"
 msgid "Console Operator"
 msgstr "コンソールオペレーター"
 
+msgid "Console Operator Created"
+msgstr "コンソールオペレーターが作成されました"
+
 msgid "consumable"
 msgstr "消耗品"
 
@@ -4343,9 +4360,6 @@ msgstr "部品番号をコピー"
 
 msgid "Copy part unique identifier"
 msgstr "部品の一意の識別子をコピー"
-
-msgid "Copy PIN"
-msgstr "PINをコピー"
 
 msgid "Copy previous day"
 msgstr "前日をコピー"
@@ -4667,6 +4681,9 @@ msgstr "新規作成"
 
 msgid "Create new rule"
 msgstr "新しいルールを作成"
+
+msgid "Create Operator"
+msgstr "作業者を作成"
 
 msgid "Create PO Revision"
 msgstr "発注書リビジョンを作成"
@@ -8087,8 +8104,8 @@ msgstr "総勘定元帳と月末決算"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "新しい4桁のPINを生成します。作業者に共有して、MES端末にサインインできるようにします。"
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "新しい 4 桁の PIN を生成します。作業者の現在の PIN は直ちに使用できなくなります。"
 
 msgid "Generate and send customer invoices"
 msgstr "得意先請求書を生成して送信する"
@@ -8101,9 +8118,6 @@ msgstr "会計年度を生成"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "材料のプロパティに基づいて材料IDと説明を生成します。"
-
-msgid "Generate new PIN"
-msgstr "新しいPINを生成"
 
 msgid "Generate Picking List"
 msgstr "ピッキングリストを生成"
@@ -10901,9 +10915,6 @@ msgstr "新規支払条件"
 
 msgid "New Picking List"
 msgstr "新しいピッキングリスト"
-
-msgid "New PIN"
-msgstr "新しいPIN"
 
 msgid "New PO"
 msgstr "新規PO"
@@ -14118,9 +14129,6 @@ msgstr "残高"
 msgid "Remaining after split stays on the original row."
 msgstr "分割後の残りは元の行に留まります。"
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "このPINを覚えておいてください。MES端末でコンソールモードを終了するために必要になります。"
-
 msgid "Remove"
 msgstr "除去"
 
@@ -14130,7 +14138,7 @@ msgstr "{0}を除去"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "バッチから {0} を除去"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "{0}をこのバッチから除去しますか？その工程はスケジ
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "{1} から {memberCount} 工程中 {0} 個を除去しますか？"
 
 msgid "Remove {label}"
 msgstr "{label}を除去"
@@ -14560,6 +14568,9 @@ msgstr "返品理由"
 
 msgid "Return Reasons"
 msgstr "返品理由一覧"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "連携に戻り、Onshape に再度接続してください。"
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "連携に戻り、Ramp にもう一度接続してください。"
@@ -15820,6 +15831,12 @@ msgstr "リンクを共有"
 
 msgid "Share Quote"
 msgstr "見積もりを共有"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "このPINを {name} と共有してください。これにより MES 端末でサインインできます。"
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "このPINを作業者と共有してください。これにより MES 端末でサインインできます。"
 
 msgid "Shared"
 msgstr "共有"
@@ -17598,6 +17615,9 @@ msgstr "このアセットが償却される月数。"
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "数量ベースのポリシーに基づいて新しい補充注文をトリガーするオンハンド在庫レベル。"
 
+msgid "The Onshape connection expired"
+msgstr "Onshape の接続が期限切れです"
+
 msgid "The operations and steps your parts move through"
 msgstr "部品が通過する工程とステップ。"
 
@@ -18147,6 +18167,15 @@ msgstr "このパスは次に何が実行されるかだけを決定します"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "この期間には転記された仕訳がなく、永久に削除できます。この処理は取り消せません。"
+
+msgid "This PIN will not be shown again."
+msgstr "このPINは再度表示されません。"
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "このPINは再度表示されません。紛失した場合は、作業者リストからリセットしてください。"
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
 
 msgid "this purchase order"
 msgstr "この発注書"

@@ -29,7 +29,7 @@ Company membership is per-user: one login can hold several companies and switch 
 
   - **accountingEnabled**: Master switch for the ledger. When off, operations complete without posting journal entries.
   - **timeCardEnabled**: Turns on shop-floor time cards.
-  - **consoleEnabled**: Enables the support/impersonation console.
+  - **consoleEnabled**: Enables MES console (shared-station) mode, where operators pin in with a 4-digit PIN. Business plan; toggled from **Settings → People** by someone with `settings_update`, and only through that screen — the API refuses a direct write to this column. See `docs/reference/mes`.
   - **requireMfa**: Everyone needs an authenticator app to open this company. Edited from **Settings → System → Security**; locked on in controlled (ITAR) deployments. See `docs/reference/two-factor`.
   - **useMetric**: Whether material units default to metric.
   - **materialGeneratedIds**: Whether new materials get an auto-generated readable id.

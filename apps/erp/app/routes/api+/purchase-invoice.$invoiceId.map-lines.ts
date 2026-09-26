@@ -1,7 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { resolveItemIdFromExtractedText, upsertPart } from "~/modules/items";
+
+const logger = getLogger("erp", "purchase-invoice-map-lines");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
@@ -63,7 +66,62 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!mappingsStr) return { success: false, error: "No mappings provided" };
 
   const mappings = JSON.parse(mappingsStr);
+  if (!Array.isArray(mappings)) {
+    return { success: false, error: "Invalid mappings" };
+  }
   const serviceRole = await getCarbonServiceRole();
+
+  // Every line id and chosen item id is caller-supplied. Prove each line
+  // belongs to this invoice in this company, and each item to this company,
+  // before any of them is written — otherwise a line could be pointed at
+  // another company's item.
+  const activeMappings = mappings.filter((map) => map?.action !== "ignore");
+  if (activeMappings.some((map) => typeof map?.lineId !== "string")) {
+    return { success: false, error: "Invalid mappings" };
+  }
+  const lineIds = [...new Set(activeMappings.map((map) => map.lineId))];
+  const itemIds = [
+    ...new Set(
+      activeMappings
+        .filter((map) => map.itemId)
+        .map((map) => String(map.itemId))
+    )
+  ];
+
+  if (lineIds.length > 0) {
+    const lines = await serviceRole
+      .from("purchaseInvoiceLine")
+      .select("id")
+      .eq("invoiceId", invoiceId)
+      .eq("companyId", companyId)
+      .in("id", lineIds);
+    if (lines.error || (lines.data?.length ?? 0) !== lineIds.length) {
+      logger.error("Invoice lines not found for mapping", {
+        companyId,
+        invoiceId,
+        lineIds,
+        error: lines.error
+      });
+      return { success: false, error: "Invoice line not found" };
+    }
+  }
+
+  if (itemIds.length > 0) {
+    const items = await serviceRole
+      .from("item")
+      .select("id")
+      .eq("companyId", companyId)
+      .in("id", itemIds);
+    if (items.error || (items.data?.length ?? 0) !== itemIds.length) {
+      logger.error("Items not found for invoice line mapping", {
+        companyId,
+        invoiceId,
+        itemIds,
+        error: items.error
+      });
+      return { success: false, error: "Item not found" };
+    }
+  }
 
   for (const map of mappings) {
     if (map.action === "ignore") continue;

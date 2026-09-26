@@ -25,7 +25,7 @@ import {
   sequences,
   unitOfMeasures,
 } from "../lib/seed.ts";
-import { getSupabaseServiceRole } from "../lib/supabase.ts";
+import { getSupabaseServiceRole, requireServiceRole } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
 import { resolveShippingDefault } from "./shipping-default.ts";
 
@@ -35,6 +35,17 @@ const db = getDatabaseClient<DB>(pool);
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
+
+  // Only servers seed a company (company.new, companies.new and onboarding, all
+  // with the service role). A company API key must not reach it: the body's
+  // userId becomes the company's Admin and parentCompanyId picks the group it
+  // joins — companies.new checks that parent against the caller's group first.
+  try {
+    requireServiceRole(req);
+  } catch (err) {
+    return errorResponse(err, 401);
+  }
+
   const { companyId: id, userId, parentCompanyId, identityOnly } =
     await req.json();
 
@@ -51,11 +62,7 @@ serve(async (req: Request) => {
     if (!userId) throw new Error("Payload is missing userId");
 
     const companyId = id as string;
-    const client = await getSupabaseServiceRole(
-      req.headers.get("Authorization"),
-      req.headers.get("carbon-key") ?? "",
-      companyId
-    );
+    const client = await getSupabaseServiceRole(req.headers.get("Authorization"));
 
     const company = await client
       .from("company")

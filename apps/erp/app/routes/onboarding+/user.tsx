@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
@@ -29,6 +29,7 @@ import {
 } from "~/modules/account";
 import { getUser } from "~/modules/users/users.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
+import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "user");
 
@@ -69,7 +70,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to update account");
   }
 
-  throw redirect(next);
+  throw redirect(safeRedirect(next, path.to.onboarding.root));
 }
 
 export default function OnboardingUser() {

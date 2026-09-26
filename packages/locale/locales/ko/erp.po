@@ -246,6 +246,10 @@ msgstr "{0}개 값"
 msgid "{0} values missing"
 msgstr "{0}개 값 누락"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0}이 {name}으로 저장됩니다"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -538,8 +542,11 @@ msgstr "90일"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "이 공정의 \"일치해야 함\" 규칙이 이들을 배치 공유에서 차단합니다"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분할하려면 대신 Dissolve를 사용하세요."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon이 진행하는 데이터 마이그레이션 — 직접 데이터를 업로드"
@@ -1382,6 +1389,9 @@ msgstr "회사 추가"
 
 msgid "Add condition"
 msgstr "조건 추가"
+
+msgid "Add Console Operator"
+msgstr "콘솔 작업자 추가"
 
 msgid "Add Contractor"
 msgstr "외주 인력 추가"
@@ -3286,6 +3296,10 @@ msgstr "유일하게 활성화된 휴게시간은 비활성화할 수 없습니�
 msgid "Can't download this file"
 msgstr "이 파일을 다운로드할 수 없습니다"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "{0}이라는 이름의 파일을 업로드할 수 없습니다"
+
 msgid "Cancel"
 msgstr "취소"
 
@@ -4101,6 +4115,9 @@ msgstr "콘솔 모드가 활성화됨"
 msgid "Console Operator"
 msgstr "콘솔 작업자"
 
+msgid "Console Operator Created"
+msgstr "콘솔 작업자가 생성되었습니다"
+
 msgid "consumable"
 msgstr "소모품"
 
@@ -4343,9 +4360,6 @@ msgstr "품목 번호 복사"
 
 msgid "Copy part unique identifier"
 msgstr "품목 고유 식별자 복사"
-
-msgid "Copy PIN"
-msgstr "PIN 복사"
 
 msgid "Copy previous day"
 msgstr "이전 날 복사"
@@ -4667,6 +4681,9 @@ msgstr "새로 생성"
 
 msgid "Create new rule"
 msgstr "새 규칙 생성"
+
+msgid "Create Operator"
+msgstr "작업자 생성"
 
 msgid "Create PO Revision"
 msgstr "구매주문 리비전 생성"
@@ -8087,8 +8104,8 @@ msgstr "총계정원장 및 월마감"
 msgid "Generate"
 msgstr "생성"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "새로운 4자리 PIN을 생성하세요. 작업자와 공유하여 MES 터미널에서 PIN으로 로그인할 수 있도록 하세요."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "새로운 4자리 PIN을 발급하세요. 작업자의 현재 PIN은 즉시 무효화됩니다."
 
 msgid "Generate and send customer invoices"
 msgstr "고객 송장 생성 및 발송"
@@ -8101,9 +8118,6 @@ msgstr "회계연도 생성"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "자재 속성을 기반으로 자재 ID와 설명을 생성합니다."
-
-msgid "Generate new PIN"
-msgstr "새 PIN 생성"
 
 msgid "Generate Picking List"
 msgstr "피킹 리스트 생성"
@@ -10901,9 +10915,6 @@ msgstr "신규 지불 조건"
 
 msgid "New Picking List"
 msgstr "새 피킹 리스트"
-
-msgid "New PIN"
-msgstr "새 PIN"
 
 msgid "New PO"
 msgstr "새 구매주문"
@@ -14118,9 +14129,6 @@ msgstr "남음"
 msgid "Remaining after split stays on the original row."
 msgstr "분할 후 남은 수량은 원래 행에 유지됩니다."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "이 PIN을 기억하세요. MES 터미널에서 콘솔 모드를 종료하려면 필요합니다."
-
 msgid "Remove"
 msgstr "제거"
 
@@ -14130,7 +14138,7 @@ msgstr "{0} 제거"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "배치에서 {0} 제거"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "{1}에서 {memberCount}개 공정 중 {0}개를 제거하시겠습니까?"
 
 msgid "Remove {label}"
 msgstr "제거 {label}"
@@ -14560,6 +14568,9 @@ msgstr "반품 사유"
 
 msgid "Return Reasons"
 msgstr "반품 사유"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "연동으로 돌아가서 Onshape를 다시 연결하세요."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "연동으로 돌아가 Ramp를 다시 연결하세요."
@@ -15820,6 +15831,12 @@ msgstr "링크 공유"
 
 msgid "Share Quote"
 msgstr "견적 공유"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "이 PIN을 {name}과 공유하면 MES 터미널에 로그인할 수 있습니다."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "이 PIN을 작업자와 공유하면 MES 터미널에 로그인할 수 있습니다."
 
 msgid "Shared"
 msgstr "공유됨"
@@ -17598,6 +17615,9 @@ msgstr "이 자산이 감가상각되는 개월 수입니다."
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "수량 기반 정책에서 새 보충 주문을 발생시키는 보유 재고 수준입니다."
 
+msgid "The Onshape connection expired"
+msgstr "Onshape 연동이 만료되었습니다"
+
 msgid "The operations and steps your parts move through"
 msgstr "부품이 이동하는 공정 및 단계"
 
@@ -18147,6 +18167,15 @@ msgstr "이 경로는 다음에 실행할 작업만 결정합니다."
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "이 기간은 전기된 전표 항목이 없으며 영구적으로 삭제할 수 있습니다. 이를 취소할 수 없습니다."
+
+msgid "This PIN will not be shown again."
+msgstr "이 PIN은 다시 표시되지 않습니다."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "이 PIN은 다시 표시되지 않습니다. 분실한 경우 작업자 목록에서 재설정하세요."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
 
 msgid "this purchase order"
 msgstr "이 발주서"

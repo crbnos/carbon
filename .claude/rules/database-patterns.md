@@ -154,27 +154,46 @@ every write inside it, and rolls everything back on any error.
 ### Service function example
 
 `Kysely<KyselyDatabase>` is the first arg by convention. The route passes `getDatabaseClient()`.
-Real precedents: `items.service.ts → upsertPickMethodWithShelfLife`,
-`update<Entity>LineOrder` functions across purchasing, sales, invoicing services.
+Real precedents: `items.service.ts → upsertPickMethodWithShelfLife`, and the drag-sort
+reorders (`update<Entity>LineOrder` in purchasing/sales/invoicing,
+`updateAssemblyInstructionStep{,Material}Order`, `updateChangeNoticeActionOrder`), which are
+thin wrappers over ONE shared helper, `updateSortOrder` in
+`apps/erp/app/modules/shared/sort-order.ts`. Reuse it for any new reorder — never write a
+per-row UPDATE loop.
 
 ```typescript
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { updateSortOrder } from "../shared/sort-order";
 
 export async function updatePurchaseOrderLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  purchaseOrderId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchaseOrderLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchaseOrderLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "purchaseOrderId", id: purchaseOrderId },
+    updates
   });
 }
 ```
+
+`updateSortOrder` issues a single `UPDATE t … FROM (VALUES …) v(id, sortOrder) WHERE t.id = v.id
+AND t."companyId" = $ AND t.<parent> = $ RETURNING t.id` inside a transaction and throws (rolling
+back) when fewer rows come back than were sent — an id from another company, another document,
+or a missing row aborts the whole reorder. A row one hop from the document uses
+`parent: { column, via: { table, column, id } }` (assembly step materials → step → instruction).
+It is deliberately NOT in a `*.service.ts`, so the generic "reorder any table" function never
+becomes an API/MCP tool. Its compiled SQL is pinned by `shared/sort-order.test.ts`.
+
+Keep `companyId`/`userId` as positional params named exactly that: the API dispatcher
+(`api+/v1+/lib/dispatch.server.ts`) fills them from the authenticated context, never the body.
+The parent document id is an ordinary payload param.
 
 ### Route handler example
 
@@ -183,10 +202,17 @@ import { getDatabaseClient } from "~/services/database.server";
 import { updatePurchaseOrderLineOrder } from "~/modules/purchasing";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, { update: "purchasing" });
+  const { companyId, userId } = await requirePermissions(request, { update: "purchasing" });
+  if (!params.orderId) throw new Error("Could not find orderId");
   // ... build `updates` from formData ...
   try {
-    await updatePurchaseOrderLineOrder(getDatabaseClient(), updates);
+    await updatePurchaseOrderLineOrder(
+      getDatabaseClient(),
+      companyId,
+      userId,
+      params.orderId, // the URL's document — every row must belong to it
+      updates
+    );
   } catch (err) {
     return data(
       { success: false },
@@ -200,11 +226,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 ### Key notes
 
 - Kysely **throws** on rollback — use `try/catch`, not the `{ error }` return pattern.
-- Kysely **does not apply RLS**. Authorize at the route with `requirePermissions` before calling it;
-  when in doubt, scope queries by `companyId` inside the transaction.
+- Kysely **does not apply RLS**, so authorization is two layers and both are required:
+  `requirePermissions` at the route proves the caller may act in the company, and the service
+  **always** scopes every statement by `companyId` — plus the parent document id whenever the row
+  ids come from the request body. The route cannot enforce the second: it never sees which rows
+  the ids name, so an unscoped service lets any route reorder/edit any row in the company.
+  The `no-unscoped-kysely-write` check (`@carbon/checks`) fails any `updateTable`/`deleteFrom`
+  in ERP modules/routes, MES or `packages/jobs` whose statement has no `.where("companyId", …)`.
+  A link table with no `companyId` column (`jobMaterialStep`, `jobOperationToolStep`) is scoped
+  through its parent: `.where("jobOperationStepId", "in", (eb) => eb.selectFrom("jobOperationStep")
+  .select("id").where("id", "in", ids).where("companyId", "=", companyId))`.
+- Never query inside a loop — one set-based statement (`UPDATE … FROM (VALUES …)`, `.in()`, a
+  join) per logical write.
 - Single writes are already atomic — don't reach for a transaction.
-- Kysely auto-quotes reserved column names (e.g. `order`), so `.set({ order: sortOrder })` is safe.
-- Kysely uses a connection pool and the Postgres role — enforce auth at the route, not in the service.
+- Kysely auto-quotes reserved column names (e.g. `order`), so `.set({ order: sortOrder })` is
+  safe; in raw `sql`, use `sql.ref(column)`.
 
 ## RLS / permission model
 

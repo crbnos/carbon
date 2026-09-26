@@ -1,8 +1,9 @@
-import { assertIsPost, error } from "@carbon/auth";
+import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { Fragment } from "react";
@@ -28,6 +29,8 @@ import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "sales-rfq-line-details");
+
 export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   const { companyId } = await requirePermissions(request, {
     view: "sales"
@@ -46,6 +49,17 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
       path.to.salesRfq(rfqId),
       await flash(request, error(line.error, "Failed to load line"))
     );
+  }
+
+  // The service role bypasses RLS and lineId comes from the URL: the line must
+  // belong to this company and to the RFQ in the URL.
+  if (line.data.companyId !== companyId || line.data.salesRfqId !== rfqId) {
+    logger.error("Sales RFQ line not found for company", {
+      companyId,
+      rfqId,
+      lineId
+    });
+    throw notFound("Sales RFQ line not found");
   }
 
   const itemId = line.data.itemId;

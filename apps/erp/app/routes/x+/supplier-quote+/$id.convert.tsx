@@ -60,6 +60,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     isApprovalRequired(serviceRole, "supplier", companyId)
   ]);
 
+  // The service role bypasses RLS and id comes from the URL.
+  if (!quote.data || quote.data.companyId !== companyId) {
+    logger.error("Supplier quote not found for company", {
+      companyId,
+      supplierQuoteId: id,
+      error: quote.error
+    });
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(request, error(null, "Supplier quote not found"))
+    );
+  }
+
   if (supplierApprovalRequired && quote.data?.supplierId) {
     const supplier = await getSupplier(serviceRole, quote.data.supplierId);
     if (supplier.data?.status !== "Active") {

@@ -1,7 +1,11 @@
 import { Readable } from "node:stream";
-import { CarbonEdition } from "@carbon/auth";
+import {
+  CarbonEdition,
+  getClaims,
+  makePermissionsFromClaims
+} from "@carbon/auth";
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { Edition } from "@carbon/utils";
@@ -122,6 +126,38 @@ async function startCompanyTemplate(
 }
 
 /**
+ * Refuse unless `userId` is an employee of `companyId` holding settings_update
+ * there. Reads claims fresh from the database (not the Redis cache) so a
+ * company the caller created moments ago in a failed first attempt counts.
+ */
+async function assertCanUpdateCompany(
+  serviceRole: ServiceRole,
+  userId: string,
+  companyId: string
+): Promise<void> {
+  const rawClaims = await getClaims(serviceRole, userId, companyId);
+  const claims = rawClaims.error
+    ? null
+    : makePermissionsFromClaims(rawClaims.data as Json[]);
+
+  const allowed =
+    claims?.role === "employee" &&
+    (claims.permissions.settings?.update ?? []).includes(companyId);
+
+  if (!allowed) {
+    logger.error("Onboarding re-entry refused: caller cannot update company", {
+      userId,
+      companyId,
+      role: claims?.role ?? null,
+      error: rawClaims.error
+    });
+    throw new Response("You do not have permission to update this company", {
+      status: 403
+    });
+  }
+}
+
+/**
  * Insert-or-update the onboarding company, provision its data, and create the
  * headquarters location plus the owner's employee job. Returns the companyId.
  * Called by the data-choice step: a clean seed, a demo template, or (internal
@@ -163,6 +199,14 @@ export async function provisionOnboardingCompany(
 
   // Re-entry: a company + location already exist — just update them. No reseed.
   if (company && location) {
+    // The re-entry target is simply the caller's first membership, and the
+    // writes below run with the service role: they overwrite the company
+    // profile and, for a template, wipe its business data. So the caller must
+    // hold the authority that editing company settings needs — an employee
+    // with settings_update — or any portal user / regular employee could
+    // rewrite the company by POSTing this step.
+    await assertCanUpdateCompany(serviceRole, userId, company.id!);
+
     const [companyUpdate, locationUpdate] = await Promise.all([
       updateCompany(serviceRole, company.id!, {
         ...companyData,
@@ -185,7 +229,9 @@ export async function provisionOnboardingCompany(
       });
       throw new Error("Fatal: failed to update location");
     }
-    // Re-entry still honours the template — the job refuses if items already exist.
+    // Re-entry still honours the template. The job snapshots the company and
+    // then WIPES its business data before seeding (revertible from the
+    // snapshot) — it no longer refuses a company that already has items.
     await startCompanyTemplate(company.id!, userId, template);
     return company.id!;
   }

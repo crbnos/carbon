@@ -21,6 +21,15 @@ export const Linear = defineIntegration({
       type: "secret",
       required: true,
       value: ""
+    },
+    {
+      name: "webhookSigningSecret",
+      label: "Webhook Signing Secret",
+      description:
+        "Optional. When set, Carbon rejects webhook requests that are not signed with this secret.",
+      type: "secret",
+      required: false,
+      value: ""
     }
   ],
   schema: z.object({
@@ -31,7 +40,10 @@ export const Linear = defineIntegration({
       .string()
       .refine((val) => val === "" || val.startsWith("lin_api"), {
         message: "Linear API Key must start with 'lin_api'"
-      })
+      }),
+    // Optional, vaulted like apiKey (empty keeps the stored value). When set,
+    // the webhook route requires a valid `Linear-Signature` on every delivery.
+    webhookSigningSecret: z.string().optional()
   })
 });
 
@@ -59,6 +71,12 @@ function SetupInstructions({ companyId }: { companyId: string }) {
           <Copy text={webhookUrl} />
         </InputRightElement>
       </InputGroup>
+
+      <p className="text-sm text-muted-foreground">
+        After you save the webhook, Linear shows a signing secret on the
+        webhook's detail page. Copy it into the "Webhook Signing Secret" field
+        below so Carbon only accepts requests that Linear has signed.
+      </p>
 
       <p className="text-sm text-muted-foreground">
         Next, from the sidebar go to "Security and access" page and generate a

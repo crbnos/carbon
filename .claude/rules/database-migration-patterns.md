@@ -131,6 +131,13 @@ FROM "entityName" e
 LEFT JOIN "user" u ON u."id" = e."createdBy";
 ```
 
+`CREATE OR REPLACE VIEW` replaces the view's options, so recreating a view without the `WITH`
+clause silently turns it back into an owner-rights view that bypasses RLS for every PostgREST
+caller, anon included (`openJobMaterialLines`, fixed in `20260926093417`). The
+`no-view-without-invoker` check (`@carbon/checks`) fails any `CREATE VIEW` that does not state
+`security_invoker`; the `view-without-security-invoker` invariant checks the live catalog.
+Materialized views cannot run as the caller — revoke SELECT from `anon, authenticated` instead.
+
 ## Triggers
 
 There is **no generic boilerplate trigger** to add per table. Triggers in this codebase are

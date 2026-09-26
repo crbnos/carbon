@@ -42,6 +42,28 @@ function isMissingQuantityColumn(
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
+/**
+ * A `{ data, error }` failure shaped like a PostgREST response, for when a
+ * caller-supplied record id does not belong to the caller's company. Callers
+ * of these services pass service-role clients, so the companyId check is the
+ * only tenant boundary — a miss must stop the write, not no-op past it.
+ */
+function notFoundResponse(message: string) {
+  return {
+    data: null,
+    error: {
+      name: "PostgrestError",
+      message,
+      details: "",
+      hint: "",
+      code: "PGRST116"
+    } as PostgrestError,
+    count: null,
+    status: 404,
+    statusText: "Not Found"
+  };
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
@@ -288,13 +310,26 @@ export async function finishJobOperation(
     companyId: string;
   }
 ) {
+  // Callers pass a service-role client, so the companyId filter is the tenant
+  // check: an operation id from another company updates nothing, and nothing
+  // downstream (GL posting, picked-material returns, moments) may run for it.
   const result = await client
     .from("jobOperation")
     .update({
       status: "Done",
       updatedBy: args.userId
     })
-    .eq("id", args.jobOperationId);
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .select("id");
+
+  if (!result.error && result.data.length === 0) {
+    log.warn("finishJobOperation: job operation not found in company", {
+      companyId: args.companyId,
+      jobOperationId: args.jobOperationId
+    });
+    return notFoundResponse("Job operation not found");
+  }
 
   if (!result.error) {
     client
@@ -658,6 +693,24 @@ export async function getJobAttributesByOperationId(
     .from("jobOperationStep")
     .select("*, jobOperationStepRecord(*)")
     .eq("operationId", operationId);
+}
+
+/**
+ * Tenant check for a caller-supplied job operation id. Routes read operations
+ * with a service-role client (operators often lack RLS rights), so this scoped
+ * lookup is the boundary: null data means the id is not in the company.
+ */
+export async function getJobOperationForCompany(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, jobId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 }
 
 export async function getJobByOperationId(
@@ -1362,6 +1415,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     .from("jobOperationStep")
     .select("id, operationId")
     .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
     .single();
   if (step.error || !step.data.operationId) return { error: step.error };
   const operationId = step.data.operationId;
@@ -1614,6 +1668,7 @@ export async function getOperationEligibility(
     .from("jobOperation")
     .select("processId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
   if (operation.error) {
@@ -2157,6 +2212,24 @@ export async function insertAttributeRecord(
     createdBy: string;
   }
 ) {
+  // Callers pass a service-role client and the step id comes from the form.
+  // The upsert's conflict target is (jobOperationStepId, index), so a foreign
+  // step id would overwrite — and re-tenant — another company's record.
+  const step = await client
+    .from("jobOperationStep")
+    .select("id")
+    .eq("id", data.jobOperationStepId)
+    .eq("companyId", data.companyId)
+    .maybeSingle();
+  if (step.error) return step;
+  if (!step.data) {
+    log.warn("insertAttributeRecord: step not found in company", {
+      companyId: data.companyId,
+      jobOperationStepId: data.jobOperationStepId
+    });
+    return notFoundResponse("Job operation step not found");
+  }
+
   return client.from("jobOperationStepRecord").upsert(data, {
     onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false
@@ -2422,12 +2495,13 @@ export async function endProductionEventsByWorkCenter(
 // block the production event that already succeeded.
 async function autoStartJobAndOperation(
   client: SupabaseClient<Database>,
-  args: { jobOperationId: string; userId: string }
+  args: { jobOperationId: string; userId: string; companyId: string }
 ) {
   const op = await client
     .from("jobOperation")
     .select("jobId, status")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.error || !op.data) return;
 
@@ -2438,6 +2512,7 @@ async function autoStartJobAndOperation(
         .from("jobOperation")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", args.jobOperationId)
+        .eq("companyId", args.companyId)
         .in("status", ["Todo", "Ready", "Waiting"])
     );
   }
@@ -2447,10 +2522,86 @@ async function autoStartJobAndOperation(
         .from("job")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", op.data.jobId)
+        .eq("companyId", args.companyId)
         .in("status", ["Draft", "Planned", "Ready"])
     );
   }
   await Promise.all(updates);
+}
+
+/**
+ * Every record id a production event references must belong to the event's
+ * company. `startProductionEvent` is called with a service-role client (the
+ * QR start route) as well as the user client, and a foreign id here would
+ * attach another tenant's operation, work center, batch or serial to this
+ * company's timer and genealogy. One scoped query per id type.
+ */
+async function verifyProductionEventRefs(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    workCenterId?: string;
+    jobOperationBatchId?: string;
+    trackedEntityId?: string;
+  }
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { companyId } = args;
+  const [operation, workCenter, batch, entity] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("id", args.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    args.workCenterId
+      ? client
+          .from("workCenter")
+          .select("id")
+          .eq("id", args.workCenterId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.jobOperationBatchId
+      ? client
+          .from("jobOperationBatch")
+          .select("id")
+          .eq("id", args.jobOperationBatchId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.trackedEntityId
+      ? client
+          .from("trackedEntity")
+          .select("id")
+          .eq("id", args.trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const missing = [
+    !operation.data && "Job operation",
+    workCenter && !workCenter.data && "Work center",
+    batch && !batch.data && "Operation batch",
+    entity && !entity.data && "Tracked entity"
+  ].filter(Boolean) as string[];
+
+  if (missing.length > 0) {
+    log.warn("startProductionEvent: referenced record not found in company", {
+      companyId,
+      missing,
+      jobOperationId: args.jobOperationId,
+      workCenterId: args.workCenterId,
+      jobOperationBatchId: args.jobOperationBatchId,
+      trackedEntityId: args.trackedEntityId,
+      error:
+        operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
+    });
+    return { ok: false, message: `${missing[0]} not found` };
+  }
+
+  return { ok: true };
 }
 
 export async function startProductionEvent(
@@ -2471,6 +2622,15 @@ export async function startProductionEvent(
   /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
   source: WorkSource = "mes"
 ) {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
@@ -2480,6 +2640,7 @@ export async function startProductionEvent(
         .from("jobOperation")
         .select("*")
         .eq("id", data.jobOperationId)
+        .eq("companyId", data.companyId)
         .single()
     ]);
 
@@ -2535,7 +2696,8 @@ export async function startProductionEvent(
 
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     trackWorkEvent("job_operation_started", {
@@ -2558,7 +2720,8 @@ export async function startProductionEvent(
   if (!eventInsert.error) {
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     const inserted = eventInsert.data?.[0];

@@ -39,6 +39,7 @@ import {
   resolveBuyUnitCost,
   upsertExternalLink
 } from "../shared/shared.service";
+import { updateSortOrder } from "../shared/sort-order";
 import type {
   customerAccountingValidator,
   customerBankAccountValidator,
@@ -2828,6 +2829,44 @@ export async function upsertCustomerItemPriceOverride(
     };
   }
 
+  // Kysely bypasses RLS and the dispatcher reaches this with caller-supplied
+  // ids, so the item and the customer (or customer type) must belong to this
+  // company before either is written onto the override.
+  const [item, customer, customerType] = await Promise.all([
+    db
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", data.itemId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst(),
+    data.customerId
+      ? db
+          .selectFrom("customer")
+          .select("id")
+          .where("id", "=", data.customerId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null,
+    data.customerTypeId
+      ? db
+          .selectFrom("customerType")
+          .select("id")
+          .where("id", "=", data.customerTypeId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null
+  ]);
+  if (
+    !item ||
+    (data.customerId && !customer) ||
+    (data.customerTypeId && !customerType)
+  ) {
+    return {
+      data: null,
+      error: { message: "Item, customer or customer type not found" }
+    };
+  }
+
   const sortedBreaks = [...data.breaks].sort((a, b) => a.quantity - b.quantity);
 
   const parentFields = {
@@ -3993,16 +4032,18 @@ export async function upsertQuoteLine(
 
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  quoteId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("quoteLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "quoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "quoteId", id: quoteId },
+    updates
   });
 }
 
@@ -4093,6 +4134,7 @@ async function rewriteQuoteLinePrices(
     .selectFrom("quoteLine")
     .select("unitPricePrecision")
     .where("id", "=", lineId)
+    .where("quoteId", "=", quoteId)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
 
@@ -4820,37 +4862,56 @@ export async function resolvePurchaseToOrderPrices(
 
 export async function recalculateQuoteLinePrices(
   client: SupabaseClient<Database>,
+  companyId: string,
   quoteId: string,
   quoteLineId: string,
   userId: string
 ) {
-  // 1. Fetch existing price rows
-  const existingPrices = await client
-    .from("quoteLinePrice")
-    .select("*")
-    .eq("quoteLineId", quoteLineId);
-
-  if (existingPrices.error) return { error: existingPrices.error };
-  if (!existingPrices.data?.length) return { error: null };
-
-  // 2. Fetch line precision and company + customer context for engine pipe-through
+  // Callers pass a service-role client and URL ids: the line must belong to
+  // this quote AND this company before any price row is read or rewritten.
   const [lineResult, quoteResult] = await Promise.all([
     client
       .from("quoteLine")
       .select("itemId, unitPricePrecision")
       .eq("id", quoteLineId)
-      .single(),
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
     client
       .from("quote")
-      .select("companyId, customerId")
+      .select("customerId")
       .eq("id", quoteId)
-      .single()
+      .eq("companyId", companyId)
+      .maybeSingle()
   ]);
 
-  const precision = lineResult.data?.unitPricePrecision ?? 2;
-  const itemId = lineResult.data?.itemId ?? undefined;
-  const companyId = quoteResult.data?.companyId;
-  const customerId = quoteResult.data?.customerId ?? undefined;
+  if (lineResult.error) return { error: lineResult.error };
+  if (quoteResult.error) return { error: quoteResult.error };
+  if (!lineResult.data || !quoteResult.data) {
+    logger.error("Quote line not found for price recalculation", {
+      companyId,
+      quoteId,
+      quoteLineId
+    });
+    return {
+      error: { message: "Quote line not found" } as PostgrestError
+    };
+  }
+
+  // 1. Fetch existing price rows
+  const existingPrices = await client
+    .from("quoteLinePrice")
+    .select("*")
+    .eq("quoteLineId", quoteLineId)
+    .eq("companyId", companyId);
+
+  if (existingPrices.error) return { error: existingPrices.error };
+  if (!existingPrices.data?.length) return { error: null };
+
+  // 2. Line precision and customer context for engine pipe-through
+  const precision = lineResult.data.unitPricePrecision ?? 2;
+  const itemId = lineResult.data.itemId ?? undefined;
+  const customerId = quoteResult.data.customerId ?? undefined;
 
   // Fetch default markups to use as fallback for legacy rows without categoryMarkups
   let defaultMarkups: Record<string, number> = {};
@@ -4947,6 +5008,7 @@ export async function recalculateQuoteLinePrices(
         updatedBy: userId
       })
       .eq("quoteLineId", quoteLineId)
+      .eq("companyId", companyId)
       .eq("quantity", row.quantity);
 
     if (updateResult.error) {
@@ -5033,15 +5095,28 @@ export async function upsertQuoteMaterial(
         quoteId: string;
         quoteLineId: string;
         quoteOperationId?: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
   if ("updatedBy" in quoteMaterial) {
+    // A material never moves between quotes, lines, make methods or tenants —
+    // strip the parent columns so an update cannot re-parent the row, and
+    // scope it to the caller's company (callers may pass a service-role client).
+    const {
+      id,
+      companyId,
+      quoteId: _quoteId,
+      quoteLineId: _quoteLineId,
+      quoteMakeMethodId: _quoteMakeMethodId,
+      ...update
+    } = quoteMaterial;
     return client
       .from("quoteMaterial")
-      .update(sanitize(quoteMaterial))
-      .eq("id", quoteMaterial.id)
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
       .select("id, methodType")
       .single();
   }
@@ -5138,6 +5213,7 @@ export async function upsertQuoteOperation(
         id: string;
         quoteId: string;
         quoteLineId: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5149,10 +5225,21 @@ export async function upsertQuoteOperation(
       .select("id")
       .single();
   }
+  // An operation never moves between quotes, lines, make methods or tenants —
+  // strip the parent columns so an update cannot re-parent the row.
+  const {
+    id,
+    companyId,
+    quoteId: _quoteId,
+    quoteLineId: _quoteLineId,
+    quoteMakeMethodId: _quoteMakeMethodId,
+    ...update
+  } = operation;
   return client
     .from("quoteOperation")
-    .update(sanitize(normalizeOperationSourceIds(operation)))
-    .eq("id", operation.id)
+    .update(sanitize(normalizeOperationSourceIds(update)))
+    .eq("id", id)
+    .eq("companyId", companyId)
     .select("id")
     .single();
 }
@@ -5969,16 +6056,18 @@ export async function upsertSalesOrderLine(
 
 export async function updateSalesOrderLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  salesOrderId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("salesOrderLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "salesOrderLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "salesOrderId", id: salesOrderId },
+    updates
   });
 }
 
@@ -6034,6 +6123,76 @@ export async function insertSalesRFQ(
   data: { id: string; rfqId: string } | null;
   error: PostgrestError | null;
 }> {
+  // Kysely bypasses RLS and the dispatcher reaches this with caller-supplied
+  // ids: the customer, its contacts and location, the location and the sales
+  // person must all belong to this company (the contacts and location to this
+  // customer) before any of them is written onto the RFQ.
+  const { companyId, customerId } = input;
+  const contactIds = [
+    ...new Set(
+      [input.customerContactId, input.customerEngineeringContactId].filter(
+        (id): id is string => !!id
+      )
+    )
+  ];
+  const [customer, contacts, customerLocation, location, salesPerson] =
+    await Promise.all([
+      db
+        .selectFrom("customer")
+        .select("id")
+        .where("id", "=", customerId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst(),
+      contactIds.length > 0
+        ? db
+            .selectFrom("customerContact")
+            .select("id")
+            .where("id", "in", contactIds)
+            .where("customerId", "=", customerId)
+            .where("companyId", "=", companyId)
+            .execute()
+        : [],
+      input.customerLocationId
+        ? db
+            .selectFrom("customerLocation")
+            .select("id")
+            .where("id", "=", input.customerLocationId)
+            .where("customerId", "=", customerId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : null,
+      input.locationId
+        ? db
+            .selectFrom("location")
+            .select("id")
+            .where("id", "=", input.locationId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : null,
+      input.salesPersonId
+        ? db
+            .selectFrom("employee")
+            .select("id")
+            .where("id", "=", input.salesPersonId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : null
+    ]);
+  if (
+    !customer ||
+    contacts.length !== contactIds.length ||
+    (input.customerLocationId && !customerLocation) ||
+    (input.locationId && !location) ||
+    (input.salesPersonId && !salesPerson)
+  ) {
+    return {
+      data: null,
+      error: {
+        message: "Customer, contact, location or sales person not found"
+      } as PostgrestError
+    };
+  }
+
   let rfqId: string;
   if (input.rfqId) {
     rfqId = input.rfqId;
@@ -6276,16 +6435,18 @@ export async function upsertSalesRFQLine(
 
 export async function updateSalesRFQLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  salesRfqId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("salesRfqLine")
-        .set({ order: sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "salesRfqLine",
+    column: "order",
+    companyId,
+    userId,
+    parent: { column: "salesRfqId", id: salesRfqId },
+    updates
   });
 }
 

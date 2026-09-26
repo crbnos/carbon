@@ -216,6 +216,19 @@ querying), and every route entry point checks it too — login buttons, the
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
+- **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
+  at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
+  `SESSION_SECRET` and bound to the company and the terminal's session user
+  (`setConsolePinIn` / `clearConsolePinIn`). `resolveConsolePinIn` re-validates it on
+  every request — the operator must still be an active employee of the company and
+  `companySettings.consoleEnabled` still on — and is memoized per read request. PINs
+  are bcrypt hashes in `employeePin` (no API-role access; `set_employee_pin` /
+  `verify_employee_pin` over the server's Kysely connection, via
+  `@carbon/ee/console.server`). MES pin-in (`x+/console.pin-in.tsx`) consumes the
+  per-operator `AccountLockout` attempt and the per-terminal `Ratelimit` token BEFORE
+  verifying (refunding both on a non-guess), so a parallel burst cannot outrun the
+  limits. `companySettings.consoleEnabled` is server-only: a trigger refuses API-role
+  writes, and it only moves through `updateConsoleSetting` (`requireEntitlement`).
 
 ## MFA / TOTP (`mfa.server.ts`)
 
@@ -321,6 +334,11 @@ the gate used in every loader/action. Two paths:
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
      consoleMode }`. `bypassRls: true` + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
+   - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
+     is the pinned operator from `resolveConsolePinIn` (falling back to the session
+     user when nobody valid is pinned in); `sessionUserId` is always the account the
+     terminal is signed in with. Gate terminal-level actions (entering console mode)
+     on `sessionUserId`, never `userId`.
 
 Claims cache must be invalidated when permissions change — `users.server.ts` deactivate
 flows call `redis.del(getPermissionCacheKey(userId))`.

@@ -22,9 +22,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * as non-secret leaks — keep this map exhaustive and reviewed.
  */
 export const SECRET_KEYS: Record<string, string[]> = {
-  linear: ["apiKey"],
+  linear: ["apiKey", "webhookSigningSecret"],
   slack: ["access_token"],
-  jira: ["credentials.accessToken", "credentials.refreshToken"],
+  jira: [
+    "credentials.accessToken",
+    "credentials.refreshToken",
+    "webhookSigningSecret"
+  ],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
@@ -41,6 +45,14 @@ export const SECRET_KEYS: Record<string, string[]> = {
   // (top-level). splitSecrets omits whichever is absent for the active provider.
   email: ["apiKey", "password"]
 };
+
+/**
+ * Metadata key of the OPTIONAL inbound-webhook signing secret for integrations
+ * whose webhook the customer creates by hand in the provider (Linear, Jira).
+ * Optional so existing unsigned installs keep working: when it is set, the
+ * webhook route rejects any delivery without a valid signature.
+ */
+export const WEBHOOK_SIGNING_SECRET_KEY = "webhookSigningSecret";
 
 /** Thrown when a secret is expected in the vault but cannot be read (fail-closed). */
 export class IntegrationSecretUnavailableError extends Error {
@@ -267,4 +279,30 @@ export async function resolveIntegrationSecrets(
     setPath(base, path, value);
   }
   return base;
+}
+
+/**
+ * Read an integration's optional webhook signing secret from the vault.
+ * Returns null when none is configured (the webhook stays unsigned). Throws
+ * `IntegrationSecretUnavailableError` when the vault cannot be read — callers
+ * must fail closed, since "no secret" cannot be told apart from "unreadable".
+ * Requires a SERVICE-ROLE client.
+ */
+export async function getWebhookSigningSecret(
+  serviceClient: SupabaseClient<Database>,
+  companyId: string,
+  integrationId: string,
+  row: { metadata: unknown; secretRef?: string | null }
+): Promise<string | null> {
+  const resolved = await resolveIntegrationSecrets(
+    serviceClient,
+    companyId,
+    integrationId,
+    row.metadata,
+    row.secretRef
+  );
+  const secret = getPath(resolved, WEBHOOK_SIGNING_SECRET_KEY);
+  return typeof secret === "string" && secret.trim().length > 0
+    ? secret.trim()
+    : null;
 }

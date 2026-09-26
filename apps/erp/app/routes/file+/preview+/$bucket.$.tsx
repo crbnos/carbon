@@ -5,6 +5,7 @@ import {
   effectiveExtension,
   getCompanyPrivateBucket,
   getContentType,
+  isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
   TEMP_STAGING_BUCKET
@@ -24,6 +25,15 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
 
   // Don't decode the path here - let Supabase handle the URL encoding
   // path = decodeURIComponent(path);
+
+  if (isUnsafeStoragePath(path)) {
+    logger.error("Refused a storage path that escapes its prefix", {
+      companyId,
+      bucket,
+      path
+    });
+    return new Response(null, { status: 400 });
+  }
 
   const fileType = path.split(".").pop()?.toLowerCase();
 

@@ -396,19 +396,29 @@ so it can open a real transaction. This is the answer to the "three inserts aren
 atomic" problem from [Part 2](#part-2-follow-one-click-all-the-way-down):
 
 ```ts
-return db.transaction().execute(async (trx) => {
-  for (const { id, sortOrder, updatedBy } of updates) {
-    await trx
-      .updateTable("quoteLine")
-      .set({ sortOrder, updatedBy })
-      .where("id", "=", id)
-      .execute();
-  }
+// updateSortOrder (apps/erp/app/modules/shared/sort-order.ts), which every
+// drag-to-reorder route uses: one UPDATE for all the rows, inside a transaction.
+await db.transaction().execute(async (trx) => {
+  const { rows } = await sql<{ id: string }>`
+    UPDATE "quoteLine" AS t SET "sortOrder" = v."sortOrder", …
+    FROM (VALUES ${values}) AS v("id", "sortOrder")
+    WHERE t."id" = v."id"
+      AND t."companyId" = ${companyId}
+      AND t."quoteId" = ${quoteId}
+    RETURNING t."id"`.execute(trx);
+  // A row from another company or another quote matched nothing. Throwing
+  // here rolls back the rows that did match: all or nothing.
+  if (rows.length !== updates.length) throw new Error("…");
 });
 ```
 
-Three warnings. Kysely **throws** on failure rather than returning `{ error }`, so wrap it
-in `try/catch`. It applies **no** RLS, so authorize before you call it. And the pool it
+Four warnings. Kysely **throws** on failure rather than returning `{ error }`, so wrap it
+in `try/catch`. It applies **no** RLS, so authorize before you call it, and then scope
+**every** statement yourself: `companyId` always, plus the parent document's id whenever
+the row ids come from the request. Without the parent filter, a request sent through one
+quote's URL could reorder the lines of any other quote in the company, including one
+that is already closed. Write one statement for the whole set rather than a query per row
+inside a loop. And the pool it
 draws from is small (edge functions ask for exactly one connection,
 `getConnectionPool(1)`): if code inside a transaction reaches for a second connection from
 the same pool, that second request queues behind a transaction that cannot finish until it

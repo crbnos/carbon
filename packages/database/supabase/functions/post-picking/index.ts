@@ -3,6 +3,7 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -137,6 +138,38 @@ serve(async (req: Request) => {
       await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
     } catch (err) {
       return errorResponse(err, 401);
+    }
+
+    // requirePermissions proves the caller may act in companyId, not that the
+    // body's ids belong to it. Every line-scoped case writes pickingListId as the
+    // ledger/activity documentId and locationId / fromStorageUnitId /
+    // trackedEntityId onto this company's ledger rows, so all of them are
+    // re-read under companyId — and the line must be on the list the body names.
+    if ("pickingListLineId" in validatedPayload) {
+      const { companyId, pickingListId, pickingListLineId, locationId } = validatedPayload;
+      const line = await db
+        .selectFrom("pickingListLine")
+        .select("id")
+        .where("id", "=", pickingListLineId)
+        .where("pickingListId", "=", pickingListId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!line) throw new RecordNotFoundError("Picking list line not found");
+      await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+      await assertCompanyRecords(
+        db,
+        "storageUnit",
+        ["fromStorageUnitId" in validatedPayload ? validatedPayload.fromStorageUnitId : null],
+        companyId,
+        "Storage unit"
+      );
+      await assertCompanyRecords(
+        db,
+        "trackedEntity",
+        ["trackedEntityId" in validatedPayload ? validatedPayload.trackedEntityId : null],
+        companyId,
+        "Tracked entity"
+      );
     }
 
     const today = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId)).toString();

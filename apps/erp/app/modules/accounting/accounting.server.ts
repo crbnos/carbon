@@ -600,6 +600,7 @@ export async function postDepreciationRun(
         .updateTable("depreciationRunLine")
         .set({ journalId: journal.id })
         .where("id", "=", line.id)
+        .where("companyId", "=", companyId)
         .execute();
 
       const newAccumulated = Number(asset.accumulatedDepreciation) + amount;
@@ -628,6 +629,7 @@ export async function postDepreciationRun(
         .updateTable("fixedAsset")
         .set(assetUpdate)
         .where("id", "=", line.fixedAssetId)
+        .where("companyId", "=", companyId)
         .execute();
     }
 
@@ -799,6 +801,7 @@ export async function postDepreciationRun(
         postedBy: userId
       })
       .where("id", "=", depreciationRunId)
+      .where("companyId", "=", companyId)
       .execute();
   });
 }

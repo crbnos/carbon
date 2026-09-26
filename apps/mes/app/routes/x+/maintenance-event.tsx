@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -12,6 +13,8 @@ import {
 } from "~/services/maintenance.service";
 import { notifyScheduleInputsChanged } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "maintenance-event");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -30,6 +33,37 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = await getCarbonServiceRole();
   const currentTime = datetime.timestamp();
 
+  // Every write below is service-role and the ids come from the form, so the
+  // dispatch (and, on Start, the work center) must be this company's.
+  const [ownedDispatch, ownedWorkCenter] = await Promise.all([
+    serviceRole
+      .from("maintenanceDispatch")
+      .select("id")
+      .eq("id", dispatchId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    action === "Start" && workCenterId
+      ? serviceRole
+          .from("workCenter")
+          .select("id")
+          .eq("id", workCenterId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  if (!ownedDispatch.data || (ownedWorkCenter && !ownedWorkCenter.data)) {
+    logger.warn("Dispatch or work center not found in company", {
+      companyId,
+      dispatchId,
+      workCenterId,
+      error: ownedDispatch.error ?? ownedWorkCenter?.error
+    });
+    return data(
+      {},
+      await flash(request, error(null, "Maintenance dispatch not found"))
+    );
+  }
+
   // A dispatch that takes its work center offline moves the schedule's downtime
   // window when it starts (down begins) or completes (down ends) — stamp the
   // work center so the wave regenerates its location.
@@ -38,6 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("maintenanceDispatch")
       .select("takesWorkCenterOffline, workCenterId")
       .eq("id", dispatchId)
+      .eq("companyId", companyId)
       .single();
     if (dispatch?.takesWorkCenterOffline && dispatch.workCenterId) {
       await notifyScheduleInputsChanged(
@@ -75,7 +110,8 @@ export async function action({ request }: ActionFunctionArgs) {
       dispatchId,
       status: "In Progress",
       actualStartTime: currentTime,
-      updatedBy: userId
+      updatedBy: userId,
+      companyId
     });
 
     await stampScheduleIfOffline();
@@ -97,7 +133,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const endEvent = await endMaintenanceEvent(serviceRole, {
       eventId,
       endTime: currentTime,
-      updatedBy: userId
+      updatedBy: userId,
+      companyId
     });
 
     if (endEvent.error) {
@@ -119,7 +156,8 @@ export async function action({ request }: ActionFunctionArgs) {
       await endMaintenanceEvent(serviceRole, {
         eventId,
         endTime: currentTime,
-        updatedBy: userId
+        updatedBy: userId,
+        companyId
       });
     }
 
@@ -129,7 +167,8 @@ export async function action({ request }: ActionFunctionArgs) {
       status: "Completed",
       actualEndTime: currentTime,
       completedAt: currentTime,
-      updatedBy: userId
+      updatedBy: userId,
+      companyId
     });
 
     if (updateStatus.error) {

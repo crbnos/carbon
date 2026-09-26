@@ -317,7 +317,7 @@ export async function action(args: ActionFunctionArgs) {
           buyer
         ] = await Promise.all([
           getCompany(serviceRole, companyId),
-          getSupplierContact(serviceRole, supplierContact),
+          getSupplierContact(serviceRole, supplierContact, companyId),
           getPurchaseOrder(serviceRole, orderId),
           getPurchaseOrderLines(serviceRole, orderId),
           getPurchaseOrderLocations(serviceRole, orderId),

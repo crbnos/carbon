@@ -11,6 +11,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobOperation
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -34,6 +35,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const operationData = validation.data;
+
+  // The insert uses the service role, which bypasses RLS: the job and its make
+  // method must belong to this company.
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "job", companyId, { id: jobId }),
+    requireCompanyRecord(serviceRole, "jobMakeMethod", companyId, {
+      id: validation.data.jobMakeMethodId,
+      jobId
+    })
+  ]);
 
   const insertJobOperation = await upsertJobOperation(serviceRole, {
     ...operationData,

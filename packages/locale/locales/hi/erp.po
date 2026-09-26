@@ -246,6 +246,10 @@ msgstr "{0} मान"
 msgid "{0} values missing"
 msgstr "{0} मान गायब हैं"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} को {name} के रूप में सहेजा जाएगा"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}द"
@@ -538,8 +542,11 @@ msgstr "90 दिन"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "इस प्रक्रिया पर एक \"मेल खाना चाहिए\" नियम इन्हें एक बैच साझा करने से रोकता है"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "ऑपरेटर बनाए जाने पर एक 4-अंकीय PIN बनाया जाता है।"
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "बैच को कम से कम एक ऑपरेशन की आवश्यकता है। पूरे बैच को विभाजित करने के लिए, इसके बजाय विघटन का उपयोग करें।"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "एक कार्बन-चलाया गया डेटा माइग्रेशन — आप अपना डेटा लोड करते हैं"
@@ -1382,6 +1389,9 @@ msgstr "कंपनी जोड़ें"
 
 msgid "Add condition"
 msgstr "शर्त जोड़ें"
+
+msgid "Add Console Operator"
+msgstr "कंसोल ऑपरेटर जोड़ें"
 
 msgid "Add Contractor"
 msgstr "ठेकेदार जोड़ें"
@@ -3286,6 +3296,10 @@ msgstr "केवल सक्रिय ब्रेक को अक्षम �
 msgid "Can't download this file"
 msgstr "इस फ़ाइल को डाउनलोड नहीं कर सकते"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "{0} नाम की फ़ाइल अपलोड नहीं की जा सकती"
+
 msgid "Cancel"
 msgstr "रद्द करें"
 
@@ -4101,6 +4115,9 @@ msgstr "कंसोल मोड सक्षम है"
 msgid "Console Operator"
 msgstr "कंसोल ऑपरेटर"
 
+msgid "Console Operator Created"
+msgstr "कंसोल ऑपरेटर बनाया गया"
+
 msgid "consumable"
 msgstr "उपभोग्य सामग्री"
 
@@ -4343,9 +4360,6 @@ msgstr "भाग संख्या कॉपी करें"
 
 msgid "Copy part unique identifier"
 msgstr "भाग के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
-
-msgid "Copy PIN"
-msgstr "PIN कॉपी करें"
 
 msgid "Copy previous day"
 msgstr "पिछले दिन से कॉपी करें"
@@ -4667,6 +4681,9 @@ msgstr "नया बनाएँ"
 
 msgid "Create new rule"
 msgstr "नया नियम बनाएं"
+
+msgid "Create Operator"
+msgstr "ऑपरेटर बनाएँ"
 
 msgid "Create PO Revision"
 msgstr "क्रय आदेश रिवीजन बनाएँ"
@@ -8087,8 +8104,8 @@ msgstr "सामान्य खाता बही और महीने क�
 msgid "Generate"
 msgstr "उत्पन्न करें"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "एक नया 4-अंकीय PIN जेनरेट करें। इसे ऑपरेटर के साथ साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "एक नया 4-अंकीय PIN बनाएँ। ऑपरेटर का वर्तमान PIN तुरंत काम करना बंद कर देगा।"
 
 msgid "Generate and send customer invoices"
 msgstr "ग्राहक चालान उत्पन्न करें और भेजें"
@@ -8101,9 +8118,6 @@ msgstr "वित्तीय वर्ष उत्पन्न करें"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "सामग्री के गुणों के आधार पर सामग्री आईडी और विवरण उत्पन्न करें।"
-
-msgid "Generate new PIN"
-msgstr "नया PIN जेनरेट करें"
 
 msgid "Generate Picking List"
 msgstr "पिकिंग सूची जेनरेट करें"
@@ -10901,9 +10915,6 @@ msgstr "नई भुगतान शर्तें"
 
 msgid "New Picking List"
 msgstr "नई पिकिंग सूची"
-
-msgid "New PIN"
-msgstr "नया PIN"
 
 msgid "New PO"
 msgstr "नया PO"
@@ -14118,9 +14129,6 @@ msgstr "शेष"
 msgid "Remaining after split stays on the original row."
 msgstr "विभाजन के बाद शेष मूल पंक्ति पर रहता है।"
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "इस PIN को याद रखें। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
-
 msgid "Remove"
 msgstr "निकालें"
 
@@ -14130,7 +14138,7 @@ msgstr "निकालें {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "बैच से {0} निकालें"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "इस बैच से {0} को निकालें? इसका �
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "क्या बैच {1} से {memberCount} में से {0} ऑपरेशन निकाले जाएँ?"
 
 msgid "Remove {label}"
 msgstr "निकालें {label}"
@@ -14560,6 +14568,9 @@ msgstr "रिटर्न कारण"
 
 msgid "Return Reasons"
 msgstr "रिटर्न कारण"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "एकीकरण पर वापस लौटें और Onshape को फिर से कनेक्ट करें।"
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "एकीकरण पर वापस जाएँ और Ramp को फिर से कनेक्ट करें।"
@@ -15820,6 +15831,12 @@ msgstr "लिंक साझा करें"
 
 msgid "Share Quote"
 msgstr "उद्धरण साझा करें"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "{name} के साथ यह PIN साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "इस PIN को ऑपरेटर के साथ साझा करें ताकि वे MES टर्मिनल पर पिन इन कर सकें।"
 
 msgid "Shared"
 msgstr "साझा"
@@ -17598,6 +17615,9 @@ msgstr "महीनों की संख्या जिसके दौर�
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "हाथ पर रखी गई स्तर जो मात्रा-आधारित नीतियों के तहत एक नई पुनः भरण आदेश को ट्रिगर करता है।"
 
+msgid "The Onshape connection expired"
+msgstr "Onshape कनेक्शन समाप्त हो गया"
+
 msgid "The operations and steps your parts move through"
 msgstr "ऑपरेशन और चरण जिनके माध्यम से आपके पार्ट्स आगे बढ़ते हैं"
 
@@ -18147,6 +18167,15 @@ msgstr "यह path केवल यह तय करता है कि आग
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "इस अवधि में कोई जर्नल प्रविष्टि पोस्ट नहीं की गई है और इसे स्थायी रूप से हटाया जा सकता है। इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "This PIN will not be shown again."
+msgstr "यह PIN फिर से नहीं दिखाया जाएगा।"
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "यह PIN फिर से नहीं दिखाया जाएगा। यदि यह खो गया है, तो इसे ऑपरेटर सूची से रीसेट करें।"
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "यह PIN फिर से नहीं दिखाया जाएगा। MES टर्मिनल पर कंसोल मोड से बाहर निकलने के लिए आपको इसकी आवश्यकता होगी।"
 
 msgid "this purchase order"
 msgstr "यह क्रय आदेश"

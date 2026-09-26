@@ -1,4 +1,4 @@
-import { createHmac, timingSafeEqual } from "node:crypto";
+import { verifyHmacSha256Signature } from "../../integrations/webhook-signature";
 
 /**
  * Verify a Ramp webhook delivery.
@@ -17,24 +17,5 @@ export function verifyRampWebhookSignature(args: {
   body: string;
   secret: string;
 }): boolean {
-  const { signature, body, secret } = args;
-  if (!signature || !secret) return false;
-
-  let expected: Buffer;
-  try {
-    expected = createHmac("sha256", secret).update(body).digest();
-  } catch {
-    return false;
-  }
-
-  let provided: Buffer;
-  try {
-    provided = Buffer.from(signature.trim(), "base64");
-  } catch {
-    return false;
-  }
-
-  return (
-    provided.length === expected.length && timingSafeEqual(provided, expected)
-  );
+  return verifyHmacSha256Signature({ ...args, encoding: "base64" });
 }

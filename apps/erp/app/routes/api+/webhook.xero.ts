@@ -31,7 +31,8 @@ import {
   getProviderIntegration,
   getXeroBillPaymentSyncEntityId,
   getXeroPaymentSyncEntityId,
-  ProviderID
+  ProviderID,
+  parseStoredCredentials
 } from "@carbon/ee/accounting";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -61,51 +62,80 @@ const WebhookSchema = z.object({
   lastEventSequence: z.number()
 });
 
-function verifySignature(payload: string, header: string) {
-  if (!XERO_WEBHOOK_SECRET) {
-    logger.warning("XERO_WEBHOOK_SECRET is not configured");
-    return payload;
+function verifySignature(payload: string, header: string, secret: string) {
+  const expected = Buffer.from(
+    crypto.createHmac("sha256", secret).update(payload, "utf8").digest("base64")
+  );
+  const received = Buffer.from(header);
+
+  // timingSafeEqual throws on unequal lengths; treat that as a mismatch.
+  return (
+    expected.length === received.length &&
+    crypto.timingSafeEqual(expected, received)
+  );
+}
+
+/**
+ * The Xero tenant the stored credentials belong to. `getAccountingIntegration`
+ * matches `companyId` OR the credential tenant id, so the resolved row is only
+ * trusted when its OWN tenant is the one the event names.
+ */
+function getStoredTenantId(credentials: unknown): string | null {
+  try {
+    const parsed = parseStoredCredentials(credentials);
+    if (
+      parsed.type === "oauth2" &&
+      typeof parsed.providerMetadata?.tenantId === "string"
+    ) {
+      return parsed.providerMetadata.tenantId;
+    }
+  } catch (error) {
+    logger.error("Failed to parse stored Xero credentials", { error });
   }
-
-  const hmac = crypto
-    .createHmac("sha256", XERO_WEBHOOK_SECRET)
-    .update(payload, "utf8")
-    .digest("base64");
-
-  return crypto.timingSafeEqual(Buffer.from(hmac), Buffer.from(header));
+  return null;
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   // Get the raw payload for signature verification
   const payloadText = await request.text();
 
+  // Fail closed: without the webhook key there is no way to tell Xero's
+  // deliveries from anyone else's, and every event triggers a sync job.
+  if (!XERO_WEBHOOK_SECRET) {
+    logger.error(
+      "Xero webhook rejected: XERO_WEBHOOK_SECRET is not configured"
+    );
+    return data(
+      { success: false, error: "Webhook secret not configured" },
+      { status: 401 }
+    );
+  }
+
   // Verify webhook signature for security (Xero's intent-to-receive workflow)
-  if (XERO_WEBHOOK_SECRET) {
-    // If payload is empty or just contains intent-to-receive data, return 200
-    if (!payloadText || payloadText.trim() === "" || payloadText === "{}") {
-      return new Response("", { status: 200 });
-    }
+  // If payload is empty or just contains intent-to-receive data, return 200
+  if (!payloadText || payloadText.trim() === "" || payloadText === "{}") {
+    return new Response("", { status: 200 });
+  }
 
-    const signature = request.headers.get("x-xero-signature");
+  const signature = request.headers.get("x-xero-signature");
 
-    if (!signature) {
-      return data(
-        { success: false, error: "Missing signature" },
-        { status: 401 }
-      );
-    }
+  if (!signature) {
+    logger.warning("Xero webhook rejected", { reason: "missing_signature" });
+    return data(
+      { success: false, error: "Missing signature" },
+      { status: 401 }
+    );
+  }
 
-    const isValid = verifySignature(payloadText, signature);
-
-    if (!isValid) {
-      return data(
-        {
-          success: false,
-          error: "Invalid signature"
-        },
-        { status: 401 }
-      );
-    }
+  if (!verifySignature(payloadText, signature, XERO_WEBHOOK_SECRET)) {
+    logger.warning("Xero webhook rejected", { reason: "signature_mismatch" });
+    return data(
+      {
+        success: false,
+        error: "Invalid signature"
+      },
+      { status: 401 }
+    );
   }
 
   // Parse and validate the webhook payload for actual events
@@ -168,6 +198,18 @@ export async function action({ request }: ActionFunctionArgs) {
 
       if (!integration) {
         logger.error("No Xero integration found for tenant", { tenantId });
+        errors.push({
+          tenantId,
+          error: "Tenant ID not found in integrations"
+        });
+        continue;
+      }
+
+      if (getStoredTenantId(integration.metadata.credentials) !== tenantId) {
+        logger.error("Xero webhook tenant does not match its integration", {
+          tenantId,
+          companyId: integration.companyId
+        });
         errors.push({
           tenantId,
           error: "Tenant ID not found in integrations"

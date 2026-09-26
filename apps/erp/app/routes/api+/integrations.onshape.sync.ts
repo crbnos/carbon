@@ -70,7 +70,8 @@ export async function action({ request }: ActionFunctionArgs) {
       .delete()
       .eq("entityType", "item")
       .eq("entityId", itemId)
-      .eq("integration", "onshape");
+      .eq("integration", "onshape")
+      .eq("companyId", companyId);
 
     await client.from("externalIntegrationMapping").insert({
       entityType: "item",

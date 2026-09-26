@@ -7,6 +7,7 @@ import { redirect } from "react-router";
 import { getSupplierPriceBreaksForItems } from "~/modules/items";
 import { upsertQuoteLineMethod } from "~/modules/sales/sales.service";
 import { resolveBuyUnitCost } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -17,6 +18,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { quoteId, lineId } = params;
   if (!quoteId) throw new Error("Could not find quoteId");
   if (!lineId) throw new Error("Could not find lineId");
+
+  // The method pull and price refresh below use the service role and key on
+  // the URL line id.
+  const serviceRole = getCarbonServiceRole();
+  await requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+    id: lineId,
+    quoteId
+  });
 
   const configuration = await request.json();
   if (configuration) {
@@ -47,7 +56,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const serviceRole = await getCarbonServiceRole();
     const upsertMethod = await upsertQuoteLineMethod(serviceRole, {
       quoteId,
       quoteLineId: lineId,
@@ -70,6 +78,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("quoteMaterial")
       .select("id, itemId, unitCost, unitCostSource")
       .eq("quoteLineId", lineId)
+      .eq("companyId", companyId)
       .eq("methodType", "Purchase to Order");
 
     const buyItemIds = [
@@ -87,7 +96,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
         await serviceRole
           .from("quoteMaterial")
           .update({ unitCost: price })
-          .eq("id", mat.id);
+          .eq("id", mat.id)
+          .eq("companyId", companyId);
       }
     }
   } else {

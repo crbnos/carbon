@@ -1,7 +1,13 @@
+import { createHmac } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// Fail-open: no secret configured → signature verification is skipped.
-vi.mock("@carbon/auth", () => ({ XERO_WEBHOOK_SECRET: undefined }));
+const SECRET = "xero-webhook-key";
+const env = vi.hoisted(() => ({ secret: undefined as string | undefined }));
+vi.mock("@carbon/auth", () => ({
+  get XERO_WEBHOOK_SECRET() {
+    return env.secret;
+  }
+}));
 vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({})
 }));
@@ -18,6 +24,7 @@ vi.mock("@carbon/ee/accounting", () => ({
   getProviderIntegration: (...args: unknown[]) =>
     getProviderIntegration(...args),
   ProviderID: { XERO: "xero" },
+  parseStoredCredentials: (raw: unknown) => raw,
   // Real composite-id shape (the syncer's contract): ACCREC prefix-less AR,
   // ACCPAY `bill:`-prefixed AP.
   getXeroPaymentSyncEntityId: (
@@ -49,10 +56,20 @@ function invoiceEvent() {
   };
 }
 
-function makeRequest(body: unknown) {
+function makeRequest(body: unknown, opts: { signature?: string | null } = {}) {
+  const text = JSON.stringify(body);
+  const headers = new Headers();
+  if (opts.signature !== null) {
+    headers.set(
+      "x-xero-signature",
+      opts.signature ??
+        createHmac("sha256", SECRET).update(text, "utf8").digest("base64")
+    );
+  }
   return new Request("http://localhost/api/webhook/xero", {
     method: "POST",
-    body: JSON.stringify(body)
+    body: text,
+    headers
   });
 }
 
@@ -61,10 +78,16 @@ describe("webhook.xero Invoice-update payment accelerator", () => {
     vi.mocked(trigger).mockReset();
     getAccountingIntegration.mockReset();
     getProviderIntegration.mockReset();
+    env.secret = SECRET;
 
     getAccountingIntegration.mockResolvedValue({
       companyId: "company-1",
-      metadata: {}
+      metadata: {
+        credentials: {
+          type: "oauth2",
+          providerMetadata: { tenantId: "tenant-1" }
+        }
+      }
     });
   });
 
@@ -155,5 +178,49 @@ describe("webhook.xero Invoice-update payment accelerator", () => {
     expect(payload.entities).toEqual([
       { entityType: "bill", entityId: "inv-remote-1", operation: "update" }
     ]);
+  });
+
+  it("fails closed with 401 when XERO_WEBHOOK_SECRET is not configured", async () => {
+    env.secret = undefined;
+
+    const result = (await action({
+      request: makeRequest(invoiceEvent(), { signature: null })
+    } as never)) as { init?: { status?: number } };
+
+    expect(result.init?.status).toBe(401);
+    expect(getAccountingIntegration).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
+  });
+
+  it("rejects a missing or invalid signature with 401 before any lookup", async () => {
+    for (const signature of [null, "bad", "AAAA"]) {
+      const result = (await action({
+        request: makeRequest(invoiceEvent(), { signature })
+      } as never)) as { init?: { status?: number } };
+      expect(result.init?.status).toBe(401);
+    }
+    expect(getAccountingIntegration).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
+  });
+
+  it("refuses an integration row that matched on companyId rather than its own tenant", async () => {
+    getAccountingIntegration.mockResolvedValue({
+      companyId: "tenant-1",
+      metadata: {
+        credentials: {
+          type: "oauth2",
+          providerMetadata: { tenantId: "some-other-tenant" }
+        }
+      }
+    });
+
+    const result = (await action({
+      request: makeRequest(invoiceEvent())
+    } as never)) as { success: boolean; jobsTriggered: number };
+
+    expect(result.success).toBe(false);
+    expect(result.jobsTriggered).toBe(0);
+    expect(getProviderIntegration).not.toHaveBeenCalled();
+    expect(trigger).not.toHaveBeenCalled();
   });
 });

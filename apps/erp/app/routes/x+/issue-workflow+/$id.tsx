@@ -58,6 +58,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (workflow.data.companyId !== companyId) {
+    logger.error("Issue workflow is not in the caller's company", {
+      companyId,
+      issueWorkflowId: id
+    });
+    throw redirect(path.to.issueWorkflows);
+  }
+
   return {
     workflow: workflow.data,
     requiredActions: requiredActions.data ?? []

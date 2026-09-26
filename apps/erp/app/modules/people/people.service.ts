@@ -615,18 +615,93 @@ export async function updateEmployeeJob(
     // so a caller that omits it (the API/MCP tool leaves it optional) would
     // otherwise wipe a set location. Never write a falsy locationId — drop it
     // from the payload so the existing value is preserved.
-    const updatePayload = sanitize(employeeJob);
-    if (!updatePayload.locationId) {
-      delete (updatePayload as { locationId?: unknown }).locationId;
-    }
+    const sanitized = sanitize(employeeJob);
+    // An explicit allow-list, never the caller's object: the API passes
+    // `employeeJob` through with whatever keys were sent, and a spread into
+    // Kysely's `.set()` (no RLS) would reach any column — `companyId` included.
+    const updatePayload = {
+      title: sanitized.title,
+      startDate: sanitized.startDate,
+      ...(sanitized.locationId ? { locationId: sanitized.locationId } : {}),
+      shiftId: sanitized.shiftId,
+      departmentId: sanitized.departmentId,
+      managerId: sanitized.managerId,
+      ...("customFields" in sanitized
+        ? { customFields: sanitized.customFields }
+        : {}),
+      updatedBy: sanitized.updatedBy
+    };
+
+    const { companyId } = employeeJob;
 
     await db.transaction().execute(async (trx) => {
-      await trx
+      // Kysely bypasses RLS and every id below comes from the caller, so each
+      // one is re-read under companyId: the single-column FKs would accept a
+      // location, shift, department or manager from any company.
+      const [employee, location, shift, department, manager] =
+        await Promise.all([
+          trx
+            .selectFrom("employee")
+            .select("id")
+            .where("id", "=", employeeId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst(),
+          updatePayload.locationId
+            ? trx
+                .selectFrom("location")
+                .select("id")
+                .where("id", "=", updatePayload.locationId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : null,
+          employeeJob.shiftId
+            ? trx
+                .selectFrom("shift")
+                .select("id")
+                .where("id", "=", employeeJob.shiftId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : null,
+          employeeJob.departmentId
+            ? trx
+                .selectFrom("department")
+                .select("id")
+                .where("id", "=", employeeJob.departmentId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : null,
+          employeeJob.managerId
+            ? trx
+                .selectFrom("employee")
+                .select("id")
+                .where("id", "=", employeeJob.managerId)
+                .where("companyId", "=", companyId)
+                .executeTakeFirst()
+            : null
+        ]);
+      if (!employee) throw new Error("Employee not found");
+      if (updatePayload.locationId && !location) {
+        throw new Error("Location not found");
+      }
+      if (employeeJob.shiftId && !shift) throw new Error("Shift not found");
+      if (employeeJob.departmentId && !department) {
+        throw new Error("Department not found");
+      }
+      if (employeeJob.managerId && !manager) {
+        throw new Error("Manager not found");
+      }
+
+      const updated = await trx
         .updateTable("employeeJob")
         .set(updatePayload)
         .where("id", "=", employeeId)
-        .where("companyId", "=", employeeJob.companyId)
-        .execute();
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      // No row means the employee is not in this company — stop before the
+      // employeeShift insert below writes a row for a foreign user id.
+      if (Number(updated.numUpdatedRows) === 0) {
+        throw new Error("Employee not found");
+      }
 
       // The scheduler reads shift assignments from employeeShift (see
       // getEmployeeShiftWindows in the schedule engine), NOT from

@@ -46,7 +46,11 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
-import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
+import {
+  getPath,
+  SECRET_KEYS,
+  WEBHOOK_SIGNING_SECRET_KEY
+} from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
@@ -1648,10 +1652,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   ]);
   if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
     const alreadyVaulted = existing.data?.secretRef != null;
-    const providedSecret = (SECRET_KEYS[integrationId] ?? []).some((p) => {
-      const v = getPath(metadata, p);
-      return typeof v === "string" && v.trim().length > 0;
-    });
+    // The optional webhook signing secret is not a credential: it must not
+    // satisfy the "a credential is required" check on its own.
+    const providedSecret = (SECRET_KEYS[integrationId] ?? [])
+      .filter((p) => p !== WEBHOOK_SIGNING_SECRET_KEY)
+      .some((p) => {
+        const v = getPath(metadata, p);
+        return typeof v === "string" && v.trim().length > 0;
+      });
     if (!alreadyVaulted && !providedSecret) {
       return data(
         {},

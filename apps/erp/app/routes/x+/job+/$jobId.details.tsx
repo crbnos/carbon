@@ -54,6 +54,7 @@ import {
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import PurchasingStatus from "~/modules/purchasing/ui/PurchaseOrder/PurchasingStatus";
 import { getTagsList } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { useItems } from "~/stores";
 import type { StorageItem } from "~/types";
 import { setCustomFields } from "~/utils/form";
@@ -68,6 +69,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
+
+  // `client` is the service role (bypassRls) and every read keys on the URL id.
+  await requireCompanyRecord(client, "job", companyId, { id: jobId });
 
   const job = await getJob(client, jobId);
   if (job.error) {

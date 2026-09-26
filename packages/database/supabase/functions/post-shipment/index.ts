@@ -53,18 +53,28 @@ serve(async (req: Request) => {
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     const [shipment, shipmentLines, shipmentLineTracking] = await Promise.all([
-      client.from("shipment").select("*").eq("id", shipmentId).single(),
+      // The client is service-role: requirePermissions proved the caller may
+      // act in companyId, not that shipmentId belongs to it.
+      client
+        .from("shipment")
+        .select("*")
+        .eq("id", shipmentId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
       client
         .from("shipmentLine")
         .select("*, fulfillment(*)")
-        .eq("shipmentId", shipmentId),
+        .eq("shipmentId", shipmentId)
+        .eq("companyId", companyId),
       client
         .from("trackedEntity")
         .select("*")
-        .eq("attributes->> Shipment", shipmentId),
+        .eq("attributes->> Shipment", shipmentId)
+        .eq("companyId", companyId),
     ]);
 
     if (shipment.error) throw new Error("Failed to fetch shipment");
+    if (!shipment.data) return errorResponse("Shipment not found", 404);
     if (shipmentLines.error) throw new Error("Failed to fetch shipment lines");
 
     const itemIds = shipmentLines.data.reduce<string[]>((acc, shipmentLine) => {
@@ -4490,7 +4500,8 @@ serve(async (req: Request) => {
       await client
         .from("shipment")
         .update({ status: "Draft" })
-        .eq("id", payload.shipmentId);
+        .eq("id", payload.shipmentId)
+        .eq("companyId", payload.companyId);
     }
     return errorResponse(err, 500);
   }

@@ -106,8 +106,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     serviceRole,
     companyId,
     ProviderID.QUICKBOOKS
-  ).catch(() => null);
+  ).catch((error) => {
+    logger.warning("QuickBooks Online integration lookup failed", {
+      companyId,
+      error
+    });
+    return null;
+  });
+  // `getAccountingIntegration` also matches a realm/tenant id, so only trust a
+  // row that belongs to the company in the URL.
   if (!integration || !integration.active) {
+    return data({ success: false }, { status: 404 });
+  }
+  if (integration.companyId !== companyId) {
+    logger.error("QuickBooks Online integration belongs to another company", {
+      companyId,
+      integrationCompanyId: integration.companyId
+    });
     return data({ success: false }, { status: 404 });
   }
 
@@ -117,6 +132,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // env fallback for a single app-wide token — confirm where Carbon persists
   // it during QBO setup and drop whichever branch is unused.
   let verifierToken: string | null = null;
+  let realmId: string | null = null;
   try {
     const credentials = parseStoredCredentials(
       integration.metadata.credentials
@@ -125,6 +141,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       const token = credentials.providerMetadata?.webhookVerifierToken;
       if (typeof token === "string" && token.length > 0) {
         verifierToken = token;
+      }
+      const storedRealmId = credentials.providerMetadata?.realmId;
+      if (typeof storedRealmId === "string" && storedRealmId.length > 0) {
+        realmId = storedRealmId;
       }
     }
   } catch (error) {
@@ -139,6 +159,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
   if (!verifierToken) {
+    logger.error("QuickBooks Online webhook verifier token not configured", {
+      companyId
+    });
     return data(
       { success: false, error: "Webhook verifier token not configured" },
       { status: 401 }
@@ -147,6 +170,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const signature = request.headers.get("intuit-signature");
   if (!signature) {
+    logger.warning("QuickBooks Online webhook rejected", {
+      companyId,
+      reason: "missing_signature"
+    });
     return data({ success: false }, { status: 401 });
   }
 
@@ -154,6 +181,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .update(body)
     .digest("base64");
   if (!signaturesMatch(signature, expected)) {
+    logger.warning("QuickBooks Online webhook rejected", {
+      companyId,
+      reason: "signature_mismatch"
+    });
     return data({ success: false }, { status: 401 });
   }
 
@@ -165,9 +196,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return data({ success: false }, { status: 400 });
   }
 
+  // The verifier token can be app-wide (the env fallback), so a validly signed
+  // delivery may carry other realms' notifications. Only act on this company's
+  // own realm — never on a realm the URL's company is not connected to.
+  const ownNotifications = parsed.eventNotifications.filter(
+    (notification) => realmId !== null && notification.realmId === realmId
+  );
+  if (ownNotifications.length < parsed.eventNotifications.length) {
+    logger.warning(
+      "Ignoring QuickBooks Online notifications for another realm",
+      {
+        companyId,
+        realmId,
+        ignored: parsed.eventNotifications.length - ownNotifications.length
+      }
+    );
+  }
+
   // Forward-compatibility: unrecognized entity names are acknowledged and
   // ignored, never rejected.
-  const paymentNotifications = parsed.eventNotifications
+  const paymentNotifications = ownNotifications
     .flatMap((notification) => notification.dataChangeEvent?.entities ?? [])
     .filter((entity) => PAYMENT_ENTITY_NAMES.has(entity.name));
 

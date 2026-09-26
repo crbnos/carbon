@@ -246,6 +246,10 @@ msgstr "{0} değer"
 msgid "{0} values missing"
 msgstr "{0} değeri eksik"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0}, {name} olarak kaydedilecek"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}g"
@@ -538,8 +542,11 @@ msgstr "90G"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Bu operasyon üzerinde \"eşleşmeli\" kuralı bunların bir partide paylaşılmasını engeller"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "Operatör oluşturulduğunda bir 4 haneli PIN oluşturulur."
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "Bir parti en az bir operasyon gerektirir. Bütün partiyi ayırmak için bunun yerine Çöz'ü kullanın."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Bir Carbon tarafından yönetilen veri taşıması — kendi verilerinizi yüklersiniz"
@@ -1382,6 +1389,9 @@ msgstr "Şirket Ekle"
 
 msgid "Add condition"
 msgstr "Koşul ekle"
+
+msgid "Add Console Operator"
+msgstr "Konsol operatörü ekle"
 
 msgid "Add Contractor"
 msgstr "Taşeron Ekle"
@@ -3286,6 +3296,10 @@ msgstr "Yalnızca aktif olan aralığı devre dışı bırakamazsınız. Başka 
 msgid "Can't download this file"
 msgstr "Bu dosya indirilemiyor"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "{0} adlı bir dosya yüklenemiyor"
+
 msgid "Cancel"
 msgstr "İptal"
 
@@ -4101,6 +4115,9 @@ msgstr "Konsol modu etkinleştirildi"
 msgid "Console Operator"
 msgstr "Konsol Operatörü"
 
+msgid "Console Operator Created"
+msgstr "Konsol operatörü oluşturuldu"
+
 msgid "consumable"
 msgstr "sarf malzemesi"
 
@@ -4343,9 +4360,6 @@ msgstr "Parça numarasını kopyala"
 
 msgid "Copy part unique identifier"
 msgstr "Parça benzersiz tanımlayıcısını kopyala"
-
-msgid "Copy PIN"
-msgstr "PIN'i Kopyala"
 
 msgid "Copy previous day"
 msgstr "Önceki günü kopyala"
@@ -4667,6 +4681,9 @@ msgstr "Yeni oluştur"
 
 msgid "Create new rule"
 msgstr "Yeni kural oluştur"
+
+msgid "Create Operator"
+msgstr "Operatör oluştur"
 
 msgid "Create PO Revision"
 msgstr "PO Revizyonu Oluştur"
@@ -8087,8 +8104,8 @@ msgstr "Büyük defter ve dönem sonu kapanışı"
 msgid "Generate"
 msgstr "Oluştur"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "Yeni bir 4 haneli PIN oluşturun. Operatörün MES terminallerinde giriş yapabilmesi için bunu onunla paylaşın."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "Yeni bir 4 haneli PIN oluştur. Operatörün mevcut PIN'i hemen çalışmayı durdurur."
 
 msgid "Generate and send customer invoices"
 msgstr "Müşteri faturalarını oluştur ve gönder"
@@ -8101,9 +8118,6 @@ msgstr "Mali Yıl Oluştur"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Malzemenin özelliklerine göre malzeme kimlikleri ve açıklamaları oluşturun."
-
-msgid "Generate new PIN"
-msgstr "Yeni PIN oluştur"
 
 msgid "Generate Picking List"
 msgstr "Toplama listesi oluştur"
@@ -10901,9 +10915,6 @@ msgstr "Yeni ödeme koşulu"
 
 msgid "New Picking List"
 msgstr "Yeni Toplama Listesi"
-
-msgid "New PIN"
-msgstr "Yeni PIN"
 
 msgid "New PO"
 msgstr "Yeni Sipariş"
@@ -14118,9 +14129,6 @@ msgstr "Kalan"
 msgid "Remaining after split stays on the original row."
 msgstr "Bölme sonrası kalan orijinal satırda kalır."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "Bu PIN'i hatırlayın. MES terminallerinde konsol modundan çıkmak için buna ihtiyacınız olacak."
-
 msgid "Remove"
 msgstr "Kaldır"
 
@@ -14130,7 +14138,7 @@ msgstr "Kaldır {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "{0}'i partiden kaldır"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "{0} bu partiyi kaldırmak istiyor musunuz? Operasyonu çizelgeye geri d�
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
 
 msgid "Remove {label}"
 msgstr "{label}'i Kaldır"
@@ -14560,6 +14568,9 @@ msgstr "İade Nedeni"
 
 msgid "Return Reasons"
 msgstr "İade Nedenleri"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "Entegrasyonlara dön ve Onshape'i tekrar bağla."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "Entegrasyonlara geri dönün ve Ramp'i yeniden bağlayın."
@@ -15820,6 +15831,12 @@ msgstr "Paylaşım Bağlantısı"
 
 msgid "Share Quote"
 msgstr "Teklifi Paylaş"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "Bu PIN'i {name} ile paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "Bu PIN'i operatörle paylaş, böylece MES terminal'lerine PIN ile giriş yapabilir."
 
 msgid "Shared"
 msgstr "Paylaşılan"
@@ -17598,6 +17615,9 @@ msgstr "Bu varlığın amort edileceği ay sayısı."
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "Miktar tabanlı politikler altında yeni bir yenileme siparişini tetikleyen eldeki envanter seviyesi."
 
+msgid "The Onshape connection expired"
+msgstr "Onshape bağlantısının süresi doldu"
+
 msgid "The operations and steps your parts move through"
 msgstr "Parçalarınızın geçtiği operasyonlar ve adımlar"
 
@@ -18147,6 +18167,15 @@ msgstr "Bu yol yalnızca sonra ne çalışacağını belirler"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Bu dönem hiçbir muhasebe fişi içermez ve kalıcı olarak silinebilir. Bu işlem geri alınamaz."
+
+msgid "This PIN will not be shown again."
+msgstr "Bu PIN bir daha gösterilmeyecek."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "Bu PIN bir daha gösterilmeyecek. Kaybolduysa, operatörler listesinden sıfırla."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "Bu PIN bir daha gösterilmeyecek. MES terminal'lerinde konsol modundan çıkmak için gerekli olacak."
 
 msgid "this purchase order"
 msgstr "bu satın alma siparişi"

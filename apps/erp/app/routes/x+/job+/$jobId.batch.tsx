@@ -7,7 +7,7 @@ import { updateJobBatchNumber } from "~/modules/production/production.service";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "production",
     bypassRls: true
   });
@@ -19,8 +19,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const rawValue = formData.get("value");
   const value = rawValue == null ? "" : String(rawValue).trim();
 
+  // `client` is the service role (bypassRls) and the tracked entity id comes
+  // from the form: scope the write to this company.
   const update = await updateJobBatchNumber(
     client,
+    companyId,
     trackedEntityId,
     value === "" ? null : value
   );

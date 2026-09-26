@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -36,6 +37,66 @@ import {
 } from "~/modules/production";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
+
+const logger = getLogger("erp", "priority-people-update");
+
+type BoardReferenceTable =
+  | "department"
+  | "employee"
+  | "location"
+  | "shift"
+  | "workCenter";
+
+/**
+ * Every board mutation writes these ids into this company's rows through
+ * Kysely (no RLS), and their single-column FKs accept another company's row.
+ * One query per table; empty values are ignored so optional fields stay
+ * optional.
+ */
+async function referencesBelongToCompany(
+  companyId: string,
+  refs: Record<BoardReferenceTable, unknown[]>
+): Promise<boolean> {
+  const db = getDatabaseClient();
+  const results = await Promise.all(
+    (Object.entries(refs) as [BoardReferenceTable, unknown[]][]).map(
+      async ([table, values]) => {
+        const ids = [
+          ...new Set(
+            values.filter(
+              (value): value is string =>
+                typeof value === "string" && value.length > 0
+            )
+          )
+        ];
+        if (ids.length === 0) return true;
+        // Every table in the union has `id` + `companyId`; the cast only
+        // narrows the union so Kysely can type the builder.
+        const rows = await db
+          .selectFrom(table as "location")
+          .select("id")
+          .where("id", "in", ids)
+          .where("companyId", "=", companyId)
+          .execute();
+        return rows.length === ids.length;
+      }
+    )
+  );
+  return results.every(Boolean);
+}
+
+function dayRowWorkCenterIds(raw: FormDataEntryValue | null): unknown[] {
+  if (typeof raw !== "string" || !raw) return [];
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed)
+      ? parsed.map((row) => (row as { workCenterId?: unknown })?.workCenterId)
+      : [];
+  } catch {
+    // The intent's own validator reports the malformed field.
+    return [];
+  }
+}
 
 /**
  * Notify the replan pipeline once per station the person is assigned at on the
@@ -80,6 +141,29 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const intent = formData.get("intent");
+
+  const refs = {
+    department: [formData.get("departmentId")],
+    employee: [formData.get("employeeId")],
+    location: [formData.get("locationId")],
+    shift: [formData.get("shiftId")],
+    workCenter: [
+      formData.get("workCenterId"),
+      formData.get("fromWorkCenterId"),
+      ...dayRowWorkCenterIds(formData.get("rows"))
+    ]
+  };
+  if (!(await referencesBelongToCompany(companyId, refs))) {
+    logger.error("People board reference is not in the caller's company", {
+      companyId,
+      intent,
+      refs
+    });
+    return data(
+      { success: false },
+      await flash(request, error(null, "Not found"))
+    );
+  }
 
   if (intent === "assign") {
     const validation = await validator(peopleAssignmentValidator).validate(
@@ -251,7 +335,7 @@ export async function action({ request }: ActionFunctionArgs) {
       validation.data;
 
     try {
-      await setPeopleDay(getDatabaseClient(), {
+      await setPeopleDay(getDatabaseClient(), userId, {
         companyId,
         locationId,
         employeeId,
@@ -259,8 +343,7 @@ export async function action({ request }: ActionFunctionArgs) {
         shiftId: shiftId || null,
         note: note || null,
         overtimeHours,
-        rows,
-        createdBy: userId
+        rows
       });
       await notifyForEmployeeDate(
         client,
@@ -388,14 +471,13 @@ export async function action({ request }: ActionFunctionArgs) {
       validation.data;
 
     try {
-      await assignPeopleWeek(getDatabaseClient(), {
+      await assignPeopleWeek(getDatabaseClient(), userId, {
         companyId,
         locationId,
         employeeId,
         workCenterId,
         weekStart,
-        shiftId: shiftId || null,
-        createdBy: userId
+        shiftId: shiftId || null
       });
       await notifyScheduleInputsChanged(
         companyId,
@@ -515,14 +597,13 @@ export async function action({ request }: ActionFunctionArgs) {
     const { employeeId, fromDate, toDate, shiftId, note } = validation.data;
 
     try {
-      const result = await setPeopleAbsenceRange(getDatabaseClient(), {
+      const result = await setPeopleAbsenceRange(getDatabaseClient(), userId, {
         companyId,
         employeeId,
         fromDate,
         toDate,
         shiftId: shiftId || null,
-        note,
-        createdBy: userId
+        note
       });
       await notifyScheduleInputsChanged(
         companyId,

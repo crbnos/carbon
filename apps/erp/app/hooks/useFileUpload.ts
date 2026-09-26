@@ -1,5 +1,9 @@
 import { useCarbon } from "@carbon/auth";
-import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  safeStorageFileName,
+  storage
+} from "@carbon/files";
 import {
   DuplicateFileNameError,
   MediaUploader,
@@ -65,11 +69,37 @@ export function useFileUpload(options: FileUploadOptions = {}) {
         return;
       }
 
+      // Storage keys can't hold `?`, `#` or `%` — the first two end the key
+      // there, silently shortening the name. Rename up front (before HEIC
+      // conversion, which marks the files it produces) and say so, so the
+      // stored key, the document record and what the user sees all agree.
+      const nameable: File[] = [];
+      for (const file of files) {
+        const name = safeStorageFileName(file.name);
+        if (!name) {
+          toast.error(t`Can't upload a file named ${file.name}`);
+          onError?.(file);
+          continue;
+        }
+        if (name !== file.name) {
+          toast.info(t`${file.name} will be saved as ${name}`);
+          nameable.push(
+            new File([file], name, {
+              type: file.type,
+              lastModified: file.lastModified
+            })
+          );
+          continue;
+        }
+        nameable.push(file);
+      }
+      if (nameable.length === 0) return;
+
       setIsUploading(true);
       try {
         let prepared: File[];
         try {
-          prepared = await uploader.prepareForUpload(files);
+          prepared = await uploader.prepareForUpload(nameable);
         } catch (error) {
           toast.error(
             error instanceof DuplicateFileNameError

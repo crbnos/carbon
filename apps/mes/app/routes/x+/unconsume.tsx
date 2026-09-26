@@ -7,7 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { issueTrackedEntityValidator } from "~/services/models";
 
-const log = getLogger("mes");
+const log = getLogger("mes", "unconsume");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -43,9 +43,18 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("jobMaterial")
     .select("jobOperationId, itemId, quantity")
     .eq("id", materialId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
-  if (matRow?.jobOperationId) {
+  if (!matRow) {
+    log.warn("Job material not found for company", { companyId, materialId });
+    return data(
+      { success: false, message: "Material not found" },
+      { status: 404 }
+    );
+  }
+
+  if (matRow.jobOperationId) {
     // `workInstructionId` is in the runtime row but absent from the generated
     // DB types (stale until next regen). Select only the typed column;
     // pick up `workInstructionId` via cast below.
@@ -53,6 +62,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .from("jobOperation")
       .select("workCenterId")
       .eq("id", matRow.jobOperationId)
+      .eq("companyId", companyId)
       .maybeSingle();
 
     if (jobOpRow?.workCenterId) {
