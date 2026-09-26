@@ -1320,6 +1320,9 @@ msgstr "Add a line (in document explorers)"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
 
+msgid "Add a note to this reading"
+msgstr "Add a note to this reading"
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "Add a parameter (in the procedure explorer)"
 
@@ -1433,6 +1436,9 @@ msgstr "Add manually"
 
 msgid "Add match"
 msgstr "Add match"
+
+msgid "Add note"
+msgstr "Add note"
 
 msgid "Add Note"
 msgstr "Add Note"
@@ -1726,6 +1732,9 @@ msgstr "All Work Centers"
 
 msgid "Allocated"
 msgstr "Allocated"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "allowable {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Allows acknowledge & continue"
 msgstr "Allows acknowledge & continue"
@@ -6569,6 +6578,9 @@ msgstr "Edit Memo"
 
 msgid "Edit Non Conformance Type"
 msgstr "Edit Non Conformance Type"
+
+msgid "Edit note"
+msgstr "Edit note"
 
 msgid "Edit Part"
 msgstr "Edit Part"

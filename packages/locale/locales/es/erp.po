@@ -1320,6 +1320,9 @@ msgstr "Agregar una línea (en exploradores de documentos)"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Agregue una sección de materiales que enumere cada artículo en la lista de materiales con su cantidad."
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "Agregar un parámetro (en el explorador de procedimientos)"
 
@@ -1433,6 +1436,9 @@ msgstr "Agregar manualmente"
 
 msgid "Add match"
 msgstr "Agregar coincidencia"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Note"
 msgstr "Agregar Nota"
@@ -1726,6 +1732,9 @@ msgstr "Todos los Centros de Trabajo"
 
 msgid "Allocated"
 msgstr "Asignado"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Permite reconocer y continuar"
@@ -6569,6 +6578,9 @@ msgstr "Editar Memorándum"
 
 msgid "Edit Non Conformance Type"
 msgstr "Editar Tipo de No Conformidad"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Edit Part"
 msgstr "Editar Parte"

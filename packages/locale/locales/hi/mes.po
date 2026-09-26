@@ -130,11 +130,17 @@ msgstr "जोड़ें"
 msgid "Add & Issue"
 msgstr "जोड़ें और जारी करें"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "प्रिंटिंग सेटिंग्स में एक प्रिंटर जोड़ें ताकि आप सीधे लेबल प्रिंट कर सकें।"
 
 msgid "Add Inventory"
 msgstr "इन्वेंटरी जोड़ें"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "नमूना जोड़ें"
@@ -166,6 +172,9 @@ msgstr "विफल इकाइयों को आवंटित करे�
 
 msgid "Allocate units"
 msgstr "इकाइयों को आवंटित करें"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "क्या आप वाकई इस चरण को हटाना चाहते हैं?"
@@ -506,6 +515,9 @@ msgstr "प्रत्येक जॉब का आउटपुट इसक�
 
 msgid "Edit"
 msgstr "संपादित करें"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "बीता हुआ"
@@ -1054,6 +1066,9 @@ msgstr "कोई वर्क सेंटर मौजूद नहीं ह�
 
 msgid "None"
 msgstr "कोई नहीं"
+
+msgid "Note"
+msgstr ""
 
 msgid "Notes"
 msgstr "नोट्स"

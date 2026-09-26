@@ -130,11 +130,17 @@ msgstr "追加"
 msgid "Add & Issue"
 msgstr "追加して払出"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "印刷設定でプリンターを追加して、ラベルを直接印刷します。"
 
 msgid "Add Inventory"
 msgstr "在庫追加"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "サンプルを追加"
@@ -166,6 +172,9 @@ msgstr "不合格ユニットを割り当てる"
 
 msgid "Allocate units"
 msgstr "ユニットを割り当てる"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "このステップを削除してもよろしいですか？"
@@ -506,6 +515,9 @@ msgstr "各製造指図の出力はそれぞれのロット — 各製造指図�
 
 msgid "Edit"
 msgstr "編集"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "経過時間"
@@ -1054,6 +1066,9 @@ msgstr "作業区が存在しません。"
 
 msgid "None"
 msgstr "なし"
+
+msgid "Note"
+msgstr ""
 
 msgid "Notes"
 msgstr "メモ"

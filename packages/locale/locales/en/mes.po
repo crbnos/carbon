@@ -130,11 +130,17 @@ msgstr "Add"
 msgid "Add & Issue"
 msgstr "Add & Issue"
 
+msgid "Add a note to this reading"
+msgstr "Add a note to this reading"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
 
 msgid "Add Inventory"
 msgstr "Add Inventory"
+
+msgid "Add note"
+msgstr "Add note"
 
 msgid "Add Sample"
 msgstr "Add Sample"
@@ -166,6 +172,9 @@ msgstr "Allocate failed units"
 
 msgid "Allocate units"
 msgstr "Allocate units"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "allowable {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Are you sure you want to delete this step?"
@@ -506,6 +515,9 @@ msgstr "Each job's output is its own lot — keep each job's parts apart."
 
 msgid "Edit"
 msgstr "Edit"
+
+msgid "Edit note"
+msgstr "Edit note"
 
 msgid "Elapsed"
 msgstr "Elapsed"
@@ -1054,6 +1066,9 @@ msgstr "No work centers exist"
 
 msgid "None"
 msgstr "None"
+
+msgid "Note"
+msgstr "Note"
 
 msgid "Notes"
 msgstr "Notes"

@@ -1320,6 +1320,9 @@ msgstr "添加一行（在文件浏览器中）"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "添加一个列出物料清单上每个物料及其数量的物料部分。"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "添加参数（在程序文件浏览器中）"
 
@@ -1433,6 +1436,9 @@ msgstr "手动添加"
 
 msgid "Add match"
 msgstr "添加匹配"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Note"
 msgstr "添加备注"
@@ -1726,6 +1732,9 @@ msgstr "所有工作中心"
 
 msgid "Allocated"
 msgstr "已分配"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "允许确认并继续"
@@ -6569,6 +6578,9 @@ msgstr "编辑备忘录"
 
 msgid "Edit Non Conformance Type"
 msgstr "编辑 不合格 类型"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Edit Part"
 msgstr "编辑零件"

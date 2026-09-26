@@ -20,6 +20,11 @@ import {
   valuateMeasurement
 } from "../supabase/functions/shared/inspection-verdict.ts";
 import type { Kysely, KyselyDatabase } from "./client.ts";
+import {
+  type FirstArticleNeed,
+  type FirstArticleNeedInput,
+  resolveFirstArticleNeeds
+} from "./first-article.ts";
 import type {
   FeatureSamplingRule,
   SamplingPlanInput,
@@ -1444,6 +1449,584 @@ export async function getOrCreateJobOperationInspection(
     }
     return errResult(
       err instanceof Error ? err.message : "Failed to create inspection"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// 7. First Article Inspection generation (AS9102)
+// -------------------------------------------------------------
+// One First Article lot per job make method that needs one — the lot's
+// readable inspectionId is the FAIR identifier. Which make methods need one is
+// decided by the pure `resolveFirstArticleNeeds` (shared with the release
+// blocker, so the two can never disagree); this module only loads its input
+// and writes the lot, its per-feature plan rows and the seeded Form 1 header.
+
+type FirstArticleInspectionReason =
+  Database["public"]["Enums"]["firstArticleInspectionReason"];
+type FirstArticleInspectionScope =
+  Database["public"]["Enums"]["firstArticleInspectionScope"];
+
+/** A manual "New First Article" for one make method. */
+export type FirstArticleManualRequest = {
+  jobMakeMethodId: string;
+  scope: FirstArticleInspectionScope;
+  reason: FirstArticleInspectionReason;
+  baselineFirstArticleInspectionId?: string;
+  baselineReference?: string;
+};
+
+type FirstArticleItem = {
+  readableId: string;
+  readableIdWithRevision: string | null;
+  revision: string | null;
+  name: string;
+};
+
+// Carbon stores "no revision" as '0' (or ''), matching the
+// `readableIdWithRevision` generated column.
+function itemRevision(revision: string | null): string | null {
+  return revision && revision !== "0" ? revision : null;
+}
+
+/** "P-1001 Rev B", or the bare part number when the item has no revision. */
+function firstArticleDescription(item: FirstArticleItem): string {
+  const revision = itemRevision(item.revision);
+  return revision ? `${item.readableId} Rev ${revision}` : item.readableId;
+}
+
+type FirstArticleContext = {
+  input: FirstArticleNeedInput;
+  job: {
+    id: string;
+    jobId: string;
+    customerId: string | null;
+    salesOrderId: string | null;
+  };
+  companyName: string;
+  samplingStandard: SamplingStandard;
+  items: Map<string, FirstArticleItem>;
+};
+
+async function loadFirstArticleContext(
+  db: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; today: string }
+): Promise<FirstArticleContext> {
+  const job = await db
+    .selectFrom("job")
+    .select(["id", "jobId", "customerId", "salesOrderId"])
+    .where("id", "=", args.jobId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+  if (!job) throw new Error("Job not found");
+
+  const company = await db
+    .selectFrom("company")
+    .select(["name", "timezone"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+  if (!company) throw new Error("Company not found");
+
+  const settings = await db
+    .selectFrom("companySettings")
+    .select(["requireFirstArticle", "samplingStandard"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+
+  const customerShipping = job.customerId
+    ? await db
+        .selectFrom("customerShipping")
+        .select(["requiresFirstArticle"])
+        .where("customerId", "=", job.customerId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst()
+    : undefined;
+
+  // Root and made sub-assemblies alike — AS9102 needs an FAI per item.
+  const makeMethods = await db
+    .selectFrom("jobMakeMethod")
+    .innerJoin("item", "item.id", "jobMakeMethod.itemId")
+    .select([
+      "jobMakeMethod.id",
+      "jobMakeMethod.itemId",
+      "item.readableId",
+      "item.readableIdWithRevision",
+      "item.revision",
+      "item.name"
+    ])
+    .where("jobMakeMethod.jobId", "=", job.id)
+    .where("jobMakeMethod.companyId", "=", args.companyId)
+    .orderBy("jobMakeMethod.createdAt")
+    .orderBy("jobMakeMethod.id")
+    .execute();
+
+  const items = new Map<string, FirstArticleItem>();
+  for (const makeMethod of makeMethods) {
+    items.set(makeMethod.itemId, {
+      readableId: makeMethod.readableId,
+      readableIdWithRevision: makeMethod.readableIdWithRevision,
+      revision: makeMethod.revision,
+      name: makeMethod.name
+    });
+  }
+
+  const context: Omit<FirstArticleContext, "input"> = {
+    job,
+    companyName: company.name,
+    samplingStandard: (settings?.samplingStandard ??
+      "ANSI_Z1_4") as SamplingStandard,
+    items
+  };
+  const baseInput = {
+    companyRequiresFirstArticle: settings?.requireFirstArticle ?? false,
+    customerRequiresFirstArticle:
+      customerShipping?.requiresFirstArticle ?? false,
+    today: args.today
+  };
+  if (makeMethods.length === 0) {
+    return { ...context, input: { ...baseInput, makeMethods: [] } };
+  }
+
+  const itemIds = [...items.keys()];
+  const makeMethodIds = makeMethods.map((makeMethod) => makeMethod.id);
+
+  const firstArticleSlots = await db
+    .selectFrom("itemInspectionDocumentAssignment")
+    .select(["itemId", "inspectionDocumentId"])
+    .where("usage", "=", "First Article")
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .execute();
+
+  const partPlans = await db
+    .selectFrom("inspectionDocument")
+    .select(["id", "partId"])
+    .where("partId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .orderBy("id")
+    .execute();
+
+  // Formatted in SQL: node-postgres decodes timestamptz to a JS Date, and the
+  // due rule takes an ISO string (approval) and a company business day (job).
+  const approvals = await db
+    .selectFrom("firstArticleInspection")
+    .select([
+      "itemId",
+      sql<string>`to_char(max("approvedAt") AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.MS"Z"')`.as(
+        "latestApprovedAt"
+      )
+    ])
+    .where("status", "=", "Approved")
+    .where("approvedAt", "is not", null)
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .groupBy("itemId")
+    .execute();
+
+  const completedJobs = await db
+    .selectFrom("job")
+    .select([
+      "itemId",
+      sql<string>`to_char(max("completedDate") AT TIME ZONE ${company.timezone}, 'YYYY-MM-DD')`.as(
+        "lastCompletedJobDate"
+      )
+    ])
+    .where("status", "in", ["Completed", "Closed"])
+    .where("completedDate", "is not", null)
+    .where("id", "<>", job.id)
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .groupBy("itemId")
+    .execute();
+
+  const existingLots = await db
+    .selectFrom("inspection")
+    .select(["sourceDocumentLineId"])
+    .where("sourceDocument", "=", "First Article")
+    .where("sourceDocumentLineId", "in", makeMethodIds)
+    .where("companyId", "=", args.companyId)
+    .execute();
+
+  const slotByItem = new Map(
+    firstArticleSlots.map((slot) => [slot.itemId, slot.inspectionDocumentId])
+  );
+  const partPlansByItem = new Map<string, string[]>();
+  for (const plan of partPlans) {
+    const list = partPlansByItem.get(plan.partId) ?? [];
+    list.push(plan.id);
+    partPlansByItem.set(plan.partId, list);
+  }
+  const approvedAtByItem = new Map(
+    approvals.map((row) => [row.itemId, row.latestApprovedAt])
+  );
+  const completedByItem = new Map(
+    completedJobs.map((row) => [row.itemId, row.lastCompletedJobDate])
+  );
+  const lotMakeMethodIds = new Set(
+    existingLots.map((lot) => lot.sourceDocumentLineId)
+  );
+
+  return {
+    ...context,
+    input: {
+      ...baseInput,
+      makeMethods: makeMethods.map((makeMethod) => ({
+        jobMakeMethodId: makeMethod.id,
+        itemId: makeMethod.itemId,
+        description: firstArticleDescription(makeMethod),
+        firstArticlePlanId: slotByItem.get(makeMethod.itemId) ?? null,
+        partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
+        latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
+        lastCompletedJobDate: completedByItem.get(makeMethod.itemId) ?? null,
+        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id)
+      }))
+    }
+  };
+}
+
+/**
+ * Everything `resolveFirstArticleNeeds` needs for one job, in a fixed number
+ * of queries regardless of the size of the method tree. Pass the active `trx`
+ * when called inside a transaction.
+ */
+export async function loadFirstArticleNeedInput(
+  trx: Kysely<KyselyDatabase>,
+  args: { jobId: string; companyId: string; today: string }
+): Promise<FirstArticleNeedInput> {
+  const { input } = await loadFirstArticleContext(trx, args);
+  return input;
+}
+
+/**
+ * Creates the First Article lots a job needs — at release (no `only`), or one
+ * manual FAI for a chosen make method (`only`, treated as required and due,
+ * still requiring a resolved plan). Idempotent: a make method that already has
+ * a First Article lot is skipped, including one created concurrently.
+ */
+export async function createFirstArticleInspections(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    jobId: string;
+    companyId: string;
+    userId: string;
+    /** YYYY-MM-DD, company timezone. */
+    today: string;
+    only?: FirstArticleManualRequest;
+  }
+): Promise<Result<{ firstArticleInspectionIds: string[] }>> {
+  const { companyId, userId, only } = args;
+
+  try {
+    const result = await db.transaction().execute(async (trx) => {
+      const context = await loadFirstArticleContext(trx, args);
+      const needs = resolveFirstArticleNeeds(context.input);
+      const { job, items } = context;
+
+      let toCreate: FirstArticleNeed[];
+      if (only) {
+        const need = needs.find(
+          (n) => n.jobMakeMethodId === only.jobMakeMethodId
+        );
+        if (!need) throw new Error("Make method not found on this job");
+        if (!need.planId) {
+          throw new Error(
+            `Assign a first article plan for ${need.description}`
+          );
+        }
+        const hasLot = context.input.makeMethods.some(
+          (m) =>
+            m.jobMakeMethodId === need.jobMakeMethodId && m.hasFirstArticleLot
+        );
+        if (hasLot) {
+          throw new Error(
+            `This job already has a first article for ${need.description}`
+          );
+        }
+        toCreate = [need];
+      } else {
+        toCreate = needs.filter((need) => need.create);
+      }
+      if (toCreate.length === 0) return { firstArticleInspectionIds: [] };
+
+      const planIds = [
+        ...new Set(toCreate.map((need) => need.planId as string))
+      ];
+      const itemIds = [...new Set(toCreate.map((need) => need.itemId))];
+      const makeMethodIds = toCreate.map((need) => need.jobMakeMethodId);
+      const readableIds = [
+        ...new Set(itemIds.map((itemId) => items.get(itemId)?.readableId ?? ""))
+      ].filter(Boolean);
+
+      const plans = await trx
+        .selectFrom("inspectionDocument")
+        .select([
+          "id",
+          "drawingNumber",
+          "drawingRevision",
+          "samplingPlanType",
+          "samplingSampleSize",
+          "samplingPercentage",
+          "samplingAql",
+          "samplingInspectionLevel",
+          "samplingSeverity"
+        ])
+        .where("id", "in", planIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      const planById = new Map(plans.map((plan) => [plan.id, plan]));
+
+      const features = await trx
+        .selectFrom("inspectionFeature")
+        .select([
+          "id",
+          "inspectionDocumentId",
+          "samplingPlanType",
+          "samplingSampleSize",
+          "samplingPercentage",
+          "samplingAql",
+          "samplingInspectionLevel",
+          "samplingSeverity"
+        ])
+        .where("inspectionDocumentId", "in", planIds)
+        .where("companyId", "=", companyId)
+        .orderBy("id")
+        .execute();
+      const featuresByPlan = new Map<string, typeof features>();
+      for (const feature of features) {
+        const list = featuresByPlan.get(feature.inspectionDocumentId) ?? [];
+        list.push(feature);
+        featuresByPlan.set(feature.inspectionDocumentId, list);
+      }
+
+      const customerParts = job.customerId
+        ? await trx
+            .selectFrom("customerPartToItem")
+            .select(["itemId", "customerPartId", "customerPartRevision"])
+            .where("customerId", "=", job.customerId)
+            .where("itemId", "in", itemIds)
+            .where("companyId", "=", companyId)
+            .orderBy("customerPartId")
+            .execute()
+        : [];
+      const customerPartByItem = new Map<
+        string,
+        (typeof customerParts)[number]
+      >();
+      for (const part of customerParts) {
+        if (!customerPartByItem.has(part.itemId)) {
+          customerPartByItem.set(part.itemId, part);
+        }
+      }
+
+      const salesOrder = job.salesOrderId
+        ? await trx
+            .selectFrom("salesOrder")
+            .select(["customerReference"])
+            .where("id", "=", job.salesOrderId)
+            .where("companyId", "=", companyId)
+            .executeTakeFirst()
+        : undefined;
+
+      // Assembly when the make method builds any made child (Form 1 field 7).
+      const assemblyRows = await trx
+        .selectFrom("jobMaterial")
+        .select(["jobMakeMethodId"])
+        .where("jobMakeMethodId", "in", makeMethodIds)
+        .where("methodType", "=", "Make to Order")
+        .where("companyId", "=", companyId)
+        .execute();
+      const assemblyMakeMethodIds = new Set(
+        assemblyRows.map((row) => row.jobMakeMethodId)
+      );
+
+      // Released change notices of every revision of the part (mirrors
+      // `findChangeNoticesForItem`'s affected-item relation).
+      const changeOrders =
+        readableIds.length > 0
+          ? await trx
+              .selectFrom("item")
+              .innerJoin(
+                "changeOrderAffectedItem",
+                "changeOrderAffectedItem.itemId",
+                "item.id"
+              )
+              .innerJoin("changeOrder", (join) =>
+                join
+                  .onRef(
+                    "changeOrder.id",
+                    "=",
+                    "changeOrderAffectedItem.changeOrderId"
+                  )
+                  .onRef(
+                    "changeOrder.companyId",
+                    "=",
+                    "changeOrderAffectedItem.companyId"
+                  )
+              )
+              .select([
+                "item.readableId",
+                "changeOrder.id",
+                "changeOrder.changeOrderId",
+                "changeOrder.name"
+              ])
+              .where("item.readableId", "in", readableIds)
+              .where("item.companyId", "=", companyId)
+              .where("changeOrder.status", "=", "Done")
+              .orderBy("changeOrder.changeOrderId")
+              .orderBy("changeOrder.id")
+              .execute()
+          : [];
+      const changesByReadableId = new Map<string, Map<string, string>>();
+      for (const row of changeOrders) {
+        const changes =
+          changesByReadableId.get(row.readableId) ?? new Map<string, string>();
+        changes.set(row.id, `${row.changeOrderId} ${row.name}`);
+        changesByReadableId.set(row.readableId, changes);
+      }
+
+      // A First Article lot is one unit inspected on every characteristic.
+      const lotSize = 1;
+      const allPlan: SamplingPlanInput = {
+        type: "All",
+        sampleSize: null,
+        percentage: null,
+        aql: null,
+        inspectionLevel: "II",
+        severity: "Normal"
+      };
+      const snapshot = resolveSamplingPlan(
+        allPlan,
+        lotSize,
+        context.samplingStandard
+      );
+
+      const firstArticleInspectionIds: string[] = [];
+      for (const need of toCreate) {
+        const planId = need.planId as string;
+        const plan = planById.get(planId);
+        if (!plan) throw new Error(`Inspection plan ${planId} not found`);
+        const item = items.get(need.itemId);
+        if (!item) throw new Error(`Item ${need.itemId} not found`);
+
+        const readableInspectionId = await getNextSequence(
+          trx,
+          "inspection",
+          companyId
+        );
+
+        const inserted = await trx
+          .insertInto("inspection")
+          .values({
+            inspectionId: readableInspectionId,
+            sourceDocument: "First Article",
+            sourceDocumentId: job.id,
+            sourceDocumentLineId: need.jobMakeMethodId,
+            sourceDocumentReadableId: job.jobId,
+            itemId: need.itemId,
+            itemReadableId: item.readableIdWithRevision ?? item.readableId,
+            supplierId: null,
+            lotSize,
+            samplingStandard: context.samplingStandard,
+            samplingPlanType: allPlan.type,
+            sampleSize: 1,
+            acceptanceNumber: snapshot.acceptance,
+            rejectionNumber: snapshot.rejection,
+            aql: null,
+            inspectionLevel: allPlan.inspectionLevel ?? null,
+            severity: allPlan.severity ?? null,
+            codeLetter: snapshot.codeLetter,
+            inspectionDocumentId: planId,
+            status: "Pending",
+            companyId,
+            createdBy: userId
+          })
+          // Lost a race with a concurrent generation for this make method:
+          // the partial unique index keeps one lot, the winner's.
+          .onConflict((oc) =>
+            oc
+              .columns(["sourceDocument", "sourceDocumentLineId"])
+              .where("sourceDocumentLineId", "is not", null)
+              .doNothing()
+          )
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!inserted) continue;
+
+        const defaultPlan = toSamplingPlanInput(plan);
+        const planFeatures = featuresByPlan.get(planId) ?? [];
+        if (planFeatures.length > 0) {
+          await trx
+            .insertInto("inspectionSamplingPlan")
+            .values(
+              planFeatures.map((feature) => ({
+                inspectionId: inserted.id,
+                inspectionFeatureId: feature.id,
+                ...resolveLotFeaturePlan(
+                  "First Article",
+                  feature,
+                  defaultPlan,
+                  lotSize,
+                  context.samplingStandard
+                ),
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+        }
+
+        const customerPart = customerPartByItem.get(need.itemId);
+        const changes = changesByReadableId.get(item.readableId);
+
+        const fai = await trx
+          .insertInto("firstArticleInspection")
+          .values({
+            companyId,
+            inspectionId: inserted.id,
+            itemId: need.itemId,
+            jobId: job.id,
+            jobMakeMethodId: need.jobMakeMethodId,
+            type: assemblyMakeMethodIds.has(need.jobMakeMethodId)
+              ? "Assembly"
+              : "Detail",
+            scope: only?.scope ?? "Full",
+            reason: only?.reason ?? need.reason ?? "New Part",
+            baselineFirstArticleInspectionId:
+              only?.baselineFirstArticleInspectionId || null,
+            baselineReference: only?.baselineReference || null,
+            partNumber: customerPart?.customerPartId ?? item.readableId,
+            partName: item.name,
+            partRevision:
+              customerPart?.customerPartRevision ||
+              itemRevision(item.revision) ||
+              "N/C",
+            drawingNumber: plan.drawingNumber,
+            drawingRevision: plan.drawingRevision,
+            additionalChanges:
+              changes && changes.size > 0
+                ? [...changes.values()].join(", ")
+                : null,
+            manufacturingProcessReference: `${job.jobId} / ${item.readableId}`,
+            organizationName: context.companyName,
+            purchaseOrderNumber: salesOrder?.customerReference ?? null,
+            comments: customerPart ? `Carbon part: ${item.readableId}` : null,
+            createdBy: userId
+          })
+          .returning(["id"])
+          .executeTakeFirstOrThrow();
+
+        firstArticleInspectionIds.push(fai.id);
+      }
+
+      return { firstArticleInspectionIds };
+    });
+
+    return { data: result, error: null };
+  } catch (err) {
+    return errResult(
+      err instanceof Error
+        ? err.message
+        : "Failed to create first article inspections"
     );
   }
 }

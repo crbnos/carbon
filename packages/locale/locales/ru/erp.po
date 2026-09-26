@@ -1320,6 +1320,9 @@ msgstr "Добавить строку (в обозревателях докум�
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Добавить раздел материалов, в котором указывается каждый элемент спецификации материалов с его количеством."
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "Добавить параметр (в обозревателе процедур)"
 
@@ -1433,6 +1436,9 @@ msgstr "Добавить вручную"
 
 msgid "Add match"
 msgstr "Добавить совпадение"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Note"
 msgstr "Добавить примечание"
@@ -1726,6 +1732,9 @@ msgstr "Все рабочие центры"
 
 msgid "Allocated"
 msgstr "Распределено"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "Позволяет подтвердить и продолжить"
@@ -6569,6 +6578,9 @@ msgstr "Изменить заметку"
 
 msgid "Edit Non Conformance Type"
 msgstr "Изменить тип несоответствия"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Edit Part"
 msgstr "Изменить деталь"

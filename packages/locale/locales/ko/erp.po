@@ -1320,6 +1320,9 @@ msgstr "라인 추가 (문서 탐색기에서)"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "절차서 탐색기에서 매개변수 추가"
 
@@ -1433,6 +1436,9 @@ msgstr "수동으로 추가"
 
 msgid "Add match"
 msgstr "일치 추가"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -1726,6 +1732,9 @@ msgstr "모든 작업장"
 
 msgid "Allocated"
 msgstr "할당됨"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "확인 후 계속 진행 허용"
@@ -6569,6 +6578,9 @@ msgstr "메모 편집"
 
 msgid "Edit Non Conformance Type"
 msgstr "부적합 유형 편집"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Edit Part"
 msgstr "부품 편집"

@@ -130,11 +130,17 @@ msgstr "Hinzufügen"
 msgid "Add & Issue"
 msgstr "Hinzufügen & Ausgeben"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Einen Drucker in den Druckeinstellungen hinzufügen, um Etiketten direkt zu drucken."
 
 msgid "Add Inventory"
 msgstr "Bestand hinzufügen"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "Probe hinzufügen"
@@ -166,6 +172,9 @@ msgstr "Fehlerhafte Einheiten zuordnen"
 
 msgid "Allocate units"
 msgstr "Einheiten zuordnen"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Möchten Sie diesen Schritt wirklich löschen?"
@@ -506,6 +515,9 @@ msgstr "Die Ausgabe jedes Fertigungsauftrags ist seine eigene Charge – halten 
 
 msgid "Edit"
 msgstr "Bearbeiten"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "Verstrichene Zeit"
@@ -1054,6 +1066,9 @@ msgstr "Keine Arbeitsplätze vorhanden"
 
 msgid "None"
 msgstr "Keine"
+
+msgid "Note"
+msgstr ""
 
 msgid "Notes"
 msgstr "Notizen"

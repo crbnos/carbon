@@ -130,11 +130,17 @@ msgstr "Dodaj"
 msgid "Add & Issue"
 msgstr "Dodaj i wydaj"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Dodaj drukarkę w ustawieniach drukowania, aby drukować etykiety bezpośrednio."
 
 msgid "Add Inventory"
 msgstr "Dodaj zapasy"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Sample"
 msgstr "Dodaj próbkę"
@@ -166,6 +172,9 @@ msgstr "Przydziel jednostki z błędami"
 
 msgid "Allocate units"
 msgstr "Przydziel jednostki"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Czy na pewno chcesz usunąć ten krok?"
@@ -506,6 +515,9 @@ msgstr "Wynik każdego zlecenia produkcyjnego to jego własna partia — trzymaj
 
 msgid "Edit"
 msgstr "Edytuj"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Elapsed"
 msgstr "Minęło"
@@ -1054,6 +1066,9 @@ msgstr "Brak stanowisk roboczych"
 
 msgid "None"
 msgstr "Brak"
+
+msgid "Note"
+msgstr ""
 
 msgid "Notes"
 msgstr "Notatki"

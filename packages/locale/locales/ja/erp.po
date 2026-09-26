@@ -1320,6 +1320,9 @@ msgstr "行を追加（文書エクスプローラーで）"
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
+msgid "Add a note to this reading"
+msgstr ""
+
 msgid "Add a parameter (in the procedure explorer)"
 msgstr "手順書エクスプローラーでパラメータを追加"
 
@@ -1433,6 +1436,9 @@ msgstr "手動で追加"
 
 msgid "Add match"
 msgstr "マッチを追加"
+
+msgid "Add note"
+msgstr ""
 
 msgid "Add Note"
 msgstr "メモを追加"
@@ -1726,6 +1732,9 @@ msgstr "すべての作業区"
 
 msgid "Allocated"
 msgstr "配置済み"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr ""
 
 msgid "Allows acknowledge & continue"
 msgstr "確認して続行できます"
@@ -6569,6 +6578,9 @@ msgstr "メモを編集"
 
 msgid "Edit Non Conformance Type"
 msgstr "不適合タイプを編集"
+
+msgid "Edit note"
+msgstr ""
 
 msgid "Edit Part"
 msgstr "パーツを編集"
