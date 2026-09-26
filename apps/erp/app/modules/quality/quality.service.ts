@@ -1,5 +1,9 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import {
+  evaluateFirstArticleDue,
+  type FirstArticleReason
+} from "@carbon/database/first-article";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -248,6 +252,107 @@ export async function getIssueFromExternalLink(
     .select("*, nonConformance(*)")
     .eq("id", id)
     .single();
+}
+
+/**
+ * Whether each item's First Article is due (§5 of the CofC/FAI spec): the
+ * latest Approved FAI per item and the item's latest completed job, excluding
+ * the job being evaluated, run through `evaluateFirstArticleDue`.
+ */
+export async function getFirstArticleDue(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { itemIds: string[]; excludeJobId?: string; today: string }
+): Promise<
+  | {
+      data: Record<
+        string,
+        {
+          due: boolean;
+          reason: FirstArticleReason | null;
+          latestFairId: string | null;
+        }
+      >;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const [approved, completedJobs, timeZone] = await Promise.all([
+    fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
+      client,
+      "firstArticleInspection",
+      "id, itemId, approvedAt",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("itemId", itemIds)
+          .not("approvedAt", "is", null)
+          .order("approvedAt", { ascending: false })
+          .order("id")
+    ),
+    fetchAllFromTable<{ itemId: string; completedDate: string }>(
+      client,
+      "job",
+      "itemId, completedDate",
+      (query) => {
+        const filtered = query
+          .eq("companyId", companyId)
+          .in("status", ["Completed", "Closed"])
+          .in("itemId", itemIds)
+          .not("completedDate", "is", null);
+        return (
+          args.excludeJobId ? filtered.neq("id", args.excludeJobId) : filtered
+        )
+          .order("completedDate", { ascending: false })
+          .order("id");
+      }
+    ),
+    getCompanyTimeZone(client, companyId)
+  ]);
+
+  if (approved.error) return { data: null, error: approved.error };
+  if (completedJobs.error) return { data: null, error: completedJobs.error };
+
+  // Both reads are ordered newest first, so the first row per item is its latest.
+  const latestApproval = new Map<string, { id: string; approvedAt: string }>();
+  for (const row of approved.data) {
+    if (!latestApproval.has(row.itemId)) latestApproval.set(row.itemId, row);
+  }
+  const lastCompletedJobDate = new Map<string, string>();
+  for (const row of completedJobs.data) {
+    if (!lastCompletedJobDate.has(row.itemId)) {
+      lastCompletedJobDate.set(
+        row.itemId,
+        datetime.businessDay(row.completedDate, timeZone).toString()
+      );
+    }
+  }
+
+  const data: Record<
+    string,
+    {
+      due: boolean;
+      reason: FirstArticleReason | null;
+      latestFairId: string | null;
+    }
+  > = {};
+  for (const itemId of itemIds) {
+    const approval = latestApproval.get(itemId);
+    data[itemId] = {
+      ...evaluateFirstArticleDue({
+        latestApprovedAt: approval?.approvedAt ?? null,
+        lastCompletedJobDate: lastCompletedJobDate.get(itemId) ?? null,
+        today: args.today
+      }),
+      latestFairId: approval?.id ?? null
+    };
+  }
+
+  return { data, error: null };
 }
 
 export async function getGauge(
