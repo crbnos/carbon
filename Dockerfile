@@ -6,7 +6,7 @@ ARG APP
 ARG SOURCEMAPS=0
 
 # slim, not node:22 — every native dep ships prebuilt, nothing needs the toolchain.
-FROM node:22-slim AS deps
+FROM node:25-slim AS deps
 WORKDIR /repo
 RUN corepack enable
 # Store on a cache mount, so a source-only commit relinks instead of refetching.
@@ -53,7 +53,7 @@ RUN find /repo -maxdepth 4 \( -name '.ignored_*' -o -name '.vite' \) \
         find /repo/node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
     fi
 
-FROM node:22-slim AS ops
+FROM node:25-slim AS ops
 # slim ships no CA certs, and the supabase CLI is a Go binary that verifies TLS
 # against the system store — migrations default to sslmode=require.
 RUN apt-get update \
@@ -102,7 +102,7 @@ RUN find node_modules/.pnpm -maxdepth 1 -type d \( \
         find node_modules -type f -name '*.map' -delete 2>/dev/null || true ; \
     fi
 
-FROM node:22-slim AS runner
+FROM node:25-slim AS runner
 ARG APP
 WORKDIR /repo
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
