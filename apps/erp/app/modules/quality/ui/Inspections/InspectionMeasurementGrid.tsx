@@ -951,15 +951,12 @@ function MeasurementNote({
           className={cn(
             "flex size-6 shrink-0 items-center justify-center rounded-md transition-[opacity,color] active:scale-[0.96]",
             hasNote
-              ? "text-amber-600 dark:text-amber-400"
+              ? "text-muted-foreground"
               : "text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/cell:opacity-100"
           )}
         >
           <LuStickyNote
-            className={cn(
-              "size-3.5",
-              hasNote && "fill-amber-200 dark:fill-amber-500/30"
-            )}
+            className={cn("size-3.5", hasNote && "fill-muted-foreground/20")}
           />
         </button>
       </PopoverTrigger>
