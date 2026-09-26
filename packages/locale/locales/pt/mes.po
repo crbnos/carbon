@@ -103,7 +103,7 @@ msgid "Accept"
 msgstr "Aceitar"
 
 msgid "Accept first article?"
-msgstr ""
+msgstr "Aceitar primeiro artigo?"
 
 msgid "Accept Lot"
 msgstr "Aceitar Lote"
@@ -134,7 +134,7 @@ msgid "Add & Issue"
 msgstr "Adicionar e Emitir"
 
 msgid "Add a note to this reading"
-msgstr ""
+msgstr "Adicionar uma observação a esta leitura"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Adicione uma impressora nas configurações de impressão para imprimir etiquetas diretamente."
@@ -143,7 +143,7 @@ msgid "Add Inventory"
 msgstr "Adicionar Estoque"
 
 msgid "Add note"
-msgstr ""
+msgstr "Adicionar observação"
 
 msgid "Add Sample"
 msgstr "Adicionar Amostra"
@@ -177,7 +177,7 @@ msgid "Allocate units"
 msgstr "Alocar unidades"
 
 msgid "allowable {allowableLabel} (bonus {bonusLabel})"
-msgstr ""
+msgstr "permitido {allowableLabel} (bônus {bonusLabel})"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Tem certeza de que deseja excluir esta etapa?"
@@ -520,7 +520,7 @@ msgid "Edit"
 msgstr "Editar"
 
 msgid "Edit note"
-msgstr ""
+msgstr "Editar observação"
 
 msgid "Elapsed"
 msgstr "Decorrido"
@@ -654,11 +654,11 @@ msgid "Finish with material unpicked?"
 msgstr "Finalizar com material não selecionado?"
 
 msgid "First article"
-msgstr ""
+msgstr "Primeiro artigo"
 
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
-msgstr ""
+msgstr "Primeiro artigo necessário para {0}"
 
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
@@ -714,13 +714,13 @@ msgid "In Progress"
 msgstr "Em Andamento"
 
 msgid "Inspect"
-msgstr ""
+msgstr "Inspecionar"
 
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
 
 msgid "Inspect the first unit on every characteristic before running the rest."
-msgstr ""
+msgstr "Inspecione a primeira unidade em cada característica antes de executar o resto."
 
 msgid "inspected"
 msgstr "inspecionado"
@@ -1084,7 +1084,7 @@ msgid "None"
 msgstr "Nenhum"
 
 msgid "Note"
-msgstr ""
+msgstr "Observação"
 
 msgid "Notes"
 msgstr "Observações"
@@ -1331,7 +1331,7 @@ msgid "Reject"
 msgstr "Rejeitar"
 
 msgid "Reject first article?"
-msgstr ""
+msgstr "Rejeitar primeiro artigo?"
 
 msgid "Reject Lot"
 msgstr "Rejeitar Lote"
@@ -1648,10 +1648,10 @@ msgid "The completed quantity for this operation is less than the required quant
 msgstr "A quantidade concluída para esta operação é menor que a quantidade requerida de {targetQuantity}."
 
 msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
-msgstr ""
+msgstr "O primeiro artigo será marcado como Reprovado e seus resultados bloqueados. Nenhuma quantidade é registrada."
 
 msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
-msgstr ""
+msgstr "O primeiro artigo será marcado como Aprovado e seus resultados bloqueados. Nenhuma quantidade é registrada."
 
 msgid "The jobs and parts that make up this run."
 msgstr "As ordens de produção e peças que compõem esta execução."
