@@ -36,6 +36,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (fai.data.status !== "Draft") {
     return { success: false, message: "This first article is locked" };
   }
+  // The job (or the make method, after Get Method rebuilt it) was deleted:
+  // there is no operation left to attach a certificate to.
+  const { jobId, jobMakeMethodId } = fai.data;
+  if (!jobId || !jobMakeMethodId) {
+    return {
+      success: false,
+      message: "The job or make method of this first article no longer exists"
+    };
+  }
 
   const formData = await request.formData();
   const validation = await validator(certificateValidator).validate(formData);
@@ -60,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("jobOperation")
     .select("id")
     .eq("id", jobOperationId ?? "")
-    .eq("jobMakeMethodId", fai.data.jobMakeMethodId)
+    .eq("jobMakeMethodId", jobMakeMethodId)
     .eq("companyId", companyId)
     .maybeSingle();
   if (operation.error || !operation.data) {
@@ -71,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const documentPath = formData.get("path");
   if (typeof documentPath === "string" && documentPath) {
     // Only register files uploaded to this job's folder of this company.
-    if (!documentPath.startsWith(`${companyId}/job/${fai.data.jobId}/`)) {
+    if (!documentPath.startsWith(`${companyId}/job/${jobId}/`)) {
       return { success: false, message: "Invalid file path" };
     }
 
@@ -82,7 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       name: typeof name === "string" && name ? name : "certificate.pdf",
       size: Number.isFinite(size) ? size : 0,
       sourceDocument: "Job",
-      sourceDocumentId: fai.data.jobId,
+      sourceDocumentId: jobId,
       readGroups: [userId],
       writeGroups: [userId],
       createdBy: userId,

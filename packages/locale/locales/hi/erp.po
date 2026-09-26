@@ -9561,6 +9561,9 @@ msgstr "इसकी डिजाइन परिवर्तन सूचना
 msgid "Job"
 msgstr "Job"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "जॉब आईडी"
 
@@ -10255,6 +10258,9 @@ msgstr "निष्क्रिय करें"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "निर्माण आइटम को सीधे चालान नहीं किया जा सकता। जारी रखने के लिए विधि को पिकिंग में बदलें।"
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "निर्माण विधि संस्करण"
@@ -17888,6 +17894,9 @@ msgstr "उस दिन देय नौकरी के घंटे (दे�
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "वह काम जिसका संचालन यह बाहरी-प्रसंस्करण लाइन कवर करता है; लाइन की रसीद इस काम के विरुद्ध संचालन को बंद करती है।"
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "जॉब की अपने स्थान की शेड्यूल पंक्ति में स्थिति — एक अंशीय संख्या जो Carbon नियत तिथि और समय सीमा प्रकार से परिकलित करता है, कोई निम्न/उच्च रेटिंग नहीं।"

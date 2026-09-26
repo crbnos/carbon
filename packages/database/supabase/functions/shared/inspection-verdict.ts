@@ -75,7 +75,8 @@ export type GeometricValuation = {
 // grows by how far the related feature of size departs from that condition,
 // capped at the size's own tolerance band. RFS, attribute features and
 // unparseable nominals fall back to `valuateMeasurement` with no bonus. A
-// missing size reading earns no bonus (the stated tolerance still applies); a
+// missing size reading, or a feature with no declared feature of size, earns
+// no bonus (the stated tolerance still applies); a
 // FAILED size reading fails the geometric feature outright — a bonus cannot be
 // derived from an out-of-spec size.
 // `passed` is forwarded to the fallback so an attribute or unparseable-nominal
@@ -123,12 +124,20 @@ export function valuateGeometricMeasurement(
   const sizeNominal =
     size && size.value != null ? parseSpecNumber(size.spec.nominalValue) : null;
 
-  if (size && size.value != null && sizeNominal !== null) {
+  // Without a declared feature of size there is no way to tell which limit
+  // is the MMC, so no bonus is earned — the stated tolerance applies. Guessing
+  // Internal would grant a bonus of the wrong sign on a pin or boss.
+  if (
+    feature.featureOfSize != null &&
+    size &&
+    size.value != null &&
+    sizeNominal !== null
+  ) {
     const lower =
       sizeNominal - Math.abs(parseSpecNumber(size.spec.toleranceMinus) ?? 0);
     const upper =
       sizeNominal + Math.abs(parseSpecNumber(size.spec.tolerancePlus) ?? 0);
-    const internal = feature.featureOfSize !== "External";
+    const internal = feature.featureOfSize === "Internal";
     const raw =
       condition === "MMC"
         ? internal

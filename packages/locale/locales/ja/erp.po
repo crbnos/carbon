@@ -9561,6 +9561,9 @@ msgstr "変更通知のリリース前に、そのデザインが変わる可能
 msgid "Job"
 msgstr "ジョブ"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ジョブID"
 
@@ -10255,6 +10258,9 @@ msgstr "無効にする"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "内製品目は直接請求できません。方法をピッキングに変更して続行してください。"
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "製造方法バージョン"
@@ -17888,6 +17894,9 @@ msgstr "その日に期限切れになるジョブの時間（作業が実行さ
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "この外部加工明細が対象とする作業。行の受領はこの作業に対して操作を閉じます。"
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "このジョブのロケーション内のスケジュール順序での位置。Carbonが期日と期限タイプから計算した小数値で、低/高レーティングではありません。"

@@ -30,8 +30,15 @@ Two outbound quality records built on one input: the **certification lineage**
 uploaded file) and exactly one target — CHECK `certificate_one_target`
 (`num_nonnulls("receiptLineId", "jobOperationId") = 1`):
 
-- **Receipt line** — `x+/receipt+/lines.$lineId.certificates.tsx` (view/update
-  `inventory`), opened from `ReceiptLines.tsx` (`CertificatesDrawer`).
+- **Receipt line** — `x+/receipt+/lines.$lineId.certificates.tsx`, opened from
+  `ReceiptLines.tsx` (`CertificatesDrawer`). Permission per intent: loader
+  `inventory_view`, add `inventory_create`, `intent=delete` `inventory_delete`.
+  The writes are `addReceiptLineCertificate` / `deleteReceiptLineCertificate`
+  (`quality/certificates.server.ts`): the `document` and `certificate` rows go
+  in ONE Kysely transaction (the browser-uploaded file is removed on failure,
+  unless another `document` already points at that path); a form `supplierId`
+  that is not the company's is dropped; delete is scoped to the line and fails
+  when it removed nothing.
 - **Job operation** — `x+/first-article+/$id.certificates.new.tsx` ("Attach
   certificate" on FAI Form 2; `quality` create+update, Draft FAI only). The
   operation id comes from the client, so the route re-checks it belongs to the
@@ -42,7 +49,9 @@ is `inventory_*` (shipments are inventory); the compliance and FAI tables are
 `quality_*`.
 
 `complianceStatement` (+ `complianceStatementAssignment`, one of `customerId` /
-`itemId`) holds the boilerplate a certificate prints. A statement applies when
+`itemId`) holds the boilerplate a certificate prints. `upsertComplianceStatement`
+(Kysely) keeps only the form's customer / item ids that belong to the company
+before writing the assignments. A statement applies when
 `appliesToAllCustomers` or it is assigned to the shipment's customer or to any
 shipped item (`getComplianceStatementsForShipment`). Managed at
 `x+/quality+/compliance-statements*.tsx`.
@@ -158,9 +167,18 @@ Per job make method (root and made sub-assemblies alike):
 - **Plan**: the First Article slot, else the part's **only** plan
   (`inspectionDocument.partId = itemId`, exactly one). Two plans and no slot
   resolves nothing.
-- `blocked` = required ∧ due ∧ no lot yet ∧ no plan → **release blocker**
+- **Open elsewhere**: an open (Draft / Verified) FAI for the same item on
+  ANOTHER job (`jobId` set and different) satisfies the need — the part's first
+  article is already in progress. Input `hasOpenFirstArticleElsewhere`, loaded
+  by both loaders (`loadFirstArticleContext` in Kysely,
+  `getFirstArticlesWithoutPlan` over supabase-js — the latter pages approvals,
+  open FAIs and completed jobs with `fetchAllFromTable`, so PostgREST's
+  1000-row cap cannot drop rows). An FAI whose job was deleted does not count.
+- `pending` = required ∧ due ∧ no lot on this job ∧ none open elsewhere — the
+  job header's "FAI due" chip.
+  `blocked` = pending ∧ no plan → **release blocker**
   ("Assign a first article plan for P-1001 Rev B").
-  `create` = the same with a plan → the generator creates the lot.
+  `create` = pending ∧ a plan → the generator creates the lot.
 
 ### Generation at release — `afterJobsReleased`
 
@@ -171,9 +189,13 @@ that releases a job:
   release (`releaseBatchMemberJobs`, from `production+/batches.release.tsx` and
   `priority+/batching.update.tsx`; batch release refuses the whole batch naming
   each job's parts without a plan);
-- the plain `status=Ready` post in `x+/job+/$jobId.status.tsx`, only when the
-  prior status was Draft or Planned — **Ready from Paused is a resume**: no
-  readiness re-check, no generation;
+- a plain status post in `x+/job+/$jobId.status.tsx` that is a **release**:
+  prior status Draft or Planned and new status `Ready` **or `In Progress`**
+  (both run the blocker, then generation). **Ready from Paused is a resume**:
+  no readiness re-check, no generation. The Release dialog branch
+  (`status=Ready&schedule=1`) requires the same Draft/Planned prior status and
+  refuses otherwise ("Only a Draft or Planned job can be released"), so an
+  already-released job is never put through `releaseJobs` again;
 - kanban auto-release (`api+/kanban.$id.tsx`) — generates, but is **not gated**
   by the blocker (it never reads readiness).
 
@@ -203,16 +225,35 @@ may carry the user's edits.
 
 | From → To | Function | Guard / effect |
 |---|---|---|
-| (created) Draft | generator / manual | Header, Form 2 editable (`updateFirstArticleInspectionHeader`, `upsert/deleteFirstArticleInspectionProduct` refuse non-Draft) |
+| (created) Draft | generator / manual | Header, Form 2 editable (`updateFirstArticleInspectionHeader`; `upsert/deleteFirstArticleInspectionProduct` in firstArticle.server.ts lock the FAI row `FOR UPDATE` and re-check Draft in the same Kysely transaction as the write) |
 | Draft → Verified | `verifyFirstArticleInspection` | Lot must be dispositioned (Passed/Failed/Partial). Snapshots `hasNonconformance` = lot Failed/Partial, or an NCR linked to the lot or to an operation of the make method. Signs fields 19–21 |
 | Verified → Draft | `reopenFirstArticleInspection` | Clears verification. The lot stays closed; readings stay locked |
-| Verified → Approved | `approveFirstArticleInspection` | Renders the FAIR (landscape A4) with the approver's signature, uploads it under `{companyId}/job/{jobId}/`, then in one txn inserts a `document` (source `Job`) and locks the FAI. Upload removed on failure. When the approver is the verifier the UI asks for confirmation (`FirstArticleHeader`); the server does not refuse |
+| Verified → Approved | `approveFirstArticleInspection` | Renders the FAIR (landscape A4) with the approver's signature — the render reads the FAI under the caller's client and company, which is the access proof — then uploads it with the **service role** under `{companyId}/job/{jobId}/` (or `{companyId}/first-article/{id}/` when the job was deleted), then in one txn inserts a `document` (source `Job`, or none without a job) and locks the FAI. Upload removed (service role) on failure. When the approver is the verifier the UI asks for confirmation (`FirstArticleHeader`); the server does not refuse |
 | Approved | `updateFirstArticleCustomerApproval` | The only edit an Approved FAI accepts: fields 24/25 |
 | Draft (no readings) → deleted | `deleteFirstArticleInspection` | Deletes the lot; extension, Form 2, plans, samples cascade |
 
 **The approved PDF is the record.** `file+/first-article+/$id[.]pdf.tsx` serves
 the stored document for an Approved FAI and renders live (DRAFT mark) otherwise,
-so later plan or data edits never change what was approved.
+so later plan or data edits never change what was approved. The stored
+`document` row is readable only by the approver (`readGroups`), so after the
+FAI read under the caller's client proves access, the document path and the
+file are read with the service role — the CofC download does the same.
+
+### When the job or make method is gone
+
+`firstArticleInspection.jobId` and `jobMakeMethodId` are nullable,
+`ON DELETE SET NULL` (migration `20260926053908_first-article-fk-set-null.sql`):
+the report is a quality record that outlives its job, and RESTRICT blocked job
+deletion and Get Method's sub-assembly rebuild (which deletes and re-inserts
+`jobMakeMethod`). The FAI keeps its own part snapshot. With either link null:
+
+- the detail page shows a "Job deleted" / "Make method removed" badge, the
+  Form 1 index says it cannot be derived, and Refresh / Attach Certificate are
+  disabled (`getFirstArticleInspection` skips the materials / operations reads);
+- `verifyFirstArticleInspection`, `seed/refreshFirstArticleProducts` and
+  `$id.certificates.new.tsx` refuse with "The job or make method of this first
+  article no longer exists";
+- approve and the PDF still work (above).
 
 ### Recording the verdict
 

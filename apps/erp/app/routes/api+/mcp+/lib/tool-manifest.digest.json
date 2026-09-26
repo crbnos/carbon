@@ -1,5 +1,5 @@
 {
-  "totalTools": 1570,
+  "totalTools": 1568,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1018,7 +1018,6 @@
     {"name":"quality_deactivateGauge","classification":"WRITE","paramCount":1,"schema":"f65da45a1155","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:update","paginates":false},
     {"name":"quality_deleteCertificate","classification":"DESTRUCTIVE","paramCount":1,"schema":"d9bd32189c3c","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:delete","paginates":false},
     {"name":"quality_deleteComplianceStatement","classification":"DESTRUCTIVE","paramCount":1,"schema":"d5091f3c6243","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:delete","paginates":false},
-    {"name":"quality_deleteFirstArticleInspectionProduct","classification":"DESTRUCTIVE","paramCount":2,"schema":"a7619dacb1e9","response":"3797626bd17e","injectAuth":"companyId","permission":"quality:delete","paginates":false},
     {"name":"quality_deleteGauge","classification":"DESTRUCTIVE","paramCount":1,"schema":"f65da45a1155","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:delete","paginates":false},
     {"name":"quality_deleteGaugeCalibrationRecord","classification":"DESTRUCTIVE","paramCount":1,"schema":"81eca1e58f6e","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:delete","paginates":false},
     {"name":"quality_deleteGaugeType","classification":"DESTRUCTIVE","paramCount":1,"schema":"24fb90489cd4","response":"bcde375ebd4c","injectAuth":"companyId","permission":"quality:delete","paginates":false},
@@ -1101,7 +1100,6 @@
     {"name":"quality_updateRiskStatus","classification":"WRITE","paramCount":2,"schema":"27ac2e505123","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"quality:update","paginates":false},
     {"name":"quality_upsertCertificate","classification":"WRITE","paramCount":9,"schema":"1461b15c18b9","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"quality:create+update","paginates":false},
     {"name":"quality_upsertComplianceStatement","classification":"DESTRUCTIVE","paramCount":7,"schema":"a217d34ec7fc","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"quality:create+update","paginates":false},
-    {"name":"quality_upsertFirstArticleInspectionProduct","classification":"WRITE","paramCount":13,"schema":"f2c357352390","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"quality:create+update","paginates":false},
     {"name":"quality_upsertGauge","classification":"WRITE","paramCount":16,"schema":"6969c2f67b33","response":"3ec91e2c9200","injectAuth":"companyId+createdBy+updatedBy","permission":"quality:create+update","paginates":false},
     {"name":"quality_upsertGaugeCalibrationRecord","classification":"WRITE","paramCount":15,"schema":"80febac2c711","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"quality:create+update","paginates":false},
     {"name":"quality_upsertGaugeType","classification":"WRITE","paramCount":3,"schema":"f47f137a8607","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"quality:create+update","paginates":false},

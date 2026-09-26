@@ -147233,8 +147233,6 @@ export default {
         "inspectionId",
         "status",
         "itemId",
-        "jobId",
-        "jobMakeMethodId",
         "type",
         "scope",
         "reason",

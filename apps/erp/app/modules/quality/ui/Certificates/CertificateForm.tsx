@@ -2,6 +2,8 @@ import { useCarbon } from "@carbon/auth";
 import { storage } from "@carbon/files";
 import { ValidatedForm } from "@carbon/form";
 import { HStack, IconButton, toast, VStack } from "@carbon/react";
+import type { MessageDescriptor } from "@lingui/core";
+import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuFileText, LuX } from "react-icons/lu";
@@ -112,7 +114,7 @@ const CertificateForm = ({
 
   const typeOptions = certificateTypes.map((type) => ({
     value: type,
-    label: getCertificateTypeLabel(type, t)
+    label: t(getCertificateTypeLabel(type))
   }));
 
   return (
@@ -213,22 +215,23 @@ const CertificateForm = ({
   );
 };
 
+// Message descriptors, resolved by the caller's `t` from `useLingui()`. A
+// helper that took `t` as an argument and used `` t`...` `` rendered blank:
+// the macro only rewrites a `t` that comes from `useLingui()` in scope.
+const CERTIFICATE_TYPE_LABELS: Record<
+  (typeof certificateTypes)[number],
+  MessageDescriptor
+> = {
+  Material: msg`Material`,
+  "Special Process": msg`Special Process`,
+  "Functional Test": msg`Functional Test`,
+  Other: msg`Other`
+};
+
 export function getCertificateTypeLabel(
-  type: (typeof certificateTypes)[number],
-  t: ReturnType<typeof useLingui>["t"]
-) {
-  switch (type) {
-    case "Material":
-      return t`Material`;
-    case "Special Process":
-      return t`Special Process`;
-    case "Functional Test":
-      return t`Functional Test`;
-    case "Other":
-      return t`Other`;
-    default:
-      return type;
-  }
+  type: (typeof certificateTypes)[number]
+): MessageDescriptor {
+  return CERTIFICATE_TYPE_LABELS[type] ?? { id: type, message: type };
 }
 
 export default CertificateForm;

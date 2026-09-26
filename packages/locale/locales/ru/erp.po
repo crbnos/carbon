@@ -9561,6 +9561,9 @@ msgstr "Его конструкция может измениться до вы�
 msgid "Job"
 msgstr "Задание"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ID задания"
 
@@ -10255,6 +10258,9 @@ msgstr "Сделать неактивным"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Товары типа \"Make\" не могут быть выставлены счетом напрямую. Измените метод на \"Pick\" для продолжения."
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "Версия метода производства"
@@ -17888,6 +17894,9 @@ msgstr "рабочие часы, подлежащие в этот день (на
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Работа, операция которой охватывает эту строку внешней обработки; квитанция по строке закрывает операцию для этой работы."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Положение производственного заказа в очереди графика его площадки — дробное число, которое Carbon вычисляет из срока выполнения и типа крайнего срока, а не рейтинг «Низкий/Высокий»."

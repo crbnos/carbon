@@ -9561,6 +9561,9 @@ msgstr "在变更通知下达前，其设计可能会改变。"
 msgid "Job"
 msgstr "工作"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "工作ID"
 
@@ -10255,6 +10258,9 @@ msgstr "停用"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "自制物料无法直接开票。将方法更改为从库存领用以继续。"
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "制造方法版本"
@@ -17888,6 +17894,9 @@ msgstr "该天到期的任务小时数（以截止日期为基础，而不是工
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "该外部处理行所涵盖的操作工作；行的收据关闭对该工作的操作。"
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "工单在其地点排程队列中的位置——一个 Carbon 根据到期日和截止日期类型计算的小数，而非低/高评级。"

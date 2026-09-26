@@ -20,6 +20,7 @@ function makeMethod(overrides: Partial<MakeMethod> = {}): MakeMethod {
     latestApprovedAt: null,
     lastCompletedJobDate: null,
     hasFirstArticleLot: false,
+    hasOpenFirstArticleElsewhere: false,
     ...overrides
   };
 }
@@ -184,6 +185,27 @@ describe("resolveFirstArticleNeeds", () => {
     expect(need({ hasFirstArticleLot: true, partPlanIds: [] })).toMatchObject({
       create: false,
       blocked: false
+    });
+  });
+
+  it("neither creates nor blocks when the part has an open FAI on another job", () => {
+    expect(need({ hasOpenFirstArticleElsewhere: true })).toMatchObject({
+      required: true,
+      due: true,
+      pending: false,
+      create: false,
+      blocked: false
+    });
+    expect(
+      need({ hasOpenFirstArticleElsewhere: true, partPlanIds: [] })
+    ).toMatchObject({ pending: false, create: false, blocked: false });
+  });
+
+  it("is pending when required and due with nothing started", () => {
+    expect(need()).toMatchObject({ pending: true, create: true });
+    expect(need({ partPlanIds: [] })).toMatchObject({
+      pending: true,
+      blocked: true
     });
   });
 

@@ -1,3 +1,4 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { FirstArticleReason } from "@carbon/database/first-article";
@@ -10,9 +11,11 @@ import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime, stripSpecialCharacters } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import type { CertificationLineageRow } from "./certificationLineage";
 import { renderFirstArticleInspectionPdf } from "./firstArticlePdf.server";
+import type { firstArticleInspectionProductValidator } from "./quality.models";
 import { getCertificationLineage } from "./quality.service";
 
 const logger = getLogger("erp", "first-article");
@@ -29,6 +32,12 @@ function failure(err: unknown, fallback: string): Result<never> {
 }
 
 const NO_CERTIFICATE = "No certificate on file";
+
+// The FAI's job and make method are ON DELETE SET NULL: a deleted job, or Get
+// Method rebuilding the sub-assembly, leaves the report without the operations
+// and materials Form 2 and the verification read.
+const MAKE_METHOD_GONE =
+  "The job or make method of this first article no longer exists";
 
 // AS9102 generation at release: every path that flips a job to Ready calls
 // this AFTER the Ready write succeeds — `releaseJobs` (job Release dialog,
@@ -109,8 +118,9 @@ export async function afterJobsReleased(
 
 /**
  * The job's parts whose first article is due and required (a switch applies)
- * but has no lot yet — the job header's "FAI due" badge. The same shared
- * `resolveFirstArticleNeeds` the release blocker and the generator use.
+ * but has no lot yet — on this job, or open on another — the job header's
+ * "FAI due" badge. The same shared `resolveFirstArticleNeeds` the release
+ * blocker and the generator use.
  * Informational: a failure is logged and reads as nothing due.
  */
 export async function getFirstArticlesDueForJob(
@@ -125,19 +135,8 @@ export async function getFirstArticlesDueForJob(
       .today(await getCompanyTimeZone(client, args.companyId))
       .toString();
     const input = await loadFirstArticleNeedInput(db, { ...args, today });
-    const hasLot = new Set(
-      input.makeMethods
-        .filter((makeMethod) => makeMethod.hasFirstArticleLot)
-        .map((makeMethod) => makeMethod.jobMakeMethodId)
-    );
     return resolveFirstArticleNeeds(input)
-      .filter(
-        (need) =>
-          need.required &&
-          need.due &&
-          need.reason !== null &&
-          !hasLot.has(need.jobMakeMethodId)
-      )
+      .filter((need) => need.pending && need.reason !== null)
       .map((need) => ({
         jobMakeMethodId: need.jobMakeMethodId,
         description: need.description,
@@ -200,6 +199,9 @@ export async function refreshFirstArticleProducts(
       .where("companyId", "=", companyId)
       .executeTakeFirst();
     if (!fai) throw new Error("First article not found");
+    if (!fai.jobId || !fai.jobMakeMethodId) {
+      throw new Error(MAKE_METHOD_GONE);
+    }
 
     // The lineage resolver reads over supabase-js, so it runs before the
     // transaction; the transaction re-checks the status it writes under.
@@ -278,6 +280,139 @@ export async function refreshFirstArticleProducts(
   }
 }
 
+/**
+ * Adds or edits one Form 2 row. The FAI row is locked and its Draft status
+ * re-checked in the same transaction as the write, so a row cannot land on an
+ * FAI that is being verified or approved concurrently.
+ */
+export async function upsertFirstArticleInspectionProduct(
+  db: Kysely<KyselyDatabase>,
+  product: z.infer<typeof firstArticleInspectionProductValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<Result<{ id: string }>> {
+  const { id, companyId, userId, firstArticleInspectionId, ...fields } =
+    product;
+
+  const values = {
+    kind: fields.kind,
+    name: fields.name,
+    specification: fields.specification ?? null,
+    code: fields.code ?? null,
+    supplier: fields.supplier ?? null,
+    certificateNumber: fields.certificateNumber ?? null,
+    certificateId: fields.certificateId ?? null,
+    functionalTestProcedureNumber: fields.functionalTestProcedureNumber ?? null,
+    acceptanceReportNumber: fields.acceptanceReportNumber ?? null,
+    comments: fields.comments ?? null,
+    customerApprovalVerification: fields.customerApprovalVerification
+  };
+
+  try {
+    const savedId = await db.transaction().execute(async (trx) => {
+      await lockDraftFirstArticle(trx, firstArticleInspectionId, companyId);
+
+      // The certificate id comes from the form; Kysely bypasses RLS, and an
+      // FK does not check the tenant.
+      if (values.certificateId) {
+        const certificate = await trx
+          .selectFrom("certificate")
+          .select(["id"])
+          .where("id", "=", values.certificateId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (!certificate) throw new Error("Certificate not found");
+      }
+
+      if (id) {
+        const updated = await trx
+          .updateTable("firstArticleInspectionProduct")
+          .set({
+            ...values,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", id)
+          .where("firstArticleInspectionId", "=", firstArticleInspectionId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+        if (!updated) throw new Error("Row not found");
+        return updated.id;
+      }
+
+      const last = await trx
+        .selectFrom("firstArticleInspectionProduct")
+        .select(["sortOrder"])
+        .where("firstArticleInspectionId", "=", firstArticleInspectionId)
+        .where("companyId", "=", companyId)
+        .orderBy("sortOrder", "desc")
+        .limit(1)
+        .executeTakeFirst();
+
+      const inserted = await trx
+        .insertInto("firstArticleInspectionProduct")
+        .values({
+          ...values,
+          firstArticleInspectionId,
+          sortOrder: (last?.sortOrder ?? -1) + 1,
+          companyId,
+          createdBy: userId
+        })
+        .returning(["id"])
+        .executeTakeFirstOrThrow();
+      return inserted.id;
+    });
+    return { data: { id: savedId }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to save the row");
+  }
+}
+
+/** Deletes one Form 2 row of a Draft FAI, under the same FAI lock. */
+export async function deleteFirstArticleInspectionProduct(
+  db: Kysely<KyselyDatabase>,
+  args: { id: string; firstArticleInspectionId: string; companyId: string }
+): Promise<Result<{ id: string }>> {
+  try {
+    await db.transaction().execute(async (trx) => {
+      await lockDraftFirstArticle(
+        trx,
+        args.firstArticleInspectionId,
+        args.companyId
+      );
+      const deleted = await trx
+        .deleteFrom("firstArticleInspectionProduct")
+        .where("id", "=", args.id)
+        .where("firstArticleInspectionId", "=", args.firstArticleInspectionId)
+        .where("companyId", "=", args.companyId)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (!deleted) throw new Error("Row not found");
+    });
+    return { data: { id: args.id }, error: null };
+  } catch (err) {
+    return failure(err, "Failed to delete the row");
+  }
+}
+
+async function lockDraftFirstArticle(
+  trx: Kysely<KyselyDatabase>,
+  id: string,
+  companyId: string
+): Promise<void> {
+  const fai = await trx
+    .selectFrom("firstArticleInspection")
+    .select(["status"])
+    .where("id", "=", id)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirst();
+  if (!fai) throw new Error("First article not found");
+  if (fai.status !== "Draft") throw new Error("This first article is locked");
+}
+
 // -------------------------------------------------------------
 // Lifecycle — Draft → Verified → Approved
 // -------------------------------------------------------------
@@ -333,6 +468,8 @@ export async function verifyFirstArticleInspection(
       if (fai.status !== "Draft") {
         throw new Error("Only a draft first article can be verified");
       }
+      const jobMakeMethodId = fai.jobMakeMethodId;
+      if (!jobMakeMethodId) throw new Error(MAKE_METHOD_GONE);
 
       const lot = await trx
         .selectFrom("inspection")
@@ -360,7 +497,7 @@ export async function verifyFirstArticleInspection(
             "nonConformanceJobOperation.jobOperationId"
           )
           .select(["nonConformanceJobOperation.id"])
-          .where("jobOperation.jobMakeMethodId", "=", fai.jobMakeMethodId)
+          .where("jobOperation.jobMakeMethodId", "=", jobMakeMethodId)
           .where("nonConformanceJobOperation.companyId", "=", companyId)
           .limit(1)
           .executeTakeFirst()
@@ -452,6 +589,7 @@ export async function approveFirstArticleInspection(
 ): Promise<Result<{ id: string; documentId: string }>> {
   const { id, companyId, userId, locale } = args;
 
+  const serviceRole = getCarbonServiceRole();
   let uploadedPath: string | null = null;
   try {
     const approver = await signatory(db, userId, companyId);
@@ -470,15 +608,23 @@ export async function approveFirstArticleInspection(
     }
 
     // A unique name per approval: a retry never overwrites (or, on failure,
-    // removes) a file another attempt stored.
+    // removes) a file another attempt stored. Filed on the job when it still
+    // exists (the job's files list it), else under the FAI.
     const fileName = `${
       stripSpecialCharacters(
         `${fairIdentifier} FAIR ${approvedAt.slice(0, 19)}`
       ) || "fair"
     }.pdf`;
-    const filePath = `${companyId}/job/${firstArticle.jobId}/${fileName}`;
+    const jobId = firstArticle.jobId;
+    const filePath = jobId
+      ? `${companyId}/job/${jobId}/${fileName}`
+      : `${companyId}/first-article/${id}/${fileName}`;
 
-    const upload = await storage(client)
+    // The caller proved access by reading the FAI under their own client and
+    // companyId (the render above). The record is written with the service
+    // role: a quality approver need not hold the job's storage permissions,
+    // and the file route serves it the same way.
+    const upload = await storage(serviceRole)
       .company(companyId)
       .upload(filePath, new Uint8Array(pdf), {
         cacheControl: `${12 * 60 * 60}`,
@@ -509,8 +655,8 @@ export async function approveFirstArticleInspection(
           // KB, as every other document row stores it.
           size: Math.round(pdf.byteLength / 1024),
           type: "PDF",
-          sourceDocument: "Job",
-          sourceDocumentId: firstArticle.jobId,
+          sourceDocument: jobId ? "Job" : null,
+          sourceDocumentId: jobId,
           readGroups: [userId],
           writeGroups: [userId],
           companyId,
@@ -541,7 +687,7 @@ export async function approveFirstArticleInspection(
     return { data: { id, documentId }, error: null };
   } catch (err) {
     if (uploadedPath) {
-      const removed = await storage(client)
+      const removed = await storage(serviceRole)
         .company(companyId)
         .remove([uploadedPath]);
       if (removed.error) {

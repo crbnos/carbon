@@ -124,7 +124,7 @@ const CertificatesDrawer = ({
                   <Tbody>
                     {certificates.map((certificate) => (
                       <Tr key={certificate.id}>
-                        <Td>{getCertificateTypeLabel(certificate.type, t)}</Td>
+                        <Td>{t(getCertificateTypeLabel(certificate.type))}</Td>
                         <Td>{certificate.certificateNumber}</Td>
                         <Td>{certificate.specification ?? ""}</Td>
                         <Td>{certificate.supplier?.name ?? ""}</Td>

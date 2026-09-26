@@ -153,7 +153,9 @@ AS9102 plan fields (`20260926032544_cofc-fai-reports.sql`):
 `inspectionDocument.drawingRevision`; `inspectionFeature.designator`,
 `referenceLocation`, `materialCondition` (enum `materialCondition`: RFS / MMC /
 LMC), `sizeFeatureId` (self-FK, ON DELETE SET NULL — the related feature of
-size) and `featureOfSize` (enum `featureOfSizeType`: Internal / External).
+size; CHECK `inspectionFeature_sizeFeatureId_not_self`, migration
+`20260926053908`) and `featureOfSize` (enum `featureOfSizeType`: Internal /
+External).
 The same migration's `save_inspection_document_atomic` persists them
 (`sizeFeatureId` in a pass after creates/updates, so it may name a new
 feature's `tempId`) and **refuses to delete a feature that has recorded
@@ -164,6 +166,9 @@ FK cascade used to wipe measurements on every lot, closed ones included.
 `{method,quote,job}Operation_inspectionDocument_type_check`
 (`"inspectionDocumentId" IS NULL OR "operationType" = 'Inspection'`); the
 migration first cleared the plans the MES never ran on other operation types.
+`get-method` copies an operation's plan through `inspectionDocumentFor`, keyed
+on the FINAL `operationType` of the row it inserts — a configurator rule can
+change the type, and copying the source's link blindly violated the CHECK.
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
@@ -320,7 +325,11 @@ grows by how far its related feature of size (`sizeFeatureId`) departs from
 that condition, capped at the size's own tolerance band:
 
 - MMC: internal `size − lower`, external `upper − size`; LMC the reverse.
-  `featureOfSize` defaults to Internal when null.
+  **No declared `featureOfSize` ⇒ bonus 0** (the stated tolerance applies) —
+  without it the bonus has no direction. The save validators
+  (`inspectionSaveFeature{Create,Update}ItemValidator`, production.models.ts)
+  refuse an MMC/LMC feature without one, and the plan editor's save toasts
+  before posting, as it does for a missing size feature.
 - `allowable = nominal + |tol+| + bonus`; pass when
   `nominal − |tol−| ≤ value ≤ allowable` (± `EPSILON`).
 - **Size reading Failed ⇒ the geometric feature Failed** outright (bonus 0) —
@@ -332,10 +341,12 @@ that condition, capped at the size's own tolerance band:
 - **Datum shift is never computed** — the valuation has no datum term (a spec
   decision: only the feature's own bonus counts).
 
-`upsertInspectionMeasurement` uses the size feature's reading on the **same
-sample** (unit), stores `bonus` / `allowable` on the measurement, and — when the
-saved reading is itself a size feature — **re-valuates every dependent
-geometric reading on that sample** before deriving the sample status. Both
+`upsertInspectionMeasurement` locks an existing sample row first
+(`SELECT … FOR UPDATE`, so a size reading and its dependent's reading on one
+unit serialise), uses the size feature's reading on the **same sample** (unit),
+stores `bonus` / `allowable` on the measurement, and — when the saved reading
+is itself a size feature — **re-valuates every dependent MMC/LMC reading on
+that sample** before deriving the sample status. Both
 grids show "allowable Y (bonus X)" on a reading that earned a bonus.
 
 ## Notes per reading

@@ -92,7 +92,11 @@ const FirstArticleProducts = ({ detail }: FirstArticleProductsProps) => {
             <Button
               variant="secondary"
               leftIcon={<LuRefreshCw />}
-              isDisabled={!isEditable || refreshFetcher.state !== "idle"}
+              isDisabled={
+                !isEditable ||
+                !firstArticle.jobMakeMethodId ||
+                refreshFetcher.state !== "idle"
+              }
               isLoading={refreshFetcher.state !== "idle"}
               onClick={() =>
                 refreshFetcher.submit(
@@ -177,7 +181,7 @@ const FirstArticleProducts = ({ detail }: FirstArticleProductsProps) => {
                           {product.name}
                         </span>
                         <span className="text-xs text-muted-foreground">
-                          {getCertificateTypeLabel(product.kind, t)}
+                          {t(getCertificateTypeLabel(product.kind))}
                         </span>
                       </div>
                     </Td>
@@ -285,7 +289,7 @@ const FirstArticleProducts = ({ detail }: FirstArticleProductsProps) => {
         />
       )}
 
-      {certificateModal.isOpen && (
+      {certificateModal.isOpen && firstArticle.jobId && (
         <ModalDrawerProvider type="drawer">
           <ModalDrawer
             open

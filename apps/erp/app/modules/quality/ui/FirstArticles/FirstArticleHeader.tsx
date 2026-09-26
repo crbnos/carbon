@@ -83,6 +83,15 @@ const FirstArticleHeader = ({
             <Badge variant={getInspectionStatusVariant(lot.status)}>
               {lot.status}
             </Badge>
+            {!firstArticle.jobId ? (
+              <Badge variant="outline">
+                <Trans>Job deleted</Trans>
+              </Badge>
+            ) : !firstArticle.jobMakeMethodId ? (
+              <Badge variant="outline">
+                <Trans>Make method removed</Trans>
+              </Badge>
+            ) : null}
             <Copy text={lot.inspectionId} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

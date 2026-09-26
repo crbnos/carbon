@@ -50,18 +50,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Ready from Draft/Planned is a release; from Paused it is a resume, which
-  // neither re-checks release readiness nor creates first articles.
+  // Leaving Draft/Planned for the floor is a release — Ready, or straight to
+  // In Progress. Ready from Paused is a resume, which neither re-checks release
+  // readiness nor creates first articles.
   let isRelease = false;
-  if (status === "Ready") {
+  if (status === "Ready" || status === "In Progress") {
     const { data } = await client
       .from("job")
       .select("status, item(itemReplenishment(manufacturingBlocked))")
       .eq("id", id)
+      .eq("companyId", companyId)
       .single();
     isRelease = data?.status === "Draft" || data?.status === "Planned";
 
-    if (data?.item?.itemReplenishment?.manufacturingBlocked) {
+    if (
+      status === "Ready" &&
+      data?.item?.itemReplenishment?.manufacturingBlocked
+    ) {
       throw redirect(
         requestReferrer(request) ?? path.to.job(id),
         await flash(request, error(null, "Manufacturing is blocked"))
@@ -71,7 +76,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The Release dialog: the shared release path (also run by batch release),
   // re-checking what the dialog checked, then one schedule run for the location.
+  // Only a real release: a job that already left Draft/Planned would otherwise
+  // be put through releaseJobs again (purchase orders, first articles).
   if (status === "Ready" && shouldSchedule) {
+    if (!isRelease) {
+      throw redirect(
+        requestReferrer(request) ?? path.to.job(id),
+        await flash(
+          request,
+          error(null, "Only a Draft or Planned job can be released")
+        )
+      );
+    }
     const readiness = await getJobReleaseReadiness(client, [id], companyId);
     const job = readiness.data?.jobs[0];
     const missing = job?.missingAssemblies ?? [];
@@ -142,7 +158,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // A plain Ready post (no Release dialog) that releases the job: a part that
+  // A plain Ready (or In Progress) post that releases the job: a part that
   // needs a first article but has no plan to inspect against refuses it here
   // too, so no release path skips the blocker.
   if (isRelease) {

@@ -2226,6 +2226,15 @@ export default function InspectionDocumentEditor({
       toast.error(t`Choose the size feature for MMC/LMC characteristics`);
       return;
     }
+    const missingFeatureOfSize = featureRows.some(
+      (r) => hasBonusTolerance(r) && !r.featureOfSize
+    );
+    if (missingFeatureOfSize) {
+      toast.error(
+        t`Choose Internal or External feature of size for MMC/LMC characteristics`
+      );
+      return;
+    }
 
     manualSaveToastRef.current = true;
     const formData = new FormData();

@@ -1909,6 +1909,28 @@ const inspectionFeatureCharacteristicFieldsValidator = {
   sizeFeatureId: z.string().nullable().optional()
 };
 
+// An MMC/LMC characteristic needs its feature of size declared: without it
+// the bonus has no direction (a hole's MMC is its lower limit, a pin's its
+// upper) and the engine judges it against the stated tolerance only.
+function requireFeatureOfSizeForBonus(
+  item: {
+    materialCondition?: (typeof materialConditions)[number] | null;
+    featureOfSize?: (typeof featureOfSizeTypes)[number] | null;
+  },
+  ctx: z.RefinementCtx
+) {
+  if (
+    (item.materialCondition === "MMC" || item.materialCondition === "LMC") &&
+    item.featureOfSize == null
+  ) {
+    ctx.addIssue({
+      code: "custom",
+      message: "Feature of size is required for MMC/LMC characteristics",
+      path: ["featureOfSize"]
+    });
+  }
+}
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     tempId: z.string().min(1),
@@ -1923,7 +1945,8 @@ export const inspectionSaveFeatureCreateItemValidator = z
     ...inspectionFeatureSamplingFieldsValidator,
     ...inspectionFeatureCharacteristicFieldsValidator
   })
-  .strict();
+  .strict()
+  .superRefine(requireFeatureOfSizeForBonus);
 
 export const inspectionSaveFeatureUpdateItemValidator = z
   .object({
@@ -1939,7 +1962,8 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     ...inspectionFeatureSamplingFieldsValidator,
     ...inspectionFeatureCharacteristicFieldsValidator
   })
-  .strict();
+  .strict()
+  .superRefine(requireFeatureOfSizeForBonus);
 
 export const inspectionSaveFeaturesPayloadValidator = z
   .object({

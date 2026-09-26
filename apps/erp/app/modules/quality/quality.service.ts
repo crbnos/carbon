@@ -35,7 +35,6 @@ import type {
   complianceStatementValidator,
   firstArticleCustomerApprovalValidator,
   firstArticleInspectionHeaderValidator,
-  firstArticleInspectionProductValidator,
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
@@ -2245,7 +2244,7 @@ export async function upsertComplianceStatement(
           .set({
             ...fields,
             updatedBy: userId,
-            updatedAt: new Date().toISOString()
+            updatedAt: datetime.timestamp()
           })
           .where("id", "=", writtenId)
           .where("companyId", "=", companyId)
@@ -2267,14 +2266,37 @@ export async function upsertComplianceStatement(
         writtenId = inserted.id;
       }
 
+      // The ids come from the form and Kysely bypasses RLS (an FK does not
+      // check the tenant): keep only this company's customers and items.
+      const requestedCustomerIds = [...new Set(customerIds)];
+      const requestedItemIds = [...new Set(itemIds)];
+      const [ownCustomers, ownItems] = await Promise.all([
+        requestedCustomerIds.length > 0
+          ? trx
+              .selectFrom("customer")
+              .select(["id"])
+              .where("id", "in", requestedCustomerIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([]),
+        requestedItemIds.length > 0
+          ? trx
+              .selectFrom("item")
+              .select(["id"])
+              .where("id", "in", requestedItemIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([])
+      ]);
+
       const assignments = [
-        ...[...new Set(customerIds)].map((customerId) => ({
+        ...ownCustomers.map(({ id: customerId }) => ({
           complianceStatementId: writtenId!,
           companyId,
           customerId,
           createdBy: userId
         })),
-        ...[...new Set(itemIds)].map((itemId) => ({
+        ...ownItems.map(({ id: itemId }) => ({
           complianceStatementId: writtenId!,
           companyId,
           itemId,
@@ -3512,20 +3534,26 @@ export async function getFirstArticleInspection(
       .eq("companyId", companyId)
       .order("sortOrder", { ascending: true })
       .order("createdAt", { ascending: true }),
-    client
-      .from("jobMaterial")
-      .select(
-        "id, itemId, methodType, item(readableId, readableIdWithRevision, name, type)"
-      )
-      .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
-      .eq("companyId", companyId)
-      .order("order", { ascending: true }),
-    client
-      .from("jobOperation")
-      .select("id, description, process(name)")
-      .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
-      .eq("companyId", companyId)
-      .order("order", { ascending: true }),
+    // The make method is gone once its job is deleted or Get Method rebuilt
+    // the sub-assembly (the FK sets null): no live Form 1 index, no operations.
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobMaterial")
+          .select(
+            "id, itemId, methodType, item(readableId, readableIdWithRevision, name, type)"
+          )
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobOperation")
+          .select("id, description, process(name)")
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
     firstArticle.baselineFirstArticleInspectionId
       ? client
           .from("firstArticleInspection")
@@ -3705,123 +3733,6 @@ export async function updateFirstArticleInspectionHeader(
     return { data: null, error: { message: FIRST_ARTICLE_LOCKED } };
   }
   return { data: { id }, error: null };
-}
-
-async function requireDraftFirstArticle(
-  client: SupabaseClient<Database>,
-  firstArticleInspectionId: string,
-  companyId: string
-): Promise<{ message: string } | null> {
-  const fai = await client
-    .from("firstArticleInspection")
-    .select("status")
-    .eq("id", firstArticleInspectionId)
-    .eq("companyId", companyId)
-    .maybeSingle();
-  if (fai.error) return fai.error;
-  if (!fai.data) return { message: "First article not found" };
-  if (fai.data.status !== "Draft") return { message: FIRST_ARTICLE_LOCKED };
-  return null;
-}
-
-export async function upsertFirstArticleInspectionProduct(
-  client: SupabaseClient<Database>,
-  product: z.infer<typeof firstArticleInspectionProductValidator> & {
-    companyId: string;
-    userId: string;
-  }
-): Promise<FirstArticleResult<{ id: string }>> {
-  const { id, companyId, userId, firstArticleInspectionId, ...fields } =
-    product;
-
-  const locked = await requireDraftFirstArticle(
-    client,
-    firstArticleInspectionId,
-    companyId
-  );
-  if (locked) return { data: null, error: locked };
-
-  const values = {
-    kind: fields.kind,
-    name: fields.name,
-    specification: fields.specification ?? null,
-    code: fields.code ?? null,
-    supplier: fields.supplier ?? null,
-    certificateNumber: fields.certificateNumber ?? null,
-    certificateId: fields.certificateId ?? null,
-    functionalTestProcedureNumber: fields.functionalTestProcedureNumber ?? null,
-    acceptanceReportNumber: fields.acceptanceReportNumber ?? null,
-    comments: fields.comments ?? null,
-    customerApprovalVerification: fields.customerApprovalVerification
-  };
-
-  if (id) {
-    const updated = await client
-      .from("firstArticleInspectionProduct")
-      .update({
-        ...values,
-        updatedBy: userId,
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", id)
-      .eq("firstArticleInspectionId", firstArticleInspectionId)
-      .eq("companyId", companyId)
-      .select("id");
-    if (updated.error) return { data: null, error: updated.error };
-    if (!updated.data?.length) {
-      return { data: null, error: { message: "Row not found" } };
-    }
-    return { data: { id }, error: null };
-  }
-
-  const last = await client
-    .from("firstArticleInspectionProduct")
-    .select("sortOrder")
-    .eq("firstArticleInspectionId", firstArticleInspectionId)
-    .eq("companyId", companyId)
-    .order("sortOrder", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (last.error) return { data: null, error: last.error };
-
-  const inserted = await client
-    .from("firstArticleInspectionProduct")
-    .insert({
-      ...values,
-      firstArticleInspectionId,
-      sortOrder: (last.data?.sortOrder ?? -1) + 1,
-      companyId,
-      createdBy: userId
-    })
-    .select("id")
-    .single();
-  if (inserted.error) return { data: null, error: inserted.error };
-  return { data: { id: inserted.data.id }, error: null };
-}
-
-export async function deleteFirstArticleInspectionProduct(
-  client: SupabaseClient<Database>,
-  args: { id: string; firstArticleInspectionId: string; companyId: string }
-): Promise<FirstArticleResult<{ id: string }>> {
-  const locked = await requireDraftFirstArticle(
-    client,
-    args.firstArticleInspectionId,
-    args.companyId
-  );
-  if (locked) return { data: null, error: locked };
-
-  const deleted = await client
-    .from("firstArticleInspectionProduct")
-    .delete()
-    .eq("id", args.id)
-    .eq("firstArticleInspectionId", args.firstArticleInspectionId)
-    .eq("companyId", args.companyId)
-    .select("id");
-  if (deleted.error) return { data: null, error: deleted.error };
-  if (!deleted.data?.length) {
-    return { data: null, error: { message: "Row not found" } };
-  }
-  return { data: { id: args.id }, error: null };
 }
 
 /** AS9102 fields 24/25 — the only edit an approved FAI accepts. */

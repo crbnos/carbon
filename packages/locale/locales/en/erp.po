@@ -9561,6 +9561,9 @@ msgstr "Its design may change before the change notice is released."
 msgid "Job"
 msgstr "Job"
 
+msgid "Job deleted"
+msgstr "Job deleted"
+
 msgid "Job ID"
 msgstr "Job ID"
 
@@ -10255,6 +10258,9 @@ msgstr "Make Inactive"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Make items cannot be invoiced directly. Change method to Pick to continue."
+
+msgid "Make method removed"
+msgstr "Make method removed"
 
 msgid "Make Method Version"
 msgstr "Make Method Version"
@@ -17888,6 +17894,9 @@ msgstr "the job hours due that day (a due-date basis, not the day the work runs)
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr "The job's make method no longer exists, so the index cannot be derived."
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."

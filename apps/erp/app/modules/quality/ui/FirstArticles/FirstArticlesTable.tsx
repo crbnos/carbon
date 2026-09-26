@@ -68,7 +68,7 @@ const FirstArticlesTable = memo(({ data, count }: FirstArticlesTableProps) => {
         id: "job",
         header: t`Job`,
         cell: ({ row }) =>
-          row.original.job?.jobId ? (
+          row.original.jobId && row.original.job?.jobId ? (
             <Hyperlink to={path.to.job(row.original.jobId)}>
               {row.original.job.jobId}
             </Hyperlink>

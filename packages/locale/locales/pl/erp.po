@@ -9561,6 +9561,9 @@ msgstr "Jego projekt może się zmienić przed wydaniem zawiadomienia o zmianie.
 msgid "Job"
 msgstr "Zadanie"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ID zadania"
 
@@ -10255,6 +10258,9 @@ msgstr "Ustaw jako nieaktywne"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Artykuły Produkcji nie mogą być bezpośrednio zafakturowane. Zmień metodę na Pobranie, aby kontynuować."
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "Wersja metody produkcji"
@@ -17888,6 +17894,9 @@ msgstr "godziny zadania należne tego dnia (na podstawie terminu, nie dnia wykon
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Zadanie, którego operacja pokrywa ta linia przetwarzania zewnętrznego; rachunek linii zamyka operację dla tego zadania."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Pozycja zadania w kolejce harmonogramu jego lokalizacji — liczba ułamkowa, którą Carbon oblicza na podstawie daty terminu i typu terminu, a nie oceny Niska/Wysoka."

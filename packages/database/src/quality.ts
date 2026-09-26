@@ -743,25 +743,12 @@ export async function upsertInspectionMeasurement(
         throw new Error("Inspection is closed");
       }
 
-      const feature = await trx
-        .selectFrom("inspectionFeature")
-        .select([
-          "id",
-          "type",
-          "nominalValue",
-          "tolerancePlus",
-          "toleranceMinus",
-          "materialCondition",
-          "featureOfSize",
-          "sizeFeatureId"
-        ])
-        .where("id", "=", args.inspectionFeatureId)
-        .where("companyId", "=", args.companyId)
-        .executeTakeFirst();
-      if (!feature) throw new Error("Inspection feature not found");
-
       // Resolve or create the sample (anonymous columns are created on the
-      // first measurement recorded against them).
+      // first measurement recorded against them). An existing sample is
+      // locked first: two readings on one unit (a size and the MMC/LMC
+      // feature that takes its bonus from it) otherwise race — each valuates
+      // against the other's pre-commit value and derives the sample's status
+      // from a stale set of readings.
       let sample: {
         id: string;
         trackedEntityId: string | null;
@@ -773,6 +760,7 @@ export async function upsertInspectionMeasurement(
           .select(["id", "trackedEntityId", "status", "inspectionId"])
           .where("id", "=", args.sampleId)
           .where("companyId", "=", args.companyId)
+          .forUpdate()
           .executeTakeFirst();
         if (!existing || existing.inspectionId !== args.inspectionId) {
           throw new Error("Sample not found");
@@ -793,6 +781,23 @@ export async function upsertInspectionMeasurement(
           .executeTakeFirstOrThrow();
         sample = inserted;
       }
+
+      const feature = await trx
+        .selectFrom("inspectionFeature")
+        .select([
+          "id",
+          "type",
+          "nominalValue",
+          "tolerancePlus",
+          "toleranceMinus",
+          "materialCondition",
+          "featureOfSize",
+          "sizeFeatureId"
+        ])
+        .where("id", "=", args.inspectionFeatureId)
+        .where("companyId", "=", args.companyId)
+        .executeTakeFirst();
+      if (!feature) throw new Error("Inspection feature not found");
 
       const numericValue =
         args.value != null && args.value !== "" ? Number(args.value) : null;
@@ -915,6 +920,7 @@ export async function upsertInspectionMeasurement(
           "featureOfSize"
         ])
         .where("sizeFeatureId", "=", feature.id)
+        .where("materialCondition", "in", ["MMC", "LMC"])
         .where("companyId", "=", args.companyId)
         .execute();
       if (dependentFeatures.length > 0) {
@@ -1631,6 +1637,19 @@ async function loadFirstArticleContext(
     .groupBy("itemId")
     .execute();
 
+  // An open (Draft / Verified) FAI for the part on another job is the part's
+  // first article in progress: this job neither blocks on nor starts another.
+  // A report whose job was deleted (jobId null) does not count.
+  const openElsewhere = await db
+    .selectFrom("firstArticleInspection")
+    .select(["itemId"])
+    .distinct()
+    .where("status", "in", ["Draft", "Verified"])
+    .where("jobId", "<>", job.id)
+    .where("itemId", "in", itemIds)
+    .where("companyId", "=", args.companyId)
+    .execute();
+
   const existingLots = await db
     .selectFrom("inspection")
     .select(["sourceDocumentLineId"])
@@ -1657,6 +1676,7 @@ async function loadFirstArticleContext(
   const lotMakeMethodIds = new Set(
     existingLots.map((lot) => lot.sourceDocumentLineId)
   );
+  const openElsewhereItemIds = new Set(openElsewhere.map((row) => row.itemId));
 
   return {
     ...context,
@@ -1673,7 +1693,10 @@ async function loadFirstArticleContext(
         partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
         latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
         lastCompletedJobDate: completedByItem.get(makeMethod.itemId) ?? null,
-        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id)
+        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id),
+        hasOpenFirstArticleElsewhere: openElsewhereItemIds.has(
+          makeMethod.itemId
+        )
       }))
     }
   };

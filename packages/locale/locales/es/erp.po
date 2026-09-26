@@ -9561,6 +9561,9 @@ msgstr "Su diseño puede cambiar antes de que se libere el aviso de cambio."
 msgid "Job"
 msgstr "Trabajo"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "ID de Trabajo"
 
@@ -10255,6 +10258,9 @@ msgstr "Inactivar"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Los artículos de fabricación no se pueden facturar directamente. Cambie el método a Recoger para continuar."
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "Versión del Método de Fabricación"
@@ -17888,6 +17894,9 @@ msgstr "las horas de Orden de trabajo vencidas ese día (una base de fecha de ve
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "El trabajo cuya operación cubre esta línea de procesamiento externo; el recibo de la línea cierra la operación contra este trabajo."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "La posición del trabajo en la cola de programación de su ubicación — un número fraccionario que Carbon calcula a partir de la fecha de vencimiento y tipo de plazo, no una calificación Bajo/Alto."

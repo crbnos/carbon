@@ -9561,6 +9561,9 @@ msgstr "변경 통지가 발행되기 전에 설계가 변경될 수 있습니�
 msgid "Job"
 msgstr "작업"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "작업 ID"
 
@@ -10255,6 +10258,9 @@ msgstr "비활성으로 설정"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "사내 생산 품목은 직접 송장 발행할 수 없습니다. 계속하려면 방법을 피킹으로 변경하세요."
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "생산 방법 버전"
@@ -17888,6 +17894,9 @@ msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "이 외주 라인이 처리하는 공정작업이 속한 작업입니다. 이 라인의 입고는 해당 작업의 공정작업을 마감합니다."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "작업 지시가 해당 사업장의 일정 대기열에서의 위치로, Carbon이 마감일과 마감일 유형으로부터 계산한 소수점 이하 숫자이며, 낮음/높음 등급이 아닙니다."

@@ -43,14 +43,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   // Baseline choices for a partial FAI: approved FAIs of any revision of this
-  // part, other than this one.
-  const options = await getFirstArticleCreateOptions(
-    client,
-    detail.data.firstArticle.jobId,
-    companyId
-  );
+  // part, other than this one. None once the job has been deleted.
+  const jobId = detail.data.firstArticle.jobId;
+  const options = jobId
+    ? await getFirstArticleCreateOptions(client, jobId, companyId)
+    : null;
   const readableId = detail.data.firstArticle.item?.readableId;
-  const baselines = (options.data?.baselines ?? []).filter(
+  const baselines = (options?.data?.baselines ?? []).filter(
     (baseline) => baseline.id !== id && baseline.readableId === readableId
   );
 

@@ -9561,6 +9561,9 @@ msgstr "Sein Design kann sich ändern, bevor die Änderungsmitteilung freigegebe
 msgid "Job"
 msgstr "Job"
 
+msgid "Job deleted"
+msgstr ""
+
 msgid "Job ID"
 msgstr "Auftrags-ID"
 
@@ -10255,6 +10258,9 @@ msgstr "Inaktiv machen"
 
 msgid "Make items cannot be invoiced directly. Change method to Pick to continue."
 msgstr "Eigenfertigung-Artikel können nicht direkt fakturiert werden. Ändern Sie die Bereitstellungsart zu Kommissionierung, um fortzufahren."
+
+msgid "Make method removed"
+msgstr ""
 
 msgid "Make Method Version"
 msgstr "Fertigungsmethode-Version"
@@ -17888,6 +17894,9 @@ msgstr "die Arbeitsstunden fällig an diesem Tag (basierend auf dem Fälligkeits
 
 msgid "The job whose operation this outside-processing line covers; the line's receipt closes the operation against this job."
 msgstr "Der Auftrag, dessen Operation diese Außenbearbeitungslinie abdeckt; der Beleg der Zeile schließt die Operation gegen diesen Auftrag."
+
+msgid "The job's make method no longer exists, so the index cannot be derived."
+msgstr ""
 
 msgid "The job's position in its location's schedule queue — a fractional number Carbon computes from the due date and deadline type, not a Low/High rating."
 msgstr "Die Position des Fertigungsauftrags in der Terminplanwarteschlange des Standorts — eine Dezimalzahl, die Carbon aus dem Fälligkeitsdatum und dem Termintyp berechnet, keine Hoch/Niedrig-Bewertung."

@@ -16618,8 +16618,8 @@ export type Database = {
           id: string
           inspectionId: string
           itemId: string
-          jobId: string
-          jobMakeMethodId: string
+          jobId: string | null
+          jobMakeMethodId: string | null
           manufacturingProcessReference: string
           organizationName: string
           partName: string
@@ -16660,8 +16660,8 @@ export type Database = {
           id?: string
           inspectionId: string
           itemId: string
-          jobId: string
-          jobMakeMethodId: string
+          jobId?: string | null
+          jobMakeMethodId?: string | null
           manufacturingProcessReference: string
           organizationName: string
           partName: string
@@ -16702,8 +16702,8 @@ export type Database = {
           id?: string
           inspectionId?: string
           itemId?: string
-          jobId?: string
-          jobMakeMethodId?: string
+          jobId?: string | null
+          jobMakeMethodId?: string | null
           manufacturingProcessReference?: string
           organizationName?: string
           partName?: string

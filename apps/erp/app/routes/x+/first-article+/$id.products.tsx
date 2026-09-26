@@ -4,15 +4,14 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
-import {
-  firstArticleInspectionProductValidator,
-  upsertFirstArticleInspectionProduct
-} from "~/modules/quality";
+import { firstArticleInspectionProductValidator } from "~/modules/quality";
+import { upsertFirstArticleInspectionProduct } from "~/modules/quality/firstArticle.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "quality"
   });
 
@@ -28,12 +27,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // The FAI comes from the URL, never from the form.
-  const result = await upsertFirstArticleInspectionProduct(client, {
-    ...validation.data,
-    firstArticleInspectionId: id,
-    companyId,
-    userId
-  });
+  const result = await upsertFirstArticleInspectionProduct(
+    getDatabaseClient(),
+    {
+      ...validation.data,
+      firstArticleInspectionId: id,
+      companyId,
+      userId
+    }
+  );
   if (result.error) {
     return data(
       {},

@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { getPreferenceHeaders } from "@carbon/utils";
@@ -46,7 +47,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const fairIdentifier = fai.data.inspection?.inspectionId ?? id;
 
   if (fai.data.status === "Approved" && fai.data.documentId) {
-    const document = await client
+    // Access is proven by the FAI read above (the caller's client, their
+    // company). The stored record's document row is readable only by the
+    // approver, so its path and file are read with the service role.
+    const serviceRole = getCarbonServiceRole();
+    const document = await serviceRole
       .from("document")
       .select("path")
       .eq("id", fai.data.documentId)
@@ -62,7 +67,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       throw new Response("Not found", { status: 404 });
     }
 
-    const file = await storage(client)
+    const file = await storage(serviceRole)
       .company(companyId)
       .download(document.data.path);
     if (file.error || !file.data) {

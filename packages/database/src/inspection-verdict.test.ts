@@ -136,6 +136,23 @@ describe("valuateGeometricMeasurement", () => {
     ).toEqual({ status: "Failed", bonus: 0, allowable: 0.01 });
   });
 
+  it("earns no bonus when the feature of size is not declared", () => {
+    expect(
+      valuateGeometricMeasurement(
+        { ...position, featureOfSize: null },
+        0.013,
+        hole(0.254)
+      )
+    ).toEqual({ status: "Failed", bonus: 0, allowable: 0.01 });
+    expect(
+      valuateGeometricMeasurement(
+        { ...position, featureOfSize: null },
+        0.009,
+        hole(0.254)
+      )
+    ).toEqual({ status: "Passed", bonus: 0, allowable: 0.01 });
+  });
+
   it("clamps the bonus to the size tolerance band", () => {
     expect(valuateGeometricMeasurement(position, 0.013, hole(0.26)).bonus).toBe(
       0.005

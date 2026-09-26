@@ -88,7 +88,7 @@ const FirstArticleProductForm = ({
                     label={t`Kind`}
                     options={certificateTypes.map((value) => ({
                       value,
-                      label: getCertificateTypeLabel(value, t)
+                      label: t(getCertificateTypeLabel(value))
                     }))}
                   />
                   <Input name="name" label={t`Material or Process Name`} />

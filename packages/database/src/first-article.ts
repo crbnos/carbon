@@ -35,6 +35,12 @@ export type FirstArticleNeedInput = {
     lastCompletedJobDate: string | null;
     /** This job already has a First Article lot for this make method. */
     hasFirstArticleLot: boolean;
+    /**
+     * An open (Draft / Verified) FAI for the same item exists on another job
+     * — the part's first article is already in progress, so this job neither
+     * blocks on nor creates another one.
+     */
+    hasOpenFirstArticleElsewhere: boolean;
   }[];
 };
 
@@ -46,9 +52,14 @@ export type FirstArticleNeed = {
   due: boolean;
   reason: FirstArticleReason | null;
   planId: string | null;
-  /** Required and due, but no plan resolves — a release blocker. */
+  /**
+   * Required and due, with no First Article lot on this job and no open one
+   * for the part on another job — what the "FAI due" badge shows.
+   */
+  pending: boolean;
+  /** Pending, but no plan resolves — a release blocker. */
   blocked: boolean;
-  /** Required and due with a plan — the generator creates the lot. */
+  /** Pending with a plan — the generator creates the lot. */
   create: boolean;
 };
 
@@ -123,7 +134,11 @@ export function resolveFirstArticleNeeds(
       (makeMethod.partPlanIds.length === 1
         ? (makeMethod.partPlanIds[0] ?? null)
         : null);
-    const pending = required && due && !makeMethod.hasFirstArticleLot;
+    const pending =
+      required &&
+      due &&
+      !makeMethod.hasFirstArticleLot &&
+      !makeMethod.hasOpenFirstArticleElsewhere;
 
     return {
       jobMakeMethodId: makeMethod.jobMakeMethodId,
@@ -133,6 +148,7 @@ export function resolveFirstArticleNeeds(
       due,
       reason,
       planId,
+      pending,
       blocked: pending && planId === null,
       create: pending && planId !== null
     };

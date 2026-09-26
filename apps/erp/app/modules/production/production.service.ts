@@ -2852,39 +2852,64 @@ async function getFirstArticlesWithoutPlan(
   const today = datetime.today(timezone).toString();
   const itemIds = [...new Set(makeMethods.data.map((m) => m.itemId))];
 
-  const [slots, partPlans, approvals, lots] = await Promise.all([
-    client
-      .from("itemInspectionDocumentAssignment")
-      .select("itemId, inspectionDocumentId")
-      .eq("usage", "First Article")
-      .in("itemId", itemIds)
-      .eq("companyId", companyId),
-    client
-      .from("inspectionDocument")
-      .select("id, partId")
-      .in("partId", itemIds)
-      .eq("companyId", companyId)
-      .order("id"),
-    client
-      .from("firstArticleInspection")
-      .select("itemId, approvedAt")
-      .eq("status", "Approved")
-      .not("approvedAt", "is", null)
-      .in("itemId", itemIds)
-      .eq("companyId", companyId)
-      .order("approvedAt", { ascending: false }),
-    client
-      .from("inspection")
-      .select("sourceDocumentLineId")
-      .eq("sourceDocument", "First Article")
-      .in(
-        "sourceDocumentLineId",
-        makeMethods.data.map((m) => m.id)
-      )
-      .eq("companyId", companyId)
-  ]);
+  // Every approval and every open FAI of these parts, paged: a part approved
+  // more than 1000 times would otherwise drop rows past PostgREST's cap.
+  const [slots, partPlans, approvals, openFirstArticles, lots] =
+    await Promise.all([
+      client
+        .from("itemInspectionDocumentAssignment")
+        .select("itemId, inspectionDocumentId")
+        .eq("usage", "First Article")
+        .in("itemId", itemIds)
+        .eq("companyId", companyId),
+      client
+        .from("inspectionDocument")
+        .select("id, partId")
+        .in("partId", itemIds)
+        .eq("companyId", companyId)
+        .order("id"),
+      fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
+        client,
+        "firstArticleInspection",
+        "id, itemId, approvedAt",
+        (query) =>
+          query
+            .eq("status", "Approved")
+            .not("approvedAt", "is", null)
+            .in("itemId", itemIds)
+            .eq("companyId", companyId)
+            .order("approvedAt", { ascending: false })
+            .order("id")
+      ),
+      // An open FAI for the part on another job satisfies this job's need.
+      fetchAllFromTable<{ id: string; itemId: string; jobId: string | null }>(
+        client,
+        "firstArticleInspection",
+        "id, itemId, jobId",
+        (query) =>
+          query
+            .in("status", ["Draft", "Verified"])
+            .not("jobId", "is", null)
+            .in("itemId", itemIds)
+            .eq("companyId", companyId)
+            .order("id")
+      ),
+      client
+        .from("inspection")
+        .select("sourceDocumentLineId")
+        .eq("sourceDocument", "First Article")
+        .in(
+          "sourceDocumentLineId",
+          makeMethods.data.map((m) => m.id)
+        )
+        .eq("companyId", companyId)
+    ]);
   const needError =
-    slots.error ?? partPlans.error ?? approvals.error ?? lots.error;
+    slots.error ??
+    partPlans.error ??
+    approvals.error ??
+    openFirstArticles.error ??
+    lots.error;
   if (needError) return { data: result, error: needError };
 
   const slotByItem = new Map(
@@ -2907,6 +2932,15 @@ async function getFirstArticlesWithoutPlan(
   const lotMakeMethodIds = new Set(
     (lots.data ?? []).map((lot) => lot.sourceDocumentLineId)
   );
+  const openJobIdsByItem = new Map<string, Set<string>>();
+  for (const open of openFirstArticles.data ?? []) {
+    if (!open.jobId) continue;
+    const jobIds = openJobIdsByItem.get(open.itemId) ?? new Set<string>();
+    jobIds.add(open.jobId);
+    openJobIdsByItem.set(open.itemId, jobIds);
+  }
+  const hasOpenElsewhere = (itemId: string, jobId: string) =>
+    [...(openJobIdsByItem.get(itemId) ?? [])].some((id) => id !== jobId);
 
   const inputFor = (
     jobId: string,
@@ -2930,7 +2964,8 @@ async function getFirstArticlesWithoutPlan(
         partPlanIds: partPlansByItem.get(makeMethod.itemId) ?? [],
         latestApprovedAt: approvedAtByItem.get(makeMethod.itemId) ?? null,
         lastCompletedJobDate: lastCompletedJobDate(makeMethod.itemId),
-        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id)
+        hasFirstArticleLot: lotMakeMethodIds.has(makeMethod.id),
+        hasOpenFirstArticleElsewhere: hasOpenElsewhere(makeMethod.itemId, jobId)
       }))
   });
 
@@ -2964,15 +2999,22 @@ async function getFirstArticlesWithoutPlan(
         : [];
     })
     .sort();
+  // Paged: a part with more than 1000 completed jobs since its approval must
+  // not lose the newest ones to PostgREST's cap.
   const completedJobs = completedSince
-    ? await client
-        .from("job")
-        .select("id, itemId, completedDate")
-        .in("status", ["Completed", "Closed"])
-        .gte("completedDate", completedSince)
-        .in("itemId", lapseItemIds)
-        .eq("companyId", companyId)
-        .order("completedDate", { ascending: false })
+    ? await fetchAllFromTable<{
+        id: string;
+        itemId: string | null;
+        completedDate: string | null;
+      }>(client, "job", "id, itemId, completedDate", (query) =>
+        query
+          .in("status", ["Completed", "Closed"])
+          .gte("completedDate", completedSince)
+          .in("itemId", lapseItemIds)
+          .eq("companyId", companyId)
+          .order("completedDate", { ascending: false })
+          .order("id")
+      )
     : { data: [], error: null };
   if (completedJobs.error) return { data: result, error: completedJobs.error };
 
