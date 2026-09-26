@@ -1003,17 +1003,6 @@ export async function updateLeasePolicySettings(
     .eq("id", companyId);
 }
 
-export async function updateRevenueRecognitionSetting(
-  client: SupabaseClient<Database>,
-  companyId: string,
-  enabled: boolean
-) {
-  return client
-    .from("companySettings")
-    .update({ revenueRecognitionEnabled: enabled })
-    .eq("id", companyId);
-}
-
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
   companyId: string,

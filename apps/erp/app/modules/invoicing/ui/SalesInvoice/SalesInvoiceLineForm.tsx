@@ -270,7 +270,7 @@ const SalesInvoiceItemLineForm = ({
 }: SalesInvoiceLineFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { revenueRecognitionEnabled } = useSettings();
+  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
 
   const { company, defaults } = useUser();
@@ -800,7 +800,7 @@ const SalesInvoiceItemLineForm = ({
                               }))
                             }
                           />
-                          {revenueRecognitionEnabled && (
+                          {accountingEnabled && lineType === "Service" && (
                             <>
                               <DatePicker
                                 name="serviceStartDate"

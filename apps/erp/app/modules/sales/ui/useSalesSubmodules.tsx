@@ -54,16 +54,16 @@ export default function useSalesSubmodules() {
           table: "salesOrder"
         },
         {
+          name: t`Rentals`,
+          to: path.to.rentalAgreements,
+          icon: <LuKeyRound />,
+          table: "rentalAgreement"
+        },
+        {
           name: t`Returns`,
           to: path.to.salesReturnOrders,
           icon: <LuUndo2 />,
           table: "salesReturnOrder"
-        },
-        {
-          name: t`Rental Agreements`,
-          to: path.to.rentalAgreements,
-          icon: <LuKeyRound />,
-          table: "rentalAgreement"
         }
       ]
     },

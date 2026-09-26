@@ -374,7 +374,19 @@ export const salesInvoiceLineValidator = z
   .refine((data) => isValidServicePeriod(data), {
     message: "Service end must be on or after service start",
     path: ["serviceEndDate"]
-  });
+  })
+  // Rental lines carry their billing period in these columns, written by
+  // rental invoice generation; every other non-Service type is a physical good.
+  .refine(
+    (data) =>
+      data.invoiceLineType === "Service" ||
+      data.invoiceLineType === "Rental" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
+    }
+  );
 
 // ----------------------------------------------------------------------
 // Credit / Debit Memos — payment-shaped documents (the `memo` table). A memo is

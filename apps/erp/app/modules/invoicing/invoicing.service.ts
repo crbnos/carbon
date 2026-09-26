@@ -1326,15 +1326,27 @@ export async function upsertSalesInvoiceLine(
         customFields?: Json;
       })
 ) {
+  // Only a Service line has a service period (a Rental line carries its
+  // billing period) — every other item type is a physical good, earned when it
+  // ships. A cleared DatePicker posts "", which a DATE column rejects, so both
+  // collapse to null.
+  const hasServicePeriod =
+    salesInvoiceLine.invoiceLineType === "Service" ||
+    salesInvoiceLine.invoiceLineType === "Rental";
+  const servicePeriod = {
+    serviceStartDate:
+      (hasServicePeriod && salesInvoiceLine.serviceStartDate) || null,
+    serviceEndDate:
+      (hasServicePeriod && salesInvoiceLine.serviceEndDate) || null
+  };
+
   if ("id" in salesInvoiceLine) {
     return client
       .from("salesInvoiceLine")
       .update(
         sanitize({
           ...salesInvoiceLine,
-          // A cleared DatePicker posts "", which a DATE column rejects.
-          serviceStartDate: salesInvoiceLine.serviceStartDate || null,
-          serviceEndDate: salesInvoiceLine.serviceEndDate || null
+          ...servicePeriod
         })
       )
       .eq("id", salesInvoiceLine.id)
@@ -1357,8 +1369,7 @@ export async function upsertSalesInvoiceLine(
     .insert([
       {
         ...salesInvoiceLine,
-        serviceStartDate: salesInvoiceLine.serviceStartDate || null,
-        serviceEndDate: salesInvoiceLine.serviceEndDate || null,
+        ...servicePeriod,
         sortOrder: maxSortOrder + 1
       }
     ])

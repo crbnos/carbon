@@ -101,7 +101,7 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
   const permissions = usePermissions();
-  const { revenueRecognitionEnabled } = useSettings();
+  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const { orderId } = useParams();
@@ -690,19 +690,18 @@ const SalesOrderLineForm = ({
                               label={t`Promised Date`}
                               termId="sales-order-line-promised-date"
                             />
-                            {revenueRecognitionEnabled &&
-                              lineType !== "Fixed Asset" && (
-                                <>
-                                  <DatePicker
-                                    name="serviceStartDate"
-                                    label={t`Service start`}
-                                  />
-                                  <DatePicker
-                                    name="serviceEndDate"
-                                    label={t`Service end`}
-                                  />
-                                </>
-                              )}
+                            {accountingEnabled && lineType === "Service" && (
+                              <>
+                                <DatePicker
+                                  name="serviceStartDate"
+                                  label={t`Service start`}
+                                />
+                                <DatePicker
+                                  name="serviceEndDate"
+                                  label={t`Service end`}
+                                />
+                              </>
+                            )}
                             {[
                               "Part",
                               "Material",

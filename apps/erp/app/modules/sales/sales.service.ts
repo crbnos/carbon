@@ -5914,15 +5914,22 @@ export async function upsertSalesOrderLine(
         customFields?: Json;
       })
 ) {
+  // Only a Service line has a service period — every other item type is a
+  // physical good, earned when it ships. A cleared DatePicker posts "", which
+  // a DATE column rejects, so both collapse to null.
+  const isService = salesOrderLine.salesOrderLineType === "Service";
+  const servicePeriod = {
+    serviceStartDate: (isService && salesOrderLine.serviceStartDate) || null,
+    serviceEndDate: (isService && salesOrderLine.serviceEndDate) || null
+  };
+
   if ("id" in salesOrderLine) {
     return client
       .from("salesOrderLine")
       .update(
         sanitize({
           ...salesOrderLine,
-          // A cleared DatePicker posts "", which a DATE column rejects.
-          serviceStartDate: salesOrderLine.serviceStartDate || null,
-          serviceEndDate: salesOrderLine.serviceEndDate || null
+          ...servicePeriod
         })
       )
       .eq("id", salesOrderLine.id)
@@ -5970,8 +5977,7 @@ export async function upsertSalesOrderLine(
         addOnCost: salesOrderLine.addOnCost ?? 0,
         nonTaxableAddOnCost: salesOrderLine.nonTaxableAddOnCost ?? 0,
         taxPercent: salesOrderLine.taxPercent ?? 0,
-        serviceStartDate: salesOrderLine.serviceStartDate || null,
-        serviceEndDate: salesOrderLine.serviceEndDate || null,
+        ...servicePeriod,
         exchangeRate,
         sortOrder: maxSortOrder + 1
       }

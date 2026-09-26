@@ -1008,7 +1008,16 @@ export const salesOrderLineValidator = z
   .refine((data) => isValidServicePeriod(data), {
     message: "Service end must be on or after service start",
     path: ["serviceEndDate"]
-  });
+  })
+  .refine(
+    (data) =>
+      data.salesOrderLineType === "Service" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
+    }
+  );
 
 export const salesOrderPaymentValidator = z.object({
   id: z.string(),

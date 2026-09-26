@@ -1,10 +1,8 @@
--- Revenue recognition core: settings, account defaults, seeded accounts, sequence,
+-- Revenue recognition core: account defaults, seeded accounts, sequence,
 -- close task, service dates on sales lines, schedule + run tables. Idempotent.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1
 
--- 1) Settings + account defaults ------------------------------------------------
-ALTER TABLE "companySettings" ADD COLUMN IF NOT EXISTS "revenueRecognitionEnabled" BOOLEAN NOT NULL DEFAULT false;
-
+-- 1) Account defaults ----------------------------------------------------------
 ALTER TABLE "accountDefault"
   ADD COLUMN IF NOT EXISTS "deferredRevenueAccount" TEXT,
   ADD COLUMN IF NOT EXISTS "contractAssetAccount" TEXT,
@@ -34,6 +32,19 @@ BEGIN
 END $rrfk$;
 
 -- 2) Accounts, one per company group, parents resolved by group NAME (never number) -----
+-- 2160 Deferred Revenue ships with the seeded chart. A group that renumbered it keeps
+-- its account (matched by name below); only a group with neither gets a new one, since
+-- posting a dated invoice line refuses without the default mapped.
+INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
+SELECT id('acct'), '2160', 'Deferred Revenue', 'Liability', 'Other Current Liability', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
+FROM "account" g
+WHERE g."isGroup" = TRUE AND g.name = 'Current Liabilities'
+  AND NOT EXISTS (
+    SELECT 1 FROM "account" a
+    WHERE a."companyGroupId" = g."companyGroupId"
+      AND (a.number = '2160' OR (a.name = 'Deferred Revenue' AND a."isGroup" = FALSE))
+  );
+
 INSERT INTO "account" ("id", "number", "name", "class", "accountType", "incomeBalance", "consolidatedRate", "parentId", "isGroup", "active", "isSystem", "companyGroupId", "createdBy")
 SELECT id('acct'), '1145', 'Contract Assets', 'Asset', 'Other Current Asset', 'Balance Sheet', 'Current', g.id, false, true, false, g."companyGroupId", 'system'
 FROM "account" g
@@ -82,8 +93,14 @@ BEGIN
 END $rrguard$;
 
 -- 3) Backfill the six defaults by id -----------------------------------------------
+-- Deferred Revenue by number, then by name for a group that renumbered 2160.
 UPDATE "accountDefault" ad SET "deferredRevenueAccount" = a.id, "updatedBy" = 'system'
 FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '2160'
+WHERE ad."companyId" = c.id AND ad."deferredRevenueAccount" IS NULL;
+
+UPDATE "accountDefault" ad SET "deferredRevenueAccount" = a.id, "updatedBy" = 'system'
+FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId"
+  AND a.name = 'Deferred Revenue' AND a."isGroup" = FALSE
 WHERE ad."companyId" = c.id AND ad."deferredRevenueAccount" IS NULL;
 
 UPDATE "accountDefault" ad SET "contractAssetAccount" = a.id, "updatedBy" = 'system'
@@ -105,6 +122,20 @@ WHERE ad."companyId" = c.id AND ad."leaseInterestIncomeAccount" IS NULL;
 UPDATE "accountDefault" ad SET "netInvestmentInLeasesAccount" = a.id, "updatedBy" = 'system'
 FROM "company" c JOIN "account" a ON a."companyGroupId" = c."companyGroupId" AND a.number = '1160'
 WHERE ad."companyId" = c.id AND ad."netInvestmentInLeasesAccount" IS NULL;
+
+-- Revenue recognition follows accountingEnabled, so every company must leave with a
+-- usable Deferred Revenue default: an unmapped or non-Liability-leaf account would make
+-- every dated invoice line refuse to post.
+DO $rrdeferred$
+BEGIN
+  IF EXISTS (
+    SELECT 1 FROM "accountDefault" ad
+    LEFT JOIN "account" a ON a.id = ad."deferredRevenueAccount"
+    WHERE a.id IS NULL OR a.class <> 'Liability' OR a."isGroup"
+  ) THEN
+    RAISE EXCEPTION 'revenue-recognition-core: a company has no Deferred Revenue default, or it is not a Liability leaf account';
+  END IF;
+END $rrdeferred$;
 
 -- 4) Sequence per company ---------------------------------------------------------
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")

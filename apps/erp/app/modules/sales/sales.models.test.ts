@@ -57,14 +57,15 @@ describe("quoteValidator.notes", () => {
 
 // A service period on a line is either absent or a complete, ordered pair:
 // revenue recognition schedules from it, so a lone start or an end before the
-// start must be refused at validation rather than stored.
+// start must be refused at validation rather than stored. Only a Service line
+// has one — every other item type is a physical good, earned when it ships.
 
 const lineBase = {
   salesOrderId: "so_1",
-  salesOrderLineType: "Part" as const,
+  salesOrderLineType: "Service" as const,
   itemId: "item_1",
   locationId: "loc_1",
-  methodType: "Make to Order" as const,
+  methodType: "Pull from Inventory" as const,
   taxPercent: 0
 };
 
@@ -105,6 +106,22 @@ describe("salesOrderLineValidator service dates", () => {
 
   it("accepts a line with no service period", () => {
     expect(salesOrderLineValidator.safeParse(lineBase).success).toBe(true);
+  });
+
+  it("rejects a service period on a Part line", () => {
+    const result = salesOrderLineValidator.safeParse({
+      ...lineBase,
+      salesOrderLineType: "Part",
+      serviceStartDate: "2026-03-01",
+      serviceEndDate: "2026-03-31"
+    });
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.error.issues[0]?.path).toEqual(["serviceStartDate"]);
+      expect(result.error.issues[0]?.message).toBe(
+        "Service dates only apply to Service lines"
+      );
+    }
   });
 });
 

@@ -38,7 +38,6 @@ import {
   updateAccountingEnabledSetting,
   updateAssetTaxDepreciationSettings,
   updateLeasePolicySettings,
-  updateRevenueRecognitionSetting,
   updateShowCurrencyTrailingZerosSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -144,22 +143,6 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true, message: "Fixed asset settings updated" };
   }
 
-  if (intent === "revenueRecognitionEnabled") {
-    const enabled = formData.get("enabled") === "true";
-    const update = await updateRevenueRecognitionSetting(
-      client,
-      companyId,
-      enabled
-    );
-    if (update.error) return { success: false, message: update.error.message };
-    return {
-      success: true,
-      message: enabled
-        ? "Revenue recognition enabled"
-        : "Revenue recognition disabled"
-    };
-  }
-
   if (intent === "leasePolicy") {
     const validation = await validator(leasePolicySettingsValidator).validate(
       formData
@@ -226,8 +209,6 @@ export default function AccountingSettingsRoute() {
   const { t } = useLingui();
 
   const taxEnabled = companySettings.assetTaxDepreciationEnabled ?? false;
-  const revenueRecognitionEnabled =
-    companySettings.revenueRecognitionEnabled ?? false;
 
   useEffect(() => {
     if (fetcher.data && "success" in fetcher.data) {
@@ -295,16 +276,6 @@ export default function AccountingSettingsRoute() {
     [fetcher]
   );
 
-  const handleRevenueRecognitionToggle = useCallback(
-    (checked: boolean) => {
-      fetcher.submit(
-        { intent: "revenueRecognitionEnabled", enabled: String(checked) },
-        { method: "POST" }
-      );
-    },
-    [fetcher]
-  );
-
   return (
     <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
@@ -363,28 +334,6 @@ export default function AccountingSettingsRoute() {
               />
             </HStack>
           </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Revenue recognition</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Invoice lines with service dates defer to Deferred Revenue
-                    and are released by recognition runs.
-                  </Trans>
-                </CardDescription>
-              </div>
-              <Switch
-                checked={revenueRecognitionEnabled}
-                onCheckedChange={handleRevenueRecognitionToggle}
-              />
-            </HStack>
-          </CardHeader>
         </Card>
 
         <Card>

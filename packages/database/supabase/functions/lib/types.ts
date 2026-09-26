@@ -8037,7 +8037,6 @@ export type Database = {
           quoteLineCategoryMarkups: Json | null
           requireMfa: boolean
           returnPickedMaterialTiming: string
-          revenueRecognitionEnabled: boolean
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
           salesRuleNotificationGroup: string[]
@@ -8093,7 +8092,6 @@ export type Database = {
           quoteLineCategoryMarkups?: Json | null
           requireMfa?: boolean
           returnPickedMaterialTiming?: string
-          revenueRecognitionEnabled?: boolean
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]
@@ -8149,7 +8147,6 @@ export type Database = {
           quoteLineCategoryMarkups?: Json | null
           requireMfa?: boolean
           returnPickedMaterialTiming?: string
-          revenueRecognitionEnabled?: boolean
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
           salesRuleNotificationGroup?: string[]

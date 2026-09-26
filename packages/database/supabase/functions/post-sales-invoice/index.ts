@@ -76,7 +76,7 @@ serve(async (req: Request) => {
         .single(),
       client
         .from("companySettings")
-        .select("accountingEnabled, revenueRecognitionEnabled")
+        .select("accountingEnabled")
         .eq("id", companyId)
         .single(),
     ]);
@@ -273,9 +273,19 @@ serve(async (req: Request) => {
           throw new Error("Error getting account defaults");
         }
         // Revenue recognition defers a dated service line's revenue at posting.
-        // It is meaningless without a journal, so it follows accountingEnabled.
-        const revenueRecognitionEnabled = accountingEnabled &&
-          (accountingSettings.data?.revenueRecognitionEnabled ?? false);
+        // It is meaningless without a journal, so it follows accountingEnabled
+        // and only engages when a line actually carries a service range. Only a
+        // Service line is deferred: every other item type is a physical good,
+        // earned when it ships, so dates left on one (a line whose type changed,
+        // an API write) must not move its revenue. Rental lines defer through
+        // their own path below.
+        const deferredServicePeriod = (line: InvoiceLineRecord) =>
+          line.invoiceLineType === "Service" && line.serviceStartDate && line.serviceEndDate
+            ? { startDate: line.serviceStartDate, endDate: line.serviceEndDate }
+            : null;
+        const hasServiceDates = accountingEnabled && salesInvoiceLines.data.some(
+          (line: InvoiceLineRecord) => deferredServicePeriod(line) !== null
+        );
 
         const dimensions = accountingEnabled
           ? await client
@@ -377,18 +387,18 @@ serve(async (req: Request) => {
         }
         // The deferral account comes from accountDefault (a stable id, never an
         // account number) and is validated through the same query as the charge
-        // accounts. With the flag on, an unmapped account refuses to post rather
+        // accounts. A dated line with no mapped account refuses to post rather
         // than silently booking deferrable revenue straight to Sales.
-        const deferredRevenueAccountId = revenueRecognitionEnabled
+        const deferredRevenueAccountId = hasServiceDates
           ? accountDefaults?.data?.deferredRevenueAccount ?? null
           : null;
-        if (revenueRecognitionEnabled && !deferredRevenueAccountId) {
-          throw new Error("Deferred Revenue account is not mapped; map it in the accounting defaults before posting with revenue recognition enabled");
+        if (hasServiceDates && !deferredRevenueAccountId) {
+          throw new Error("Deferred Revenue account is not mapped; map it in the accounting defaults before posting lines with service dates");
         }
         if (deferredRevenueAccountId) accountIds.add(deferredRevenueAccountId);
         // Rental lines always post through deferred revenue, contract assets
-        // and rental income, whatever the revenue recognition flag says: rent
-        // is recognized by schedule, never at billing.
+        // and rental income, with or without service dates: rent is
+        // recognized by schedule, never at billing.
         const rentalInvoiceLines = accountingEnabled
           ? salesInvoiceLines.data.filter((line: InvoiceLineRecord) => line.invoiceLineType === "Rental")
           : [];
@@ -613,8 +623,9 @@ serve(async (req: Request) => {
                   // A dated service range defers this line's revenue: the sales
                   // leg is credited to Deferred Revenue now and a straight-line
                   // schedule recognizes it into Sales later.
-                  const deferral = deferredRevenueAccount && invoiceLine.serviceStartDate && invoiceLine.serviceEndDate
-                    ? { account: deferredRevenueAccount, startDate: invoiceLine.serviceStartDate, endDate: invoiceLine.serviceEndDate }
+                  const servicePeriod = deferredServicePeriod(invoiceLine);
+                  const deferral = deferredRevenueAccount && servicePeriod
+                    ? { account: deferredRevenueAccount, ...servicePeriod }
                     : null;
                   const charges = buildSalesPostingLines({
                     line: postingLine, context: postingContext, accounts: chargeAccounts,
