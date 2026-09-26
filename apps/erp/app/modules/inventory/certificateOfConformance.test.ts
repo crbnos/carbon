@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { CertificationLineageRow } from "../quality/certificationLineage";
 import type { ConformityDetailsInput } from "./certificateOfConformance";
-import { buildConformityDetails } from "./certificateOfConformance";
+import {
+  buildConformityDetails,
+  certificateLineRevision
+} from "./certificateOfConformance";
 
 function lineage(
   overrides: Partial<CertificationLineageRow>
@@ -132,5 +135,22 @@ describe("buildConformityDetails", () => {
     expect(result.shelfLife).toEqual(["LOT-1: expires on 2027-01-31"]);
     expect(result.fairs).toEqual(["GX-4471: INS000004"]);
     expect(result.reasonForUpdate).toBe("Corrected lot number");
+  });
+});
+
+describe("certificateLineRevision", () => {
+  it("prints N/C for an unset item revision, as the FAI does", () => {
+    expect(certificateLineRevision(null, "0")).toBe("N/C");
+    expect(certificateLineRevision(null, "")).toBe("N/C");
+    expect(certificateLineRevision(undefined, null)).toBe("N/C");
+  });
+
+  it("prints the item revision when set", () => {
+    expect(certificateLineRevision(null, "B")).toBe("B");
+  });
+
+  it("prefers the customer part revision when mapped", () => {
+    expect(certificateLineRevision("C", "B")).toBe("C");
+    expect(certificateLineRevision("C", "0")).toBe("C");
   });
 });

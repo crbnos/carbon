@@ -3718,6 +3718,9 @@ msgstr "다른 파일을 선택하세요"
 msgid "Choose how to add lines to this return."
 msgstr "이 반품에 라인을 추가하는 방법을 선택하세요."
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC 특성을 위한 크기 특징 선택"
 
@@ -8238,6 +8241,9 @@ msgstr "완전한 셋업 및 마이그레이션"
 
 msgid "Fully Depreciated"
 msgstr "상각 완료"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "기능 테스트 절차서 번호"
@@ -16675,6 +16681,9 @@ msgstr "예비 부품 원가"
 
 msgid "Spec"
 msgstr "사양"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "특수 공법 공급업체 코드"

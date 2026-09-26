@@ -3718,6 +3718,9 @@ msgstr "Выбрать другой файл"
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Выберите параметр размера для характеристик MMC/LMC"
 
@@ -8238,6 +8241,9 @@ msgstr "Полная наладка и миграции"
 
 msgid "Fully Depreciated"
 msgstr "Полностью амортизирован"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "Номер процедуры функциональной проверки"
@@ -16675,6 +16681,9 @@ msgstr "Себестоимость запасной части"
 
 msgid "Spec"
 msgstr "Тех. условия"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "Код поставщика специального процесса"

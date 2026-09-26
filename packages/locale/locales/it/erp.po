@@ -3718,6 +3718,9 @@ msgstr "Scegli un altro file"
 msgid "Choose how to add lines to this return."
 msgstr "Scegli come aggiungere righe a questo reso."
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "Scegli la caratteristica dimensionale per le caratteristiche MMC/LMC"
 
@@ -8238,6 +8241,9 @@ msgstr "Configurazione completa e migrazioni"
 
 msgid "Fully Depreciated"
 msgstr "Completamente Ammortizzato"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "Numero della Procedura di Prova Funzionale"
@@ -16675,6 +16681,9 @@ msgstr "Costo dei Ricambi"
 
 msgid "Spec"
 msgstr "Specifica"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "Codice Fornitore Processo Speciale"

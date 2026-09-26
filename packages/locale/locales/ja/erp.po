@@ -3718,6 +3718,9 @@ msgstr "別のファイルを選択"
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC特性のサイズフィーチャーを選択"
 
@@ -8238,6 +8241,9 @@ msgstr "完全なセットアップとマイグレーション"
 
 msgid "Fully Depreciated"
 msgstr "完全償却済み"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "機能テスト手順書番号"
@@ -16675,6 +16681,9 @@ msgstr "予備品原価"
 
 msgid "Spec"
 msgstr "仕様"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "特別工法仕入先コード"

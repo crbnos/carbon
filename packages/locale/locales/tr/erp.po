@@ -3718,6 +3718,9 @@ msgstr "Başka bir dosya seç"
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC özellikleri için boyut özelliğini seçin"
 
@@ -8238,6 +8241,9 @@ msgstr "Tam kurulum ve göçler"
 
 msgid "Fully Depreciated"
 msgstr "Amortismanı tamamlanmış"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "İşlevsel Test Prosedürü Numarası"
@@ -16675,6 +16681,9 @@ msgstr "Yedek Parça Maliyeti"
 
 msgid "Spec"
 msgstr "Spesifikasyon"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "Özel Proses Tedarikçi Kodu"

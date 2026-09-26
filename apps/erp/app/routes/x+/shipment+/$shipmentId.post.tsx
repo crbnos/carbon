@@ -22,6 +22,7 @@ import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
 import { getCertificateOfConformanceDefaults } from "~/modules/inventory";
 import {
+  emailIntegrationActive,
   issueCertificateOfConformance,
   sendCertificateOfConformance
 } from "~/modules/inventory/inventory.server";
@@ -494,7 +495,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 /**
  * Issue (and email) the Certificate of Conformance a customer requires on
  * every shipment. Runs after a post that stuck and never changes its result:
- * every failure is reported, not thrown.
+ * every failure is reported, not thrown. Emails only when the company's email
+ * integration is active — the same gate as the manual Send.
  */
 async function autoIssueCertificateOfConformance(
   request: Request,
@@ -543,13 +545,21 @@ async function autoIssueCertificateOfConformance(
       };
     }
 
+    if (!(await emailIntegrationActive(client, companyId))) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: the email integration is not active)`
+      };
+    }
+
     const sent = await sendCertificateOfConformance(client, {
       companyId,
       shipmentId,
       userId,
       certificateOfConformanceId: issued.data.id,
       customerContactId: contactId,
-      locale
+      locale,
+      content: issued.data.content
     });
     if (sent.error) {
       return {

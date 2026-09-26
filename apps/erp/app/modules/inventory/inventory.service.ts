@@ -37,7 +37,10 @@ import {
   getFirstArticleDue
 } from "../quality/quality.service";
 import type { ConformityDetails } from "./certificateOfConformance";
-import { buildConformityDetails } from "./certificateOfConformance";
+import {
+  buildConformityDetails,
+  certificateLineRevision
+} from "./certificateOfConformance";
 import type {
   batchPropertyOrderValidator,
   batchPropertyValidator,
@@ -1602,6 +1605,7 @@ export async function getCertificateOfConformanceData(
           .from("salesOrderLines")
           .select("id, sortOrder, customerPartId, customerPartRevision")
           .eq("salesOrderId", salesOrderId)
+          .eq("companyId", companyId)
           .order("sortOrder", { ascending: true })
           .order("id")
       : Promise.resolve({ data: [], error: null }),
@@ -1720,8 +1724,10 @@ export async function getCertificateOfConformanceData(
         itemNumber: `${position} / ${orderLine?.customerPartId ?? itemReadableId}`,
         quantity: `${formatQuantity(line.shippedQuantity, locale)} ${line.unitOfMeasure}`,
         description: line.item?.name ?? "",
-        revision:
-          orderLine?.customerPartRevision || line.item?.revision || "N/C",
+        revision: certificateLineRevision(
+          orderLine?.customerPartRevision,
+          line.item?.revision
+        ),
         traceability: (entitiesByLine.get(line.id) ?? []).map((entity) => ({
           id: entity.readableId ?? entity.id,
           quantity: formatQuantity(entity.quantity, locale)

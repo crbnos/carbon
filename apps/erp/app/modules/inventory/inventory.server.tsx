@@ -31,6 +31,7 @@ import {
   getDocumentTemplate,
   resolveSections
 } from "~/modules/settings";
+import { hasIntegration } from "~/modules/settings/settings.server";
 import { getUser } from "~/modules/users/users.server";
 import { stripSpecialCharacters } from "~/utils/string";
 import type { CertificateOfConformanceShipmentData } from "./inventory.service";
@@ -215,6 +216,8 @@ export type IssuedCertificateOfConformance = {
   certificateId: string;
   revision: number;
   number: string;
+  /** What the issued PDF printed, so a send in the same request reuses it. */
+  content: CertificateOfConformanceShipmentData;
 };
 
 /**
@@ -222,7 +225,8 @@ export type IssuedCertificateOfConformance = {
  * number; a reissue keeps the number, takes revision n+1 and requires a
  * reason. Sequence, render, upload, `document` and `certificateOfConformance`
  * run in one transaction; an uploaded object is removed if anything after it
- * fails.
+ * fails. The shipment row is locked and its status re-checked inside the
+ * transaction, so a void that lands after the pre-check cannot be certified.
  */
 export async function issueCertificateOfConformance(
   db: Kysely<KyselyDatabase>,
@@ -276,14 +280,18 @@ export async function issueCertificateOfConformance(
   try {
     const issued = await db.transaction().execute(async (trx) => {
       // Serialise issues of one shipment, so two clicks cannot mint two
-      // numbers or collide on a revision.
-      await trx
+      // numbers or collide on a revision — and read the status under the
+      // lock, so a shipment voided since the pre-check is refused.
+      const locked = await trx
         .selectFrom("shipment")
-        .select("id")
+        .select("status")
         .where("id", "=", shipmentId)
         .where("companyId", "=", companyId)
         .forUpdate()
         .executeTakeFirstOrThrow();
+      if (locked.status !== "Posted") {
+        throw new Error("Only posted shipments can be certified");
+      }
 
       const latest = await trx
         .selectFrom("certificateOfConformance")
@@ -321,10 +329,14 @@ export async function issueCertificateOfConformance(
 
       const fileName = `${stripSpecialCharacters(number) || "certificate"}.pdf`;
       const path = `${companyId}/shipment/${shipmentId}/${fileName}`;
+      // Overwrite: nothing references the path until this transaction
+      // commits, and the lock serialises issues of this shipment — so an
+      // object at this path is an orphan of a failed attempt whose cleanup
+      // also failed, and must not block the retry.
       const upload = await companyStorage.upload(path, pdf, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
-        upsert: false
+        upsert: true
       });
       if (upload.error) {
         throw new Error(
@@ -370,7 +382,7 @@ export async function issueCertificateOfConformance(
         .returning("id")
         .executeTakeFirstOrThrow();
 
-      return { id: certificate.id, certificateId, revision, number };
+      return { id: certificate.id, certificateId, revision, number, content };
     });
 
     return { data: issued, error: null };
@@ -467,8 +479,11 @@ async function getCertificateDocumentPath(
 }
 
 /**
- * Email an issued revision's stored PDF to a customer contact (and the
- * sender), then stamp `lastSentAt` / `lastSentTo`.
+ * Email an issued revision's stored PDF to a contact of the certificate's
+ * customer (and the sender), then stamp `lastSentAt` / `lastSentTo`. Refuses
+ * without the email integration, for a voided shipment, and for a certificate
+ * with no customer. `content` is the issue's own data when the caller issued
+ * in the same request; otherwise it is loaded.
  */
 export async function sendCertificateOfConformance(
   client: SupabaseClient<Database>,
@@ -480,6 +495,7 @@ export async function sendCertificateOfConformance(
     customerContactId: string;
     cc?: string[];
     locale: string;
+    content?: CertificateOfConformanceShipmentData;
   }
 ): Promise<Result<{ to: string[] }>> {
   const { companyId, userId, certificateOfConformanceId, locale } = args;
@@ -500,17 +516,28 @@ export async function sendCertificateOfConformance(
   if (!certificate.data?.documentId) {
     return failure("Certificate not found", { certificateOfConformanceId });
   }
+  const customerId = certificate.data.customerId;
+  if (!customerId) {
+    return failure("The certificate has no customer to send it to", {
+      certificateOfConformanceId
+    });
+  }
+  if (!(await emailIntegrationActive(client, companyId))) {
+    return failure("The email integration is not active", { companyId });
+  }
 
   const [contact, sender, company, content] = await Promise.all([
     getCustomerContact(client, args.customerContactId, companyId),
     getUser(client, userId),
     getCompany(client, companyId),
-    getCertificateOfConformanceData(
-      client,
-      companyId,
-      certificate.data.shipmentId,
-      { locale }
-    )
+    args.content
+      ? { data: args.content, error: null }
+      : getCertificateOfConformanceData(
+          client,
+          companyId,
+          certificate.data.shipmentId,
+          { locale }
+        )
   ]);
 
   if (contact.error || !contact.data) {
@@ -519,10 +546,7 @@ export async function sendCertificateOfConformance(
       error: contact.error
     });
   }
-  if (
-    certificate.data.customerId &&
-    contact.data.customerId !== certificate.data.customerId
-  ) {
+  if (contact.data.customerId !== customerId) {
     return failure("The selected contact does not belong to this customer", {
       customerContactId: args.customerContactId
     });
@@ -544,6 +568,11 @@ export async function sendCertificateOfConformance(
   }
   if (content.error) {
     return failure(content.error.message, {
+      shipmentId: certificate.data.shipmentId
+    });
+  }
+  if (content.data.shipment.status === "Voided") {
+    return failure("The shipment is voided", {
       shipmentId: certificate.data.shipmentId
     });
   }
@@ -636,4 +665,21 @@ export async function sendCertificateOfConformance(
   }
 
   return { data: { to: [contactEmail] }, error: null };
+}
+
+/**
+ * Whether the company's email integration is active — the server twin of the
+ * `useIntegrations().has("email")` gate on the Send menu item. A read failure
+ * counts as inactive: the send is refused rather than risked.
+ */
+export async function emailIntegrationActive(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<boolean> {
+  try {
+    return await hasIntegration(client, companyId, "email");
+  } catch (error) {
+    logger.error("Failed to read the email integration", { companyId, error });
+    return false;
+  }
 }

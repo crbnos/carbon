@@ -3718,6 +3718,9 @@ msgstr "选择另一个文件"
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "为MMC/LMC特征选择尺寸特征"
 
@@ -8238,6 +8241,9 @@ msgstr "完整设置和迁移"
 
 msgid "Fully Depreciated"
 msgstr "已提足折旧"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "功能测试程序文件编号"
@@ -16675,6 +16681,9 @@ msgstr "备件成本"
 
 msgid "Spec"
 msgstr "规范"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "特殊工艺供应商代码"

@@ -3718,6 +3718,9 @@ msgstr "दूसरी फ़ाइल चुनें"
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
+msgid "Choose Internal or External feature of size for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose the size feature for MMC/LMC characteristics"
 msgstr "MMC/LMC विशेषताओं के लिए आकार विशेषता चुनें"
 
@@ -8238,6 +8241,9 @@ msgstr "पूर्ण सेटअप और माइग्रेशन"
 
 msgid "Fully Depreciated"
 msgstr "पूर्ण मूल्यह्रासित"
+
+msgid "Functional Test"
+msgstr ""
 
 msgid "Functional Test Procedure Number"
 msgstr "कार्यकारी परीक्षण कार्यविधि संख्या"
@@ -16675,6 +16681,9 @@ msgstr "स्पेयर पार्ट लागत"
 
 msgid "Spec"
 msgstr "विनिर्देश"
+
+msgid "Special Process"
+msgstr ""
 
 msgid "Special Process Supplier Code"
 msgstr "विशेष प्रक्रिया आपूर्तिकर्ता कोड"

@@ -3,7 +3,22 @@
  * Conformance. `getCertificateOfConformanceData` (inventory.service.ts) loads
  * the inputs; this only turns them into the printed lines. No I/O.
  */
+import { firstArticleItemRevision } from "@carbon/database/first-article";
 import type { CertificationLineageRow } from "../quality/certificationLineage";
+
+/**
+ * Field 10: the customer's part revision when the order line maps one, else
+ * the item's — where an unset revision ('', '0', null) prints "N/C", exactly
+ * as the first article report does.
+ */
+export function certificateLineRevision(
+  customerPartRevision: string | null | undefined,
+  itemRevision: string | null | undefined
+): string {
+  return (
+    customerPartRevision || firstArticleItemRevision(itemRevision) || "N/C"
+  );
+}
 
 export type ConformityDetailsInput = {
   /** Shipped lots/serials; only the ones with an expiration date print. */

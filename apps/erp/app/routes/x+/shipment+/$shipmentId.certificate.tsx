@@ -129,7 +129,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     certificateOfConformanceId: issued.data.id,
     customerContactId: customerContact,
     cc,
-    locale
+    locale,
+    content: issued.data.content
   });
   if (sent.error) {
     // The certificate is issued either way; only the email failed.
