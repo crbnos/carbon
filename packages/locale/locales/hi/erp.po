@@ -1374,6 +1374,9 @@ msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 msgid "Add Calibration Record"
 msgstr "अंशांकन रिकॉर्ड जोड़ें"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "बाल भंडारण इकाई जोड़ें"
 
@@ -3505,11 +3508,20 @@ msgstr "केंद्रीकृत बिलिंग पता"
 msgid "Cert Version"
 msgstr "सर्ट संस्करण"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "प्रमाणपत्र संख्या"
 
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "विशेषता हटाएं"
 
 msgid "Delete Category"
 msgstr "श्रेणी हटाएं"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "परिवर्तन सूचना हटाएं"
@@ -7728,6 +7743,7 @@ msgstr "फ़ाइल को नए स्थान पर अपलोड क
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "फ़ाइल अपलोड करने में विफल: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "फील्ड मैपिंग"
 
 msgid "Fields"
 msgstr "फील्ड्स"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "फ़ाइल सफलतापूर्वक हटा दी गई"
@@ -11215,6 +11234,9 @@ msgstr "कोई अंशांकन रिकॉर्ड नहीं म�
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "कोई क्षमता आरक्षण नहीं है जो देखा जा सके। कार्य-केंद्र लोड देखने के लिए एक नौकरी शेड्यूल करें।"
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "कोई परिवर्तन दर्ज नहीं किया गया"
 
@@ -14213,6 +14235,9 @@ msgstr "भ्रष्ट डेटा निकालें और पुन�
 msgid "Remove Employee"
 msgstr "कर्मचारी को हटाएँ"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "फ़िल्टर निकालें"
 
@@ -16352,6 +16377,9 @@ msgstr "विशिष्ट ग्राहक"
 
 msgid "Specific Items"
 msgstr "विशिष्ट आइटम"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "आपूर्तिकर्ता, आइटम, या श्रेणी द्वारा व्यय — आपके सबसे बड़े लागत ड्राइवर"

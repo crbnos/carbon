@@ -1374,6 +1374,9 @@ msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 msgid "Add Calibration Record"
 msgstr "Kalibrasyon Kaydı Ekle"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Alt Depolama Birimi Ekle"
 
@@ -3505,11 +3508,20 @@ msgstr "Merkezi Faturalama Adresi"
 msgid "Cert Version"
 msgstr "Sertifika Versiyonu"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "Sertifika Numarası"
 
 msgid "Certificate uploaded"
 msgstr "Sertifika Yüklendi"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "Özniteliği Sil"
 
 msgid "Delete Category"
 msgstr "Kategoriyi Sil"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Değişiklik Bildirisini Sil"
@@ -7728,6 +7743,7 @@ msgstr "Yeni konuma dosya yüklenemedi"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Dosyük yüklenemedi: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "Alan Adlandırma"
 
 msgid "Fields"
 msgstr "Alanlar"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "Dosya başarıyla silindi"
@@ -11215,6 +11234,9 @@ msgstr "Kalibrasyon kaydı bulunamadı"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Görselleştirilecek kapasite rezervasyonu yok. İş merkezi yükünü görmek için bir işi planlayın."
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Değişiklik kaydedilmedi"
 
@@ -14213,6 +14235,9 @@ msgstr "Bozuk verileri kaldır ve geri yükle"
 msgid "Remove Employee"
 msgstr "Çalışanı Kaldır"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "Filtreyi kaldır"
 
@@ -16352,6 +16377,9 @@ msgstr "Belirli Müşteriler"
 
 msgid "Specific Items"
 msgstr "Belirli Ürünler"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Tedarikçi, ürün veya kategoriye göre harcama — en büyük maliyet sürücüleriniz"

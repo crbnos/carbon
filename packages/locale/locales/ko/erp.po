@@ -1374,6 +1374,9 @@ msgstr "인증 앱 추가"
 msgid "Add Calibration Record"
 msgstr "교정 기록 추가"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "하위 보관 단위 추가"
 
@@ -3505,11 +3508,20 @@ msgstr "통합 청구 주소"
 msgid "Cert Version"
 msgstr "인증 버전"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "인증서 번호"
 
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "속성 삭제"
 
 msgid "Delete Category"
 msgstr "카테고리 삭제"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "변경 통지 삭제"
@@ -7728,6 +7743,7 @@ msgstr "파일을 새 위치에 업로드하지 못했습니다"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "파일을 업로드하지 못했습니다: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "필드 매핑"
 
 msgid "Fields"
 msgstr "필드"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "파일이 삭제되었습니다"
@@ -11215,6 +11234,9 @@ msgstr "교정 기록이 없습니다"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "시각화할 용량 예약이 없습니다. 작업을 예약하여 작업 센터 부하를 확인하세요."
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "기록된 변경 사항이 없습니다"
 
@@ -14213,6 +14235,9 @@ msgstr "손상된 데이터 제거 및 복원"
 msgid "Remove Employee"
 msgstr "직원 제거"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "필터 제거"
 
@@ -16352,6 +16377,9 @@ msgstr "특정 고객"
 
 msgid "Specific Items"
 msgstr "특정 품목"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "공급업체, 품목 또는 카테고리별 지출 — 주요 원가 요인"

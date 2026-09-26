@@ -1374,6 +1374,9 @@ msgstr "Добавить приложение-аутентификатор"
 msgid "Add Calibration Record"
 msgstr "Добавить запись калибровки"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Добавить дочернюю единицу хранения"
 
@@ -3505,11 +3508,20 @@ msgstr "Централизованный адрес выставления сч�
 msgid "Cert Version"
 msgstr "Версия сертификата"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "Номер сертификата"
 
 msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "Удалить атрибут"
 
 msgid "Delete Category"
 msgstr "Удалить категорию"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Удалить извещение об изменении"
@@ -7728,6 +7743,7 @@ msgstr "Не удалось загрузить файл в новое место
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Ошибка загрузки файла: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "Сопоставление полей"
 
 msgid "Fields"
 msgstr "Поля"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "Файл успешно удален"
@@ -11215,6 +11234,9 @@ msgstr "Записи о калибровке не найдены"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Нет резервирований мощности для визуализации. Запланируйте задание, чтобы увидеть нагрузку рабочего центра."
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Изменений не записано"
 
@@ -14213,6 +14235,9 @@ msgstr "Убрать поврежденные данные и восстанов
 msgid "Remove Employee"
 msgstr "Удалить сотрудника"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "Убрать фильтр"
 
@@ -16352,6 +16377,9 @@ msgstr "Конкретные Покупатели"
 
 msgid "Specific Items"
 msgstr "Конкретные товары"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Расходы по поставщику, номенклатуре или категории — ваши основные факторы затрат"

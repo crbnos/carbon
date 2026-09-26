@@ -1,12 +1,22 @@
-import { Badge, cn, toast } from "@carbon/react";
+import {
+  Badge,
+  Button,
+  cn,
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+  Textarea,
+  toast
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { PostgrestSingleResponse } from "@supabase/supabase-js";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { LuCheck, LuX } from "react-icons/lu";
+import { LuCheck, LuStickyNote, LuX } from "react-icons/lu";
 import { Table } from "~/components";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
+import { useQuantityFormatter } from "~/hooks";
 import type {
   InspectionMeasurement,
   InspectionSample,
@@ -25,6 +35,17 @@ export type MeasurementSaveResult = {
   columnIndex: number;
   value: number | null;
   passed: boolean | null;
+  notes: string | null;
+  // MMC/LMC geometric tolerances: the bonus earned from the related size
+  // feature's reading and the resulting allowable tolerance.
+  bonus: number | null;
+  allowable: number | null;
+};
+
+type MeasurementPayload = {
+  value?: string;
+  passed?: "true" | "false";
+  notes?: string;
 };
 
 type FeatureGridRow = {
@@ -97,6 +118,7 @@ const InspectionMeasurementGrid = ({
   primaryAction
 }: InspectionMeasurementGridProps) => {
   const { t } = useLingui();
+  const formatQuantity = useQuantityFormatter();
 
   // Grid ignores plan rows whose live feature was deleted from the document.
   const liveFeatures = useMemo(
@@ -151,6 +173,13 @@ const InspectionMeasurementGrid = ({
   const [valueByCell, setValueByCell] = useState<Record<string, number | null>>(
     {}
   );
+  // Per-reading note and MMC/LMC bonus, mirrored the same way.
+  const [notesByCell, setNotesByCell] = useState<Record<string, string | null>>(
+    {}
+  );
+  const [toleranceByCell, setToleranceByCell] = useState<
+    Record<string, { bonus: number | null; allowable: number | null }>
+  >({});
   const measurementFor = useCallback(
     (sampleId: string | undefined, featureId: string) =>
       sampleId
@@ -175,13 +204,50 @@ const InspectionMeasurementGrid = ({
     },
     [statusByCell, sampleIdByColumn, measurementFor, samples]
   );
+  const cellValue = useCallback(
+    (columnIndex: number, featureId: string): number | null => {
+      const key = `${columnIndex}:${featureId}`;
+      if (key in valueByCell) return valueByCell[key];
+      const measurement = measurementFor(
+        sampleIdByColumn[columnIndex],
+        featureId
+      );
+      return measurement?.value ?? null;
+    },
+    [valueByCell, sampleIdByColumn, measurementFor]
+  );
+  const cellNotes = useCallback(
+    (columnIndex: number, featureId: string): string | null => {
+      const key = `${columnIndex}:${featureId}`;
+      if (key in notesByCell) return notesByCell[key];
+      return (
+        measurementFor(sampleIdByColumn[columnIndex], featureId)?.notes ?? null
+      );
+    },
+    [notesByCell, sampleIdByColumn, measurementFor]
+  );
+  const cellTolerance = useCallback(
+    (columnIndex: number, featureId: string) => {
+      const key = `${columnIndex}:${featureId}`;
+      if (key in toleranceByCell) return toleranceByCell[key];
+      const measurement = measurementFor(
+        sampleIdByColumn[columnIndex],
+        featureId
+      );
+      return {
+        bonus: measurement?.bonus ?? null,
+        allowable: measurement?.allowable ?? null
+      };
+    },
+    [toleranceByCell, sampleIdByColumn, measurementFor]
+  );
 
   // Document-driven cell: record a per-feature measurement.
   const persistMeasurement = useCallback(
     async (
       row: FeatureGridRow,
       columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+      payload: MeasurementPayload
     ): Promise<MeasurementSaveResult | null> => {
       const formData = new FormData();
       formData.set("inspectionId", inspectionId);
@@ -190,6 +256,13 @@ const InspectionMeasurementGrid = ({
       formData.set("inspectionFeatureId", row.featureId);
       if (payload.value !== undefined) formData.set("value", payload.value);
       if (payload.passed !== undefined) formData.set("passed", payload.passed);
+      // The engine writes the note on every save, so a value/verdict edit
+      // re-sends the cell's current note to keep it.
+      const notes =
+        payload.notes !== undefined
+          ? payload.notes.trim()
+          : (cellNotes(columnIndex, row.featureId) ?? "");
+      if (notes) formData.set("notes", notes);
 
       const response = await fetch(
         path.to.inspectionMeasurement(inspectionId),
@@ -201,6 +274,8 @@ const InspectionMeasurementGrid = ({
           measurementId: string;
           measurementStatus: string;
           sampleStatus: string;
+          bonus: number | null;
+          allowable: number | null;
         } | null;
         error?: { message: string } | null;
       } | null;
@@ -223,10 +298,13 @@ const InspectionMeasurementGrid = ({
           payload.value !== undefined && payload.value !== ""
             ? Number(payload.value)
             : null,
-        passed: payload.passed !== undefined ? payload.passed === "true" : null
+        passed: payload.passed !== undefined ? payload.passed === "true" : null,
+        notes: notes || null,
+        bonus: body.data.bonus ?? null,
+        allowable: body.data.allowable ?? null
       };
     },
-    [inspectionId, sampleIdByColumn, t]
+    [inspectionId, sampleIdByColumn, cellNotes, t]
   );
 
   // No-document cell: set the sample's Pass/Fail status directly. Serial
@@ -269,7 +347,10 @@ const InspectionMeasurementGrid = ({
         inspectionFeatureId: OVERALL_ROW_ID,
         columnIndex,
         value: null,
-        passed: status === "Passed"
+        passed: status === "Passed",
+        notes: null,
+        bonus: null,
+        allowable: null
       };
     },
     [inspectionId, sampleIdByColumn, samples, t]
@@ -279,7 +360,7 @@ const InspectionMeasurementGrid = ({
     async (
       row: FeatureGridRow,
       columnIndex: number,
-      payload: { value?: string; passed?: "true" | "false" }
+      payload: MeasurementPayload
     ): Promise<MeasurementSaveResult | null> => {
       // The "Overall result" row (no-document lots) sets the sample's status
       // directly through the sample route instead of recording a measurement.
@@ -302,10 +383,59 @@ const InspectionMeasurementGrid = ({
         ...prev,
         [`${columnIndex}:${row.featureId}`]: result.value
       }));
+      setNotesByCell((prev) => ({
+        ...prev,
+        [`${columnIndex}:${row.featureId}`]: result.notes
+      }));
+      setToleranceByCell((prev) => ({
+        ...prev,
+        [`${columnIndex}:${row.featureId}`]: {
+          bonus: result.bonus,
+          allowable: result.allowable
+        }
+      }));
       onMeasurementSaved(result);
       return result;
     },
     [persistMeasurement, persistOverall, onMeasurementSaved]
+  );
+
+  // Note popover Save: re-post the cell's current reading with the new note
+  // (numeric cells their value, attribute cells their verdict).
+  const saveNote = useCallback(
+    async (
+      row: FeatureGridRow,
+      columnIndex: number,
+      notes: string
+    ): Promise<boolean> => {
+      let payload: MeasurementPayload;
+      if (row.isNumeric) {
+        const value = cellValue(columnIndex, row.featureId);
+        payload = { value: value == null ? "" : String(value), notes };
+      } else {
+        const status = cellStatus(columnIndex, row.featureId);
+        payload =
+          status === "Passed"
+            ? { passed: "true", notes }
+            : status === "Failed"
+              ? { passed: "false", notes }
+              : { notes };
+      }
+      return (await persistCell(row, columnIndex, payload)) != null;
+    },
+    [cellValue, cellStatus, persistCell]
+  );
+
+  const renderNote = useCallback(
+    (original: FeatureGridRow, i: number) =>
+      original.featureId === OVERALL_ROW_ID ? null : (
+        <MeasurementNote
+          notes={cellNotes(i, original.featureId)}
+          isReadOnly={isReadOnly}
+          onSave={(notes) => saveNote(original, i, notes)}
+        />
+      ),
+    [cellNotes, isReadOnly, saveNote]
   );
 
   // EditableNumber-compatible mutation for numeric cells.
@@ -421,7 +551,7 @@ const InspectionMeasurementGrid = ({
       return (
         <div
           data-sample-col={i}
-          className="-mx-4 -my-2 flex justify-center px-1.5 py-1"
+          className="-mx-4 -my-2 flex items-center justify-center gap-1 px-1.5 py-1"
         >
           {/* Negative margins cancel the cell's px-4 py-2 so the segmented
               control fills the full cell for a large, finger-friendly target;
@@ -466,10 +596,11 @@ const InspectionMeasurementGrid = ({
               <LuX className="h-5 w-5" />
             </button>
           </div>
+          {renderNote(original, i)}
         </div>
       );
     },
-    [cellStatus, isReadOnly, persistCell, t]
+    [cellStatus, isReadOnly, persistCell, renderNote, t]
   );
 
   const columns = useMemo<ColumnDef<FeatureGridRow>[]>(() => {
@@ -554,17 +685,36 @@ const InspectionMeasurementGrid = ({
           const status = cellStatus(i, original.featureId);
           if (original.isNumeric) {
             const value = original[key];
+            const { bonus, allowable } = cellTolerance(i, original.featureId);
+            const allowableLabel =
+              allowable != null ? formatQuantity(allowable) : null;
+            const bonusLabel = bonus != null ? formatQuantity(bonus) : null;
             return (
-              <span
+              <div
                 data-sample-col={i}
-                className={cn(
-                  "block min-w-[48px] text-center font-mono text-xs tabular-nums",
-                  status === "Failed" && "font-semibold text-red-500",
-                  value == null && "text-muted-foreground/60"
-                )}
+                className="flex min-w-[48px] items-center justify-center gap-1"
               >
-                {value == null ? "—" : String(value)}
-              </span>
+                <div className="flex flex-col items-center">
+                  <span
+                    className={cn(
+                      "block text-center font-mono text-xs tabular-nums",
+                      status === "Failed" && "font-semibold text-red-500",
+                      value == null && "text-muted-foreground/60"
+                    )}
+                  >
+                    {value == null ? "—" : String(value)}
+                  </span>
+                  {bonus != null &&
+                  bonus > 0 &&
+                  allowableLabel != null &&
+                  bonusLabel != null ? (
+                    <span className="text-xs text-muted-foreground tabular-nums">
+                      {t`allowable ${allowableLabel} (bonus ${bonusLabel})`}
+                    </span>
+                  ) : null}
+                </div>
+                {renderNote(original, i)}
+              </div>
             );
           }
           // Attribute pass/fail toggle — shared with the editable cell so
@@ -581,6 +731,9 @@ const InspectionMeasurementGrid = ({
     isSerial,
     featureCounts,
     cellStatus,
+    cellTolerance,
+    formatQuantity,
+    renderNote,
     renderPassFail,
     t
   ]);
@@ -753,5 +906,103 @@ const InspectionMeasurementGrid = ({
     </div>
   );
 };
+
+// Per-reading note: an icon button (filled when the reading has a note) that
+// opens a popover editor. Save re-posts the cell's reading with the note.
+function MeasurementNote({
+  notes,
+  isReadOnly,
+  onSave
+}: {
+  notes: string | null;
+  isReadOnly: boolean;
+  onSave: (notes: string) => Promise<boolean>;
+}) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
+  const [draft, setDraft] = useState(notes ?? "");
+  const [isSaving, setIsSaving] = useState(false);
+  const hasNote = !!notes?.trim();
+
+  if (isReadOnly && !hasNote) return null;
+
+  const save = async () => {
+    setIsSaving(true);
+    const saved = await onSave(draft);
+    setIsSaving(false);
+    if (saved) setOpen(false);
+  };
+
+  return (
+    <Popover
+      open={open}
+      onOpenChange={(next) => {
+        if (next) setDraft(notes ?? "");
+        setOpen(next);
+      }}
+    >
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label={hasNote ? t`Edit note` : t`Add note`}
+          title={notes ?? undefined}
+          tabIndex={-1}
+          onClick={(e) => e.stopPropagation()}
+          className={cn(
+            "flex size-6 shrink-0 items-center justify-center rounded-md transition-[opacity,color] active:scale-[0.96]",
+            hasNote
+              ? "text-amber-600 dark:text-amber-400"
+              : "text-muted-foreground opacity-0 hover:text-foreground focus-visible:opacity-100 group-hover/cell:opacity-100"
+          )}
+        >
+          <LuStickyNote
+            className={cn(
+              "size-3.5",
+              hasNote && "fill-amber-200 dark:fill-amber-500/30"
+            )}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        className="w-72"
+        // The popover is portaled but React events still bubble through the
+        // cell — keep clicks from selecting or opening the cell underneath.
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex flex-col gap-3">
+          <span className="text-sm font-medium">{t`Note`}</span>
+          <Textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            readOnly={isReadOnly}
+            rows={3}
+            placeholder={t`Add a note to this reading`}
+            autoFocus
+          />
+          {isReadOnly ? null : (
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setOpen(false)}
+              >
+                {t`Cancel`}
+              </Button>
+              <Button
+                size="sm"
+                isLoading={isSaving}
+                isDisabled={isSaving || draft.trim() === (notes ?? "").trim()}
+                onClick={save}
+              >
+                {t`Save`}
+              </Button>
+            </div>
+          )}
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}
 
 export default InspectionMeasurementGrid;

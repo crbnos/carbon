@@ -1374,6 +1374,9 @@ msgstr "認証器アプリを追加"
 msgid "Add Calibration Record"
 msgstr "校正記録を追加"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "子保管ユニットを追加"
 
@@ -3505,11 +3508,20 @@ msgstr "一元化された請求先住所"
 msgid "Cert Version"
 msgstr "認定バージョン"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "証明書番号"
 
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "属性を削除"
 
 msgid "Delete Category"
 msgstr "カテゴリを削除"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "変更通知を削除"
@@ -7728,6 +7743,7 @@ msgstr "新しい場所へのファイルアップロードに失敗しました
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "ファイルのアップロードに失敗しました: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "フィールドマッピング"
 
 msgid "Fields"
 msgstr "フィールド"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "ファイルが正常に削除されました"
@@ -11215,6 +11234,9 @@ msgstr "校正記録が見つかりません"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "表示する容量予約はありません。ジョブをスケジュールして作業センターの負荷を表示してください。"
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "変更が記録されていません"
 
@@ -14213,6 +14235,9 @@ msgstr "破損データを除去して復元"
 msgid "Remove Employee"
 msgstr "従業員を削除"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "絞り込みを除去"
 
@@ -16352,6 +16377,9 @@ msgstr "特定の得意先"
 
 msgid "Specific Items"
 msgstr "特定の品目"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "仕入先、品目、またはカテゴリ別の支出 — 最大の原価ドライバー"

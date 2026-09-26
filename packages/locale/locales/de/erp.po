@@ -1374,6 +1374,9 @@ msgstr "Authentifikator-App hinzufügen"
 msgid "Add Calibration Record"
 msgstr "Kalibrierprotokoll hinzufügen"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Untergeordnete Lagereinheit hinzufügen"
 
@@ -3505,11 +3508,20 @@ msgstr "Zentralisierte Rechnungsadresse"
 msgid "Cert Version"
 msgstr "Zertifikat-Version"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "Zertifikatnummer"
 
 msgid "Certificate uploaded"
 msgstr "Zertifikat hochgeladen"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "Attribut löschen"
 
 msgid "Delete Category"
 msgstr "Kategorie löschen"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Änderungsmitteilung löschen"
@@ -7728,6 +7743,7 @@ msgstr "Fehler beim Hochladen der Datei an den neuen Speicherort"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Fehler beim Hochladen der Datei: {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "Feldzuordnung"
 
 msgid "Fields"
 msgstr "Felder"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "Datei erfolgreich gelöscht"
@@ -11215,6 +11234,9 @@ msgstr "Keine Kalibrierprotokolle gefunden"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Keine Kapazitätsreservierungen zum Visualisieren. Planen Sie einen Auftrag, um die Arbeitsplatzauslastung zu sehen."
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Keine Änderungen aufgezeichnet"
 
@@ -14213,6 +14235,9 @@ msgstr "Beschädigte Daten entfernen und wiederherstellen"
 msgid "Remove Employee"
 msgstr "Mitarbeiter entfernen"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "Filter entfernen"
 
@@ -16352,6 +16377,9 @@ msgstr "Bestimmte Kunden"
 
 msgid "Specific Items"
 msgstr "Spezifische Artikel"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Ausgaben nach Lieferant, Artikel oder Kategorie – Ihre größten Kostenverursacher"

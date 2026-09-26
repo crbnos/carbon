@@ -1374,6 +1374,9 @@ msgstr "Ajouter une application d'authentification"
 msgid "Add Calibration Record"
 msgstr "Ajouter un enregistrement d'étalonnage"
 
+msgid "Add Certificate"
+msgstr ""
+
 msgid "Add Child Storage Unit"
 msgstr "Ajouter une unité de stockage enfant"
 
@@ -3505,11 +3508,20 @@ msgstr "Adresse de facturation centralisée"
 msgid "Cert Version"
 msgstr "Version de certification"
 
+msgid "Certificate added"
+msgstr ""
+
+msgid "Certificate deleted"
+msgstr ""
+
 msgid "Certificate Number"
 msgstr "Numéro de Certificat"
 
 msgid "Certificate uploaded"
 msgstr "Certificat téléchargé"
+
+msgid "Certificates"
+msgstr ""
 
 msgid "Certifications"
 msgstr ""
@@ -5529,6 +5541,9 @@ msgstr "Supprimer l'attribut"
 
 msgid "Delete Category"
 msgstr "Supprimer la catégorie"
+
+msgid "Delete certificate"
+msgstr ""
 
 msgid "Delete Change Notice"
 msgstr "Supprimer l'avis de modification"
@@ -7728,6 +7743,7 @@ msgstr "Impossible de téléverser le fichier vers le nouveau site"
 
 #. placeholder {0}: file.name
 #. placeholder {0}: fileUpload.name
+#. placeholder {0}: selected.name
 msgid "Failed to upload file: {0}"
 msgstr "Impossible de téléverser le fichier : {0}"
 
@@ -7796,6 +7812,9 @@ msgstr "Mappage des champs"
 
 msgid "Fields"
 msgstr "Champs"
+
+msgid "File"
+msgstr ""
 
 msgid "File deleted successfully"
 msgstr "Fichier supprimé avec succès"
@@ -11215,6 +11234,9 @@ msgstr "Aucun enregistrement d'étalonnage trouvé"
 msgid "No capacity reservations to visualize. Schedule a job to see work-center load."
 msgstr "Aucune réservation de capacité à visualiser. Planifiez une tâche pour voir la charge du centre de travail."
 
+msgid "No certificates on this line yet."
+msgstr ""
+
 msgid "No changes recorded"
 msgstr "Aucune modification enregistrée"
 
@@ -14213,6 +14235,9 @@ msgstr "Retirer les données corrompues et restaurer"
 msgid "Remove Employee"
 msgstr "Supprimer l'employé"
 
+msgid "Remove file"
+msgstr ""
+
 msgid "Remove filter"
 msgstr "Retirer le filtre"
 
@@ -16352,6 +16377,9 @@ msgstr "Clients spécifiques"
 
 msgid "Specific Items"
 msgstr "Articles spécifiques"
+
+msgid "Specification"
+msgstr ""
 
 msgid "Spend by supplier, item, or category — your biggest cost drivers"
 msgstr "Dépenses par fournisseur, article ou catégorie — vos principaux moteurs de coûts"
