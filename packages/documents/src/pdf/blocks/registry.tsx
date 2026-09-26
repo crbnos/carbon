@@ -52,6 +52,8 @@ export const salesInvoiceBlockRegistry: Record<
   associations: () => null,
   actionTasks: () => null,
   reviewers: () => null,
+  conformityDetails: () => null,
+  conformityStatement: () => null,
   labelHeading: () => null,
   labelRevision: () => null,
   labelQuantity: () => null,

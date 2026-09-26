@@ -193,6 +193,20 @@ export const BLOCK_META: Record<DocumentBlockType, BlockMeta> = {
     hideable: true,
     addable: false
   },
+  conformityDetails: {
+    label: "Conformity Details",
+    isBuiltIn: true,
+    removable: false,
+    hideable: true,
+    addable: false
+  },
+  conformityStatement: {
+    label: "Statement of Conformity",
+    isBuiltIn: true,
+    removable: false,
+    hideable: true,
+    addable: false
+  },
   labelHeading: {
     label: "Item ID",
     isBuiltIn: true,
@@ -418,6 +432,32 @@ function issueBlocks(): DocumentBlock[] {
 }
 
 /**
+ * Certificate of Conformance (AS9163): header (fields 1–3), parties (4–5),
+ * details (6), line items (7–12), conformity details (13), statement (14),
+ * notes. The watermark starts hidden — an unissued certificate already carries
+ * its own PREVIEW mark.
+ */
+function certificateBlocks(): DocumentBlock[] {
+  return [
+    {
+      id: "watermark",
+      type: "watermark",
+      visible: false,
+      opacity: 0.07,
+      placement: "center",
+      size: 50
+    },
+    { id: "header", type: "header", visible: true },
+    { id: "parties", type: "parties", visible: true },
+    { id: "details", type: "details", visible: true },
+    { id: "lineItems", type: "lineItems", visible: true },
+    { id: "conformityDetails", type: "conformityDetails", visible: true },
+    { id: "conformityStatement", type: "conformityStatement", visible: true },
+    { id: "notes", type: "notes", visible: true }
+  ];
+}
+
+/**
  * Default template per supported document type. Adding a document = wire its
  * PDF to consume a template, then add its default here + to the schema enum.
  */
@@ -508,6 +548,15 @@ export const DEFAULT_TEMPLATES: Record<DocumentTemplateType, DocumentTemplate> =
       formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
       documentType: "issue",
       blocks: issueBlocks(),
+      theme: { ...DEFAULT_THEME },
+      settings: { ...DEFAULT_DOCUMENT_SETTINGS },
+      headerSectionId: BUILT_IN_SECTION_IDS.header,
+      footerSectionId: BUILT_IN_SECTION_IDS.footer
+    },
+    certificateOfConformance: {
+      formatVersion: CURRENT_TEMPLATE_FORMAT_VERSION,
+      documentType: "certificateOfConformance",
+      blocks: certificateBlocks(),
       theme: { ...DEFAULT_THEME },
       settings: { ...DEFAULT_DOCUMENT_SETTINGS },
       headerSectionId: BUILT_IN_SECTION_IDS.header,
@@ -751,6 +800,13 @@ export const DOCUMENT_CATALOG: DocumentCatalogEntry[] = [
     group: "Quality",
     supported: true,
     themeColors: "text"
+  },
+  {
+    type: "certificateOfConformance",
+    label: "Certificate of Conformance",
+    group: "Quality",
+    supported: true,
+    themeColors: "full"
   },
   {
     type: "trackingLabel",
