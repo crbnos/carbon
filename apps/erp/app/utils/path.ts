@@ -516,6 +516,9 @@ export const path = {
       generatePath(`${x}/settings/company/switch/${companyId}`),
     completeTrainingAssignment: (id: string) =>
       generatePath(`${share}/training/${id}`),
+    complianceStatement: (id: string) =>
+      generatePath(`${x}/quality/compliance-statements/${id}`),
+    complianceStatements: `${x}/quality/compliance-statements`,
     configurationParameter: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/parameter`),
     configurationParameterGroup: (itemId: string) =>
@@ -664,6 +667,8 @@ export const path = {
       generatePath(`${x}/items/change-notice-types/delete/${id}`),
     deleteCompany: (id: string) =>
       generatePath(`${x}/settings/companies/delete/${id}`),
+    deleteComplianceStatement: (id: string) =>
+      generatePath(`${x}/quality/compliance-statements/delete/${id}`),
     deleteConfigurationParameter: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
     deleteConfigurationParameterGroup: (itemId: string, id: string) =>
@@ -1533,6 +1538,7 @@ export const path = {
     newChartOfAccountGroup: `${x}/accounting/charts/new-group`,
     newCompany: `${x}/settings/company/new`,
     newCompanyInGroup: `${x}/settings/companies/new`,
+    newComplianceStatement: `${x}/quality/compliance-statements/new`,
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing/new`),
@@ -2004,6 +2010,8 @@ export const path = {
     receiptDetails: (id: string) => generatePath(`${x}/receipt/${id}/details`),
     receiptFixedAssetLineUpdate: `${x}/receipt/fixed-asset-lines/update`,
     receiptInvoice: (id: string) => generatePath(`${x}/receipt/${id}/invoice`),
+    receiptLineCertificates: (lineId: string) =>
+      generatePath(`${x}/receipt/lines/${lineId}/certificates`),
     receiptLineDelete: (id: string) =>
       generatePath(`${x}/receipt/lines/${id}/delete`),
     receiptLineSplit: `${x}/receipt/lines/split`,

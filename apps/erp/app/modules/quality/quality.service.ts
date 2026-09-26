@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
   evaluateFirstArticleDue,
   type FirstArticleReason
@@ -14,11 +15,15 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { CertificationLineageRow } from "./certificationLineage";
+import { dedupeLineageRows, findReceivedRoots } from "./certificationLineage";
 
 const logger = getLogger("erp", "quality");
 
 import type { inspectionStatus } from "../shared";
 import type {
+  certificateValidator,
+  complianceStatementValidator,
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
@@ -37,6 +42,8 @@ import type {
   riskSource,
   riskStatus
 } from "./quality.models";
+import type { Certificate } from "./types";
+
 export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -55,6 +62,30 @@ export async function deactivateGauge(
     .from("gauges")
     .update({ gaugeStatus: "Inactive" })
     .eq("id", gaugeId);
+}
+
+export async function deleteCertificate(
+  client: SupabaseClient<Database>,
+  certificateId: string,
+  companyId: string
+) {
+  return client
+    .from("certificate")
+    .delete()
+    .eq("id", certificateId)
+    .eq("companyId", companyId);
+}
+
+export async function deleteComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .delete()
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId);
 }
 
 export async function deleteGauge(
@@ -252,6 +283,518 @@ export async function getIssueFromExternalLink(
     .select("*, nonConformance(*)")
     .eq("id", id)
     .single();
+}
+
+/**
+ * Certificates attached to any of the given receipt lines or job operations
+ * (or with any of the given ids). Filters are OR-ed; a filter passed as an
+ * empty array matches nothing.
+ */
+export async function getCertificates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    receiptLineIds?: string[];
+    jobOperationIds?: string[];
+    ids?: string[];
+  } = {}
+) {
+  let query = client
+    .from("certificate")
+    .select("*, supplier(id, name), document(id, name, path)")
+    .eq("companyId", companyId);
+
+  const clauses: string[] = [];
+  if (args.receiptLineIds?.length) {
+    clauses.push(`receiptLineId.in.(${args.receiptLineIds.join(",")})`);
+  }
+  if (args.jobOperationIds?.length) {
+    clauses.push(`jobOperationId.in.(${args.jobOperationIds.join(",")})`);
+  }
+  if (args.ids?.length) {
+    clauses.push(`id.in.(${args.ids.join(",")})`);
+  }
+
+  const filtered =
+    args.receiptLineIds !== undefined ||
+    args.jobOperationIds !== undefined ||
+    args.ids !== undefined;
+
+  if (clauses.length > 0) {
+    query = query.or(clauses.join(","));
+  } else if (filtered) {
+    query = query.in("id", []);
+  }
+
+  return query
+    .order("createdAt", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export async function getComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)")
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getComplianceStatements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+/**
+ * The active statements a shipment's certificate prints: every statement that
+ * applies to all customers, plus those assigned to the customer or to any of
+ * the shipped items — each once, ordered by name.
+ */
+export async function getComplianceStatementsForShipment(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { customerId: string | null; itemIds: string[] }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  const targets: string[] = [];
+  if (args.customerId) targets.push(`customerId.eq.${args.customerId}`);
+  if (itemIds.length > 0) targets.push(`itemId.in.(${itemIds.join(",")})`);
+
+  let assignedIds: string[] = [];
+  if (targets.length > 0) {
+    const assignments = await client
+      .from("complianceStatementAssignment")
+      .select("complianceStatementId")
+      .eq("companyId", companyId)
+      .or(targets.join(","));
+    if (assignments.error) return { data: null, error: assignments.error };
+    assignedIds = [
+      ...new Set(
+        (assignments.data ?? []).map((row) => row.complianceStatementId)
+      )
+    ];
+  }
+
+  const applies =
+    assignedIds.length > 0
+      ? `appliesToAllCustomers.eq.true,id.in.(${assignedIds.join(",")})`
+      : "appliesToAllCustomers.eq.true";
+
+  return client
+    .from("complianceStatement")
+    .select("id, name, content")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .or(applies)
+    .order("name", { ascending: true });
+}
+
+type LineageSupplier = { id: string; name: string } | null;
+
+/**
+ * The certificates behind a set of tracked entities (CofC: the shipped lots)
+ * or a job (FAI Form 2), per §2 of the CofC/FAI spec. Rows without a
+ * certificate come back `missing: true` so the documents can say so.
+ *
+ * - Materials: the start entities are walked back through their lineage to
+ *   the lots that were received; each receipt line yields its certificates,
+ *   or a missing row.
+ * - Job input only: Outside Processing operations yield the certificates on
+ *   the receipt lines of their purchase order lines (outside-processing
+ *   receipts write no tracked entities, so this path goes through the PO
+ *   link) or the certificates attached to the operation itself, else a missing
+ *   row; certificates on every operation of the job; and a missing row per
+ *   untracked Material the make method consumes.
+ */
+export async function getCertificationLineage(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  input:
+    | { trackedEntityIds: string[] }
+    | { jobId: string; jobMakeMethodId?: string; trackedEntityId?: string }
+): Promise<
+  | { data: CertificationLineageRow[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const rows: CertificationLineageRow[] = [];
+
+  // ── start entities ────────────────────────────────────────────────────
+  let startIds: string[];
+  if ("trackedEntityIds" in input) {
+    startIds = input.trackedEntityIds;
+  } else {
+    const consumed = await fetchAllFromTable<{ trackedEntityId: string }>(
+      client,
+      "itemLedger",
+      "trackedEntityId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("documentType", "Job Consumption")
+          .eq("documentId", input.jobId)
+          .not("trackedEntityId", "is", null)
+          .order("id")
+    );
+    if (consumed.error) return { data: null, error: consumed.error };
+    startIds = consumed.data.map((row) => row.trackedEntityId);
+    if (input.trackedEntityId) startIds.push(input.trackedEntityId);
+  }
+  startIds = [...new Set(startIds)];
+
+  // ── materials: lineage back to the received lots ──────────────────────
+  if (startIds.length > 0) {
+    const start = await client
+      .from("trackedEntity")
+      .select("id, attributes")
+      .in("id", startIds)
+      .eq("companyId", companyId);
+    if (start.error) return { data: null, error: start.error };
+
+    let walkError: PostgrestError | null = null;
+    const roots = await findReceivedRoots(
+      (start.data ?? []).map((entity) => ({
+        id: entity.id,
+        attributes: asAttributes(entity.attributes)
+      })),
+      async (ids) => {
+        // Carbon names lineage from the assembly down: the "descendants" of an
+        // entity are the inputs of the activity that produced it — the lots it
+        // was consumed from, or the parent it was split from. That is the
+        // backwards ("where from") direction this walk needs.
+        const result = await client.rpc(
+          "get_direct_descendants_of_tracked_entities_strict",
+          { p_tracked_entity_ids: ids }
+        );
+        if (result.error) {
+          walkError = result.error;
+          return [];
+        }
+        return (result.data ?? []).map((edge) => ({
+          sourceEntityId: edge.sourceEntityId,
+          id: edge.id,
+          attributes: asAttributes(edge.attributes)
+        }));
+      }
+    );
+    if (walkError) return { data: null, error: walkError };
+
+    const receiptLineIds = [...roots.keys()];
+    const rootIds = [...roots.values()].flat();
+
+    if (receiptLineIds.length > 0) {
+      const [certificates, receiptLines, rootEntities] = await Promise.all([
+        getCertificates(client, companyId, { receiptLineIds }),
+        client
+          .from("receiptLine")
+          .select("id, receipt(supplierId, supplier(id, name))")
+          .in("id", receiptLineIds)
+          .eq("companyId", companyId),
+        client
+          .from("trackedEntity")
+          .select("id, item(name)")
+          .in("id", rootIds)
+          .eq("companyId", companyId)
+      ]);
+      if (certificates.error) return { data: null, error: certificates.error };
+      if (receiptLines.error) return { data: null, error: receiptLines.error };
+      if (rootEntities.error) return { data: null, error: rootEntities.error };
+
+      const supplierByLine = new Map<string, LineageSupplier>(
+        (receiptLines.data ?? []).map((line) => [
+          line.id,
+          line.receipt?.supplier ?? null
+        ])
+      );
+      const itemNameByEntity = new Map(
+        (rootEntities.data ?? []).map((entity) => [
+          entity.id,
+          entity.item?.name ?? null
+        ])
+      );
+
+      for (const [receiptLineId, entityIds] of roots) {
+        const name =
+          entityIds
+            .map((id) => itemNameByEntity.get(id))
+            .find((itemName) => !!itemName) ?? "";
+        const supplier = supplierByLine.get(receiptLineId) ?? null;
+        const lineCertificates = (certificates.data ?? []).filter(
+          (certificate) => certificate.receiptLineId === receiptLineId
+        );
+
+        if (lineCertificates.length === 0) {
+          rows.push({
+            kind: "Material",
+            name,
+            specification: null,
+            supplierId: supplier?.id ?? null,
+            supplierName: supplier?.name ?? null,
+            certificateId: null,
+            certificateNumber: null,
+            documentId: null,
+            receiptLineId,
+            jobOperationId: null,
+            trackedEntityIds: entityIds,
+            missing: true
+          });
+          continue;
+        }
+
+        for (const certificate of lineCertificates) {
+          rows.push(
+            certificateLineageRow(certificate, {
+              name,
+              supplier,
+              receiptLineId,
+              jobOperationId: null,
+              trackedEntityIds: entityIds
+            })
+          );
+        }
+      }
+    }
+  }
+
+  if ("trackedEntityIds" in input) {
+    return { data: dedupeLineageRows(rows), error: null };
+  }
+
+  // ── job: special processes, operation certificates, untracked materials ─
+  let operationsQuery = client
+    .from("jobOperation")
+    .select("id, operationType, description, process(name)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  let materialsQuery = client
+    .from("jobMaterial")
+    .select("id, item(name, type, itemTrackingType)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  if (input.jobMakeMethodId) {
+    operationsQuery = operationsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+    materialsQuery = materialsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+  }
+
+  const [operations, materials] = await Promise.all([
+    operationsQuery.order("order"),
+    materialsQuery.order("order")
+  ]);
+  if (operations.error) return { data: null, error: operations.error };
+  if (materials.error) return { data: null, error: materials.error };
+
+  const operationIds = (operations.data ?? []).map((op) => op.id);
+  const outsideOperations = (operations.data ?? []).filter(
+    (op) => op.operationType === "Outside Processing"
+  );
+  const operationName = new Map(
+    (operations.data ?? []).map((op) => [
+      op.id,
+      op.process?.name ?? op.description ?? ""
+    ])
+  );
+
+  const [operationCertificates, purchaseOrderLines] = await Promise.all([
+    getCertificates(client, companyId, { jobOperationIds: operationIds }),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, jobOperationId, purchaseOrder(supplierId, supplier(id, name))"
+      )
+      .in(
+        "jobOperationId",
+        outsideOperations.map((op) => op.id)
+      )
+      .eq("companyId", companyId)
+  ]);
+  if (operationCertificates.error) {
+    return { data: null, error: operationCertificates.error };
+  }
+  if (purchaseOrderLines.error) {
+    return { data: null, error: purchaseOrderLines.error };
+  }
+
+  const purchaseOrderLineIds = (purchaseOrderLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processReceiptLines =
+    purchaseOrderLineIds.length > 0
+      ? await client
+          .from("receiptLine")
+          .select("id, lineId")
+          .in("lineId", purchaseOrderLineIds)
+          .eq("companyId", companyId)
+      : { data: [] as { id: string; lineId: string | null }[], error: null };
+  if (processReceiptLines.error) {
+    return { data: null, error: processReceiptLines.error };
+  }
+
+  const processReceiptLineIds = (processReceiptLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processCertificates =
+    processReceiptLineIds.length > 0
+      ? await getCertificates(client, companyId, {
+          receiptLineIds: processReceiptLineIds
+        })
+      : { data: [] as Certificate[], error: null };
+  if (processCertificates.error) {
+    return { data: null, error: processCertificates.error };
+  }
+
+  for (const operation of outsideOperations) {
+    const name = operationName.get(operation.id) ?? "";
+    const poLines = (purchaseOrderLines.data ?? []).filter(
+      (line) => line.jobOperationId === operation.id
+    );
+    const poLineIds = new Set(poLines.map((line) => line.id));
+    const receiptLineIds = new Set(
+      (processReceiptLines.data ?? [])
+        .filter((line) => line.lineId && poLineIds.has(line.lineId))
+        .map((line) => line.id)
+    );
+    const supplier = poLines[0]?.purchaseOrder?.supplier ?? null;
+    const certificates = (processCertificates.data ?? []).filter(
+      (certificate) =>
+        certificate.receiptLineId &&
+        receiptLineIds.has(certificate.receiptLineId)
+    );
+    const attachedToOperation = (operationCertificates.data ?? []).some(
+      (certificate) => certificate.jobOperationId === operation.id
+    );
+
+    for (const certificate of certificates) {
+      rows.push(
+        certificateLineageRow(certificate, {
+          name,
+          supplier,
+          receiptLineId: certificate.receiptLineId,
+          jobOperationId: operation.id,
+          trackedEntityIds: []
+        })
+      );
+    }
+
+    if (certificates.length === 0 && !attachedToOperation) {
+      rows.push({
+        kind: "Special Process",
+        name,
+        specification: null,
+        supplierId: supplier?.id ?? null,
+        supplierName: supplier?.name ?? null,
+        certificateId: null,
+        certificateNumber: null,
+        documentId: null,
+        receiptLineId: null,
+        jobOperationId: operation.id,
+        trackedEntityIds: [],
+        missing: true
+      });
+    }
+  }
+
+  for (const certificate of operationCertificates.data ?? []) {
+    rows.push(
+      certificateLineageRow(certificate, {
+        name: operationName.get(certificate.jobOperationId ?? "") ?? "",
+        supplier: null,
+        receiptLineId: null,
+        jobOperationId: certificate.jobOperationId,
+        trackedEntityIds: []
+      })
+    );
+  }
+
+  for (const material of materials.data ?? []) {
+    const item = material.item;
+    if (
+      !item ||
+      item.type !== "Material" ||
+      item.itemTrackingType === "Batch" ||
+      item.itemTrackingType === "Serial"
+    ) {
+      continue;
+    }
+    rows.push({
+      kind: "Material",
+      name: item.name,
+      specification: null,
+      supplierId: null,
+      supplierName: null,
+      certificateId: null,
+      certificateNumber: null,
+      documentId: null,
+      receiptLineId: null,
+      jobOperationId: null,
+      trackedEntityIds: [],
+      missing: true
+    });
+  }
+
+  return { data: dedupeLineageRows(rows), error: null };
+}
+
+function asAttributes(value: Json | null): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function certificateLineageRow(
+  certificate: Certificate,
+  context: {
+    name: string;
+    supplier: LineageSupplier;
+    receiptLineId: string | null;
+    jobOperationId: string | null;
+    trackedEntityIds: string[];
+  }
+): CertificationLineageRow {
+  // The certificate's own supplier wins over the receipt's / PO's.
+  const supplier = certificate.supplier ?? context.supplier;
+  return {
+    kind: certificate.type,
+    name: context.name,
+    specification: certificate.specification,
+    supplierId: supplier?.id ?? null,
+    supplierName: supplier?.name ?? null,
+    certificateId: certificate.id,
+    certificateNumber: certificate.certificateNumber,
+    documentId: certificate.documentId,
+    receiptLineId: context.receiptLineId,
+    jobOperationId: context.jobOperationId,
+    trackedEntityIds: context.trackedEntityIds,
+    missing: false
+  };
 }
 
 /**
@@ -1624,6 +2167,134 @@ export async function updateGauge(
 
   if (result.error) return { data: null, error: result.error };
   return { data: { id: result.data.id! }, error: null };
+}
+
+export async function upsertCertificate(
+  client: SupabaseClient<Database>,
+  certificate:
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in certificate) {
+    return client
+      .from("certificate")
+      .insert([certificate])
+      .select("id")
+      .single();
+  }
+
+  const { id, companyId, ...update } = certificate;
+  return client
+    .from("certificate")
+    .update(sanitize({ ...update, updatedAt: new Date().toISOString() }))
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Writes a compliance statement and REPLACES its customer / item assignments
+ * with the given ones, in one transaction.
+ */
+export async function upsertComplianceStatement(
+  db: Kysely<KyselyDatabase>,
+  statement: Omit<z.infer<typeof complianceStatementValidator>, "id"> & {
+    id?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { id: string }; error: null }
+  | { data: null; error: { message: string; code?: string } }
+> {
+  const {
+    id,
+    companyId,
+    userId,
+    customerIds = [],
+    itemIds = [],
+    ...fields
+  } = statement;
+
+  try {
+    const statementId = await db.transaction().execute(async (trx) => {
+      let writtenId = id;
+      if (writtenId) {
+        const updated = await trx
+          .updateTable("complianceStatement")
+          .set({
+            ...fields,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+          .where("id", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirst();
+        if (!updated) throw new Error("Compliance statement not found");
+
+        await trx
+          .deleteFrom("complianceStatementAssignment")
+          .where("complianceStatementId", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .execute();
+      } else {
+        const inserted = await trx
+          .insertInto("complianceStatement")
+          .values({ ...fields, companyId, createdBy: userId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        writtenId = inserted.id;
+      }
+
+      const assignments = [
+        ...[...new Set(customerIds)].map((customerId) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          customerId,
+          createdBy: userId
+        })),
+        ...[...new Set(itemIds)].map((itemId) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          itemId,
+          createdBy: userId
+        }))
+      ];
+      if (assignments.length > 0) {
+        await trx
+          .insertInto("complianceStatementAssignment")
+          .values(assignments)
+          .execute();
+      }
+
+      return writtenId;
+    });
+
+    return { data: { id: statementId }, error: null };
+  } catch (err) {
+    logger.error("Failed to save compliance statement", {
+      companyId,
+      complianceStatementId: id,
+      error: err
+    });
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to save statement",
+        code: (err as { code?: string })?.code
+      }
+    };
+  }
 }
 
 /** @deprecated Use insertGauge for new gauges, updateGauge for existing gauges */

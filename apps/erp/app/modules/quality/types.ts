@@ -2,6 +2,8 @@ import type { Database } from "@carbon/database";
 import type { ChangeNoticeStatus } from "~/modules/items";
 import type { nonConformanceAssociationType } from "./quality.models";
 import type {
+  getCertificates,
+  getComplianceStatements,
   getGaugeCalibrationRecords,
   getGauges,
   getGaugeTypes,
@@ -26,6 +28,16 @@ import type {
   getRequiredActions,
   getRisks
 } from "./quality.service";
+
+export type { CertificationLineageRow } from "./certificationLineage";
+
+export type Certificate = NonNullable<
+  Awaited<ReturnType<typeof getCertificates>>["data"]
+>[number];
+
+export type ComplianceStatement = NonNullable<
+  Awaited<ReturnType<typeof getComplianceStatements>>["data"]
+>[number];
 
 export type Gauge = NonNullable<
   Awaited<ReturnType<typeof getGauges>>["data"]
