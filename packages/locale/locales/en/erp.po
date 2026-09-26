@@ -2966,6 +2966,9 @@ msgstr "Batch Number"
 msgid "Batch Properties"
 msgstr "Batch Properties"
 
+msgid "Batch Quantities"
+msgstr "Batch Quantities"
+
 msgid "Batch Size"
 msgstr "Batch Size"
 
@@ -9039,6 +9042,9 @@ msgstr "Inventory Movements"
 
 msgid "Inventory Qty"
 msgstr "Inventory Qty"
+
+msgid "Inventory Quantities"
+msgstr "Inventory Quantities"
 
 msgid "Inventory Tracking"
 msgstr "Inventory Tracking"
@@ -15643,6 +15649,9 @@ msgstr "Serial numbers to return"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Serial or Batch Tracking Required"
+
+msgid "Serial Quantities"
+msgstr "Serial Quantities"
 
 msgid "Serial tracking"
 msgstr "Serial tracking"

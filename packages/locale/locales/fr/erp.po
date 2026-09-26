@@ -2966,6 +2966,9 @@ msgstr "Numéro de lot"
 msgid "Batch Properties"
 msgstr "Propriétés de lot"
 
+msgid "Batch Quantities"
+msgstr "Quantités de lot de production"
+
 msgid "Batch Size"
 msgstr "Taille de lot"
 
@@ -9039,6 +9042,9 @@ msgstr "Mouvements d'inventaire"
 
 msgid "Inventory Qty"
 msgstr "Quantité Inventaire"
+
+msgid "Inventory Quantities"
+msgstr "Quantités des stocks"
 
 msgid "Inventory Tracking"
 msgstr "Suivi des stocks"
@@ -15643,6 +15649,9 @@ msgstr "Numéros de série à retourner"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Suivi en série ou par lot requis"
+
+msgid "Serial Quantities"
+msgstr "Quantités par numéro de série"
 
 msgid "Serial tracking"
 msgstr "Suivi des numéros de série"

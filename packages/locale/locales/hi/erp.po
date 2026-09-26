@@ -2966,6 +2966,9 @@ msgstr "बैच नंबर"
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
 
+msgid "Batch Quantities"
+msgstr "बैच मात्राएं"
+
 msgid "Batch Size"
 msgstr "बैच आकार"
 
@@ -9039,6 +9042,9 @@ msgstr "इन्वेंटरी मूवमेंट्स"
 
 msgid "Inventory Qty"
 msgstr "इन्वेंटरी मात्रा"
+
+msgid "Inventory Quantities"
+msgstr "इन्वेंटरी मात्राएं"
 
 msgid "Inventory Tracking"
 msgstr "इन्वेंटरी ट्रैकिंग"
@@ -15643,6 +15649,9 @@ msgstr "रिटर्न के लिए सीरियल नंबर"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
+
+msgid "Serial Quantities"
+msgstr "सीरियल नंबर मात्राएं"
 
 msgid "Serial tracking"
 msgstr "सीरियल ट्रैकिंग"

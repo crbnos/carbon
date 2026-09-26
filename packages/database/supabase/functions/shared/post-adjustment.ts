@@ -2,15 +2,19 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { Transaction } from "kysely";
 import { DB } from "../lib/database.ts";
 import { Database } from "../lib/types.ts";
-import { credit, debit } from "../lib/utils.ts";
 import { calculateCOGS } from "./calculate-cogs.ts";
 import { getNextSequence } from "./get-next-sequence.ts";
-import { resolveInventoryAccount } from "./get-posting-group.ts";
+import {
+  buildAdjustmentJournalLines,
+  buildCostLedgerRow,
+  buildItemLedgerRow,
+  buildJournalLineDimensions,
+} from "./plan-adjustment.ts";
 import {
   AdjustmentItemCost,
   computeCurrentUnitCost,
+  OpenCostLayer,
 } from "./post-adjustment-cost.ts";
-import { round } from "./precision.ts";
 
 export { computeCurrentUnitCost } from "./post-adjustment-cost.ts";
 export type {
@@ -101,25 +105,6 @@ export interface BookAdjustmentArgs {
   fixedUnitCost?: number;
 }
 
-// itemLedgerDocumentType values that also exist on journalLineDocumentType.
-// The journal line falls back to 'Inventory Adjustment' for ledger documentType
-// values the journal enum doesn't carry (e.g. 'Sales Invoice', 'Direct
-// Transfer', 'Posted Assembly') — inserting those would fail the enum cast.
-const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
-  "Sales Shipment",
-  "Purchase Receipt",
-  "Purchase Invoice",
-  "Transfer Shipment",
-  "Job Consumption",
-  "Job Receipt",
-  "Batch Split",
-  "Maintenance Consumption",
-  "Inventory Count",
-  "Non-Conformance",
-  "Inbound Inspection",
-  "Scrap",
-]);
-
 export interface BookAdjustmentResult {
   itemLedgerId: string;
   journalId: string | null;
@@ -166,6 +151,82 @@ export async function createAdjustmentJournal(
   return journal.id;
 }
 
+// The open cost layers an INCREASE values itself against, per item. Same
+// filters as calculateCOGS so both sides of the math agree: positive
+// remaining quantity, not an adjustment child, and not a 'Purchase Order'
+// planning artifact. Applied adjustment children (invoice-vs-receipt price
+// corrections) are folded into each layer's `appliedChildCost`.
+//
+// Takes a LIST of items so the bulk importer reads every item it is about to
+// post in a couple of queries instead of two per row. `bookAdjustment` passes
+// one.
+const CHILD_LAYER_CHUNK_SIZE = 500;
+
+export async function loadOpenCostLayers(
+  trx: Transaction<DB>,
+  args: { itemIds: string[]; companyId: string }
+): Promise<Map<string, OpenCostLayer[]>> {
+  const byItem = new Map<string, OpenCostLayer[]>();
+  if (args.itemIds.length === 0) return byItem;
+
+  const openLayers = await trx
+    .selectFrom("costLedger")
+    .select(["id", "itemId", "quantity", "remainingQuantity", "cost"])
+    .where("itemId", "in", args.itemIds)
+    .where("companyId", "=", args.companyId)
+    .where("remainingQuantity", ">", 0)
+    .where("adjustment", "=", false)
+    .where("appliesToCostLedgerId", "is", null)
+    .where((eb) =>
+      eb.or([
+        eb("documentType", "is", null),
+        eb("documentType", "!=", "Purchase Order"),
+      ])
+    )
+    .execute();
+  if (openLayers.length === 0) return byItem;
+
+  // The child lookup is chunked over the LAYER ids, not the item ids: open
+  // layers are receipts not yet consumed, so their count is data-dependent and
+  // unbounded. The bulk importer reaches here with every referenced item's
+  // layers at once, and a single `in (...)` over them would exceed Postgres'
+  // 65535 bind parameters on a large file against well-stocked items.
+  const appliedChildCostByLayer = new Map<string, number>();
+  const layerIds = openLayers.map((layer) => layer.id);
+  for (let i = 0; i < layerIds.length; i += CHILD_LAYER_CHUNK_SIZE) {
+    const children = await trx
+      .selectFrom("costLedger")
+      .select(["appliesToCostLedgerId", "cost"])
+      .where(
+        "appliesToCostLedgerId",
+        "in",
+        layerIds.slice(i, i + CHILD_LAYER_CHUNK_SIZE)
+      )
+      .where("companyId", "=", args.companyId)
+      .execute();
+    for (const child of children) {
+      const key = child.appliesToCostLedgerId as string;
+      appliedChildCostByLayer.set(
+        key,
+        (appliedChildCostByLayer.get(key) ?? 0) + Number(child.cost)
+      );
+    }
+  }
+
+  for (const layer of openLayers) {
+    const itemId = layer.itemId as string;
+    const list = byItem.get(itemId) ?? [];
+    list.push({
+      quantity: Number(layer.quantity),
+      remainingQuantity: Number(layer.remainingQuantity),
+      cost: Number(layer.cost),
+      appliedChildCost: appliedChildCostByLayer.get(layer.id) ?? 0,
+    });
+    byItem.set(itemId, list);
+  }
+  return byItem;
+}
+
 // Book one adjustment movement inside the caller's transaction: the item
 // ledger row, cost-layer maintenance (consume via calculateCOGS on decreases,
 // create a layer at current cost on increases), and — when accounting is
@@ -181,22 +242,24 @@ export async function bookAdjustment(
 
   const inserted = await trx
     .insertInto("itemLedger")
-    .values({
-      postingDate: ledger.postingDate,
-      entryType: ledger.entryType,
-      documentType: ledger.documentType ?? null,
-      documentId: ledger.documentId ?? null,
-      correctionOfItemLedgerId: ledger.correctionOfItemLedgerId ?? null,
-      itemId: ledger.itemId,
-      locationId: ledger.locationId,
-      storageUnitId: ledger.storageUnitId,
-      trackedEntityId: ledger.trackedEntityId,
-      quantity: round(ledger.quantity),
-      comment: ledger.comment ?? null,
-      scrapReasonId: ledger.scrapReasonId ?? null,
-      companyId,
-      createdBy: ledger.createdBy,
-    })
+    .values(
+      buildItemLedgerRow({
+        postingDate: ledger.postingDate,
+        entryType: ledger.entryType,
+        documentType: ledger.documentType,
+        documentId: ledger.documentId,
+        correctionOfItemLedgerId: ledger.correctionOfItemLedgerId,
+        itemId: ledger.itemId,
+        locationId: ledger.locationId,
+        storageUnitId: ledger.storageUnitId,
+        trackedEntityId: ledger.trackedEntityId,
+        quantity: ledger.quantity,
+        comment: ledger.comment,
+        scrapReasonId: ledger.scrapReasonId,
+        companyId,
+        createdBy: ledger.createdBy,
+      })
+    )
     .returning(["id"])
     .executeTakeFirstOrThrow();
 
@@ -224,19 +287,18 @@ export async function bookAdjustment(
 
     await trx
       .insertInto("costLedger")
-      .values({
-        itemLedgerType: ledger.entryType,
-        costLedgerType: "Direct Cost",
-        adjustment: false,
-        documentType: ledger.documentType ?? null,
-        documentId,
-        itemId: ledger.itemId,
-        quantity: round(-absQuantity),
-        cost: round(-cogs.totalCost),
-        remainingQuantity: 0,
-        postingDate: ledger.postingDate,
-        companyId,
-      })
+      .values(
+        buildCostLedgerRow({
+          entryType: ledger.entryType,
+          documentType: ledger.documentType,
+          documentId,
+          itemId: ledger.itemId,
+          quantity: -absQuantity,
+          cost: -cogs.totalCost,
+          postingDate: ledger.postingDate,
+          companyId,
+        })
+      )
       .execute();
   } else if (args.fixedUnitCost != null) {
     // Increase at a caller-fixed unit cost: Unscrap restores stock at the
@@ -245,86 +307,45 @@ export async function bookAdjustment(
 
     await trx
       .insertInto("costLedger")
-      .values({
-        itemLedgerType: ledger.entryType,
-        costLedgerType: "Direct Cost",
-        adjustment: false,
-        documentType: ledger.documentType ?? null,
-        documentId,
-        itemId: ledger.itemId,
-        quantity: round(absQuantity),
-        cost: round(cost),
-        remainingQuantity: round(absQuantity),
-        postingDate: ledger.postingDate,
-        companyId,
-      })
-      .execute();
-  } else {
-    // Increase: create a layer at the item's current carrying cost. Same
-    // open-layer filters as calculateCOGS so both sides of the math agree.
-    const openLayers = await trx
-      .selectFrom("costLedger")
-      .select(["id", "quantity", "remainingQuantity", "cost"])
-      .where("itemId", "=", ledger.itemId)
-      .where("companyId", "=", companyId)
-      .where("remainingQuantity", ">", 0)
-      .where("adjustment", "=", false)
-      .where("appliesToCostLedgerId", "is", null)
-      .where((eb) =>
-        eb.or([
-          eb("documentType", "is", null),
-          eb("documentType", "!=", "Purchase Order"),
-        ])
+      .values(
+        buildCostLedgerRow({
+          entryType: ledger.entryType,
+          documentType: ledger.documentType,
+          documentId,
+          itemId: ledger.itemId,
+          quantity: absQuantity,
+          cost,
+          postingDate: ledger.postingDate,
+          companyId,
+        })
       )
       .execute();
-
-    const appliedChildCostByLayer = new Map<string, number>();
-    if (openLayers.length > 0) {
-      const children = await trx
-        .selectFrom("costLedger")
-        .select(["appliesToCostLedgerId", "cost"])
-        .where(
-          "appliesToCostLedgerId",
-          "in",
-          openLayers.map((layer) => layer.id)
-        )
-        .where("companyId", "=", companyId)
-        .execute();
-      for (const child of children) {
-        const key = child.appliesToCostLedgerId as string;
-        appliedChildCostByLayer.set(
-          key,
-          (appliedChildCostByLayer.get(key) ?? 0) + Number(child.cost)
-        );
-      }
-    }
-
+  } else {
+    // Increase: create a layer at the item's current carrying cost.
+    const openLayers = await loadOpenCostLayers(trx, {
+      itemIds: [ledger.itemId],
+      companyId,
+    });
     const unitCost = computeCurrentUnitCost(
       itemCost,
-      openLayers.map((layer) => ({
-        quantity: Number(layer.quantity),
-        remainingQuantity: Number(layer.remainingQuantity),
-        cost: Number(layer.cost),
-        appliedChildCost: appliedChildCostByLayer.get(layer.id) ?? 0,
-      }))
+      openLayers.get(ledger.itemId) ?? []
     );
     cost = absQuantity * unitCost;
 
     await trx
       .insertInto("costLedger")
-      .values({
-        itemLedgerType: ledger.entryType,
-        costLedgerType: "Direct Cost",
-        adjustment: false,
-        documentType: ledger.documentType ?? null,
-        documentId,
-        itemId: ledger.itemId,
-        quantity: round(absQuantity),
-        cost: round(cost),
-        remainingQuantity: round(absQuantity),
-        postingDate: ledger.postingDate,
-        companyId,
-      })
+      .values(
+        buildCostLedgerRow({
+          entryType: ledger.entryType,
+          documentType: ledger.documentType,
+          documentId,
+          itemId: ledger.itemId,
+          quantity: absQuantity,
+          cost,
+          postingDate: ledger.postingDate,
+          companyId,
+        })
+      )
       .execute();
   }
 
@@ -345,72 +366,36 @@ export async function bookAdjustment(
         sourceType: accounting.sourceType,
       });
 
-  const inventoryAccount = resolveInventoryAccount(
-    item.replenishmentSystem,
-    accounting.accountDefaults
-  );
-  const journalLineReference = nanoid();
-  const journalLineDocumentType = (
-    ledger.documentType &&
-    JOURNAL_LINE_SAFE_DOCUMENT_TYPES.has(ledger.documentType)
-      ? ledger.documentType
-      : "Inventory Adjustment"
-  ) as Database["public"]["Enums"]["journalLineDocumentType"];
-  const isGain = ledger.quantity > 0;
-
   const journalLines = await trx
     .insertInto("journalLine")
-    .values([
-      {
+    .values(
+      buildAdjustmentJournalLines({
         journalId,
-        accountId: inventoryAccount.account,
-        description: inventoryAccount.description,
-        amount: round(isGain ? debit("asset", cost) : credit("asset", cost)),
-        quantity: round(absQuantity),
-        documentType: journalLineDocumentType,
         documentId,
-        journalLineReference,
+        documentType: ledger.documentType,
+        journalLineReference: nanoid(),
+        isGain: ledger.quantity > 0,
+        cost,
+        quantity: absQuantity,
+        replenishmentSystem: item.replenishmentSystem,
+        accountDefaults: accounting.accountDefaults,
+        offsetAccount: accounting.offsetAccount,
+        offsetDescription: accounting.offsetDescription,
         companyId,
-      },
-      {
-        journalId,
-        accountId:
-          accounting.offsetAccount ??
-          accounting.accountDefaults.inventoryAdjustmentVarianceAccount,
-        description: accounting.offsetDescription ?? "Inventory Adjustment",
-        amount: round(isGain ? credit("expense", cost) : debit("expense", cost)),
-        quantity: round(absQuantity),
-        documentType: journalLineDocumentType,
-        documentId,
-        journalLineReference,
-        companyId,
-      },
-    ])
+      })
+    )
     .returning(["id"])
     .execute();
 
-  // Dimension tags (post-shipment precedent): every line of the entry gets
-  // the movement's Item / ItemPostingGroup / Location, for whichever
-  // dimensions are active on the company group.
-  const dimensions = accounting.dimensions ?? {};
-  const dimensionValues: Array<[string, string | null | undefined]> = [
-    ["Item", ledger.itemId],
-    ["ItemPostingGroup", item.itemPostingGroupId],
-    ["Location", ledger.locationId],
-    ...(accounting.extraDimensions ?? []).map(
-      (d) => [d.entityType, d.valueId] as [string, string]
-    ),
-  ];
-  const journalLineDimensionInserts = journalLines.flatMap((line) =>
-    dimensionValues
-      .filter(([entityType, valueId]) => dimensions[entityType] && valueId)
-      .map(([entityType, valueId]) => ({
-        journalLineId: line.id,
-        dimensionId: dimensions[entityType],
-        valueId: valueId as string,
-        companyId,
-      }))
-  );
+  const journalLineDimensionInserts = buildJournalLineDimensions({
+    journalLineIds: journalLines.map((line) => line.id),
+    dimensions: accounting.dimensions ?? {},
+    itemId: ledger.itemId,
+    itemPostingGroupId: item.itemPostingGroupId,
+    locationId: ledger.locationId,
+    extraDimensions: accounting.extraDimensions,
+    companyId,
+  });
   if (journalLineDimensionInserts.length > 0) {
     await trx
       .insertInto("journalLineDimension")

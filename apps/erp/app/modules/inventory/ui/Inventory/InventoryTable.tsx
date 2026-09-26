@@ -645,6 +645,20 @@ const InventoryTable = memo(
         data={data}
         defaultColumnVisibility={defaultColumnVisibility}
         defaultColumnPinning={defaultColumnPinning}
+        importCSV={[
+          {
+            table: "inventoryQuantity" as const,
+            label: t`Inventory Quantities`
+          },
+          {
+            table: "batchQuantity" as const,
+            label: t`Batch Quantities`
+          },
+          {
+            table: "serialQuantity" as const,
+            label: t`Serial Quantities`
+          }
+        ]}
         primaryAction={
           <div className="flex items-center gap-2">
             <Combobox

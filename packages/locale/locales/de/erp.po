@@ -2966,6 +2966,9 @@ msgstr "Chargennummer"
 msgid "Batch Properties"
 msgstr "Batch-Eigenschaften"
 
+msgid "Batch Quantities"
+msgstr "Losmengen"
+
 msgid "Batch Size"
 msgstr "Chargengröße"
 
@@ -9039,6 +9042,9 @@ msgstr "Bestandsbewegungen"
 
 msgid "Inventory Qty"
 msgstr "Bestandsmenge"
+
+msgid "Inventory Quantities"
+msgstr "Bestandsmengen"
 
 msgid "Inventory Tracking"
 msgstr "Bestandsverfolgung"
@@ -15643,6 +15649,9 @@ msgstr "Seriennummern zur Rückgabe"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Serien- oder Chargenverfolgung erforderlich"
+
+msgid "Serial Quantities"
+msgstr "Serienmengen"
 
 msgid "Serial tracking"
 msgstr "Seriennummernverfolgung"
