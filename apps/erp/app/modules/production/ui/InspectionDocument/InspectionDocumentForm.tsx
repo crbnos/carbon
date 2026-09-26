@@ -20,6 +20,7 @@ type InspectionDocumentFormProps = {
     name: string;
     partId: string;
     drawingNumber?: string;
+    drawingRevision?: string;
   };
   onClose: () => void;
 };
@@ -60,6 +61,7 @@ export default function InspectionDocumentForm({
                 termId="inspection-document-drawing-number"
                 placeholder={t`e.g. DWG-1234`}
               />
+              <Input name="drawingRevision" label={t`Drawing revision`} />
             </VStack>
           </DrawerBody>
           <DrawerFooter>

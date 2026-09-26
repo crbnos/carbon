@@ -1757,6 +1757,7 @@ export const inspectionDocumentValidator = z.object({
   name: zfd.text(z.string().optional()),
   partId: z.string().min(1, { message: "Part is required" }),
   drawingNumber: zfd.text(z.string().optional()),
+  drawingRevision: zfd.text(z.string().optional()),
   pdfUrl: zfd.text(z.string().optional()),
   annotations: zfd.text(z.string().optional()),
   features: zfd.text(z.string().optional())
@@ -1886,6 +1887,28 @@ const inspectionFeatureSamplingFieldsValidator = {
   samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
 };
 
+// Geometric (bonus) tolerance of a Measurement feature: RFS = no bonus; MMC/LMC
+// read the bonus off the measured size of `sizeFeatureId`.
+export const materialConditions = [
+  "RFS",
+  "MMC",
+  "LMC"
+] as const satisfies readonly Database["public"]["Enums"]["materialCondition"][];
+
+export const featureOfSizeTypes = [
+  "Internal",
+  "External"
+] as const satisfies readonly Database["public"]["Enums"]["featureOfSizeType"][];
+
+const inspectionFeatureCharacteristicFieldsValidator = {
+  designator: z.string().nullable().optional(),
+  referenceLocation: z.string().nullable().optional(),
+  materialCondition: z.enum(materialConditions).nullable().optional(),
+  featureOfSize: z.enum(featureOfSizeTypes).nullable().optional(),
+  // A persisted feature id, or the tempId of a feature created in the same save.
+  sizeFeatureId: z.string().nullable().optional()
+};
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     tempId: z.string().min(1),
@@ -1897,7 +1920,8 @@ export const inspectionSaveFeatureCreateItemValidator = z
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
-    ...inspectionFeatureSamplingFieldsValidator
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureCharacteristicFieldsValidator
   })
   .strict();
 
@@ -1912,7 +1936,8 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
-    ...inspectionFeatureSamplingFieldsValidator
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureCharacteristicFieldsValidator
   })
   .strict();
 

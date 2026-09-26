@@ -9364,6 +9364,7 @@ function mapInspectionDocument(row: Record<string, unknown>) {
     updatedAt: (row.updatedAt as string | null) ?? null,
     content: {
       drawingNumber,
+      drawingRevision: (row.drawingRevision as string | null) ?? null,
       pdfUrl: toPreviewUrl((row.storagePath as string | null) ?? null),
       annotations: [],
       features: []
@@ -9514,6 +9515,7 @@ export async function upsertInspectionDocument(
     id,
     partId,
     drawingNumber,
+    drawingRevision,
     pdfUrl,
     pageCount,
     defaultPageWidth,
@@ -9608,6 +9610,9 @@ export async function upsertInspectionDocument(
     if (drawingNumber !== undefined) {
       updatePayload.drawingNumber = drawingNumber ?? null;
     }
+    if (drawingRevision !== undefined) {
+      updatePayload.drawingRevision = drawingRevision?.trim() || null;
+    }
     if (partId !== undefined) {
       updatePayload.partId = partId;
     }
@@ -9652,6 +9657,7 @@ export async function upsertInspectionDocument(
       companyId,
       partId,
       drawingNumber: resolvedDrawingNumber ?? null,
+      drawingRevision: drawingRevision?.trim() || null,
       version: 0,
       ...(storagePath
         ? {
@@ -9734,6 +9740,18 @@ function mapInspectionFeature(row: Record<string, unknown>) {
     samplingInspectionLevel:
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
+    // AS9102 Form 3 characteristic accountability + geometric (bonus) tolerance.
+    designator: (row.designator as string | null) ?? null,
+    referenceLocation: (row.referenceLocation as string | null) ?? null,
+    materialCondition:
+      (row.materialCondition as
+        | Database["public"]["Enums"]["materialCondition"]
+        | null) ?? null,
+    featureOfSize:
+      (row.featureOfSize as
+        | Database["public"]["Enums"]["featureOfSizeType"]
+        | null) ?? null,
+    sizeFeatureId: (row.sizeFeatureId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
