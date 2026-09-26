@@ -3,6 +3,7 @@ import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
   getContentType,
   hasCompanyPrivateObjectPathPrefix,
+  isUnsafeStoragePath,
   MEDIA_CONTENT_TYPES,
   storage
 } from "@carbon/files";
@@ -62,6 +63,14 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   if (!path) throw new Error("Path not found");
 
   path = decodeURIComponent(path);
+
+  if (isUnsafeStoragePath(path)) {
+    logger.error("Refused a storage path that escapes its prefix", {
+      companyId: shareCompanyId,
+      path
+    });
+    return new Response(null, { status: 404 });
+  }
 
   // Private objects are keyed by companyId — a path outside the portal's
   // company must not resolve to another tenant's bucket.

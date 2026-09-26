@@ -20,7 +20,7 @@ async function handleKanbanStart({
   companyId: string;
   id: string;
 }): Promise<{ data: string; error: null } | { data: null; error: string }> {
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(client, id, companyId);
   if (kanban.error) {
     return {
       data: null,
@@ -66,7 +66,9 @@ async function handleKanbanStart({
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, companyId } = await requirePermissions(request, {});
+  const { client, companyId } = await requirePermissions(request, {
+    role: "employee"
+  });
 
   const { id } = params;
   if (!id) throw notFound("id not found");

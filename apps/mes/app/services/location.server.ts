@@ -1,7 +1,10 @@
 import { notFound } from "@carbon/auth";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import * as cookie from "cookie";
+
+const logger = getLogger("mes", "location");
 
 export function getCompanySettings(request: Request, companyId: string) {
   const cookieHeader = request.headers.get("cookie");
@@ -34,6 +37,25 @@ export async function getLocation(
   let { location } = getCompanySettings(request, companyId);
 
   let updated = false;
+
+  // The cookie is client-controlled: only honor it when it names a location
+  // of this company, otherwise fall through to the defaults below.
+  if (location) {
+    const owned = await client
+      .from("location")
+      .select("id")
+      .eq("id", location)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (owned.error) {
+      logger.error("Failed to verify the location cookie", {
+        companyId,
+        locationId: location,
+        error: owned.error
+      });
+    }
+    if (!owned.data) location = undefined;
+  }
 
   if (!location) {
     const employeeJob = await client

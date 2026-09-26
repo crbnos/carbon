@@ -32,7 +32,7 @@ pnpm --filter @carbon/kv typecheck
 | Export | Provides |
 |--------|----------|
 | `redis` | Global ioredis singleton (lazy connect, 3 retries, offline queue), resilience-wrapped to fail soft when Redis is unreachable |
-| `Ratelimit` | Rate limiter class with `limit()`, `blockUntilReady()`, `getRemaining()`, `resetUsedTokens()` |
+| `Ratelimit` | Rate limiter class with `limit()`, `blockUntilReady()`, `getRemaining()`, `resetUsedTokens()`, `refund()` (sliding window only: give back a token `limit()` consumed, for consume-before-verify callers such as MES console pin-in) |
 | `Ratelimit.fixedWindow(tokens, window)` | Fixed window algorithm (simple, low memory) |
 | `Ratelimit.slidingWindow(tokens, window)` | Sliding window (smoother, prevents boundary bursts) |
 | `Ratelimit.tokenBucket(refillRate, interval, maxTokens?)` | Token bucket (allows controlled bursts) |

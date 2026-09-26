@@ -1,4 +1,5 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import { getCompanyGroupId } from "./account-mapping";
 import type { ExternalIntegrationMapping } from "./external-mapping";
 import { createMappingService } from "./external-mapping";
 import type { PostingSyncDimensionSlot } from "./models";
@@ -159,6 +160,79 @@ export function buildDimensionValueMappingLookup(
 }
 
 /**
+ * The dimension when it belongs to the company's group, else null.
+ * Dimensions are company-group scoped.
+ */
+async function getGroupDimension(
+  db: Db,
+  args: { companyId: string; dimensionId: string }
+): Promise<{ entityType: string; companyGroupId: string } | null> {
+  const companyGroupId = await getCompanyGroupId(db, args.companyId);
+  if (!companyGroupId) return null;
+  const dimension = await db
+    .selectFrom("dimension")
+    .select("entityType")
+    .where("id", "=", args.dimensionId)
+    .where("companyGroupId", "=", companyGroupId)
+    .executeTakeFirst();
+  return dimension
+    ? { entityType: String(dimension.entityType), companyGroupId }
+    : null;
+}
+
+/**
+ * Does the value belong to the company's group? Custom values are
+ * group-scoped `dimensionValue` rows of this dimension; entity-typed values
+ * are company-scoped rows of the dimension's source table, accepted for any
+ * company in the group (and unowned rows with a null companyId). An entity
+ * type with no known source table is not checked.
+ */
+async function isGroupDimensionValue(
+  db: Db,
+  args: {
+    companyGroupId: string;
+    dimensionId: string;
+    entityType: string;
+    valueId: string;
+  }
+): Promise<boolean> {
+  const { companyGroupId } = args;
+
+  if (args.entityType === "Custom") {
+    const value = await db
+      .selectFrom("dimensionValue")
+      .select("id")
+      .where("id", "=", args.valueId)
+      .where("dimensionId", "=", args.dimensionId)
+      .where("companyGroupId", "=", companyGroupId)
+      .executeTakeFirst();
+    return !!value;
+  }
+
+  const source = DIMENSION_LABEL_SOURCES[args.entityType];
+  if (!source) return true;
+
+  const rows = await (db as Kysely<KyselyDatabase>)
+    .selectFrom(source.table as never)
+    .select(`${source.table}.companyId` as never)
+    .where(`${source.table}.id` as never, "=" as never, args.valueId as never)
+    .execute();
+  if (rows.length === 0) return false;
+
+  const groupCompanies = await db
+    .selectFrom("company")
+    .select("id")
+    .where("companyGroupId", "=", companyGroupId)
+    .execute();
+  const inGroup = new Set(groupCompanies.map((company) => company.id));
+
+  return (rows as Array<Record<string, unknown>>).some((row) => {
+    const owner = row.companyId;
+    return owner === null || (typeof owner === "string" && inGroup.has(owner));
+  });
+}
+
+/**
  * Upsert a dimension-value mapping (`<dimensionId>:<valueId>` → provider
  * option id). Several Carbon values may legitimately share one provider
  * option (consolidation), so duplicate external ids are allowed — the
@@ -177,6 +251,26 @@ export async function upsertDimensionValueMapping(
   }
 ): Promise<{ data: ExternalIntegrationMapping | null; error: string | null }> {
   try {
+    // dimensionId/valueId can come from a form field, and this Kysely client
+    // bypasses RLS: refuse a dimension or value from outside the caller's
+    // group, whose label the mapping tab would otherwise resolve and show.
+    const dimension = await getGroupDimension(db, args);
+    if (!dimension) {
+      return { data: null, error: `Dimension ${args.dimensionId} not found` };
+    }
+    if (
+      !(await isGroupDimensionValue(db, {
+        ...dimension,
+        dimensionId: args.dimensionId,
+        valueId: args.valueId
+      }))
+    ) {
+      return {
+        data: null,
+        error: `Dimension value ${args.valueId} not found`
+      };
+    }
+
     const mappingService = createMappingService(db, args.companyId);
     const entityId = buildDimensionValueMappingEntityId(
       args.dimensionId,
@@ -283,6 +377,10 @@ export async function upsertDimensionMapping(
   }
 ): Promise<{ data: ExternalIntegrationMapping | null; error: string | null }> {
   try {
+    if (!(await getGroupDimension(db, args))) {
+      return { data: null, error: `Dimension ${args.dimensionId} not found` };
+    }
+
     const mappingService = createMappingService(db, args.companyId);
 
     await mappingService.link(

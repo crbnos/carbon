@@ -278,9 +278,20 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   addressed on its own pass. When a payload param is an **array** of rows,
   `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
   the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
-  table (e.g. `quoteLinePrice`) used to fail. Only `createdBy` is injected per
-  element; `companyId`/`updatedBy` are left to the service, since element keys
-  spread straight into an INSERT.
+  table (e.g. `quoteLinePrice`) used to fail. `createdBy` is the only key ever
+  ADDED to an element (element keys spread straight into an INSERT). But an
+  identity key the CALLER supplied — `createdBy`, `updatedBy`, `companyId`,
+  `companyGroupId` — is always OVERWRITTEN with the authenticated value, in
+  top-level array elements, in objects nested one level inside an object
+  payload (`{ itemUpdate: {...} }`), and in array elements one level down
+  (`{ lines: [...] }`), on every operation including reads (where it can only
+  narrow to the caller's own company). `userId` is deliberately NOT
+  overwritten inside rows — there it is usually data (the assigned employee).
+  Anything deeper (an array inside a nested object) is NOT reached, so a
+  service must not spread such a structure into a write. Pinned by
+  `dispatch-parity.test.ts` h, h3, h3b, h4. A Kysely service takes
+  `companyId`/`userId` as POSITIONAL params so they always come from context
+  (h2 — `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)`).
 - Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are
   rejected in `call_tool`, in `callOperation`, and (belt-and-braces) in the
   `gate()` middleware — though the primary gate is that the generator excludes

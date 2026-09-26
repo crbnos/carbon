@@ -24,6 +24,7 @@ import {
 import { getCompany } from "~/modules/settings";
 import type { ItemType } from "~/modules/shared";
 import { itemType, upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -40,6 +41,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { rfqId } = params;
   if (!rfqId) throw new Error("Could not find rfqId");
+
+  // bypassRls hands back the service role and every read/write below is keyed
+  // on the URL's rfqId.
+  await requireCompanyRecord(client, "purchasingRfq", companyId, {
+    id: rfqId
+  });
 
   // Validate form data
   const validation = await validator(purchasingRfqFinalizeValidator).validate(
@@ -205,7 +212,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     if (supplierContactData?.contactId && externalLinkResult.data) {
       const supplierContact = await getSupplierContact(
         client,
-        supplierContactData.contactId
+        supplierContactData.contactId,
+        companyId
       );
 
       if (supplierContact?.data?.contact?.email) {

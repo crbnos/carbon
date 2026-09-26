@@ -1,6 +1,11 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getContentType, MEDIA_CONTENT_TYPES, storage } from "@carbon/files";
+import {
+  getContentType,
+  isUnsafeStoragePath,
+  MEDIA_CONTENT_TYPES,
+  storage
+} from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -14,7 +19,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   if (!path) throw new Error("Path not found");
 
-  if (!path.includes("models")) {
+  // Unauthenticated: the unguessable model id in the key is the only
+  // credential, so serve model objects (`${companyId}/models/…`) and nothing
+  // else — never any object whose key merely contains "models".
+  if (path.split("/")[1] !== "models" || isUnsafeStoragePath(path)) {
+    logger.error("Refused a public model path", { path });
     throw notFound("Invalid path");
   }
 

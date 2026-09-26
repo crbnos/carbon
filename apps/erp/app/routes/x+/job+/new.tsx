@@ -11,6 +11,7 @@ import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { insertJob, jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -46,15 +47,35 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
+  // insertJob runs with the service role, so every foreign-key id in the form
+  // is proven to belong to this company before it is written.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "item", companyId, { id: data.itemId }),
+    requireCompanyRecord(serviceRole, "location", companyId, {
+      id: data.locationId
+    }),
+    data.customerId
+      ? requireCompanyRecord(serviceRole, "customer", companyId, {
+          id: data.customerId
+        })
+      : null,
+    data.modelUploadId
+      ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
+          id: data.modelUploadId
+        })
+      : null
+  ]);
+
   // A job pulls the item's active make method, and for an item a change notice
   // still holds that is the notice's un-approved draft BOM. Refuse the job until
   // the notice releases. Checked here rather than only in the picker because this
   // action is also reached by the API and the MCP tools.
   if (data.itemId) {
-    const unreleasedIssue = await getUnreleasedChangeOrderIssue(
-      getCarbonServiceRole(),
-      { itemId: data.itemId, companyId }
-    );
+    const unreleasedIssue = await getUnreleasedChangeOrderIssue(serviceRole, {
+      itemId: data.itemId,
+      companyId
+    });
     if (unreleasedIssue) {
       return validationError({
         fieldErrors: {
@@ -65,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const result = await insertJob(
-    getCarbonServiceRole(),
+    serviceRole,
     {
       ...data,
       jobId: data.jobId || undefined,

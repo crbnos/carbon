@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -200,7 +200,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyIdCookie = setCompanyId(companyId);
   const clearDraftCookie = await clearOnboardingDraft(request);
 
-  throw redirect(next, {
+  throw redirect(safeRedirect(next, path.to.onboarding.root), {
     headers: [
       ["Set-Cookie", sessionCookie],
       ["Set-Cookie", companyIdCookie],

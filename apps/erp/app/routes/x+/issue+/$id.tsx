@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -35,6 +36,8 @@ import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
 import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -75,6 +78,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.issues,
       await flash(request, error(nonConformance.error, "Failed to load issue"))
     );
+  }
+
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (nonConformance.data.companyId !== companyId) {
+    logger.error("Issue is not in the caller's company", {
+      companyId,
+      issueId: id
+    });
+    throw redirect(path.to.issues);
   }
 
   return {

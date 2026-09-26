@@ -18,6 +18,8 @@ import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
+import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
+import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
@@ -29,7 +31,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
   noLegacyRls,
   noDerivedPercentColumn,
-  noRequiredColumnWithoutDefault
+  noRequiredColumnWithoutDefault,
+  noViewWithoutInvoker
 ];
 
 /** Checks that run over server-side TS, not SQL migrations. */
@@ -44,7 +47,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noInlineFractionDigits,
   noDbClientInService,
   noDefaultOnEffects,
-  noUnroundedTrackedQuantity
+  noUnroundedTrackedQuantity,
+  noUnscopedKyselyWrite
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

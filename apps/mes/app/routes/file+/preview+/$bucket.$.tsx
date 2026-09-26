@@ -5,6 +5,7 @@ import {
   effectiveExtension,
   getCompanyPrivateBucket,
   getContentType,
+  isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
   TEMP_STAGING_BUCKET
@@ -45,11 +46,24 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
   // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
+  if (isUnsafeStoragePath(path)) {
+    log.warn("Refused a storage path that escapes its prefix", {
+      companyId,
+      bucket,
+      path
+    });
+    return new Response(null, { status: 400 });
+  }
   const decodedPath = decodeURIComponent(path);
   const ownsPath =
     decodedPath.startsWith(`${companyId}/`) ||
     decodedPath.includes(`/${companyId}/`);
   if (!ownsPath) {
+    log.warn("Refused file preview outside the caller's company", {
+      companyId,
+      bucket,
+      path
+    });
     return new Response(null, { status: 403 });
   }
 
@@ -66,6 +80,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     bucket !== "public" &&
     bucket !== TEMP_STAGING_BUCKET
   ) {
+    log.warn("Refused file preview from another bucket", {
+      companyId,
+      bucket
+    });
     return new Response(null, { status: 403 });
   }
 

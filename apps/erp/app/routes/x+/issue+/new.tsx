@@ -70,6 +70,49 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const d = validation.data;
 
+  // insertIssue writes through the service role, and every id below comes
+  // from the form or the query string — each lands in this company's issue as
+  // a reference whose single-column FK accepts another company's row. One
+  // scoped read per table; a miss refuses the whole create.
+  const url = new URL(request.url);
+  const trackedEntityIdsParam = url.searchParams.get("trackedEntityIds");
+  const trackedEntityIds = trackedEntityIdsParam
+    ? [...new Set(trackedEntityIdsParam.split(",").filter(Boolean))]
+    : [];
+  const refs: [string, string[]][] = [
+    ["location", [d.locationId]],
+    ["nonConformanceType", [d.nonConformanceTypeId]],
+    [
+      "nonConformanceWorkflow",
+      d.nonConformanceWorkflowId ? [d.nonConformanceWorkflowId] : []
+    ],
+    ["nonConformanceRequiredAction", [...new Set(d.requiredActionIds ?? [])]],
+    ["item", [...new Set(d.items ?? [])]],
+    ["customer", d.customerId ? [d.customerId] : []],
+    ["trackedEntity", trackedEntityIds]
+  ];
+  const owned = await Promise.all(
+    refs.map(async ([table, ids]) => {
+      if (ids.length === 0) return true;
+      const rows = await serviceRole
+        .from(table as "location")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId);
+      return !rows.error && (rows.data ?? []).length === ids.length;
+    })
+  );
+  if (owned.some((ok) => !ok)) {
+    logger.error("Issue references records outside the company", {
+      companyId,
+      refs: refs.filter((_, index) => !owned[index])
+    });
+    throw redirect(
+      path.to.issues,
+      await flash(request, error(null, "Failed to insert issue"))
+    );
+  }
+
   const createResult = await insertIssue(serviceRole, {
     nonConformanceId: d.nonConformanceId || undefined,
     name: d.name,
@@ -106,11 +149,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Pre-associate tracked entities passed via query string (used by the
   // "Create Issue from Inspection" button on inbound inspection lots).
-  const url = new URL(request.url);
-  const trackedEntityIdsParam = url.searchParams.get("trackedEntityIds");
-  const trackedEntityIds = trackedEntityIdsParam
-    ? trackedEntityIdsParam.split(",").filter(Boolean)
-    : [];
   if (trackedEntityIds.length > 0) {
     await serviceRole.from("nonConformanceTrackedEntity").insert(
       trackedEntityIds.map((trackedEntityId) => ({
@@ -269,10 +307,12 @@ async function autoLinkJobOperationDisposition(
 ) {
   const { nonConformanceId, companyId, userId, jobOperationId } = args;
 
+  // Service role and a form id: scope both reads to the company.
   const operation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", jobOperationId)
+    .eq("companyId", companyId)
     .single();
   const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
   if (!jobMakeMethodId) return;
@@ -281,6 +321,7 @@ async function autoLinkJobOperationDisposition(
     .from("jobMakeMethod")
     .select("itemId")
     .eq("id", jobMakeMethodId)
+    .eq("companyId", companyId)
     .single();
   const itemId = makeMethod.data?.itemId ?? null;
   if (!itemId) return;

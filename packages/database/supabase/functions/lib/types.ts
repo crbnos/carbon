@@ -14010,21 +14010,18 @@ export type Database = {
           companyId: string
           employeeTypeId: string
           id: string
-          pin: string | null
         }
         Insert: {
           active?: boolean
           companyId: string
           employeeTypeId: string
           id?: string
-          pin?: string | null
         }
         Update: {
           active?: boolean
           companyId?: string
           employeeTypeId?: string
           id?: string
-          pin?: string | null
         }
         Relationships: [
           {
@@ -14369,6 +14366,101 @@ export type Database = {
           },
           {
             foreignKeyName: "employeeJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      employeePin: {
+        Row: {
+          companyId: string
+          employeeId: string
+          pinHash: string
+          updatedAt: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          employeeId: string
+          pinHash: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          employeeId?: string
+          pinHash?: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_employee_fkey"
+            columns: ["employeeId", "companyId"]
+            isOneToOne: true
+            referencedRelation: "employee"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -84398,6 +84490,15 @@ export type Database = {
         Args: { p_company_id: string }
         Returns: undefined
       }
+      set_employee_pin: {
+        Args: {
+          p_company_id: string
+          p_employee_id: string
+          p_pin: string
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
@@ -84790,6 +84891,10 @@ export type Database = {
       }
       uuid_generate_v4: { Args: never; Returns: string }
       uuid_to_base58: { Args: { _uuid: string }; Returns: string }
+      verify_employee_pin: {
+        Args: { p_company_id: string; p_employee_id: string; p_pin: string }
+        Returns: boolean
+      }
       workflow_merge_custom_fields: {
         Args: {
           p_company_id: string

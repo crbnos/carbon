@@ -1,9 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -11,6 +13,8 @@ import {
   userPermissionsValidator
 } from "~/modules/users";
 import { getParams, path } from "~/utils/path";
+
+const logger = getLogger("erp", "users-bulk-edit-permissions");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -54,6 +58,26 @@ export async function action({ request }: ActionFunctionArgs) {
     throw redirect(
       path.to.employeeAccounts,
       await flash(request, error(permissions, "Failed to parse permissions"))
+    );
+  }
+
+  // The job writes these users' grants as the service role: every id must be
+  // an employee of this company. One batched read.
+  const uniqueUserIds = [...new Set(userIds)];
+  const members = await getCarbonServiceRole()
+    .from("employee")
+    .select("id")
+    .in("id", uniqueUserIds)
+    .eq("companyId", companyId);
+  if (members.error || (members.data ?? []).length !== uniqueUserIds.length) {
+    logger.error("Bulk permission edit names users outside the company", {
+      companyId,
+      userIds: uniqueUserIds,
+      error: members.error
+    });
+    throw redirect(
+      path.to.employeeAccounts,
+      await flash(request, error(members.error, "Employee not found"))
     );
   }
 

@@ -15,10 +15,8 @@ import { createHash } from "crypto";
 import { redirect } from "react-router";
 import {
   CarbonEdition,
-  CONTROLLED_ENVIRONMENT,
   IS_LOCAL_DEV,
   REFRESH_ACCESS_TOKEN_THRESHOLD,
-  SESSION_IDLE_LOCK_MS,
   STRIPE_BYPASS_COMPANY_IDS,
   VERCEL_URL
 } from "../config/env";
@@ -31,6 +29,7 @@ import { error } from "../utils/result";
 import { type ApiKeyRecord, getApiKeyRecord } from "./api-key.server";
 import { logAuthEvent } from "./auth-events.server";
 import { isCarbonOwnedCompany } from "./company.server";
+import { resolveConsolePinIn } from "./console-pin.server";
 import {
   destroyAuthSession,
   flash,
@@ -166,44 +165,21 @@ export function makeAuthSession(
  * If console mode is on and an operator is pinned in, returns
  * the operator's ID. Otherwise returns the session user's ID.
  *
- * Console mode is read from the auth session; pin-in state is
- * still read from the `console-pin-{companyId}` cookie.
+ * Console mode is read from the auth session; the pin-in from the SIGNED
+ * `console-pin-{companyId}` cookie, re-validated against the database on every
+ * request (`resolveConsolePinIn`): a forged, legacy, stale or foreign cookie,
+ * a pinned user who is not an active employee of this company, or console mode
+ * switched off for the company all fall back to the session user.
  */
-function getEffectiveUser(
+async function getEffectiveUser(
   request: Request,
   companyId: string,
   sessionUserId: string,
   consoleMode: boolean
-): string {
+): Promise<string> {
   if (!consoleMode) return sessionUserId;
-
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) return sessionUserId;
-
-  // Parse only the pin-in cookie we need
-  const cookies = Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [key, ...rest] = c.trim().split("=");
-      return [key, decodeURIComponent(rest.join("="))];
-    })
-  );
-
-  const pinRaw = cookies[`console-pin-${companyId}`];
-  if (!pinRaw) return sessionUserId;
-
-  try {
-    const pinIn = JSON.parse(pinRaw);
-    const elapsed = Date.now() - pinIn.pinnedAt;
-    // Console operator idle window. A controlled environment (ITAR/CUI, NIST
-    // 3.1.10) drops the operator to re-PIN after the standard idle-lock window
-    // instead of the default 1h — pinnedAt is refreshed on every shell
-    // navigation, so this is effectively an inactivity timeout.
-    const maxAge = CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : 3600000;
-    if (elapsed > maxAge) return sessionUserId;
-    return pinIn.userId ?? sessionUserId;
-  } catch {
-    return sessionUserId;
-  }
+  const pinIn = await resolveConsolePinIn(request, companyId, sessionUserId);
+  return pinIn?.userId ?? sessionUserId;
 }
 
 export async function requirePermissions(
@@ -369,7 +345,7 @@ export async function requirePermissions(
       companyId,
       companyGroupId,
       email,
-      userId: getEffectiveUser(request, companyId, userId, consoleMode),
+      userId: await getEffectiveUser(request, companyId, userId, consoleMode),
       sessionUserId: userId,
       consoleMode
     };
@@ -430,7 +406,7 @@ export async function requirePermissions(
     companyId,
     companyGroupId,
     email,
-    userId: getEffectiveUser(request, companyId, userId, consoleMode),
+    userId: await getEffectiveUser(request, companyId, userId, consoleMode),
     sessionUserId: userId,
     consoleMode
   };

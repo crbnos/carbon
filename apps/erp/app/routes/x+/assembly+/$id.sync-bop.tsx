@@ -36,6 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("jobOperation")
     .select("id, job(status)")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
   if (operation.error) {
     return data(

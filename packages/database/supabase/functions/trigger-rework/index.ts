@@ -2,6 +2,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import z from "npm:zod@^4.5.4";
+import { assertCompanyRecords } from "../lib/company-records.ts";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -459,6 +460,41 @@ serve(async (req) => {
     if (!job || job.companyId !== body.companyId) {
       return errorResponse("Job not found in this company", 404);
     }
+
+    // The same holds for the two operation ids: triggerRework reads, clones and
+    // writes productionQuantity against them by id alone, so both must be
+    // operations of this job (the job is already proven to be this company's).
+    const operationIds = [
+      ...new Set([body.triggeredAtJobOperationId, body.targetJobOperationId]),
+    ];
+    const operations = await db
+      .selectFrom("jobOperation")
+      .select("id")
+      .where("id", "in", operationIds)
+      .where("jobId", "=", body.jobId)
+      .where("companyId", "=", body.companyId)
+      .execute();
+    if (operations.length !== operationIds.length) {
+      return errorResponse("Job operation not found in this company", 404);
+    }
+
+    await assertCompanyRecords(
+      db,
+      "trackedEntity",
+      body.trackedEntityIds ?? [],
+      body.companyId,
+      "Tracked entity"
+    );
+
+    // Written as productionQuantity.inspectionId, whose FK accepts any company's
+    // inspection.
+    await assertCompanyRecords(
+      db,
+      "inspection",
+      [body.inspectionId],
+      body.companyId,
+      "Inspection"
+    );
 
     logger.info(
       `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`

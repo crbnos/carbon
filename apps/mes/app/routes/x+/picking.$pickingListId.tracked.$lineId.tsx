@@ -1,6 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import {
@@ -9,6 +10,8 @@ import {
   getPickOrder
 } from "~/services/inventory.service";
 import { setPickingListLineTrackedEntity } from "~/services/picking.service";
+
+const logger = getLogger("mes", "picking-tracked-line");
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -25,9 +28,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       "id, itemId, quantityToPick, quantityPicked, pickingList(locationId), item(itemTrackingType)"
     )
     .eq("id", lineId)
-    .single();
+    .eq("companyId", companyId)
+    .maybeSingle();
 
   if (lineResult.error || !lineResult.data) {
+    logger.warn("Picking line not found for company", {
+      companyId,
+      lineId,
+      error: lineResult.error
+    });
     throw new Response("Line not found", { status: 404 });
   }
 
@@ -76,7 +85,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId, companyId } = await requirePermissions(request, {});
   const effectiveUserId = context.get(userContext)?.effectiveUserId ?? userId;
   const serviceRole = getCarbonServiceRole();
 
@@ -100,10 +109,17 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     fromStorageUnitId,
     quantity,
     unpick,
-    userId: effectiveUserId
+    userId: effectiveUserId,
+    companyId
   });
 
   if (result.error) {
+    logger.error("Failed to pick tracked entity", {
+      companyId,
+      lineId,
+      trackedEntityId,
+      error: result.error
+    });
     return {
       success: false,
       message:

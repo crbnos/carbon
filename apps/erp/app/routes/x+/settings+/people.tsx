@@ -34,6 +34,7 @@ import { redirect, useFetcher, useLoaderData } from "react-router";
 import { UpgradeOverlayUpgradeButton } from "~/components/UpgradeOverlay";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { getCompanySettings, updateTimeCardSetting } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -90,6 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const update = await updateConsoleSetting(
       client,
+      getDatabaseClient(),
       companyId,
       enabled,
       userId
@@ -97,23 +99,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
     if (update.error) return { success: false, message: update.error.message };
 
-    // Check if a PIN was auto-generated for the user
-    if (enabled) {
-      const userPin = await client
-        .from("employee")
-        .select("pin" as any)
-        .eq("id", userId)
-        .eq("companyId", companyId)
-        .maybeSingle();
+    // A PIN generated for the enabling user is returned ONCE here — it is
+    // stored hashed and can never be read back.
+    if (update.pin) {
+      return {
+        success: true,
+        message: "Console mode enabled",
+        pin: update.pin
+      };
+    }
 
-      const pin = (userPin.data as any)?.pin;
-      if (pin) {
-        return {
-          success: true,
-          message: "Console mode enabled",
-          pin
-        };
-      }
+    // Console mode is on; only the enabling user's PIN is missing.
+    if (update.pinError) {
+      return {
+        success: false,
+        message: `Console mode enabled, but ${update.pinError.toLowerCase()}. Set one from Users → Employees → Set Console PIN.`
+      };
     }
 
     return { success: true, message: "Console mode settings updated" };
@@ -299,8 +300,8 @@ export default function PeopleSettingsRoute() {
                 </div>
                 <p className="text-xs text-muted-foreground text-center">
                   <Trans>
-                    Remember this PIN. You will need it to exit console mode on
-                    MES terminals.
+                    This PIN will not be shown again. You will need it to exit
+                    console mode on MES terminals.
                   </Trans>
                 </p>
               </VStack>

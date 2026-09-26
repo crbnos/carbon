@@ -230,11 +230,11 @@ export const notifyFunction = inngest.createFunction(
         payload.event,
         primaryDocumentId,
         payload.from,
-        payload.documentType,
         {
           body: payload.body,
           companyId: payload.companyId,
           documentIds: payload.documentIds,
+          documentType: payload.documentType,
           title: payload.title,
           userId:
             payload.recipient.type === "user"

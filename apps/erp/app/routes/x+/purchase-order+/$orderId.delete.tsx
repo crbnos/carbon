@@ -17,7 +17,7 @@ const logger = getLogger("erp", "orderid-delete");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "purchasing"
   });
 
@@ -28,6 +28,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Get PO status and check if it's in "Needs Approval"
   const purchaseOrder = await getPurchaseOrder(serviceRole, orderId);
+  // The service role bypasses RLS and orderId comes from the URL.
+  if (purchaseOrder.data && purchaseOrder.data.companyId !== companyId) {
+    logger.error("Purchase order not found for company", {
+      companyId,
+      orderId
+    });
+    throw redirect(
+      path.to.purchaseOrders,
+      await flash(request, error(null, "Purchase order not found"))
+    );
+  }
+
   if (purchaseOrder.error || !purchaseOrder.data) {
     throw redirect(
       path.to.purchaseOrders,
@@ -104,6 +116,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("documentType", "purchaseOrder")
         .eq("documentId", orderId)
+        .eq("companyId", companyId)
         .eq("status", "Pending");
     }
   }

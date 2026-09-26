@@ -1,4 +1,5 @@
--- Tenant isolation for functions reachable at /rest/v1/rpc (20260925121735_rpc-function-guards).
+-- Tenant isolation for functions reachable at /rest/v1/rpc (20260925121735_rpc-function-guards),
+-- and console PINs out of the API's reach (20260926141957_employee-pin).
 -- Run from the repository root against an existing local database:
 -- pnpm exec tsx scripts/run-local-accounting-check.ts psql -X -v ON_ERROR_STOP=1 -f packages/database/supabase/tests/rpc-privileges.test.sql
 -- All fixtures and role changes are confined to the rolled-back transaction.
@@ -204,6 +205,157 @@ BEGIN
 END;
 $$;
 RESET ROLE;
+
+-- Console PINs (20260926141957_employee-pin). "employeePin" holds bcrypt
+-- hashes that no API role may read or write, even through the two SECURITY
+-- INVOKER functions; companySettings."consoleEnabled" changes only over the
+-- servers' direct connection. user_a gets settings_update here so the trigger,
+-- not the UPDATE policy, is what refuses the console flag.
+SET LOCAL "app.sync_in_progress" = 'true';
+DO $pin_fixtures$
+DECLARE
+  company_a text := current_setting('test.company_a');
+  user_a text := current_setting('test.user_a');
+  user_c text := current_setting('test.user_c');
+  employee_type text;
+BEGIN
+  -- The company's all-employees group, which the employeeType interceptor joins.
+  INSERT INTO "group" (id, name, "companyId")
+  VALUES ('00000000-0000-' || substring(company_a, 1, 4) || '-' || substring(company_a, 5, 4) || '-' || substring(company_a, 9, 12),
+          'RPC privileges employees', company_a)
+  ON CONFLICT (id) DO NOTHING;
+  INSERT INTO "employeeType" (name, "companyId") VALUES ('RPC privileges', company_a) RETURNING id INTO employee_type;
+  INSERT INTO "employee" (id, "companyId", "employeeTypeId", active) VALUES
+    (user_a, company_a, employee_type, true), (user_c, company_a, employee_type, true);
+  INSERT INTO "companySettings" (id, "consoleEnabled") VALUES (company_a, false)
+  ON CONFLICT (id) DO UPDATE SET "consoleEnabled" = false;
+  UPDATE "userPermission"
+  SET permissions = permissions || jsonb_build_object('settings_update', jsonb_build_array(company_a))
+  WHERE id = user_a;
+
+  -- The owner (the servers' direct connection) sets and verifies.
+  PERFORM set_employee_pin(user_a, company_a, '4821', user_a);
+  IF NOT verify_employee_pin(user_a, company_a, '4821') THEN
+    RAISE EXCEPTION 'FAIL: the owner cannot verify a PIN it set';
+  END IF;
+  IF verify_employee_pin(user_a, company_a, '0000') THEN
+    RAISE EXCEPTION 'FAIL: a wrong PIN verified';
+  END IF;
+  IF verify_employee_pin(user_c, company_a, '4821') THEN
+    RAISE EXCEPTION 'FAIL: an employee with no PIN verified';
+  END IF;
+  IF (SELECT "pinHash" FROM "employeePin" WHERE "employeeId" = user_a AND "companyId" = company_a) = '4821' THEN
+    RAISE EXCEPTION 'FAIL: the PIN is stored in plaintext';
+  END IF;
+END;
+$pin_fixtures$;
+
+SELECT set_config('request.jwt.claims', '{}', true);
+SET LOCAL ROLE anon;
+DO $$
+BEGIN
+  BEGIN
+    PERFORM 1 FROM "employeePin";
+    RAISE EXCEPTION 'FAIL: anon read employeePin';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    IF verify_employee_pin(current_setting('test.user_a'), current_setting('test.company_a'), '4821') THEN
+      RAISE EXCEPTION 'FAIL: anon verified an employee''s PIN';
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    PERFORM set_employee_pin(current_setting('test.user_a'), current_setting('test.company_a'), '1111', NULL);
+    RAISE EXCEPTION 'FAIL: anon set an employee''s PIN';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE "companySettings" SET "consoleEnabled" = true WHERE id = current_setting('test.company_a');
+    IF FOUND THEN
+      RAISE EXCEPTION 'FAIL: anon switched console mode on';
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+END;
+$$;
+RESET ROLE;
+
+-- The employee themself, holding settings_update in company A.
+SELECT set_config('request.jwt.claims', jsonb_build_object('sub', current_setting('test.user_a'), 'role', 'authenticated')::text, true);
+SET LOCAL ROLE authenticated;
+DO $$
+DECLARE
+  updated integer;
+BEGIN
+  BEGIN
+    PERFORM 1 FROM "employeePin";
+    RAISE EXCEPTION 'FAIL: an employee read employeePin';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    INSERT INTO "employeePin" ("employeeId", "companyId", "pinHash")
+    VALUES (current_setting('test.user_c'), current_setting('test.company_a'), 'forged');
+    RAISE EXCEPTION 'FAIL: an employee wrote employeePin directly';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    IF verify_employee_pin(current_setting('test.user_a'), current_setting('test.company_a'), '4821') THEN
+      RAISE EXCEPTION 'FAIL: an employee verified a PIN through the API';
+    END IF;
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    PERFORM set_employee_pin(current_setting('test.user_c'), current_setting('test.company_a'), '1111', current_setting('test.user_a'));
+    RAISE EXCEPTION 'FAIL: an employee set a colleague''s PIN through the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  BEGIN
+    UPDATE "companySettings" SET "consoleEnabled" = true WHERE id = current_setting('test.company_a');
+    RAISE EXCEPTION 'FAIL: a settings_update holder switched console mode on over the API';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
+
+  -- Every other column stays writable, and sending consoleEnabled unchanged is fine.
+  UPDATE "companySettings"
+  SET "digitalQuoteEnabled" = NOT "digitalQuoteEnabled", "consoleEnabled" = "consoleEnabled"
+  WHERE id = current_setting('test.company_a');
+  GET DIAGNOSTICS updated = ROW_COUNT;
+  IF updated <> 1 THEN
+    RAISE EXCEPTION 'FAIL: a settings_update holder could not update another companySettings column (% rows)', updated;
+  END IF;
+END;
+$$;
+RESET ROLE;
+SELECT set_config('request.jwt.claims', '{}', true);
+
+-- Nothing the API roles tried landed, and the server can still flip the flag.
+DO $$
+DECLARE
+  company_a text := current_setting('test.company_a');
+BEGIN
+  IF NOT verify_employee_pin(current_setting('test.user_a'), company_a, '4821')
+     OR verify_employee_pin(current_setting('test.user_a'), company_a, '1111')
+     OR EXISTS (SELECT 1 FROM "employeePin" WHERE "employeeId" = current_setting('test.user_c') AND "companyId" = company_a) THEN
+    RAISE EXCEPTION 'FAIL: an API role changed a PIN';
+  END IF;
+  IF (SELECT "consoleEnabled" FROM "companySettings" WHERE id = company_a) THEN
+    RAISE EXCEPTION 'FAIL: an API role switched console mode on';
+  END IF;
+
+  UPDATE "companySettings" SET "consoleEnabled" = true WHERE id = company_a;
+  IF NOT (SELECT "consoleEnabled" FROM "companySettings" WHERE id = company_a) THEN
+    RAISE EXCEPTION 'FAIL: the server cannot switch console mode on';
+  END IF;
+END;
+$$;
 
 SELECT 'rpc-privileges: all checks passed' AS result;
 ROLLBACK;

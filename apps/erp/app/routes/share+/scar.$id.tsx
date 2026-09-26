@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
   Button,
@@ -53,6 +54,13 @@ export const meta = () => {
   return [{ title: "SCAR Report" }];
 };
 
+const logger = getLogger("erp", "share", "scar");
+
+// The link is the only credential on this unauthenticated page: it must be a
+// SCAR link, and the issue it names must belong to the link's company.
+const isScarLink = (link: { documentType: string } | null) =>
+  link?.documentType === "Non-Conformance Supplier";
+
 enum IssueState {
   Valid,
   NotFound
@@ -69,7 +77,11 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   const externalLink = await getExternalLink(serviceRole, id);
-  if (!externalLink.data || !externalLink.data?.documentId) {
+  if (
+    !externalLink.data ||
+    !externalLink.data?.documentId ||
+    !isScarLink(externalLink.data)
+  ) {
     return {
       state: IssueState.NotFound,
       data: null
@@ -80,7 +92,13 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     serviceRole,
     externalLink.data.documentId
   );
-  if (!issue.data) {
+  if (!issue.data || issue.data.companyId !== externalLink.data.companyId) {
+    if (issue.data) {
+      logger.error("SCAR link names an issue of another company", {
+        companyId: externalLink.data.companyId,
+        externalLinkId: id
+      });
+    }
     return {
       state: IssueState.NotFound,
       data: null
@@ -139,7 +157,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const externalLink = await getExternalLink(serviceRole, id);
-  if (!externalLink.data || !externalLink.data?.documentId) {
+  if (
+    !externalLink.data ||
+    !externalLink.data?.documentId ||
+    !isScarLink(externalLink.data)
+  ) {
+    logger.error("SCAR link not found", { externalLinkId: id });
     throw new Error("Could not find id");
   }
 
@@ -147,7 +170,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     serviceRole,
     externalLink.data.documentId
   );
-  if (!issue.data) {
+  if (!issue.data || issue.data.companyId !== externalLink.data.companyId) {
+    logger.error("SCAR issue not found for link", {
+      companyId: externalLink.data.companyId,
+      externalLinkId: id,
+      error: issue.error
+    });
     throw new Error("Could not find the issue");
   }
 

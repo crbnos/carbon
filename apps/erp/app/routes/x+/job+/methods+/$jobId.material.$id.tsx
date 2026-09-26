@@ -11,6 +11,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobMaterial
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -36,6 +37,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // `client` is the service role (bypassRls): the material must belong to this
+  // job and company, and so must the make method recalculated below and the
+  // operation it is assigned to.
+  await Promise.all([
+    requireCompanyRecord(client, "jobMaterial", companyId, {
+      id,
+      jobId,
+      jobMakeMethodId: validation.data.jobMakeMethodId
+    }),
+    validation.data.jobOperationId
+      ? requireCompanyRecord(client, "jobOperation", companyId, {
+          id: validation.data.jobOperationId,
+          jobId
+        })
+      : undefined
+  ]);
 
   // Capture the previous methodType so we only pull the subassembly's method on
   // the transition INTO "Make to Order" (not on every save of a material that is

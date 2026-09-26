@@ -177,3 +177,23 @@ Deno.test("isDataLayerError returns false for non-data-layer values", () => {
     assertEquals(isDataLayerError(input), false);
   }
 });
+
+Deno.test("errorResponse uses a numeric 4xx/5xx err.status over the passed status", async () => {
+  // Shaped like lib/company-records.ts' RecordNotFoundError.
+  class NotFoundError extends Error {
+    readonly status = 404;
+  }
+  const res = errorResponse(new NotFoundError("Receipt not found"), 500);
+  assertEquals(res.status, 404);
+  assertEquals(await res.json(), { message: "Receipt not found" });
+
+  const limited = Object.assign(new Error("Rate limit exceeded"), { status: 429 });
+  assertEquals(errorResponse(limited, 401).status, 429);
+});
+
+Deno.test("errorResponse ignores a non-HTTP err.status", () => {
+  for (const status of [200, 302, 700, "404", 404.5]) {
+    const err = Object.assign(new Error("x"), { status });
+    assertEquals(errorResponse(err, 400).status, 400);
+  }
+});

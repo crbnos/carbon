@@ -8,10 +8,11 @@ import {
   deleteQuoteMaterial,
   recalculateQuoteLinePrices
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -26,6 +27,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw new Error("id not found");
   }
 
+  // The price recalculation below uses the service role: the material and its
+  // line must belong to this company before anything is touched.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+      id: lineId,
+      quoteId
+    }),
+    requireCompanyRecord(serviceRole, "quoteMaterial", companyId, {
+      id,
+      quoteLineId: lineId
+    })
+  ]);
+
   const deleteMaterial = await deleteQuoteMaterial(client, id);
   if (deleteMaterial.error) {
     return data(
@@ -39,8 +54,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(
+    serviceRole,
+    companyId,
+    quoteId,
+    lineId,
+    userId
+  );
 
   return {};
 }

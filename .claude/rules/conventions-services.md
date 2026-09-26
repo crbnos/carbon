@@ -155,23 +155,33 @@ Kysely **bypasses RLS** and **throws on rollback** (the route try/catches it). S
 
 ```typescript
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { updateSortOrder } from "../shared/sort-order";
 
 // real: updateQuoteLineOrder in sales.service.ts
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  quoteId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("quoteLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "quoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "quoteId", id: quoteId },
+    updates
   });
 }
 ```
+
+Because Kysely bypasses RLS, a Kysely service **always** scopes by `companyId` — and by the
+parent document id when the row ids come from the request — in the SQL itself. Never a per-row
+query in a loop: `updateSortOrder` (`modules/shared/sort-order.ts`) is one
+`UPDATE … FROM (VALUES …)` that throws, rolling back, if any id falls outside that scope. Name
+the tenant params `companyId` / `userId` so the API dispatcher injects them from the auth
+context rather than the body.
 
 A single write is already atomic — don't reach for a transaction.
 
@@ -204,7 +214,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 | Create-or-update | `upsertCustomer(client, data)` | client |
 | Insert-only | `insertCustomerContact(client, data)` | client |
 | Delete | `deleteCustomer(client, id)` | client |
-| Multi-row / reorder | `updateQuoteLineOrder(db, updates)` | `Kysely<KyselyDatabase>` |
+| Multi-row / reorder | `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)` | `Kysely<KyselyDatabase>` |
 
 ## Checklist
 

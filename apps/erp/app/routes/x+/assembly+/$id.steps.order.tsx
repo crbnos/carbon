@@ -4,34 +4,33 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { updateAssemblyInstructionStepOrder } from "~/modules/production";
+import { parseSortOrderUpdates } from "~/modules/shared/sort-order";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "production"
   });
 
   if (!params.id) throw new Error("Could not find id");
 
-  const updateMap = (await request.formData()).get("updates") as string;
-  if (!updateMap) {
+  const updates = parseSortOrderUpdates(await request.formData());
+  if (!updates) {
     return data(
       { success: false },
       await flash(request, error(null, "Failed to receive a new sort order"))
     );
   }
 
-  const updates = Object.entries(JSON.parse(updateMap)).map(
-    ([id, sortOrderString]) => ({
-      id,
-      sortOrder: Number(sortOrderString),
-      updatedBy: userId
-    })
-  );
-
   try {
-    await updateAssemblyInstructionStepOrder(getDatabaseClient(), updates);
+    await updateAssemblyInstructionStepOrder(
+      getDatabaseClient(),
+      companyId,
+      userId,
+      params.id,
+      updates
+    );
   } catch (err) {
     return data(
       { success: false },

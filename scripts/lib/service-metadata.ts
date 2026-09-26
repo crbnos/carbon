@@ -107,6 +107,23 @@ const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   // authenticated creator for every replacement row.
   invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
   invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
+  // Both read the caller's group-scoped currency with the payload's
+  // companyGroupId and write a memo, so it must come from the auth context —
+  // a caller-supplied group would resolve another group's currency rows.
+  purchasing_createPurchaseReturnOrderCredit: [
+    "companyId",
+    "companyGroupId",
+    "createdBy",
+    "updatedBy",
+    "userId",
+  ],
+  sales_createSalesReturnOrderCredit: [
+    "companyId",
+    "companyGroupId",
+    "createdBy",
+    "updatedBy",
+    "userId",
+  ],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`

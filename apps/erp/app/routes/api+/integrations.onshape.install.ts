@@ -1,16 +1,24 @@
 import { ONSHAPE_CLIENT_ID, ONSHAPE_OAUTH_REDIRECT_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { issueOAuthState } from "@carbon/auth/oauth-state.server";
+import { Onshape } from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  await requirePermissions(request, {});
+  const { userId, companyId } = await requirePermissions(request, {});
 
   if (!ONSHAPE_CLIENT_ID || !ONSHAPE_OAUTH_REDIRECT_URL) {
     return data({ error: "Onshape OAuth not configured" }, { status: 500 });
   }
 
-  const state = crypto.randomUUID();
+  // Bound to this browser, user and company, and consumed by the callback —
+  // otherwise anyone could hand a victim a callback URL carrying their own
+  // Onshape code and link the victim's company to the attacker's account.
+  const { state, cookie } = await issueOAuthState(
+    { integrationId: Onshape.id, userId, companyId },
+    request
+  );
 
   const params = new URLSearchParams({
     client_id: ONSHAPE_CLIENT_ID,
@@ -31,5 +39,5 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = `https://oauth.onshape.com/oauth/authorize?${params}&scope=${scope}`;
 
-  return { url };
+  return data({ url }, { headers: { "Set-Cookie": cookie } });
 }

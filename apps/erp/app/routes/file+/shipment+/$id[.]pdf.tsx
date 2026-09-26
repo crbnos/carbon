@@ -62,6 +62,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     logger.error("Failed to load shipment", { error: shipment.error });
   }
 
+  // RLS admits a shipment from any company the user belongs to, but the source
+  // document below is read with the service role — pin it to this company.
+  if (shipment.data && shipment.data.companyId !== companyId) {
+    logger.error("Shipment does not belong to this company", {
+      companyId,
+      shipmentId: id
+    });
+    throw new Response("Not found", { status: 404 });
+  }
+
   if (shipmentLines.error) {
     logger.error("Failed to load shipmentLines", {
       error: shipmentLines.error

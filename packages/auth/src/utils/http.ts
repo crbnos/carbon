@@ -87,11 +87,15 @@ export function safeRedirect(
   to: FormDataEntryValue | string | null | undefined,
   defaultRedirect = path.to.authenticatedRoot
 ) {
+  // Only a same-origin path. Browsers read `/\host` like `//host` (a
+  // protocol-relative URL to another origin), so a backslash in second place is
+  // refused along with `//`.
   if (
     !to ||
     typeof to !== "string" ||
     !to.startsWith("/") ||
-    to.startsWith("//")
+    to.startsWith("//") ||
+    to.startsWith("/\\")
   ) {
     return defaultRedirect;
   }

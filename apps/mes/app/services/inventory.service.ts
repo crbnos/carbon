@@ -56,6 +56,7 @@ export async function getBatchNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client
@@ -132,6 +133,7 @@ export async function getSerialNumbersForItem(
     .from("item")
     .select("*")
     .eq("id", args.itemId)
+    .eq("companyId", args.companyId)
     .single();
   if (item.data?.type === "Material") {
     const items = await client

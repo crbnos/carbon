@@ -246,6 +246,10 @@ msgstr "{0} valeurs"
 msgid "{0} values missing"
 msgstr "{0} valeurs manquantes"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} sera enregistré en tant que {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}j"
@@ -538,8 +542,11 @@ msgstr "90 jours"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Une règle « doit correspondre » sur ce procédé empêche ces articles de partager un lot de production"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "Un code PIN à 4 chiffres est généré lors de la création de l'opérateur."
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "Un lot de production a besoin d'au moins une opération. Pour diviser tout le lot, utilisez plutôt Dissoudre."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Une migration de données gérée par Carbon — vous chargez vos propres données"
@@ -1382,6 +1389,9 @@ msgstr "Ajouter Société"
 
 msgid "Add condition"
 msgstr "Ajouter une condition"
+
+msgid "Add Console Operator"
+msgstr "Ajouter un opérateur console"
 
 msgid "Add Contractor"
 msgstr "Ajouter Prestataire"
@@ -3286,6 +3296,10 @@ msgstr "Impossible de désactiver le seul palier actif. Ajoutez un autre palier 
 msgid "Can't download this file"
 msgstr "Impossible de télécharger ce fichier"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "Impossible de téléverser un fichier nommé {0}"
+
 msgid "Cancel"
 msgstr "Annuler"
 
@@ -4101,6 +4115,9 @@ msgstr "Le mode console est activé"
 msgid "Console Operator"
 msgstr "Opérateur Console"
 
+msgid "Console Operator Created"
+msgstr "Opérateur console créé"
+
 msgid "consumable"
 msgstr "consommable"
 
@@ -4343,9 +4360,6 @@ msgstr "Copier le numéro de pièce"
 
 msgid "Copy part unique identifier"
 msgstr "Copier l'identifiant unique de la pièce"
-
-msgid "Copy PIN"
-msgstr "Copier le PIN"
 
 msgid "Copy previous day"
 msgstr "Copier le jour précédent"
@@ -4667,6 +4681,9 @@ msgstr "Créer nouveau"
 
 msgid "Create new rule"
 msgstr "Créer une nouvelle règle"
+
+msgid "Create Operator"
+msgstr "Créer un opérateur"
 
 msgid "Create PO Revision"
 msgstr "Créer une révision de bon de commande"
@@ -8087,8 +8104,8 @@ msgstr "Grand livre et clôture de fin de mois"
 msgid "Generate"
 msgstr "Générer"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "Générez un nouveau PIN à 4 chiffres. Partagez-le avec l'opérateur pour qu'il puisse se connecter aux terminaux MES."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "Générer un nouveau code PIN à 4 chiffres. Le code PIN actuel de l'opérateur cessera de fonctionner immédiatement."
 
 msgid "Generate and send customer invoices"
 msgstr "Générer et envoyer les factures clients"
@@ -8101,9 +8118,6 @@ msgstr "Générer un exercice comptable"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Générer les IDs de matériaux et les descriptions en fonction des propriétés du matériau."
-
-msgid "Generate new PIN"
-msgstr "Générer un nouveau PIN"
 
 msgid "Generate Picking List"
 msgstr "Générer la liste de prélèvement"
@@ -10901,9 +10915,6 @@ msgstr "Nouvelles conditions de paiement"
 
 msgid "New Picking List"
 msgstr "Nouvelle Liste de Prélèvement"
-
-msgid "New PIN"
-msgstr "Nouveau PIN"
 
 msgid "New PO"
 msgstr "Nouveau BC"
@@ -14118,9 +14129,6 @@ msgstr "Restant"
 msgid "Remaining after split stays on the original row."
 msgstr "Le reste après la division reste sur la ligne d'origine."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "Mémorisez ce code PIN. Vous en aurez besoin pour quitter le mode console sur les terminaux MES."
-
 msgid "Remove"
 msgstr "Retirer"
 
@@ -14130,7 +14138,7 @@ msgstr "Retirer {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "Retirer {0} du lot de production"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "Retirer {0} de ce lot de production ? Son opération retourne au plannin
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "Retirer {0} sur {memberCount} opérations de {1} ?"
 
 msgid "Remove {label}"
 msgstr "Retirer {label}"
@@ -14560,6 +14568,9 @@ msgstr "Motif de retour"
 
 msgid "Return Reasons"
 msgstr "Motifs de retour"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "Retourner à Intégrations et reconnecter Onshape."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "Retournez dans Intégrations et reconnectez Ramp."
@@ -15820,6 +15831,12 @@ msgstr "Lien de partage"
 
 msgid "Share Quote"
 msgstr "Partager le devis"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "Partagez ce code PIN avec {name} pour qu'ils puissent se connecter sur les terminaux MES."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "Partagez ce code PIN avec l'opérateur pour qu'il puisse se connecter sur les terminaux MES."
 
 msgid "Shared"
 msgstr "Partagé"
@@ -17598,6 +17615,9 @@ msgstr "Le nombre de mois sur lesquels cet actif sera amorti."
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "Le niveau d'inventaire en main qui déclenche un nouvel ordre de réapprovisionnement selon les politiques basées sur la quantité."
 
+msgid "The Onshape connection expired"
+msgstr "La connexion Onshape a expiré"
+
 msgid "The operations and steps your parts move through"
 msgstr "Les opérations et les étapes par lesquelles vos pièces passent"
 
@@ -18147,6 +18167,15 @@ msgstr "Ce chemin décide seulement de ce qui s'exécute ensuite"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Cette période n'a aucune écriture de journal comptabilisée et peut être supprimée définitivement. Cela ne peut pas être annulé."
+
+msgid "This PIN will not be shown again."
+msgstr "Ce code PIN ne sera plus affiché."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "Ce code PIN ne sera plus affiché. Si vous l'avez oublié, réinitialisez-le à partir de la liste des opérateurs."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "Ce code PIN ne sera plus affiché. Vous en aurez besoin pour quitter le mode console sur les terminaux MES."
 
 msgid "this purchase order"
 msgstr "ce bon de commande"

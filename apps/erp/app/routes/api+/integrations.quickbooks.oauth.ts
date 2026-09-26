@@ -4,6 +4,7 @@ import {
   QUICKBOOKS_CLIENT_SECRET
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { QuickBooks } from "@carbon/ee";
 import {
   DEFAULT_SYNC_CONFIG,
@@ -11,6 +12,7 @@ import {
   ProviderID
 } from "@carbon/ee/accounting";
 import { quickbooksOnInstall } from "@carbon/ee/quickbooks/hooks.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { upsertCompanyIntegration } from "~/modules/settings/settings.server";
@@ -20,6 +22,8 @@ import { path } from "~/utils/path";
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "quickbooks", "oauth");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {
@@ -37,9 +41,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { data: params } = quickBooksAuthResponse;
 
-  // TODO: Verify state parameter
-  if (!params.state) {
-    return data({ error: "Invalid state parameter" }, { status: 400 });
+  // The state must be the one the integrations page issued to THIS browser
+  // for this user and company (IntegrationCard puts it on the authorize URL).
+  // Without the check anyone could send a victim a callback URL carrying the
+  // attacker's own authorization code, linking the victim's company to the
+  // attacker's QuickBooks account. Single-use: consumed whether it matches or not.
+  const consumedState = await consumeOAuthState(request, params.state, {
+    integrationId: QuickBooks.id,
+    userId,
+    companyId
+  });
+
+  if (!consumedState.valid) {
+    logger.error("Invalid QuickBooks OAuth state", { companyId, userId });
+    return data(
+      { error: "Invalid state parameter" },
+      { status: 400, headers: { "Set-Cookie": consumedState.cookie } }
+    );
   }
 
   if (!QUICKBOOKS_CLIENT_ID || !QUICKBOOKS_CLIENT_SECRET) {
@@ -107,7 +125,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (createdQuickBooksIntegration?.data?.metadata) {
       // Canonical public origin — `request.url`'s origin is the internal proxy
       // address in dev, which would drop the session cookies on redirect.
-      return redirect(`${getAppUrl()}${path.to.integrations}`);
+      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+        headers: { "Set-Cookie": consumedState.cookie }
+      });
     } else {
       return data(
         { error: "Failed to save QuickBooks integration" },

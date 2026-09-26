@@ -246,6 +246,10 @@ msgstr "{0} 个值"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} 将被保存为 {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}天"
@@ -538,8 +542,11 @@ msgstr "90天"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "创建操作员时会生成4位数PIN。"
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
@@ -1382,6 +1389,9 @@ msgstr "添加公司"
 
 msgid "Add condition"
 msgstr "添加条件"
+
+msgid "Add Console Operator"
+msgstr "添加控制台操作员"
 
 msgid "Add Contractor"
 msgstr "添加外协人员"
@@ -3286,6 +3296,10 @@ msgstr "无法禁用唯一的启用休息时间。请添加另一个休息时间
 msgid "Can't download this file"
 msgstr "无法下载此文件"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "无法上传名为 {0} 的文件"
+
 msgid "Cancel"
 msgstr "取消"
 
@@ -4101,6 +4115,9 @@ msgstr "控制台模式已启用"
 msgid "Console Operator"
 msgstr "控制台操作员"
 
+msgid "Console Operator Created"
+msgstr "控制台操作员已创建"
+
 msgid "consumable"
 msgstr "耗材"
 
@@ -4343,9 +4360,6 @@ msgstr "复制零件号"
 
 msgid "Copy part unique identifier"
 msgstr "复制零件唯一标识符"
-
-msgid "Copy PIN"
-msgstr "复制PIN"
 
 msgid "Copy previous day"
 msgstr "复制前一天"
@@ -4667,6 +4681,9 @@ msgstr "新建"
 
 msgid "Create new rule"
 msgstr "创建新规则"
+
+msgid "Create Operator"
+msgstr "创建操作员"
 
 msgid "Create PO Revision"
 msgstr "创建采购订单修订版本"
@@ -8087,8 +8104,8 @@ msgstr "总账和月末结账"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "生成新的4位PIN码。与操作员分享，以便他们可以在MES终端上登录。"
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "生成新的4位数PIN。操作员的当前PIN将立即停止工作。"
 
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
@@ -8101,9 +8118,6 @@ msgstr "生成会计年度"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "根据原材料的属性生成原材料ID和描述。"
-
-msgid "Generate new PIN"
-msgstr "生成新PIN"
 
 msgid "Generate Picking List"
 msgstr "生成拣货单"
@@ -10901,9 +10915,6 @@ msgstr "新建付款条件"
 
 msgid "New Picking List"
 msgstr "新拣货单"
-
-msgid "New PIN"
-msgstr "新PIN"
 
 msgid "New PO"
 msgstr "新采购订单"
@@ -14118,9 +14129,6 @@ msgstr "剩余"
 msgid "Remaining after split stays on the original row."
 msgstr "拆分后的剩余部分保留在原始行上。"
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "记住此PIN。您需要它来退出MES终端上的控制台模式。"
-
 msgid "Remove"
 msgstr "移除"
 
@@ -14130,7 +14138,7 @@ msgstr "移除{0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "从生产批次中移除 {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14147,7 @@ msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行�
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -14560,6 +14568,9 @@ msgstr "退货原因"
 
 msgid "Return Reasons"
 msgstr "退货原因"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "返回集成并重新连接Onshape。"
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "返回集成页面并重新连接 Ramp。"
@@ -15820,6 +15831,12 @@ msgstr "分享链接"
 
 msgid "Share Quote"
 msgstr "分享报价"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "将此PIN与 {name} 分享，以便他们可以在MES终端登入。"
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "将此PIN与操作员分享，以便他们可以在MES终端登入。"
 
 msgid "Shared"
 msgstr "共享"
@@ -17598,6 +17615,9 @@ msgstr "此资产将折旧的月数。"
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "按数量触发新补充订单的库存水平根据基于数量的政策。"
 
+msgid "The Onshape connection expired"
+msgstr "Onshape连接已过期"
+
 msgid "The operations and steps your parts move through"
 msgstr "您的零件所经历的工序和步骤"
 
@@ -18147,6 +18167,15 @@ msgstr "此路径仅决定接下来运行什么"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间没有已过账的凭证，可以永久删除。此操作无法撤销。"
+
+msgid "This PIN will not be shown again."
+msgstr "此PIN将不再显示。"
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "此PIN将不再显示。如果丢失，可从操作员列表中重置。"
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
 msgid "this purchase order"
 msgstr "此采购订单"

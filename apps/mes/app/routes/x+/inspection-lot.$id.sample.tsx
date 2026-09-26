@@ -3,10 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { upsertInspectionSample } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
 import { inspectionSampleValidator } from "~/services/models";
+
+const logger = getLogger("mes", "inspection-lot-sample");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -33,7 +36,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const result = await upsertInspectionSample(getDatabaseClient(), {
+  const db = getDatabaseClient();
+
+  // The sample write runs as the superuser and links the tracked entity, so
+  // the entity must belong to this company.
+  const { trackedEntityId } = validation.data;
+  if (trackedEntityId) {
+    const entity = await db
+      .selectFrom("trackedEntity")
+      .select("id")
+      .where("id", "=", trackedEntityId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!entity) {
+      logger.warn("Tracked entity not found for company", {
+        companyId,
+        inspectionId: id,
+        trackedEntityId
+      });
+      return data(
+        { error: { message: "Tracked entity not found" } },
+        await flash(request, error(null, "Tracked entity not found"))
+      );
+    }
+  }
+
+  const result = await upsertInspectionSample(db, {
     ...validation.data,
     companyId,
     inspectedBy: userId

@@ -18,6 +18,7 @@ import {
   upsertQuoteLine,
   upsertQuoteLineMethod
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
 
 const quoteDragValidator = z.object({
@@ -52,7 +53,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { name: fileName, path: documentPath, size, lineId } = validation.data;
 
+  // Lines and parts are created with the service role: the URL quote must
+  // belong to this company.
   const serviceRole = getCarbonServiceRole();
+  await requireCompanyRecord(serviceRole, "quote", companyId, { id: quoteId });
 
   const quote = await getQuote(serviceRole, quoteId);
   if (quote.error || !quote.data) {
@@ -195,6 +199,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("quoteLine")
       .select("itemId")
       .eq("id", targetLineId)
+      .eq("quoteId", quoteId)
       .eq("companyId", companyId)
       .single();
 

@@ -50,7 +50,10 @@ export async function approveRequest(
     };
   }
 
-  const { documentType, documentId } = approvalRequest;
+  // Document ids on an approval request are caller-supplied at creation, and
+  // Kysely bypasses RLS: every document write below is also pinned to the
+  // request's own company so a foreign id can never be approved into state.
+  const { documentType, documentId, companyId } = approvalRequest;
   const now = new Date().toISOString();
 
   try {
@@ -81,6 +84,7 @@ export async function approveRequest(
             "receivedComplete"
           ])
           .where("purchaseOrderId", "=", documentId)
+          .where("companyId", "=", companyId)
           .execute();
 
         const { status: calculatedStatus } = getPurchaseOrderStatus(lines);
@@ -94,6 +98,7 @@ export async function approveRequest(
             updatedAt: now
           })
           .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
           .where("status", "=", "Needs Approval")
           .returning(["id"])
           .executeTakeFirst();
@@ -112,6 +117,7 @@ export async function approveRequest(
             updatedAt: now
           })
           .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
           .returning(["id"])
           .executeTakeFirst();
 
@@ -127,6 +133,7 @@ export async function approveRequest(
             updatedAt: now
           })
           .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
           .returning(["id"])
           .executeTakeFirst();
 
@@ -814,7 +821,7 @@ export async function rejectRequest(
   // Pre-flight check: verify approval request exists and is pending
   const approvalRequest = await db
     .selectFrom("approvalRequest")
-    .select(["id", "status", "documentType", "documentId"])
+    .select(["id", "status", "documentType", "documentId", "companyId"])
     .where("id", "=", id)
     .executeTakeFirst();
 
@@ -829,7 +836,8 @@ export async function rejectRequest(
     };
   }
 
-  const { documentType, documentId } = approvalRequest;
+  // Pinned to the request's own company — see approveRequest.
+  const { documentType, documentId, companyId } = approvalRequest;
   const now = new Date().toISOString();
 
   try {
@@ -859,6 +867,7 @@ export async function rejectRequest(
             updatedAt: now
           })
           .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
           .where("status", "=", "Needs Approval")
           .returning(["id"])
           .executeTakeFirst();
@@ -880,6 +889,7 @@ export async function rejectRequest(
             updatedAt: now
           })
           .where("id", "=", documentId)
+          .where("companyId", "=", companyId)
           .returning(["id"])
           .executeTakeFirst();
 
@@ -904,6 +914,52 @@ export async function rejectRequest(
   }
 }
 
+// Approvers are user or group ids from the form, and the callers write with the
+// service role: prove each one is a member / group of the rule's company, or a
+// rule could name another tenant's users as approvers of this company's
+// documents. `approverGroupIds` mixes groups and individuals.
+async function approversBelongToCompany(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  rule: {
+    approverGroupIds?: string[] | null;
+    defaultApproverId?: string | null;
+  }
+): Promise<boolean> {
+  const approverIds = [...new Set(rule.approverGroupIds ?? [])];
+  const userIds = [
+    ...new Set(
+      [...approverIds, rule.defaultApproverId].filter(
+        (id): id is string => typeof id === "string" && id.length > 0
+      )
+    )
+  ];
+  if (userIds.length === 0) return true;
+
+  const [groups, employees] = await Promise.all([
+    approverIds.length > 0
+      ? client
+          .from("group")
+          .select("id")
+          .in("id", approverIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [] as { id: string }[], error: null }),
+    client
+      .from("employee")
+      .select("id")
+      .in("id", userIds)
+      .eq("companyId", companyId)
+  ]);
+  if (groups.error || employees.error) return false;
+
+  const groupIds = new Set((groups.data ?? []).map((g) => g.id));
+  const employeeIds = new Set((employees.data ?? []).map((e) => e.id));
+  return (
+    approverIds.every((id) => groupIds.has(id) || employeeIds.has(id)) &&
+    (!rule.defaultApproverId || employeeIds.has(rule.defaultApproverId))
+  );
+}
+
 export async function upsertApprovalRule(
   client: SupabaseClient<Database>,
   rule: UpsertApprovalRuleInput
@@ -924,6 +980,16 @@ export async function upsertApprovalRule(
 
     await requireEntitlement(client, existing.data.companyId, "APPROVAL_RULES");
 
+    if (
+      !(await approversBelongToCompany(client, existing.data.companyId, rule))
+    ) {
+      logger.error("Approval rule names approvers outside the company", {
+        companyId: existing.data.companyId,
+        ruleId: rule.id
+      });
+      return { data: null, error: { message: "Approver not found" } };
+    }
+
     return client
       .from("approvalRule")
       .update(sanitize(rule))
@@ -934,6 +1000,13 @@ export async function upsertApprovalRule(
   }
 
   await requireEntitlement(client, rule.companyId, "APPROVAL_RULES");
+
+  if (!(await approversBelongToCompany(client, rule.companyId, rule))) {
+    logger.error("Approval rule names approvers outside the company", {
+      companyId: rule.companyId
+    });
+    return { data: null, error: { message: "Approver not found" } };
+  }
 
   return client.from("approvalRule").insert([rule]).select("id").single();
 }

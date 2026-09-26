@@ -5,6 +5,10 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import z from "npm:zod@^4.5.4";
 import { getFunctionLogger } from "../lib/logging.ts";
+import {
+  assertCompanyRecords,
+  RecordNotFoundError,
+} from "../lib/company-records.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database, Json } from "../lib/types.ts";
@@ -205,6 +209,16 @@ serve(async (req: Request) => {
     permissionsByType[type] ?? { update: "settings" }
   );
 
+  // Every receipt/shipment type writes the body's locationId onto the new
+  // document (and its lines); the FK alone accepts another company's location.
+  await assertCompanyRecords(
+    db,
+    "location",
+    [payload.locationId],
+    companyId,
+    "Location"
+  );
+
   switch (type) {
     case "nonConformanceTasks": {
       const { id } = payload;
@@ -219,28 +233,38 @@ serve(async (req: Request) => {
           approvalTasks,
           existingReviewers,
         ] = await Promise.all([
-          client.from("nonConformance").select("*").eq("id", id).single(),
+          client
+            .from("nonConformance")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("nonConformanceActionTask")
             .select("*")
-            .eq("nonConformanceId", id),
+            .eq("nonConformanceId", id)
+            .eq("companyId", companyId),
           client
             .from("nonConformanceApprovalTask")
             .select("*")
-            .eq("nonConformanceId", id),
+            .eq("nonConformanceId", id)
+            .eq("companyId", companyId),
           client
             .from("nonConformanceReviewer")
             .select("*")
-            .eq("nonConformanceId", id),
+            .eq("nonConformanceId", id)
+            .eq("companyId", companyId),
         ]);
 
         if (nonConformance.error) throw new Error(nonConformance.error.message);
+        if (!nonConformance.data) throw new RecordNotFoundError("Non-conformance not found");
 
         const workflow = nonConformance.data?.nonConformanceWorkflowId
           ? await client
               .from("nonConformanceWorkflow")
               .select("*")
               .eq("id", nonConformance.data?.nonConformanceWorkflowId)
+              .eq("companyId", companyId)
               .maybeSingle()
           : null;
 
@@ -450,14 +474,34 @@ serve(async (req: Request) => {
       try {
 
         const [job, jobOperations] = await Promise.all([
-          client.from("job").select("*").eq("id", jobId).single(),
+          client
+            .from("job")
+            .select("*")
+            .eq("id", jobId)
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("jobOperation")
             .select("*, jobMakeMethod(itemId)")
-            .eq("jobId", jobId),
+            .eq("jobId", jobId)
+            .eq("companyId", companyId),
         ]);
 
+        if (job.error) throw new Error(job.error.message);
+        if (!job.data) throw new RecordNotFoundError("Job not found");
         if (jobOperations.error) throw new Error(jobOperations.error.message);
+
+        // Caller-chosen existing POs must belong to this company — lines are
+        // appended to them by id below.
+        await assertCompanyRecords(
+          db,
+          "purchaseOrder",
+          Object.values(purchaseOrdersBySupplierId as Record<string, string>).filter(
+            (poId) => poId && poId !== "new"
+          ),
+          companyId,
+          "Purchase order"
+        );
 
         const outsideOperations = jobOperations.data?.filter(
           (d) => d.operationType === "Outside Processing"
@@ -482,17 +526,20 @@ serve(async (req: Request) => {
                   .from("supplierProcess")
                   .select("*")
                   .in("id", Array.from(supplierProcessIds))
+                  .eq("companyId", companyId)
               : Promise.resolve({ data: [], error: null }),
             outsideProcessIds.size > 0
               ? client
                   .from("supplierProcess")
                   .select("*")
                   .in("processId", Array.from(outsideProcessIds))
+                  .eq("companyId", companyId)
               : Promise.resolve({ data: [], error: null }),
             client
               .from("purchaseOrderLine")
               .select("*")
               .eq("jobId", jobId)
+              .eq("companyId", companyId)
               .in(
                 "jobOperationId",
                 outsideOperations.map((d) => d.id)
@@ -575,16 +622,23 @@ serve(async (req: Request) => {
               client
                 .from("supplier")
                 .select("*")
-                .in("id", Array.from(supplierIds)),
+                .in("id", Array.from(supplierIds))
+                .eq("companyId", companyId),
               client
                 .from("supplierPayment")
                 .select("*")
-                .in("supplierId", Array.from(supplierIds)),
+                .in("supplierId", Array.from(supplierIds))
+                .eq("companyId", companyId),
               client
                 .from("supplierShipping")
                 .select("*")
-                .in("supplierId", Array.from(supplierIds)),
-              client.from("item").select("*").in("id", Array.from(itemIds)),
+                .in("supplierId", Array.from(supplierIds))
+                .eq("companyId", companyId),
+              client
+                .from("item")
+                .select("*")
+                .in("id", Array.from(itemIds))
+                .eq("companyId", companyId),
             ]);
 
           if (suppliers.error) throw new Error(suppliers.error.message);
@@ -854,11 +908,13 @@ serve(async (req: Request) => {
           client
             .from("purchaseOrders")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", purchaseOrderId)
             .single(),
           client
             .from("purchaseOrderLine")
             .select("*")
+            .eq("companyId", companyId)
             .eq("purchaseOrderId", purchaseOrderId)
             .in("purchaseOrderLineType", [
               "Part",
@@ -870,16 +926,18 @@ serve(async (req: Request) => {
           client
             .from("purchaseOrderLine")
             .select("id, purchaseOrderLineType, assetId, purchaseQuantity, quantityReceived, receivedComplete")
+            .eq("companyId", companyId)
             .eq("purchaseOrderId", purchaseOrderId)
             .eq("purchaseOrderLineType", "Fixed Asset"),
           client
             .from("receipt")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", existingReceiptId)
             .maybeSingle(),
         ]);
 
-        if (!purchaseOrder.data) throw new Error("Purchase order not found");
+        if (!purchaseOrder.data) throw new RecordNotFoundError("Purchase order not found");
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
 
@@ -896,6 +954,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             purchaseOrderLines.data
@@ -925,6 +984,7 @@ serve(async (req: Request) => {
         const pickMethods = await client
           .from("pickMethod")
           .select("itemId, locationId, defaultStorageUnitId")
+          .eq("companyId", companyId)
           .in("itemId", receiptItemIds);
         const pickMethodKey = (itemId: string, loc: string | null) =>
           `${itemId}::${loc ?? ""}`;
@@ -938,6 +998,10 @@ serve(async (req: Request) => {
           }
         }
 
+        // A supplied id that is not this company's receipt is a 404, not a
+        // silent create-new.
+        if (existingReceiptId && !receipt.data)
+          throw new RecordNotFoundError("Receipt not found");
         const hasReceipt = !!receipt.data?.id;
         const isOutsideOperation =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
@@ -1109,21 +1173,24 @@ serve(async (req: Request) => {
             client
               .from("warehouseTransfer")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", warehouseTransferId)
               .single(),
             client
               .from("warehouseTransferLine")
               .select("*")
+              .eq("companyId", companyId)
               .eq("transferId", warehouseTransferId),
             client
               .from("receipt")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingReceiptId)
               .maybeSingle(),
           ]);
 
         if (!warehouseTransfer.data)
-          throw new Error("Warehouse transfer not found");
+          throw new RecordNotFoundError("Warehouse transfer not found");
         if (warehouseTransferLines.error)
           throw new Error(warehouseTransferLines.error.message);
 
@@ -1132,6 +1199,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             warehouseTransferLines.data
@@ -1149,6 +1217,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's receipt is a 404, not a
+        // silent create-new.
+        if (existingReceiptId && !receipt.data)
+          throw new RecordNotFoundError("Receipt not found");
         const hasReceipt = !!receipt.data?.id;
 
         const previouslyReceivedQuantitiesByLine = (
@@ -1290,12 +1362,13 @@ serve(async (req: Request) => {
             client
               .from("receipt")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingReceiptId)
               .maybeSingle(),
           ]);
 
         if (!salesReturnOrder.data)
-          throw new Error("Sales return order not found");
+          throw new RecordNotFoundError("Sales return order not found");
         if (salesReturnOrder.data.status !== "To Receive")
           throw new Error(
             `Cannot receive against a return order in ${salesReturnOrder.data.status} status`
@@ -1316,6 +1389,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in("id", returnItemIds);
         const serializedItems = new Set(
           items.data
@@ -1331,6 +1405,7 @@ serve(async (req: Request) => {
         const pickMethods = await client
           .from("pickMethod")
           .select("itemId, locationId, defaultStorageUnitId")
+          .eq("companyId", companyId)
           .in("itemId", returnItemIds);
         const defaultStorageUnitByItem = new Map<string, string>();
         for (const row of pickMethods.data ?? []) {
@@ -1339,6 +1414,10 @@ serve(async (req: Request) => {
           }
         }
 
+        // A supplied id that is not this company's receipt is a 404, not a
+        // silent create-new.
+        if (existingReceiptId && !receipt.data)
+          throw new RecordNotFoundError("Receipt not found");
         const hasReceipt = !!receipt.data?.id;
         // Re-targeting deletes and rebuilds the lines — only a Draft may be
         // rebuilt; a Posted document's lines are referenced by ledger rows.
@@ -1457,21 +1536,24 @@ serve(async (req: Request) => {
             client
               .from("warehouseTransfer")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", warehouseTransferId)
               .single(),
             client
               .from("warehouseTransferLine")
               .select("*")
+              .eq("companyId", companyId)
               .eq("transferId", warehouseTransferId),
             client
               .from("receipt")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingReceiptId)
               .maybeSingle(),
           ]);
 
         if (!warehouseTransfer.data)
-          throw new Error("Warehouse transfer not found");
+          throw new RecordNotFoundError("Warehouse transfer not found");
         if (warehouseTransferLines.error)
           throw new Error(warehouseTransferLines.error.message);
 
@@ -1480,6 +1562,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             warehouseTransferLines.data
@@ -1497,6 +1580,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's receipt is a 404, not a
+        // silent create-new.
+        if (existingReceiptId && !receipt.data)
+          throw new RecordNotFoundError("Receipt not found");
         const hasReceipt = !!receipt.data?.id;
 
         const previouslyReceivedQuantitiesByLine = (
@@ -1623,17 +1710,19 @@ serve(async (req: Request) => {
           client
             .from("receiptLine")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", receiptLineId)
             .single(),
           client
             .from("trackedEntity")
             .select("*")
+            .eq("companyId", companyId)
             .eq("attributes->> Receipt Line", receiptLineId),
         ]);
 
         logger.debug({ trackedEntities });
 
-        if (!receiptLine.data) throw new Error("Receipt line not found");
+        if (!receiptLine.data) throw new RecordNotFoundError("Receipt line not found");
 
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = receiptLine.data;
@@ -1782,21 +1871,24 @@ serve(async (req: Request) => {
             client
               .from("warehouseTransfer")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", warehouseTransferId)
               .single(),
             client
               .from("warehouseTransferLine")
               .select("*")
+              .eq("companyId", companyId)
               .eq("transferId", warehouseTransferId),
             client
               .from("shipment")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingShipmentId)
               .maybeSingle(),
           ]);
 
         if (!warehouseTransfer.data)
-          throw new Error("Warehouse transfer not found");
+          throw new RecordNotFoundError("Warehouse transfer not found");
         if (warehouseTransferLines.error)
           throw new Error(warehouseTransferLines.error.message);
 
@@ -1805,6 +1897,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             warehouseTransferLines.data
@@ -1822,6 +1915,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
 
         const previouslyShippedQuantitiesByLine = (
@@ -1964,12 +2061,13 @@ serve(async (req: Request) => {
             client
               .from("shipment")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingShipmentId)
               .maybeSingle(),
           ]);
 
         if (!salesReturnOrder.data)
-          throw new Error("Sales return order not found");
+          throw new RecordNotFoundError("Sales return order not found");
         if (salesReturnOrderLines.error)
           throw new Error(salesReturnOrderLines.error.message);
         // Goods can only go back out once they came in: the return must be
@@ -2008,6 +2106,7 @@ serve(async (req: Request) => {
           const priorLines = await client
             .from("shipmentLine")
             .select("lineId, shippedQuantity")
+            .eq("companyId", companyId)
             .in("shipmentId", priorShipmentIds);
           for (const line of priorLines.data ?? []) {
             if (!line.lineId) continue;
@@ -2025,6 +2124,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in("id", returnItemIds);
         const serializedItems = new Set(
           items.data
@@ -2037,6 +2137,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
         if (hasShipment && shipment.data!.status !== "Draft")
           throw new Error(
@@ -2174,12 +2278,13 @@ serve(async (req: Request) => {
             client
               .from("shipment")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingShipmentId)
               .maybeSingle(),
           ]);
 
         if (!purchaseReturnOrder.data)
-          throw new Error("Purchase return order not found");
+          throw new RecordNotFoundError("Purchase return order not found");
         if (purchaseReturnOrder.data.status !== "To Ship")
           throw new Error(
             `Cannot ship against a return order in ${purchaseReturnOrder.data.status} status`
@@ -2198,6 +2303,7 @@ serve(async (req: Request) => {
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in("id", returnItemIds);
         const serializedItems = new Set(
           items.data
@@ -2210,6 +2316,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
         if (hasShipment && shipment.data!.status !== "Draft")
           throw new Error(
@@ -2415,11 +2525,13 @@ serve(async (req: Request) => {
           client
             .from("purchaseOrder")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", purchaseOrderId)
             .single(),
           client
             .from("purchaseOrderLine")
             .select("*")
+            .eq("companyId", companyId)
             .eq("purchaseOrderId", purchaseOrderId)
             .in("purchaseOrderLineType", [
               "Part",
@@ -2432,22 +2544,25 @@ serve(async (req: Request) => {
           client
             .from("purchaseOrderDelivery")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", purchaseOrderId)
             .maybeSingle(),
           client
             .from("shipment")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", existingShipmentId)
             .maybeSingle(),
         ]);
 
-        if (!purchaseOrder.data) throw new Error("Purchase order not found");
+        if (!purchaseOrder.data) throw new RecordNotFoundError("Purchase order not found");
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
 
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             purchaseOrderLines.data.map((d) => d.itemId)
@@ -2463,6 +2578,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
         const isOutsideOperation =
           purchaseOrder.data.purchaseOrderType === "Outside Processing";
@@ -2607,10 +2726,16 @@ serve(async (req: Request) => {
           shipment,
           jobs,
         ] = await Promise.all([
-          client.from("salesOrder").select("*").eq("id", salesOrderId).single(),
+          client
+            .from("salesOrder")
+            .select("*")
+            .eq("id", salesOrderId)
+            .eq("companyId", companyId)
+            .single(),
           client
             .from("salesOrderLine")
             .select("*")
+            .eq("companyId", companyId)
             .eq("salesOrderId", salesOrderId)
             .in("salesOrderLineType", [
               "Part",
@@ -2623,32 +2748,37 @@ serve(async (req: Request) => {
           client
             .from("salesOrderLine")
             .select("id, salesOrderLineType, assetId, saleQuantity, quantitySent, sentComplete")
+            .eq("companyId", companyId)
             .eq("salesOrderId", salesOrderId)
             .eq("salesOrderLineType", "Fixed Asset"),
           client
             .from("salesOrderShipment")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", salesOrderId)
             .maybeSingle(),
           client
             .from("shipment")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", existingShipmentId)
             .maybeSingle(),
           client
             .from("job")
             .select("*")
+            .eq("companyId", companyId)
             .eq("salesOrderId", salesOrderId)
             .neq("status", "Cancelled"),
         ]);
 
-        if (!salesOrder.data) throw new Error("Sales order not found");
+        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
 
         const items = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .in(
             "id",
             salesOrderLines.data.map((d) => d.itemId)
@@ -2664,6 +2794,10 @@ serve(async (req: Request) => {
             .map((d) => d.id)
         );
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
 
         // Group jobs by sales order line ID
@@ -2826,6 +2960,7 @@ serve(async (req: Request) => {
                       const trackedEntities = await client
                         .from("trackedEntity")
                         .select("*")
+                        .eq("companyId", companyId)
                         .eq("attributes->>Job Make Method", jobMakeMethod.id)
                         .order("createdAt", { ascending: true });
 
@@ -2949,12 +3084,13 @@ serve(async (req: Request) => {
         const salesOrderLine = await client
           .from("salesOrderLine")
           .select("*")
+          .eq("companyId", companyId)
           .eq("id", salesOrderLineId)
           .eq("locationId", locationId)
           .single();
 
         if (!salesOrderLine.data || !salesOrderLine.data.itemId)
-          throw new Error("Sales order line not found");
+          throw new RecordNotFoundError("Sales order line not found");
         // Services are never shipped
         if (salesOrderLine.data.salesOrderLineType === "Service")
           throw new Error("Service lines cannot be shipped");
@@ -2965,38 +3101,47 @@ serve(async (req: Request) => {
             client
               .from("salesOrder")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", salesOrderId)
               .single(),
             client
               .from("salesOrderShipment")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", salesOrderId)
               .maybeSingle(),
             client
               .from("shipment")
               .select("*")
+              .eq("companyId", companyId)
               .eq("id", existingShipmentId)
               .maybeSingle(),
             client
               .from("job")
               .select("*")
+              .eq("companyId", companyId)
               .eq("salesOrderLineId", salesOrderLineId)
               .neq("status", "Cancelled"),
           ]);
 
-        if (!salesOrder.data) throw new Error("Sales order not found");
+        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
 
         const item = await client
           .from("item")
           .select("id, itemTrackingType")
+          .eq("companyId", companyId)
           .eq("id", salesOrderLine.data.itemId)
           .single();
 
-        if (!item.data) throw new Error("Item not found");
+        if (!item.data) throw new RecordNotFoundError("Item not found");
 
         const isSerial = item.data.itemTrackingType === "Serial";
         const isBatch = item.data.itemTrackingType === "Batch";
 
+        // A supplied id that is not this company's shipment is a 404, not a
+        // silent create-new.
+        if (existingShipmentId && !shipment.data)
+          throw new RecordNotFoundError("Shipment not found");
         const hasShipment = !!shipment.data?.id;
         const previouslyShippedQuantity = salesOrderLine.data.quantitySent ?? 0;
 
@@ -3121,6 +3266,7 @@ serve(async (req: Request) => {
                     const trackedEntities = await client
                       .from("trackedEntity")
                       .select("*")
+                      .eq("companyId", companyId)
                       .eq("attributes->>Job Make Method", jobMakeMethod.id)
                       .order("createdAt", { ascending: true });
 
@@ -3199,11 +3345,12 @@ serve(async (req: Request) => {
           client
             .from("shipmentLine")
             .select("*")
+            .eq("companyId", companyId)
             .eq("id", shipmentLineId)
             .single(),
         ]);
 
-        if (!shipmentLine.data) throw new Error("Shipment line not found");
+        if (!shipmentLine.data) throw new RecordNotFoundError("Shipment line not found");
 
         await db.transaction().execute(async (trx) => {
           const { id, ...data } = shipmentLine.data;

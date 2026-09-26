@@ -1,5 +1,6 @@
 import { getAppUrl } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { getIntegrationConfigById } from "@carbon/ee";
 import {
   exchangeCodeForTokens,
@@ -34,8 +35,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { data: params } = jiraAuthResponse;
 
-  if (!params.state) {
-    return data({ error: "Invalid state parameter" }, { status: 400 });
+  // The state must be the one the integrations page issued to THIS browser
+  // for this user and company (IntegrationCard puts it on the authorize URL).
+  // Without the check anyone could send a victim a callback URL carrying the
+  // attacker's own authorization code, linking the victim's company to the
+  // attacker's Jira account. Single-use: consumed whether it matches or not.
+  const consumedState = await consumeOAuthState(request, params.state, {
+    integrationId: "jira",
+    userId,
+    companyId
+  });
+
+  if (!consumedState.valid) {
+    logger.error("Invalid Jira OAuth state", { companyId, userId });
+    return data(
+      { error: "Invalid state parameter" },
+      { status: 400, headers: { "Set-Cookie": consumedState.cookie } }
+    );
   }
 
   try {
@@ -96,7 +112,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     if (createdJiraIntegration?.data?.metadata) {
       // Redirect on the canonical public origin — `request.url`'s origin is the
       // internal proxy address in dev, which would drop the session cookies.
-      return redirect(`${getAppUrl()}${path.to.integrations}`);
+      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+        headers: { "Set-Cookie": consumedState.cookie }
+      });
     } else {
       return data(
         { error: "Failed to save Jira integration" },

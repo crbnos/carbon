@@ -9,6 +9,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory";
 import { bulkJobValidator, insertJob } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -85,6 +86,27 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
   }
+
+  // insertJob runs with the service role, so every foreign-key id in the form
+  // is proven to belong to this company before any job is written.
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "item", companyId, {
+      id: jobData.itemId
+    }),
+    requireCompanyRecord(serviceRole, "location", companyId, {
+      id: jobData.locationId
+    }),
+    jobData.customerId
+      ? requireCompanyRecord(serviceRole, "customer", companyId, {
+          id: jobData.customerId
+        })
+      : null,
+    jobData.modelUploadId
+      ? requireCompanyRecord(serviceRole, "modelUpload", companyId, {
+          id: jobData.modelUploadId
+        })
+      : null
+  ]);
 
   const storageUnitId = await getDefaultStorageUnitForJob(
     serviceRole,

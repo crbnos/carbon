@@ -1,4 +1,5 @@
 import type { Redis } from "ioredis";
+import RedisMock from "ioredis-mock";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { Ratelimit } from "./ratelimit";
 
@@ -539,5 +540,69 @@ describe("Ratelimit", () => {
         expect.anything()
       );
     });
+  });
+});
+
+// These run the REAL Lua scripts (ioredis-mock executes them), so they pin what
+// Redis does with the counters rather than what a stubbed `eval` returns.
+describe("refund() against the real window scripts", () => {
+  beforeEach(async () => {
+    // Only the clock is faked — mid-window, so no test straddles a boundary.
+    vi.useFakeTimers({ toFake: ["Date"] });
+    vi.setSystemTime(new Date("2024-01-01T00:30:00.000Z"));
+    // ioredis-mock instances share one keyspace; start every test empty.
+    await new RedisMock().flushall();
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  const create = () =>
+    new Ratelimit({
+      redis: new RedisMock() as unknown as Redis,
+      limiter: Ratelimit.slidingWindow(2, "1 h"),
+      timeout: 0
+    });
+
+  it("a concurrent burst consumes at most the budget", async () => {
+    const ratelimit = create();
+    const results = await Promise.all(
+      Array.from({ length: 10 }, () => ratelimit.limit("terminal"))
+    );
+    expect(results.filter((r) => r.success)).toHaveLength(2);
+  });
+
+  it("returns a consumed token so the next call passes", async () => {
+    const ratelimit = create();
+    expect((await ratelimit.limit("terminal")).success).toBe(true);
+    expect((await ratelimit.limit("terminal")).success).toBe(true);
+    expect((await ratelimit.limit("terminal")).success).toBe(false);
+
+    await ratelimit.refund("terminal");
+
+    expect((await ratelimit.limit("terminal")).success).toBe(true);
+    expect((await ratelimit.limit("terminal")).success).toBe(false);
+  });
+
+  it("never banks credit below zero", async () => {
+    const ratelimit = create();
+    await ratelimit.refund("terminal");
+    await ratelimit.refund("terminal");
+
+    expect((await ratelimit.limit("terminal")).success).toBe(true);
+    expect((await ratelimit.limit("terminal")).success).toBe(true);
+    expect((await ratelimit.limit("terminal")).success).toBe(false);
+  });
+
+  it("only returns the identifier's own token", async () => {
+    const ratelimit = create();
+    await ratelimit.limit("a");
+    await ratelimit.limit("a");
+    await ratelimit.limit("b");
+
+    await ratelimit.refund("b");
+
+    expect((await ratelimit.limit("a")).success).toBe(false);
   });
 });

@@ -284,6 +284,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  // Absolute cap already passed → termination wins over lock, as in the loader
+  // and requireAuthSession. Both unlock paths below re-stamp createdAt (the
+  // passkey path directly, TOTP via makeAuthSession), so a POST here would
+  // otherwise revive a session past its absolute cap.
+  const lockedSession = await getAuthSession(request);
+  if (lockedSession && isSessionExpiredAbsolute(lockedSession)) {
+    throw await destroyAuthSession(request);
+  }
+
   // Passkey unlock arrives as JSON (the credential assertion); TOTP unlock is a
   // form POST. Branch on content type — the TOTP path below is unchanged.
   const contentType = request.headers.get("content-type") ?? "";

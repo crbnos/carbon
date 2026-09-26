@@ -35,6 +35,7 @@ import {
   type SourcingType,
   type SupplierPriceMap
 } from "../shared";
+import { updateSortOrder } from "../shared/sort-order";
 import {
   type ChangeNoticeChangeType,
   type ChangeNoticeError,
@@ -2896,6 +2897,7 @@ export async function upsertPickMethodWithShelfLife(
     defaultStorageUnitId?: string | null;
     sortMethod?: (typeof pickMethodSortMethods)[number];
     customFields?: Json;
+    companyId: string;
     userId: string;
     shelfLife: {
       mode?: (typeof shelfLifeModes)[number];
@@ -2909,6 +2911,18 @@ export async function upsertPickMethodWithShelfLife(
   const updatedAt = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
+    // Kysely bypasses RLS and itemId comes from the URL, so prove the item is
+    // this company's before any write — every statement below is also scoped.
+    const item = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!item) {
+      throw new Error(`Item ${args.itemId} not found`);
+    }
+
     await trx
       .updateTable("pickMethod")
       .set({
@@ -2922,6 +2936,7 @@ export async function upsertPickMethodWithShelfLife(
       })
       .where("itemId", "=", args.itemId)
       .where("locationId", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
       .execute();
 
     const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
@@ -2935,6 +2950,7 @@ export async function upsertPickMethodWithShelfLife(
       await trx
         .deleteFrom("itemShelfLife")
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
     }
@@ -2957,6 +2973,7 @@ export async function upsertPickMethodWithShelfLife(
         .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
         .select("mo.processId")
         .where("amm.itemId", "=", args.itemId)
+        .where("amm.companyId", "=", args.companyId)
         .where("mo.processId", "is not", null)
         .execute();
       const allowed = new Set(
@@ -2975,6 +2992,7 @@ export async function upsertPickMethodWithShelfLife(
       .selectFrom("itemShelfLife")
       .select("itemId")
       .where("itemId", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
       .executeTakeFirst();
 
     if (existing) {
@@ -2990,18 +3008,9 @@ export async function upsertPickMethodWithShelfLife(
           updatedAt
         })
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
-    }
-
-    const itemRow = await trx
-      .selectFrom("item")
-      .select("companyId")
-      .where("id", "=", args.itemId)
-      .executeTakeFirstOrThrow();
-
-    if (!itemRow.companyId) {
-      throw new Error(`Item ${args.itemId} has no companyId`);
     }
 
     await trx
@@ -3013,7 +3022,7 @@ export async function upsertPickMethodWithShelfLife(
         triggerProcessId: normalizedTriggerProcess,
         triggerTiming: normalizedTriggerTiming,
         calculateFromBom: normalizedCalcFromBom,
-        companyId: itemRow.companyId,
+        companyId: args.companyId,
         createdBy: args.userId
       })
       .execute();
@@ -3192,10 +3201,22 @@ export async function updateItemMethodAndSourcing(
 
   const updatedAt = datetime.timestamp();
 
+  // An explicit allow-list, never a spread: `itemUpdate` reaches this from the
+  // API with whatever keys the caller sent, and Kysely bypasses RLS — a spread
+  // would let `{ companyId }` (or any other column) through to the UPDATE.
+  const { replenishmentSystem, defaultMethodType, sourcingType } =
+    args.itemUpdate;
+
   return db.transaction().execute(async (trx) => {
     await trx
       .updateTable("item")
-      .set({ ...args.itemUpdate, updatedBy: args.userId, updatedAt })
+      .set({
+        ...(replenishmentSystem !== undefined && { replenishmentSystem }),
+        ...(defaultMethodType !== undefined && { defaultMethodType }),
+        ...(sourcingType !== undefined && { sourcingType }),
+        updatedBy: args.userId,
+        updatedAt
+      })
       .where("id", "in", args.itemIds)
       .where("companyId", "=", args.companyId)
       .execute();
@@ -7188,28 +7209,20 @@ export async function deleteChangeNoticeAction(
   return client.from("changeOrderActionTask").delete().eq("id", id);
 }
 
-// Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
-// getDatabaseClient()). Kysely bypasses RLS and the ids come from the request
-// body, so every update is scoped to the owning change notice + company.
 export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
-  args: {
-    changeNoticeId: string;
-    companyId: string;
-    updates: { id: string; sortOrder: number; updatedBy: string }[];
-  }
+  companyId: string,
+  userId: string,
+  changeNoticeId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  const { changeNoticeId, companyId, updates } = args;
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("changeOrderActionTask")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .where("changeOrderId", "=", changeNoticeId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "changeOrderActionTask",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "changeOrderId", id: changeNoticeId },
+    updates
   });
 }
 

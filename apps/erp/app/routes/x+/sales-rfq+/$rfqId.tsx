@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { supportedModelTypes } from "@carbon/files/cad";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -28,6 +29,8 @@ import { useOptimisticDocumentDrag } from "~/modules/sales/ui/SalesRFQ/useOptimi
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
+const logger = getLogger("erp", "sales-rfq");
+
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
     { breadcrumb: msg`RFQs`, to: path.to.salesRfqs },
@@ -50,6 +53,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSalesRFQ(serviceRole, rfqId),
     getSalesRFQLines(serviceRole, rfqId)
   ]);
+
+  // The service role bypasses RLS and rfqId comes from the URL.
+  if (rfqSummary.data && rfqSummary.data.companyId !== companyId) {
+    logger.error("Sales RFQ not found for company", { companyId, rfqId });
+    throw redirect(path.to.salesRfqs);
+  }
 
   const opportunity = await getOpportunity(
     serviceRole,

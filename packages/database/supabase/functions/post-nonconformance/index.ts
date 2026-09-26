@@ -1,6 +1,7 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { assertCompanyRecords } from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
@@ -78,6 +79,31 @@ serve(async (req: Request) => {
     if (effectiveMovements.length === 0) {
       return jsonResponse({ success: true, journalId: null });
     }
+
+    // The service-role client proves the caller may act in companyId, not that
+    // the document or the movements' location / tracked entity belong to it —
+    // all three land on this company's ledger rows.
+    await assertCompanyRecords(
+      db,
+      documentType === "Inbound Inspection" ? "inspection" : "nonConformance",
+      [documentId],
+      companyId,
+      documentType === "Inbound Inspection" ? "Inspection" : "Non-conformance"
+    );
+    await assertCompanyRecords(
+      db,
+      "location",
+      effectiveMovements.map((m) => m.locationId),
+      companyId,
+      "Location"
+    );
+    await assertCompanyRecords(
+      db,
+      "trackedEntity",
+      effectiveMovements.map((m) => m.trackedEntityId),
+      companyId,
+      "Tracked entity"
+    );
 
     const itemIds = [...new Set(effectiveMovements.map((m) => m.itemId))];
 
