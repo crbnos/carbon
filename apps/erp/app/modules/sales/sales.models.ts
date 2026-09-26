@@ -231,7 +231,9 @@ export const customerShippingValidator = z.object({
   // shippingTermId: zfd.text(z.string().optional()),
   shippingMethodId: zfd.text(z.string().optional()),
   incoterm: zfd.text(z.enum(incoterms).optional()),
-  incotermLocation: zfd.text(z.string().optional())
+  incotermLocation: zfd.text(z.string().optional()),
+  requiresCertificateOfConformance: zfd.checkbox(),
+  requiresFirstArticle: zfd.checkbox()
 });
 
 export const customerStatusValidator = z.object({
