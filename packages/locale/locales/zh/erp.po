@@ -5734,6 +5734,9 @@ msgstr "删除操作"
 msgid "Delete Agreement"
 msgstr "删除 协议"
 
+msgid "Delete and apply"
+msgstr "删除并应用"
+
 msgid "Delete and restore"
 msgstr "删除并恢复"
 
@@ -6627,6 +6630,9 @@ msgstr "每个工单需要自己的批次号 — 或将它们合并为一个批�
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。包含这些行的备份永远无法恢复。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "每一行都是从此公司的数据指向其不拥有的行的链接。移除这些行可以应用演示数据。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删除这些行可以运行恢复。"
@@ -9449,9 +9455,6 @@ msgstr "发票客户位置"
 
 msgid "Invoice ID"
 msgstr "发票ID"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "具有服务日期的发票行递延至递延收入，由收益确认凭证实现。"
 
 msgid "Invoice Location"
 msgstr "发票地点"
@@ -14704,6 +14707,9 @@ msgstr "移除条款"
 msgid "Remove condition"
 msgstr "移除条件"
 
+msgid "Remove corrupted data and apply"
+msgstr "移除损坏的数据并应用"
+
 msgid "Remove corrupted data and restore"
 msgstr "移除损坏数据并恢复"
 
@@ -14815,6 +14821,9 @@ msgstr "租赁场所"
 
 msgid "Rental Utilization"
 msgstr "租赁设备利用率"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "重新打开"
@@ -15238,9 +15247,6 @@ msgstr "收入总账科目，用于记录经营租赁收入（在租赁期内采
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "在获得前开票的收入，作为负债持有并随着服务期间推移由识别运行释放为收入。"
 
-msgid "Revenue recognition"
-msgstr "收入确认"
-
 msgid "Revenue Recognition"
 msgstr "收入确认"
 
@@ -15645,9 +15651,6 @@ msgstr "销售收入"
 
 msgid "Sales Rule Violations"
 msgstr "销售规则违规"
-
-msgid "Sales rules"
-msgstr "销售规则"
 
 msgid "Sales Rules"
 msgstr "销售规则"
@@ -18747,6 +18750,9 @@ msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "这些行链接到此公司外部的数据，因此无法为您当前的数据创建安全副本。删除它们无法撤销。如果它们与此集团中的其他公司共享，则不会删除任何内容，演示数据也不会应用。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
@@ -20868,6 +20874,9 @@ msgstr "为什么库存在变化 — 正向（发现）、负向（丢失/报废
 
 msgid "Why this backup failed"
 msgstr "备份失败原因"
+
+msgid "Why this failed"
+msgstr "为什么失败"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告记录。"

@@ -1,4 +1,7 @@
 [
+  "edge-function-authorizes-caller::packages/database/supabase/functions/embed::embed",
+  "edge-function-authorizes-caller::packages/database/supabase/functions/event-wake::event-wake",
+  "edge-function-authorizes-caller::packages/database/supabase/functions/trigger::trigger",
   "module-shape::settings::extra-service:backups.service.ts",
   "module-shape::shared::extra-models:imports.models.ts",
   "module-shape::shared::missing:ui",

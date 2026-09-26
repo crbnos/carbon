@@ -1,13 +1,19 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
+  HolidaySpec,
+  MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
   ProcedureStepSpec,
   ShelfSpec,
   ShiftSpec,
-  WarehouseSpec
+  TagSpec,
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -136,6 +142,29 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["CMM Inspection Bench", "Incoming Inspection"],
   ["CMM Inspection Bench", "Final Test & Inspection"]
 ];
+
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Turning Cell", "A Shift"],
+  ["CNC Turning Cell", "B Shift"],
+  ["Lamination Press", "A Shift"],
+  ["Winding Line 1", "A Shift"],
+  ["Winding Line 1", "B Shift"],
+  ["Impregnation Oven", "A Shift"],
+  ["Impregnation Oven", "B Shift"],
+  ["Balancing Cell", "A Shift"],
+  ["Motor Assembly Bench", "A Shift"],
+  ["Motor Assembly Bench", "Saturday Shift"],
+  ["Dyno Test Cell", "A Shift"],
+  ["Dyno Test Cell", "Saturday Shift"],
+  ["CMM Inspection Bench", "A Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Production Supervisor",
+  department: "Assembly",
+  shift: "A Shift",
+  startDateOffset: -1250
+};
 
 export const PLANT: PlantSpec = {
   name: "Motor Assembly Plant",
@@ -342,6 +371,37 @@ export const SUPPLIERS = [
     type: "Services",
     phone: "+1-937-555-1170",
     website: "https://anchormetrology.com"
+  },
+  // Status showcases + the EUR vendor. None of these may be referenced by
+  // purchasing data — they exist so every supplier status renders somewhere.
+  {
+    name: "Rustbelt Laminations",
+    type: "Materials",
+    phone: "+1-216-555-1280",
+    website: "https://rustbeltlaminations.com",
+    status: "Inactive" as const
+  },
+  {
+    name: "Amperon Winding Works",
+    type: "Electrical",
+    phone: "+1-317-555-1390",
+    website: "https://amperonwindings.com",
+    status: "Pending" as const
+  },
+  {
+    name: "Budget Bearing Depot",
+    type: "Hardware",
+    phone: "+1-614-555-1410",
+    website: "https://budgetbearing.com",
+    status: "Rejected" as const
+  },
+  {
+    name: "Euromag Ferrite Werke GmbH",
+    type: "Magnets",
+    phone: "+49-231-555-1520",
+    website: "https://euromag-ferrite.de",
+    status: "Active" as const,
+    currencyCode: "EUR"
   }
 ];
 
@@ -394,6 +454,34 @@ export const SUPPLIER_CONTACTS = [
     lastName: "Kaminski",
     email: "bkaminski@anchormetrology.com",
     title: "Calibration Coordinator"
+  },
+  {
+    supplier: "Rustbelt Laminations",
+    firstName: "Dale",
+    lastName: "Hoffman",
+    email: "dhoffman@rustbeltlaminations.com",
+    title: "Sales Manager"
+  },
+  {
+    supplier: "Amperon Winding Works",
+    firstName: "Grace",
+    lastName: "Nakamura",
+    email: "gnakamura@amperonwindings.com",
+    title: "Business Development"
+  },
+  {
+    supplier: "Budget Bearing Depot",
+    firstName: "Vince",
+    lastName: "Talley",
+    email: "vtalley@budgetbearing.com",
+    title: "Account Executive"
+  },
+  {
+    supplier: "Euromag Ferrite Werke GmbH",
+    firstName: "Annika",
+    lastName: "Richter",
+    email: "a.richter@euromag-ferrite.de",
+    title: "Export Sales"
   }
 ];
 
@@ -403,6 +491,32 @@ export const SUPPLIER_PROCESSES = [
   // Backs the outside-processing (shaft nitride, housing anodize) steps.
   { supplier: "Maumee Contract Machining", process: "Outside Processing" }
 ];
+
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Maumee Contract Machining",
+    ability: "CNC Machining",
+    hoursPerWeek: 40
+  },
+  {
+    supplier: "Anchor Metrology Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  },
+  {
+    supplier: "Amperon Winding Works",
+    ability: "Coil Winding",
+    hoursPerWeek: 24
+  }
+];
+
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Prototype Winding Lab",
+  dept: "Engineering",
+  ability: "Coil Winding",
+  laborRate: 82,
+  machineRate: 30
+};
 
 export const CONTRACTORS = [
   {
@@ -464,10 +578,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Coil Winding",
     description:
       "Coil insertion, lacing and Class H varnish impregnation for a 9000-frame stator.",
+    parameters: [
+      { key: "Varnish", value: "Class H polyester, VPI" },
+      { key: "Cure profile", value: "4 h at 160 °C" },
+      { key: "Hipot after cure", value: "2,000 V for 60 s" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify slot liner installation",
@@ -485,7 +604,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: STATOR_WINDING_STEPS_V2 }
+      { version: 2, status: "Active", steps: STATOR_WINDING_STEPS_V2 }
     ]
   },
   {
@@ -496,7 +615,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Measure bore diameter after impregnation",
@@ -652,6 +771,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Final Test & Inspection",
     description:
       "No-load, loaded and thermal acceptance run on the dyno before the motor is released to stock.",
+    parameters: [
+      { key: "Rated load", value: "90 kW at 3,000 rpm" },
+      { key: "Thermal run", value: "Until ΔT < 1 °C over 30 min" },
+      { key: "Vibration limit", value: "1.8 mm/s RMS" }
+    ],
     versions: [
       {
         version: 1,
@@ -695,6 +819,26 @@ export const PROCEDURES: ProcedureSpec[] = [
             type: "Checkbox",
             instruction:
               "Print the dyno curve, stamp the nameplate serial on it and file it against the job."
+          },
+          {
+            name: "Stamp hipot test pass time",
+            type: "Timestamp",
+            instruction:
+              "Run the 1.8 kV dielectric withstand test after the thermal run and stamp the moment it passes — the winding must not be re-energised for ten minutes after the stamp."
+          },
+          {
+            name: "Attach dyno curve export",
+            type: "File",
+            instruction:
+              "Export the torque-speed and efficiency curves from the dyno DAQ and attach them to the acceptance record.",
+            fileTypes: ["csv", "pdf"]
+          },
+          {
+            name: "Final visual inspection",
+            type: "Inspection",
+            instruction:
+              "Inspect paint, nameplate stamping, shaft key fit and terminal box sealing before release to stock. Photograph any finding.",
+            required: false
           }
         ]
       }
@@ -739,11 +883,59 @@ export const NO_QUOTE_REASONS = [
   "Tooling Cost"
 ];
 
+// Offsets are positive (upcoming) and distinct — holiday has UNIQUE (date).
+export const HOLIDAYS: HolidaySpec[] = [
+  { name: "Founders Day", dateOffset: 40 },
+  { name: "Plant Retooling Shutdown", dateOffset: 100 },
+  { name: "Year-End Shutdown", dateOffset: 160 }
+];
+
+export const TAGS: TagSpec[] = [
+  { name: "High Voltage", table: "operation" },
+  { name: "UL Listed", table: "procedure" },
+  { name: "Winding Certified", table: "training" },
+  { name: "Magnet Handling", table: "material" },
+  { name: "Calibrated", table: "tool" }
+];
+
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
+export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
+  substances: [
+    { name: "Electrical Steel", code: "ESTL" },
+    // Backs the magnet wire classification on MAT-CU-18AWG (items.ts).
+    { name: "Enameled Copper", code: "ENCU" }
+  ],
+  forms: [{ name: "Lamination Coil", code: "LAMCOIL" }],
+  types: [
+    {
+      name: "Electrical Steel Lamination Coil",
+      code: "ESTL-LAM",
+      substance: "Electrical Steel",
+      form: "Lamination Coil"
+    }
+  ],
+  grades: [
+    { name: "M19", substance: "Electrical Steel" },
+    { name: "M27", substance: "Electrical Steel" },
+    { name: "MW 35-C", substance: "Enameled Copper" }
+  ],
+  finishes: [
+    { name: "C5 Insulation Coating", substance: "Electrical Steel" },
+    { name: "Polyamide-Imide Overcoat", substance: "Enameled Copper" }
+  ],
+  dimensions: [
+    { name: "0.35mm x 200mm", form: "Lamination Coil", isMetric: true },
+    { name: "0.50mm x 150mm", form: "Lamination Coil", isMetric: true }
+  ]
+};
+
 export const motorFoundation: FoundationData = {
   departments: DEPT_NAMES,
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -759,12 +951,18 @@ export const motorFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,
   printerRoute: PRINTER_ROUTE,
+  holidays: HOLIDAYS,
+  tags: TAGS,
+  materialTaxonomy: MATERIAL_TAXONOMY,
   defaultShippingMethod: "UPS Ground",
   contractorAgency: CONTRACTOR_AGENCY,
   partyAddressCity: "Fort Wayne",

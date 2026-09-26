@@ -9,13 +9,13 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  botProtection,
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
-  turnstileSiteKey,
   verifyAuthSession,
-  verifyLoginCaptcha
+  verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -43,8 +43,8 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
-  TurnstileChallenge,
   toast,
+  useBotProtection,
   useMount,
   VStack
 } from "@carbon/react";
@@ -93,7 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
-        turnstileSiteKey
+        botProtection
       },
       { headers: cookieHeaders }
     );
@@ -104,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey
+    botProtection
   };
 }
 
@@ -134,7 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, turnstileToken } = validation.data;
+  const { email, botToken } = validation.data;
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
   // above. Keyed by the normalized email so an attacker rotating IPs, or
@@ -159,11 +159,15 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
-  if (captchaError) {
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
+  if (botError) {
     return data(
-      error(null, captchaError),
-      await flash(request, error(null, captchaError))
+      error(null, botError),
+      await flash(request, error(null, botError))
     );
   }
 
@@ -223,7 +227,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, turnstileToken);
+    const magicLink = await sendMagicLink(email);
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -273,19 +277,6 @@ export async function action({ request }: ActionFunctionArgs) {
       await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
     );
   } else {
-    // Signup verification codes go out via Resend, never GoTrue.
-    const signupCaptchaError = await verifyLoginCaptcha(
-      turnstileToken,
-      ip,
-      "app"
-    );
-    if (signupCaptchaError) {
-      return data(
-        error(null, signupCaptchaError),
-        await flash(request, error(null, signupCaptchaError))
-      );
-    }
-
     // User doesn't exist, send verification code for signup
     const verificationSent = await sendVerificationCode(email);
 
@@ -307,7 +298,7 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey: siteKey
+    botProtection
   } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
@@ -315,7 +306,6 @@ export default function LoginRoute() {
   const emailParam = searchParams.get("email") ?? undefined;
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
   const [signupEmail, setSignupEmail] = useState<string>("");
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
@@ -336,6 +326,7 @@ export default function LoginRoute() {
   }, [logoutReason]);
 
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.mode) {
@@ -619,7 +610,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Hidden name="turnstileToken" value={turnstileToken} />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -692,9 +683,7 @@ export default function LoginRoute() {
 
               <Submit
                 isDisabled={
-                  fetcher.state !== "idle" ||
-                  ssoLoading ||
-                  (!!siteKey && !turnstileToken)
+                  fetcher.state !== "idle" || ssoLoading || !bot.ready
                 }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
@@ -705,10 +694,7 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              <TurnstileChallenge
-                siteKey={siteKey ?? undefined}
-                onToken={setTurnstileToken}
-              />
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

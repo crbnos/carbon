@@ -141,6 +141,46 @@ add a trigger only when there's real derived state to maintain. For async/event-
 effects use the event system (see `event-system.md`), not ad-hoc triggers.
 <!-- UNVERIFIED: no GRANT statements appear in recent migrations; per-table grants are not a current convention -->
 
+## Restricting a function: guard inside, never `REVOKE EXECUTE`
+
+Every function in `public` is a PostgREST RPC. On supabase/postgres 15.14.1.112, calling a function
+the caller lacks EXECUTE on, as `anon`/`authenticated`, **segfaults the backend** and restarts every
+connection. So a `REVOKE EXECUTE … FROM anon, authenticated` turns "not allowed" into an
+unauthenticated one-request DoS. (A missing TABLE privilege is an ordinary error; table REVOKEs are fine.)
+
+- **Service-role-only function called directly by a service client** — first statement of the body:
+  `IF current_setting('role', true) IN ('anon','authenticated') THEN RAISE EXCEPTION … USING ERRCODE = 'insufficient_privilege'; END IF;`
+  PostgREST's `SET ROLE` stays visible inside SECURITY DEFINER, and service role / direct connections
+  (`none`) pass. Examples: `get_integration_secret`, `assert_audit_log_access(company, NULL)`.
+- **Tenant-scoped function** (SECURITY DEFINER, takes a company id from the caller) — first
+  statement `PERFORM assert_company_access(company_id[, '<module>_<action>'])` (in a
+  `LANGUAGE sql` body: a leading `SELECT assert_company_access(company_id);`). It raises; never
+  write the check inline as `IF NOT (x = ANY(helper()) OR …)`: when a lookup finds nothing that
+  expression is NULL, `IF NOT NULL` does not raise, and the guard fails open. That is how
+  `get_next_sequence` and the storage-requirement RPCs let any caller through until
+  `20260925121735`. A user id from the caller needs the same care (`get_claims`,
+  `groups_for_user`).
+- **Internal helper of a SECURITY DEFINER function** — the role GUC still says `authenticated` inside
+  the nested call, so the guard above would refuse legitimate callers. Make the helper
+  `SECURITY INVOKER`: from its SECURITY DEFINER caller it runs as the owner, and from the API it runs
+  under the caller's RLS (`terminal_job_operations`, `complete_job_remaining_quantities`). Or put it in
+  `util` (no API `USAGE`) — see `event-system.md`.
+
+- **Event interceptor** — SECURITY INVOKER. The dispatchers are SECURITY DEFINER, so it runs as
+  the owner on every write; called directly it runs under the caller's RLS (`event-system.md`).
+
+Every public table has RLS (including the per-company `searchIndex_*` / `auditLog_*` tables), so a
+SECURITY INVOKER function can do nothing through the API that REST could not. Default to it; reach
+for SECURITY DEFINER only when the function must see across RLS, and then guard it as above. The
+`public-definer-function-authorizes-caller` invariant (`pnpm --filter @carbon/checks invariants`)
+fails on any SECURITY DEFINER function with no recognized guard.
+
+Migration `20260924192316_api-function-guards-not-revokes.sql` converted the six functions that used
+REVOKE; `20260925121735_rpc-function-guards.sql` closed the other 98. Test a new guard in a
+throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared database — and call
+the function as `anon`, don't just check `has_function_privilege`: the segfault only shows on the
+call. `packages/database/supabase/tests/rpc-privileges.test.sql` is the tenant-isolation test.
+
 ## Enums
 
 ```sql

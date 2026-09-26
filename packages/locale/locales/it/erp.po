@@ -5734,6 +5734,9 @@ msgstr "Elimina azione"
 msgid "Delete Agreement"
 msgstr "Elimina Accordo"
 
+msgid "Delete and apply"
+msgstr "Elimina e applica"
+
 msgid "Delete and restore"
 msgstr "Elimina e ripristina"
 
@@ -6627,6 +6630,9 @@ msgstr "Ogni Ordine di produzione richiede il suo numero di Lotto — oppure com
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Ogni riga è un collegamento dai dati di questa Azienda a una riga che non possiede. Un backup con queste righe non potrebbe mai essere ripristinato."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Ogni riga è un collegamento dai dati di questa azienda a una riga che non possiede. Rimuovere quelle righe consente di applicare i dati demo."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Ogni riga è un collegamento dai dati di questa Azienda a una riga che non possiede. La rimozione di queste righe consente l'esecuzione del ripristino."
@@ -9449,9 +9455,6 @@ msgstr "Ubicazione Cliente Fattura"
 
 msgid "Invoice ID"
 msgstr "ID Fattura"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "Le righe di fattura con date di servizio vengono differite a Ricavi differiti e vengono rilasciate da esecuzioni di riconoscimento."
 
 msgid "Invoice Location"
 msgstr "Ubicazione Fattura"
@@ -14704,6 +14707,9 @@ msgstr "Rimuovi clausola"
 msgid "Remove condition"
 msgstr "Rimuovi condizione"
 
+msgid "Remove corrupted data and apply"
+msgstr "Rimuovi dati corrotti e applica"
+
 msgid "Remove corrupted data and restore"
 msgstr "Rimuovi i dati corrotti e ripristina"
 
@@ -14815,6 +14821,9 @@ msgstr "Sito di noleggio"
 
 msgid "Rental Utilization"
 msgstr "Utilizzo dei noleggi"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "Riapri"
@@ -15238,9 +15247,6 @@ msgstr "Conto contabile «Ricavi» per il reddito da noleggio operativo riconosc
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Ricavi Fatturati prima di essere guadagnati, trattenuti come passività e rilasciati ai Ricavi dal run di riconoscimento al passare del periodo di servizio."
 
-msgid "Revenue recognition"
-msgstr "riconoscimento dei ricavi"
-
 msgid "Revenue Recognition"
 msgstr "Riconoscimento dei ricavi"
 
@@ -15645,9 +15651,6 @@ msgstr "Ricavi di vendita"
 
 msgid "Sales Rule Violations"
 msgstr "Violazioni delle Regole di Vendita"
-
-msgid "Sales rules"
-msgstr "Regole di vendita"
 
 msgid "Sales Rules"
 msgstr "Regole di Vendita"
@@ -18747,6 +18750,9 @@ msgstr "Queste operazioni utilizzano un processo con più fornitori. Scegli un f
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Questi componenti sono sostituiti da questo. Ogni regola è impostata sul vecchio componente; aprilo per modificare la regola."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Queste righe si collegano a dati al di fuori di questa azienda, quindi non è possibile creare una copia di sicurezza dei tuoi dati attuali. Eliminarli non può essere annullato. Se risultano condivisi con altre aziende in questo gruppo, nulla viene eliminato e i dati demo non vengono applicati."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Queste righe sono collegate a dati esterni a questa azienda, pertanto non è possibile effettuare una copia di sicurezza dei dati attuali. La loro eliminazione non può essere annullata. Se risultano condivise con altre aziende del gruppo, nulla viene eliminato e il ripristino non si avvierà."
 
@@ -20868,6 +20874,9 @@ msgstr "Perché la giacenza sta cambiando — Positivo (trovato), Negativo (pers
 
 msgid "Why this backup failed"
 msgstr "Motivo per cui questo backup è fallito"
+
+msgid "Why this failed"
+msgstr "Perché è fallito"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Perché questa linea viene rifiutata; visualizzato sul preventivo stampabile e registrato per i rapporti di vincita/perdita."

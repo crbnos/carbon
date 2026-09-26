@@ -1,6 +1,10 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  getSalesRuleAssignmentsForItem,
+  getSalesRulesList
+} from "@carbon/ee/rules";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -20,6 +24,7 @@ import {
   itemRentalRateValidator,
   upsertItemRentalRate
 } from "~/modules/sales";
+import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getCompany } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -33,10 +38,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [partUnitSalePrice, customerParts, company] = await Promise.all([
+  const [
+    partUnitSalePrice,
+    customerParts,
+    company,
+    salesRuleAssignments,
+    salesRuleLibrary
+  ] = await Promise.all([
     getItemUnitSalePrice(client, itemId, companyId),
     getItemCustomerParts(client, itemId, companyId),
-    getCompany(client, companyId)
+    getCompany(client, companyId),
+    getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
+    getSalesRulesList(client, companyId)
   ]);
 
   // The rate ladder is kept per currency; the item page edits the company's
@@ -62,6 +75,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     customerParts: customerParts.data,
     rentalRate: rentalRate?.data ?? null,
     baseCurrencyCode,
+    salesRuleAssignments: salesRuleAssignments.data ?? [],
+    salesRuleLibrary: salesRuleLibrary.data ?? [],
     itemId
   };
 }
@@ -144,6 +159,8 @@ export default function PartSalesRoute() {
     partUnitSalePrice,
     rentalRate,
     baseCurrencyCode,
+    salesRuleAssignments,
+    salesRuleLibrary,
     itemId
   } = useLoaderData<typeof loader>();
 
@@ -182,6 +199,11 @@ export default function PartSalesRoute() {
       {customerParts ? (
         <CustomerParts customerParts={customerParts} itemId={itemId} />
       ) : null}
+      <SalesRuleAssignmentsList
+        itemId={itemId}
+        assignments={salesRuleAssignments as never}
+        library={salesRuleLibrary as never}
+      />
     </VStack>
   );
 }

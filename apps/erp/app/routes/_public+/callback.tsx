@@ -362,8 +362,18 @@ export async function action({ request }: ActionFunctionArgs) {
     // nothing here (the auth user already exists by the time this action
     // runs), so a no-company, no-invite arrival is a self-signup however
     // it authenticated.
+    //
+    // Except the first arrival on an empty instance. The seed creates the
+    // instance admin (ADMIN_EMAIL) with no company on purpose — onboarding
+    // is where they make the first one — so refusing a company-less user
+    // here locked every fresh self-hosted install out of its own front
+    // door. It is safe to let through: with sign-ups disabled, GoTrue only
+    // holds accounts made server-side, and before any company exists the
+    // seed's is the only one.
     const platformClosed =
-      pickable.length === 0 && (await isPlatformSignupDisabled());
+      pickable.length === 0 &&
+      (await isPlatformSignupDisabled()) &&
+      (await instanceHasCompany(serviceRole));
     if (
       platformClosed ||
       (pickable.length === 0 && isSelfSignupBlockedForEmail(authSession.email))
@@ -528,4 +538,16 @@ export default function AuthCallback() {
       )}
     </div>
   );
+}
+
+/** Whether any company exists yet — false only before the first onboarding. */
+async function instanceHasCompany(
+  client: ReturnType<typeof getCarbonServiceRole>
+): Promise<boolean> {
+  const { count, error } = await client
+    .from("company")
+    .select("id", { count: "exact", head: true });
+  // Unanswerable reads as "has one": the gate stays shut rather than
+  // opening on a database hiccup.
+  return Boolean(error) || (count ?? 0) > 0;
 }

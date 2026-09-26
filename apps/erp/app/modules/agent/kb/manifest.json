@@ -192,16 +192,22 @@
         "The apply or revert looks stuck",
         "Can't apply a second template",
         "Applying failed with an error",
+        "Applying failed with \"Seed: this company trades with other companies in its group\"",
+        "Applying failed with \"Seed: this company has N posted or voided card transaction(s)\"",
+        "Material Planning, Scheduling or Priorities are empty right after applying",
+        "The Webhooks, API keys or Audit log screens are empty after applying",
+        "The Documents list is empty after applying a template",
         "The demo dates look recent — is that real activity?"
       ]
     },
     {
       "slug": "docs/platform/licensing",
       "title": "Licensing",
-      "description": "Carbon is dual-licensed: AGPLv3 for the Community edition, and a commercial license for Business features or for keeping your changes private.",
+      "description": "Carbon is dual-licensed: AGPLv3 for Community Edition (CE), and a commercial license for Business features or for keeping your changes private.",
       "keywords": ["licensing", "docs", "platform"],
       "headings": [
         "Editions",
+        "What each plan unlocks",
         "How to buy",
         "Carbon Cloud — we run it",
         "Self-hosted — you run it",
@@ -1046,7 +1052,7 @@
         "Where to go next",
         "Internals and troubleshooting",
         "Stuck in the setup wizard / keeps redirecting to /onboarding",
-        "The Industry step isn't showing",
+        "\"Restore from a backup\" isn't offered on the Industry step",
         "The Plan step isn't showing"
       ]
     },

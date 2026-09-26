@@ -5734,6 +5734,9 @@ msgstr "Удалить действие"
 msgid "Delete Agreement"
 msgstr "Удалить договор"
 
+msgid "Delete and apply"
+msgstr "Удалить и применить"
+
 msgid "Delete and restore"
 msgstr "Удалить и восстановить"
 
@@ -6627,6 +6630,9 @@ msgstr "Каждый производственный заказ требует 
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Резервную копию с этими строками никогда не удастся восстановить."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Каждая Строка — это ссылка из данных этой Организации на Строку, которой она не владеет. Убрание этих Строк позволяет применить демо-данные."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Удаление этих строк позволяет выполнить восстановление."
@@ -9449,9 +9455,6 @@ msgstr "Площадка покупателя счета-фактуры"
 
 msgid "Invoice ID"
 msgstr "Счет-фактура ID"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "Строки счета-фактуры с датами оказания услуг отсрочиваются в отложенную выручку и выпускаются процессами признания выручки."
 
 msgid "Invoice Location"
 msgstr "Площадка счета-фактуры"
@@ -14704,6 +14707,9 @@ msgstr "Убрать условие"
 msgid "Remove condition"
 msgstr "Убрать условие"
 
+msgid "Remove corrupted data and apply"
+msgstr "Убрать поврежденные данные и применить"
+
 msgid "Remove corrupted data and restore"
 msgstr "Убрать поврежденные данные и восстановить"
 
@@ -14815,6 +14821,9 @@ msgstr "Объект аренды"
 
 msgid "Rental Utilization"
 msgstr "Использование арендованного оборудования"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "Открыть заново"
@@ -15238,9 +15247,6 @@ msgstr "Счет учета выручки для доходов от опера
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Выручка, выставленная счетом раньше, чем она была заработана, удерживаемая как обязательство и передаваемая в доходы процессом признания по мере истечения периода Услуги."
 
-msgid "Revenue recognition"
-msgstr "Признание выручки"
-
 msgid "Revenue Recognition"
 msgstr "Признание выручки"
 
@@ -15645,9 +15651,6 @@ msgstr "Выручка от продаж"
 
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
-
-msgid "Sales rules"
-msgstr "Правила продаж"
 
 msgid "Sales Rules"
 msgstr "Правила продаж"
@@ -18747,6 +18750,9 @@ msgstr "Эти операции выполняются по процессу с 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Эти детали заменяются на эту. Каждое правило установлено на старой детали; откройте ее, чтобы изменить правило."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Эти Строки ссылаются на данные вне этой Организации, поэтому невозможно создать резервную копию ваших текущих данных. Их удаление невозможно отменить. Если окажется, что они используются другими Организациями в этой группе, ничего не удаляется и демо-данные не применяются."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
 
@@ -20868,6 +20874,9 @@ msgstr "Почему изменяется запас — Положительн�
 
 msgid "Why this backup failed"
 msgstr "Почему эта резервная копия не удалась"
+
+msgid "Why this failed"
+msgstr "Почему это не удалось"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Почему эта строка отклоняется; отображается в печатаемом предложении и записывается для отчетов по победам и потерям."

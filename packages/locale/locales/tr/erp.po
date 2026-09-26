@@ -5734,6 +5734,9 @@ msgstr "İşlemi Sil"
 msgid "Delete Agreement"
 msgstr "Sözleşmeyi Sil"
 
+msgid "Delete and apply"
+msgstr "Sil ve uygula"
+
 msgid "Delete and restore"
 msgstr "Sil ve geri yükle"
 
@@ -6627,6 +6630,9 @@ msgstr "Her İş emri kendi Lot numarasına ihtiyaç duyar — veya bunları bir
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları içeren bir yedekleme asla geri yüklenemez."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Her satır, bu şirketin verilerine ait olmayan bir satıra bağlantıdır. Bu satırları kaldırmak, demo verinin uygulanmasını sağlar."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları kaldırmak geri yüklemenin çalışmasını sağlar."
@@ -9449,9 +9455,6 @@ msgstr "Fatura Müşteri Konumu"
 
 msgid "Invoice ID"
 msgstr "Fatura Kimlik Numarası"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "Hizmet tarihleri olan fatura satırları ertelenmiş hasılata ertelenir ve muhasebe tanıma çalıştırmaları tarafından serbest bırakılır."
 
 msgid "Invoice Location"
 msgstr "Fatura Konumu"
@@ -14704,6 +14707,9 @@ msgstr "Maddeyi kaldır"
 msgid "Remove condition"
 msgstr "Koşulu kaldır"
 
+msgid "Remove corrupted data and apply"
+msgstr "Bozulmuş veriyi kaldır ve uygula"
+
 msgid "Remove corrupted data and restore"
 msgstr "Bozuk verileri kaldır ve geri yükle"
 
@@ -14815,6 +14821,9 @@ msgstr "Kiralama Alanı"
 
 msgid "Rental Utilization"
 msgstr "Kiralama Kullanım Oranı"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "Yeniden Aç"
@@ -15238,9 +15247,6 @@ msgstr "Kira döneminde doğrusal olarak muhasebeleştirilen işletme kira gelir
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Kazanılmadan önce faturalandırılmış hasılat, borç hesabında tutulur ve muhasebeleştirme çalıştırması tarafından hizmet dönemi geçerken hasılata aktarılır."
 
-msgid "Revenue recognition"
-msgstr "Hasılat muhasebeleştirmesi"
-
 msgid "Revenue Recognition"
 msgstr "Hasılat Muhasebeleştirmesi"
 
@@ -15645,9 +15651,6 @@ msgstr "Satış Hasılat"
 
 msgid "Sales Rule Violations"
 msgstr "Satış Kuralı İhlalleri"
-
-msgid "Sales rules"
-msgstr "Satış kuralları"
 
 msgid "Sales Rules"
 msgstr "Satış Kuralları"
@@ -18747,6 +18750,9 @@ msgstr "Bu operasyonlar birden fazla tedarikçili bir proses kullanır. Her biri
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Bu parçalar bu birim tarafından değiştiriliyor. Her kural eski parçaya ayarlanmış; kuralı değiştirmek için açın."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Bu satırlar bu şirketin dışındaki verilere bağlantılı, bu yüzden mevcut verilerinizin güvenlik kopyası oluşturulamaz. Onları silmek geri alınamaz. Eğer bu grup içindeki diğer şirketlerle paylaşıldığı ortaya çıkarsa, hiçbir şey silinmez ve demo verileri uygulanmaz."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcut verilerinizin bir güvenlik kopyası oluşturulamaz. Bu satırları silmek geri alınamaz. Bunların bu gruptaki diğer Şirketlerle paylaşıldığı anlaşılırsa, hiçbir şey silinmez ve geri yükleme başlamaz."
 
@@ -20868,6 +20874,9 @@ msgstr "Stok neden değişiyor — Pozitif (bulundu), Negatif (kayboldu/Fire), v
 
 msgid "Why this backup failed"
 msgstr "Bu yedek neden başarısız oldu"
+
+msgid "Why this failed"
+msgstr "Bu neden başarısız oldu"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Bu satırın neden reddedildiği; yazdırılabilir teklifte gösterilir ve kazanç-kayıp raporlaması için kaydedilir."

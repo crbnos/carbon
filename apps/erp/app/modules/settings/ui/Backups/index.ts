@@ -4,5 +4,6 @@ export * from "./BackupProgressModal";
 export * from "./BackupSourcePicker";
 export * from "./ExcludedRowsInfo";
 export * from "./format";
+export * from "./PurgeCorruptedRowsModal";
 export * from "./RestoreDisclosure";
 export * from "./RestoreReviewRow";

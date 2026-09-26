@@ -1,13 +1,19 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
+  HolidaySpec,
+  MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
   ProcedureStepSpec,
   ShelfSpec,
   ShiftSpec,
-  WarehouseSpec
+  TagSpec,
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -115,6 +121,25 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Potting Station", "Potting & Conformal Coat"],
   ["Potting Station", "Clean Room Assembly"]
 ];
+
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Mill", "Day Shift"],
+  ["TIG Welder Cell", "Day Shift"],
+  ["Clean Room Bay A", "Day Shift"],
+  ["Clean Room Bay A", "Swing Shift"],
+  ["PCB Lab", "Day Shift"],
+  ["TVAC Chamber 1", "Day Shift"],
+  ["TVAC Chamber 1", "Swing Shift"],
+  ["QC Bench", "Day Shift"],
+  ["Potting Station", "Day Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Production Supervisor",
+  department: "Manufacturing",
+  shift: "Day Shift",
+  startDateOffset: -1140
+};
 
 export const PLANT: PlantSpec = {
   name: "Manufacturing Plant",
@@ -307,6 +332,37 @@ export const SUPPLIERS = [
     type: "Contract Manufacturer",
     phone: "+1-972-555-1000",
     website: "https://astromill.com"
+  },
+  // Status showcases + the EUR vendor. None of these may be referenced by
+  // purchasing data — they exist so every supplier status renders somewhere.
+  {
+    name: "Legacy Harness Co",
+    type: "Hardware",
+    phone: "+1-720-555-1200",
+    website: "https://legacyharness.com",
+    status: "Inactive" as const
+  },
+  {
+    name: "Ionix Thrusters",
+    type: "Propulsion",
+    phone: "+1-425-555-1300",
+    website: "https://ionixthrusters.com",
+    status: "Pending" as const
+  },
+  {
+    name: "BargainSat Components",
+    type: "Electronics",
+    phone: "+1-702-555-1400",
+    website: "https://bargainsat.com",
+    status: "Rejected" as const
+  },
+  {
+    name: "Rheinland Precision Bearings GmbH",
+    type: "Hardware",
+    phone: "+49-711-555-1500",
+    website: "https://rheinland-bearings.de",
+    status: "Active" as const,
+    currencyCode: "EUR"
   }
 ];
 
@@ -352,6 +408,34 @@ export const SUPPLIER_CONTACTS = [
     lastName: "Brooks",
     email: "dbrooks@astromill.com",
     title: "Account Rep"
+  },
+  {
+    supplier: "Legacy Harness Co",
+    firstName: "Pat",
+    lastName: "Whitfield",
+    email: "pwhitfield@legacyharness.com",
+    title: "Sales Manager"
+  },
+  {
+    supplier: "Ionix Thrusters",
+    firstName: "Naomi",
+    lastName: "Fedorova",
+    email: "nfedorova@ionixthrusters.com",
+    title: "Business Development"
+  },
+  {
+    supplier: "BargainSat Components",
+    firstName: "Gary",
+    lastName: "Duncan",
+    email: "gduncan@bargainsat.com",
+    title: "Account Executive"
+  },
+  {
+    supplier: "Rheinland Precision Bearings GmbH",
+    firstName: "Katrin",
+    lastName: "Vogel",
+    email: "k.vogel@rheinland-bearings.de",
+    title: "Export Sales"
   }
 ];
 
@@ -362,6 +446,28 @@ export const SUPPLIER_PROCESSES = [
   // Backs the outside-processing (anodize) step on the structural frame.
   { supplier: "AstroMill Machining", process: "Outside Processing" }
 ];
+
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "AstroMill Machining",
+    ability: "CNC Operation",
+    hoursPerWeek: 40
+  },
+  { supplier: "AstroMill Machining", ability: "Welding", hoursPerWeek: 16 },
+  {
+    supplier: "Orbital Composites",
+    ability: "Composite Layup",
+    hoursPerWeek: 24
+  }
+];
+
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Flatsat Test Lab",
+  dept: "Engineering",
+  ability: "Inspection",
+  laborRate: 80,
+  machineRate: 25
+};
 
 export const CONTRACTORS = [
   {
@@ -423,10 +529,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Clean Room Assembly",
     description:
       "Assembly and torque procedure for the ESPA-class structural frame.",
+    parameters: [
+      { key: "Corner fastener torque", value: "9 N·m (M6 A286)" },
+      { key: "Diagonal squareness limit", value: "0.5 mm" },
+      { key: "Thread locker", value: "None — safety-wired per NASA-STD-5020" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify panel kit against the pick list",
@@ -444,7 +555,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: STRUCTURAL_STEPS_V2 }
+      { version: 2, status: "Active", steps: STRUCTURAL_STEPS_V2 }
     ]
   },
   {
@@ -455,7 +566,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage subsystems in the clean room",
@@ -499,6 +610,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Thermal Vacuum Test",
     description:
       "Thermal vacuum qualification cycle for an integrated satellite bus.",
+    parameters: [
+      { key: "Thermal cycles", value: "8" },
+      { key: "Chamber pressure", value: "≤ 1×10⁻⁵ Torr" },
+      { key: "Plateau dwell", value: "4 h hot / 4 h cold" }
+    ],
     versions: [
       {
         version: 1,
@@ -530,6 +646,26 @@ export const PROCEDURES: ProcedureSpec[] = [
             type: "Checkbox",
             instruction:
               "Command the bus through the functional script during the final hot dwell and confirm all telemetry is nominal."
+          },
+          {
+            name: "Stamp chamber break time",
+            type: "Timestamp",
+            instruction:
+              "Record the moment the chamber is vented back to ambient — the 24-hour outgassing bake clock starts here."
+          },
+          {
+            name: "Attach thermal profile export",
+            type: "File",
+            instruction:
+              "Export the full temperature/pressure profile from the chamber DAQ and attach it to the test record.",
+            fileTypes: ["csv", "pdf"]
+          },
+          {
+            name: "Post-test workmanship inspection",
+            type: "Inspection",
+            instruction:
+              "Inspect harness lacing, thermocouple bond points and MLI closeouts for cycling damage. Photograph any finding.",
+            required: false
           }
         ]
       }
@@ -573,11 +709,69 @@ export const NO_QUOTE_REASONS = [
   "Strategic Hold"
 ];
 
+// Offsets are positive (upcoming) and distinct — holiday has UNIQUE (date).
+export const HOLIDAYS: HolidaySpec[] = [
+  { name: "Company Founding Day", dateOffset: 40 },
+  { name: "Launch Campaign Recognition Day", dateOffset: 100 },
+  { name: "Year-End Shutdown", dateOffset: 160 }
+];
+
+export const TAGS: TagSpec[] = [
+  { name: "Flight Critical", table: "operation" },
+  { name: "ITAR Controlled", table: "procedure" },
+  { name: "Clean Room Certified", table: "training" },
+  { name: "Low Outgassing", table: "material" },
+  { name: "Calibrated", table: "tool" }
+];
+
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
+export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
+  substances: [
+    { name: "Carbon Fiber Composite", code: "CFRP" },
+    // Backs the Kapton tape classification on MAT-KAPTON (items.ts).
+    { name: "Polyimide Film", code: "PI" }
+  ],
+  forms: [
+    { name: "Honeycomb Panel", code: "HCPANEL" },
+    { name: "Film Roll", code: "FILMROLL" }
+  ],
+  types: [
+    {
+      name: "CFRP Honeycomb Panel",
+      code: "CFRP-HC",
+      substance: "Carbon Fiber Composite",
+      form: "Honeycomb Panel"
+    },
+    {
+      name: "Polyimide Tape Roll",
+      code: "PI-ROLL",
+      substance: "Polyimide Film",
+      form: "Film Roll"
+    }
+  ],
+  grades: [
+    { name: "M55J", substance: "Carbon Fiber Composite" },
+    { name: "T300", substance: "Carbon Fiber Composite" },
+    { name: "Kapton HN", substance: "Polyimide Film" }
+  ],
+  finishes: [
+    { name: "Low-Outgassing Coating", substance: "Carbon Fiber Composite" },
+    { name: "Silicone Adhesive Backing", substance: "Polyimide Film" }
+  ],
+  dimensions: [
+    { name: "1200 x 2400 x 25mm", form: "Honeycomb Panel", isMetric: true },
+    { name: "600 x 600 x 10mm", form: "Honeycomb Panel", isMetric: true },
+    { name: "25mm x 33m", form: "Film Roll", isMetric: true }
+  ]
+};
+
 export const satelliteFoundation: FoundationData = {
   departments: DEPT_NAMES,
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -593,12 +787,18 @@ export const satelliteFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,
   printerRoute: PRINTER_ROUTE,
+  holidays: HOLIDAYS,
+  tags: TAGS,
+  materialTaxonomy: MATERIAL_TAXONOMY,
   defaultShippingMethod: "UPS Ground",
   contractorAgency: CONTRACTOR_AGENCY,
   partyAddressCity: "Houston",

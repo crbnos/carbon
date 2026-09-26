@@ -1,9 +1,19 @@
-import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  BatchPropertySpec,
+  ConfigurationSpec,
+  CustomerPartSpec,
+  EnforcementRuleSpec,
+  InspectionPlanSpec,
+  ItemSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
+import { satelliteAssembly } from "./assembly.ts";
 
 // ---------------------------------------------------------------------------
 // Satellite item catalog for Orbital Systems Inc.
@@ -121,6 +131,16 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 18,
     unitSalePrice: 27,
     leadTime: 10
+  },
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
+  {
+    readableId: "VLV-SOLENOID-LP2",
+    name: "Solenoid Valve Low-Pressure Gen2",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 1050,
+    unitSalePrice: 1575,
+    leadTime: 30
   }
 ];
 
@@ -140,7 +160,13 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 320,
     unitOfMeasureCode: "EA",
-    leadTime: 21
+    leadTime: 21,
+    // Partially classified on purpose.
+    material: {
+      substance: "Carbon Fiber Composite",
+      grade: "M55J",
+      finish: "Low-Outgassing Coating"
+    }
   },
   {
     readableId: "MAT-GAAS-CELL",
@@ -156,7 +182,15 @@ export const MATERIALS: ItemSpec[] = [
     type: "Material",
     standardCost: 45,
     unitOfMeasureCode: "YD",
-    leadTime: 7
+    leadTime: 7,
+    material: {
+      substance: "Polyimide Film",
+      form: "Film Roll",
+      materialType: "Polyimide Tape Roll",
+      grade: "Kapton HN",
+      finish: "Silicone Adhesive Backing",
+      dimension: "25mm x 33m"
+    }
   },
   {
     readableId: "MAT-SYLGARD",
@@ -228,7 +262,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     replenishment: "Make",
     // Serial-tracked: each satellite gets its own genealogy in traceability.
     trackingType: "Serial",
-    standardCost: 0,
+    standardCost: 990000,
     unitSalePrice: 1800000
   },
   {
@@ -236,7 +270,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Structural Frame Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 24750,
     unitSalePrice: 45000
   },
   {
@@ -244,7 +278,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Electrical Power Subsystem",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 66000,
     unitSalePrice: 120000
   },
   {
@@ -252,7 +286,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Solar Array Wing",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 19250,
     unitSalePrice: 35000
   },
   {
@@ -260,7 +294,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "EPS Control PCB Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 2310,
     unitSalePrice: 4200
   },
   {
@@ -268,7 +302,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Attitude Determination & Control System",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 52250,
     unitSalePrice: 95000
   },
   {
@@ -276,7 +310,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "ADCS Electronics Board",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 3190,
     unitSalePrice: 5800
   },
   {
@@ -284,7 +318,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Communications Subsystem",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 15400,
     unitSalePrice: 28000
   },
   {
@@ -292,7 +326,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Patch Antenna S-Band",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 990,
     unitSalePrice: 1800
   },
   {
@@ -300,7 +334,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Propulsion Module",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 20900,
     unitSalePrice: 38000
   },
   {
@@ -308,7 +342,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Spacecraft Wiring Harness",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 6600,
     unitSalePrice: 12000
   }
 ];
@@ -333,13 +367,20 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Mill",
         description: "Machine structural panels",
         order: 1,
-        laborTime: 4
+        setupTime: 0.75,
+        laborTime: 4,
+        machineTime: 3.5,
+        parameters: [
+          { key: "Fixture", value: "FX-BUS-PANEL-01" },
+          { key: "Coolant", value: "Flood — water-soluble" }
+        ]
       },
       {
         process: "Welding",
         workCenter: "TIG Welder Cell",
         description: "Weld bracket assemblies",
         order: 2,
+        setupTime: 0.5,
         laborTime: 2
       },
       // Sent out to AstroMill for hard anodize between welding and assembly.
@@ -361,7 +402,12 @@ export const METHODS: MakeMethodSpec[] = [
         order: 4,
         laborTime: 3,
         // Gives the MES operation screen an Instructions tab with real steps.
-        procedure: "procedure:Structural Frame Assembly"
+        procedure: "procedure:Structural Frame Assembly",
+        tools: [{ tool: "TL-TORQUE-J1", quantity: 1 }],
+        parameters: [
+          { key: "Torque Spec", value: "9 Nm, star pattern" },
+          { key: "Cleanliness Class", value: "ISO 7" }
+        ]
       }
     ]
   },
@@ -378,7 +424,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Clean Room Bay A",
         description: "Layup solar array substrate",
         order: 1,
-        laborTime: 6
+        setupTime: 0.5,
+        laborTime: 6,
+        machineTime: 4
       },
       {
         process: "Clean Room Assembly",
@@ -423,7 +471,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "QC Bench",
         description: "Flying probe test",
         order: 3,
-        laborTime: 1
+        laborTime: 1,
+        operationType: "Inspection",
+        inspectionPlan: "EPS-PCB-FPT"
       }
     ]
   },
@@ -439,7 +489,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "PCB Lab",
         description: "SMT placement & reflow",
         order: 1,
-        laborTime: 1.5
+        setupTime: 0.5,
+        laborTime: 1.5,
+        machineTime: 0.25
       },
       {
         process: "Potting & Conformal Coat",
@@ -716,10 +768,246 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     leadTime: 45
   },
   { supplier: "Deep Space RF", item: "RW-010", price: 14500, leadTime: 90 },
-  { supplier: "Deep Space RF", item: "ST-050", price: 28000, leadTime: 120 }
+  { supplier: "Deep Space RF", item: "ST-050", price: 28000, leadTime: 120 },
+  {
+    supplier: "PropTech Solutions",
+    item: "VLV-SOLENOID-LP2",
+    price: 1050,
+    leadTime: 30
+  }
+];
+
+// PROP-001 still names VLV-SOLENOID-LP (8 on shelf A3-L2), so Consume First
+// keeps pulling the old valve until the shelf is empty, then swaps to Gen2.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "VLV-SOLENOID-LP",
+    successor: "VLV-SOLENOID-LP2",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "SAT-1000",
+    customer: "ORBSEC Defense",
+    customerPartId: "ORB-BUS-4400",
+    customerRevision: "C"
+  },
+  {
+    item: "EPS-001",
+    customer: "NovaSat Networks",
+    customerPartId: "NS-PWR-201"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "SAT-1000",
+    customer: "NovaSat Networks",
+    notes: "FY constellation block-buy pricing per MSA amendment 3.",
+    breaks: [
+      { quantity: 1, overridePrice: 1750000 },
+      { quantity: 3, overridePrice: 1690000 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "ORBSEC program discount",
+    ruleType: "Discount",
+    amountType: "Percentage",
+    amount: 5,
+    customer: "ORBSEC Defense",
+    minQuantity: 2,
+    priority: 10
+  },
+  {
+    name: "Commercial operator spares markup",
+    ruleType: "Markup",
+    amountType: "Percentage",
+    amount: 12,
+    customerType: "Commercial",
+    items: ["TXRX-SBAND", "THR-HYDRA-1N", "RW-010"],
+    priority: 5
+  },
+  {
+    name: "Flight fastener lot break",
+    ruleType: "Discount",
+    amountType: "Fixed",
+    amount: 0.25,
+    items: ["FST-M4-TI", "FST-M6-A286"],
+    minQuantity: 250,
+    priority: 1
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "SAT-1000",
+  group: "Mission Configuration",
+  parameters: [
+    { key: "payload_mass_kg", label: "Payload Mass (kg)", dataType: "numeric" },
+    {
+      key: "orbit_regime",
+      label: "Orbit Regime",
+      dataType: "list",
+      listOptions: ["LEO", "SSO", "GTO"]
+    },
+    {
+      key: "propulsion_module",
+      label: "Include Propulsion Module",
+      dataType: "boolean"
+    }
+  ],
+  rules: [
+    {
+      target: { component: "PROP-001" },
+      field: "quantity",
+      code: "return params.propulsion_module ? 1 : 0;"
+    },
+    {
+      target: { operation: 2 },
+      field: "laborTime",
+      code: 'return params.orbit_regime === "GTO" ? 96 : 72;'
+    }
+  ]
+};
+
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "ANT-PATCH-01",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
+  }
+];
+
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
+export const INSPECTION_PLANS: InspectionPlanSpec[] = [
+  {
+    key: "EPS-PCB-FPT",
+    item: "PCB-EPS-R1",
+    drawingNumber: "EPS-CTL-200 Rev D",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "3V3 bus regulation under 2 A load",
+        nominalValue: "3.300",
+        tolerancePlus: "0.050",
+        toleranceMinus: "0.050",
+        unit: "V"
+      },
+      {
+        label: "2",
+        description: "Battery charge FET gate threshold",
+        nominalValue: "2.10",
+        tolerancePlus: "0.25",
+        toleranceMinus: "0.25",
+        unit: "V"
+      }
+    ]
+  }
+];
+
+export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
+  {
+    family: "sales",
+    name: "ITAR spacecraft — US ship-to only",
+    description: "22 CFR 120: the bus and ADCS are defense articles.",
+    message:
+      "ITAR-controlled hardware can only ship to a US address. Route export requests through Trade Compliance.",
+    severity: "error",
+    surfaces: ["salesOrderLine", "salesInvoiceLine"],
+    match: "all",
+    conditions: [
+      { field: "customer.location.countryCode", op: "in", value: ["US"] }
+    ],
+    items: ["SAT-1000", "ADCS-001"]
+  },
+  {
+    family: "sales",
+    name: "Research orders need program sign-off",
+    message:
+      "Flight subsystems quoted to a research institution need program office sign-off before pricing is released.",
+    severity: "warn",
+    surfaces: ["quoteLine", "salesOrderLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.customerTypeId",
+        op: "notIn",
+        value: { customerTypes: ["Research"] }
+      }
+    ],
+    items: ["EPS-001", "COMMS-001"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Flight electronics stay at the plant",
+    message:
+      "Flight electronics are stored at the Houston plant only — pick a plant bin.",
+    severity: "warn",
+    surfaces: ["receipt", "stockTransfer"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.locationId",
+        op: "eq",
+        value: { location: "Plant" }
+      }
+    ],
+    items: ["TXRX-SBAND", "ST-050", "RW-010"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Propellant tanks on racks",
+    message: "Titanium propellant tanks are racked, never binned.",
+    severity: "warn",
+    surfaces: ["place"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.storageTypeId",
+        op: "eq",
+        value: { storageType: "Rack" }
+      }
+    ],
+    items: ["TANK-TI-4L"]
+  },
+  {
+    family: "storage",
+    targetType: "workCenter",
+    name: "Clean room bay in service",
+    message:
+      "This clean room bay is out of service — start the integration on another bay.",
+    severity: "error",
+    surfaces: ["operationStart"],
+    match: "all",
+    conditions: [{ field: "workCenter.active", op: "eq", value: true }],
+    workCenters: ["Clean Room Bay A"]
+  }
+];
+
+export const BATCH_PROPERTIES: BatchPropertySpec[] = [
+  { item: "BAT-LIION-48V", label: "Cell lot code", dataType: "text" },
+  { item: "BAT-LIION-48V", label: "Formation date", dataType: "date" },
+  {
+    item: "BAT-LIION-48V",
+    label: "Capacity grade",
+    dataType: "list",
+    listOptions: ["A", "B"]
+  },
+  { item: "MAT-AL7075-PLT", label: "Heat number", dataType: "text" },
+  { item: "MAT-AL7075-PLT", label: "Mill cert received", dataType: "boolean" }
 ];
 
 export const satelliteItems: ItemsData = {
+  assembly: satelliteAssembly,
   buyParts: BUY_PARTS,
   materials: MATERIALS,
   consumables: CONSUMABLES,
@@ -727,5 +1015,14 @@ export const satelliteItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER,
+  inspectionPlans: INSPECTION_PLANS,
+  enforcementRules: ENFORCEMENT_RULES,
+  batchProperties: BATCH_PROPERTIES
 };

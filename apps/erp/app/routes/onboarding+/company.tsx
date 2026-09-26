@@ -1,8 +1,5 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { setCompanyId } from "@carbon/auth/company.server";
-import { updateCompanySession } from "@carbon/auth/session.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
   Button,
@@ -12,7 +9,6 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
 import { getLocalTimeZone } from "@internationalized/date";
 import {
   type ActionFunctionArgs,
@@ -35,7 +31,6 @@ import {
 } from "~/components/Form";
 import { useOnboarding } from "~/hooks";
 import { addressValidator, getCompany } from "~/modules/settings";
-import { provisionOnboardingCompany } from "~/services/onboarding.server";
 import {
   getOnboardingDraft,
   setOnboardingDraft
@@ -60,7 +55,7 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, email } = await requirePermissions(request, {});
+  await requirePermissions(request, {});
 
   const formData = await request.formData();
 
@@ -72,44 +67,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { next, ...companyData } = validation.data;
 
-  // Internal users get a dedicated data-choice step (demo template / backup
-  // import) that creates the company; stash this step's input for it.
-  if (isInternalEmail(email)) {
-    const draftCookie = await setOnboardingDraft(request, {
-      company: companyData
-    });
-
-    throw redirect(next, {
-      headers: [["Set-Cookie", draftCookie]]
-    });
-  }
-
-  // Public signups skip the data-choice step and create a clean company here.
-  const serviceRole = getCarbonServiceRole();
-  const companyId = await provisionOnboardingCompany(serviceRole, client, {
-    userId,
-    companyData,
-    backup: null,
-    template: null
+  // The next (data-choice) step creates the company; stash this step's input
+  // for it.
+  const draftCookie = await setOnboardingDraft(request, {
+    company: companyData
   });
 
-  const companyRecord = await serviceRole
-    .from("company")
-    .select("companyGroupId")
-    .eq("id", companyId)
-    .single();
-  const sessionCookie = await updateCompanySession(
-    request,
-    companyId,
-    companyRecord.data?.companyGroupId ?? ""
-  );
-  const companyIdCookie = setCompanyId(companyId);
-
   throw redirect(next, {
-    headers: [
-      ["Set-Cookie", sessionCookie],
-      ["Set-Cookie", companyIdCookie]
-    ]
+    headers: [["Set-Cookie", draftCookie]]
   });
 }
 

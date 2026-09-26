@@ -124,8 +124,8 @@ async function startCompanyTemplate(
 /**
  * Insert-or-update the onboarding company, provision its data, and create the
  * headquarters location plus the owner's employee job. Returns the companyId.
- * Shared by the public company step (clean seed, `backup: null`) and the
- * internal data-choice step (restore from an uploaded backup, or a demo template).
+ * Called by the data-choice step: a clean seed, a demo template, or (internal
+ * only) a restore from an uploaded backup.
  */
 export async function provisionOnboardingCompany(
   serviceRole: ServiceRole,

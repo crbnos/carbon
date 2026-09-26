@@ -47,8 +47,17 @@ verify_jwt = true                              # JWT required (the common case)
 # entrypoint = "./functions/<name>/index.ts"   # optional; only if not default index.ts
 ```
 
-- `verify_jwt = true` — protected (almost all Carbon functions; the JWT/API-key is
-  re-checked in-function anyway, see step 4).
+- `verify_jwt = true` — the gateway checks the JWT's signature, nothing more. The anon key
+  published in the apps' HTML IS a valid JWT, so this alone lets anyone in. The function must
+  still authorize in-function: `requirePermissions` when it acts on a company's data, or
+  `requireCaller` (`lib/supabase.ts` — service role, signed-in user, or valid API key) when it
+  touches none, or `requireServiceRole` when only servers call it (`thumbnail`). `embedding`,
+  `post-picking`, `post-stock-transfer`, `reschedule` and `thumbnail` all served the anon key
+  until they got one. The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
+  function that calls none of them. `embed`, `event-wake` and `trigger` are still open —
+  Postgres calls them with the anon key from the `config` table (`util.invoke_edge_function`,
+  `util.wake_event_queue`, `finish_job_operation`), so they cannot tell it from an anonymous
+  caller until Postgres sends a server credential.
 - `verify_jwt = false` — only for genuinely public endpoints (`logo-resizer`).
   Image processing for API/server callers is `process-image` (`verify_jwt = true`,
   in-function `requirePermissions`); it runs the shared pipeline in

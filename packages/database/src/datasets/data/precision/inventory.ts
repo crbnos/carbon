@@ -3,7 +3,10 @@ import type {
   InventoryData,
   KanbanItemSpec,
   OpeningStockSpec,
-  TrackedStockSpec
+  ShelfLifeSpec,
+  StockTransferSpec,
+  TrackedStockSpec,
+  WarehouseTransferSpec
 } from "../../types.ts";
 
 // Opening inventory — realistic quantities for a contract machine shop.
@@ -21,7 +24,7 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "PIN-CLEVIS-12", qty: 90, shelf: "B2-L2" },
   { item: "BSH-BRZ-2012", qty: 140, shelf: "B2-L2" },
   { item: "CYL-HYD-40", qty: 6, shelf: "B2-L3" },
-  { item: "MAT-AL6061-BAR", qty: 620, shelf: "Bar-Stock" },
+  { item: "MAT-AL6061-BAR", qty: 626, shelf: "Bar-Stock" },
   { item: "MAT-AL5052-SHT", qty: 380, shelf: "Bar-Stock" },
   { item: "MAT-SS304-BAR", qty: 260, shelf: "Bar-Stock" },
   { item: "MAT-SS316-PLT", qty: 210, shelf: "Bar-Stock" },
@@ -31,13 +34,14 @@ export const OPENING_STOCK: OpeningStockSpec[] = [
   { item: "CN-DEBURR-MED", qty: 90, shelf: "B3-L1" }
 ];
 
-// Lots/serials that back the tracked slice of the opening stock above.
+// Backs the tracked slice of the opening stock above.
 export const ON_HAND_TRACKED: TrackedStockSpec[] = [
   {
     item: "BRG-DBL-6205",
     entities: [
       { readableId: "LOT-BRG-2611", quantity: 16 },
-      { readableId: "LOT-BRG-2612", quantity: 8 }
+      { readableId: "LOT-BRG-2612", quantity: 8, expiresOffset: 30 },
+      { readableId: "LOT-BRG-2613", quantity: 2, status: "On Hold" }
     ]
   },
   {
@@ -55,26 +59,190 @@ export const ON_HAND_TRACKED: TrackedStockSpec[] = [
     item: "MAT-AL6061-BAR",
     entities: [
       { readableId: "LOT-AL6061-2610", quantity: 400 },
-      { readableId: "LOT-AL6061-2611", quantity: 220 }
+      { readableId: "LOT-AL6061-2611", quantity: 220 },
+      { readableId: "LOT-AL6061-2612", quantity: 3, status: "Rejected" },
+      {
+        readableId: "LOT-AL6061-2605",
+        quantity: 6,
+        status: "Scrapped",
+        scrap: {
+          shelf: "Bar-Stock",
+          reason: "Damaged",
+          dateOffset: -41,
+          comment:
+            "Bars bowed beyond straightness tolerance after a rack collapse"
+        }
+      }
     ]
   }
 ];
 
-// Kanbans (auto-replenishment cards) for high-usage buy parts.
+// LOT-BRG-2612 above expires in 30 days so the expiry chips show amber.
+export const SHELF_LIVES: ShelfLifeSpec[] = [
+  { item: "BRG-DBL-6205", days: 365 }
+];
+
 export const KANBAN_ITEMS: KanbanItemSpec[] = [
   { item: "HW-SHCS-M6", qty: 250, supplier: "Fastline Industrial Supply" },
   { item: "HW-SHCS-M10", qty: 150, supplier: "Fastline Industrial Supply" },
-  { item: "SEAL-ORING-224", qty: 200, supplier: "Midway Bearing & Seal" }
+  { item: "SEAL-ORING-224", qty: 200, supplier: "Midway Bearing & Seal" },
+  { item: "MCH-SPACER-KIT", qty: 5, replenishmentSystem: "Make" },
+  {
+    item: "CN-DEBURR-MED",
+    qty: 20,
+    replenishmentSystem: "Transfer",
+    fromShelf: "B3-L1",
+    toShelf: "B3-L2"
+  }
 ];
 
-export const INVENTORY_COUNT: InventoryCountSpec = {
-  status: "Draft",
-  notes: "Cycle count — hardware bins and bar stock racking"
-};
+export const INVENTORY_COUNTS: InventoryCountSpec[] = [
+  {
+    // The first six opening-stock rows.
+    key: "q3-draft",
+    status: "Draft",
+    notes: "Cycle count — hardware bins and bar stock racking",
+    lines: [
+      {
+        item: "HW-SHCS-M6",
+        shelf: "B1-L1",
+        snapshotQuantity: 800,
+        countedQuantity: 800
+      },
+      {
+        item: "HW-SHCS-M10",
+        shelf: "B1-L1",
+        snapshotQuantity: 500,
+        countedQuantity: 500
+      },
+      {
+        item: "HW-DOWEL-8",
+        shelf: "B1-L2",
+        snapshotQuantity: 300,
+        countedQuantity: 300
+      },
+      {
+        item: "INS-HELI-M6",
+        shelf: "B1-L2",
+        snapshotQuantity: 400,
+        countedQuantity: 400
+      },
+      {
+        item: "BRG-DBL-6205",
+        shelf: "B1-L3",
+        snapshotQuantity: 24,
+        countedQuantity: 24
+      },
+      {
+        item: "BRG-NDL-HK1512",
+        shelf: "B1-L3",
+        snapshotQuantity: 30,
+        countedQuantity: 30
+      }
+    ]
+  },
+  {
+    key: "aug-cycle",
+    status: "Posted",
+    notes: "Cycle count — fastener & hardware bins",
+    postedOffset: -20,
+    lines: [
+      {
+        item: "HW-SHCS-M6",
+        shelf: "B1-L1",
+        snapshotQuantity: 800,
+        countedQuantity: 798
+      },
+      {
+        item: "HW-SHCS-M10",
+        shelf: "B1-L1",
+        snapshotQuantity: 500,
+        countedQuantity: 500
+      },
+      {
+        item: "HW-DOWEL-8",
+        shelf: "B1-L2",
+        snapshotQuantity: 300,
+        countedQuantity: 302
+      },
+      {
+        item: "INS-HELI-M6",
+        shelf: "B1-L2",
+        snapshotQuantity: 400,
+        countedQuantity: 400
+      },
+      {
+        item: "SEAL-ORING-224",
+        shelf: "B2-L1",
+        snapshotQuantity: 600,
+        countedQuantity: 600
+      }
+    ]
+  }
+];
+
+// Only the Completed move changes stock, so it's dated after the posted count above.
+export const STOCK_TRANSFERS: StockTransferSpec[] = [
+  {
+    key: "st-completed",
+    status: "Completed",
+    fromShelf: "B1-L1",
+    toShelf: "B1-L2",
+    dateOffset: -10,
+    lines: [{ item: "HW-SHCS-M6", quantity: 100 }]
+  },
+  {
+    key: "st-released",
+    status: "Released",
+    fromShelf: "B1-L1",
+    toShelf: "B2-L3",
+    dateOffset: -1,
+    lines: [{ item: "HW-SHCS-M10", quantity: 50 }]
+  },
+  {
+    key: "st-draft",
+    status: "Draft",
+    fromShelf: "B2-L1",
+    toShelf: "B2-L2",
+    dateOffset: 0,
+    lines: [{ item: "SPR-DIE-25", quantity: 12 }]
+  }
+];
+
+// HQ has no bins, so completed receipts land shelfless.
+export const WAREHOUSE_TRANSFERS: WarehouseTransferSpec[] = [
+  {
+    key: "wt-completed",
+    status: "Completed",
+    fromLocation: "Plant",
+    toLocation: "HQ",
+    dateOffset: -12,
+    lines: [{ item: "HW-SHCS-M10", quantity: 25, fromShelf: "B1-L1" }]
+  },
+  {
+    key: "wt-toship",
+    status: "To Ship",
+    fromLocation: "Plant",
+    toLocation: "HQ",
+    dateOffset: 0,
+    lines: [{ item: "PIN-CLEVIS-12", quantity: 10, fromShelf: "B2-L2" }]
+  },
+  {
+    key: "wt-draft",
+    status: "Draft",
+    fromLocation: "Plant",
+    toLocation: "HQ",
+    dateOffset: 2,
+    lines: [{ item: "BSH-BRZ-2012", quantity: 8, fromShelf: "B2-L2" }]
+  }
+];
 
 export const precisionInventory: InventoryData = {
   openingStock: OPENING_STOCK,
   onHandTracked: ON_HAND_TRACKED,
   kanbanItems: KANBAN_ITEMS,
-  inventoryCount: INVENTORY_COUNT
+  inventoryCounts: INVENTORY_COUNTS,
+  shelfLives: SHELF_LIVES,
+  stockTransfers: STOCK_TRANSFERS,
+  warehouseTransfers: WAREHOUSE_TRANSFERS
 };

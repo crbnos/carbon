@@ -10,7 +10,11 @@ import {
   SESSION_SECRET,
   SUPABASE_URL
 } from "@carbon/env";
-import { getCompanyPrivateBucket, LEGACY_PRIVATE_BUCKET } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  LEGACY_PRIVATE_BUCKET,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { NonRetriableError } from "inngest";
 
@@ -78,15 +82,6 @@ export function assemblerBaseUrl(): string {
   return ASSEMBLER_SERVICE_URL;
 }
 
-// Where a retained raw lands: uploads/compaction stage in `temp-staging`
-// (EPHEMERAL, 2.5 GB), and the retained raw is relocated to the company's own
-// private bucket (DURABLE, 50 MB served cap) so it survives — or pruned when it
-// can't fit and a GLB preview already exists. The 50 MB gate is
-// `MODEL_RAW_KEEP_MAX_BYTES`. Object keys start with the companyId segment,
-// which is also the durable bucket's id; pre-migration raws still live in the
-// legacy `private` bucket, so readers probe both.
-export const RAW_STAGING_BUCKET = "temp-staging";
-
 /**
  * COPY a staged object into the durable bucket, same key, server-side (no
  * download — storage-js `copy` with `destinationBucket`). Deliberately not a
@@ -109,7 +104,7 @@ export async function copyRawToDurable(
   if (!companySegment) return `path has no companyId prefix: ${path}`;
   const durableBucket = getCompanyPrivateBucket(companySegment);
   const { error } = await client.storage
-    .from(RAW_STAGING_BUCKET)
+    .from(TEMP_STAGING_BUCKET)
     .copy(path, path, { destinationBucket: durableBucket });
   if (!error) return null;
   return /already exists|duplicate/i.test(error.message) ? null : error.message;
@@ -154,7 +149,7 @@ export async function resolveModelSourceBucket(
 ): Promise<string> {
   const companySegment = modelPath.split("/")[0] ?? "";
   const buckets = [
-    RAW_STAGING_BUCKET,
+    TEMP_STAGING_BUCKET,
     // A key with no companyId segment can't resolve a company bucket.
     ...(companySegment ? [getCompanyPrivateBucket(companySegment)] : []),
     LEGACY_PRIVATE_BUCKET

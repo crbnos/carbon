@@ -37,11 +37,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ── 1. itemPlanning: Buy items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Buy items reorder policy");
   for (const readableId of data.buyItemIds) {
-    const item = refs.items[readableId];
-    if (!item) {
-      ctx.log(`  skip ${readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, readableId, "planning buy item");
     await client.query(
       `UPDATE "itemPlanning"
        SET "reorderingPolicy" = 'Fixed Reorder Quantity',
@@ -57,11 +53,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // ── 2. itemPlanning: Make items → Fixed Reorder Quantity ─────────────────────
   ctx.log("itemPlanning — Make items reorder policy");
   for (const readableId of data.makeItemIds) {
-    const item = refs.items[readableId];
-    if (!item) {
-      ctx.log(`  skip ${readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, readableId, "planning make item");
     await client.query(
       `UPDATE "itemPlanning"
        SET "reorderingPolicy" = 'Fixed Reorder Quantity',
@@ -80,8 +72,12 @@ export async function runTier12(ctx: Ctx): Promise<void> {
   // promisedDate must fall inside the 48-week planning horizon.
   ctx.log("SO — open order for buy-item demand");
   const order = data.demandOrder;
-  const customerId = refs.customers[order.customer]!;
-  const customerLocationId = refs.misc[`cloc:${order.customer}`] ?? null;
+  const customerId = need(refs.customers, order.customer, "customer");
+  const customerLocationId = need(
+    refs.misc,
+    `cloc:${order.customer}`,
+    "customer location"
+  );
 
   const promisedDate = resolveDate(ctx.anchor, order.promisedDateOffset);
 
@@ -115,7 +111,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
     companyId
   });
   for (const line of order.lines) {
-    const item = refs.items[line.item]!;
+    const item = need(refs.items, line.item, "demand order item");
     await insertId(ctx, "salesOrderLine", {
       salesOrderId: so,
       salesOrderLineType: line.salesOrderLineType,
@@ -175,11 +171,7 @@ export async function runTier12(ctx: Ctx): Promise<void> {
 
   ctx.log("demandProjection — weekly forecast for make parts");
   for (const spec of data.demandProjections) {
-    const item = refs.items[spec.readableId];
-    if (!item) {
-      ctx.log(`  skip ${spec.readableId} — not in refs`);
-      continue;
-    }
+    const item = need(refs.items, spec.readableId, "demand projection item");
     for (let week = 0; week < spec.quantities.length; week++) {
       const periodId = periodIds[week];
       if (!periodId) break;
@@ -188,6 +180,44 @@ export async function runTier12(ctx: Ctx): Promise<void> {
       await insertMaybe(ctx, "demandProjection", {
         itemId: item.id,
         locationId: plantId,
+        periodId,
+        forecastQuantity: spec.quantities[week],
+        updatedBy: userId
+      });
+    }
+  }
+
+  // ── 5. HQ: one reorder policy per planning screen + a projection ────────────
+  // Every other planning row is at the plant; without these the planning
+  // screens render empty whenever the location picker is on HQ.
+  ctx.log("itemPlanning + demandProjection — HQ");
+  const hqId = need(refs.locations, "HQ", "location");
+  for (const readableId of data.hq.reorderItemIds) {
+    const item = need(refs.items, readableId, "HQ planning item");
+    const updated = await client.query(
+      `UPDATE "itemPlanning"
+       SET "reorderingPolicy" = 'Fixed Reorder Quantity',
+           "reorderPoint"      = 2,
+           "reorderQuantity"   = 4,
+           "updatedBy"         = $1,
+           "updatedAt"         = NOW()
+       WHERE "itemId" = $2 AND "companyId" = $3 AND "locationId" = $4`,
+      [userId, item.id, companyId, hqId]
+    );
+    if (updated.rowCount !== 1) {
+      throw new Error(
+        `Seed: item "${readableId}" has no itemPlanning row at HQ to set a reorder policy on`
+      );
+    }
+  }
+  for (const spec of data.hq.demandProjections) {
+    const item = need(refs.items, spec.readableId, "HQ demand projection item");
+    for (let week = 0; week < spec.quantities.length; week++) {
+      const periodId = periodIds[week];
+      if (!periodId) break;
+      await insertMaybe(ctx, "demandProjection", {
+        itemId: item.id,
+        locationId: hqId,
         periodId,
         forecastQuantity: spec.quantities[week],
         updatedBy: userId

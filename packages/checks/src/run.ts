@@ -6,6 +6,7 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 import { moduleShape } from "./conformance/module-shape";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
@@ -18,6 +19,7 @@ import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -43,6 +45,11 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDbClientInService,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity
+];
+
+/** Checks that run once per edge function, over all of its .ts files. */
+export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
+  edgeFunctionAuthorizesCaller
 ];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
@@ -79,13 +86,14 @@ export function scanModules(
   return out;
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS under `root`. */
+/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root))),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    ...scanAll(loadTypescriptFiles(root), TS_CHECKS)
+    ...scanAll(loadTypescriptFiles(root), TS_CHECKS),
+    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS)
   ];
 }
 

@@ -6,6 +6,7 @@ import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { round } from "../shared/precision.ts";
@@ -136,6 +137,14 @@ serve(async (req: Request) => {
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
+
+    // Kysely below bypasses RLS: the caller must belong to the company it names.
+    try {
+      await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
+    } catch (err) {
+      return errorResponse(err, 401);
+    }
+
     const companyToday = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId));
     const today = companyToday.toString();
     let expiredWarning: string | undefined;

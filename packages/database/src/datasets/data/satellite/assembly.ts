@@ -8,12 +8,15 @@ export const satelliteAssembly: AssemblySpec = {
   name: "Radial Engine — Build Sequence",
   item: "SAT-1000",
   componentCount: 266,
+  // The Assembly operation of the SAT-1000 method.
+  operation: 1,
   steps: [
     {
       title: "Set the crankcase in the stand",
       instruction:
         "Mount the crankcase in the rotating stand with the rear face up. Blow out every oil gallery and confirm each one passes air before anything closes over it — a blocked gallery is undetectable once the case is built.",
-      componentNodeIds: ["3bc7311d9d4c8ffc"]
+      componentNodeIds: ["3bc7311d9d4c8ffc"],
+      materials: [{ item: "BUS-STR-001", quantity: 1 }]
     },
     {
       title: "Install the master rod and piston assembly",
@@ -25,7 +28,8 @@ export const satelliteAssembly: AssemblySpec = {
       title: "Close the crankcase cover",
       instruction:
         "Fit the cover with a new gasket and pull the nuts down in a criss-cross pattern in three passes. Re-check crank rotation after the final pass; if it stiffened, the case is pinching and the cover comes back off.",
-      componentNodeIds: ["95451b53f10c23c3"]
+      componentNodeIds: ["95451b53f10c23c3"],
+      tools: [{ item: "TL-TORQUE-J1", quantity: 1 }]
     },
     {
       title: "Fit the cam ring housing and its five followers",
@@ -38,7 +42,8 @@ export const satelliteAssembly: AssemblySpec = {
         "c075111ec89c6304",
         "2943e2036cf12fe5",
         "8532047e4eda94e0"
-      ]
+      ],
+      materials: [{ item: "ADCS-001", quantity: 1 }]
     },
     {
       title: "Fit the five cylinder barrels",
@@ -97,13 +102,32 @@ export const satelliteAssembly: AssemblySpec = {
       title: "Fit the front cover",
       instruction:
         "Close the front cover onto the nose case with a new gasket, pulling the fasteners down evenly. Turn the crank before and after: any change in drag means the cover is loading the cam drive and it comes back off.",
-      componentNodeIds: ["3d5308ee67a8d612"]
+      componentNodeIds: ["3d5308ee67a8d612"],
+      materials: [{ item: "CN-MLI-001", quantity: 1 }],
+      tools: [{ item: "TL-TORQUE-J1", quantity: 1 }]
     },
     {
       title: "Fit the nose cone and turn the engine over",
       instruction:
         "Fit the nose cone last. Turn the engine through two full revolutions by hand feeling for the five compression peaks — five even peaks and no hard stop is the sign-off for this assembly.",
       componentNodeIds: ["7018fb918f1b1be6"]
+    }
+  ],
+  componentMappings: [
+    // model part "crankcase"
+    {
+      geometryHash: "15659b0b141103c3add155554c80d66c3ed0fcb1",
+      item: "BUS-STR-001"
+    },
+    // model part "central spur gear"
+    {
+      geometryHash: "85a63cb31d05831b69fa9cef44cc604b498fdab5",
+      item: "ADCS-001"
+    },
+    // model part "crankcase cover"
+    {
+      geometryHash: "9d3858a52412e910cefde30f0a9ed9ec20f9e63a",
+      item: "CN-MLI-001"
     }
   ]
 };

@@ -5734,6 +5734,9 @@ msgstr "アクションを削除"
 msgid "Delete Agreement"
 msgstr "契約を削除"
 
+msgid "Delete and apply"
+msgstr "削除して適用"
+
 msgid "Delete and restore"
 msgstr "削除して復元"
 
@@ -6627,6 +6630,9 @@ msgstr "各製造指図は独自のロット番号が必要です。または1�
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "各明細はこの会社のデータから、それが所有していない行へのリンクです。これらの行を含むバックアップは復元できません。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "各明細は、この会社のデータから所有していない行へのリンクです。これらの行を除去すれば、デモデータが適用されます。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "各明細はこの会社のデータから、それが所有していない行へのリンクです。それらの行を削除すると、復元を実行できます。"
@@ -9449,9 +9455,6 @@ msgstr "請求書得意先拠点"
 
 msgid "Invoice ID"
 msgstr "請求書ID"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "サービス日付を持つ請求書明細は繰延売上高に計上され、認識実行によってリリースされます。"
 
 msgid "Invoice Location"
 msgstr "請求書の場所"
@@ -14704,6 +14707,9 @@ msgstr "条項を除去"
 msgid "Remove condition"
 msgstr "条件を除去"
 
+msgid "Remove corrupted data and apply"
+msgstr "破損したデータを除去して適用"
+
 msgid "Remove corrupted data and restore"
 msgstr "破損データを除去して復元"
 
@@ -14815,6 +14821,9 @@ msgstr "レンタル拠点"
 
 msgid "Rental Utilization"
 msgstr "レンタル資産利用率"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "再オープン"
@@ -15238,9 +15247,6 @@ msgstr "レンタル期間にわたって直線法で認識する営業賃貸料
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "獲得する前に請求された売上高で、負債として保持され、サービス提供期間の経過により認識実行によって売上高に振替えられます。"
 
-msgid "Revenue recognition"
-msgstr "売上高認識"
-
 msgid "Revenue Recognition"
 msgstr "売上高認識"
 
@@ -15645,9 +15651,6 @@ msgstr "販売売上高"
 
 msgid "Sales Rule Violations"
 msgstr "販売ルール違反"
-
-msgid "Sales rules"
-msgstr "販売ルール"
 
 msgid "Sales Rules"
 msgstr "販売ルール"
@@ -18747,6 +18750,9 @@ msgstr "これらの工程は複数の仕入先に対応可能な工法を使用
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "これらの行は、この会社の外部のデータにリンクしています。このため、現在のデータのセーフコピーを作成できません。これらの削除は取り消すことができません。これらがこのグループ内の他の会社と共有されている場合、何も削除されず、デモデータは適用されません。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "これらの行はこの会社外のデータにリンクしているため、現在のデータのバックアップを作成できません。削除を元に戻すことはできません。このグループ内の他の会社と共有されていることが判明した場合、何も削除されず、復元は開始されません。"
 
@@ -20868,6 +20874,9 @@ msgstr "在庫が変わっている理由 — 正（見つかった）、負（�
 
 msgid "Why this backup failed"
 msgstr "このバックアップが失敗した理由"
+
+msgid "Why this failed"
+msgstr "これが失敗した理由"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "この行が拒否されている理由。印刷可能な見積もりに表示され、win-loss報告用に記録されます。"

@@ -518,6 +518,20 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** any new SECURITY DEFINER function that calls pg_net/`net.http_post` or is meant to be trigger/cron-only (`packages/database/supabase/migrations/`). Trigger functions returning `trigger` are not RPC-exposed (safe in public), but VOID/scalar helpers are.
 
+**Update (2026-09-24):** pg_net is not required. On `supabase/postgres:15.14.1.112`, a plain
+`LANGUAGE sql` function (`select 1`) with `REVOKE EXECUTE … FROM PUBLIC, anon, authenticated`
+segfaults the backend (signal 11) when called under `SET ROLE authenticated` or `anon`. This was
+reproduced in a fresh container of that image. A missing table privilege, a `RAISE`, and "must be owner"
+are all ordinary errors. So `REVOKE EXECUTE` on any function in `public` is itself an unauthenticated DoS
+(`POST /rest/v1/rpc/<fn>`). Gate API access INSIDE the function instead, and raise on
+`current_setting('role', true) IN ('anon','authenticated')` without the permission — see
+`assert_audit_log_access` in `20260924171942_audit-log-company-scope.sql`. When you test a revoke, use a
+throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared dev database. The crash
+restarts every backend. `20260924192316_api-function-guards-not-revokes.sql` replaced the six existing public-function
+revokes (integration secrets, `upsert_company_integration_patch`, the job-completion helpers). A nested
+helper of a SECURITY DEFINER function cannot use the role-GUC guard, because `current_setting('role')`
+still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER` instead.
+
 ## The local Inngest dev server (v1.19.4) can't handle `debounce` — it errors on every debounce item
 
 **Context:** The push-based event-queue drainer (`packages/jobs/src/inngest/functions/events/queue.ts`) was configured with `debounce: { period: "2s", timeout: "10s" }` to coalesce bursts of `carbon/event-queue.process` wake events into one run.
@@ -2302,3 +2316,51 @@ current, `git reset --soft origin/main`, commit once, confirm `HEAD^{tree}` is
 unchanged) and `git push --force-with-lease=<branch>:<known sha>`.
 
 **Applies to:** any PR on crbnos/carbon (cla-assistant.io).
+
+---
+
+**Context:** A security report: any signed-in user could read, create, update and delete every
+`public."user"` row through PostgREST. The policy was `FOR ALL USING
+(has_any_company_permission('users_update'))`, and a self-serve signup holds `users_update` in
+its own company.
+
+**Problem:** `has_any_company_permission(claim)` answers "does the caller hold this permission
+ANYWHERE?" It never relates the row to a company, so any policy built on it alone is
+cross-tenant. A table with no `companyId` (`user`) cannot use the standard four-policy template,
+so the shortcut looked reasonable.
+
+**Rule:** Never gate a policy on `has_any_company_permission`. Every policy must connect the ROW
+to a company in `get_companies_with_employee_role()` or
+`get_companies_with_employee_permission(...)`. For tables without `companyId`, go through a
+membership table (`userToCompany`, `employee`, …), as `20260924153817` does. When a global
+row is shared by several tenants, also pin the columns no single tenant owns (a BEFORE UPDATE
+guard on `current_user IN ('anon','authenticated')`), and revoke INSERT/DELETE from the API
+roles when only the server writes them. Also check `pg_policies` for `qual = 'true'`.
+
+**Applies to:** `packages/database/supabase/migrations/**` RLS on global tables (`user`,
+`userPermission`, `group`), and any review of an RLS helper.
+
+---
+
+**Context:** A security report: with only the published anon key, a caller could reach 84+
+SECURITY DEFINER functions through `/rest/v1/rpc` — inventory valuation, claims, document
+sequences, the event interceptors — for any company, plus a SQL injection in
+`get_company_id_from_foreign_key`. Table RLS held on all 438 tables; the functions went around it.
+
+**Problem:** Every function in `public` is an RPC endpoint, and a SECURITY DEFINER one bypasses
+RLS. Guards were written inline as `IF NOT (has_role(...) OR ...)`, which is NULL — not true —
+when a lookup finds nothing, so they never raised. The obvious fix, `REVOKE EXECUTE`, segfaults
+this Postgres image on the next anon call (`20260924192316`); a first draft of the fix did exactly
+that and only a rule file caught it, because its test checked `has_function_privilege` instead of
+making the call.
+
+**Rule:** Never `REVOKE EXECUTE` on a public function. A SECURITY DEFINER function that takes a
+company id calls `assert_company_access` first; one that only servers call raises on
+`current_setting('role')`; everything internal (helpers, event interceptors) is SECURITY INVOKER.
+Never trust a user id parameter without relating it to `auth.uid()`. Test a guard by CALLING the
+function as `anon` and as another company's user, not by reading the catalog. Edge functions:
+`verify_jwt` accepts the anon key, so authorize in-function (`requirePermissions` / `requireCaller`).
+
+**Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
+`packages/database/supabase/functions/*/index.ts`; enforced by the
+`public-definer-function-authorizes-caller` invariant and `supabase/tests/rpc-privileges.test.sql`.

@@ -8,13 +8,18 @@ import {
   HStack,
   VStack
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
 import { DateTime } from "~/components";
 import type { CompanyTemplateRun } from "~/modules/settings";
+import {
+  ExcludedRowsInfo,
+  PurgeCorruptedRowsModal
+} from "~/modules/settings/ui/Backups";
 import { formatElapsed } from "~/modules/settings/ui/Backups/format";
 import { path } from "~/utils/path";
+import { totalScopeRows } from "../../backups.service";
 
 /** A run with no completion after this long is treated as stalled, and offered a
  *  revert retry — the job's own crash handler can't fire if the process died. */
@@ -23,13 +28,16 @@ const STALLED_AFTER_MS = 5 * 60 * 1000;
 export function TemplateReviewRow({
   run,
   datasetLabel,
-  onResolve
+  onResolve,
+  onPurgeAndApply
 }: {
   run: CompanyTemplateRun;
   datasetLabel: string | null;
   /** Hides the row for a keep/dismiss, which clear the marker asynchronously —
    *  a revert must NOT use this: it keeps running, and the row is what reports it. */
   onResolve: (templateRunId: string) => void;
+  /** The route submits, so it can put the run back if the purge is refused. */
+  onPurgeAndApply: () => void;
 }) {
   const { t } = useLingui();
   const fetcher = useFetcher();
@@ -45,6 +53,9 @@ export function TemplateReviewRow({
   );
   const isReverting = run.status === "reverting" || revertRequestedAt !== null;
   const busy = run.status === "running" || isReverting;
+  const scopeViolations =
+    run.status === "failed" && run.reason === "scope-violations";
+  const [confirmPurge, setConfirmPurge] = useState(false);
   useEffect(() => {
     // Any status but `ready` means the server has taken over the story —
     // including `failed`, where the optimistic spinner must not hide the error.
@@ -125,7 +136,28 @@ export function TemplateReviewRow({
               <span className="text-sm font-medium truncate">
                 {datasetLabel ?? run.datasetKey ?? t`Demo data`}
               </span>
-              {run.status === "failed" ? (
+              {scopeViolations ? (
+                // Exact tables and the raw error live in the popover, as in RestoreReviewRow.
+                <span className="break-words text-xs text-destructive">
+                  <Plural
+                    value={totalScopeRows(run.violationRowsByTable)}
+                    one="# row links to data outside this company, so a safety copy of your current data can't be made."
+                    other="# rows link to data outside this company, so a safety copy of your current data can't be made."
+                  />{" "}
+                  <ExcludedRowsInfo
+                    excludedRows={run.violations}
+                    title={<Trans>Why this failed</Trans>}
+                    description={
+                      <Trans>
+                        Each line is a link from this company's data to a row it
+                        doesn't own. Removing those rows lets the demo data
+                        apply.
+                      </Trans>
+                    }
+                    technical={run.error}
+                  />
+                </span>
+              ) : run.status === "failed" ? (
                 <span className="text-xs text-destructive">
                   {t`Failed`} — {run.error ?? t`unknown error`}
                 </span>
@@ -160,6 +192,15 @@ export function TemplateReviewRow({
                     <Trans>Revert</Trans>
                   </Button>
                 </>
+              )}
+              {scopeViolations && (
+                <Button
+                  variant="destructive"
+                  isDisabled={submitting}
+                  onClick={() => setConfirmPurge(true)}
+                >
+                  <Trans>Remove corrupted data and apply</Trans>
+                </Button>
               )}
               {run.status === "failed" && (
                 <Button
@@ -196,6 +237,27 @@ export function TemplateReviewRow({
                 ))}
             </HStack>
           </HStack>
+
+          {confirmPurge && (
+            <PurgeCorruptedRowsModal
+              rowsByTable={run.violationRowsByTable}
+              description={
+                <Trans>
+                  These rows link to data outside this company, so a safety copy
+                  of your current data can't be made. Deleting them cannot be
+                  undone. If they turn out to be shared with other companies in
+                  this group, nothing is deleted and the demo data isn't
+                  applied.
+                </Trans>
+              }
+              confirmLabel={<Trans>Delete and apply</Trans>}
+              onCancel={() => setConfirmPurge(false)}
+              onConfirm={() => {
+                setConfirmPurge(false);
+                onPurgeAndApply();
+              }}
+            />
+          )}
 
           {stalled && (
             <span className="text-xs text-muted-foreground">

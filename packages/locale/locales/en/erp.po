@@ -5734,6 +5734,9 @@ msgstr "Delete Action"
 msgid "Delete Agreement"
 msgstr "Delete Agreement"
 
+msgid "Delete and apply"
+msgstr "Delete and apply"
+
 msgid "Delete and restore"
 msgstr "Delete and restore"
 
@@ -6627,6 +6630,9 @@ msgstr "Each job needs its own lot number — or combine them into one lot."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
@@ -9449,9 +9455,6 @@ msgstr "Invoice Customer Location"
 
 msgid "Invoice ID"
 msgstr "Invoice ID"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
 
 msgid "Invoice Location"
 msgstr "Invoice Location"
@@ -14704,6 +14707,9 @@ msgstr "Remove clause"
 msgid "Remove condition"
 msgstr "Remove condition"
 
+msgid "Remove corrupted data and apply"
+msgstr "Remove corrupted data and apply"
+
 msgid "Remove corrupted data and restore"
 msgstr "Remove corrupted data and restore"
 
@@ -14815,6 +14821,9 @@ msgstr "Rental Site"
 
 msgid "Rental Utilization"
 msgstr "Rental Utilization"
+
+msgid "Rentals"
+msgstr "Rentals"
 
 msgid "Reopen"
 msgstr "Reopen"
@@ -15238,9 +15247,6 @@ msgstr "Revenue GL account for operating rental income recognized straight-line 
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 
-msgid "Revenue recognition"
-msgstr "Revenue recognition"
-
 msgid "Revenue Recognition"
 msgstr "Revenue Recognition"
 
@@ -15645,9 +15651,6 @@ msgstr "Sales Revenue"
 
 msgid "Sales Rule Violations"
 msgstr "Sales Rule Violations"
-
-msgid "Sales rules"
-msgstr "Sales rules"
 
 msgid "Sales Rules"
 msgstr "Sales Rules"
@@ -18747,6 +18750,9 @@ msgstr "These operations use a process with multiple suppliers. Choose a supplie
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 
@@ -20868,6 +20874,9 @@ msgstr "Why stock is changing — Positive (found), Negative (lost/scrap), or Se
 
 msgid "Why this backup failed"
 msgstr "Why this backup failed"
+
+msgid "Why this failed"
+msgstr "Why this failed"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."

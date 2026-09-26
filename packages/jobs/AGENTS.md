@@ -34,6 +34,7 @@ pnpm --filter @carbon/jobs test
 pnpm --filter @carbon/jobs typecheck
 pnpm --filter @carbon/jobs dev:jobs
 pnpm db:check:backups
+pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + schedule one company
 ```
 
 ## Key Exports
@@ -70,6 +71,7 @@ pnpm db:check:backups
 - `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.
 - `src/workflows/engine/log.ts` redacts secret/token/password/header values before persisting step input.
 - Bare `tsx` scripts cannot rely on Vite's CJS/ESM interop. Keep runtime imports from packages without `"type":"module"` out of script dependency chains; type-only imports are safe.
+- `src/demo-planning.ts` `planDemoCompany` runs MRP + `runLocationSchedule` over a company after a demo template commits; it never throws. Called by the `company-template` job's non-fatal `plan-template` step and by the `plan:company` script (`src/scripts/plan-company.ts`, spawned by `db:seed:dev`), which loads it through `createRequire` for the reason above. See `.claude/rules/onboarding-company-templates.md`.
 - `db:check:backups` is read-only when run directly. The pre-commit hook passes `--stage` and regenerates/stages `packages/jobs/manifests/schema.json` after a successful live-schema comparison.
 
 ## Cross-References

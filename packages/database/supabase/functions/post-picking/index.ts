@@ -5,6 +5,7 @@ import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { resolveTrackedEntityBin } from "../issue/resolve-tracked-entity-bin.ts";
 import {
@@ -130,6 +131,14 @@ serve(async (req: Request) => {
   try {
     const payload = await req.json();
     const validatedPayload = payloadValidator.parse(payload);
+
+    // Kysely below bypasses RLS: the caller must belong to the company it names.
+    try {
+      await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
+    } catch (err) {
+      return errorResponse(err, 401);
+    }
+
     const today = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId)).toString();
     let splitEntityId: string | undefined;
 

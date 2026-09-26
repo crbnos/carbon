@@ -5734,6 +5734,9 @@ msgstr "Aktion löschen"
 msgid "Delete Agreement"
 msgstr "Vertrag löschen"
 
+msgid "Delete and apply"
+msgstr "Löschen und anwenden"
+
 msgid "Delete and restore"
 msgstr "Löschen und wiederherstellen"
 
@@ -6627,6 +6630,9 @@ msgstr "Jeder Fertigungsauftrag braucht seine eigene Chargennummer — oder komb
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Jede Zeile ist ein Link aus den Daten dieses Unternehmens zu einer Zeile, die es nicht besitzt. Eine Sicherung mit diesen Zeilen könnte niemals wiederhergestellt werden."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Jede Zeile ist ein Link von den Daten dieses Unternehmens zu einer Zeile, die es nicht besitzt. Das Entfernen dieser Zeilen ermöglicht die Anwendung der Demo-Daten."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Jede Zeile ist ein Link aus den Daten dieses Unternehmens zu einer Zeile, die es nicht besitzt. Das Entfernen dieser Zeilen ermöglicht die Wiederherstellung."
@@ -9449,9 +9455,6 @@ msgstr "Rechnungskundenstandort"
 
 msgid "Invoice ID"
 msgstr "Rechnungs-ID"
-
-msgid "Invoice lines with service dates defer to Deferred Revenue and are released by recognition runs."
-msgstr "Rechnungspositionen mit Leistungsdatum werden auf Abgegrenzte Erträge aufgeschoben und durch Anerkennungsläufe freigegeben."
 
 msgid "Invoice Location"
 msgstr "Rechnungsort"
@@ -14704,6 +14707,9 @@ msgstr "Klausel entfernen"
 msgid "Remove condition"
 msgstr "Bedingung entfernen"
 
+msgid "Remove corrupted data and apply"
+msgstr "Beschädigte Daten entfernen und anwenden"
+
 msgid "Remove corrupted data and restore"
 msgstr "Beschädigte Daten entfernen und wiederherstellen"
 
@@ -14815,6 +14821,9 @@ msgstr "Vermietungsstandort"
 
 msgid "Rental Utilization"
 msgstr "Leihauslastung"
+
+msgid "Rentals"
+msgstr ""
 
 msgid "Reopen"
 msgstr "Wieder öffnen"
@@ -15238,9 +15247,6 @@ msgstr "Umsatzerlöse-Sachkonto für Betriebsmieterlöse, die linear über den M
 msgid "Revenue invoiced before it is earned, held as a liability and released to revenue by the recognition run as the service period passes."
 msgstr "Umsatzerlöse, die fakturiert werden, bevor sie verdient werden, als Verbindlichkeit gehalten und vom Abgrenzungslauf als Umsatzerlöse freigegeben, wenn die Serviceperiode verstreicht."
 
-msgid "Revenue recognition"
-msgstr "Erlöserfassung"
-
 msgid "Revenue Recognition"
 msgstr "Erlöserfassung"
 
@@ -15645,9 +15651,6 @@ msgstr "Umsatzerlöse"
 
 msgid "Sales Rule Violations"
 msgstr "Verstöße gegen Verkaufsregeln"
-
-msgid "Sales rules"
-msgstr "Verkaufsregeln"
 
 msgid "Sales Rules"
 msgstr "Verkaufsregeln"
@@ -18747,6 +18750,9 @@ msgstr "Diese Arbeitsgänge nutzen ein Verfahren mit mehreren Lieferanten. Wähl
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Diese Teile werden durch dieses Teil ersetzt. Jede Regel ist auf dem alten Teil konfiguriert; öffnen Sie es, um die Regel zu ändern."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Diese Zeilen sind Links zu Daten außerhalb dieses Unternehmens, daher kann keine Sicherungskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Falls sie sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Demo-Daten werden nicht angewendet."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Diese Zeilen verlinken auf Daten außerhalb dieses Unternehmens. Daher kann keine Sicherheitskopie Ihrer aktuellen Daten erstellt werden. Das Löschen kann nicht rückgängig gemacht werden. Sollten diese sich als gemeinsam mit anderen Unternehmen in dieser Gruppe herausstellen, wird nichts gelöscht und die Wiederherstellung wird nicht gestartet."
 
@@ -20868,6 +20874,9 @@ msgstr "Warum sich der Bestand ändert — Positiv (gefunden), Negativ (verloren
 
 msgid "Why this backup failed"
 msgstr "Warum diese Sicherung fehlgeschlagen ist"
+
+msgid "Why this failed"
+msgstr "Warum das fehlgeschlagen ist"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Warum diese Zeile abgelehnt wird; auf dem druckbaren Angebot angezeigt und für Win-Loss-Berichterstattung aufgezeichnet."

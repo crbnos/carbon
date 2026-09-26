@@ -240,14 +240,20 @@ export async function ensureSequences(
   }
 }
 
+// Journals survive the wipe, so their counter must not rewind: a rewound one
+// hands the app (and the seed) an id a preserved journal already holds.
+const PRESERVED_SEQUENCES = ["journalEntry"];
+
 // Re-running the seed must produce the same readable ids as the first run.
 export async function resetSequences(
   client: PoolClient,
   companyId: string
 ): Promise<void> {
-  await client.query(`UPDATE sequence SET next = 0 WHERE "companyId" = $1`, [
-    companyId
-  ]);
+  await client.query(
+    `UPDATE sequence SET next = 0
+     WHERE "companyId" = $1 AND "table" <> ALL($2::text[])`,
+    [companyId, PRESERVED_SEQUENCES]
+  );
 }
 
 // SECURITY DEFINER, skips its permission check when session_user != 'authenticator'.
@@ -259,6 +265,19 @@ export async function nextSequence(ctx: Ctx, table: string): Promise<string> {
   const value = res.rows[0]?.value;
   if (!value) throw new Error(`Seed: no sequence value for "${table}"`);
   return value;
+}
+
+/** Earlier seeds rewound this counter while journals survived, so skip past any collision. */
+export async function nextJournalEntryId(ctx: Ctx): Promise<string> {
+  for (let attempt = 0; attempt < 10_000; attempt++) {
+    const candidate = await nextSequence(ctx, "journalEntry");
+    const taken = await ctx.client.query(
+      `SELECT 1 FROM journal WHERE "journalEntryId" = $1 AND "companyId" = $2`,
+      [candidate, ctx.companyId]
+    );
+    if (taken.rowCount === 0) return candidate;
+  }
+  throw new Error("Seed: no free journalEntry id after 10000 attempts");
 }
 
 const SUMMARY_TABLES = [

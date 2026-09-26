@@ -254,6 +254,58 @@ function checkPermissions(
   return true;
 }
 
+/**
+ * For functions that touch no company's data, so requirePermissions has nothing
+ * to check, but that must still refuse the published anon key: accepts the
+ * service role, a signed-in user, or a valid, rate-limited API key. As in
+ * requirePermissions, the gateway (verify_jwt) has verified the signature.
+ * Throws; a rate-limited key's error carries `status: 429`, anything else is a 401.
+ */
+export async function requireCaller(req: Request): Promise<void> {
+  const authorizationHeader = req.headers.get("Authorization");
+  const apiKeyHeader = req.headers.get("carbon-key");
+
+  if (apiKeyHeader) {
+    const auth = await getAuthFromAPIKey(apiKeyHeader);
+    if (!auth) throw new Error("Invalid API key");
+    const serviceRole = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      postgrestServiceKey(authorizationHeader),
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const rl = await checkApiKeyRateLimit(
+      serviceRole,
+      auth.apiKeyId,
+      auth.rateLimit,
+      auth.rateLimitWindow
+    );
+    if (!rl.success) {
+      throw Object.assign(new Error("Rate limit exceeded"), { status: 429 });
+    }
+    return;
+  }
+
+  if (isTrustedBearer(authorizationHeader)) return;
+
+  const token = authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+  try {
+    const role = (JSON.parse(atob(token.split(".")[1] ?? "")) as {
+      role?: string;
+    }).role;
+    if (role === "authenticated") return;
+  } catch {
+    // fall through
+  }
+  throw new Error("Sign in or use an API key");
+}
+
+/** For functions only servers call (jobs, other edge functions): the service role key or nothing. */
+export function requireServiceRole(req: Request): void {
+  if (!isTrustedBearer(req.headers.get("Authorization"))) {
+    throw new Error("Service role only");
+  }
+}
+
 export async function requirePermissions(
   req: Request,
   companyId: string,

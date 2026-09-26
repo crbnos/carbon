@@ -60,6 +60,7 @@
     "@carbon/logger": "workspace:*",
     "@react-email/components": "catalog:",
     "@simplewebauthn/server": "^13.1.0",
+    "botid": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
     "jose": "catalog:",

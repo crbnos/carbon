@@ -6,15 +6,18 @@ import { datetime } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { applyTableRenames } from "../../../backups/renames";
 import { getJobDatabaseClient } from "../../../db";
+import { planDemoCompany } from "../../../demo-planning";
 import { inngest } from "../../client";
 import {
   backupAssetsDir,
   backupDir,
+  ExportScopeViolationError,
   getCompanyTableCatalog,
   type JobProgress,
   readBackup,
   removeStoragePrefix,
   restoreAssetsFromBackup,
+  type ScopeViolation,
   throttleProgress,
   writeBackupManifest
 } from "./company-backup";
@@ -47,6 +50,13 @@ type TemplateMeta = {
   includeGroup?: boolean;
   /** Live phase progress, so a run that takes minutes doesn't look hung. */
   progress?: JobProgress | null;
+  planningError?: string | null;
+  /** The pre-apply snapshot refused over the LIVE data — the one recoverable failure. */
+  reason?: "scope-violations" | null;
+  /** Per FK edge — never sum into a row count. */
+  violations?: ScopeViolation[] | null;
+  /** DISTINCT rows — the count the user is told. */
+  violationRowsByTable?: Array<{ table: string; rows: number }> | null;
 };
 
 /**
@@ -179,7 +189,7 @@ export const companyTemplateFunction = inngest.createFunction(
       snapshot: takeSnapshot = false
     } = event.data;
 
-    return await step.run("apply-template", async () => {
+    const applied = await step.run("apply-template", async () => {
       const client = getCarbonServiceRole();
 
       const dataset = getDataset(datasetKey);
@@ -218,7 +228,11 @@ export const companyTemplateFunction = inngest.createFunction(
           datasetKey,
           startedAt: datetime.timestamp(),
           // A retry, or a new run after a failed one, inherits that marker's error.
-          error: null
+          error: null,
+          planningError: null,
+          reason: null,
+          violations: null,
+          violationRowsByTable: null
         }
       });
 
@@ -286,6 +300,7 @@ export const companyTemplateFunction = inngest.createFunction(
           onProgress: (p) => report({ ...p, phase: "seed" })
         });
       } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
         await writeTemplateMarker(client, {
           companyId,
           userId,
@@ -294,9 +309,21 @@ export const companyTemplateFunction = inngest.createFunction(
             status: "failed",
             datasetKey,
             progress: null,
-            error: (err as Error).message
+            error: message,
+            ...(err instanceof ExportScopeViolationError
+              ? {
+                  reason: "scope-violations",
+                  violations: err.violations,
+                  violationRowsByTable: err.rowsByTable
+                }
+              : {})
           }
         });
+        // The snapshot guard's verdict is deterministic; a retry re-fails and
+        // flickers the marker running → failed under the user's recovery button.
+        if (err instanceof ExportScopeViolationError) {
+          throw new NonRetriableError(message, { cause: err });
+        }
         throw err;
       } finally {
         pgClient?.release();
@@ -319,6 +346,48 @@ export const companyTemplateFunction = inngest.createFunction(
 
       return { templateRunId, datasetKey };
     });
+
+    // Non-fatal: the data is committed, and the MRP cron heals a missed run.
+    await step.run("plan-template", async () => {
+      const planning = await planDemoCompany({ companyId, userId });
+      const failures = [
+        ...(planning.mrp === "ok" ? [] : [`MRP: ${planning.mrp}`]),
+        ...planning.schedule
+          .filter((s) => s.result !== "ok")
+          .map((s) => `Schedule ${s.locationId}: ${s.result}`)
+      ];
+      if (failures.length === 0) return planning;
+
+      const planningError = failures.join("; ");
+      logger.error("Demo template planning failed", {
+        companyId,
+        templateRunId,
+        planningError
+      });
+      try {
+        // Only a marker still held for keep/revert records it — writing to a
+        // cleared one would resurrect it as `running`.
+        const client = getCarbonServiceRole();
+        const marker = await readTemplateMarker(client, companyId);
+        if (marker?.metadata.templateRunId === templateRunId) {
+          await writeTemplateMarker(client, {
+            companyId,
+            userId,
+            templateRunId,
+            patch: { planningError }
+          });
+        }
+      } catch (err) {
+        logger.error("Failed to record planning error", {
+          companyId,
+          templateRunId,
+          error: (err as Error).message
+        });
+      }
+      return planning;
+    });
+
+    return applied;
   }
 );
 

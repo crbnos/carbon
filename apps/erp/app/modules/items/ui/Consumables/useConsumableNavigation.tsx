@@ -4,6 +4,7 @@ import {
   LuChartLine,
   LuClipboardCheck,
   LuFileText,
+  LuReceipt,
   LuShoppingCart,
   LuTags
 } from "react-icons/lu";
@@ -66,6 +67,13 @@ export function useConsumableNavigation() {
       role: ["employee", "supplier"],
       icon: LuBox,
       shortcut: DETAIL_TAB_SHORTCUTS.inventory
+    },
+    {
+      name: t`Sales`,
+      to: path.to.consumableSales(itemId),
+      role: ["employee"],
+      icon: LuReceipt,
+      shortcut: DETAIL_TAB_SHORTCUTS.sales
     },
     {
       name: t`Quality`,

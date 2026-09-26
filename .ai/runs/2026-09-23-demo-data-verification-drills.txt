@@ -1,0 +1,49 @@
+# Negative-path drills — 2026-09-23, branch feat/demo-data-completeness (plan Tasks 13-14, spec acceptance #1/#2)
+
+## Task 13 — row-count floor drill (coverage.ts floors temporarily raised above actual, then restored; file sha identical after)
+$ (pickingList floor 2->3, jobFavorite floor 1->2) pnpm --silent db:check:datasets --dataset satellite
+Checking 1 dataset(s) against the schema...
+  ✗ satellite (1.0s) — 2 table(s) below their row-count floor (datasets/coverage.ts):
+      jobFavorite: expected ≥ 2, got 1
+      pickingList: expected ≥ 3, got 2
+
+The demo datasets no longer match the schema, or a table fell below its row-count floor (datasets/coverage.ts). Fix them in packages/database/src/datasets/ — onboarding's demo templates and pnpm db:seed:dev both run this code.
+Re-run on its own with: pnpm db:check:datasets
+Commit anyway with:     CARBON_SKIP_DATASET_CHECK=1 git commit ...
+exit=1
+
+## Task 14 step 6a — broken item ref, DB unreachable
+$ SUPABASE_DB_URL=postgresql://postgres:postgres@localhost:1/postgres pnpm --silent db:check:datasets
+  ✗ satellite — 1 consistency violation(s):
+      purchasing.lifecycleRfqs "prfq:star-tracker": unknown item "ST-050-BOGUS"
+
+The demo datasets are internally inconsistent. Fix them in packages/database/src/datasets/data/ before committing.
+Re-run on its own with: pnpm db:check:datasets
+Commit anyway with:     CARBON_SKIP_DATASET_CHECK=1 git commit ...
+exit=1
+
+## Task 14 step 6b — broken file staged alone, hook run directly (output tail)
+
+strip-po-headers: 26 file(s) normalized
+Checking demo datasets against the schema...
+  ✗ satellite — 1 consistency violation(s):
+      purchasing.lifecycleRfqs "prfq:star-tracker": unknown item "ST-050-BOGUS"
+
+The demo datasets are internally inconsistent. Fix them in packages/database/src/datasets/data/ before committing.
+Re-run on its own with: pnpm db:check:datasets
+Commit anyway with:     CARBON_SKIP_DATASET_CHECK=1 git commit ...
+
+Commit blocked by the demo-dataset check. The reason is printed above.
+Skip it with: CARBON_SKIP_DATASET_CHECK=1 git commit ...
+husky - pre-commit hook exited with code 1 (error)
+exit=1
+
+--- restore: git restore --staged packages/database/src/datasets/data/satellite/purchasing.ts && cp <pre-drill backup> packages/database/src/datasets/data/satellite/purchasing.ts
+staged files now: []
+file sha before: 38f65d7b5b6be7168975ad54e67fc14f2267f324  packages/database/src/datasets/data/satellite/purchasing.ts
+file sha after:  38f65d7b5b6be7168975ad54e67fc14f2267f324  packages/database/src/datasets/data/satellite/purchasing.ts
+git diff sha before: 96bf1505e7d5450756ae008a6cfec0c9543786b4  -
+git diff sha after:  96bf1505e7d5450756ae008a6cfec0c9543786b4  -
+grep BOGUS: 0
+status vs pre-drill: identical
+hook side effects: lingui:clean rewrote locale .po files with identical content (git status unchanged); no stash left behind
