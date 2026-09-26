@@ -329,6 +329,142 @@ Deno.test("asset disposal loss uses the expense account and zero gain requires n
   });
 });
 
+Deno.test("deferred revenue account takes the sales leg as a liability credit of the net amount and the lines still balance", () => {
+  const input = fixture();
+  input.deferredRevenueAccount = account("deferred", "Liability");
+  const result = buildSalesPostingLines(input);
+  assertEquals(byAccount(result), {
+    deferred: 123,
+    shipping: 15,
+    tax: 13,
+    ar: 151,
+  });
+  assertEquals(
+    result.lines.find((line) => line.accountId === "deferred")?.description,
+    "Deferred Revenue",
+  );
+  assertEquals(result.lines.some((line) => line.accountId === "sales"), false);
+  assertEquals(result.amounts.salesRevenueBase, 123);
+  assertEquals(result.signedDebitTotal, 0);
+  const wrongClass = fixture();
+  wrongClass.deferredRevenueAccount = account("deferred", "Revenue");
+  assertThrows(
+    () => buildSalesPostingLines(wrongClass),
+    Error,
+    "Deferred Revenue account",
+  );
+});
+
+const rentalFixture = (unitPrice: number): BuildSalesPostingLinesInput => ({
+  ...fixture(),
+  line: { invoiceLineType: "Rental", quantity: 1, unitPrice, taxPercent: 0.1 },
+});
+
+Deno.test("a Rental line posts its revenue to a Liability revenue leg referencing the agreement", () => {
+  const input = rentalFixture(1500);
+  input.revenueLegs = [{
+    account: account("deferred", "Liability"),
+    accountClass: "Liability",
+    description: "Deferred Revenue",
+    documentType: "Rental Agreement",
+    documentId: "agreement",
+  }];
+  const result = buildSalesPostingLines(input);
+  assertEquals(byAccount(result), { deferred: 1500, tax: 150, ar: 1650 });
+  assertEquals(result.revenueLegAmounts, [1500]);
+  assertEquals(result.signedDebitTotal, 0);
+  const deferred = result.lines.find((line) => line.accountId === "deferred")!;
+  assertEquals(deferred.documentType, "Rental Agreement");
+  assertEquals(deferred.documentId, "agreement");
+  for (const line of result.lines.filter((line) => line.accountId !== "deferred")) {
+    assertEquals(line.documentType, "Invoice");
+    assertEquals(line.documentId, "invoice");
+  }
+  assertEquals(result.lines.some((line) => line.accountId === "sales"), false);
+});
+
+Deno.test("revenue legs split the line: explicit amounts first, the last leg takes the remainder", () => {
+  const input = rentalFixture(1500);
+  input.revenueLegs = [
+    {
+      account: account("contract", "Asset"),
+      accountClass: "Asset",
+      description: "Contract Assets",
+      amount: 600,
+    },
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue",
+    },
+  ];
+  const result = buildSalesPostingLines(input);
+  // Crediting an Asset stores a negative natural-balance amount.
+  assertEquals(byAccount(result), {
+    contract: -600,
+    deferred: 900,
+    tax: 150,
+    ar: 1650,
+  });
+  assertEquals(result.revenueLegAmounts, [600, 900]);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("a negative Rental line mirrors every leg and still balances", () => {
+  const input = rentalFixture(-1200);
+  input.revenueLegs = [
+    {
+      account: account("rental-income", "Revenue"),
+      accountClass: "Revenue",
+      description: "Rental Income",
+      amount: -200,
+    },
+    {
+      account: account("deferred", "Liability"),
+      accountClass: "Liability",
+      description: "Deferred Revenue",
+    },
+  ];
+  const result = buildSalesPostingLines(input);
+  // Dr deferred revenue 1,000 and Dr rental income 200 / Cr AR 1,320, with
+  // the tax reversed too.
+  assertEquals(byAccount(result), {
+    "rental-income": -200,
+    deferred: -1000,
+    tax: -120,
+    ar: -1320,
+  });
+  assertEquals(result.revenueLegAmounts, [-200, -1000]);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("revenue legs are refused when missing, misshapen, overshooting or combined with a deferral account", () => {
+  assertThrows(
+    () => buildSalesPostingLines(rentalFixture(100)),
+    Error,
+    "Rental posting requires its revenue legs",
+  );
+  const leg = (amount?: number) => ({
+    account: account("deferred", "Liability"),
+    accountClass: "Liability" as const,
+    description: "Deferred Revenue",
+    amount,
+  });
+  const lastWithAmount = rentalFixture(100);
+  lastWithAmount.revenueLegs = [leg(100)];
+  assertThrows(() => buildSalesPostingLines(lastWithAmount), Error, "the last takes the remainder");
+  const overshoot = rentalFixture(100);
+  overshoot.revenueLegs = [leg(150), leg()];
+  assertThrows(() => buildSalesPostingLines(overshoot), Error, "exceed");
+  const wrongSign = rentalFixture(100);
+  wrongSign.revenueLegs = [leg(-10), leg()];
+  assertThrows(() => buildSalesPostingLines(wrongSign), Error, "line's sign");
+  const both = rentalFixture(100);
+  both.revenueLegs = [leg()];
+  both.deferredRevenueAccount = account("deferred", "Liability");
+  assertThrows(() => buildSalesPostingLines(both), Error, "cannot be combined");
+});
+
 Deno.test("nonzero required accounts must be valid active leaves in the company group with the correct class", () => {
   for (const key of ["sales", "shipping", "tax", "receivables"] as const) {
     const input = fixture();

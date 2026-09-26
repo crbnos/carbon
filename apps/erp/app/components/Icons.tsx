@@ -25,6 +25,7 @@ import {
   LuBox,
   LuBuilding,
   LuBuilding2,
+  LuCalendarClock,
   LuCircle,
   LuCircleCheck,
   LuCircleDashed,
@@ -46,6 +47,7 @@ import {
   LuHardHat,
   LuHeadphones,
   LuImage,
+  LuKeyRound,
   LuLandmark,
   LuList,
   LuListChecks,
@@ -649,6 +651,12 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTriangleAlert className={className} />;
     case "Inbound Inspection":
       return <LuClipboardCheck className={className} />;
+    case "Revenue Recognition":
+      return <LuCalendarClock className={className} />;
+    case "Asset Transfer":
+      return <LuArrowLeftRight className={className} />;
+    case "Lease":
+      return <LuKeyRound className={className} />;
   }
 
   return <LuSquare className={cn("text-muted-foreground", className)} />;

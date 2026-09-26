@@ -400,7 +400,11 @@ export const COVERAGE = {
     missing: (status) => `accounting.closeTasks: no "${status}" task`
   },
   fixedAssetStatus: {
-    values: enumValues("fixedAssetStatus"),
+    // Under Construction needs a CIP class and fixedAssetCipCost rows, which
+    // FixedAssetSpec cannot express.
+    values: enumValues("fixedAssetStatus", {
+      "Under Construction": NOT_AUTHORABLE
+    }),
     missing: (status) => `accounting.fixedAssets: no "${status}" asset`
   },
 

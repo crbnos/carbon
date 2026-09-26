@@ -4,9 +4,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { msg } from "@lingui/core/macro";
-import type { ActionFunctionArgs } from "react-router";
-import { redirect } from "react-router";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { useUrlParams, useUser } from "~/hooks";
+import { getFixedAssets } from "~/modules/accounting";
 import { getUnreleasedChangeOrderIssue } from "~/modules/items/items.server";
 import { insertJob, jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
@@ -20,6 +21,45 @@ export const handle: Handle = {
   to: path.to.jobs,
   module: "production"
 };
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const { client, companyId } = await requirePermissions(request, {
+    view: "production"
+  });
+
+  // The Complete To pickers. A CIP class is the holding account a job's cost
+  // sits in, never a target, so it is filtered out here rather than by name.
+  const [fixedAssetClasses, underConstructionAssets] = await Promise.all([
+    client
+      .from("fixedAssetClass")
+      .select("id, name, isConstructionInProgress")
+      .eq("companyId", companyId)
+      .eq("isConstructionInProgress", false)
+      .order("name"),
+    getFixedAssets(client, companyId, {
+      search: null,
+      status: "Under Construction",
+      limit: 100,
+      offset: 0,
+      sorts: [],
+      filters: []
+    })
+  ]);
+
+  return {
+    fixedAssetClasses: (fixedAssetClasses.data ?? []).map((assetClass) => ({
+      id: assetClass.id,
+      name: assetClass.name
+    })),
+    underConstructionAssets: (underConstructionAssets.data ?? []).map(
+      (asset) => ({
+        id: asset.id,
+        fixedAssetId: asset.fixedAssetId,
+        name: asset.name
+      })
+    )
+  };
+}
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -69,6 +109,8 @@ export async function action({ request }: ActionFunctionArgs) {
     {
       ...data,
       jobId: data.jobId || undefined,
+      fixedAssetClassId: data.fixedAssetClassId || null,
+      fixedAssetId: data.fixedAssetId || null,
       configuration,
       companyId,
       createdBy: userId,
@@ -88,15 +130,21 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function JobNewRoute() {
+  const { fixedAssetClasses, underConstructionAssets } =
+    useLoaderData<typeof loader>();
   const { defaults } = useUser();
   const [params] = useUrlParams();
   const customerId = params.get("customerId");
+  // "Build for fleet" opens this page with the class preselected.
+  const fixedAssetClassId = params.get("fixedAssetClassId");
 
   const initialValues = {
     customerId: customerId ?? "",
     deadlineType: "No Deadline" as const,
     description: "",
     dueDate: "",
+    fixedAssetClassId: fixedAssetClassId ?? "",
+    fixedAssetId: "",
     itemId: "",
     itemType: "Item" as MethodItemType,
     jobId: undefined,
@@ -109,7 +157,11 @@ export default function JobNewRoute() {
 
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
-      <JobForm initialValues={initialValues} />
+      <JobForm
+        initialValues={initialValues}
+        fixedAssetClasses={fixedAssetClasses}
+        underConstructionAssets={underConstructionAssets}
+      />
     </div>
   );
 }

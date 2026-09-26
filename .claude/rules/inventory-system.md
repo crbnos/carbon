@@ -34,7 +34,20 @@ Key service functions (verified):
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
   `post-inventory-count` books its variances through the same shared core
-  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL.
+  **Serial units are costed by specific identification.** `costLedger.trackedEntityId`
+  (migration `20260923223639`) stamps a layer booked for ONE serial unit — every layer
+  `bookAdjustment` writes for a `Serial` item (a fixed asset returned to stock at NBV, a
+  sales-type lease residual, an unscrap, a positive adjustment). `calculateCOGS` takes
+  optional `trackedEntityIds` and orders FIFO / LIFO layers through
+  `orderLayersForConsumption` (`shared/cost-layer-order.ts`): the leaving unit's own layer
+  first, then unstamped layers, then another unit's stamped layer as the last resort (so
+  nothing else eats a returned unit's value). Callers passing the ids: `bookAdjustment`
+  decreases, the three `post-shipment` COGS calls (`leavingTrackedEntityIds` over the
+  shipment's ledger rows) and `issue`'s `createMaterialWipEntries`. Receipt and job-output
+  layers cover many units and stay unstamped, so a received serial is still FIFO-costed.
+  Pinned by `shared/cost-layer-order.test.ts` and the database test
+  `shared/calculate-cogs.test.ts`. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +

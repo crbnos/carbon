@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuBan,
   LuGlobe,
+  LuKeyRound,
   LuList,
   LuPercent,
   LuShapes,
@@ -51,6 +52,12 @@ export default function useSalesSubmodules() {
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
+        },
+        {
+          name: t`Rentals`,
+          to: path.to.rentalAgreements,
+          icon: <LuKeyRound />,
+          table: "rentalAgreement"
         },
         {
           name: t`Returns`,

@@ -8,6 +8,7 @@ import {
   RULE_SEVERITIES,
   SALES_RULE_SURFACES
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -889,6 +890,25 @@ export const salesOrderShipmentValidator = z
     }
   );
 
+/**
+ * A service period is both dates or neither, with the end on or after the
+ * start. `zfd.text` has already turned an empty submission into undefined.
+ * A malformed date fails the check instead of throwing out of the refine.
+ */
+function isValidServicePeriod(data: {
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+}): boolean {
+  const { serviceStartDate, serviceEndDate } = data;
+  if (!serviceStartDate && !serviceEndDate) return true;
+  if (!serviceStartDate || !serviceEndDate) return false;
+  try {
+    return parseDate(serviceEndDate).compare(parseDate(serviceStartDate)) >= 0;
+  } catch {
+    return false;
+  }
+}
+
 export const salesOrderLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -919,6 +939,8 @@ export const salesOrderLineValidator = z
     promisedDate: zfd.text(z.string().optional()),
     saleQuantity: zfd.numeric(z.number().optional()),
     serviceId: zfd.text(z.string().optional()),
+    serviceStartDate: zfd.text(z.string().optional()),
+    serviceEndDate: zfd.text(z.string().optional()),
     setupPrice: zfd.numeric(z.number().optional()),
     storageUnitId: zfd.text(z.string().optional()),
     taxPercent: zfd.numeric(
@@ -981,6 +1003,19 @@ export const salesOrderLineValidator = z
     {
       message: "Fixed Asset quantity must be 1",
       path: ["saleQuantity"]
+    }
+  )
+  .refine((data) => isValidServicePeriod(data), {
+    message: "Service end must be on or after service start",
+    path: ["serviceEndDate"]
+  })
+  .refine(
+    (data) =>
+      data.salesOrderLineType === "Service" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
     }
   );
 
@@ -1261,3 +1296,225 @@ export const salesReturnOrderCreditValidator = z.object({
         .min(1, { message: "At least one line is required" })
     )
 });
+
+// Rental agreements (spec §3): the agreement header, its lines (one fleet
+// unit each), variable charges, the return form and the item rate ladder.
+// Every enum value comes from these arrays — the DB enums of the same name.
+
+export const rentalAgreementStatuses = [
+  "Draft",
+  "Active",
+  "Closed",
+  "Cancelled"
+] as const;
+
+export const rentalAgreementLineStatuses = [
+  "Pending",
+  "On Rent",
+  "Returned",
+  "Sold"
+] as const;
+
+export const rentalBillingCycles = ["Calendar Month", "28 Days"] as const;
+
+export const rentalBillingTimings = ["Advance", "Arrears"] as const;
+
+export const rentalRateUnits = ["Day", "Week", "Month"] as const;
+
+export const rentalRateModes = ["Best Rate", "Fixed"] as const;
+
+export const rentalInvoiceLineKinds = [
+  "Rent",
+  "Charge",
+  "Purchase Option"
+] as const;
+
+/**
+ * The end date, when given, falls after the start date (the table's CHECK).
+ * `zfd.text` has already turned an empty submission into undefined. A
+ * malformed date fails the check instead of throwing out of the refine.
+ */
+function isEndDateAfterStart(data: {
+  startDate: string;
+  endDate?: string;
+}): boolean {
+  if (!data.endDate) return true;
+  try {
+    return parseDate(data.endDate).compare(parseDate(data.startDate)) > 0;
+  } catch {
+    return false;
+  }
+}
+
+export const rentalAgreementValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    rentalAgreementId: zfd.text(z.string().optional()),
+    customerId: z.string().min(1, { message: "Customer is required" }),
+    customerLocationId: zfd.text(z.string().optional()),
+    customerContactId: zfd.text(z.string().optional()),
+    salesPersonId: zfd.text(z.string().optional()),
+    locationId: z.string().min(1, { message: "Location is required" }),
+    startDate: z.string().min(1, { message: "Start date is required" }),
+    endDate: zfd.text(z.string().optional()),
+    billingCycle: z.enum(rentalBillingCycles, {
+      error: "Billing cycle is required"
+    }),
+    billingTiming: z.enum(rentalBillingTimings, {
+      error: "Billing timing is required"
+    }),
+    paymentTermId: zfd.text(z.string().optional()),
+    currencyCode: z.string().min(1, { message: "Currency is required" }),
+    exchangeRate: zfd.numeric(z.number().optional()),
+    depositAmount: zfd.numeric(
+      z.number().min(0, { message: "Deposit cannot be negative" })
+    ),
+    taxPercent: zfd.numeric(
+      z
+        .number()
+        .min(0)
+        .max(1, { message: "Tax percent must be between 0 and 1" })
+    ),
+    discountRate: zfd.numeric(
+      z.number().min(0, { message: "Discount rate cannot be negative" })
+    ),
+    ownershipTransfers: zfd.checkbox(),
+    specializedAsset: zfd.checkbox(),
+    purchaseOptionAmount: zfd.numeric(
+      z
+        .number()
+        .min(0, { message: "Purchase option cannot be negative" })
+        .optional()
+    ),
+    purchaseOptionReasonablyCertain: zfd.checkbox(),
+    notes: zfd.text(z.string().optional())
+  })
+  .refine(isEndDateAfterStart, {
+    message: "End date must be after the start date",
+    path: ["endDate"]
+  })
+  .refine(
+    (data) => (data.purchaseOptionReasonablyCertain ? !!data.endDate : true),
+    {
+      message: "A purchase option that is reasonably certain needs an end date",
+      path: ["endDate"]
+    }
+  );
+
+export const rentalAgreementLineValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    rentalAgreementId: z
+      .string()
+      .min(1, { message: "Rental agreement is required" }),
+    fixedAssetId: z.string().min(1, { message: "Fleet unit is required" }),
+    itemId: zfd.text(z.string().optional()),
+    rateMode: z.enum(rentalRateModes, { error: "Rate mode is required" }),
+    rateUnit: zfd.text(z.enum(rentalRateUnits).optional()),
+    fairValue: zfd.numeric(z.number().min(0).optional()),
+    economicLifeMonths: zfd.numeric(
+      z
+        .number()
+        .int()
+        .positive({ message: "Economic life must be positive" })
+        .optional()
+    ),
+    guaranteedResidualValue: zfd.numeric(z.number().min(0).optional()),
+    unguaranteedResidualValue: zfd.numeric(z.number().min(0).optional())
+  })
+  .refine((data) => (data.rateMode === "Fixed" ? !!data.rateUnit : true), {
+    message: "A fixed rate needs the tier it bills",
+    path: ["rateUnit"]
+  });
+
+/** No `kind`: the form only ever adds a `Charge`. `Rent` comes from the
+ *  schedule and `Purchase Option` from Sell to Customer, both server-side. */
+export const rentalAgreementChargeValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  rentalAgreementLineId: z
+    .string()
+    .min(1, { message: "Rental agreement line is required" }),
+  chargeDate: z.string().min(1, { message: "Charge date is required" }),
+  description: z.string().trim().min(1, { message: "Description is required" }),
+  amount: zfd.numeric(z.number()),
+  taxPercent: zfd.numeric(
+    z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
+  )
+});
+
+/** Where a Sales-Type unit's closing net investment goes when it comes back
+ *  (spec §4): a new asset in the Rental Fleet class, or finished goods. */
+export const rentalResidualDestinations = ["Fleet", "Inventory"] as const;
+
+export const rentalAgreementReturnValidator = z
+  .object({
+    rentalAgreementLineId: z
+      .string()
+      .min(1, { message: "Rental agreement line is required" }),
+    returnedAt: z.string().min(1, { message: "Return date is required" }),
+    meterIn: zfd.numeric(z.number().min(0).optional()),
+    returnNotes: zfd.text(z.string().optional()),
+    takeOutOfService: zfd.checkbox(),
+    outOfServiceReason: zfd.text(z.string().optional()),
+    /** Posted by the form for a Sales-Type line so the destination can be
+     *  required client-side; the route re-reads the line's classification. */
+    isSalesType: zfd.checkbox({ trueValue: "true" }),
+    residualDestination: zfd.text(z.enum(rentalResidualDestinations).optional())
+  })
+  .refine(
+    (data) => (data.takeOutOfService ? !!data.outOfServiceReason : true),
+    {
+      message: "A reason is required to take the unit out of service",
+      path: ["outOfServiceReason"]
+    }
+  )
+  .refine((data) => (data.isSalesType ? !!data.residualDestination : true), {
+    message: "Choose where the returned unit goes",
+    path: ["residualDestination"]
+  })
+  .refine(
+    (data) =>
+      !(
+        data.isSalesType &&
+        data.residualDestination === "Inventory" &&
+        data.takeOutOfService
+      ),
+    {
+      message:
+        "A unit returned to inventory cannot be taken out of service; return it to the fleet instead",
+      path: ["takeOutOfService"]
+    }
+  );
+
+export const lessorClassificationOverrides = [
+  "Operating",
+  "Sales-Type"
+] as const;
+
+/** A manual lessor classification (spec §4), audit-logged with its reason. */
+export const rentalAgreementLineClassificationValidator = z.object({
+  classification: z.enum(lessorClassificationOverrides, {
+    error: "Classification is required"
+  }),
+  reason: z.string().trim().min(1, { message: "A reason is required" })
+});
+
+export const itemRentalRateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    itemId: z.string().min(1, { message: "Item is required" }),
+    currencyCode: z.string().min(1, { message: "Currency is required" }),
+    dayRate: zfd.numeric(z.number().min(0).optional()),
+    weekRate: zfd.numeric(z.number().min(0).optional()),
+    monthRate: zfd.numeric(z.number().min(0).optional())
+  })
+  .refine(
+    (data) =>
+      [data.dayRate, data.weekRate, data.monthRate].some(
+        (rate) => rate !== undefined
+      ),
+    {
+      message: "At least one of day, week or month rate is required",
+      path: ["dayRate"]
+    }
+  );

@@ -36,12 +36,16 @@ export type SalesPostingMetadata = {
   fixedAssetClassId: string | null;
 };
 
+/** A rental revenue leg references the agreement it earns under; every other
+ *  line (AR, tax, shipping, disposal) references the invoice. */
+export type SalesPostingDocumentType = "Invoice" | "Rental Agreement";
+
 export type SalesPostingJournalLine = {
   accountId: string;
   description: string;
   amount: number;
   quantity: number;
-  documentType: "Invoice";
+  documentType: SalesPostingDocumentType;
   documentId: string;
   externalDocumentId?: string | null;
   documentLineReference?: string | null;
@@ -69,6 +73,20 @@ export type SalesPostingDisposal =
     clearingAccount?: SalesPostingAccount | null;
   });
 
+/** One slice of the sales revenue component, credited to `account`. A leg with
+ *  a negative amount (a credit line) lands as the mirrored debit. */
+export type SalesRevenueLeg = {
+  account: SalesPostingAccount | null | undefined;
+  accountClass: "Revenue" | "Liability" | "Asset";
+  description: string;
+  /** Base amount, signed like the line. Required on every leg but the last;
+   *  the last leg takes whatever the others leave of `salesRevenueBase`, so the
+   *  legs always sum to it exactly. */
+  amount?: number;
+  documentType?: SalesPostingDocumentType;
+  documentId?: string;
+};
+
 export type BuildSalesPostingLinesInput = {
   line: SalesPostingAmountsInput & { invoiceLineType: string };
   context: {
@@ -88,6 +106,16 @@ export type BuildSalesPostingLinesInput = {
   };
   metadata: SalesPostingMetadata;
   disposal?: SalesPostingDisposal;
+  /** Revenue recognition: when set, the sales revenue leg is credited to this
+   *  Liability account as "Deferred Revenue" instead of `accounts.sales`; a
+   *  recognition run later moves it to Sales. Shipping, tax and AR legs are
+   *  unchanged. `amounts.salesRevenueBase` is the deferred leg's base amount. */
+  deferredRevenueAccount?: SalesPostingAccount | null;
+  /** Replaces the Sales Account leg with these legs (Rental lines, which never
+   *  post to Sales: deferred revenue, contract asset or rental income by kind).
+   *  Required for `Rental`; not allowed with `deferredRevenueAccount` or on a
+   *  Fixed Asset line. */
+  revenueLegs?: SalesRevenueLeg[];
 };
 
 function finite(amount: number, label: string): number {
@@ -194,50 +222,13 @@ export function calculateSalesIntercompanyAmount(
   return toDocumentAmount(base, exchangeRate, SCALE);
 }
 
-export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
-  lines: SalesPostingJournalLine[];
-  metadata: SalesPostingMetadata[];
-  amounts: SalesPostingAmounts;
-  saleProceeds: number;
-  netBookValue: number | null;
-  gainLoss: number | null;
-  signedDebitTotal: number;
-} {
-  const { line, context, accounts, disposal } = input;
-  const empty = {
-    salesRevenueBase: 0,
-    shippingRevenueBase: 0,
-    salesTaxBase: 0,
-    grossReceivableBase: 0,
-  };
-  if (line.invoiceLineType === "Comment") {
-    return {
-      lines: [],
-      metadata: [],
-      amounts: empty,
-      saleProceeds: 0,
-      netBookValue: null,
-      gainLoss: null,
-      signedDebitTotal: 0,
-    };
-  }
-  if (
-    ![
-      "Part",
-      "Service",
-      "Consumable",
-      "Fixture",
-      "Material",
-      "Tool",
-      "Fixed Asset",
-    ].includes(line.invoiceLineType)
-  ) {
-    throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);
-  }
-  const isAsset = line.invoiceLineType === "Fixed Asset";
-  if (isAsset && !disposal) {
-    throw new Error("Fixed asset posting requires disposal facts");
-  }
+/** The posted base amounts of one line: each component rounded at internal
+ *  scale, with the rounding residual against the rounded total reconciled
+ *  onto the largest component. These are exactly the amounts
+ *  `buildSalesPostingLines` posts. */
+export function roundSalesPostingAmounts(
+  line: SalesPostingAmountsInput,
+): SalesPostingAmounts {
   const raw = calculateSalesPostingAmounts(line);
   const componentKeys = [
     "salesRevenueBase",
@@ -267,6 +258,67 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     )[0]!;
     amounts[recipient] = round(amounts[recipient] + residual);
   }
+  return amounts;
+}
+
+export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
+  lines: SalesPostingJournalLine[];
+  metadata: SalesPostingMetadata[];
+  amounts: SalesPostingAmounts;
+  saleProceeds: number;
+  netBookValue: number | null;
+  gainLoss: number | null;
+  signedDebitTotal: number;
+  /** Base amount of each revenue leg as posted, in the order given (the Sales
+   *  Account leg alone when no `revenueLegs` were passed; empty for assets). */
+  revenueLegAmounts: number[];
+} {
+  const { line, context, accounts, disposal, deferredRevenueAccount, revenueLegs } = input;
+  const empty = {
+    salesRevenueBase: 0,
+    shippingRevenueBase: 0,
+    salesTaxBase: 0,
+    grossReceivableBase: 0,
+  };
+  if (line.invoiceLineType === "Comment") {
+    return {
+      lines: [],
+      metadata: [],
+      amounts: empty,
+      saleProceeds: 0,
+      netBookValue: null,
+      gainLoss: null,
+      signedDebitTotal: 0,
+      revenueLegAmounts: [],
+    };
+  }
+  if (
+    ![
+      "Part",
+      "Service",
+      "Consumable",
+      "Fixture",
+      "Material",
+      "Tool",
+      "Fixed Asset",
+      "Rental",
+    ].includes(line.invoiceLineType)
+  ) {
+    throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);
+  }
+  const isAsset = line.invoiceLineType === "Fixed Asset";
+  if (isAsset && !disposal) {
+    throw new Error("Fixed asset posting requires disposal facts");
+  }
+  if (line.invoiceLineType === "Rental" && !revenueLegs?.length) {
+    throw new Error("Rental posting requires its revenue legs");
+  }
+  if (revenueLegs?.length && (isAsset || deferredRevenueAccount)) {
+    throw new Error(
+      "Revenue legs cannot be combined with a disposal or a deferred revenue account",
+    );
+  }
+  const amounts = roundSalesPostingAmounts(line);
   if (
     amounts.shippingRevenueBase !== 0 &&
     accounts.shipping?.id === accounts.sales?.id && accounts.shipping?.id
@@ -285,6 +337,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     description: string,
     isControl = false,
     quantity = line.quantity,
+    document?: { documentType: SalesPostingDocumentType; documentId: string },
   ) => {
     const baseAmount = toBaseAmount(amount, 1);
     if (baseAmount === 0) return;
@@ -308,8 +361,8 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         ? debit(naturalClass, baseAmount)
         : credit(naturalClass, baseAmount),
       quantity: round(quantity),
-      documentType: "Invoice",
-      documentId: context.documentId,
+      documentType: document?.documentType ?? "Invoice",
+      documentId: document?.documentId ?? context.documentId,
       externalDocumentId: context.externalDocumentId,
       documentLineReference: context.documentLineReference,
       journalLineReference: context.journalLineReference,
@@ -321,14 +374,66 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     metadata.push({ ...input.metadata });
     signedDebitTotal += side === "debit" ? baseAmount : -baseAmount;
   };
-  if (!isAsset) {
-    push(
-      accounts.sales,
-      "Revenue",
-      "credit",
-      amounts.salesRevenueBase,
-      "Sales Account",
-    );
+  const revenueLegAmounts: number[] = [];
+  if (revenueLegs?.length) {
+    const base = amounts.salesRevenueBase;
+    let explicit = 0;
+    const legAmounts = revenueLegs.map((leg, index) => {
+      const isLast = index === revenueLegs.length - 1;
+      if (isLast !== (leg.amount === undefined)) {
+        throw new Error(
+          "Every revenue leg but the last carries an amount; the last takes the remainder",
+        );
+      }
+      if (isLast) return round(base - explicit);
+      const amount = toBaseAmount(finite(leg.amount!, leg.description), 1);
+      // A leg is a slice of the line, so it shares the line's sign.
+      if (amount * base < 0) {
+        throw new Error(`${leg.description} must carry the line's sign`);
+      }
+      explicit = round(explicit + amount);
+      return amount;
+    });
+    if (Math.abs(explicit) > Math.abs(base) + EPSILON) {
+      throw new Error("Revenue legs exceed the line's revenue");
+    }
+    revenueLegs.forEach((leg, index) => {
+      push(
+        leg.account,
+        leg.accountClass,
+        "credit",
+        legAmounts[index]!,
+        leg.description,
+        false,
+        line.quantity,
+        leg.documentType
+          ? {
+            documentType: leg.documentType,
+            documentId: leg.documentId ?? context.documentId,
+          }
+          : undefined,
+      );
+      revenueLegAmounts.push(legAmounts[index]!);
+    });
+  } else if (!isAsset) {
+    revenueLegAmounts.push(amounts.salesRevenueBase);
+    if (deferredRevenueAccount) {
+      push(
+        deferredRevenueAccount,
+        "Liability",
+        "credit",
+        amounts.salesRevenueBase,
+        "Deferred Revenue",
+      );
+    } else {
+      push(
+        accounts.sales,
+        "Revenue",
+        "credit",
+        amounts.salesRevenueBase,
+        "Sales Account",
+      );
+    }
   }
   push(
     accounts.shipping,
@@ -422,5 +527,6 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     netBookValue,
     gainLoss,
     signedDebitTotal,
+    revenueLegAmounts,
   };
 }

@@ -46,6 +46,7 @@ import {
 } from "./backup-baseline";
 
 const SCHEMA_FILE = join(import.meta.dirname, "../../manifests/schema.json");
+const REPO_ROOT = join(import.meta.dirname, "../../../..");
 /** A hook that hangs is a hook people bypass. */
 const FETCH_TIMEOUT_MS = 3000;
 
@@ -174,7 +175,12 @@ function reportBlocking(
 }
 
 function git(args: string[]): string {
+  // Always from the repo root. A git hook exports GIT_DIR without GIT_WORK_TREE,
+  // and git then takes the CURRENT directory as the work tree — so `git add` of
+  // the absolute manifest path, run from packages/jobs by `pnpm --filter`,
+  // indexed it as a root-level `manifests/schema.json` on every migration commit.
   return execFileSync("git", args, {
+    cwd: REPO_ROOT,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
   }).trim();

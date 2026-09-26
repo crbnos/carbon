@@ -13,6 +13,7 @@ import {
   type JournalDimensionMeta,
 } from "../shared/journal-dimensions.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { leavingTrackedEntityIds } from "../shared/cost-layer-order.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
@@ -1104,6 +1105,10 @@ serve(async (req: Request) => {
                     itemId,
                     quantity: info.totalQuantity,
                     companyId,
+                    trackedEntityIds: leavingTrackedEntityIds(
+                      itemLedgerInserts,
+                      itemId
+                    ),
                   });
 
                   let costAssigned = 0;
@@ -2025,6 +2030,10 @@ serve(async (req: Request) => {
                   itemId,
                   quantity,
                   companyId,
+                  trackedEntityIds: leavingTrackedEntityIds(
+                    itemLedgerInserts,
+                    itemId
+                  ),
                 });
 
                 await trx
@@ -2585,6 +2594,10 @@ serve(async (req: Request) => {
                   itemId,
                   quantity,
                   companyId,
+                  trackedEntityIds: leavingTrackedEntityIds(
+                    itemLedgerInserts,
+                    itemId
+                  ),
                 });
 
                 await trx

@@ -523,6 +523,33 @@ export const sequences = [
     next: 0,
     size: 6,
     step: 1
+  },
+  {
+    table: "revenueRecognitionRun",
+    name: "Revenue Recognition Run",
+    prefix: "RR",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "fixedAssetTransfer",
+    name: "Fixed Asset Transfer",
+    prefix: "FAT",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "rentalAgreement",
+    name: "Rental Agreement",
+    prefix: "RA",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
   }
 ] as const;
 
@@ -674,7 +701,9 @@ export const accounts = [
   { key: "receivables", number: null, name: "Receivables", isGroup: true, parentKey: "assets", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1110", number: "1110", name: "Accounts Receivable", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1130", number: "1130", name: "Inter-Company Receivables", isGroup: false, parentKey: "receivables", accountType: "Accounts Receivable", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1145", number: "1145", name: "Contract Assets", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1150", number: "1150", name: "Supplier Prepayments", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1160", number: "1160", name: "Net Investment in Leases", isGroup: false, parentKey: "receivables", accountType: "Other Current Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // Inventory
   { key: "inventory", number: null, name: "Inventory & Stock", isGroup: true, parentKey: "assets", accountType: "Inventory", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
@@ -691,6 +720,9 @@ export const accounts = [
   { key: "1340", number: "1340", name: "Accumulated Depreciation on Disposal", isGroup: false, parentKey: "ppe", accountType: "Accumulated Depreciation", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1350", number: "1350", name: "Machinery & Equipment", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
   { key: "1360", number: "1360", name: "Buildings & Leasehold Improvements", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1370", number: "1370", name: "Rental Fleet", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1380", number: "1380", name: "Accumulated Depreciation – Rental Fleet", isGroup: false, parentKey: "ppe", accountType: "Accumulated Depreciation", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
+  { key: "1390", number: "1390", name: "Construction in Progress", isGroup: false, parentKey: "ppe", accountType: "Fixed Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
 
   // Other Assets
   { key: "other-assets", number: null, name: "Other Assets", isGroup: true, parentKey: "assets", accountType: "Other Asset", incomeBalance: "Balance Sheet", class: "Asset", consolidatedRate: "Current", createdBy: "system" },
@@ -747,6 +779,8 @@ export const accounts = [
   { key: "4030", number: "4030", name: "Manufacturing Services Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4040", number: "4040", name: "Customer Payment Discounts", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4050", number: "4050", name: "Shipping Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4060", number: "4060", name: "Rental Income", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4070", number: "4070", name: "Lease Revenue", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4900", number: "4900", name: "Sales Returns", isGroup: false, parentKey: "revenue", accountType: "Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // Other Income
@@ -755,6 +789,7 @@ export const accounts = [
   { key: "4120", number: "4120", name: "Foreign Exchange Gains", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4130", number: "4130", name: "Vendor Write-Off Income", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
   { key: "4140", number: "4140", name: "Gain on Disposal", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
+  { key: "4150", number: "4150", name: "Interest Income – Leases", isGroup: false, parentKey: "other-income", accountType: "Other Income", incomeBalance: "Income Statement", class: "Revenue", consolidatedRate: "Average", createdBy: "system" },
 
   // ─── 5000-5999: COST OF GOODS SOLD ───
   { key: "cogs", number: null, name: "Cost of Goods Sold", isGroup: true, parentKey: "income-statement", accountType: "Cost of Goods Sold", incomeBalance: "Income Statement", class: "Expense", consolidatedRate: "Average", createdBy: "system" },
@@ -862,6 +897,12 @@ export const accountDefaults = {
   realizedExchangeLossAccount: "7060",
   deferredTaxLiabilityAccountId: "2420",
   deferredTaxExpenseAccountId: "7090",
+  deferredRevenueAccount: "2160",
+  contractAssetAccount: "1145",
+  rentalIncomeAccount: "4060",
+  leaseRevenueAccount: "4070",
+  leaseInterestIncomeAccount: "4150",
+  netInvestmentInLeasesAccount: "1160",
 } as const;
 
 export const fixedAssetClasses = [
@@ -877,6 +918,7 @@ export const fixedAssetClasses = [
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
     lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false,
   },
   {
     name: "Machinery & Equipment",
@@ -890,6 +932,7 @@ export const fixedAssetClasses = [
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
     lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false,
   },
   {
     name: "Vehicles",
@@ -903,6 +946,39 @@ export const fixedAssetClasses = [
     writeDownAccount: "6320",
     gainOnDisposalAccount: "4140",
     lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false,
+  },
+  {
+    // Built or bought units rented out under operating leases: their own
+    // balance-sheet line, depreciated whether or not on rent.
+    name: "Rental Fleet",
+    depreciationMethod: "Straight Line" as const,
+    usefulLifeMonths: 60,
+    residualValuePercent: 20,
+    assetAccount: "1370",
+    accumulatedDepreciationAccount: "1380",
+    depreciationExpenseAccount: "6310",
+    writeOffAccount: "6320",
+    writeDownAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: false,
+  },
+  {
+    // Self-constructed assets accumulate cost here until placed in service;
+    // never depreciated (its depreciation accounts are conventional fillers).
+    name: "Construction in Progress",
+    depreciationMethod: "Straight Line" as const,
+    usefulLifeMonths: 120,
+    residualValuePercent: 0,
+    assetAccount: "1390",
+    accumulatedDepreciationAccount: "1330",
+    depreciationExpenseAccount: "6310",
+    writeOffAccount: "6320",
+    writeDownAccount: "6320",
+    gainOnDisposalAccount: "4140",
+    lossOnDisposalAccount: "6320",
+    isConstructionInProgress: true,
   },
 ];
 
@@ -954,6 +1030,16 @@ export const periodCloseTaskDefinitions = [
     taskType: "Auto",
     autoCheckKey: "draft-depreciation",
     sortOrder: 4,
+    required: true,
+    severity: "Warning",
+    active: true,
+    isSystem: true
+  },
+  {
+    name: "Recognize revenue for the period",
+    taskType: "Auto",
+    autoCheckKey: "unposted-revenue-schedules",
+    sortOrder: 5,
     required: true,
     severity: "Warning",
     active: true,

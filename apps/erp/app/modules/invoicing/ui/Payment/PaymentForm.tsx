@@ -14,7 +14,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { LuCheckCheck, LuTicketX, LuTrash } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -22,6 +22,7 @@ import { DocumentHeader } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import {
   Account,
+  Combobox,
   Currency,
   Customer,
   CustomFormFields,
@@ -37,7 +38,11 @@ import {
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import { isPaymentLocked, paymentValidator } from "~/modules/invoicing";
+import {
+  type DepositDocument,
+  isPaymentLocked,
+  paymentValidator
+} from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import PaymentStatus from "./PaymentStatus";
 
@@ -75,6 +80,22 @@ export function getApplyCreditHref(args: {
 
 type PaymentFormValues = z.infer<typeof paymentValidator>;
 
+// The picker's single value: the two ids travel as separate hidden fields
+// (`salesOrderId` / `rentalAgreementId`, at most one set — the validator and
+// `payment_deposit_document_check` both enforce it).
+const depositValue = (doc: Pick<DepositDocument, "kind" | "id">) =>
+  `${doc.kind}:${doc.id}`;
+const parseDepositValue = (value: string) => {
+  const separator = value.indexOf(":");
+  if (separator < 0) return { salesOrderId: "", rentalAgreementId: "" };
+  const kind = value.slice(0, separator);
+  const id = value.slice(separator + 1);
+  return {
+    salesOrderId: kind === "salesOrder" ? id : "",
+    rentalAgreementId: kind === "rentalAgreement" ? id : ""
+  };
+};
+
 type PaymentFormProps = {
   initialValues: PaymentFormValues & { status?: string };
   // When set, a hidden field carries the seed invoice ids through to the
@@ -82,9 +103,16 @@ type PaymentFormProps = {
   // their open balances server-side). Drives the workbench "pay N invoices"
   // hand-off as well as the single-invoice "Pay Invoice" link.
   seedInvoiceIds?: string[];
+  // Documents the "Deposit for" picker offers. Omitted = no picker (the saved
+  // ids still round-trip through the hidden fields).
+  depositDocuments?: DepositDocument[];
 };
 
-const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
+const PaymentForm = ({
+  initialValues,
+  seedInvoiceIds,
+  depositDocuments
+}: PaymentFormProps) => {
   const { t } = useLingui();
   const { company } = useUser();
   const [currencyCode, setCurrencyCode] = useState(
@@ -114,12 +142,57 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
       ? "customer-refund"
       : "customer-payment";
   const [paymentKind, setPaymentKind] = useState(initialKind);
-  const defaultValues = { ...initialValues, paymentKind: initialKind };
   const isCustomer = paymentKind.startsWith("customer-");
   const currentType =
     paymentKind === "customer-payment" || paymentKind === "supplier-refund"
       ? "Receipt"
       : "Disbursement";
+
+  // The deposit picker follows the selected customer; picking a customer clears
+  // a document that belonged to the previous one.
+  const [customerId, setCustomerId] = useState(initialValues.customerId ?? "");
+  const initialDeposit = initialValues.rentalAgreementId
+    ? depositValue({
+        kind: "rentalAgreement",
+        id: initialValues.rentalAgreementId
+      })
+    : initialValues.salesOrderId
+      ? depositValue({ kind: "salesOrder", id: initialValues.salesOrderId })
+      : "";
+  const [deposit, setDeposit] = useState(initialDeposit);
+  // UI-only controlled fields are seeded through the form defaults so the
+  // registered value matches what is shown on first render.
+  const defaultValues = {
+    ...initialValues,
+    paymentKind: initialKind,
+    depositDocument: initialDeposit
+  };
+  const showDepositPicker = isCustomer && depositDocuments !== undefined;
+  const depositOptions = useMemo(() => {
+    if (!showDepositPicker) return [];
+    const forReceipt = currentType === "Receipt";
+    return (depositDocuments ?? [])
+      .filter(
+        (doc) =>
+          doc.customerId === customerId &&
+          (!forReceipt || doc.open || depositValue(doc) === initialDeposit)
+      )
+      .map((doc) => ({
+        value: depositValue(doc),
+        label: doc.readableId,
+        helper: `${
+          doc.kind === "rentalAgreement" ? t`Rental Agreement` : t`Sales Order`
+        } · ${doc.status}`
+      }));
+  }, [
+    showDepositPicker,
+    depositDocuments,
+    customerId,
+    currentType,
+    initialDeposit,
+    t
+  ]);
+  const depositIds = parseDepositValue(showDepositPicker ? deposit : "");
   const typeOptions = [
     { label: t`Payment from Customer`, value: "customer-payment" },
     { label: t`Payment to Supplier`, value: "supplier-payment" },
@@ -201,6 +274,11 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
             <Hidden name="id" />
             <Hidden name="paymentType" value={currentType} />
             <Hidden name={isCustomer ? "supplierId" : "customerId"} value="" />
+            <Hidden name="salesOrderId" value={depositIds.salesOrderId} />
+            <Hidden
+              name="rentalAgreementId"
+              value={depositIds.rentalAgreementId}
+            />
             {isEditing && <Hidden name="paymentId" />}
             {seedInvoiceIds && seedInvoiceIds.length > 0 && (
               <Hidden name="seedInvoiceIds" value={seedInvoiceIds.join(",")} />
@@ -224,9 +302,37 @@ const PaymentForm = ({ initialValues, seedInvoiceIds }: PaymentFormProps) => {
                   }}
                 />
                 {isCustomer ? (
-                  <Customer name="customerId" label={t`Customer`} />
+                  <Customer
+                    name="customerId"
+                    label={t`Customer`}
+                    onChange={(option) => {
+                      const next = option?.value ?? "";
+                      if (next !== customerId) setDeposit("");
+                      setCustomerId(next);
+                    }}
+                  />
                 ) : (
                   <Supplier name="supplierId" label={t`Supplier`} />
+                )}
+                {showDepositPicker && (
+                  <Combobox
+                    name="depositDocument"
+                    label={
+                      currentType === "Receipt"
+                        ? t`Deposit for`
+                        : t`Refund deposit for`
+                    }
+                    helperText={
+                      currentType === "Receipt"
+                        ? t`Unapplied cash is held as a customer prepayment for this document instead of on-account credit.`
+                        : t`Pays the deposit held for this document back out of customer prepayments.`
+                    }
+                    options={depositOptions}
+                    value={deposit}
+                    isOptional
+                    placeholder={t`No document`}
+                    onChange={(option) => setDeposit(option?.value ?? "")}
+                  />
                 )}
                 <DatePicker name="paymentDate" label={t`Payment Date`} />
                 <Currency

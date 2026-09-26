@@ -19,11 +19,12 @@ Work orders (jobs), scheduling, routings (operations), bill of materials, proced
 
 ### Job completion
 
-`complete_job_to_inventory` (SQL, `20260914095239_complete-job-received-quantity.sql`) is the single choke point: the ERP complete route, the API/MCP `completeJob` tool and the `sync_finish_job_operation` trigger interceptor all go through it.
+`complete_job_to_inventory` (SQL, newest `20260922230906_complete-job-to-asset.sql`, forked verbatim from `20260922050131_mark-complete-completes-remaining-quantities.sql`) is the single choke point: the ERP complete route, the API/MCP `completeJob` tool and the `sync_finish_job_operation` trigger interceptor all go through it.
 
 - `p_quantity_complete` is **CUMULATIVE**, not this completion's delta. The function receives `p_quantity_complete - job.quantityReceivedToInventory` and stores the cumulative value back, because `get_inventory_quantities` computes on-production supply as production + scrap − received − shipped. `backflush_job_materials` takes the same cumulative number and is idempotent, so a re-completion at the received quantity receives nothing and consumes nothing.
 - It **refuses** a quantity ≤ 0 or below what was already received (stocked items), and a fractional quantity on a serial job. Those raises reach the `jobOperation` UPDATE when they happen under the trigger — `sync_finish_job_operation` therefore clamps with `GREATEST(computed, received)` before calling.
 - The serial branch receives the delta one numbered unit at a time — shop-floor-finished (`Available`) first, then by `readableId` — skipping `Consumed`/`Rejected`/`Scrapped` and any unit with a `Job Receipt` ledger row for this job, so re-completion never double-receives. An item with **no serial sequence** never reaches `assign-serial-numbers`, so its job keeps one whole-quantity seed entity and the delta is received against that seed instead.
+- **Make to Asset branch.** A job with `fixedAssetClassId` completes into one new `fixedAsset` per unit (status `Active`, or `Under Construction` when the class `isConstructionInProgress`; `acquisitionCost` = swept WIP ÷ units; one Posted `fixedAssetTransfer` per asset, `type 'Capitalization'`, `sourceType 'Job'`); a job with `fixedAssetId` sweeps its WIP onto that Construction in Progress asset as one `fixedAssetCipCost` row + one transfer. The units never enter stock: no `itemLedger`, `costLedger`, `pickMethod` or `itemCost` write, and the WIP discharge posts Dr class `assetAccountId` / Cr WIP as an `'Asset Transfer'` journal (both lines still `documentId = jobId`, so the per-job WIP balance nets to zero). Each serial unit goes `Consumed` with `attributes["Fixed Asset"]` and a `'Capitalize'` `trackedActivity`; with accounting disabled the assets stay at cost 0. Two guards raise before anything moves: `'A job linked to a sales order line cannot complete to a fixed asset'` and `'Make to Asset needs a serialized item or a quantity of one'` (a non-serial item must complete exactly 1); a job attached to a non-CIP asset is also refused (`'… is not in a Construction in Progress class'`). The same two gates run in `routes/x+/job+/$jobId.status.tsx` when a job goes `Ready`, so a bad target is refused at release, not at completion. Covered by `packages/database/supabase/tests/job-completion-to-asset.test.sql`. Full flow: `.claude/rules/fixed-asset-lifecycle.md`.
 - Dialog logic lives in `ui/Jobs/job-complete-logic.ts` (pure, no JSX/lingui, unit-tested by `apps/erp/test/job-complete-logic.test.ts`); the SQL is covered by `packages/database/supabase/tests/job-completion-received-quantity.test.sql`, hand-run like its siblings (nothing in CI runs `supabase/tests/`).
 
 ## Safety
@@ -56,7 +57,7 @@ pnpm --filter @carbon/erp test
 
 | Table / View | Purpose |
 |---|---|
-| `job` / `jobs` (view) | Work order header: item, quantity, dates, status, priority |
+| `job` / `jobs` (view) | Work order header: item, quantity, dates, status, priority. `fixedAssetClassId` / `fixedAssetId` (Make to Asset target; CHECK `job_asset_target_check` allows at most one; `jobValidator` refines the same and `JobForm` exposes it as **Complete To**: Inventory / Fixed Asset Class / Asset Under Construction) |
 | `jobMakeMethod` | Manufacturing method instance; tree via `parentMaterialId` |
 | `jobOperation` | Routing step: process, times, work center, status, dual dates (`dueDate` = backward need-by target; `startDate` + `projectedCompletionAt` = forward projection) |
 | `jobMaterial` | BOM line: item, quantity, methodType, unitCost |
@@ -127,6 +128,7 @@ import { jobValidator, isJobLocked, jobStatus } from "~/modules/production";
 - **sales** — jobs created from sales order lines; `job.salesOrderLineId` links back
 - **items** — `job.itemId` references item master; methods come from item make methods
 - **inventory** — materials issued from inventory; finished goods post on job completion
+- **accounting** — Make to Asset: a job whose **Complete To** is a fixed asset class or an asset under construction completes into `fixedAsset` rows instead of stock (`.claude/rules/fixed-asset-lifecycle.md`); the fleet register's **Build for Fleet** opens `x+/job+/new.tsx?fixedAssetClassId=…` with the Rental Fleet class pre-filled
 - **purchasing** — outside operations and purchased materials create PO lines via `jobId`
 - **resources** — operations run on work centers; scheduling assigns to work centers
 - **quality** — production quantities can trigger quality inspections; scrap reasons overlap

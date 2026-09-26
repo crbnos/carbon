@@ -1,7 +1,12 @@
 import {
   assert,
   assertEquals,
+  assertThrows,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import {
+  CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION,
+  CUSTOMER_DEPOSIT_DESCRIPTION,
+} from "../shared/accounting-posting.ts";
 import { round } from "../shared/precision.ts";
 import {
   buildPaymentJournal,
@@ -204,3 +209,195 @@ for (const isAR of [true, false]) {
     assertEquals(result.signedDebitTotal, 0);
   });
 }
+
+// A customer DEPOSIT — a Receipt referencing a sales order or rental agreement
+// — is the customer's money held against that document. Its unapplied cash is
+// a liability on the prepayment account (2110), never on-account receivable
+// credit; applying it later releases 2110 against the invoice; and a
+// Disbursement carrying the same reference refunds it from 2110. Across the
+// three, 2110 nets to zero and receivables never carry the deposit itself.
+const depositAccounts = {
+  controlAccountId: "today-control",
+  discountAccountId: "discount",
+  writeOffAccountId: "writeoff",
+  fxGainAccountId: "fxgain",
+  fxLossAccountId: "fxloss",
+};
+const depositClasses: Record<
+  string,
+  "Asset" | "Liability" | "Expense" | "Revenue"
+> = {
+  bank: "Asset",
+  prepayment: "Liability",
+  "original-control": "Asset",
+  "today-control": "Asset",
+};
+// Decode storage independently by account class, as the tests above do: a
+// natural-signed sum cannot prove GL balance once a liability is in the entry.
+const decodedDebitTotal = (
+  result: ReturnType<typeof buildPaymentJournal>,
+) =>
+  round(result.lines.reduce((sum, line) => {
+    const accountClass = depositClasses[line.accountId];
+    assert(accountClass, `Unexpected account ${line.accountId}`);
+    return sum +
+      (accountClass === "Asset" || accountClass === "Expense"
+        ? line.amount
+        : -line.amount);
+  }, 0));
+
+Deno.test("deposit receipt holds its unapplied cash on the prepayment account, not receivables", () => {
+  const result = buildPaymentJournal({
+    paymentId: "deposit",
+    companyId: "company",
+    isAR: true,
+    cashIn: true,
+    totalAmount: 3000,
+    exchangeRate: 1,
+    bankAccount: "bank",
+    journalLineReference: "reference",
+    applications: [],
+    newOnAccountBase: 3000,
+    accounts: depositAccounts,
+    isDeposit: true,
+    depositAccountId: "prepayment",
+  });
+  assertEquals(
+    result.lines.find((line) => line.accountId === "bank")?.amount,
+    3000,
+  );
+  const held = result.lines.find((line) => line.accountId === "prepayment");
+  assert(held, "Missing prepayment line");
+  // A credit to a liability is stored positive: 3,000 owed back to the customer.
+  assertEquals(held.amount, 3000);
+  assertEquals(held.description, CUSTOMER_DEPOSIT_DESCRIPTION);
+  assert(!result.lines.some((line) => line.accountId === "today-control"));
+  assertEquals(decodedDebitTotal(result), 0);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("applying a deposit to an invoice releases the prepayment account against receivables", () => {
+  // A zero-cash receipt funded by the posted deposit (sourcePaymentId), the
+  // existing prior-credit path; the driver read the deposit's own journal line
+  // and marked the source as a deposit on the prepayment account.
+  const result = buildPaymentJournal({
+    paymentId: "application",
+    companyId: "company",
+    isAR: true,
+    cashIn: true,
+    totalAmount: 0,
+    exchangeRate: 1,
+    bankAccount: "bank",
+    journalLineReference: "reference",
+    applications: [
+      {
+        targetSalesInvoiceId: "invoice",
+        targetControlAccountId: "original-control",
+        sourcePaymentId: "deposit",
+        sourceControlAccountId: "prepayment",
+        sourceIsDeposit: true,
+        sourceAmount: 500,
+        appliedAmount: 500,
+        discountAmount: 0,
+        writeOffAmount: 0,
+        targetExchangeRate: 1,
+        sourceExchangeRate: 1,
+        fxGainLossAmount: 0,
+      },
+    ],
+    newOnAccountBase: 0,
+    accounts: depositAccounts,
+    isDeposit: false,
+    depositAccountId: "prepayment",
+  });
+  const released = result.lines.find((line) => line.accountId === "prepayment");
+  assert(released, "Missing prepayment release");
+  // A debit to a liability is stored negative: 500 less owed back.
+  assertEquals(released.amount, -500);
+  assertEquals(released.description, CUSTOMER_DEPOSIT_APPLIED_DESCRIPTION);
+  assertEquals(
+    result.lines.find((line) => line.accountId === "original-control")?.amount,
+    -500,
+  );
+  assert(!result.lines.some((line) => line.accountId === "bank"));
+  assert(!result.lines.some((line) => line.accountId === "today-control"));
+  assertEquals(decodedDebitTotal(result), 0);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("refunding a deposit is a customer Disbursement that debits the prepayment account", () => {
+  const result = buildPaymentJournal({
+    paymentId: "refund",
+    companyId: "company",
+    isAR: true,
+    cashIn: false,
+    totalAmount: 2500,
+    exchangeRate: 1,
+    bankAccount: "bank",
+    journalLineReference: "reference",
+    applications: [],
+    newOnAccountBase: 2500,
+    accounts: depositAccounts,
+    isDeposit: true,
+    depositAccountId: "prepayment",
+  });
+  assertEquals(
+    result.lines.find((line) => line.accountId === "bank")?.amount,
+    -2500,
+  );
+  const refunded = result.lines.find((line) => line.accountId === "prepayment");
+  assert(refunded, "Missing prepayment line");
+  assertEquals(refunded.amount, -2500);
+  assertEquals(refunded.description, CUSTOMER_DEPOSIT_DESCRIPTION);
+  // Never restored to receivables: the customer was not owed on account.
+  assert(!result.lines.some((line) => line.accountId === "today-control"));
+  assertEquals(decodedDebitTotal(result), 0);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("a receipt without a document reference keeps its remainder on receivables", () => {
+  const result = buildPaymentJournal({
+    paymentId: "payment",
+    companyId: "company",
+    isAR: true,
+    cashIn: true,
+    totalAmount: 3000,
+    exchangeRate: 1,
+    bankAccount: "bank",
+    journalLineReference: "reference",
+    applications: [],
+    newOnAccountBase: 3000,
+    accounts: depositAccounts,
+    isDeposit: false,
+    depositAccountId: "prepayment",
+  });
+  assertEquals(
+    result.lines.find((line) => line.accountId === "today-control")?.amount,
+    -3000,
+  );
+  assert(!result.lines.some((line) => line.accountId === "prepayment"));
+  assertEquals(decodedDebitTotal(result), 0);
+});
+
+Deno.test("a deposit refuses to post without a prepayment account", () => {
+  assertThrows(
+    () =>
+      buildPaymentJournal({
+        paymentId: "deposit",
+        companyId: "company",
+        isAR: true,
+        cashIn: true,
+        totalAmount: 3000,
+        exchangeRate: 1,
+        bankAccount: "bank",
+        journalLineReference: "reference",
+        applications: [],
+        newOnAccountBase: 3000,
+        accounts: depositAccounts,
+        isDeposit: true,
+        depositAccountId: null,
+      }),
+    Error,
+    CUSTOMER_DEPOSIT_DESCRIPTION,
+  );
+});

@@ -66,6 +66,8 @@ import {
   nightlyReplanFunction,
   notificationDigestFunction,
   notificationPurgeFunction,
+  rentalBillingFunction,
+  revenueRecognitionProposalFunction,
   scheduleReplanWaveFunction,
   updateExchangeRatesFunction,
   weeklyFunction,
@@ -154,6 +156,8 @@ export const functions = [
   notificationDigestFunction,
   notificationPurgeFunction,
   workflowRunRetentionFunction,
+  revenueRecognitionProposalFunction,
+  rentalBillingFunction,
   // Integrations
   jiraSyncFunction,
   linearSyncFunction,

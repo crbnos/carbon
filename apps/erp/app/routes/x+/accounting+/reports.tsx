@@ -23,6 +23,7 @@ import {
   LuBoxes,
   LuBriefcase,
   LuFileSpreadsheet,
+  LuGauge,
   LuHandCoins,
   LuPin,
   LuRecycle,
@@ -185,6 +186,24 @@ export default function ReportsIndexRoute() {
         defaultPinned: false
       },
       {
+        key: "revenue-waterfall",
+        name: t`Deferred Revenue Waterfall`,
+        description: t`When deferred, accrued and lease-interest revenue will be recognized`,
+        to: path.to.revenueWaterfall,
+        icon: LuFileSpreadsheet,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
+        key: "lease-net-investment",
+        name: t`Net Investment in Leases`,
+        description: t`Sales-type lease balances, the next interest and payments due by fiscal year`,
+        to: path.to.leaseNetInvestment,
+        icon: LuScale,
+        category: t`Close Reports`,
+        defaultPinned: false
+      },
+      {
         key: "revenue",
         name: t`Revenue`,
         description: t`Slice revenue by customer, customer type, or any dimension`,
@@ -226,6 +245,15 @@ export default function ReportsIndexRoute() {
         description: t`What drove inventory up or down, by any dimension`,
         to: path.to.analyticsReport("inventory-change"),
         icon: LuArrowUpDown,
+        category: t`Analytics`,
+        defaultPinned: false
+      },
+      {
+        key: "rental-utilization",
+        name: t`Rental Utilization`,
+        description: t`Time and dollar utilization of the rental fleet by asset and class`,
+        to: path.to.rentalUtilization,
+        icon: LuGauge,
         category: t`Analytics`,
         defaultPinned: false
       },

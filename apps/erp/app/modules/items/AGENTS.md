@@ -139,7 +139,7 @@ Change-order code follows the one-service/models/server-per-module convention �
 - **purchasing** — supplier parts pricing; PO lines reference items; `conversionFactor` on `supplierPart`; CO impact panel reads open PO lines (`openPurchaseOrderLines`) for deleted parts
 - **inventory** — quantities tracked per item/location; tracking type drives receipt/picking behavior
 - **production** — jobs manufacture items; make methods copied to jobs via `get-method` edge function
-- **sales** — quote lines and sales order lines reference items; `itemUnitSalePrice` is base price
+- **sales** — quote lines and sales order lines reference items; `itemUnitSalePrice` is base price; `ui/Item/ItemRentalRateForm.tsx` ("Rental Rates" card on the part Sales tab, `x+/part+/$itemId.sales.tsx`, shown only for serial-tracked parts, base currency) edits the item's rental day / week / month rates with `itemRentalRateValidator` from `~/modules/sales` (intent `rentalRate` → `upsertItemRentalRate`; the rental agreement snapshots them at activation)
 - **accounting** — `itemPostingGroup` maps items to GL accounts
 - **quality** — inbound inspection is driven by the item's Receipt-usage inspection-document assignment (`itemInspectionDocumentAssignment`), configured on the item Quality tab; inspection documents reference parts
 

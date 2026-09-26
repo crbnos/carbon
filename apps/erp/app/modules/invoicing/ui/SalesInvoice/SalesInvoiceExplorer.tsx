@@ -22,6 +22,7 @@ import { useRef, useState } from "react";
 import {
   LuCirclePlus,
   LuEllipsisVertical,
+  LuKeyRound,
   LuSettings2,
   LuTrash
 } from "react-icons/lu";
@@ -50,7 +51,9 @@ import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 import type { SalesInvoice, SalesInvoiceLine } from "../../types";
 import DeleteSalesInvoiceLine from "./DeleteSalesInvoiceLine";
-import SalesInvoiceLineForm from "./SalesInvoiceLineForm";
+import SalesInvoiceLineForm, {
+  useRentalLineKindLabel
+} from "./SalesInvoiceLineForm";
 
 export default function SalesInvoiceExplorer() {
   const { defaults } = useUser();
@@ -274,6 +277,8 @@ function SalesInvoiceLineItem({
   if (!invoiceId) throw new Error("Could not find invoiceId");
   const permissions = usePermissions();
   const location = useOptimisticLocation();
+  const rentalKindLabel = useRentalLineKindLabel();
+  const isRental = line.invoiceLineType === "Rental";
 
   const isSelected =
     location.pathname === path.to.salesInvoiceLine(invoiceId, line.id!);
@@ -292,12 +297,20 @@ function SalesInvoiceLineItem({
           )}
         >
           <HStack spacing={2} className="flex-grow min-w-0 pr-10">
-            <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
+            {isRental ? (
+              <div className="bg-muted rounded-lg flex items-center justify-center flex-shrink-0 w-10 h-10 p-1.5">
+                <LuKeyRound className="w-5 h-5 text-muted-foreground" />
+              </div>
+            ) : (
+              <ItemThumbnail thumbnailPath={line.thumbnailPath} type="Part" />
+            )}
             <VStack spacing={0} className="min-w-0">
               <span className="font-semibold line-clamp-1">
-                {line.invoiceLineType === "Fixed Asset"
-                  ? (line as any).assetReadableId || "Fixed Asset"
-                  : (getItemReadableId(items, line.itemId) ?? "")}
+                {isRental
+                  ? rentalKindLabel(line.rentalInvoiceLineKind)
+                  : line.invoiceLineType === "Fixed Asset"
+                    ? (line as any).assetReadableId || "Fixed Asset"
+                    : (getItemReadableId(items, line.itemId) ?? "")}
               </span>
               <span className="text-muted-foreground text-xs truncate line-clamp-1">
                 {line.invoiceLineType === "Fixed Asset"

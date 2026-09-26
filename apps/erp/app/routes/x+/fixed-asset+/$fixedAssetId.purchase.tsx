@@ -30,6 +30,11 @@ const purchaseAssetValidator = z.object({
   supplierId: z.string().min(1, { message: "Supplier is required" })
 });
 
+// A construction-in-progress asset collects purchased cost alongside job
+// cost, so it can still be purchased while Under Construction; receipt and
+// invoice posting add a CIP cost row and leave its status alone.
+const PURCHASABLE_ASSET_STATUSES: string[] = ["Draft", "Under Construction"];
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client } = await requirePermissions(request, {
     view: "accounting"
@@ -46,10 +51,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  if (asset.data.status !== "Draft") {
+  if (!PURCHASABLE_ASSET_STATUSES.includes(asset.data.status)) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(null, "Only Draft assets can be purchased"))
+      await flash(
+        request,
+        error(null, "Only a Draft or Under Construction asset can be purchased")
+      )
     );
   }
 

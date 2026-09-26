@@ -23,7 +23,8 @@ import {
   NumberControlled,
   SelectControlled,
   Submit,
-  useAssetClasses
+  useAssetClasses,
+  WorkCenter
 } from "~/components/Form";
 import { usePermissions, useSettings } from "~/hooks";
 import { path } from "~/utils/path";
@@ -197,6 +198,11 @@ const FixedAssetForm = ({ initialValues, onClose }: FixedAssetFormProps) => {
                   />
                 )}
                 <Location name="locationId" label={t`Location`} />
+                <WorkCenter
+                  name="workCenterId"
+                  label={t`Work Center`}
+                  isOptional
+                />
                 {taxDepreciationEnabled && (
                   <>
                     <SelectControlled

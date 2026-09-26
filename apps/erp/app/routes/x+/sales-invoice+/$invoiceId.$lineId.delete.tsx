@@ -6,11 +6,12 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import {
-  deleteSalesInvoiceLine,
   getSalesInvoice,
   getSalesInvoiceLine,
   isSalesInvoiceLocked
 } from "~/modules/invoicing";
+import { deleteSalesInvoiceLineReleasingRentals } from "~/modules/sales/sales.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -45,7 +46,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "invoicing"
   });
 
@@ -61,17 +62,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot delete lines on a locked sales invoice."
   });
 
-  const { error: deleteTypeError } = await deleteSalesInvoiceLine(
-    client,
-    lineId
-  );
-  if (deleteTypeError) {
+  // A Rental line releases the billing period or charge it billed.
+  try {
+    await deleteSalesInvoiceLineReleasingRentals(getDatabaseClient(), {
+      companyId,
+      invoiceId,
+      salesInvoiceLineId: lineId,
+      userId
+    });
+  } catch (err) {
     throw redirect(
       path.to.salesInvoiceDetails(invoiceId),
-      await flash(
-        request,
-        error(deleteTypeError, "Failed to delete sales invoice line")
-      )
+      await flash(request, error(err, "Failed to delete sales invoice line"))
     );
   }
 

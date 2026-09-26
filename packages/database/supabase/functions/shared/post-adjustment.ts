@@ -118,6 +118,7 @@ const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Non-Conformance",
   "Inbound Inspection",
   "Scrap",
+  "Asset Transfer",
 ]);
 
 export interface BookAdjustmentResult {
@@ -210,6 +211,12 @@ export async function bookAdjustment(
 
   const absQuantity = Math.abs(ledger.quantity);
   const documentId = ledger.documentId ?? inserted.id;
+  // A serial unit's movement is costed by specific identification: an
+  // increase books a layer that belongs to the unit, and a decrease relieves
+  // that layer first (calculateCOGS / cost-layer-order.ts). A batch entity is
+  // split and re-pointed as it moves, so its layers stay FIFO / LIFO.
+  const serialId =
+    item.itemTrackingType === "Serial" ? ledger.trackedEntityId : null;
   let cost = 0;
 
   if (ledger.quantity < 0) {
@@ -219,6 +226,7 @@ export async function bookAdjustment(
       itemId: ledger.itemId,
       quantity: absQuantity,
       companyId,
+      trackedEntityIds: serialId ? [serialId] : [],
     });
     cost = cogs.totalCost;
 
@@ -235,6 +243,7 @@ export async function bookAdjustment(
         cost: round(-cogs.totalCost),
         remainingQuantity: 0,
         postingDate: ledger.postingDate,
+        trackedEntityId: serialId,
         companyId,
       })
       .execute();
@@ -256,6 +265,7 @@ export async function bookAdjustment(
         cost: round(cost),
         remainingQuantity: round(absQuantity),
         postingDate: ledger.postingDate,
+        trackedEntityId: serialId,
         companyId,
       })
       .execute();
@@ -323,6 +333,7 @@ export async function bookAdjustment(
         cost: round(cost),
         remainingQuantity: round(absQuantity),
         postingDate: ledger.postingDate,
+        trackedEntityId: serialId,
         companyId,
       })
       .execute();

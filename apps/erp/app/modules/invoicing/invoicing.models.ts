@@ -1,3 +1,4 @@
+import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 // Import the constants from the models file directly (not the `../shared` barrel),
@@ -264,17 +265,40 @@ export const salesInvoiceShipmentValidator = z.object({
   customFields: z.any().optional()
 });
 
+/**
+ * A service period is both dates or neither, with the end on or after the
+ * start. `zfd.text` has already turned an empty submission into undefined.
+ * A malformed date fails the check instead of throwing out of the refine.
+ */
+function isValidServicePeriod(data: {
+  serviceStartDate?: string;
+  serviceEndDate?: string;
+}): boolean {
+  const { serviceStartDate, serviceEndDate } = data;
+  if (!serviceStartDate && !serviceEndDate) return true;
+  if (!serviceStartDate || !serviceEndDate) return false;
+  try {
+    return parseDate(serviceEndDate).compare(parseDate(serviceStartDate)) >= 0;
+  } catch {
+    return false;
+  }
+}
+
 export const salesInvoiceLineValidator = z
   .object({
     id: zfd.text(z.string().optional()),
     invoiceId: z.string().min(1, { message: "Invoice is required" }),
-    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset"], {
+    // "Rental" lines are written by rental invoice generation, never offered as
+    // a choice (it is not in `salesInvoiceLineType`); it is accepted here so a
+    // rental line's shape validates. The DB requires a rental agreement line on
+    // every Rental row, so a hand-posted one is still refused.
+    invoiceLineType: z.enum([...itemType, "Fixture", "Fixed Asset", "Rental"], {
       error: "Type is required"
     }),
     // Wrapped in zfd.text so an empty-string submission (the form always posts a
     // hidden methodType) coerces to undefined instead of failing the enum check.
     // Requiredness is enforced conditionally by the refine below, which exempts
-    // Fixed Asset lines.
+    // Fixed Asset and Rental lines.
     methodType: zfd.text(
       z
         .enum(methodType, {
@@ -297,7 +321,9 @@ export const salesInvoiceLineValidator = z
     taxPercent: zfd.numeric(z.number().optional().default(0)),
     locationId: zfd.text(z.string().optional()),
     storageUnitId: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional())
+    exchangeRate: zfd.numeric(z.number().optional()),
+    serviceStartDate: zfd.text(z.string().optional()),
+    serviceEndDate: zfd.text(z.string().optional())
   })
   .refine(
     (data) =>
@@ -323,7 +349,11 @@ export const salesInvoiceLineValidator = z
   )
   .refine(
     (data) => {
-      if (data.invoiceLineType === "Fixed Asset") return true;
+      if (
+        data.invoiceLineType === "Fixed Asset" ||
+        data.invoiceLineType === "Rental"
+      )
+        return true;
       return !!data.methodType;
     },
     {
@@ -339,6 +369,22 @@ export const salesInvoiceLineValidator = z
     {
       message: "Fixed Asset quantity must be 1",
       path: ["quantity"]
+    }
+  )
+  .refine((data) => isValidServicePeriod(data), {
+    message: "Service end must be on or after service start",
+    path: ["serviceEndDate"]
+  })
+  // Rental lines carry their billing period in these columns, written by
+  // rental invoice generation; every other non-Service type is a physical good.
+  .refine(
+    (data) =>
+      data.invoiceLineType === "Service" ||
+      data.invoiceLineType === "Rental" ||
+      (!data.serviceStartDate && !data.serviceEndDate),
+    {
+      message: "Service dates only apply to Service lines",
+      path: ["serviceStartDate"]
     }
   );
 
@@ -417,12 +463,42 @@ export const paymentValidator = z
     ),
     bankAccount: z.string().min(1, { message: "Bank account is required" }),
     reference: zfd.text(z.string().optional()),
-    memo: zfd.text(z.string().optional())
+    memo: zfd.text(z.string().optional()),
+    // A customer deposit names the document it is held against — at most one
+    // (`payment_deposit_document_check`). post-payment books the unapplied cash
+    // of a payment carrying either reference on the prepayment account.
+    salesOrderId: zfd.text(z.string().optional()),
+    rentalAgreementId: zfd.text(z.string().optional())
   })
   .refine((d) => Boolean(d.customerId) !== Boolean(d.supplierId), {
     message: "A payment requires exactly one customer or supplier",
     path: ["customerId"]
+  })
+  .refine((d) => !(d.salesOrderId && d.rentalAgreementId), {
+    message:
+      "A deposit is held against a sales order or a rental agreement, not both",
+    path: ["rentalAgreementId"]
+  })
+  .refine((d) => !d.supplierId || !(d.salesOrderId || d.rentalAgreementId), {
+    message: "Only a customer payment can be a deposit",
+    path: ["rentalAgreementId"]
   });
+
+// A sales order or rental agreement a customer payment can be a deposit for
+// (a Receipt) or a refund of (a Disbursement), as the payment form's "Deposit
+// for" picker lists them. Loaded company-wide with the customer on each row —
+// the form narrows to the selected customer, which can change before the
+// payment is saved. `open` is whether a NEW deposit may be taken against it
+// (an open order / a Draft or Active agreement); a refund can name any document
+// that already holds a deposit, closed or not.
+export type DepositDocument = {
+  id: string;
+  readableId: string;
+  customerId: string;
+  kind: "salesOrder" | "rentalAgreement";
+  status: string;
+  open: boolean;
+};
 
 // ----------------------------------------------------------------------
 // Card transactions (Ramp spend-management sync)

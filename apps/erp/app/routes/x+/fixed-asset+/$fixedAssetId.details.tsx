@@ -61,6 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     residualValuePercent: d.residualValuePercent,
     assetLifetimeUsage: d.assetLifetimeUsage ?? null,
     locationId: d.locationId ?? null,
+    workCenterId: d.workCenterId ?? null,
     taxDepreciationMethod: d.taxDepreciationMethod ?? null,
     taxUsefulLifeMonths: d.taxUsefulLifeMonths ?? null,
     taxResidualValuePercent: d.taxResidualValuePercent ?? null,

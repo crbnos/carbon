@@ -9,6 +9,7 @@ import ItemForm from "./ItemForm";
 import ItemNotes from "./ItemNotes";
 import ItemPlanningForm from "./ItemPlanningForm";
 import ItemPurchasingForm from "./ItemPurchasingForm";
+import ItemRentalRateForm from "./ItemRentalRateForm";
 import ItemRiskRegister from "./ItemRiskRegister";
 import ItemSalePriceForm from "./ItemSalePriceForm";
 import ItemSupersessionForm, {
@@ -35,6 +36,7 @@ export {
   ItemNotes,
   ItemPlanningForm,
   ItemPurchasingForm,
+  ItemRentalRateForm,
   ItemRiskRegister,
   ItemSupersessionForm,
   getItemLifecycleStatus,

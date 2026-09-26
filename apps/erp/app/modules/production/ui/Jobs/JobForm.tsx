@@ -24,6 +24,7 @@ import { LuDiamond, LuLayers } from "react-icons/lu";
 import type { z } from "zod";
 import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
 import {
+  Combobox,
   Customer,
   CustomFormFields,
   DatePicker,
@@ -33,6 +34,7 @@ import {
   Location,
   NumberControlled,
   Select,
+  SelectControlled,
   SequenceOrCustomId,
   Submit
 } from "~/components/Form";
@@ -60,11 +62,27 @@ type JobFormValues = z.infer<typeof jobValidator> & {
   itemType: MethodItemType;
 };
 
+// Where the finished job goes. Only "inventory" is the default; the other two
+// are Make to Asset and write fixedAssetClassId / fixedAssetId respectively.
+type CompleteTo = "inventory" | "class" | "asset";
+
 type JobFormProps = {
   initialValues: JobFormValues;
+  /** Classes a job may complete to — a CIP class is never a target. */
+  fixedAssetClasses?: { id: string; name: string }[];
+  /** Assets still under construction that a job may sweep its cost onto. */
+  underConstructionAssets?: {
+    id: string;
+    fixedAssetId: string;
+    name: string;
+  }[];
 };
 
-const JobForm = ({ initialValues }: JobFormProps) => {
+const JobForm = ({
+  initialValues,
+  fixedAssetClasses = [],
+  underConstructionAssets = []
+}: JobFormProps) => {
   const permissions = usePermissions();
   const { t, i18n } = useLingui();
   const { company } = useUser();
@@ -133,6 +151,25 @@ const JobForm = ({ initialValues }: JobFormProps) => {
 
   const isCustomer = permissions.is("customer");
   const isEditing = initialValues.id !== undefined;
+
+  // The completion target is chosen up front and frozen once the job is
+  // released: the release gate has already vetted it, and materials may have
+  // been issued against it.
+  const [completeTo, setCompleteTo] = useState<CompleteTo>(
+    initialValues.fixedAssetId
+      ? "asset"
+      : initialValues.fixedAssetClassId
+        ? "class"
+        : "inventory"
+  );
+  const [fixedAssetClassId, setFixedAssetClassId] = useState<string>(
+    initialValues.fixedAssetClassId ?? ""
+  );
+  const [fixedAssetId, setFixedAssetId] = useState<string>(
+    initialValues.fixedAssetId ?? ""
+  );
+  const canEditCompleteTo =
+    initialValues.status === "Draft" || initialValues.status === "Planned";
 
   const onTypeChange = (t: MethodItemType | "Item") => {
     setType(t as MethodItemType);
@@ -268,6 +305,16 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       value={JSON.stringify(configurationValues)}
                     />
                   )}
+                  {/* Only the chosen target is submitted; the other is cleared
+                      so the two never both land on the row. */}
+                  <Hidden
+                    name="fixedAssetClassId"
+                    value={completeTo === "class" ? fixedAssetClassId : ""}
+                  />
+                  <Hidden
+                    name="fixedAssetId"
+                    value={completeTo === "asset" ? fixedAssetId : ""}
+                  />
                   <VStack>
                     <div
                       className={cn(
@@ -343,6 +390,56 @@ const JobForm = ({ initialValues }: JobFormProps) => {
                       />
 
                       <Location name="locationId" label={t`Location`} />
+
+                      <SelectControlled
+                        name="completeTo"
+                        label={t`Complete To`}
+                        value={completeTo}
+                        onChange={(option) =>
+                          setCompleteTo(
+                            (option?.value as CompleteTo | undefined) ??
+                              "inventory"
+                          )
+                        }
+                        options={[
+                          { value: "inventory", label: t`Inventory` },
+                          { value: "class", label: t`Fixed Asset Class` },
+                          { value: "asset", label: t`Asset Under Construction` }
+                        ]}
+                        isDisabled={!canEditCompleteTo}
+                      />
+
+                      {completeTo === "class" && (
+                        <SelectControlled
+                          name="fixedAssetClassSelect"
+                          label={t`Fixed Asset Class`}
+                          value={fixedAssetClassId}
+                          onChange={(option) =>
+                            setFixedAssetClassId(option?.value ?? "")
+                          }
+                          options={fixedAssetClasses.map((assetClass) => ({
+                            value: assetClass.id,
+                            label: assetClass.name
+                          }))}
+                          isDisabled={!canEditCompleteTo}
+                        />
+                      )}
+
+                      {completeTo === "asset" && (
+                        <Combobox
+                          name="fixedAssetSelect"
+                          label={t`Asset Under Construction`}
+                          value={fixedAssetId}
+                          onChange={(option) =>
+                            setFixedAssetId(option?.value ?? "")
+                          }
+                          options={underConstructionAssets.map((asset) => ({
+                            value: asset.id,
+                            label: `${asset.fixedAssetId} — ${asset.name}`
+                          }))}
+                          isReadOnly={!canEditCompleteTo}
+                        />
+                      )}
 
                       {showDueDate && (
                         <DatePicker

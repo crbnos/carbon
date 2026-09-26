@@ -18,6 +18,7 @@ import {
   replaceInvoiceSettlements,
   upsertPayment
 } from "~/modules/invoicing";
+import { getDepositDocuments } from "~/modules/invoicing/invoicing.server";
 import { getCompany, getNextSequence } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
@@ -46,6 +47,7 @@ async function getSeedableOpenInvoices(
 //   invoiceId   -> one or more; their open balances are summed into the total
 //                  and (on submit) one application is seeded per invoice
 //   amount      -> fallback total when no invoiceId is supplied
+//   salesOrderId / rentalAgreementId -> seeds the deposit document
 // Early-payment discount per invoice as of `asOfDate`, in the invoice's DOCUMENT
 // currency. It is computed from `remainingDocument` rather than `balance`
 // (which is company base) so it lines up with the payment's cash total, which
@@ -97,15 +99,18 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const supplierId = url.searchParams.get("supplierId");
   const invoiceIds = url.searchParams.getAll("invoiceId");
   const amount = url.searchParams.get("amount");
+  const salesOrderId = url.searchParams.get("salesOrderId");
+  const rentalAgreementId = url.searchParams.get("rentalAgreementId");
 
   const paymentType: "Receipt" | "Disbursement" = supplierId
     ? "Disbursement"
     : "Receipt";
   const partyId = paymentType === "Receipt" ? customerId : supplierId;
 
-  const [company, defaults] = await Promise.all([
+  const [company, defaults, depositDocuments] = await Promise.all([
     getCompany(client, companyId),
-    getDefaultAccounts(client, companyId)
+    getDefaultAccounts(client, companyId),
+    getDepositDocuments(client, companyId, [salesOrderId])
   ]);
   const bankAccount = defaults.data?.bankCashAccount ?? "";
 
@@ -179,9 +184,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
       totalAmount,
       bankAccount,
       reference: "",
-      memo: ""
+      memo: "",
+      salesOrderId: salesOrderId ?? "",
+      rentalAgreementId: rentalAgreementId ?? ""
     },
-    seedInvoiceIds: invoiceIds
+    seedInvoiceIds: invoiceIds,
+    depositDocuments
   };
 }
 
@@ -337,12 +345,14 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewPaymentRoute() {
-  const { initialValues, seedInvoiceIds } = useLoaderData<typeof loader>();
+  const { initialValues, seedInvoiceIds, depositDocuments } =
+    useLoaderData<typeof loader>();
   return (
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <PaymentForm
         initialValues={initialValues}
         seedInvoiceIds={seedInvoiceIds}
+        depositDocuments={depositDocuments}
       />
     </div>
   );

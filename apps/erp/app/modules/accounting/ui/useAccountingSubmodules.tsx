@@ -8,6 +8,7 @@ import {
   LuBuilding2,
   LuCalendar1,
   LuCalendarCheck,
+  LuCalendarClock,
   LuClock,
   LuCoins,
   LuEuro,
@@ -16,7 +17,8 @@ import {
   LuHandCoins,
   LuLayers,
   LuScale,
-  LuSheet
+  LuSheet,
+  LuTruck
 } from "react-icons/lu";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
@@ -69,6 +71,12 @@ export default function useAccountingSubmodules() {
             to: path.to.accountingPeriods,
             role: "employee",
             icon: <LuCalendarCheck />
+          },
+          {
+            name: t`Revenue Recognition`,
+            to: path.to.revenueRecognitionRuns,
+            role: "employee",
+            icon: <LuCalendarClock />
           }
         ]
       },
@@ -81,6 +89,12 @@ export default function useAccountingSubmodules() {
             to: path.to.fixedAssets,
             role: "employee",
             icon: <LuBuilding2 />
+          },
+          {
+            name: t`Fleet`,
+            to: path.to.fleet,
+            role: "employee",
+            icon: <LuTruck />
           },
           {
             name: t`Depreciation`,

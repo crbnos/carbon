@@ -204,6 +204,16 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-inventory-adjustment/index.ts"
 
+[functions.post-asset-transfer]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-asset-transfer/index.ts"
+
+[functions.post-rental-agreement]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-rental-agreement/index.ts"
+
 [functions.correct-stock-movement]
 enabled = true
 verify_jwt = true

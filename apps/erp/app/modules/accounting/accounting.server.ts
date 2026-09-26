@@ -4,7 +4,7 @@ import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { toStoredAmount } from "@carbon/utils";
+import { datetime, toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   applyCtaToReportPeriodSeries,
@@ -337,6 +337,10 @@ export async function postAssetRegistration(
     accountingPeriodId: string;
     locationDimensionId: string | undefined;
     assetClassDimensionId: string | undefined;
+    // "Under Construction" for an asset registered into a construction-in-
+    // progress class: it accumulates cost and is not depreciated until it is
+    // capitalized into its in-service class.
+    status?: "Active" | "Under Construction";
     companyId: string;
     userId: string;
   }
@@ -353,6 +357,7 @@ export async function postAssetRegistration(
     accountingPeriodId,
     locationDimensionId,
     assetClassDimensionId,
+    status = "Active",
     companyId,
     userId
   } = args;
@@ -444,7 +449,7 @@ export async function postAssetRegistration(
     const updateResult = await trx
       .updateTable("fixedAsset")
       .set({
-        status: "Active",
+        status,
         acquisitionCost: registration.acquisitionCost,
         acquisitionDate: registration.acquisitionDate,
         accumulatedDepreciation: registration.accumulatedDepreciation,
@@ -459,6 +464,25 @@ export async function postAssetRegistration(
     if (!updateResult.numUpdatedRows) {
       // Lost the race (already registered/disposed) — roll back the journal.
       throw new Error("Asset is no longer in Draft status");
+    }
+
+    // An asset registered straight into a construction-in-progress class keeps
+    // its registration cost as a CIP cost row, so capitalizing it into service
+    // later sweeps that cost together with everything attached since
+    // (post-asset-transfer sums the rows, not the asset's acquisitionCost).
+    if (status === "Under Construction" && acquisitionCost > 0) {
+      await trx
+        .insertInto("fixedAssetCipCost")
+        .values({
+          fixedAssetId,
+          sourceType: "Manual",
+          amount: acquisitionCost,
+          costDate: acquisitionDate,
+          journalId: journal.id,
+          companyId,
+          createdBy: userId
+        })
+        .execute();
     }
   });
 }
@@ -799,6 +823,416 @@ export async function postDepreciationRun(
         postedBy: userId
       })
       .where("id", "=", depreciationRunId)
+      .execute();
+  });
+}
+
+// ── Revenue recognition runs ─────────────────────────────────────────────────
+// Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §1. Proposals are
+// built by @carbon/database/revenue-recognition (shared with the Inngest job);
+// posting and deletion are human actions and live here, beside the
+// depreciation-run posters they mirror.
+
+export type RevenueRecognitionDimensionIds = {
+  customer?: string;
+  item?: string;
+  location?: string;
+};
+
+type RevenueScheduleType = Database["public"]["Enums"]["revenueScheduleType"];
+type AccountClass = NonNullable<Database["public"]["Enums"]["glAccountClass"]>;
+
+const REVENUE_LINE_DESCRIPTIONS: Record<
+  RevenueScheduleType,
+  { debit: string; credit: string }
+> = {
+  Deferral: {
+    debit: "Deferred revenue released",
+    credit: "Revenue recognized"
+  },
+  Accrual: { debit: "Unbilled rent accrued", credit: "Rental income accrued" },
+  Interest: {
+    debit: "Net investment interest",
+    credit: "Lease interest income"
+  }
+};
+
+/**
+ * Posts a Draft revenue recognition run as ONE journal (`sourceType`
+ * 'Revenue Recognition'): two lines per schedule row, each row's own
+ * debit/credit accounts, signed by account class. Stamps `journalId` on the
+ * rows and the run and flips both to Posted, all in one transaction. The route
+ * resolves the accounting period (`source: "accounting"`, so a Locked period
+ * accepts it) and the dimension ids before calling.
+ */
+export async function postRevenueRecognitionRun(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    runId: string;
+    companyId: string;
+    userId: string;
+    accountingPeriodId: string;
+    postingDate: string;
+    dimensionIds: RevenueRecognitionDimensionIds;
+  }
+) {
+  const {
+    runId,
+    companyId,
+    userId,
+    accountingPeriodId,
+    postingDate,
+    dimensionIds
+  } = args;
+  const now = datetime.timestamp();
+
+  return db.transaction().execute(async (trx) => {
+    const run = await trx
+      .selectFrom("revenueRecognitionRun")
+      .select(["id", "runId", "status"])
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Draft") {
+      throw new Error(
+        `Revenue recognition run ${run.runId} is already ${run.status}`
+      );
+    }
+
+    const rows = await trx
+      .selectFrom("revenueRecognitionRunLine as l")
+      .innerJoin("revenueRecognitionSchedule as s", (join) =>
+        join
+          .onRef("s.id", "=", "l.scheduleId")
+          .on("s.companyId", "=", companyId)
+      )
+      .select([
+        "l.amount",
+        "s.id as scheduleId",
+        "s.type",
+        "s.debitAccountId",
+        "s.creditAccountId",
+        "s.salesInvoiceLineId",
+        "s.rentalAgreementLineId",
+        "s.rentalLeaseScheduleLineId"
+      ])
+      .where("l.runId", "=", runId)
+      .where("l.companyId", "=", companyId)
+      .execute();
+    if (rows.length === 0) {
+      throw new Error(`Revenue recognition run ${run.runId} has no lines`);
+    }
+
+    // `account` is group-scoped (no companyId); the ids came from rows already
+    // scoped to this company.
+    const accountIds = [
+      ...new Set(
+        rows.flatMap((row) => [row.debitAccountId, row.creditAccountId])
+      )
+    ];
+    const accounts = await trx
+      .selectFrom("account")
+      .select(["id", "class"])
+      .where("id", "in", accountIds)
+      .execute();
+    const classById = new Map<string, AccountClass>();
+    for (const account of accounts) {
+      if (account.class) classById.set(account.id, account.class);
+    }
+    for (const id of accountIds) {
+      if (!classById.has(id)) {
+        throw new Error(`Account ${id} on the revenue schedule has no class`);
+      }
+    }
+
+    // Deferral rows point at the invoice line that funded them; the journal
+    // line references the invoice and carries its customer/item/location.
+    const invoiceLineIds = [
+      ...new Set(
+        rows
+          .map((row) => row.salesInvoiceLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    const invoiceLines =
+      invoiceLineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("salesInvoiceLine as sil")
+            .innerJoin("salesInvoice as si", (join) =>
+              join
+                .onRef("si.id", "=", "sil.invoiceId")
+                .on("si.companyId", "=", companyId)
+            )
+            .select([
+              "sil.id",
+              "sil.invoiceId",
+              "sil.itemId",
+              "sil.locationId",
+              "si.customerId"
+            ])
+            .where("sil.id", "in", invoiceLineIds)
+            .where("sil.companyId", "=", companyId)
+            .execute();
+    const invoiceLineById = new Map(
+      invoiceLines.map((line) => [line.id, line])
+    );
+
+    // Accrual (and later Interest) rows point at a rental agreement line; the
+    // journal line references the agreement and carries its customer, the
+    // line's item and the agreement's location.
+    const rentalLineIds = [
+      ...new Set(
+        rows
+          .filter((row) => !row.salesInvoiceLineId)
+          .map((row) => row.rentalAgreementLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    const rentalLines =
+      rentalLineIds.length === 0
+        ? []
+        : await trx
+            .selectFrom("rentalAgreementLine as ral")
+            .innerJoin("rentalAgreement as ra", (join) =>
+              join
+                .onRef("ra.id", "=", "ral.rentalAgreementId")
+                .on("ra.companyId", "=", companyId)
+            )
+            .select([
+              "ral.id",
+              "ral.itemId",
+              "ra.id as rentalAgreementId",
+              "ra.customerId",
+              "ra.locationId"
+            ])
+            .where("ral.id", "in", rentalLineIds)
+            .where("ral.companyId", "=", companyId)
+            .execute();
+    const rentalLineById = new Map(rentalLines.map((line) => [line.id, line]));
+
+    const journalEntryId = await getNextSequence(
+      trx,
+      "journalEntry",
+      companyId
+    );
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId,
+        accountingPeriodId,
+        companyId,
+        description: `Revenue Recognition ${run.runId}`,
+        postingDate,
+        sourceType: "Revenue Recognition",
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning(["id"])
+      .executeTakeFirstOrThrow();
+
+    for (const row of rows) {
+      const amount = Number(row.amount);
+      const descriptions = REVENUE_LINE_DESCRIPTIONS[row.type];
+      const invoiceSource = row.salesInvoiceLineId
+        ? invoiceLineById.get(row.salesInvoiceLineId)
+        : undefined;
+      const rentalSource =
+        !invoiceSource && row.rentalAgreementLineId
+          ? rentalLineById.get(row.rentalAgreementLineId)
+          : undefined;
+      const source = invoiceSource ?? rentalSource;
+      const document = invoiceSource
+        ? {
+            documentType: "Invoice" as const,
+            documentId: invoiceSource.invoiceId
+          }
+        : rentalSource
+          ? {
+              documentType: "Rental Agreement" as const,
+              documentId: rentalSource.rentalAgreementId
+            }
+          : {};
+
+      if (amount !== 0) {
+        // A negative row (a credit memo's deferral) reverses the legs: the
+        // stored amount is signed by account class, so the debit leg of a
+        // negative row is a credit of its magnitude and vice versa.
+        const magnitude = Math.abs(amount);
+        const debitClass = classById.get(row.debitAccountId)!;
+        const creditClass = classById.get(row.creditAccountId)!;
+        const debitAmount =
+          amount > 0
+            ? toStoredAmount(magnitude, 0, debitClass)
+            : toStoredAmount(0, magnitude, debitClass);
+        const creditAmount =
+          amount > 0
+            ? toStoredAmount(0, magnitude, creditClass)
+            : toStoredAmount(magnitude, 0, creditClass);
+
+        const journalLines = await trx
+          .insertInto("journalLine")
+          .values([
+            {
+              journalId: journal.id,
+              accountId: row.debitAccountId,
+              description: descriptions.debit,
+              amount: debitAmount,
+              journalLineReference: crypto.randomUUID(),
+              companyId,
+              ...document
+            },
+            {
+              journalId: journal.id,
+              accountId: row.creditAccountId,
+              description: descriptions.credit,
+              amount: creditAmount,
+              journalLineReference: crypto.randomUUID(),
+              companyId,
+              ...document
+            }
+          ])
+          .returning(["id"])
+          .execute();
+
+        const dimensionValues: Array<{ dimensionId: string; valueId: string }> =
+          [];
+        if (dimensionIds.customer && source?.customerId) {
+          dimensionValues.push({
+            dimensionId: dimensionIds.customer,
+            valueId: source.customerId
+          });
+        }
+        if (dimensionIds.item && source?.itemId) {
+          dimensionValues.push({
+            dimensionId: dimensionIds.item,
+            valueId: source.itemId
+          });
+        }
+        if (dimensionIds.location && source?.locationId) {
+          dimensionValues.push({
+            dimensionId: dimensionIds.location,
+            valueId: source.locationId
+          });
+        }
+        if (dimensionValues.length > 0) {
+          await trx
+            .insertInto("journalLineDimension")
+            .values(
+              journalLines.flatMap((line) =>
+                dimensionValues.map((dimension) => ({
+                  journalLineId: line.id,
+                  dimensionId: dimension.dimensionId,
+                  valueId: dimension.valueId,
+                  companyId
+                }))
+              )
+            )
+            .execute();
+        }
+      }
+
+      await trx
+        .updateTable("revenueRecognitionSchedule")
+        .set({ journalId: journal.id, status: "Posted", updatedBy: userId })
+        .where("id", "=", row.scheduleId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    // An Interest row posts one period of a sales-type lease's effective
+    // interest schedule; the schedule line records the journal that posted it,
+    // which is how the net investment report tells posted principal from
+    // future principal.
+    const leaseScheduleLineIds = [
+      ...new Set(
+        rows
+          .map((row) => row.rentalLeaseScheduleLineId)
+          .filter((id): id is string => Boolean(id))
+      )
+    ];
+    if (leaseScheduleLineIds.length > 0) {
+      await trx
+        .updateTable("rentalLeaseScheduleLine")
+        .set({
+          journalId: journal.id,
+          postedAt: now,
+          updatedBy: userId,
+          updatedAt: now
+        })
+        .where("id", "in", leaseScheduleLineIds)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    await trx
+      .updateTable("revenueRecognitionRun")
+      .set({
+        journalId: journal.id,
+        status: "Posted",
+        postedAt: now,
+        postedBy: userId,
+        updatedBy: userId
+      })
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .execute();
+
+    return { journalId: journal.id, journalEntryId };
+  });
+}
+
+/** Deletes a Draft run and releases its claimed schedule rows (`runLineId`
+ * back to null) so a later proposal can claim them again. Posted runs are
+ * immutable — reverse the journal instead. */
+export async function deleteRevenueRecognitionRun(
+  db: Kysely<KyselyDatabase>,
+  args: { runId: string; companyId: string; userId: string }
+) {
+  const { runId, companyId, userId } = args;
+
+  return db.transaction().execute(async (trx) => {
+    const run = await trx
+      .selectFrom("revenueRecognitionRun")
+      .select(["runId", "status"])
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirstOrThrow();
+    if (run.status !== "Draft") {
+      throw new Error(
+        `Revenue recognition run ${run.runId} is ${run.status}; reverse its journal instead of deleting it`
+      );
+    }
+
+    const lineIds = (
+      await trx
+        .selectFrom("revenueRecognitionRunLine")
+        .select("id")
+        .where("runId", "=", runId)
+        .where("companyId", "=", companyId)
+        .execute()
+    ).map((line) => line.id);
+
+    if (lineIds.length > 0) {
+      await trx
+        .updateTable("revenueRecognitionSchedule")
+        .set({ runLineId: null, updatedBy: userId })
+        .where("runLineId", "in", lineIds)
+        .where("companyId", "=", companyId)
+        .execute();
+      await trx
+        .deleteFrom("revenueRecognitionRunLine")
+        .where("runId", "=", runId)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+
+    await trx
+      .deleteFrom("revenueRecognitionRun")
+      .where("id", "=", runId)
+      .where("companyId", "=", companyId)
       .execute();
   });
 }

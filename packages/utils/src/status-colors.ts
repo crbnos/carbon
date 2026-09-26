@@ -147,9 +147,18 @@ export const MAINTENANCE_DISPATCH_STATUS_COLOR_MAP = {
 
 export const FIXED_ASSET_STATUS_COLOR_MAP = {
   Draft: "gray",
+  "Under Construction": "blue",
   Active: "green",
   "Fully Depreciated": "yellow",
   Disposed: "red"
+} as const satisfies Record<string, StatusColor>;
+
+// Mirrors RentalStatus.tsx (sales/ui/Rentals) — the agreement header statuses.
+export const RENTAL_AGREEMENT_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Active: "blue",
+  Closed: "green",
+  Cancelled: "red"
 } as const satisfies Record<string, StatusColor>;
 
 export const TRACKED_ENTITY_STATUS_COLOR_MAP = {
@@ -374,6 +383,7 @@ export const statusColorMaps = {
   pickingListLine: PICKING_LIST_LINE_STATUS_COLOR_MAP,
   maintenanceDispatch: MAINTENANCE_DISPATCH_STATUS_COLOR_MAP,
   fixedAsset: FIXED_ASSET_STATUS_COLOR_MAP,
+  rentalAgreement: RENTAL_AGREEMENT_STATUS_COLOR_MAP,
   trackedEntity: TRACKED_ENTITY_STATUS_COLOR_MAP,
   salesInvoice: SALES_INVOICE_STATUS_COLOR_MAP,
   purchaseInvoice: PURCHASE_INVOICE_STATUS_COLOR_MAP,

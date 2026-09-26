@@ -1,4 +1,10 @@
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  createRentalInvoicesForDuePeriods,
+  type RentalInvoiceGenerationArgs,
+  releaseRentalInvoiceStamps
+} from "@carbon/database/rental-billing";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
@@ -319,4 +325,144 @@ export async function recordSalesRuleOutcome(
       error: err
     });
   }
+}
+
+// ---------------------------------------------------------------------------
+// Rental invoices
+// ---------------------------------------------------------------------------
+
+/**
+ * The `Purchase Option` charge Sell to Customer bills (`$id.$lineId.sell.tsx`,
+ * which checks the agreement is Active, the line is a Sales-Type unit On Rent
+ * and the option is not already billed). Server-only on purpose: the
+ * `sales.service.ts` charge writer is an MCP tool and only ever writes a
+ * `Charge`, so no caller can name this kind and skip those checks.
+ */
+export async function insertRentalPurchaseOptionCharge(
+  client: SupabaseClient<Database>,
+  charge: {
+    rentalAgreementLineId: string;
+    chargeDate: string;
+    description: string;
+    amount: number;
+    taxPercent: number;
+    companyId: string;
+    createdBy: string;
+  }
+) {
+  return client
+    .from("rentalAgreementCharge")
+    .insert([{ ...charge, kind: "Purchase Option" as const }])
+    .select("id")
+    .single();
+}
+
+/** The agreement page's "Generate invoices": drafts an invoice for whatever
+ *  the agreement has due today, exactly as the daily job would. */
+export async function generateRentalInvoicesNow(
+  db: Kysely<KyselyDatabase>,
+  args: RentalInvoiceGenerationArgs
+): Promise<{ invoiceIds: string[] }> {
+  return createRentalInvoicesForDuePeriods(db, args);
+}
+
+/**
+ * Deletes a Draft sales invoice and, in the same transaction, releases the
+ * rental billing periods and charges it billed so the next generation bills
+ * them again. `salesInvoiceLineId` on those rows has no foreign key, so a
+ * plain delete would leave them stamped as billed forever. Throws on a
+ * missing or non-Draft invoice.
+ */
+export async function deleteSalesInvoiceReleasingRentals(
+  db: Kysely<KyselyDatabase>,
+  args: { companyId: string; invoiceId: string; userId: string }
+): Promise<void> {
+  const { companyId, invoiceId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const invoice = await trx
+      .selectFrom("salesInvoice")
+      .select(["id", "status"])
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!invoice) throw new Error("Sales invoice not found");
+    if (invoice.status !== "Draft") {
+      throw new Error(
+        `Cannot delete sales invoice with status "${invoice.status}". Only Draft invoices can be deleted.`
+      );
+    }
+
+    const lines = await trx
+      .selectFrom("salesInvoiceLine")
+      .select("id")
+      .where("invoiceId", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .where("invoiceLineType", "=", "Rental")
+      .execute();
+    await releaseRentalInvoiceStamps(trx, {
+      companyId,
+      salesInvoiceLineIds: lines.map((line) => line.id),
+      userId
+    });
+
+    await trx
+      .deleteFrom("salesInvoice")
+      .where("id", "=", invoiceId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
+}
+
+/** One line of a Draft invoice, releasing the rental period or charge it
+ *  billed (see `deleteSalesInvoiceReleasingRentals`). The line must belong
+ *  to `invoiceId` and that invoice must be Draft — checked here, under a row
+ *  lock, because releasing a POSTED line's stamps would bill its period
+ *  again. Throws otherwise. */
+export async function deleteSalesInvoiceLineReleasingRentals(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    invoiceId: string;
+    salesInvoiceLineId: string;
+    userId: string;
+  }
+): Promise<void> {
+  const { companyId, invoiceId, salesInvoiceLineId, userId } = args;
+  await db.transaction().execute(async (trx) => {
+    const line = await trx
+      .selectFrom("salesInvoiceLine")
+      .innerJoin("salesInvoice", (join) =>
+        join
+          .onRef("salesInvoice.id", "=", "salesInvoiceLine.invoiceId")
+          .onRef("salesInvoice.companyId", "=", "salesInvoiceLine.companyId")
+      )
+      .select([
+        "salesInvoiceLine.invoiceId as invoiceId",
+        "salesInvoice.status as status"
+      ])
+      .where("salesInvoiceLine.id", "=", salesInvoiceLineId)
+      .where("salesInvoiceLine.companyId", "=", companyId)
+      .forUpdate()
+      .executeTakeFirst();
+    if (!line || line.invoiceId !== invoiceId) {
+      throw new Error("Sales invoice line not found on this invoice");
+    }
+    if (line.status !== "Draft") {
+      throw new Error(
+        `Cannot delete a line of a sales invoice with status "${line.status}". Only Draft invoices can be edited.`
+      );
+    }
+
+    await releaseRentalInvoiceStamps(trx, {
+      companyId,
+      salesInvoiceLineIds: [salesInvoiceLineId],
+      userId
+    });
+    await trx
+      .deleteFrom("salesInvoiceLine")
+      .where("id", "=", salesInvoiceLineId)
+      .where("companyId", "=", companyId)
+      .execute();
+  });
 }

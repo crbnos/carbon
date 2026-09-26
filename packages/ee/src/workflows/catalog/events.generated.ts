@@ -989,7 +989,9 @@ export const WORKFLOW_ENTITIES: Record<string, Record<string, ValueType>> = {
     projectedCompletionAt: { kind: "primitive", of: "date" },
     scheduleOutdatedReason: { kind: "primitive", of: "string" },
     scheduleOutdatedAt: { kind: "primitive", of: "date" },
-    productionQuantity: { kind: "primitive", of: "number" }
+    productionQuantity: { kind: "primitive", of: "number" },
+    fixedAssetClassId: { kind: "primitive", of: "string" },
+    fixedAssetId: { kind: "primitive", of: "string" }
   },
   jobOperation: {
     id: { kind: "primitive", of: "string" },

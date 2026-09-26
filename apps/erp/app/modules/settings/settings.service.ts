@@ -986,6 +986,23 @@ export async function updateAssetTaxDepreciationSettings(
     .eq("id", companyId);
 }
 
+/** The ASC 842 classification thresholds and the default lessor discount
+ *  rate, all percentage points (75, 90, 6). */
+export async function updateLeasePolicySettings(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  settings: {
+    leaseMajorPartThresholdPercent: number;
+    leaseSubstantiallyAllThresholdPercent: number;
+    leaseDefaultDiscountRate: number;
+  }
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize(settings))
+    .eq("id", companyId);
+}
+
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
   companyId: string,

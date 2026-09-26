@@ -8,6 +8,7 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
+import { getWorkCenterCapitalCost } from "~/modules/accounting";
 import { notifyScheduleInputsChanged } from "~/modules/production";
 import {
   getWorkCenter,
@@ -20,7 +21,7 @@ import { path } from "~/utils/path";
 import { getCompanyId, workCentersQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "resources",
     role: "employee"
   });
@@ -28,7 +29,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("Invalid work center id");
 
-  const workCenter = await getWorkCenter(client, id);
+  const [workCenter, capitalCost] = await Promise.all([
+    getWorkCenter(client, id),
+    getWorkCenterCapitalCost(client, id, companyId)
+  ]);
   if (workCenter.error) {
     throw redirect(
       path.to.workCenters,
@@ -39,7 +43,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { workCenter: workCenter.data };
+  // The capital-cost panel is read-only context on the edit form: a failed
+  // read renders no panel rather than blocking the work center itself.
+  return {
+    workCenter: workCenter.data,
+    capitalCost: capitalCost.data ?? undefined
+  };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -97,7 +106,7 @@ export async function clientAction({ serverAction }: ClientActionFunctionArgs) {
 }
 
 export default function WorkCenterRoute() {
-  const { workCenter } = useLoaderData<typeof loader>();
+  const { workCenter, capitalCost } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
   const onClose = () => navigate(path.to.workCenters);
 
@@ -124,6 +133,7 @@ export default function WorkCenterRoute() {
       key={initialValues.id}
       onClose={onClose}
       initialValues={initialValues}
+      capitalCost={capitalCost}
     />
   );
 }

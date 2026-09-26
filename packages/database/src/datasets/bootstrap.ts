@@ -377,8 +377,8 @@ export async function seedCompanyReferenceData(
         "assetAccountId", "accumulatedDepreciationAccountId",
         "depreciationExpenseAccountId", "writeOffAccountId",
         "writeDownAccountId", "gainOnDisposalAccountId", "lossOnDisposalAccountId",
-        "companyId", "createdBy"
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'system')`,
+        "isConstructionInProgress", "companyId", "createdBy"
+      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, 'system')`,
       [
         fac.name,
         fac.depreciationMethod,
@@ -391,6 +391,7 @@ export async function seedCompanyReferenceData(
         accountIdByKey[fac.writeDownAccount],
         accountIdByKey[fac.gainOnDisposalAccount],
         accountIdByKey[fac.lossOnDisposalAccount],
+        fac.isConstructionInProgress,
         companyId
       ]
     );

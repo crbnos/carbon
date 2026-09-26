@@ -13,7 +13,8 @@ import {
   getMacrsPercentage,
   getMonthsBetween,
   getMonthsElapsed,
-  getNextPeriodEnd
+  getNextPeriodEnd,
+  getNextRevenueRecognitionPeriodEnd
 } from "./accounting.utils";
 
 // ---------------------------------------------------------------------------
@@ -276,6 +277,34 @@ describe("getNextPeriodEnd", () => {
   it("handles year rollover", () => {
     const result = getNextPeriodEnd("2025-12-31");
     expect(result).toBe("2026-01-31");
+  });
+
+  it("defaults to the end of the current month of the given business date", () => {
+    expect(getNextPeriodEnd(null, "2026-02-10")).toBe("2026-02-28");
+    expect(getNextPeriodEnd(null, "2024-02-01")).toBe("2024-02-29");
+  });
+});
+
+describe("getNextRevenueRecognitionPeriodEnd", () => {
+  it("returns the month end after the last run", () => {
+    expect(getNextRevenueRecognitionPeriodEnd("2026-09-30", "2026-11-03")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd("2025-12-31", "2026-03-01")).toBe(
+      "2026-01-31"
+    );
+  });
+
+  it("defaults to the month just closed, not the month in progress", () => {
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-11-01")).toBe(
+      "2026-10-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-01-15")).toBe(
+      "2025-12-31"
+    );
+    expect(getNextRevenueRecognitionPeriodEnd(null, "2026-03-31")).toBe(
+      "2026-02-28"
+    );
   });
 });
 

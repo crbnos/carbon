@@ -37,6 +37,7 @@ import {
   getAccountingPeriodDeletability,
   getFiscalCalendarCommitted,
   getOrCreateAccountingPeriod,
+  getPeriodCloseReadiness,
   postJournalEntry,
   reopenAccountingPeriod,
   skipCloseTask
@@ -72,6 +73,8 @@ function makeClient(responses: Scripted[]) {
     or: () => builder,
     order: () => builder,
     limit: () => builder,
+    not: () => builder,
+    range: () => builder,
     single: () => Promise.resolve(next()),
     maybeSingle: () => Promise.resolve(next()),
     then: (resolve: (v: Scripted) => unknown) => resolve(next())
@@ -106,6 +109,8 @@ function makeRecordingClient(responses: Scripted[]) {
       or: () => builder,
       order: () => builder,
       limit: () => builder,
+      not: () => builder,
+      range: () => builder,
       single: () => Promise.resolve(next()),
       maybeSingle: () => Promise.resolve(next()),
       then: (resolve: (v: Scripted) => unknown) => resolve(next())
@@ -958,5 +963,141 @@ describe("createFiscalYearPeriods", () => {
       startDate: "2027-02-01",
       fiscalYear: 2027
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// unposted-revenue-schedules — the rental accrual half. After the batched
+// readiness reads, the evaluator reads the period's operating rental billing
+// periods, then (only when some are Invoiced) the unposted rental invoice
+// lines, then (only when some are unbilled) the period-end Accrual rows.
+// ---------------------------------------------------------------------------
+
+describe("getPeriodCloseReadiness — unaccrued operating rent", () => {
+  const october = {
+    id: "P10",
+    startDate: "2026-10-01",
+    endDate: "2026-10-31",
+    closeStatus: "Open"
+  };
+  // Period lookup, timezone, external GL (no integrations), then the batched
+  // readiness reads in issue order.
+  const baseline = (unpostedSchedules: number): Scripted[] => [
+    { data: october },
+    { data: { timezone: "America/New_York" } },
+    { data: [] }, // external GL readiness: no active integrations
+    { count: 0 }, // draft journals
+    { data: [] }, // posted journals in period
+    { count: 0 }, // draft depreciation
+    { count: unpostedSchedules }, // Planned revenue schedule rows due
+    { count: 0 }, // unmatched intercompany
+    { count: 0 }, // pending receipts
+    { count: 0 }, // pending shipments
+    { count: 0 }, // pending sales invoices
+    { count: 0 }, // pending purchase invoices
+    { count: 0 }, // draft payments
+    { count: 0 } // draft memos
+  ];
+  const line = (deliveredAt: string | null, returnedAt: string | null) => ({
+    deliveredAt,
+    returnedAt
+  });
+
+  it("adds operating lines with unbilled, unaccrued rent in the period to the count", async () => {
+    const client = makeClient([
+      ...baseline(2),
+      {
+        data: [
+          // Pending, delivered mid-month, accrued -> covered.
+          {
+            id: "BP1",
+            rentalAgreementLineId: "L1",
+            periodStart: "2026-10-15",
+            periodEnd: "2026-10-31",
+            status: "Pending",
+            rentalAgreementLine: line("2026-10-15", null)
+          },
+          // Invoiced onto a Draft invoice, not accrued -> unaccrued.
+          {
+            id: "BP2",
+            rentalAgreementLineId: "L2",
+            periodStart: "2026-10-01",
+            periodEnd: "2026-10-31",
+            status: "Invoiced",
+            rentalAgreementLine: line("2026-09-01", null)
+          },
+          // Invoiced onto a posted invoice -> billed, nothing to accrue.
+          {
+            id: "BP3",
+            rentalAgreementLineId: "L3",
+            periodStart: "2026-10-01",
+            periodEnd: "2026-10-31",
+            status: "Invoiced",
+            rentalAgreementLine: line("2026-09-01", null)
+          },
+          // Returned before October -> no rent earned in the period.
+          {
+            id: "BP4",
+            rentalAgreementLineId: "L4",
+            periodStart: "2026-09-15",
+            periodEnd: "2026-10-12",
+            status: "Pending",
+            rentalAgreementLine: line("2026-09-15", "2026-09-28")
+          }
+        ]
+      },
+      { data: [{ rentalBillingPeriodId: "BP2" }] }, // unposted invoice lines
+      { data: [{ rentalAgreementLineId: "L1" }] } // October Accrual rows
+    ]);
+
+    const result = await getPeriodCloseReadiness(client, "C1", "P10");
+
+    const check = result.data?.checks.find(
+      (c) => c.autoCheckKey === "unposted-revenue-schedules"
+    );
+    expect(check).toMatchObject({ failing: true, count: 3 });
+    expect(
+      result.data?.warnings.find((w) => w.key === "unposted-revenue-schedules")
+        ?.count
+    ).toBe(3);
+  });
+
+  it("passes when every earning line is accrued and nothing is Planned", async () => {
+    const client = makeClient([
+      ...baseline(0),
+      {
+        data: [
+          {
+            id: "BP1",
+            rentalAgreementLineId: "L1",
+            periodStart: "2026-10-01",
+            periodEnd: "2026-10-31",
+            status: "Pending",
+            rentalAgreementLine: line("2026-10-01", null)
+          }
+        ]
+      },
+      { data: [{ rentalAgreementLineId: "L1" }] } // October Accrual rows
+    ]);
+
+    const result = await getPeriodCloseReadiness(client, "C1", "P10");
+
+    expect(
+      result.data?.checks.find(
+        (c) => c.autoCheckKey === "unposted-revenue-schedules"
+      )
+    ).toMatchObject({ failing: false, count: 0 });
+  });
+
+  it("passes trivially for a company with no rental lines", async () => {
+    const client = makeClient([...baseline(0), { data: [] }]);
+
+    const result = await getPeriodCloseReadiness(client, "C1", "P10");
+
+    expect(
+      result.data?.checks.find(
+        (c) => c.autoCheckKey === "unposted-revenue-schedules"
+      )
+    ).toMatchObject({ failing: false, count: 0 });
   });
 });

@@ -245,7 +245,8 @@ const PurchaseOrderLineForm = ({
         .from("fixedAsset")
         .select("id, fixedAssetId, name, locationId")
         .eq("companyId", company.id)
-        .eq("status", "Draft")
+        // Under Construction too: a CIP asset collects purchased cost.
+        .in("status", ["Draft", "Under Construction"])
         .order("fixedAssetId");
       const options = (assets.data ?? []).map((a) => ({
         value: a.id,

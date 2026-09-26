@@ -4,7 +4,10 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
 import type { PeriodPostingSource, ReportPeriodBucket } from "@carbon/utils";
 import {
+  addDays,
   datetime,
+  daysBetweenInclusive,
+  earnsInterest,
   fiscalYearAndPeriodFor,
   getDateNYearsAgo,
   isBalanced,
@@ -20,7 +23,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -3048,6 +3051,116 @@ export async function getPeriodExternalGlSyncReadiness(
  *  can never disagree about which journals are unbalanced. */
 const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
+/**
+ * Operating rental lines that earned rent inside [startDate, endDate] which no
+ * posted invoice covers and no Accrual row for this period end accrues — the
+ * accrual half of the "Recognize revenue for the period" close task. Mirrors
+ * `synthesizeRentalAccruals` (`@carbon/database/revenue-recognition`): a
+ * non-adjustment billing period of an Operating `On Rent` / `Returned` line,
+ * overlapping the period inside the line's `[deliveredAt, returnedAt]`, that is
+ * `Pending` or `Invoiced` onto a Draft/Pending invoice. Usually one query: the
+ * invoice and accrual reads only run when a candidate exists. A failed read
+ * counts as failing (1), never as a silent pass.
+ */
+async function countUnaccruedRentalLines(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  startDate: string,
+  endDate: string
+): Promise<number> {
+  const periods = await fetchAllFromTable<{
+    id: string;
+    rentalAgreementLineId: string;
+    periodStart: string;
+    periodEnd: string;
+    status: Database["public"]["Enums"]["rentalBillingPeriodStatus"];
+    rentalAgreementLine: {
+      deliveredAt: string | null;
+      returnedAt: string | null;
+    };
+  }>(
+    client,
+    "rentalBillingPeriod",
+    "id, rentalAgreementLineId, periodStart, periodEnd, status, rentalAgreementLine!inner(deliveredAt, returnedAt)",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("isAdjustment", false)
+        .lte("periodStart", endDate)
+        .gte("periodEnd", startDate)
+        .eq("rentalAgreementLine.lessorClassification", "Operating")
+        .in("rentalAgreementLine.status", ["On Rent", "Returned"])
+        .lte("rentalAgreementLine.deliveredAt", endDate)
+        .order("id")
+  );
+  if (periods.error) return 1;
+
+  const earning = (periods.data ?? []).filter((period) => {
+    const { deliveredAt, returnedAt } = period.rentalAgreementLine;
+    if (!deliveredAt) return false;
+    const starts = [period.periodStart, startDate, deliveredAt];
+    const ends = [
+      period.periodEnd,
+      endDate,
+      ...(returnedAt ? [returnedAt] : [])
+    ];
+    const start = starts.reduce((a, b) => (a > b ? a : b));
+    const end = ends.reduce((a, b) => (a < b ? a : b));
+    return start <= end;
+  });
+  if (earning.length === 0) return 0;
+
+  let unbilled = earning.filter((period) => period.status === "Pending");
+  if (unbilled.length < earning.length) {
+    // An Invoiced period is still unbilled while its invoice has not posted.
+    const unposted = await fetchAllFromTable<{
+      rentalBillingPeriodId: string;
+    }>(
+      client,
+      "salesInvoiceLine",
+      "rentalBillingPeriodId, salesInvoice!inner(status)",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .not("rentalBillingPeriodId", "is", null)
+          .in("salesInvoice.status", ["Draft", "Pending"])
+          .order("id")
+    );
+    if (unposted.error) return 1;
+    const unpostedPeriodIds = new Set(
+      (unposted.data ?? []).map((line) => line.rentalBillingPeriodId)
+    );
+    unbilled = earning.filter(
+      (period) =>
+        period.status === "Pending" || unpostedPeriodIds.has(period.id)
+    );
+  }
+  if (unbilled.length === 0) return 0;
+
+  const accruals = await fetchAllFromTable<{ rentalAgreementLineId: string }>(
+    client,
+    "revenueRecognitionSchedule",
+    "rentalAgreementLineId",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("type", "Accrual")
+        .eq("scheduledDate", endDate)
+        .not("rentalAgreementLineId", "is", null)
+        .order("id")
+  );
+  if (accruals.error) return 1;
+  const accruedLineIds = new Set(
+    (accruals.data ?? []).map((row) => row.rentalAgreementLineId)
+  );
+
+  return new Set(
+    unbilled
+      .map((period) => period.rentalAgreementLineId)
+      .filter((lineId) => !accruedLineIds.has(lineId))
+  ).size;
+}
+
 async function computePeriodReadiness(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3075,6 +3188,7 @@ async function computePeriodReadiness(
     draftJournals,
     journalsInPeriod,
     draftDepreciation,
+    unpostedRevenueSchedules,
     unmatchedIC,
     pendingReceipts,
     pendingShipments,
@@ -3107,6 +3221,16 @@ async function computePeriodReadiness(
       .eq("status", "Draft")
       .gte("periodEnd", startDate)
       .lte("periodEnd", endDate),
+    // Planned revenue schedule rows due on or before the period end — the
+    // "Recognize revenue for the period" close task (autoCheckKey
+    // unposted-revenue-schedules) fails while any exist. Not bounded below:
+    // an overdue row from an earlier period is still unrecognized revenue.
+    client
+      .from("revenueRecognitionSchedule")
+      .select("id", { count: "exact", head: true })
+      .eq("companyId", companyId)
+      .eq("status", "Planned")
+      .lte("scheduledDate", endDate),
     client
       .from("intercompanyTransaction")
       .select("id", { count: "exact", head: true })
@@ -3170,6 +3294,17 @@ async function computePeriodReadiness(
       .limit(UNPOSTED_DOCUMENT_LIMIT),
     getPeriodExternalGlSyncReadiness(client, companyId, startDate, endDate)
   ]);
+
+  // Sequential on purpose: almost every company has no rental lines, so this
+  // is one empty read after the batch above.
+  const unaccruedRentalLines = await countUnaccruedRentalLines(
+    client,
+    companyId,
+    startDate,
+    endDate
+  );
+  const unrecognizedRevenue =
+    (unpostedRevenueSchedules.count ?? 0) + unaccruedRentalLines;
 
   const unbalanced = (journalsInPeriod.data ?? []).filter(
     (j) =>
@@ -3284,6 +3419,14 @@ async function computePeriodReadiness(
       label: "Draft depreciation runs ending in this period",
       failing: (draftDepreciation.count ?? 0) > 0,
       count: draftDepreciation.count ?? 0
+    },
+    {
+      autoCheckKey: "unposted-revenue-schedules",
+      severity: "Warning",
+      label:
+        "Unposted revenue recognition schedules or unaccrued rental days due on or before this period end",
+      failing: unrecognizedRevenue > 0,
+      count: unrecognizedRevenue
     },
     {
       autoCheckKey: "unmatched-ic",
@@ -6049,6 +6192,7 @@ export async function insertFixedAsset(
     residualValuePercent: number;
     assetLifetimeUsage?: number | null;
     locationId?: string;
+    workCenterId?: string | null;
     status?: string;
     taxDepreciationMethod?: string | null;
     taxUsefulLifeMonths?: number | null;
@@ -6095,6 +6239,7 @@ export async function insertFixedAsset(
       residualValuePercent: input.residualValuePercent,
       assetLifetimeUsage: input.assetLifetimeUsage ?? null,
       locationId: input.locationId ?? null,
+      workCenterId: input.workCenterId ?? null,
       status: (input.status as any) ?? "Draft",
       taxDepreciationMethod: (input.taxDepreciationMethod as any) ?? null,
       taxUsefulLifeMonths: input.taxUsefulLifeMonths ?? null,
@@ -6131,6 +6276,7 @@ export async function updateFixedAsset(
     residualValuePercent?: number;
     assetLifetimeUsage?: number | null;
     locationId?: string | null;
+    workCenterId?: string | null;
     taxDepreciationMethod?: (typeof taxDepreciationMethods)[number] | null;
     taxUsefulLifeMonths?: number | null;
     taxResidualValuePercent?: number | null;
@@ -6322,6 +6468,681 @@ export async function getDepreciationRunLines(
     .eq("depreciationRunId", depreciationRunId);
 }
 
+// -- Revenue Recognition --
+
+export async function getRevenueRecognitionRuns(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("revenueRecognitionRun")
+    .select("id, runId, periodEnd, status, postedAt, journalId", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.ilike("runId", `%${args.search}%`);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "createdAt", ascending: false }
+  ]);
+  return query;
+}
+
+export async function getRevenueRecognitionRun(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("revenueRecognitionRun").select("*").eq("id", id).single();
+}
+
+export async function getRevenueRecognitionRunLines(
+  client: SupabaseClient<Database>,
+  runId: string
+) {
+  // The run line -> schedule FK is composite (scheduleId, companyId), so the
+  // embed must name the target table and constraint; `schedule:scheduleId(...)`
+  // only resolves single-column FKs and fails with PGRST200.
+  return client
+    .from("revenueRecognitionRunLine")
+    .select(
+      "id, amount, schedule:revenueRecognitionSchedule!revenueRecognitionRunLine_schedule_fkey(id, type, periodStart, periodEnd, scheduledDate, amount, debitAccountId, creditAccountId, salesInvoiceLineId, rentalAgreementLineId, journalId)"
+    )
+    .eq("runId", runId);
+}
+
+export async function getRevenueSchedules(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    status: Database["public"]["Enums"]["revenueScheduleStatus"] | null;
+    type: Database["public"]["Enums"]["revenueScheduleType"] | null;
+  }
+) {
+  let query = client
+    .from("revenueRecognitionSchedule")
+    .select("*", { count: "exact" })
+    .eq("companyId", companyId);
+
+  if (args.status) {
+    query = query.eq("status", args.status);
+  }
+  if (args.type) {
+    query = query.eq("type", args.type);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "scheduledDate", ascending: true }
+  ]);
+  return query;
+}
+
+export type DeferredRevenueWaterfallRow = {
+  /** YYYY-MM of the schedule's `scheduledDate`. */
+  bucket: string;
+  type: Database["public"]["Enums"]["revenueScheduleType"];
+  amount: number;
+};
+
+export async function getDeferredRevenueWaterfall(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  { asOf }: { asOf: string }
+): Promise<{
+  data: DeferredRevenueWaterfallRow[] | null;
+  error: PostgrestError | null;
+}> {
+  const schedules = await fetchAllFromTable<{
+    scheduledDate: string;
+    type: Database["public"]["Enums"]["revenueScheduleType"];
+    amount: number;
+  }>(
+    client,
+    "revenueRecognitionSchedule",
+    "scheduledDate, type, amount",
+    (query: any) =>
+      query
+        .eq("companyId", companyId)
+        .eq("status", "Planned")
+        .gte("scheduledDate", asOf)
+        .order("id", { ascending: true })
+  );
+  if (schedules.error) {
+    return { data: null, error: schedules.error };
+  }
+
+  // Bucket by month and type. `scheduledDate` is a DATE string (YYYY-MM-DD),
+  // so its first seven characters are the month; accumulate at full precision
+  // and round once per bucket.
+  const totals = new Map<string, DeferredRevenueWaterfallRow>();
+  for (const schedule of schedules.data ?? []) {
+    const bucket = schedule.scheduledDate.slice(0, 7);
+    const key = `${bucket}:${schedule.type}`;
+    const existing = totals.get(key);
+    if (existing) {
+      existing.amount += schedule.amount;
+    } else {
+      totals.set(key, { bucket, type: schedule.type, amount: schedule.amount });
+    }
+  }
+
+  const data = [...totals.values()]
+    .map((row) => ({ ...row, amount: round(row.amount) }))
+    .sort((a, b) => {
+      if (a.bucket !== b.bucket) return a.bucket < b.bucket ? -1 : 1;
+      if (a.type !== b.type) return a.type < b.type ? -1 : 1;
+      return 0;
+    });
+
+  return { data, error: null };
+}
+
+export type RentalUtilizationRow = {
+  /** `fixedAsset.id`. */
+  id: string;
+  /** The readable `fixedAsset.fixedAssetId`. */
+  fixedAssetId: string;
+  name: string;
+  serialNumber: string | null;
+  fixedAssetClassId: string;
+  className: string;
+  acquisitionCost: number;
+  fleetDays: number;
+  onRentDays: number;
+  /** on-rent days ÷ fleet days, a 0–1 fraction; null with no fleet days. */
+  timeUtilization: number | null;
+  recognizedIncome: number;
+  /** Annualized recognized income ÷ acquisition cost; null with no cost. */
+  dollarUtilization: number | null;
+};
+
+export type RentalUtilizationTotals = Omit<
+  RentalUtilizationRow,
+  "id" | "fixedAssetId" | "name" | "serialNumber"
+>;
+
+export type RentalUtilization = {
+  rangeDays: number;
+  assets: RentalUtilizationRow[];
+  /** One row per fixed asset class, in class-name order. */
+  classTotals: RentalUtilizationTotals[];
+};
+
+type DateInterval = { start: string; end: string };
+
+/** `[a] ∩ [b]` on inclusive `YYYY-MM-DD` bounds; null when they miss. */
+function intersectDateIntervals(
+  a: DateInterval,
+  b: DateInterval
+): DateInterval | null {
+  const start = a.start > b.start ? a.start : b.start;
+  const end = a.end < b.end ? a.end : b.end;
+  return start <= end ? { start, end } : null;
+}
+
+/** Days covered by the union of inclusive intervals — a unit returned and
+ *  re-delivered the same day is on rent that day once, not twice. */
+function daysCoveredByIntervals(intervals: DateInterval[]): number {
+  const sorted = [...intervals].sort((a, b) =>
+    a.start < b.start ? -1 : a.start > b.start ? 1 : 0
+  );
+  let days = 0;
+  let current: DateInterval | null = null;
+  for (const interval of sorted) {
+    if (current && interval.start <= addDays(current.end, 1)) {
+      if (interval.end > current.end) current.end = interval.end;
+      continue;
+    }
+    if (current) days += daysBetweenInclusive(current.start, current.end);
+    current = { ...interval };
+  }
+  if (current) days += daysBetweenInclusive(current.start, current.end);
+  return days;
+}
+
+function utilizationRatios(
+  totals: {
+    fleetDays: number;
+    onRentDays: number;
+    recognizedIncome: number;
+    acquisitionCost: number;
+  },
+  rangeDays: number
+) {
+  return {
+    timeUtilization:
+      totals.fleetDays > 0 ? round(totals.onRentDays / totals.fleetDays) : null,
+    dollarUtilization:
+      totals.acquisitionCost > 0
+        ? round(
+            (totals.recognizedIncome * (365 / rangeDays)) /
+              totals.acquisitionCost
+          )
+        : null
+  };
+}
+
+/**
+ * Time and dollar utilization of the rental fleet over `[from, to]`
+ * (inclusive `YYYY-MM-DD`). Per fleet asset:
+ * - fleet days: `[acquisitionDate, disposalDate ?? to] ∩ [from, to]`;
+ * - on-rent days: the union of its agreement lines'
+ *   `[deliveredAt, returnedAt ?? to]`, clipped to the fleet window;
+ * - recognized income: Posted recognition schedule rows of its lines dated in
+ *   the range that credit Rental Income or Lease Interest Income, plus posted
+ *   Charge invoice lines (recognized when billed, never scheduled);
+ * - dollar utilization: recognized income × (365 ÷ range days) ÷ cost.
+ * Every table is read once for the company; the join happens here.
+ */
+export async function getRentalUtilization(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  {
+    from,
+    to,
+    fixedAssetClassId
+  }: { from: string; to: string; fixedAssetClassId?: string | null }
+): Promise<{
+  data: RentalUtilization | null;
+  error: PostgrestError | null;
+}> {
+  if (to < from) {
+    return { data: { rangeDays: 0, assets: [], classTotals: [] }, error: null };
+  }
+  const range: DateInterval = { start: from, end: to };
+  const rangeDays = daysBetweenInclusive(from, to);
+
+  const [assets, lines, defaults, schedules, charges] = await Promise.all([
+    fetchAllFromTable<{
+      id: string;
+      fixedAssetId: string;
+      name: string;
+      serialNumber: string | null;
+      fixedAssetClassId: string;
+      className: string;
+      acquisitionDate: string | null;
+      acquisitionCost: number | null;
+      disposalDate: string | null;
+    }>(
+      client,
+      "fleetAssets",
+      "id, fixedAssetId, name, serialNumber, fixedAssetClassId, className, acquisitionDate, acquisitionCost, disposalDate",
+      (query: any) => {
+        let q = query
+          .eq("companyId", companyId)
+          .neq("status", "Under Construction")
+          .not("acquisitionDate", "is", null)
+          .lte("acquisitionDate", to)
+          .or(`disposalDate.is.null,disposalDate.gte.${from}`);
+        if (fixedAssetClassId) q = q.eq("fixedAssetClassId", fixedAssetClassId);
+        return q.order("id", { ascending: true });
+      }
+    ),
+    // Every fleet line, not only those on rent in the range: a Charge billed
+    // after the unit came back still belongs to the unit.
+    fetchAllFromTable<{
+      id: string;
+      fixedAssetId: string;
+      deliveredAt: string | null;
+      returnedAt: string | null;
+    }>(
+      client,
+      "rentalAgreementLine",
+      "id, fixedAssetId, deliveredAt, returnedAt",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .not("fixedAssetId", "is", null)
+          .order("id", { ascending: true })
+    ),
+    client
+      .from("accountDefault")
+      .select("rentalIncomeAccount, leaseInterestIncomeAccount")
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    fetchAllFromTable<{
+      rentalAgreementLineId: string;
+      creditAccountId: string;
+      amount: number;
+    }>(
+      client,
+      "revenueRecognitionSchedule",
+      "rentalAgreementLineId, creditAccountId, amount",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("status", "Posted")
+          .not("rentalAgreementLineId", "is", null)
+          .gte("scheduledDate", from)
+          .lte("scheduledDate", to)
+          .order("id", { ascending: true })
+    ),
+    fetchAllFromTable<{
+      rentalAgreementLineId: string;
+      quantity: number;
+      unitPrice: number;
+      addOnCost: number;
+      nonTaxableAddOnCost: number;
+    }>(
+      client,
+      "salesInvoiceLine",
+      "rentalAgreementLineId, quantity, unitPrice, addOnCost, nonTaxableAddOnCost, salesInvoice!inner(status, postingDate)",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("invoiceLineType", "Rental")
+          .eq("rentalInvoiceLineKind", "Charge")
+          .not("rentalAgreementLineId", "is", null)
+          .not("salesInvoice.status", "in", '("Draft","Pending","Voided")')
+          .gte("salesInvoice.postingDate", from)
+          .lte("salesInvoice.postingDate", to)
+          .order("id", { ascending: true })
+    )
+  ]);
+  for (const result of [assets, lines, defaults, schedules, charges]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  const incomeAccounts = new Set(
+    [
+      defaults.data?.rentalIncomeAccount,
+      defaults.data?.leaseInterestIncomeAccount
+    ].filter((id): id is string => !!id)
+  );
+
+  const assetIdByLine = new Map<string, string>();
+  const linesByAsset = new Map<string, typeof lines.data>();
+  for (const line of lines.data ?? []) {
+    assetIdByLine.set(line.id, line.fixedAssetId);
+    const list = linesByAsset.get(line.fixedAssetId) ?? [];
+    list.push(line);
+    linesByAsset.set(line.fixedAssetId, list);
+  }
+
+  // Accumulate at full precision; round once per asset.
+  const incomeByAsset = new Map<string, number>();
+  const addIncome = (lineId: string, amount: number) => {
+    const assetId = assetIdByLine.get(lineId);
+    if (!assetId) return;
+    incomeByAsset.set(assetId, (incomeByAsset.get(assetId) ?? 0) + amount);
+  };
+  for (const row of schedules.data ?? []) {
+    if (incomeAccounts.has(row.creditAccountId)) {
+      addIncome(row.rentalAgreementLineId, row.amount);
+    }
+  }
+  // The same base the posting's revenue leg uses (sales-posting-amounts.ts).
+  for (const line of charges.data ?? []) {
+    addIncome(
+      line.rentalAgreementLineId,
+      line.quantity * line.unitPrice +
+        (line.addOnCost ?? 0) +
+        (line.nonTaxableAddOnCost ?? 0)
+    );
+  }
+
+  const rows: RentalUtilizationRow[] = [];
+  for (const asset of assets.data ?? []) {
+    if (!asset.acquisitionDate) continue;
+    const fleetWindow = intersectDateIntervals(
+      { start: asset.acquisitionDate, end: asset.disposalDate ?? to },
+      range
+    );
+    const fleetDays = fleetWindow
+      ? daysBetweenInclusive(fleetWindow.start, fleetWindow.end)
+      : 0;
+
+    const onRent: DateInterval[] = [];
+    if (fleetWindow) {
+      for (const line of linesByAsset.get(asset.id) ?? []) {
+        if (!line.deliveredAt) continue;
+        const interval = intersectDateIntervals(
+          { start: line.deliveredAt, end: line.returnedAt ?? to },
+          fleetWindow
+        );
+        if (interval) onRent.push(interval);
+      }
+    }
+    const onRentDays = daysCoveredByIntervals(onRent);
+    const recognizedIncome = round(incomeByAsset.get(asset.id) ?? 0);
+    const acquisitionCost = asset.acquisitionCost ?? 0;
+    if (fleetDays === 0 && recognizedIncome === 0) continue;
+
+    rows.push({
+      id: asset.id,
+      fixedAssetId: asset.fixedAssetId,
+      name: asset.name,
+      serialNumber: asset.serialNumber,
+      fixedAssetClassId: asset.fixedAssetClassId,
+      className: asset.className,
+      acquisitionCost,
+      fleetDays,
+      onRentDays,
+      recognizedIncome,
+      ...utilizationRatios(
+        { fleetDays, onRentDays, recognizedIncome, acquisitionCost },
+        rangeDays
+      )
+    });
+  }
+
+  rows.sort((a, b) => {
+    if (a.className !== b.className) return a.className < b.className ? -1 : 1;
+    return a.fixedAssetId < b.fixedAssetId ? -1 : 1;
+  });
+
+  const totalsByClass = new Map<string, RentalUtilizationTotals>();
+  for (const row of rows) {
+    const existing = totalsByClass.get(row.fixedAssetClassId);
+    if (existing) {
+      existing.acquisitionCost += row.acquisitionCost;
+      existing.fleetDays += row.fleetDays;
+      existing.onRentDays += row.onRentDays;
+      existing.recognizedIncome += row.recognizedIncome;
+    } else {
+      totalsByClass.set(row.fixedAssetClassId, {
+        fixedAssetClassId: row.fixedAssetClassId,
+        className: row.className,
+        acquisitionCost: row.acquisitionCost,
+        fleetDays: row.fleetDays,
+        onRentDays: row.onRentDays,
+        recognizedIncome: row.recognizedIncome,
+        timeUtilization: null,
+        dollarUtilization: null
+      });
+    }
+  }
+  const classTotals = [...totalsByClass.values()].map((total) => {
+    const rounded = {
+      ...total,
+      acquisitionCost: round(total.acquisitionCost),
+      recognizedIncome: round(total.recognizedIncome)
+    };
+    return { ...rounded, ...utilizationRatios(rounded, rangeDays) };
+  });
+
+  return { data: { rangeDays, assets: rows, classTotals }, error: null };
+}
+
+export type LeaseNetInvestmentRow = {
+  /** `rentalAgreementLine.id`. */
+  id: string;
+  rentalAgreementId: string;
+  /** The readable RA number. */
+  rentalAgreementReadableId: string | null;
+  customerName: string | null;
+  fixedAssetId: string | null;
+  unit: string;
+  serialNumber: string | null;
+  status: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+  initialNetInvestment: number;
+  /** Σ principal of the schedule lines posted and dated on or before asOf. */
+  postedPrincipal: number;
+  currentNetInvestment: number;
+  nextInterestDate: string | null;
+  nextInterestAmount: number | null;
+  /** Undiscounted payments still to come, by fiscal year. */
+  maturityByFiscalYear: Record<number, number>;
+  /** What the schedule closes on at term end: purchase option + residuals. */
+  closingTarget: number;
+};
+
+export type LeaseNetInvestment = {
+  asOf: string;
+  /** Every fiscal year any row has a payment in, ascending. */
+  fiscalYears: number[];
+  rows: LeaseNetInvestmentRow[];
+};
+
+/**
+ * The lessor's net investment in sales-type leases as of `asOf` (spec §4).
+ * Per commenced Sales-Type line still live on that date (Pending / On Rent,
+ * or returned after it): the net investment at commencement, less the
+ * principal of every schedule line the recognition run has posted up to
+ * `asOf`, the next interest the run will post, and the undiscounted payments
+ * still to come bucketed by fiscal year (the ASC 842 maturity analysis). A
+ * Sold line has no net investment left and is omitted. One read per table
+ * for the company; the join happens here.
+ */
+export async function getLeaseNetInvestment(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  { asOf }: { asOf: string }
+): Promise<{
+  data: LeaseNetInvestment | null;
+  error: PostgrestError | null;
+}> {
+  const [lines, schedule, fiscalYear] = await Promise.all([
+    fetchAllFromTable<{
+      id: string;
+      rentalAgreementId: string;
+      status: Database["public"]["Enums"]["rentalAgreementLineStatus"];
+      returnedAt: string | null;
+      initialNetInvestment: number;
+      fixedAssetId: string | null;
+      fixedAsset: {
+        fixedAssetId: string | null;
+        name: string | null;
+        serialNumber: string | null;
+      } | null;
+      item: { readableIdWithRevision: string | null } | null;
+    }>(
+      client,
+      "rentalAgreementLine",
+      "id, rentalAgreementId, status, returnedAt, initialNetInvestment, fixedAssetId, fixedAsset(fixedAssetId, name, serialNumber), item(readableIdWithRevision)",
+      (query: any) =>
+        query
+          .eq("companyId", companyId)
+          .eq("lessorClassification", "Sales-Type")
+          .not("initialNetInvestment", "is", null)
+          .neq("status", "Sold")
+          .order("id", { ascending: true })
+    ),
+    fetchAllFromTable<{
+      rentalAgreementLineId: string;
+      periodDate: string;
+      paymentAmount: number;
+      interestAmount: number;
+      principalAmount: number;
+      closingNetInvestment: number;
+      postedAt: string | null;
+    }>(
+      client,
+      "rentalLeaseScheduleLine",
+      "rentalAgreementLineId, periodDate, paymentAmount, interestAmount, principalAmount, closingNetInvestment, postedAt",
+      (query: any) =>
+        query.eq("companyId", companyId).order("id", { ascending: true })
+    ),
+    client
+      .from("fiscalYearSettings")
+      .select("startMonth")
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  for (const result of [lines, schedule, fiscalYear]) {
+    if (result.error) return { data: null, error: result.error };
+  }
+
+  // Live on `asOf`: not yet returned, or returned after it.
+  const liveLines = (lines.data ?? []).filter(
+    (line) =>
+      line.status === "Pending" ||
+      line.status === "On Rent" ||
+      (line.status === "Returned" &&
+        (!line.returnedAt || line.returnedAt.slice(0, 10) > asOf))
+  );
+  if (liveLines.length === 0) {
+    return { data: { asOf, fiscalYears: [], rows: [] }, error: null };
+  }
+
+  const agreementIds = [
+    ...new Set(liveLines.map((line) => line.rentalAgreementId))
+  ];
+  const agreements = await client
+    .from("rentalAgreements")
+    .select("id, rentalAgreementId, customerName, startDate")
+    .eq("companyId", companyId)
+    .in("id", agreementIds);
+  if (agreements.error) return { data: null, error: agreements.error };
+  const agreementById = new Map(
+    (agreements.data ?? []).map((agreement) => [agreement.id, agreement])
+  );
+
+  const startMonth = fiscalYear.data?.startMonth
+    ? (MONTH_NUMBER[fiscalYear.data.startMonth] ?? 1)
+    : 1;
+
+  const scheduleByLine = new Map<string, NonNullable<typeof schedule.data>>();
+  for (const row of schedule.data ?? []) {
+    const list = scheduleByLine.get(row.rentalAgreementLineId) ?? [];
+    list.push(row);
+    scheduleByLine.set(row.rentalAgreementLineId, list);
+  }
+
+  const fiscalYears = new Set<number>();
+  const rows: LeaseNetInvestmentRow[] = [];
+  for (const line of liveLines) {
+    const agreement = agreementById.get(line.rentalAgreementId);
+    // Not commenced yet on `asOf`.
+    if (!agreement?.startDate || agreement.startDate > asOf) continue;
+
+    const lineSchedule = [...(scheduleByLine.get(line.id) ?? [])].sort(
+      (a, b) => (a.periodDate < b.periodDate ? -1 : 1)
+    );
+
+    // Accumulate at full precision; round once per figure.
+    let postedPrincipal = 0;
+    let next: (typeof lineSchedule)[number] | null = null;
+    const maturity: Record<number, number> = {};
+    for (const row of lineSchedule) {
+      // A line's principal is collected once its Interest row has posted —
+      // or, for a line that earns no interest (a 0 % lease, the last line of
+      // an Advance lease closing on zero), once its period date passes: it
+      // has no Interest row to post, and its rent invoice alone reduces the
+      // net investment.
+      const collected = row.postedAt || !earnsInterest(row.interestAmount);
+      if (collected && row.periodDate <= asOf) {
+        postedPrincipal += row.principalAmount;
+        continue;
+      }
+      next ??= row;
+      const { fiscalYear: year } = fiscalYearAndPeriodFor(
+        Number(row.periodDate.slice(0, 4)),
+        Number(row.periodDate.slice(5, 7)),
+        startMonth
+      );
+      fiscalYears.add(year);
+      maturity[year] = (maturity[year] ?? 0) + row.paymentAmount;
+    }
+    for (const year of Object.keys(maturity)) {
+      maturity[Number(year)] = round(maturity[Number(year)]);
+    }
+
+    const initialNetInvestment = line.initialNetInvestment ?? 0;
+    rows.push({
+      id: line.id,
+      rentalAgreementId: line.rentalAgreementId,
+      rentalAgreementReadableId: agreement.rentalAgreementId,
+      customerName: agreement.customerName,
+      fixedAssetId: line.fixedAssetId,
+      unit:
+        [line.fixedAsset?.fixedAssetId, line.fixedAsset?.name]
+          .filter(Boolean)
+          .join(" · ") ||
+        line.item?.readableIdWithRevision ||
+        "",
+      serialNumber: line.fixedAsset?.serialNumber ?? null,
+      status: line.status,
+      initialNetInvestment,
+      postedPrincipal: round(postedPrincipal),
+      currentNetInvestment: round(initialNetInvestment - postedPrincipal),
+      nextInterestDate: next?.periodDate ?? null,
+      nextInterestAmount: next?.interestAmount ?? null,
+      maturityByFiscalYear: maturity,
+      closingTarget: lineSchedule.at(-1)?.closingNetInvestment ?? 0
+    });
+  }
+
+  rows.sort((a, b) => {
+    const left = a.rentalAgreementReadableId ?? "";
+    const right = b.rentalAgreementReadableId ?? "";
+    if (left !== right) return left < right ? -1 : 1;
+    return a.unit < b.unit ? -1 : a.unit > b.unit ? 1 : 0;
+  });
+
+  return {
+    data: {
+      asOf,
+      fiscalYears: [...fiscalYears].sort((a, b) => a - b),
+      rows
+    },
+    error: null
+  };
+}
+
 // -- Depreciation History for a single asset --
 
 export async function getAssetDepreciationHistory(
@@ -6372,6 +7193,167 @@ export async function upsertFixedAssetUsageLog(
     .insert([data as any])
     .select("id")
     .single();
+}
+
+// -- Fleet --
+
+export async function getFleetAssets(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: GenericQueryFilters & {
+    search: string | null;
+    fleetStatus: string | null;
+  }
+) {
+  let query = client
+    .from("fleetAssets")
+    .select("*", { count: LIST_COUNT })
+    .eq("companyId", companyId);
+
+  if (args.search) {
+    query = query.or(
+      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%,itemReadableId.ilike.%${args.search}%`
+    );
+  }
+
+  if (args.fleetStatus) {
+    query = query.eq("fleetStatus", args.fleetStatus);
+  }
+
+  query = setGenericQueryFilters(query, args, [
+    { column: "fixedAssetId", ascending: true }
+  ]);
+  return query;
+}
+
+export async function getUnderConstructionAssets(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("fixedAsset")
+    .select("id, fixedAssetId, name, acquisitionCost")
+    .eq("companyId", companyId)
+    .eq("status", "Under Construction")
+    .order("fixedAssetId");
+}
+
+export async function getFixedAssetTransfers(
+  client: SupabaseClient<Database>,
+  fixedAssetId: string
+) {
+  return client
+    .from("fixedAssetTransfer")
+    .select("*")
+    .eq("fixedAssetId", fixedAssetId)
+    .order("transferDate", { ascending: false });
+}
+
+export async function getFixedAssetCipCosts(
+  client: SupabaseClient<Database>,
+  fixedAssetId: string,
+  companyId: string
+) {
+  return client
+    .from("fixedAssetCipCost")
+    .select("*")
+    .eq("fixedAssetId", fixedAssetId)
+    .eq("companyId", companyId)
+    .order("costDate");
+}
+
+/**
+ * The capital tied up in a work center: every non-disposed asset assigned to
+ * it, with its net book value and — for straight-line assets — the
+ * depreciation it carries each month.
+ */
+export async function getWorkCenterCapitalCost(
+  client: SupabaseClient<Database>,
+  workCenterId: string,
+  companyId: string
+) {
+  const assets = await client
+    .from("fixedAsset")
+    .select(
+      "id, fixedAssetId, name, status, acquisitionCost, accumulatedDepreciation, depreciationMethod, usefulLifeMonths, residualValuePercent"
+    )
+    .eq("workCenterId", workCenterId)
+    .eq("companyId", companyId)
+    .neq("status", "Disposed");
+
+  if (assets.error) return { data: null, error: assets.error };
+
+  return {
+    data: assets.data.map((asset) => ({
+      ...asset,
+      netBookValue: asset.acquisitionCost - asset.accumulatedDepreciation,
+      monthlyDepreciation:
+        asset.depreciationMethod === "Straight Line" && asset.usefulLifeMonths
+          ? round(
+              (asset.acquisitionCost * (1 - asset.residualValuePercent / 100)) /
+                asset.usefulLifeMonths
+            )
+          : null
+    })),
+    error: null
+  };
+}
+
+export async function setFixedAssetOutOfService(
+  client: SupabaseClient<Database>,
+  {
+    id,
+    companyId,
+    reason,
+    since,
+    updatedBy
+  }: {
+    id: string;
+    companyId: string;
+    reason: string;
+    since: string;
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("fixedAsset")
+    .update({
+      outOfServiceSince: since,
+      outOfServiceReason: reason,
+      updatedBy
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function returnFixedAssetToService(
+  client: SupabaseClient<Database>,
+  {
+    id,
+    companyId,
+    updatedBy
+  }: { id: string; companyId: string; updatedBy: string }
+) {
+  return client
+    .from("fixedAsset")
+    .update({
+      outOfServiceSince: null,
+      outOfServiceReason: null,
+      updatedBy
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+export async function invokeAssetTransfer(
+  client: SupabaseClient<Database>,
+  body: Record<string, unknown>
+) {
+  return client.functions.invoke("post-asset-transfer", { body });
 }
 
 // /********************************************************\
