@@ -6187,6 +6187,9 @@ msgstr "Numero di Disegno"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Disegno sostituito. I posizionamenti dei palloncini sono stati rimossi; le righe delle funzioni rimangono invariate."
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "Spedizione diretta"
 
@@ -7861,6 +7864,9 @@ msgstr "Completare un prelievo incompleto"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Il completamento è rifiutato finché ogni riga non è prelevata o marcata come Esaurito."
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "Prima luce, {name}."
@@ -19121,6 +19127,9 @@ msgstr "Usa un'email diversa"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Utilizza il sistema metrico per le dimensioni predefinite dei materiali."
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "Utilizzato in"

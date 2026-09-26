@@ -6187,6 +6187,9 @@ msgstr "ड्राइंग नंबर"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "ड्रॉप शिपमेंट"
 
@@ -7861,6 +7864,9 @@ msgstr "एक अधूरी पिक को समाप्त करना"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "पहली रोशनी, {name}।"
@@ -19121,6 +19127,9 @@ msgstr "एक अलग ईमेल का उपयोग करें"
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "में उपयोग किया गया"

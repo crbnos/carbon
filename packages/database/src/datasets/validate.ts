@@ -2981,6 +2981,7 @@ export function purchasing(ctx: ValidationCtx): void {
 
   let eurPoCount = 0;
   let ospPoCount = 0;
+  const receiptCertificateNumbers = new Set<string>();
   for (const [index, po] of p.purchaseOrders.entries()) {
     const where = `purchasing.purchaseOrders[${index}]`;
     seenPurchasing.purchaseOrder.add(po.status);
@@ -3054,6 +3055,22 @@ export function purchasing(ctx: ValidationCtx): void {
         }
         if (line.toShelf !== undefined)
           need("shelf", `${where} receipt`, line.toShelf);
+        if (line.certificate !== undefined) {
+          const certWhere = `purchasing.${po.receipt.ref} line ${line.item}`;
+          if (!posted || line.receivedQuantity <= 0) {
+            fail(`${certWhere}: certificate needs a Posted, received line`);
+          }
+          const number = line.certificate.certificateNumber.trim();
+          if (number === "") {
+            fail(`${certWhere}: certificate has an empty certificateNumber`);
+          } else if (receiptCertificateNumbers.has(number)) {
+            fail(
+              `${certWhere}: certificateNumber "${number}" is used by another receipt certificate`
+            );
+          } else {
+            receiptCertificateNumbers.add(number);
+          }
+        }
         const tracking = trackingByItem.get(line.item);
         if (line.lotNumber !== undefined && tracking !== "Batch") {
           fail(
@@ -3128,6 +3145,9 @@ export function purchasing(ctx: ValidationCtx): void {
     fail(
       `purchasing.purchaseOrders: expected exactly 1 EUR order (the FX showcase), found ${eurPoCount}`
     );
+  }
+  if (receiptCertificateNumbers.size < 3) {
+    fail("purchasing: at least 3 receipt certificates required");
   }
 
   for (const ret of p.purchaseReturns) {

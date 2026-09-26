@@ -6187,6 +6187,9 @@ msgstr "图号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "直发"
 
@@ -7861,6 +7864,9 @@ msgstr "完成不完整的拣货"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "在所有行都被拣货或标记为短缺后才能完成。"
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "天明时刻，{name}。"
@@ -19121,6 +19127,9 @@ msgstr "使用不同的电子邮件"
 
 msgid "Use metric system for default material dimensions."
 msgstr "使用公制作为默认原材料尺寸。"
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "用于"

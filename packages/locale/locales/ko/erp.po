@@ -6187,6 +6187,9 @@ msgstr "도면 번호"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "직배송"
 
@@ -7861,6 +7864,9 @@ msgstr "불완전한 피킹 완료"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "{name}님, 새벽빛이군요."
@@ -19121,6 +19127,9 @@ msgstr "다른 이메일 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법 시스템 사용"
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "사용처"

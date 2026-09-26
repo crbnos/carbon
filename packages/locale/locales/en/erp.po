@@ -6187,6 +6187,9 @@ msgstr "Drawing Number"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 
+msgid "Drawing revision"
+msgstr "Drawing revision"
+
 msgid "Drop shipment"
 msgstr "Drop shipment"
 
@@ -7861,6 +7864,9 @@ msgstr "Finishing an incomplete pick"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Finishing is refused until every line is picked or marked Short."
+
+msgid "First Article"
+msgstr "First Article"
 
 msgid "First light, {name}."
 msgstr "First light, {name}."
@@ -19121,6 +19127,9 @@ msgstr "Use a different email"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Use metric system for default material dimensions."
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr "Used for first article inspections of this part. Supersedes the part's only plan."
 
 msgid "Used In"
 msgstr "Used In"

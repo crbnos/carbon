@@ -6187,6 +6187,9 @@ msgstr "Resim numarası"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "Doğrudan Sevkiyat"
 
@@ -7861,6 +7864,9 @@ msgstr "Eksik seçimi tamamlama"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Bitirme, her satır seçilene veya Kısa olarak işaretlenene kadar reddedilir."
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "İlk ışık, {name}."
@@ -19121,6 +19127,9 @@ msgstr "Farklı bir e-posta kullan"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Varsayılan malzeme boyutları için metrik sistemi kullanın."
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "Kullanıldığı Yer"

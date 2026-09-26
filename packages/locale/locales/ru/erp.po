@@ -6187,6 +6187,9 @@ msgstr "Номер чертежа"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "Прямая отправка"
 
@@ -7861,6 +7864,9 @@ msgstr "Завершение неполного подбора"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как 'Недостаточно'."
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "Первый свет, {name}."
@@ -19121,6 +19127,9 @@ msgstr "Использовать другой адрес электронной 
 
 msgid "Use metric system for default material dimensions."
 msgstr "Используйте метрическую систему для измерений материала по умолчанию."
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "Используется в"

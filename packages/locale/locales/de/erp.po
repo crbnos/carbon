@@ -6187,6 +6187,9 @@ msgstr "Zeichnungsnummer"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Zeichnung ersetzt. Ballonplatzierungen wurden entfernt; Funktionszeilen bleiben unverändert."
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "Direktversand"
 
@@ -7861,6 +7864,9 @@ msgstr "Fertigstellung einer unvollständigen Auswahl"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Das Abschließen wird verweigert, bis jede Zeile kommissioniert oder als Kurzbestand markiert ist."
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "Bei Tagesanbruch, {name}."
@@ -19121,6 +19127,9 @@ msgstr "Verwenden Sie eine andere E-Mail"
 
 msgid "Use metric system for default material dimensions."
 msgstr "Metrisches System für Standard-Materialdimensionen verwenden."
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "Verwendet in"

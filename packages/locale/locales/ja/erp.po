@@ -6187,6 +6187,9 @@ msgstr "図面番号"
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
 
+msgid "Drawing revision"
+msgstr ""
+
 msgid "Drop shipment"
 msgstr "ドロップシップメント"
 
@@ -7861,6 +7864,9 @@ msgstr "不完全なピック完了"
 
 msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
+
+msgid "First Article"
+msgstr ""
 
 msgid "First light, {name}."
 msgstr "夜明け、{name}さん。"
@@ -19121,6 +19127,9 @@ msgstr "別のメールアドレスを使用"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"
+
+msgid "Used for first article inspections of this part. Supersedes the part's only plan."
+msgstr ""
 
 msgid "Used In"
 msgstr "使用されている"
