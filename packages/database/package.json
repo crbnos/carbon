@@ -28,6 +28,7 @@
     "./picked-consumption": "./src/picked-consumption.ts",
     "./datasets": "./src/datasets/index.ts",
     "./event": "./src/event.ts",
+    "./first-article": "./src/first-article.ts",
     "./quality": "./src/quality.ts",
     "./ratelimit": "./src/ratelimit.ts",
     "./sampling": "./src/sampling.ts",

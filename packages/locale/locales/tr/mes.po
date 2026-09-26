@@ -102,6 +102,9 @@ msgstr "Hakkında"
 msgid "Accept"
 msgstr "Kabul Et"
 
+msgid "Accept first article?"
+msgstr "İlk makaleyi kabul et?"
+
 msgid "Accept Lot"
 msgstr "Lotu Kabul Et"
 
@@ -130,11 +133,17 @@ msgstr "Ekle"
 msgid "Add & Issue"
 msgstr "Ekle ve Çıkış Yap"
 
+msgid "Add a note to this reading"
+msgstr "Bu okumasına bir not ekle"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Etiketleri doğrudan yazdırmak için yazdırma ayarlarında bir yazıcı ekleyin."
 
 msgid "Add Inventory"
 msgstr "Envantere Ekle"
+
+msgid "Add note"
+msgstr "Not ekle"
 
 msgid "Add Sample"
 msgstr "Örnek Ekle"
@@ -166,6 +175,9 @@ msgstr "Başarısız birimleri tahsis et"
 
 msgid "Allocate units"
 msgstr "Birimleri tahsis et"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "izin verilen {allowableLabel} (bonus {bonusLabel})"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "Bu adımı silmek istediğinizden emin misiniz?"
@@ -507,6 +519,9 @@ msgstr "Her iş emrinin çıktısı kendi Lotu — her iş emrinin parçaların�
 msgid "Edit"
 msgstr "Düzenle"
 
+msgid "Edit note"
+msgstr "Notu düzenle"
+
 msgid "Elapsed"
 msgstr "Geçen süre"
 
@@ -638,6 +653,13 @@ msgstr "Hesabınızı ayarlamayı tamamlayın"
 msgid "Finish with material unpicked?"
 msgstr "Malzeme seçilmeden bitir?"
 
+msgid "First article"
+msgstr "İlk makale"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "{0} için ilk makale gerekli"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "İlk vade {0}"
@@ -691,8 +713,14 @@ msgstr "{0} içinde"
 msgid "In Progress"
 msgstr "Devam Ediyor"
 
+msgid "Inspect"
+msgstr "Muayene et"
+
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Geri kalanını çalıştırmadan önce ilk birimi her bir özellikte muayene edin."
 
 msgid "inspected"
 msgstr "incelendi"
@@ -1055,6 +1083,9 @@ msgstr "Çalışma merkezi bulunmamaktadır"
 msgid "None"
 msgstr "Hiçbiri"
 
+msgid "Note"
+msgstr "Not"
+
 msgid "Notes"
 msgstr "Notlar"
 
@@ -1298,6 +1329,9 @@ msgstr "Kaydedildi"
 
 msgid "Reject"
 msgstr "Reddet"
+
+msgid "Reject first article?"
+msgstr "İlk makaleyi reddet?"
 
 msgid "Reject Lot"
 msgstr "Lotu Reddet"
@@ -1612,6 +1646,12 @@ msgstr "Etiket"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "İlk makale başarısız olarak işaretlenecek ve sonuçları kilitli olacak. Hiç bir miktar kaydedilmeyecektir."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "İlk makale geçti olarak işaretlenecek ve sonuçları kilitli olacak. Hiç bir miktar kaydedilmeyecektir."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Bu çalıştırmayı oluşturan iş emirleri ve parçalar."

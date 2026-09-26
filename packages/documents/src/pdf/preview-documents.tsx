@@ -1,5 +1,7 @@
 import type { ComponentType } from "react";
 import type { DocumentTemplateType } from "../template";
+import CertificateOfConformancePDF from "./CertificateOfConformancePDF";
+import { SAMPLE_CERTIFICATE_OF_CONFORMANCE } from "./certificateOfConformance.samples";
 import IssuePDF from "./IssuePDF";
 import { SAMPLE_ISSUE } from "./issue.samples";
 import JobTravelerPDF from "./JobTravelerPDF";
@@ -56,6 +58,10 @@ export const DOCUMENT_PDFS: Record<DocumentTemplateType, PreviewEntry> = {
     sample: SAMPLE_JOB_TRAVELER
   },
   issue: { Component: IssuePDF, sample: SAMPLE_ISSUE },
+  certificateOfConformance: {
+    Component: CertificateOfConformancePDF,
+    sample: SAMPLE_CERTIFICATE_OF_CONFORMANCE
+  },
   trackingLabel: {
     Component: ProductLabelPDF,
     sample: SAMPLE_TRACKING_LABEL

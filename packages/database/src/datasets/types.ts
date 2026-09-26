@@ -951,6 +951,15 @@ export type ReceiptSpec = {
      */
     lotNumber?: string;
     lotExpiresOffset?: DayOffset;
+    /**
+     * Supplier certificate attached to this receipt line (a `certificate` row).
+     * Only on a Posted line with receivedQuantity > 0.
+     */
+    certificate?: {
+      type: "Material" | "Special Process" | "Functional Test" | "Other";
+      certificateNumber: string;
+      specification?: string;
+    };
   }[];
 };
 

@@ -102,6 +102,9 @@ msgstr "Acerca de"
 msgid "Accept"
 msgstr "Aceptar"
 
+msgid "Accept first article?"
+msgstr "¿Aceptar primera pieza?"
+
 msgid "Accept Lot"
 msgstr "Aceptar lote"
 
@@ -130,11 +133,17 @@ msgstr "Agregar"
 msgid "Add & Issue"
 msgstr "Agregar y emitir"
 
+msgid "Add a note to this reading"
+msgstr "Agregar una nota a esta lectura"
+
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Agregue una impresora en la configuración de impresión para imprimir etiquetas directamente."
 
 msgid "Add Inventory"
 msgstr "Agregar inventario"
+
+msgid "Add note"
+msgstr "Agregar nota"
 
 msgid "Add Sample"
 msgstr "Agregar muestra"
@@ -166,6 +175,9 @@ msgstr "Asignar unidades fallidas"
 
 msgid "Allocate units"
 msgstr "Asignar unidades"
+
+msgid "allowable {allowableLabel} (bonus {bonusLabel})"
+msgstr "permitido {allowableLabel} (bonificación {bonusLabel})"
 
 msgid "Are you sure you want to delete this step?"
 msgstr "¿Está seguro de que desea eliminar este paso?"
@@ -507,6 +519,9 @@ msgstr "La salida de cada orden de trabajo es su propio lote: mantén las piezas
 msgid "Edit"
 msgstr "Editar"
 
+msgid "Edit note"
+msgstr "Editar nota"
+
 msgid "Elapsed"
 msgstr "Tiempo transcurrido"
 
@@ -638,6 +653,13 @@ msgstr "Finalizar la configuración de su cuenta"
 msgid "Finish with material unpicked?"
 msgstr "¿Finalizar con material sin recoger?"
 
+msgid "First article"
+msgstr "Primera pieza"
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr "Primera pieza requerida para {0}"
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Primer vencimiento {0}"
@@ -691,8 +713,14 @@ msgstr "en {0}"
 msgid "In Progress"
 msgstr "En curso"
 
+msgid "Inspect"
+msgstr "Inspeccionar"
+
 msgid "Inspect Item"
 msgstr "Inspeccionar artículo"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr "Inspeccionar la primera unidad en cada característica antes de procesar el resto."
 
 msgid "inspected"
 msgstr "inspeccionado"
@@ -1055,6 +1083,9 @@ msgstr "No existen centros de trabajo"
 msgid "None"
 msgstr "Ninguno"
 
+msgid "Note"
+msgstr "Nota"
+
 msgid "Notes"
 msgstr "Notas"
 
@@ -1298,6 +1329,9 @@ msgstr "Registrado"
 
 msgid "Reject"
 msgstr "Rechazar"
+
+msgid "Reject first article?"
+msgstr "¿Rechazar primera pieza?"
 
 msgid "Reject Lot"
 msgstr "Rechazar lote"
@@ -1612,6 +1646,12 @@ msgstr "Etiqueta"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr "La primera pieza se marcará como Rechazada y sus resultados se bloquearán. No se registran cantidades."
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr "La primera pieza se marcará como Superada y sus resultados se bloquearán. No se registran cantidades."
 
 msgid "The jobs and parts that make up this run."
 msgstr "Las órdenes de trabajo y piezas que componen esta ejecución."

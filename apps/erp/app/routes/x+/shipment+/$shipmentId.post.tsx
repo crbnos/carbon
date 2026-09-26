@@ -15,17 +15,24 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { datetime } from "@carbon/utils";
+import { datetime, getPreferenceHeaders } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
+import { getCertificateOfConformanceDefaults } from "~/modules/inventory";
+import {
+  emailIntegrationActive,
+  issueCertificateOfConformance,
+  sendCertificateOfConformance
+} from "~/modules/inventory/inventory.server";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -264,6 +271,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   /** Set by the catch below when the post was rolled back to Draft. */
   let reverted = false;
+  /** The auto-issued certificate's outcome, reported with the post. */
+  let certificateOutcome: { ok: boolean; message: string } | null = null;
 
   try {
     // Get shipment details to check if it's related to a sales order
@@ -453,14 +462,126 @@ export async function action({ request, params }: ActionFunctionArgs) {
       shipmentId,
       sourceDocument: shipmentForSurface?.sourceDocument ?? null
     });
+
+    certificateOutcome = await autoIssueCertificateOfConformance(request, {
+      client,
+      companyId,
+      shipmentId,
+      userId
+    });
   }
 
-  if (expiredWarning) {
+  // One flash per response: the expired-batch warning and the certificate
+  // outcome share it.
+  const messages = [expiredWarning, certificateOutcome?.message].filter(
+    (message): message is string => !!message
+  );
+  if (messages.length > 0) {
+    const message = messages.join(" ");
     throw redirect(
       path.to.shipmentDetails(shipmentId),
-      await flash(request, success(expiredWarning))
+      await flash(
+        request,
+        certificateOutcome && !certificateOutcome.ok
+          ? error(null, message)
+          : success(message)
+      )
     );
   }
 
   throw redirect(path.to.shipmentDetails(shipmentId));
+}
+
+/**
+ * Issue (and email) the Certificate of Conformance a customer requires on
+ * every shipment. Runs after a post that stuck and never changes its result:
+ * every failure is reported, not thrown. Emails only when the company's email
+ * integration is active — the same gate as the manual Send.
+ */
+async function autoIssueCertificateOfConformance(
+  request: Request,
+  args: {
+    client: Parameters<typeof getCertificateOfConformanceDefaults>[0];
+    companyId: string;
+    shipmentId: string;
+    userId: string;
+  }
+): Promise<{ ok: boolean; message: string } | null> {
+  const { client, companyId, shipmentId, userId } = args;
+  try {
+    const defaults = await getCertificateOfConformanceDefaults(
+      client,
+      companyId,
+      shipmentId
+    );
+    if (defaults.error) {
+      logger.error("Failed to read certificate requirements", {
+        shipmentId,
+        error: defaults.error
+      });
+      return null;
+    }
+    if (!defaults.data.requiresCertificateOfConformance) return null;
+
+    const { locale } = getPreferenceHeaders(request);
+    const issued = await issueCertificateOfConformance(
+      getDatabaseClient(),
+      client,
+      { companyId, shipmentId, userId, locale }
+    );
+    if (issued.error) {
+      return {
+        ok: false,
+        message: `Shipment posted, but the certificate could not be issued: ${issued.error.message}`
+      };
+    }
+
+    const number = issued.data.number;
+    const contactId = defaults.data.shippingCustomerContactId;
+    if (!contactId) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: the customer has no shipping contact)`
+      };
+    }
+
+    if (!(await emailIntegrationActive(client, companyId))) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: the email integration is not active)`
+      };
+    }
+
+    const sent = await sendCertificateOfConformance(client, {
+      companyId,
+      shipmentId,
+      userId,
+      certificateOfConformanceId: issued.data.id,
+      customerContactId: contactId,
+      locale,
+      content: issued.data.content
+    });
+    if (sent.error) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: ${sent.error.message})`
+      };
+    }
+
+    return {
+      ok: true,
+      message: `Certificate of Conformance ${number} issued and emailed to ${sent.data.to.join(", ")}`
+    };
+  } catch (err) {
+    logger.error("Failed to auto-issue certificate of conformance", {
+      shipmentId,
+      error: err
+    });
+    return {
+      ok: false,
+      message: `Shipment posted, but the certificate could not be issued: ${
+        err instanceof Error ? err.message : "unexpected error"
+      }`
+    };
+  }
 }

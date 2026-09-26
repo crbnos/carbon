@@ -139,6 +139,18 @@ export async function runTier5(ctx: Ctx): Promise<void> {
         // Receipt lines by (receipt, item) — quality inspects one (tier 07).
         ctx.refs.documents[`rline:${spec.receipt.ref}:${line.item}`] =
           receiptLineId;
+        // Supplier certificate received with the goods (mill cert / CofC).
+        if (posted && line.receivedQuantity > 0 && line.certificate) {
+          await insertRow(ctx, "certificate", {
+            companyId,
+            type: line.certificate.type,
+            certificateNumber: line.certificate.certificateNumber,
+            specification: line.certificate.specification ?? null,
+            supplierId,
+            receiptLineId,
+            createdBy: userId
+          });
+        }
         if (posted && line.receivedQuantity > 0) {
           let trackedEntityId: string | undefined;
           if (line.requiresBatchTracking) {

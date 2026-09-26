@@ -2296,3 +2296,46 @@ function as `anon` and as another company's user, not by reading the catalog. Ed
 **Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
 `packages/database/supabase/functions/*/index.ts`; enforced by the
 `public-definer-function-authorizes-caller` invariant and `supabase/tests/rpc-privileges.test.sql`.
+
+## Tracked-entity "descendants" are what a part was made FROM
+
+**Context:** Building the certification lineage for Certificates of Conformance and FAI
+Form 2 — from a shipped or consumed lot back to the received lots and their supplier
+certificates.
+
+**Problem:** Carbon names lineage from the assembly down. `get_direct_descendants_of_tracked_entit{y,ies}_strict`
+finds the activity that OUTPUT the entity and returns that activity's INPUTS (the lots it
+was consumed from, or split from); `..._ancestors_...` returns the OUTPUTS of activities
+that consumed it. Reading the names as family-tree words ("ancestors = where it came
+from") walks forward into shipments and finds no received lot, so every certificate
+reads "missing". `.claude/rules/traceability-model.md` itself stated the inverted
+meaning until this was verified against the SQL.
+
+**Rule:** To answer "what did this part consume / where did it come from", walk
+`get_direct_descendants_of_tracked_entities_strict`. Before relying on either RPC, read
+its join in `20260430090114_lineage-batch-rpcs.sql` (seed joined on
+`trackedActivityOutput` ⇒ returns inputs) instead of trusting the name.
+
+**Applies to:** `getCertificationLineage` (`apps/erp/app/modules/quality/quality.service.ts`),
+MES `getTrackedInputs`, `apps/erp/app/modules/inventory/lineage.server.ts`, and any new
+genealogy walk.
+
+## In a git worktree, the pre-commit hook can stage files at the wrong path
+
+**Context:** Committing a migration from a git worktree (Conductor workspace). The
+pre-commit hook runs `pnpm db:check:backups -- --stage`, and `check-backups.ts`
+regenerates `packages/jobs/manifests/schema.json` then runs `git add <absolute path>`.
+
+**Problem:** The script runs from `packages/jobs` with the hook's `GIT_DIR` /
+`GIT_INDEX_FILE` exported, and in a worktree that `git add` staged the manifest as the
+root-level `manifests/schema.json` — a new stray file — while the real baseline stayed
+stale. Separately, the hook's `git add packages/locale/locales/**/*.po` stages EVERY
+modified catalog, so extracted strings from unrelated work ride along on the commit.
+
+**Rule:** After any commit that touches `packages/database/supabase/migrations/`, run
+`git show --stat HEAD` and confirm the manifest landed at
+`packages/jobs/manifests/schema.json` (and that no root `manifests/` path exists); if not,
+move it and amend. Check the same stat for `.po` files you did not mean to commit.
+
+**Applies to:** `.husky/pre-commit`, `packages/jobs/src/scripts/check-backups.ts`
+(`writeSchemaFile`), commits made from worktrees.

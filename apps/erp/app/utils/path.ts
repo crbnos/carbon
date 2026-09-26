@@ -516,6 +516,9 @@ export const path = {
       generatePath(`${x}/settings/company/switch/${companyId}`),
     completeTrainingAssignment: (id: string) =>
       generatePath(`${share}/training/${id}`),
+    complianceStatement: (id: string) =>
+      generatePath(`${x}/quality/compliance-statements/${id}`),
+    complianceStatements: `${x}/quality/compliance-statements`,
     configurationParameter: (itemId: string) =>
       generatePath(`${x}/part/${itemId}/parameter`),
     configurationParameterGroup: (itemId: string) =>
@@ -664,6 +667,8 @@ export const path = {
       generatePath(`${x}/items/change-notice-types/delete/${id}`),
     deleteCompany: (id: string) =>
       generatePath(`${x}/settings/companies/delete/${id}`),
+    deleteComplianceStatement: (id: string) =>
+      generatePath(`${x}/quality/compliance-statements/delete/${id}`),
     deleteConfigurationParameter: (itemId: string, id: string) =>
       generatePath(`${x}/part/${itemId}/parameter/delete/${id}`),
     deleteConfigurationParameterGroup: (itemId: string, id: string) =>
@@ -716,6 +721,9 @@ export const path = {
       generatePath(`${x}/accounting/exchange-rates/delete/${id}`),
     deleteFailureMode: (id: string) =>
       generatePath(`${x}/resources/failure-modes/delete/${id}`),
+    // First Article Inspections (AS9102)
+    deleteFirstArticle: (id: string) =>
+      generatePath(`${x}/first-article/delete/${id}`),
     deleteFixedAsset: (id: string) =>
       generatePath(`${x}/fixed-asset/${id}/delete`),
     deleteGauge: (id: string) =>
@@ -1009,6 +1017,8 @@ export const path = {
     file: {
       batchList: (id: string) => generatePath(`${file}/batch/${id}.pdf`),
       cadModel: (id: string) => generatePath(`${file}/model/${id}`),
+      firstArticle: (id: string) =>
+        generatePath(`${file}/first-article/${id}.pdf`),
       jobTraveler: (id: string) => generatePath(`${file}/traveler/${id}.pdf`),
       jobTravelerByJobId: (jobId: string) =>
         generatePath(`${file}/job/${jobId}/traveler.pdf`),
@@ -1107,6 +1117,10 @@ export const path = {
       salesReturnOrder: (id: string) =>
         generatePath(`${file}/sales-return-order/${id}.pdf`),
       shipment: (id: string) => generatePath(`${file}/shipment/${id}.pdf`),
+      shipmentCertificate: (id: string) =>
+        generatePath(`${file}/shipment/${id}/certificate.pdf`),
+      shipmentCertificateRevision: (id: string, revision: number) =>
+        generatePath(`${file}/shipment/${id}/certificate/${revision}.pdf`),
       shipmentLabelsPdf: (
         id: string,
         { labelSize, lineId }: { labelSize?: string; lineId?: string } = {}
@@ -1216,6 +1230,26 @@ export const path = {
         return generatePath(url);
       }
     },
+    firstArticle: (id: string) => generatePath(`${x}/first-article/${id}`),
+    firstArticleApprove: (id: string) =>
+      generatePath(`${x}/first-article/${id}/approve`),
+    firstArticleCertificates: (id: string) =>
+      generatePath(`${x}/first-article/${id}/certificates/new`),
+    firstArticleCustomerApproval: (id: string) =>
+      generatePath(`${x}/first-article/${id}/customer-approval`),
+    firstArticleHeader: (id: string) =>
+      generatePath(`${x}/first-article/${id}/header`),
+    firstArticleProductDelete: (id: string, productId: string) =>
+      generatePath(`${x}/first-article/${id}/products/${productId}/delete`),
+    firstArticleProducts: (id: string) =>
+      generatePath(`${x}/first-article/${id}/products`),
+    firstArticleRefresh: (id: string) =>
+      generatePath(`${x}/first-article/${id}/refresh`),
+    firstArticleReopen: (id: string) =>
+      generatePath(`${x}/first-article/${id}/reopen`),
+    firstArticles: `${x}/quality/first-articles`,
+    firstArticleVerify: (id: string) =>
+      generatePath(`${x}/first-article/${id}/verify`),
     fiscalYears: `${x}/accounting/years`,
     fixedAsset: (id: string) => generatePath(`${x}/fixed-asset/${id}`),
     fixedAssetDetails: (id: string) =>
@@ -1533,6 +1567,7 @@ export const path = {
     newChartOfAccountGroup: `${x}/accounting/charts/new-group`,
     newCompany: `${x}/settings/company/new`,
     newCompanyInGroup: `${x}/settings/companies/new`,
+    newComplianceStatement: `${x}/quality/compliance-statements/new`,
     newConsumable: `${x}/consumable/new`,
     newConsumableSupplier: (id: string) =>
       generatePath(`${x}/consumable/${id}/purchasing/new`),
@@ -1564,6 +1599,7 @@ export const path = {
     newEmployeeType: `${x}/users/employee-types/new`,
     newExchangeRate: `${x}/accounting/exchange-rates/new`,
     newFailureMode: `${x}/resources/failure-modes/new`,
+    newFirstArticle: `${x}/first-article/new`,
     newFixedAsset: `${x}/accounting/fixed-assets/new`,
     newFixture: `${x}/fixture/new`,
     newFixtureSupplier: (id: string) =>
@@ -2004,6 +2040,8 @@ export const path = {
     receiptDetails: (id: string) => generatePath(`${x}/receipt/${id}/details`),
     receiptFixedAssetLineUpdate: `${x}/receipt/fixed-asset-lines/update`,
     receiptInvoice: (id: string) => generatePath(`${x}/receipt/${id}/invoice`),
+    receiptLineCertificates: (lineId: string) =>
+      generatePath(`${x}/receipt/lines/${lineId}/certificates`),
     receiptLineDelete: (id: string) =>
       generatePath(`${x}/receipt/lines/${id}/delete`),
     receiptLineSplit: `${x}/receipt/lines/split`,
@@ -2170,6 +2208,10 @@ export const path = {
     shift: (id: string) => generatePath(`${x}/people/shifts/${id}`),
     shifts: `${x}/people/shifts`,
     shipment: (id: string) => generatePath(`${x}/shipment/${id}`),
+    shipmentCertificate: (id: string) =>
+      generatePath(`${x}/shipment/${id}/certificate`),
+    shipmentCertificateSend: (id: string, certificateId: string) =>
+      generatePath(`${x}/shipment/${id}/certificate/${certificateId}/send`),
     shipmentDetails: (id: string) =>
       generatePath(`${x}/shipment/${id}/details`),
     shipmentFixedAssetLineUpdate: `${x}/shipment/fixed-asset-lines/update`,

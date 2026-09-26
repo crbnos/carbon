@@ -1,5 +1,10 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import {
+  evaluateFirstArticleDue,
+  type FirstArticleReason
+} from "@carbon/database/first-article";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
@@ -10,11 +15,26 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { CertificationLineageRow } from "./certificationLineage";
+import { dedupeLineageRows, findReceivedRoots } from "./certificationLineage";
+import type {
+  FirstArticleFeature,
+  FirstArticleMeasurement
+} from "./firstArticleRows";
+import {
+  buildForm3Rows,
+  duplicateNumbers,
+  indexPartType
+} from "./firstArticleRows";
 
 const logger = getLogger("erp", "quality");
 
 import type { inspectionStatus } from "../shared";
 import type {
+  certificateValidator,
+  complianceStatementValidator,
+  firstArticleCustomerApprovalValidator,
+  firstArticleInspectionHeaderValidator,
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
@@ -33,6 +53,8 @@ import type {
   riskSource,
   riskStatus
 } from "./quality.models";
+import type { Certificate } from "./types";
+
 export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -51,6 +73,30 @@ export async function deactivateGauge(
     .from("gauges")
     .update({ gaugeStatus: "Inactive" })
     .eq("id", gaugeId);
+}
+
+export async function deleteCertificate(
+  client: SupabaseClient<Database>,
+  certificateId: string,
+  companyId: string
+) {
+  return client
+    .from("certificate")
+    .delete()
+    .eq("id", certificateId)
+    .eq("companyId", companyId);
+}
+
+export async function deleteComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .delete()
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId);
 }
 
 export async function deleteGauge(
@@ -248,6 +294,619 @@ export async function getIssueFromExternalLink(
     .select("*, nonConformance(*)")
     .eq("id", id)
     .single();
+}
+
+/**
+ * Certificates attached to any of the given receipt lines or job operations
+ * (or with any of the given ids). Filters are OR-ed; a filter passed as an
+ * empty array matches nothing.
+ */
+export async function getCertificates(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: {
+    receiptLineIds?: string[];
+    jobOperationIds?: string[];
+    ids?: string[];
+  } = {}
+) {
+  let query = client
+    .from("certificate")
+    .select("*, supplier(id, name), document(id, name, path)")
+    .eq("companyId", companyId);
+
+  const clauses: string[] = [];
+  if (args.receiptLineIds?.length) {
+    clauses.push(`receiptLineId.in.(${args.receiptLineIds.join(",")})`);
+  }
+  if (args.jobOperationIds?.length) {
+    clauses.push(`jobOperationId.in.(${args.jobOperationIds.join(",")})`);
+  }
+  if (args.ids?.length) {
+    clauses.push(`id.in.(${args.ids.join(",")})`);
+  }
+
+  const filtered =
+    args.receiptLineIds !== undefined ||
+    args.jobOperationIds !== undefined ||
+    args.ids !== undefined;
+
+  if (clauses.length > 0) {
+    query = query.or(clauses.join(","));
+  } else if (filtered) {
+    query = query.in("id", []);
+  }
+
+  return query
+    .order("createdAt", { ascending: true })
+    .order("id", { ascending: true });
+}
+
+export async function getComplianceStatement(
+  client: SupabaseClient<Database>,
+  complianceStatementId: string,
+  companyId: string
+) {
+  return client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)")
+    .eq("id", complianceStatementId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+export async function getComplianceStatements(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & { search: string | null }
+) {
+  let query = client
+    .from("complianceStatement")
+    .select("*, complianceStatementAssignment(customerId, itemId)", {
+      count: "exact"
+    })
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.ilike("name", `%${args.search}%`);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "name", ascending: true }
+    ]);
+  }
+
+  return query;
+}
+
+/**
+ * The active statements a shipment's certificate prints: every statement that
+ * applies to all customers, plus those assigned to the customer or to any of
+ * the shipped items — each once, ordered by name.
+ */
+export async function getComplianceStatementsForShipment(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { customerId: string | null; itemIds: string[] }
+) {
+  const itemIds = [...new Set(args.itemIds)];
+  const targets: string[] = [];
+  if (args.customerId) targets.push(`customerId.eq.${args.customerId}`);
+  if (itemIds.length > 0) targets.push(`itemId.in.(${itemIds.join(",")})`);
+
+  let assignedIds: string[] = [];
+  if (targets.length > 0) {
+    const assignments = await client
+      .from("complianceStatementAssignment")
+      .select("complianceStatementId")
+      .eq("companyId", companyId)
+      .or(targets.join(","));
+    if (assignments.error) return { data: null, error: assignments.error };
+    assignedIds = [
+      ...new Set(
+        (assignments.data ?? []).map((row) => row.complianceStatementId)
+      )
+    ];
+  }
+
+  const applies =
+    assignedIds.length > 0
+      ? `appliesToAllCustomers.eq.true,id.in.(${assignedIds.join(",")})`
+      : "appliesToAllCustomers.eq.true";
+
+  return client
+    .from("complianceStatement")
+    .select("id, name, content")
+    .eq("companyId", companyId)
+    .eq("active", true)
+    .or(applies)
+    .order("name", { ascending: true });
+}
+
+type LineageSupplier = { id: string; name: string } | null;
+
+/**
+ * The certificates behind a set of tracked entities (CofC: the shipped lots)
+ * or a job (FAI Form 2), per §2 of the CofC/FAI spec. Rows without a
+ * certificate come back `missing: true` so the documents can say so.
+ *
+ * - Materials: the start entities are walked back through their lineage to
+ *   the lots that were received; each receipt line yields its certificates,
+ *   or a missing row.
+ * - Job input only: Outside Processing operations yield the certificates on
+ *   the receipt lines of their purchase order lines (outside-processing
+ *   receipts write no tracked entities, so this path goes through the PO
+ *   link) or the certificates attached to the operation itself, else a missing
+ *   row; certificates on every operation of the job; and a missing row per
+ *   untracked Material the make method consumes.
+ */
+export async function getCertificationLineage(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  input:
+    | { trackedEntityIds: string[] }
+    | { jobId: string; jobMakeMethodId?: string; trackedEntityId?: string }
+): Promise<
+  | { data: CertificationLineageRow[]; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const rows: CertificationLineageRow[] = [];
+
+  // ── start entities ────────────────────────────────────────────────────
+  let startIds: string[];
+  if ("trackedEntityIds" in input) {
+    startIds = input.trackedEntityIds;
+  } else {
+    const consumed = await fetchAllFromTable<{ trackedEntityId: string }>(
+      client,
+      "itemLedger",
+      "trackedEntityId",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("documentType", "Job Consumption")
+          .eq("documentId", input.jobId)
+          .not("trackedEntityId", "is", null)
+          .order("id")
+    );
+    if (consumed.error) return { data: null, error: consumed.error };
+    startIds = consumed.data.map((row) => row.trackedEntityId);
+    if (input.trackedEntityId) startIds.push(input.trackedEntityId);
+  }
+  startIds = [...new Set(startIds)];
+
+  // ── materials: lineage back to the received lots ──────────────────────
+  if (startIds.length > 0) {
+    const start = await client
+      .from("trackedEntity")
+      .select("id, attributes")
+      .in("id", startIds)
+      .eq("companyId", companyId);
+    if (start.error) return { data: null, error: start.error };
+
+    let walkError: PostgrestError | null = null;
+    const roots = await findReceivedRoots(
+      (start.data ?? []).map((entity) => ({
+        id: entity.id,
+        attributes: asAttributes(entity.attributes)
+      })),
+      async (ids) => {
+        // Carbon names lineage from the assembly down: the "descendants" of an
+        // entity are the inputs of the activity that produced it — the lots it
+        // was consumed from, or the parent it was split from. That is the
+        // backwards ("where from") direction this walk needs.
+        const result = await client.rpc(
+          "get_direct_descendants_of_tracked_entities_strict",
+          { p_tracked_entity_ids: ids }
+        );
+        if (result.error) {
+          walkError = result.error;
+          return [];
+        }
+        return (result.data ?? []).map((edge) => ({
+          sourceEntityId: edge.sourceEntityId,
+          id: edge.id,
+          attributes: asAttributes(edge.attributes)
+        }));
+      }
+    );
+    if (walkError) return { data: null, error: walkError };
+
+    const receiptLineIds = [...roots.keys()];
+    const rootIds = [...roots.values()].flat();
+
+    if (receiptLineIds.length > 0) {
+      const [certificates, receiptLines, rootEntities] = await Promise.all([
+        getCertificates(client, companyId, { receiptLineIds }),
+        client
+          .from("receiptLine")
+          .select("id, receipt(supplierId, supplier(id, name))")
+          .in("id", receiptLineIds)
+          .eq("companyId", companyId),
+        client
+          .from("trackedEntity")
+          .select("id, item(name)")
+          .in("id", rootIds)
+          .eq("companyId", companyId)
+      ]);
+      if (certificates.error) return { data: null, error: certificates.error };
+      if (receiptLines.error) return { data: null, error: receiptLines.error };
+      if (rootEntities.error) return { data: null, error: rootEntities.error };
+
+      const supplierByLine = new Map<string, LineageSupplier>(
+        (receiptLines.data ?? []).map((line) => [
+          line.id,
+          line.receipt?.supplier ?? null
+        ])
+      );
+      const itemNameByEntity = new Map(
+        (rootEntities.data ?? []).map((entity) => [
+          entity.id,
+          entity.item?.name ?? null
+        ])
+      );
+
+      for (const [receiptLineId, entityIds] of roots) {
+        const name =
+          entityIds
+            .map((id) => itemNameByEntity.get(id))
+            .find((itemName) => !!itemName) ?? "";
+        const supplier = supplierByLine.get(receiptLineId) ?? null;
+        const lineCertificates = (certificates.data ?? []).filter(
+          (certificate) => certificate.receiptLineId === receiptLineId
+        );
+
+        if (lineCertificates.length === 0) {
+          rows.push({
+            kind: "Material",
+            name,
+            specification: null,
+            supplierId: supplier?.id ?? null,
+            supplierName: supplier?.name ?? null,
+            certificateId: null,
+            certificateNumber: null,
+            documentId: null,
+            receiptLineId,
+            jobOperationId: null,
+            trackedEntityIds: entityIds,
+            missing: true
+          });
+          continue;
+        }
+
+        for (const certificate of lineCertificates) {
+          rows.push(
+            certificateLineageRow(certificate, {
+              name,
+              supplier,
+              receiptLineId,
+              jobOperationId: null,
+              trackedEntityIds: entityIds
+            })
+          );
+        }
+      }
+    }
+  }
+
+  if ("trackedEntityIds" in input) {
+    return { data: dedupeLineageRows(rows), error: null };
+  }
+
+  // ── job: special processes, operation certificates, untracked materials ─
+  let operationsQuery = client
+    .from("jobOperation")
+    .select("id, operationType, description, process(name)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  let materialsQuery = client
+    .from("jobMaterial")
+    .select("id, item(name, type, itemTrackingType)")
+    .eq("jobId", input.jobId)
+    .eq("companyId", companyId);
+  if (input.jobMakeMethodId) {
+    operationsQuery = operationsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+    materialsQuery = materialsQuery.eq(
+      "jobMakeMethodId",
+      input.jobMakeMethodId
+    );
+  }
+
+  const [operations, materials] = await Promise.all([
+    operationsQuery.order("order"),
+    materialsQuery.order("order")
+  ]);
+  if (operations.error) return { data: null, error: operations.error };
+  if (materials.error) return { data: null, error: materials.error };
+
+  const operationIds = (operations.data ?? []).map((op) => op.id);
+  const outsideOperations = (operations.data ?? []).filter(
+    (op) => op.operationType === "Outside Processing"
+  );
+  const operationName = new Map(
+    (operations.data ?? []).map((op) => [
+      op.id,
+      op.process?.name ?? op.description ?? ""
+    ])
+  );
+
+  const [operationCertificates, purchaseOrderLines] = await Promise.all([
+    getCertificates(client, companyId, { jobOperationIds: operationIds }),
+    client
+      .from("purchaseOrderLine")
+      .select(
+        "id, jobOperationId, purchaseOrder(supplierId, supplier(id, name))"
+      )
+      .in(
+        "jobOperationId",
+        outsideOperations.map((op) => op.id)
+      )
+      .eq("companyId", companyId)
+  ]);
+  if (operationCertificates.error) {
+    return { data: null, error: operationCertificates.error };
+  }
+  if (purchaseOrderLines.error) {
+    return { data: null, error: purchaseOrderLines.error };
+  }
+
+  const purchaseOrderLineIds = (purchaseOrderLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processReceiptLines =
+    purchaseOrderLineIds.length > 0
+      ? await client
+          .from("receiptLine")
+          .select("id, lineId")
+          .in("lineId", purchaseOrderLineIds)
+          .eq("companyId", companyId)
+      : { data: [] as { id: string; lineId: string | null }[], error: null };
+  if (processReceiptLines.error) {
+    return { data: null, error: processReceiptLines.error };
+  }
+
+  const processReceiptLineIds = (processReceiptLines.data ?? []).map(
+    (line) => line.id
+  );
+  const processCertificates =
+    processReceiptLineIds.length > 0
+      ? await getCertificates(client, companyId, {
+          receiptLineIds: processReceiptLineIds
+        })
+      : { data: [] as Certificate[], error: null };
+  if (processCertificates.error) {
+    return { data: null, error: processCertificates.error };
+  }
+
+  for (const operation of outsideOperations) {
+    const name = operationName.get(operation.id) ?? "";
+    const poLines = (purchaseOrderLines.data ?? []).filter(
+      (line) => line.jobOperationId === operation.id
+    );
+    const poLineIds = new Set(poLines.map((line) => line.id));
+    const receiptLineIds = new Set(
+      (processReceiptLines.data ?? [])
+        .filter((line) => line.lineId && poLineIds.has(line.lineId))
+        .map((line) => line.id)
+    );
+    const supplier = poLines[0]?.purchaseOrder?.supplier ?? null;
+    const certificates = (processCertificates.data ?? []).filter(
+      (certificate) =>
+        certificate.receiptLineId &&
+        receiptLineIds.has(certificate.receiptLineId)
+    );
+    const attachedToOperation = (operationCertificates.data ?? []).some(
+      (certificate) => certificate.jobOperationId === operation.id
+    );
+
+    for (const certificate of certificates) {
+      rows.push(
+        certificateLineageRow(certificate, {
+          name,
+          supplier,
+          receiptLineId: certificate.receiptLineId,
+          jobOperationId: operation.id,
+          trackedEntityIds: []
+        })
+      );
+    }
+
+    if (certificates.length === 0 && !attachedToOperation) {
+      rows.push({
+        kind: "Special Process",
+        name,
+        specification: null,
+        supplierId: supplier?.id ?? null,
+        supplierName: supplier?.name ?? null,
+        certificateId: null,
+        certificateNumber: null,
+        documentId: null,
+        receiptLineId: null,
+        jobOperationId: operation.id,
+        trackedEntityIds: [],
+        missing: true
+      });
+    }
+  }
+
+  for (const certificate of operationCertificates.data ?? []) {
+    rows.push(
+      certificateLineageRow(certificate, {
+        name: operationName.get(certificate.jobOperationId ?? "") ?? "",
+        supplier: null,
+        receiptLineId: null,
+        jobOperationId: certificate.jobOperationId,
+        trackedEntityIds: []
+      })
+    );
+  }
+
+  for (const material of materials.data ?? []) {
+    const item = material.item;
+    if (
+      !item ||
+      item.type !== "Material" ||
+      item.itemTrackingType === "Batch" ||
+      item.itemTrackingType === "Serial"
+    ) {
+      continue;
+    }
+    rows.push({
+      kind: "Material",
+      name: item.name,
+      specification: null,
+      supplierId: null,
+      supplierName: null,
+      certificateId: null,
+      certificateNumber: null,
+      documentId: null,
+      receiptLineId: null,
+      jobOperationId: null,
+      trackedEntityIds: [],
+      missing: true
+    });
+  }
+
+  return { data: dedupeLineageRows(rows), error: null };
+}
+
+function asAttributes(value: Json | null): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : null;
+}
+
+function certificateLineageRow(
+  certificate: Certificate,
+  context: {
+    name: string;
+    supplier: LineageSupplier;
+    receiptLineId: string | null;
+    jobOperationId: string | null;
+    trackedEntityIds: string[];
+  }
+): CertificationLineageRow {
+  // The certificate's own supplier wins over the receipt's / PO's.
+  const supplier = certificate.supplier ?? context.supplier;
+  return {
+    kind: certificate.type,
+    name: context.name,
+    specification: certificate.specification,
+    supplierId: supplier?.id ?? null,
+    supplierName: supplier?.name ?? null,
+    certificateId: certificate.id,
+    certificateNumber: certificate.certificateNumber,
+    documentId: certificate.documentId,
+    receiptLineId: context.receiptLineId,
+    jobOperationId: context.jobOperationId,
+    trackedEntityIds: context.trackedEntityIds,
+    missing: false
+  };
+}
+
+/**
+ * Whether each item's First Article is due (§5 of the CofC/FAI spec): the
+ * latest Approved FAI per item and the item's latest completed job, excluding
+ * the job being evaluated, run through `evaluateFirstArticleDue`.
+ */
+export async function getFirstArticleDue(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args: { itemIds: string[]; excludeJobId?: string; today: string }
+): Promise<
+  | {
+      data: Record<
+        string,
+        {
+          due: boolean;
+          reason: FirstArticleReason | null;
+          latestFairId: string | null;
+        }
+      >;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const [approved, completedJobs, timeZone] = await Promise.all([
+    fetchAllFromTable<{ id: string; itemId: string; approvedAt: string }>(
+      client,
+      "firstArticleInspection",
+      "id, itemId, approvedAt",
+      (query) =>
+        query
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("itemId", itemIds)
+          .not("approvedAt", "is", null)
+          .order("approvedAt", { ascending: false })
+          .order("id")
+    ),
+    fetchAllFromTable<{ itemId: string; completedDate: string }>(
+      client,
+      "job",
+      "itemId, completedDate",
+      (query) => {
+        const filtered = query
+          .eq("companyId", companyId)
+          .in("status", ["Completed", "Closed"])
+          .in("itemId", itemIds)
+          .not("completedDate", "is", null);
+        return (
+          args.excludeJobId ? filtered.neq("id", args.excludeJobId) : filtered
+        )
+          .order("completedDate", { ascending: false })
+          .order("id");
+      }
+    ),
+    getCompanyTimeZone(client, companyId)
+  ]);
+
+  if (approved.error) return { data: null, error: approved.error };
+  if (completedJobs.error) return { data: null, error: completedJobs.error };
+
+  // Both reads are ordered newest first, so the first row per item is its latest.
+  const latestApproval = new Map<string, { id: string; approvedAt: string }>();
+  for (const row of approved.data) {
+    if (!latestApproval.has(row.itemId)) latestApproval.set(row.itemId, row);
+  }
+  const lastCompletedJobDate = new Map<string, string>();
+  for (const row of completedJobs.data) {
+    if (!lastCompletedJobDate.has(row.itemId)) {
+      lastCompletedJobDate.set(
+        row.itemId,
+        datetime.businessDay(row.completedDate, timeZone).toString()
+      );
+    }
+  }
+
+  const data: Record<
+    string,
+    {
+      due: boolean;
+      reason: FirstArticleReason | null;
+      latestFairId: string | null;
+    }
+  > = {};
+  for (const itemId of itemIds) {
+    const approval = latestApproval.get(itemId);
+    data[itemId] = {
+      ...evaluateFirstArticleDue({
+        latestApprovedAt: approval?.approvedAt ?? null,
+        lastCompletedJobDate: lastCompletedJobDate.get(itemId) ?? null,
+        today: args.today
+      }),
+      latestFairId: approval?.id ?? null
+    };
+  }
+
+  return { data, error: null };
 }
 
 export async function getGauge(
@@ -1521,6 +2180,157 @@ export async function updateGauge(
   return { data: { id: result.data.id! }, error: null };
 }
 
+export async function upsertCertificate(
+  client: SupabaseClient<Database>,
+  certificate:
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+      })
+    | (Omit<z.infer<typeof certificateValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+      })
+) {
+  if ("createdBy" in certificate) {
+    return client
+      .from("certificate")
+      .insert([certificate])
+      .select("id")
+      .single();
+  }
+
+  const { id, companyId, ...update } = certificate;
+  return client
+    .from("certificate")
+    .update(sanitize({ ...update, updatedAt: new Date().toISOString() }))
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
+}
+
+/**
+ * Writes a compliance statement and REPLACES its customer / item assignments
+ * with the given ones, in one transaction.
+ */
+export async function upsertComplianceStatement(
+  db: Kysely<KyselyDatabase>,
+  statement: Omit<z.infer<typeof complianceStatementValidator>, "id"> & {
+    id?: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<
+  | { data: { id: string }; error: null }
+  | { data: null; error: { message: string; code?: string } }
+> {
+  const {
+    id,
+    companyId,
+    userId,
+    customerIds = [],
+    itemIds = [],
+    ...fields
+  } = statement;
+
+  try {
+    const statementId = await db.transaction().execute(async (trx) => {
+      let writtenId = id;
+      if (writtenId) {
+        const updated = await trx
+          .updateTable("complianceStatement")
+          .set({
+            ...fields,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("id", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .returning("id")
+          .executeTakeFirst();
+        if (!updated) throw new Error("Compliance statement not found");
+
+        await trx
+          .deleteFrom("complianceStatementAssignment")
+          .where("complianceStatementId", "=", writtenId)
+          .where("companyId", "=", companyId)
+          .execute();
+      } else {
+        const inserted = await trx
+          .insertInto("complianceStatement")
+          .values({ ...fields, companyId, createdBy: userId })
+          .returning("id")
+          .executeTakeFirstOrThrow();
+        writtenId = inserted.id;
+      }
+
+      // The ids come from the form and Kysely bypasses RLS (an FK does not
+      // check the tenant): keep only this company's customers and items.
+      const requestedCustomerIds = [...new Set(customerIds)];
+      const requestedItemIds = [...new Set(itemIds)];
+      const [ownCustomers, ownItems] = await Promise.all([
+        requestedCustomerIds.length > 0
+          ? trx
+              .selectFrom("customer")
+              .select(["id"])
+              .where("id", "in", requestedCustomerIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([]),
+        requestedItemIds.length > 0
+          ? trx
+              .selectFrom("item")
+              .select(["id"])
+              .where("id", "in", requestedItemIds)
+              .where("companyId", "=", companyId)
+              .execute()
+          : Promise.resolve([])
+      ]);
+
+      const assignments = [
+        ...ownCustomers.map(({ id: customerId }) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          customerId,
+          createdBy: userId
+        })),
+        ...ownItems.map(({ id: itemId }) => ({
+          complianceStatementId: writtenId!,
+          companyId,
+          itemId,
+          createdBy: userId
+        }))
+      ];
+      if (assignments.length > 0) {
+        await trx
+          .insertInto("complianceStatementAssignment")
+          .values(assignments)
+          .execute();
+      }
+
+      return writtenId;
+    });
+
+    return { data: { id: statementId }, error: null };
+  } catch (err) {
+    logger.error("Failed to save compliance statement", {
+      companyId,
+      complianceStatementId: id,
+      error: err
+    });
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to save statement",
+        code: (err as { code?: string })?.code
+      }
+    };
+  }
+}
+
 /** @deprecated Use insertGauge for new gauges, updateGauge for existing gauges */
 export async function upsertGauge(
   client: SupabaseClient<Database>,
@@ -2485,4 +3295,474 @@ export async function upsertItemInspectionDocumentAssignment(
     companyId: assignment.companyId,
     createdBy: assignment.userId
   });
+}
+
+// -------------------------------------------------------------
+// First Article Inspections (AS9102)
+// -------------------------------------------------------------
+// The FAI is a 1:1 extension of a `First Article` inspection lot. Form 1 and
+// Form 2 are editable only while the FAI is Draft; after approval the only
+// edit is the customer approval. The lifecycle transitions (verify, reopen,
+// approve, delete) live in `firstArticle.server.ts` (Kysely transactions).
+
+const FIRST_ARTICLE_LOCKED = "This first article is locked";
+
+type FirstArticleResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: { message: string } };
+
+export async function getFirstArticleInspections(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+  }
+) {
+  let query = client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name), job(jobId)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `partNumber.ilike.%${args.search}%,partName.ilike.%${args.search}%,manufacturingProcessReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args?.status) {
+    // @ts-ignore - status is a valid enum value
+    query = query.eq("status", args.status);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getFirstArticleInspectionsByJob(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select(
+      "id, status, scope, itemId, jobMakeMethodId, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+/** The FAI a `First Article` inspection lot belongs to; null for other lots. */
+export async function getFirstArticleInspectionByLot(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select("id, status")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+/**
+ * What the manual "New First Article" form offers for a job: its make methods
+ * (root and made sub-assemblies) and, for the baseline select, the approved
+ * FAIs of any revision of those parts.
+ */
+export async function getFirstArticleCreateOptions(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<
+  FirstArticleResult<{
+    makeMethods: {
+      id: string;
+      itemId: string;
+      readableId: string;
+      label: string;
+    }[];
+    baselines: {
+      id: string;
+      readableId: string;
+      label: string;
+    }[];
+  }>
+> {
+  const makeMethods = await client
+    .from("jobMakeMethod")
+    .select(
+      "id, itemId, parentMaterialId, item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+  if (makeMethods.error) return { data: null, error: makeMethods.error };
+
+  const readableIds = [
+    ...new Set(
+      (makeMethods.data ?? [])
+        .map((method) => method.item?.readableId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const approved =
+    readableIds.length > 0
+      ? await client
+          .from("firstArticleInspection")
+          .select(
+            "id, approvedAt, partNumber, partRevision, item!inner(readableId, readableIdWithRevision), inspection(inspectionId)"
+          )
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("item.readableId", readableIds)
+          .order("approvedAt", { ascending: false })
+      : { data: [], error: null };
+  if (approved.error) return { data: null, error: approved.error };
+
+  return {
+    data: {
+      makeMethods: (makeMethods.data ?? []).map((method) => ({
+        id: method.id,
+        itemId: method.itemId,
+        readableId: method.item?.readableId ?? "",
+        label: [
+          method.item?.readableIdWithRevision ?? method.item?.readableId,
+          method.item?.name
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      })),
+      baselines: (approved.data ?? []).map((fai) => ({
+        id: fai.id,
+        readableId: fai.item?.readableId ?? "",
+        label: [
+          fai.inspection?.inspectionId,
+          fai.item?.readableIdWithRevision ?? fai.partNumber
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      }))
+    },
+    error: null
+  };
+}
+
+/**
+ * Everything the FAI detail page and the FAIR PDF show: the extension with its
+ * lot, the plan's features with the first sample's readings (Form 3), the Form
+ * 2 rows, and the Form 1 index derived live from the make method's materials.
+ */
+export async function getFirstArticleInspection(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const fai = await client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(id, inspectionId, status, inspectionDocumentId, dispositionedAt), item(id, readableId, readableIdWithRevision, name, revision), job(id, jobId, status, customerId)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fai.error) return { data: null, error: fai.error } as const;
+  if (!fai.data || !fai.data.inspection) {
+    return {
+      data: null,
+      error: { message: "First article not found" }
+    } as const;
+  }
+
+  const firstArticle = fai.data;
+  const lot = fai.data.inspection;
+
+  const [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ] = await Promise.all([
+    lot.inspectionDocumentId
+      ? client
+          .from("inspectionFeature")
+          .select(
+            "id, label, description, type, nominalValue, tolerancePlus, toleranceMinus, unit, designator, referenceLocation, materialCondition, sizeFeatureId"
+          )
+          .eq("inspectionDocumentId", lot.inspectionDocumentId)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    client
+      .from("inspectionSample")
+      .select("id, status, trackedEntity(readableId)")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true }),
+    client
+      .from("inspectionMeasurement")
+      .select(
+        "inspectionFeatureId, inspectionSampleId, value, status, bonus, allowable, notes"
+      )
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("nonConformanceInspection")
+      .select("nonConformanceId")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("firstArticleInspectionProduct")
+      .select("*")
+      .eq("firstArticleInspectionId", id)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true })
+      .order("createdAt", { ascending: true }),
+    // The make method is gone once its job is deleted or Get Method rebuilt
+    // the sub-assembly (the FK sets null): no live Form 1 index, no operations.
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobMaterial")
+          .select(
+            "id, itemId, methodType, item(readableId, readableIdWithRevision, name, type)"
+          )
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    firstArticle.jobMakeMethodId
+      ? client
+          .from("jobOperation")
+          .select("id, description, process(name)")
+          .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+          .eq("companyId", companyId)
+          .order("order", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    firstArticle.baselineFirstArticleInspectionId
+      ? client
+          .from("firstArticleInspection")
+          .select("id, partNumber, partRevision, inspection(inspectionId)")
+          .eq("id", firstArticle.baselineFirstArticleInspectionId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  for (const result of [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ]) {
+    if (result.error) return { data: null, error: result.error } as const;
+  }
+
+  const ncrIds = [
+    ...new Set((ncrLinks.data ?? []).map((link) => link.nonConformanceId))
+  ];
+  const indexMaterials = (materials.data ?? [])
+    .map((material) => ({
+      material,
+      partType: indexPartType({
+        itemType: material.item?.type ?? null,
+        methodType: material.methodType
+      })
+    }))
+    .filter(
+      (
+        entry
+      ): entry is {
+        material: (typeof entry)["material"];
+        partType: NonNullable<(typeof entry)["partType"]>;
+      } => entry.partType !== null
+    );
+  const indexItemIds = [
+    ...new Set(indexMaterials.map((entry) => entry.material.itemId))
+  ];
+
+  const [ncrs, approvedByItem] = await Promise.all([
+    ncrIds.length > 0
+      ? client
+          .from("nonConformance")
+          .select("id, nonConformanceId")
+          .in("id", ncrIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    indexItemIds.length > 0
+      ? client
+          .from("firstArticleInspection")
+          .select("id, itemId, approvedAt, inspection(inspectionId)")
+          .in("itemId", indexItemIds)
+          .eq("status", "Approved")
+          .eq("companyId", companyId)
+          .order("approvedAt", { ascending: false })
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (ncrs.error) return { data: null, error: ncrs.error } as const;
+  if (approvedByItem.error) {
+    return { data: null, error: approvedByItem.error } as const;
+  }
+
+  // Newest first, so the first row per item is its latest approved FAI.
+  const latestApproved = new Map<
+    string,
+    { id: string; fairIdentifier: string | null }
+  >();
+  for (const row of approvedByItem.data ?? []) {
+    if (!latestApproved.has(row.itemId)) {
+      latestApproved.set(row.itemId, {
+        id: row.id,
+        fairIdentifier: row.inspection?.inspectionId ?? null
+      });
+    }
+  }
+
+  // One unit, every characteristic: Form 3 reports the lot's first sample.
+  const sample = samples.data?.[0] ?? null;
+  const measurementByFeatureId = new Map<string, FirstArticleMeasurement>();
+  for (const measurement of measurements.data ?? []) {
+    if (!sample || measurement.inspectionSampleId !== sample.id) continue;
+    measurementByFeatureId.set(measurement.inspectionFeatureId, measurement);
+  }
+
+  const ncrNumber =
+    (ncrs.data ?? [])
+      .map((ncr) => ncr.nonConformanceId)
+      .filter(Boolean)
+      .sort()
+      .join(", ") || null;
+
+  const characteristics = buildForm3Rows(
+    (features.data ?? []) as FirstArticleFeature[],
+    measurementByFeatureId,
+    ncrNumber
+  );
+
+  return {
+    data: {
+      firstArticle,
+      lot,
+      serialNumber: sample?.trackedEntity?.readableId ?? null,
+      hasMeasurements: (measurements.data ?? []).length > 0,
+      characteristics,
+      duplicateCharacteristicNumbers: duplicateNumbers(characteristics),
+      ncrNumber,
+      products: products.data ?? [],
+      index: indexMaterials.map(({ material, partType }) => {
+        const approved = latestApproved.get(material.itemId);
+        return {
+          jobMaterialId: material.id,
+          itemId: material.itemId,
+          partNumber:
+            material.item?.readableIdWithRevision ??
+            material.item?.readableId ??
+            "",
+          partName: material.item?.name ?? "",
+          partType,
+          firstArticleInspectionId: approved?.id ?? null,
+          fairIdentifier: approved?.fairIdentifier ?? null
+        };
+      }),
+      operations: (operations.data ?? []).map((operation) => ({
+        id: operation.id,
+        name: operation.process?.name ?? operation.description ?? ""
+      })),
+      baseline: baseline.data
+        ? {
+            id: baseline.data.id,
+            fairIdentifier: baseline.data.inspection?.inspectionId ?? null,
+            partNumber: baseline.data.partNumber,
+            partRevision: baseline.data.partRevision
+          }
+        : null
+    },
+    error: null
+  } as const;
+}
+
+export async function updateFirstArticleInspectionHeader(
+  client: SupabaseClient<Database>,
+  header: z.infer<typeof firstArticleInspectionHeaderValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, ...fields } = header;
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      ...fields,
+      partRevision: fields.partRevision ?? null,
+      drawingNumber: fields.drawingNumber ?? null,
+      drawingRevision: fields.drawingRevision ?? null,
+      additionalChanges: fields.additionalChanges ?? null,
+      supplierCode: fields.supplierCode ?? null,
+      purchaseOrderNumber: fields.purchaseOrderNumber ?? null,
+      baselineFirstArticleInspectionId:
+        fields.baselineFirstArticleInspectionId ?? null,
+      baselineReference: fields.baselineReference ?? null,
+      comments: fields.comments ?? null,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return { data: null, error: { message: FIRST_ARTICLE_LOCKED } };
+  }
+  return { data: { id }, error: null };
+}
+
+/** AS9102 fields 24/25 — the only edit an approved FAI accepts. */
+export async function updateFirstArticleCustomerApproval(
+  client: SupabaseClient<Database>,
+  approval: z.infer<typeof firstArticleCustomerApprovalValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      customerApprovalName: approval.customerApprovalName ?? null,
+      customerApprovalDate: approval.customerApprovalDate ?? null,
+      updatedBy: approval.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", approval.id)
+    .eq("companyId", approval.companyId)
+    .eq("status", "Approved")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return {
+      data: null,
+      error: {
+        message: "Only an approved first article takes a customer approval"
+      }
+    };
+  }
+  return { data: { id: approval.id }, error: null };
 }

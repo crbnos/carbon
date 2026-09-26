@@ -63,6 +63,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })
     );
   }
+
+  // An Inspection operation completes only through its inspection: the
+  // traveler's Complete QR opens the inspection view and posts nothing.
+  if (jobOperation.data.operationType === "Inspection") {
+    throw redirect(path.to.inspection(operationId));
+  }
+
   const completeAll = jobOperation.data?.completeAllOnScan ?? false;
 
   const [jobMakeMethod] = await Promise.all([

@@ -318,6 +318,10 @@ export const updateLeadTimesOnReceiptValidator = z.object({
   updateLeadTimesOnReceipt: zfd.checkbox()
 });
 
+export const requireFirstArticleValidator = z.object({
+  requireFirstArticle: zfd.checkbox()
+});
+
 export const materialIdsValidator = z.object({
   materialGeneratedIds: zfd.checkbox()
 });

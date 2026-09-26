@@ -179,6 +179,13 @@ type JobOperationProps = {
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
   autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
+  // Open First Article lots of this operation's make method — each shows a
+  // "First article required" banner linking to its inspection.
+  firstArticles?: {
+    id: string;
+    inspectionId: string;
+    itemReadableId: string | null;
+  }[];
   kanban: Kanban | null;
   materials: Promise<{
     materials: JobMaterial[];
@@ -298,6 +305,7 @@ export const JobOperation = ({
   expiredEntityPolicy = "Block",
   autoSelectMaterialWithoutPickingList = false,
   files,
+  firstArticles = [],
   job,
   kanban,
   materials,
@@ -1126,6 +1134,34 @@ export const JobOperation = ({
           className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           <div className="w-full min-w-0">
+            {firstArticles.map((firstArticle) => (
+              <div key={firstArticle.id} className="px-4 pt-4 lg:px-6">
+                <Alert variant="warning">
+                  <LuClipboardCheck />
+                  <AlertTitle>
+                    <Trans>
+                      First article required for{" "}
+                      {firstArticle.itemReadableId ?? firstArticle.inspectionId}
+                    </Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <span className="text-pretty">
+                        <Trans>
+                          Inspect the first unit on every characteristic before
+                          running the rest.
+                        </Trans>
+                      </span>
+                      <Button variant="secondary" asChild>
+                        <Link to={path.to.firstArticle(firstArticle.id)}>
+                          <Trans>Inspect</Trans>
+                        </Link>
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            ))}
             {isCompleting && (
               <div className="px-4 pt-4 lg:px-6">
                 <Card>

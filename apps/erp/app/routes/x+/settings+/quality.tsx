@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
+  Boolean,
   Hidden,
   Input,
   Select,
@@ -32,7 +33,11 @@ import { redirect, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { Users } from "~/components/Form";
 import SettingsSectionHeader from "~/components/SettingsSectionHeader";
-import { getCompanySettings } from "~/modules/settings";
+import {
+  getCompanySettings,
+  requireFirstArticleValidator,
+  updateRequireFirstArticleSetting
+} from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -54,6 +59,10 @@ const dashboardValidator = z.object({
 const samplingStandardValidator = z.object({
   intent: z.literal("samplingStandard"),
   samplingStandard: z.enum(["ANSI_Z1_4", "ISO_2859_1"])
+});
+
+const firstArticleValidator = requireFirstArticleValidator.extend({
+  intent: z.literal("requireFirstArticle")
 });
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -111,6 +120,22 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("id", companyId);
     if (update.error) return { success: false, message: update.error.message };
     return { success: true, message: "Sampling standard updated" };
+  }
+
+  if (intent === "requireFirstArticle") {
+    const validation = await validator(firstArticleValidator).validate(
+      formData
+    );
+    if (validation.error) {
+      return { success: false, message: "Invalid form data" };
+    }
+    const update = await updateRequireFirstArticleSetting(
+      client,
+      companyId,
+      validation.data.requireFirstArticle
+    );
+    if (update.error) return { success: false, message: update.error.message };
+    return { success: true, message: "First article settings updated" };
   }
 
   if (intent === "dashboard") {
@@ -370,6 +395,52 @@ export default function QualitySettingsRoute() {
                       | "ANSI_Z1_4"
                       | "ISO_2859_1") ?? "ANSI_Z1_4"
                   }
+                />
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={fetcher.state !== "idle"}
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>First Article</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={firstArticleValidator}
+            defaultValues={{
+              intent: "requireFirstArticle" as const,
+              requireFirstArticle: companySettings.requireFirstArticle ?? false
+            }}
+            fetcher={fetcher}
+          >
+            <Hidden name="intent" />
+            <CardHeader>
+              <CardTitle>
+                <Trans>First Article Inspection</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Decide when releasing a job creates first article inspections.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-2 max-w-[400px]">
+                <Boolean
+                  name="requireFirstArticle"
+                  label={t`Require first article for new parts and revisions`}
+                  description={t`Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years.`}
+                  bordered
                 />
               </div>
             </CardContent>

@@ -11,6 +11,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { z } from "zod";
 import {
+  Boolean,
   Customer,
   CustomerContact,
   CustomerLocation,
@@ -100,6 +101,25 @@ const CustomerShippingForm = ({ initialValues }: CustomerShippingFormProps) => {
               options={shippingTermOptions}
             /> */}
             <CustomFormFields table="customerShipping" />
+          </div>
+          <div className="flex flex-col gap-4 w-full mt-8">
+            <h3 className="text-sm font-medium text-foreground">
+              <Trans>Certifications</Trans>
+            </h3>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-x-8 gap-y-4 w-full">
+              <Boolean
+                name="requiresCertificateOfConformance"
+                label={t`Requires Certificate of Conformance`}
+                description={t`Posting a shipment to this customer issues a certificate and emails it to the shipping contact.`}
+                bordered
+              />
+              <Boolean
+                name="requiresFirstArticle"
+                label={t`Requires First Article`}
+                description={t`Releasing a job for this customer creates first article inspections for parts that need one.`}
+                bordered
+              />
+            </div>
           </div>
         </CardContent>
         <CardFooter>

@@ -1,6 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { getInspection } from "~/modules/quality";
+import {
+  getFirstArticleInspectionByLot,
+  getInspection
+} from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
 import { action } from "./$id.reject";
 
@@ -40,6 +43,7 @@ vi.mock("~/modules/quality/quality.server", () => ({
   dispositionInspection: vi.fn()
 }));
 vi.mock("~/modules/quality", () => ({
+  getFirstArticleInspectionByLot: vi.fn(),
   getInspection: vi.fn(),
   getInspectionMeasurements: vi.fn(),
   getInspectionSamplingPlans: vi.fn(),
@@ -89,6 +93,10 @@ beforeEach(() => {
     userId: "user-1"
   } as any);
   invoke.mockResolvedValue({ data: { success: true }, error: null });
+  vi.mocked(getFirstArticleInspectionByLot).mockResolvedValue({
+    data: null,
+    error: null
+  } as any);
 });
 
 describe("inspection reject route — inventory write-off", () => {

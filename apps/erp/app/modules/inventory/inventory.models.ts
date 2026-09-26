@@ -766,3 +766,25 @@ export const storageRuleValidator = z
       }
     });
   });
+
+// Issuing (or re-issuing) a shipment's Certificate of Conformance. A re-issue
+// needs a reason (the DB refuses revision > 0 without one); emailing needs a
+// contact to send to.
+export const certificateOfConformanceIssueValidator = z
+  .object({
+    reasonForUpdate: zfd.text(z.string().optional()),
+    email: zfd.checkbox(),
+    customerContact: zfd.text(z.string().optional()),
+    cc: z.array(z.string()).optional()
+  })
+  .refine((data) => (data.email ? !!data.customerContact : true), {
+    message: "Customer contact is required",
+    path: ["customerContact"]
+  });
+
+export const certificateOfConformanceSendValidator = z.object({
+  customerContact: z
+    .string()
+    .min(1, { message: "Customer contact is required" }),
+  cc: z.array(z.string()).optional()
+});
