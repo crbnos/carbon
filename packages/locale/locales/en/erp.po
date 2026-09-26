@@ -3502,6 +3502,9 @@ msgstr "Certificate Number"
 msgid "Certificate uploaded"
 msgstr "Certificate uploaded"
 
+msgid "Certifications"
+msgstr "Certifications"
+
 msgid "Certified"
 msgstr "Certified"
 
@@ -5321,6 +5324,9 @@ msgstr "Decide what happens when an operator presses Finish on the shop floor wi
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decide when material picked to a work center but not consumed flows back to the warehouse."
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr "Decide when releasing a job creates first article inspections."
 
 msgid "Decimal Places"
 msgstr "Decimal Places"
@@ -7876,6 +7882,9 @@ msgstr "Finishing is refused until every line is picked or marked Short."
 
 msgid "First Article"
 msgstr "First Article"
+
+msgid "First Article Inspection"
+msgstr "First Article Inspection"
 
 msgid "First light, {name}."
 msgstr "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "Posted once, no corrections."
 msgid "Posting"
 msgstr "Posting"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+
 msgid "Posting date"
 msgstr "Posting date"
 
@@ -14130,6 +14142,12 @@ msgstr "Released revision"
 msgid "Released revision is locked"
 msgstr "Released revision is locked"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr "Releasing a job for this customer creates first article inspections for parts that need one."
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Releasing the batch releases its jobs, and each one must be ready for the floor."
 
@@ -14367,6 +14385,9 @@ msgstr "Require approval for purchase orders based on amount thresholds"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Require approval for quality documents in your workflow"
 
+msgid "Require first article for new parts and revisions"
+msgstr "Require first article for new parts and revisions"
+
 msgid "Require Match"
 msgstr "Require Match"
 
@@ -14420,6 +14441,12 @@ msgstr "Requires Action"
 
 msgid "Requires Adjustment"
 msgstr "Requires Adjustment"
+
+msgid "Requires Certificate of Conformance"
+msgstr "Requires Certificate of Conformance"
+
+msgid "Requires First Article"
+msgstr "Requires First Article"
 
 msgid "Requires Repair"
 msgstr "Requires Repair"

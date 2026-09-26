@@ -1,5 +1,5 @@
 {
-  "totalTools": 1548,
+  "totalTools": 1549,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1477,6 +1477,7 @@
     {"name":"settings_updateProductLabelSize","classification":"WRITE","paramCount":1,"schema":"26bfb6ebfdda","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updatePurchasePriceUpdateTimingSetting","classification":"WRITE","paramCount":1,"schema":"6e01697e737c","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateQuoteLineCategoryMarkups","classification":"WRITE","paramCount":1,"schema":"46b636ff84f8","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
+    {"name":"settings_updateRequireFirstArticleSetting","classification":"WRITE","paramCount":1,"schema":"95716d7cc07b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateReturnPickedMaterialTimingSetting","classification":"WRITE","paramCount":1,"schema":"59acd7763b9c","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateRfqReadySetting","classification":"WRITE","paramCount":1,"schema":"8828dbf1724d","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateSalesRuleNotificationSetting","classification":"WRITE","paramCount":1,"schema":"fcb0888da832","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},

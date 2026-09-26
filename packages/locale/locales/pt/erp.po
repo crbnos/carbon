@@ -3502,6 +3502,9 @@ msgstr "Número do Certificado"
 msgid "Certificate uploaded"
 msgstr "Certificado enviado"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "Certificado"
 
@@ -5321,6 +5324,9 @@ msgstr "Decida o que acontece quando um operador pressiona Concluir no chão de 
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Decida quando o material coletado para um centro de trabalho, mas não consumido, flui de volta para o armazém."
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "Casas Decimais"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "A conclusão é recusada até que cada linha seja colhida ou marcada como Curta."
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "Lançado uma vez, sem correções."
 msgid "Posting"
 msgstr "Contabilização"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "data de contabilização"
 
@@ -14130,6 +14142,12 @@ msgstr "Revisão lançada"
 msgid "Released revision is locked"
 msgstr "A revisão lançada está bloqueada"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Liberar o lote de produção libera suas ordens de produção, e cada uma deve estar pronta para o chão de fábrica."
 
@@ -14367,6 +14385,9 @@ msgstr "Exigir aprovação para pedidos de compra com base em limites de valor"
 msgid "Require approval for quality documents in your workflow"
 msgstr "Exigir aprovação para documentos de qualidade no seu fluxo de trabalho"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Exigir Correspondência"
 
@@ -14420,6 +14441,12 @@ msgstr "Requer Ação"
 
 msgid "Requires Adjustment"
 msgstr "Requer Ajuste"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "Requer Reparo"

@@ -3502,6 +3502,9 @@ msgstr "인증서 번호"
 msgid "Certificate uploaded"
 msgstr "인증서가 업로드됨"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "인증됨"
 
@@ -5321,6 +5324,9 @@ msgstr "작업자가 아직 선택되지 않은 재료가 있는 상태에서 �
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "작업장으로 이송했으나 소비하지 않은 재료가 창고로 반환되는 시기를 결정합니다."
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "소수 자릿수"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "모든 라인이 선택되거나 부족으로 표시될 때까지 완료가 거부됩니다."
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "한 번 게시되었으며 수정되지 않았습니다."
 msgid "Posting"
 msgstr "전기"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "전기 날짜"
 
@@ -14130,6 +14142,12 @@ msgstr "릴리스된 리비전"
 msgid "Released revision is locked"
 msgstr "릴리스된 리비전은 잠김입니다."
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "배치를 릴리스하면 포함된 작업 지시들도 릴리스되고, 각각은 현장에 준비되어야 합니다."
 
@@ -14367,6 +14385,9 @@ msgstr "금액 임계값을 기준으로 발주서에 대한 승인 필요"
 msgid "Require approval for quality documents in your workflow"
 msgstr "워크플로 내 품질 문서에 승인 필요"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "필수 일치"
 
@@ -14420,6 +14441,12 @@ msgstr "조치 필요"
 
 msgid "Requires Adjustment"
 msgstr "조정 필요"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "수리 필요"

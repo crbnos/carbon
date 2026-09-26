@@ -3502,6 +3502,9 @@ msgstr "प्रमाणपत्र संख्या"
 msgid "Certificate uploaded"
 msgstr "प्रमाणपत्र अपलोड किया गया"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "प्रमाणित"
 
@@ -5321,6 +5324,9 @@ msgstr "तय करें कि जब ऑपरेटर शॉप फ्ल
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "तय करें कि वर्क सेंटर में चुनी गई अप्रयुक्त सामग्री कब गोदाम में वापस जाए।"
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "दशमलव स्थान"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "जब तक हर पंक्ति को चुना नहीं जाता या छोटा चिह्नित नहीं किया जाता तब तक समाप्ति से इनकार किया जाता है।"
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "एक बार पोस्ट किया गया, कोई स�
 msgid "Posting"
 msgstr "पोस्टिंग"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "पोस्टिंग तारीख"
 
@@ -14130,6 +14142,12 @@ msgstr "जारी रिवीजन"
 msgid "Released revision is locked"
 msgstr "जारी रिवीजन लॉक है"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "बैच जारी करने से इसकी जॉब्स जारी हो जाती हैं, और प्रत्येक को शॉप फ्लोर के लिए तैयार होना चाहिए।"
 
@@ -14367,6 +14385,9 @@ msgstr "राशि सीमा के आधार पर क्रय आद
 msgid "Require approval for quality documents in your workflow"
 msgstr "आपके वर्कफ़्लो में गुणवत्ता दस्तावेज़ों के लिए अनुमोदन की आवश्यकता है"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "मिलान आवश्यक है"
 
@@ -14420,6 +14441,12 @@ msgstr "कार्रवाई आवश्यक है"
 
 msgid "Requires Adjustment"
 msgstr "समायोजन आवश्यक है"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "मरम्मत की आवश्यकता है"

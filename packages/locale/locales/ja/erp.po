@@ -3502,6 +3502,9 @@ msgstr "証明書番号"
 msgid "Certificate uploaded"
 msgstr "証明書がアップロードされました"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "認定済み"
 
@@ -5321,6 +5324,9 @@ msgstr "作業者が製造現場で完了を押したときに、ピック待ち
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "作業区にピッキングされたが消費済みでない材料がいつ倉庫に戻されるかを決定"
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "すべてのラインがピックされるか「短い」とマークされるまで、完了は拒否されます。"
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "1回投稿され、訂正はありません。"
 msgid "Posting"
 msgstr "転記"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "転記日付"
 
@@ -14130,6 +14142,12 @@ msgstr "リリースされたリビジョン"
 msgid "Released revision is locked"
 msgstr "発行済みリビジョンはロック中です"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "バッチをリリースするとその製造指図がリリースされ、それぞれが製造現場に対応可能である必要があります。"
 
@@ -14367,6 +14385,9 @@ msgstr "金額の閾値に基づいて発注書の承認が必要です"
 msgid "Require approval for quality documents in your workflow"
 msgstr "ワークフローの品質ドキュメントについて承認が必要です"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "照合が必須"
 
@@ -14420,6 +14441,12 @@ msgstr "対応が必要"
 
 msgid "Requires Adjustment"
 msgstr "調整が必要"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "修理が必要"

@@ -3502,6 +3502,9 @@ msgstr "Номер сертификата"
 msgid "Certificate uploaded"
 msgstr "Сертификат загружен"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "Сертифицировано"
 
@@ -5321,6 +5324,9 @@ msgstr "Решите, что происходит, когда оператор �
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "Решение о том, когда материал, отобранный в рабочий центр, но не использованный, поступает обратно на склад."
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "Десятичные разряды"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "Завершение отклоняется до тех пор, пока каждая строка не будет подобрана или отмечена как 'Недостаточно'."
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "Опубликовано один раз, без исправлений.
 msgid "Posting"
 msgstr "Проведение"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "Дата проведения"
 
@@ -14130,6 +14142,12 @@ msgstr "Выпущенная ревизия"
 msgid "Released revision is locked"
 msgstr "Выпущенная ревизия заблокирована"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "Запуск серии запускает её производственные заказы, и каждый должен быть готов к цеху."
 
@@ -14367,6 +14385,9 @@ msgstr "Требовать утверждение для заказов пост
 msgid "Require approval for quality documents in your workflow"
 msgstr "Требовать утверждение для документов качества в вашем рабочем процессе"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "Требовать совпадение"
 
@@ -14420,6 +14441,12 @@ msgstr "Требует действия"
 
 msgid "Requires Adjustment"
 msgstr "Требует корректировки"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "Требует ремонта"

@@ -3502,6 +3502,9 @@ msgstr "证书编号"
 msgid "Certificate uploaded"
 msgstr "证书已上传"
 
+msgid "Certifications"
+msgstr ""
+
 msgid "Certified"
 msgstr "已认证"
 
@@ -5321,6 +5324,9 @@ msgstr "决定当操作员在车间按下完成时且原材料仍未拣货时发
 
 msgid "Decide when material picked to a work center but not consumed flows back to the warehouse."
 msgstr "决定何时将拣货到工作中心但未消耗的原材料流回仓库。"
+
+msgid "Decide when releasing a job creates first article inspections."
+msgstr ""
 
 msgid "Decimal Places"
 msgstr "小数位数"
@@ -7875,6 +7881,9 @@ msgid "Finishing is refused until every line is picked or marked Short."
 msgstr "在所有行都被拣货或标记为短缺后才能完成。"
 
 msgid "First Article"
+msgstr ""
+
+msgid "First Article Inspection"
 msgstr ""
 
 msgid "First light, {name}."
@@ -12975,6 +12984,9 @@ msgstr "过账一次，无更正。"
 msgid "Posting"
 msgstr "过账"
 
+msgid "Posting a shipment to this customer issues a certificate and emails it to the shipping contact."
+msgstr ""
+
 msgid "Posting date"
 msgstr "过账日期"
 
@@ -14130,6 +14142,12 @@ msgstr "已下达修订版"
 msgid "Released revision is locked"
 msgstr "已下达修订版已锁定"
 
+msgid "Releasing a job creates a first article inspection for every part on it that has no approved first article, or hasn't been made in two years."
+msgstr ""
+
+msgid "Releasing a job for this customer creates first article inspections for parts that need one."
+msgstr ""
+
 msgid "Releasing the batch releases its jobs, and each one must be ready for the floor."
 msgstr "下达生产批次会下达其工单，每个工单都必须为车间做好准备。"
 
@@ -14367,6 +14385,9 @@ msgstr "根据金额阈值对采购订单需要审批"
 msgid "Require approval for quality documents in your workflow"
 msgstr "工作流中的质量文档需要审批"
 
+msgid "Require first article for new parts and revisions"
+msgstr ""
+
 msgid "Require Match"
 msgstr "必需匹配"
 
@@ -14420,6 +14441,12 @@ msgstr "需要采取行动"
 
 msgid "Requires Adjustment"
 msgstr "需要调整"
+
+msgid "Requires Certificate of Conformance"
+msgstr ""
+
+msgid "Requires First Article"
+msgstr ""
 
 msgid "Requires Repair"
 msgstr "需要维修"
