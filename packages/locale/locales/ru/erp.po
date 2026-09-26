@@ -3635,6 +3635,9 @@ msgstr "Выбрать другой файл"
 msgid "Choose how to add lines to this return."
 msgstr "Выберите, как добавить строки в этот возврат."
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Выбрать, что отображается на распечатанном маршрутном листе работы."
 
@@ -5891,6 +5894,9 @@ msgstr "Описание изменения"
 msgid "Description of Issue"
 msgstr "Описание проблемы"
 
+msgid "Designator"
+msgstr ""
+
 msgid "Detail"
 msgstr "Подробности"
 
@@ -7742,6 +7748,9 @@ msgstr "Номер факса"
 
 msgid "Feature"
 msgstr "Функция"
+
+msgid "Feature of size"
+msgstr ""
 
 msgid "Feature values suggested from drawing"
 msgstr "Значения функции предложены на основе чертежа"
@@ -10227,6 +10236,9 @@ msgstr "Материал"
 
 msgid "Material"
 msgstr "Материал"
+
+msgid "Material condition"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Измерение материала"
@@ -14000,6 +14012,9 @@ msgstr "Перенаправление на страницу проверки...
 msgid "Reduced"
 msgstr "Ослабленный"
 
+msgid "Ref. location"
+msgstr ""
+
 msgid "Reference"
 msgstr "Ссылка"
 
@@ -16135,6 +16150,9 @@ msgstr "Площадки, местоположения, рабочие цент�
 
 msgid "Size"
 msgstr "Размер"
+
+msgid "Size feature"
+msgstr ""
 
 msgid "Sizes"
 msgstr "Размеры"

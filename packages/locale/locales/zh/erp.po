@@ -3635,6 +3635,9 @@ msgstr "选择另一个文件"
 msgid "Choose how to add lines to this return."
 msgstr "选择如何向此退货添加行。"
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "选择打印工单流转卡上显示的内容。"
 
@@ -5891,6 +5894,9 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Designator"
+msgstr ""
+
 msgid "Detail"
 msgstr "详情"
 
@@ -7742,6 +7748,9 @@ msgstr "传真号码"
 
 msgid "Feature"
 msgstr "特征"
+
+msgid "Feature of size"
+msgstr ""
 
 msgid "Feature values suggested from drawing"
 msgstr "从绘图中建议的特征值"
@@ -10227,6 +10236,9 @@ msgstr "原材料"
 
 msgid "Material"
 msgstr "原材料"
+
+msgid "Material condition"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "原材料维度"
@@ -14000,6 +14012,9 @@ msgstr "正在重定向到验证页面..."
 msgid "Reduced"
 msgstr "放宽检验"
 
+msgid "Ref. location"
+msgstr ""
+
 msgid "Reference"
 msgstr "参考"
 
@@ -16135,6 +16150,9 @@ msgstr "站点、位置、工作中心、用户、供应商和您的公司设置
 
 msgid "Size"
 msgstr "大小"
+
+msgid "Size feature"
+msgstr ""
 
 msgid "Sizes"
 msgstr "尺寸"

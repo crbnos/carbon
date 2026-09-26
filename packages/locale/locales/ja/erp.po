@@ -3635,6 +3635,9 @@ msgstr "別のファイルを選択"
 msgid "Choose how to add lines to this return."
 msgstr "この返品に明細を追加する方法を選択してください。"
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
 
@@ -5891,6 +5894,9 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
+msgid "Designator"
+msgstr ""
+
 msgid "Detail"
 msgstr "詳細"
 
@@ -7742,6 +7748,9 @@ msgstr "ファックス番号"
 
 msgid "Feature"
 msgstr "機能"
+
+msgid "Feature of size"
+msgstr ""
 
 msgid "Feature values suggested from drawing"
 msgstr "図面から提案された機能値"
@@ -10227,6 +10236,9 @@ msgstr "材料"
 
 msgid "Material"
 msgstr "材料"
+
+msgid "Material condition"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "材料ディメンション"
@@ -14000,6 +14012,9 @@ msgstr "検証ページにリダイレクト中..."
 msgid "Reduced"
 msgstr "ゆるい検査"
 
+msgid "Ref. location"
+msgstr ""
+
 msgid "Reference"
 msgstr "参照"
 
@@ -16135,6 +16150,9 @@ msgstr "サイト、拠点、作業区、ユーザー、仕入先、および会
 
 msgid "Size"
 msgstr "サイズ"
+
+msgid "Size feature"
+msgstr ""
 
 msgid "Sizes"
 msgstr "サイズ"

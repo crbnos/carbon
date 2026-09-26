@@ -15,17 +15,24 @@ import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.
 import {
   computeLotStatus,
   deriveSampleStatus,
+  type InspectionVerdict,
+  valuateGeometricMeasurement,
   valuateMeasurement
 } from "../supabase/functions/shared/inspection-verdict.ts";
 import type { Kysely, KyselyDatabase } from "./client.ts";
-import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
+import type {
+  FeatureSamplingRule,
+  SamplingPlanInput,
+  SamplingStandard
+} from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import type { Database } from "./types.ts";
 
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };
 export type Result<T> = Ok<T> | Err;
 
-export { valuateMeasurement };
+export { valuateGeometricMeasurement, valuateMeasurement };
 
 export function errResult(message: string, blockers?: unknown): Err {
   return { data: null, error: { message, ...(blockers ? { blockers } : {}) } };
@@ -109,6 +116,47 @@ function toSamplingPlanInput(
     aql: row.samplingAql == null ? null : Number(row.samplingAql),
     inspectionLevel: row.samplingInspectionLevel,
     severity: row.samplingSeverity
+  };
+}
+
+type LotFeaturePlan = {
+  sampleSize: number;
+  acceptanceNumber: number;
+  rejectionNumber: number;
+  codeLetter: string | null;
+};
+
+// The one per-feature plan builder for lot plan rows. A First Article lot is a
+// single unit inspected on every characteristic (AS9102), so it ignores the
+// feature/document sampling rules; every other source resolves feature rule ->
+// document default -> All. post-receipt keeps its own copy (receipts are never
+// First Article).
+function resolveLotFeaturePlan(
+  sourceDocument: Database["public"]["Enums"]["inspectionSourceDocument"],
+  feature: FeatureSamplingRule,
+  documentDefault: SamplingPlanInput | null,
+  lotSize: number,
+  standard: SamplingStandard
+): LotFeaturePlan {
+  if (sourceDocument === "First Article") {
+    return {
+      sampleSize: 1,
+      acceptanceNumber: 0,
+      rejectionNumber: 1,
+      codeLetter: null
+    };
+  }
+  const resolved = resolveFeatureSamplingPlan(
+    feature,
+    documentDefault,
+    lotSize,
+    standard
+  );
+  return {
+    sampleSize: resolved.sampleSize,
+    acceptanceNumber: resolved.acceptance,
+    rejectionNumber: resolved.rejection,
+    codeLetter: resolved.codeLetter
   };
 }
 
@@ -667,6 +715,8 @@ export async function upsertInspectionMeasurement(
     measurementId: string;
     measurementStatus: string;
     sampleStatus: string;
+    bonus: number | null;
+    allowable: number | null;
   }>
 > {
   const nowIso = new Date().toISOString();
@@ -691,7 +741,10 @@ export async function upsertInspectionMeasurement(
           "type",
           "nominalValue",
           "tolerancePlus",
-          "toleranceMinus"
+          "toleranceMinus",
+          "materialCondition",
+          "featureOfSize",
+          "sizeFeatureId"
         ])
         .where("id", "=", args.inspectionFeatureId)
         .where("companyId", "=", args.companyId)
@@ -739,11 +792,58 @@ export async function upsertInspectionMeasurement(
       }
       const passed = args.passed != null ? args.passed === "true" : null;
 
-      const measurementStatus = valuateMeasurement(
-        feature,
-        numericValue,
-        passed
-      );
+      // A geometric tolerance at MMC/LMC earns bonus from its related size
+      // feature's reading on the SAME sample (unit); everything else is a
+      // plain tolerance-band or attribute valuation.
+      let measurementStatus: InspectionVerdict;
+      let bonus: number | null = null;
+      let allowable: number | null = null;
+      if (
+        (feature.materialCondition === "MMC" ||
+          feature.materialCondition === "LMC") &&
+        feature.sizeFeatureId
+      ) {
+        const sizeFeature = await trx
+          .selectFrom("inspectionFeature")
+          .select([
+            "id",
+            "type",
+            "nominalValue",
+            "tolerancePlus",
+            "toleranceMinus"
+          ])
+          .where("id", "=", feature.sizeFeatureId)
+          .where("companyId", "=", args.companyId)
+          .executeTakeFirst();
+        const sizeMeasurement = sizeFeature
+          ? await trx
+              .selectFrom("inspectionMeasurement")
+              .select(["value", "status"])
+              .where("inspectionSampleId", "=", sample.id)
+              .where("inspectionFeatureId", "=", sizeFeature.id)
+              .executeTakeFirst()
+          : undefined;
+        const valuation = valuateGeometricMeasurement(
+          feature,
+          numericValue,
+          sizeFeature && sizeMeasurement
+            ? {
+                spec: sizeFeature,
+                value:
+                  sizeMeasurement.value == null
+                    ? null
+                    : Number(sizeMeasurement.value),
+                status: sizeMeasurement.status
+              }
+            : null,
+          passed
+        );
+        measurementStatus = valuation.status;
+        bonus = valuation.bonus;
+        allowable = valuation.allowable;
+      } else {
+        measurementStatus = valuateMeasurement(feature, numericValue, passed);
+      }
 
       const existingMeasurement = await trx
         .selectFrom("inspectionMeasurement")
@@ -755,6 +855,8 @@ export async function upsertInspectionMeasurement(
       const measurementPayload = {
         value: numericValue,
         status: measurementStatus,
+        bonus,
+        allowable,
         notes: args.notes ?? null,
         inspectedBy: measurementStatus !== "Pending" ? args.userId : null,
         inspectedAt: measurementStatus !== "Pending" ? nowIso : null
@@ -787,6 +889,65 @@ export async function upsertInspectionMeasurement(
           .returning(["id"])
           .executeTakeFirstOrThrow();
         measurementId = inserted.id;
+      }
+
+      // This reading may be the size feature of MMC/LMC geometric features:
+      // re-valuate their recorded readings on this sample against the new
+      // size, before the sample status is derived from them.
+      const dependentFeatures = await trx
+        .selectFrom("inspectionFeature")
+        .select([
+          "id",
+          "type",
+          "nominalValue",
+          "tolerancePlus",
+          "toleranceMinus",
+          "materialCondition",
+          "featureOfSize"
+        ])
+        .where("sizeFeatureId", "=", feature.id)
+        .where("companyId", "=", args.companyId)
+        .execute();
+      if (dependentFeatures.length > 0) {
+        const dependentMeasurements = await trx
+          .selectFrom("inspectionMeasurement")
+          .select(["id", "inspectionFeatureId", "value"])
+          .where("inspectionSampleId", "=", sample.id)
+          .where(
+            "inspectionFeatureId",
+            "in",
+            dependentFeatures.map((f) => f.id)
+          )
+          .where("value", "is not", null)
+          .execute();
+        const dependentById = new Map(dependentFeatures.map((f) => [f.id, f]));
+        const sizeReading = {
+          spec: feature,
+          value: numericValue,
+          status: measurementStatus
+        };
+        for (const dependent of dependentMeasurements) {
+          const dependentFeature = dependentById.get(
+            dependent.inspectionFeatureId
+          );
+          if (!dependentFeature || dependent.value == null) continue;
+          const valuation = valuateGeometricMeasurement(
+            dependentFeature,
+            Number(dependent.value),
+            sizeReading
+          );
+          await trx
+            .updateTable("inspectionMeasurement")
+            .set({
+              status: valuation.status,
+              bonus: valuation.bonus,
+              allowable: valuation.allowable,
+              updatedBy: args.userId,
+              updatedAt: nowIso
+            })
+            .where("id", "=", dependent.id)
+            .execute();
+        }
       }
 
       const lotFeatures = await trx
@@ -870,7 +1031,9 @@ export async function upsertInspectionMeasurement(
         sampleId: sample.id,
         measurementId,
         measurementStatus,
-        sampleStatus: derivedStatus
+        sampleStatus: derivedStatus,
+        bonus,
+        allowable
       };
     });
 
@@ -900,6 +1063,7 @@ export async function reconcileInspectionSamplingPlans(
         .selectFrom("inspection")
         .select([
           "id",
+          "sourceDocument",
           "inspectionDocumentId",
           "lotSize",
           "samplingStandard",
@@ -955,7 +1119,8 @@ export async function reconcileInspectionSamplingPlans(
       const defaultPlan = toSamplingPlanInput(documentDefault);
 
       const inserts = missing.map((feature) => {
-        const resolved = resolveFeatureSamplingPlan(
+        const resolved = resolveLotFeaturePlan(
+          inspection.sourceDocument,
           feature,
           defaultPlan,
           Number(inspection.lotSize),
@@ -964,10 +1129,7 @@ export async function reconcileInspectionSamplingPlans(
         return {
           inspectionId,
           inspectionFeatureId: feature.id,
-          sampleSize: resolved.sampleSize,
-          acceptanceNumber: resolved.acceptance,
-          rejectionNumber: resolved.rejection,
-          codeLetter: resolved.codeLetter,
+          ...resolved,
           companyId,
           // Never NULL into a NOT NULL audit column: fall back to the lot's
           // creator (the creating flow's userId).
@@ -1198,7 +1360,8 @@ export async function getOrCreateJobOperationInspection(
         : [];
       const featurePlans = documentFeatures.map((feature) => ({
         inspectionFeatureId: feature.id,
-        resolved: resolveFeatureSamplingPlan(
+        resolved: resolveLotFeaturePlan(
+          "Job Operation",
           feature,
           defaultPlan,
           lotSize,
@@ -1258,10 +1421,7 @@ export async function getOrCreateJobOperationInspection(
             featurePlans.map((p) => ({
               inspectionId: inserted.id,
               inspectionFeatureId: p.inspectionFeatureId,
-              sampleSize: p.resolved.sampleSize,
-              acceptanceNumber: p.resolved.acceptance,
-              rejectionNumber: p.resolved.rejection,
-              codeLetter: p.resolved.codeLetter,
+              ...p.resolved,
               companyId: args.companyId,
               createdBy: args.userId
             }))

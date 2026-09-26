@@ -3635,6 +3635,9 @@ msgstr "Başka bir dosya seç"
 msgid "Choose how to add lines to this return."
 msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
 
@@ -5891,6 +5894,9 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
+msgid "Designator"
+msgstr ""
+
 msgid "Detail"
 msgstr "Detay"
 
@@ -7742,6 +7748,9 @@ msgstr "Faks Numarası"
 
 msgid "Feature"
 msgstr "Özellik"
+
+msgid "Feature of size"
+msgstr ""
 
 msgid "Feature values suggested from drawing"
 msgstr "Çizimden önerilen özellik değerleri"
@@ -10227,6 +10236,9 @@ msgstr "Malzeme"
 
 msgid "Material"
 msgstr "Malzeme"
+
+msgid "Material condition"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Malzeme Boyutu"
@@ -14000,6 +14012,9 @@ msgstr "Doğrulama sayfasına yönlendiriliyor..."
 msgid "Reduced"
 msgstr "Gevşetilmiş"
 
+msgid "Ref. location"
+msgstr ""
+
 msgid "Reference"
 msgstr "Referans"
 
@@ -16135,6 +16150,9 @@ msgstr "Siteler, konumlar, iş merkezleri, kullanıcılar, tedarikçiler ve şir
 
 msgid "Size"
 msgstr "Boyut"
+
+msgid "Size feature"
+msgstr ""
 
 msgid "Sizes"
 msgstr "Boyutlar"

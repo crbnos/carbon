@@ -3635,6 +3635,9 @@ msgstr "Choose another file"
 msgid "Choose how to add lines to this return."
 msgstr "Choose how to add lines to this return."
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr "Choose the size feature for MMC/LMC characteristics"
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
 
@@ -5891,6 +5894,9 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
+msgid "Designator"
+msgstr "Designator"
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -7742,6 +7748,9 @@ msgstr "Fax Number"
 
 msgid "Feature"
 msgstr "Feature"
+
+msgid "Feature of size"
+msgstr "Feature of size"
 
 msgid "Feature values suggested from drawing"
 msgstr "Feature values suggested from drawing"
@@ -10227,6 +10236,9 @@ msgstr "material"
 
 msgid "Material"
 msgstr "Material"
+
+msgid "Material condition"
+msgstr "Material condition"
 
 msgid "Material Dimension"
 msgstr "Material Dimension"
@@ -14000,6 +14012,9 @@ msgstr "Redirecting to verification page..."
 msgid "Reduced"
 msgstr "Reduced"
 
+msgid "Ref. location"
+msgstr "Ref. location"
+
 msgid "Reference"
 msgstr "Reference"
 
@@ -16135,6 +16150,9 @@ msgstr "Sites, locations, work centers, users, suppliers, and your company setti
 
 msgid "Size"
 msgstr "Size"
+
+msgid "Size feature"
+msgstr "Size feature"
 
 msgid "Sizes"
 msgstr "Sizes"

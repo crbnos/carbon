@@ -3635,6 +3635,9 @@ msgstr "दूसरी फ़ाइल चुनें"
 msgid "Choose how to add lines to this return."
 msgstr "इस रिटर्न में पंक्तियाँ कैसे जोड़ें, यह चुनें।"
 
+msgid "Choose the size feature for MMC/LMC characteristics"
+msgstr ""
+
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
 
@@ -5891,6 +5894,9 @@ msgstr "परिवर्तन का विवरण"
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
+msgid "Designator"
+msgstr ""
+
 msgid "Detail"
 msgstr "विवरण"
 
@@ -7742,6 +7748,9 @@ msgstr "फैक्स नंबर"
 
 msgid "Feature"
 msgstr "विशेषता"
+
+msgid "Feature of size"
+msgstr ""
 
 msgid "Feature values suggested from drawing"
 msgstr "ड्राइंग से सुझाए गए फीचर मान"
@@ -10227,6 +10236,9 @@ msgstr "सामग्री"
 
 msgid "Material"
 msgstr "सामग्री"
+
+msgid "Material condition"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "सामग्री आयाम"
@@ -14000,6 +14012,9 @@ msgstr "सत्यापन पृष्ठ पर पुनः निर्�
 msgid "Reduced"
 msgstr "शिथिल"
 
+msgid "Ref. location"
+msgstr ""
+
 msgid "Reference"
 msgstr "संदर्भ"
 
@@ -16135,6 +16150,9 @@ msgstr "साइटें, स्थान, वर्क सेंटर, उ�
 
 msgid "Size"
 msgstr "आकार"
+
+msgid "Size feature"
+msgstr ""
 
 msgid "Sizes"
 msgstr "आकार"
