@@ -102,6 +102,9 @@ msgstr "Über"
 msgid "Accept"
 msgstr "Annehmen"
 
+msgid "Accept first article?"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "Charge annehmen"
 
@@ -650,6 +653,13 @@ msgstr "Beenden Sie die Einrichtung Ihres Kontos"
 msgid "Finish with material unpicked?"
 msgstr "Mit nicht gepicktem Material abschließen?"
 
+msgid "First article"
+msgstr ""
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "Zuerst fällig {0}"
@@ -703,8 +713,14 @@ msgstr "in {0}"
 msgid "In Progress"
 msgstr "In Bearbeitung"
 
+msgid "Inspect"
+msgstr ""
+
 msgid "Inspect Item"
 msgstr "Artikel prüfen"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr ""
 
 msgid "inspected"
 msgstr "geprüft"
@@ -1314,6 +1330,9 @@ msgstr "Aufgezeichnet"
 msgid "Reject"
 msgstr "Ablehnen"
 
+msgid "Reject first article?"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "Charge ablehnen"
 
@@ -1627,6 +1646,12 @@ msgstr "Tag"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Die abgeschlossene Menge für diesen Arbeitsgang ist geringer als die erforderliche Menge von {targetQuantity}."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr ""
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "Die Fertigungsaufträge und Teile, die diesen Durchlauf ausmachen."

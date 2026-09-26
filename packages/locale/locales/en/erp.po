@@ -1546,6 +1546,9 @@ msgstr "Add Supplier"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Add the next capability on the same system instead of buying another tool."
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 
@@ -2003,6 +2006,9 @@ msgstr "Applies to"
 msgid "Applies to all"
 msgstr "Applies to all"
 
+msgid "Applies to all customers"
+msgstr "Applies to all customers"
+
 msgid "Applies to all work centers"
 msgstr "Applies to all work centers"
 
@@ -2262,6 +2268,10 @@ msgstr "Are you sure you want to delete the change notice action: {0}? This cann
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Are you sure you want to delete the contractor: {name}? This cannot be undone."
@@ -2667,6 +2677,9 @@ msgstr "Assets"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Assets, liabilities and equity as of a date"
+
+msgid "assign a first article plan for"
+msgstr "assign a first article plan for"
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
@@ -3925,6 +3938,12 @@ msgstr "Completion in progress — retry in Shop Floor"
 
 msgid "Completion Time"
 msgstr "Completion Time"
+
+msgid "Compliance Statement"
+msgstr "Compliance Statement"
+
+msgid "Compliance Statements"
+msgstr "Compliance Statements"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5749,6 +5768,9 @@ msgstr "Delete shipment line"
 msgid "Delete Shipping Method"
 msgstr "Delete Shipping Method"
 
+msgid "Delete Statement"
+msgstr "Delete Statement"
+
 msgid "Delete step"
 msgstr "Delete step"
 
@@ -6474,6 +6496,9 @@ msgstr "Edit Change Notice Type"
 msgid "Edit column visibility"
 msgstr "Edit column visibility"
 
+msgid "Edit Compliance Statement"
+msgstr "Edit Compliance Statement"
+
 msgid "Edit Contact"
 msgstr "Edit Contact"
 
@@ -6695,6 +6720,9 @@ msgstr "Edit Shipping Method"
 
 msgid "Edit Size"
 msgstr "Edit Size"
+
+msgid "Edit Statement"
+msgstr "Edit Statement"
 
 msgid "Edit Stock Transfer"
 msgstr "Edit Stock Transfer"
@@ -10539,6 +10567,9 @@ msgstr "Mismatch"
 msgid "Missing"
 msgstr "Missing"
 
+msgid "Missing First Article Plans"
+msgstr "Missing First Article Plans"
+
 msgid "Missing Information"
 msgstr "Missing Information"
 
@@ -10821,6 +10852,9 @@ msgstr "New Change Notice Action"
 
 msgid "New Change Notice Type"
 msgstr "New Change Notice Type"
+
+msgid "New Compliance Statement"
+msgstr "New Compliance Statement"
 
 msgid "New Consumable"
 msgstr "New Consumable"
@@ -13164,6 +13198,9 @@ msgstr "Print Label"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Print Output ({0})"
+
+msgid "Printed on every Certificate of Conformance"
+msgstr "Printed on every Certificate of Conformance"
 
 msgid "Printer Settings"
 msgstr "Printer Settings"
@@ -18070,6 +18107,9 @@ msgstr "These operations use a process with multiple suppliers. Choose a supplie
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
+
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."

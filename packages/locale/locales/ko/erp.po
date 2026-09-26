@@ -1546,6 +1546,9 @@ msgstr "공급업체 추가"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "다른 도구를 구매하는 대신 같은 시스템에 다음 기능을 추가하세요."
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr ""
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "DNS 호스트에서 이 TXT 레코드를 추가한 다음 확인을 클릭하세요. DNS 변경은 전파되는 데 몇 분이 걸릴 수 있습니다."
 
@@ -2003,6 +2006,9 @@ msgstr "적용 대상"
 msgid "Applies to all"
 msgstr "전체에 적용"
 
+msgid "Applies to all customers"
+msgstr ""
+
 msgid "Applies to all work centers"
 msgstr "모든 작업장에 적용"
 
@@ -2262,6 +2268,10 @@ msgstr "변경 통지 작업을 삭제하시겠습니까: {0}? 이 작업은 취
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "변경 통지 카테고리를 삭제하시겠습니까: {0}? 이 작업은 취소할 수 없습니다."
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "외주 인력을 삭제하시겠습니까: {name}? 이 작업은 취소할 수 없습니다."
@@ -2667,6 +2677,9 @@ msgstr "자산"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
+
+msgid "assign a first article plan for"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
@@ -3925,6 +3938,12 @@ msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
 
 msgid "Completion Time"
 msgstr "완료 시간"
+
+msgid "Compliance Statement"
+msgstr ""
+
+msgid "Compliance Statements"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5749,6 +5768,9 @@ msgstr "출하 라인 삭제"
 msgid "Delete Shipping Method"
 msgstr "배송 방법 삭제"
 
+msgid "Delete Statement"
+msgstr ""
+
 msgid "Delete step"
 msgstr "단계 삭제"
 
@@ -6474,6 +6496,9 @@ msgstr "변경 통지 유형 편집"
 msgid "Edit column visibility"
 msgstr "열 표시 여부 편집"
 
+msgid "Edit Compliance Statement"
+msgstr ""
+
 msgid "Edit Contact"
 msgstr "담당자 편집"
 
@@ -6695,6 +6720,9 @@ msgstr "배송 방법 편집"
 
 msgid "Edit Size"
 msgstr "크기 편집"
+
+msgid "Edit Statement"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "재고 이송 편집"
@@ -10539,6 +10567,9 @@ msgstr "불일치"
 msgid "Missing"
 msgstr "누락"
 
+msgid "Missing First Article Plans"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "누락된 정보"
 
@@ -10821,6 +10852,9 @@ msgstr "신규 변경 통지 조치"
 
 msgid "New Change Notice Type"
 msgstr "신규 변경 통지 유형"
+
+msgid "New Compliance Statement"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "신규 소모품"
@@ -13164,6 +13198,9 @@ msgstr "라벨 인쇄"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "인쇄 출력({0})"
+
+msgid "Printed on every Certificate of Conformance"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "프린터 설정"
@@ -18070,6 +18107,9 @@ msgstr "이 공정들은 여러 공급업체에서 처리 가능합니다. 각 �
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "이 부품들이 이 부품으로 대체됩니다. 각 규칙은 기존 부품에 설정되어 있으니 규칙을 변경하려면 해당 부품을 열어주세요."
+
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr ""
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "이 행들은 이 회사 외부의 데이터로 연결되어 있으므로 현재 데이터의 백업 복사본을 만들 수 없습니다. 이를 삭제하면 되돌릴 수 없습니다. 이것이 이 그룹의 다른 회사들과 공유되는 것으로 판명되면 아무것도 삭제되지 않으며 데모 데이터도 적용되지 않습니다."

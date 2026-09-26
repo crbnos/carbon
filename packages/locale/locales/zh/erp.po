@@ -1546,6 +1546,9 @@ msgstr "添加供应商"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "在同一系统上添加下一个功能，而不是购买另一个工具。"
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr ""
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "在您的 DNS 主机上添加此 TXT 记录，然后单击验证。DNS 更改可能需要几分钟才能传播。"
 
@@ -2003,6 +2006,9 @@ msgstr "适用于"
 msgid "Applies to all"
 msgstr "适用于全部"
 
+msgid "Applies to all customers"
+msgstr ""
+
 msgid "Applies to all work centers"
 msgstr "适用于所有工作中心"
 
@@ -2262,6 +2268,10 @@ msgstr "确定要删除变更通知操作：{0}吗？此操作无法撤消。"
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "确定要删除变更通知类别：{0}吗？此操作无法撤消。"
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "确定要删除外协人员：{name}吗？此操作无法撤消。"
@@ -2667,6 +2677,9 @@ msgstr "资产"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
+
+msgid "assign a first article plan for"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
@@ -3925,6 +3938,12 @@ msgstr "完成进行中 — 请在生产车间重试"
 
 msgid "Completion Time"
 msgstr "完成时间"
+
+msgid "Compliance Statement"
+msgstr ""
+
+msgid "Compliance Statements"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5749,6 +5768,9 @@ msgstr "删除发货行"
 msgid "Delete Shipping Method"
 msgstr "删除发货方式"
 
+msgid "Delete Statement"
+msgstr ""
+
 msgid "Delete step"
 msgstr "删除步骤"
 
@@ -6474,6 +6496,9 @@ msgstr "编辑变更通知类型"
 msgid "Edit column visibility"
 msgstr "编辑列可见性"
 
+msgid "Edit Compliance Statement"
+msgstr ""
+
 msgid "Edit Contact"
 msgstr "编辑联系人"
 
@@ -6695,6 +6720,9 @@ msgstr "编辑 发货方式"
 
 msgid "Edit Size"
 msgstr "编辑尺寸"
+
+msgid "Edit Statement"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "编辑库存转移"
@@ -10539,6 +10567,9 @@ msgstr "不匹配"
 msgid "Missing"
 msgstr "缺失"
 
+msgid "Missing First Article Plans"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "缺少信息"
 
@@ -10821,6 +10852,9 @@ msgstr "新建变更通知操作"
 
 msgid "New Change Notice Type"
 msgstr "新建变更通知类型"
+
+msgid "New Compliance Statement"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "新建耗材"
@@ -13164,6 +13198,9 @@ msgstr "打印标签"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "打印输出 ({0})"
+
+msgid "Printed on every Certificate of Conformance"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "打印机设置"
@@ -18070,6 +18107,9 @@ msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
+
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr ""
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "这些行链接到此公司外部的数据，因此无法为您当前的数据创建安全副本。删除它们无法撤销。如果它们与此集团中的其他公司共享，则不会删除任何内容，演示数据也不会应用。"

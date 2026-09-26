@@ -102,6 +102,9 @@ msgstr "关于"
 msgid "Accept"
 msgstr "接受"
 
+msgid "Accept first article?"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "接受批次"
 
@@ -650,6 +653,13 @@ msgstr "完成账户设置"
 msgid "Finish with material unpicked?"
 msgstr "物料未拣货的情况下要完成吗？"
 
+msgid "First article"
+msgstr ""
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最早应交期 {0}"
@@ -703,8 +713,14 @@ msgstr "在 {0}"
 msgid "In Progress"
 msgstr "进行中"
 
+msgid "Inspect"
+msgstr ""
+
 msgid "Inspect Item"
 msgstr "检验物品"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr ""
 
 msgid "inspected"
 msgstr "已检验"
@@ -1314,6 +1330,9 @@ msgstr "已记录"
 msgid "Reject"
 msgstr "拒绝"
 
+msgid "Reject first article?"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "拒绝批次"
 
@@ -1627,6 +1646,12 @@ msgstr "标签"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr ""
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "组成此次运行的工单和零件。"

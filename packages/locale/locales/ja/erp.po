@@ -1546,6 +1546,9 @@ msgstr "仕入先を追加"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "同じシステム上に次の機能を追加して、別のツールを購入する代わりにします。"
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr ""
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "このTXTレコードをDNSホストに追加し、[確認]をクリックしてください。DNSの変更が反映されるまで数分かかる場合があります。"
 
@@ -2003,6 +2006,9 @@ msgstr "適用対象"
 msgid "Applies to all"
 msgstr "すべてに適用"
 
+msgid "Applies to all customers"
+msgstr ""
+
 msgid "Applies to all work centers"
 msgstr "すべての作業区に適用"
 
@@ -2262,6 +2268,10 @@ msgstr "変更通知アクション「{0}」を削除してもよろしいです
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "変更通知カテゴリ「{0}」を削除してもよろしいですか？この操作は取り消せません。"
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "外部作業者: {name} を削除してもよろしいですか?これは元に戻せません。"
@@ -2667,6 +2677,9 @@ msgstr "資産"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
+
+msgid "assign a first article plan for"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
@@ -3925,6 +3938,12 @@ msgstr "完了処理進行中 — 製造現場で再試行してください"
 
 msgid "Completion Time"
 msgstr "完了時間"
+
+msgid "Compliance Statement"
+msgstr ""
+
+msgid "Compliance Statements"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5749,6 +5768,9 @@ msgstr "出荷明細を削除"
 msgid "Delete Shipping Method"
 msgstr "出荷方法を削除"
 
+msgid "Delete Statement"
+msgstr ""
+
 msgid "Delete step"
 msgstr "ステップを削除"
 
@@ -6474,6 +6496,9 @@ msgstr "変更通知タイプを編集"
 msgid "Edit column visibility"
 msgstr "列の表示/非表示を編集"
 
+msgid "Edit Compliance Statement"
+msgstr ""
+
 msgid "Edit Contact"
 msgstr "担当者を編集"
 
@@ -6695,6 +6720,9 @@ msgstr "出荷方法を編集"
 
 msgid "Edit Size"
 msgstr "サイズを編集"
+
+msgid "Edit Statement"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "在庫移動を編集"
@@ -10539,6 +10567,9 @@ msgstr "不一致"
 msgid "Missing"
 msgstr "見つかりません"
 
+msgid "Missing First Article Plans"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "不足している情報"
 
@@ -10821,6 +10852,9 @@ msgstr "新規変更通知アクション"
 
 msgid "New Change Notice Type"
 msgstr "新規変更通知タイプ"
+
+msgid "New Compliance Statement"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "新しい消耗品"
@@ -13164,6 +13198,9 @@ msgstr "ラベルを印刷"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "印刷出力 ({0})"
+
+msgid "Printed on every Certificate of Conformance"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "プリンター設定"
@@ -18070,6 +18107,9 @@ msgstr "これらの工程は複数の仕入先に対応可能な工法を使用
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "これらの部品はこの部品で置き換わっています。各ルールは旧部品に設定されています；ルールを変更するには旧部品を開いてください。"
+
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr ""
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "これらの行は、この会社の外部のデータにリンクしています。このため、現在のデータのセーフコピーを作成できません。これらの削除は取り消すことができません。これらがこのグループ内の他の会社と共有されている場合、何も削除されず、デモデータは適用されません。"

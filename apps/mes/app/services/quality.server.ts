@@ -557,6 +557,10 @@ export async function createInspectionRejectionIssue(
     companyId: string;
     userId: string;
     nonConformanceTypeId?: string;
+    // The operation the issue is raised against. Defaults to the lot's own
+    // job operation; a First Article lot belongs to a make method, so its
+    // caller names one of that method's operations.
+    jobOperationId?: string;
   }
 ): Promise<{ error: unknown | null; message: string | null }> {
   const { inspectionId, companyId, userId } = args;
@@ -577,7 +581,11 @@ export async function createInspectionRejectionIssue(
       message: "Failed to load the lot for the quality issue"
     };
   }
-  const jobOperationId = insp.sourceDocumentLineId as string | null;
+  const jobOperationId =
+    args.jobOperationId ??
+    (insp.sourceDocument === "Job Operation"
+      ? (insp.sourceDocumentLineId as string | null)
+      : null);
   if (!jobOperationId) {
     return { error: null, message: "Lot has no job operation to link" };
   }

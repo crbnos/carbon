@@ -102,6 +102,9 @@ msgstr "정보"
 msgid "Accept"
 msgstr "수락"
 
+msgid "Accept first article?"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "로트 수락"
 
@@ -650,6 +653,13 @@ msgstr "계정 설정을 완료하세요"
 msgid "Finish with material unpicked?"
 msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 
+msgid "First article"
+msgstr ""
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "첫 번째 기한 {0}"
@@ -703,8 +713,14 @@ msgstr "{0} 후"
 msgid "In Progress"
 msgstr "진행 중"
 
+msgid "Inspect"
+msgstr ""
+
 msgid "Inspect Item"
 msgstr "항목 검사"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr ""
 
 msgid "inspected"
 msgstr "검사됨"
@@ -1314,6 +1330,9 @@ msgstr "기록됨"
 msgid "Reject"
 msgstr "거부"
 
+msgid "Reject first article?"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "로트 거부"
 
@@ -1627,6 +1646,12 @@ msgstr "태그"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr ""
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "이 실행을 구성하는 작업 지시와 부품입니다."

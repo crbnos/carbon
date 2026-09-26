@@ -1546,6 +1546,9 @@ msgstr "Aggiungi Fornitore"
 msgid "Add the next capability on the same system instead of buying another tool."
 msgstr "Aggiungi la prossima funzionalità nello stesso sistema invece di acquistare un altro strumento."
 
+msgid "Add the statements your customers require on certificates — e.g. DFARS 252.225-7009 specialty metals, DFARS 252.246-7008 counterfeit parts, RoHS, REACH."
+msgstr ""
+
 msgid "Add this TXT record at your DNS host, then click Verify. DNS changes can take a few minutes to propagate."
 msgstr "Aggiungi questo record TXT presso il tuo provider DNS, quindi fai clic su Verifica. Le modifiche DNS possono richiedere alcuni minuti per propagarsi."
 
@@ -2003,6 +2006,9 @@ msgstr "Si applica a"
 msgid "Applies to all"
 msgstr "Si applica a tutti"
 
+msgid "Applies to all customers"
+msgstr ""
+
 msgid "Applies to all work centers"
 msgstr "Si applica a tutti i centri di lavoro"
 
@@ -2262,6 +2268,10 @@ msgstr "Sei sicuro di voler eliminare l'azione dell'avviso di modifica: {0}? Que
 #. placeholder {0}: changeNoticeType.name
 msgid "Are you sure you want to delete the change notice category: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare la categoria dell'avviso di modifica: {0}? Questa operazione non può essere annullata."
+
+#. placeholder {0}: complianceStatement.name
+msgid "Are you sure you want to delete the compliance statement: {0}? This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete the contractor: {name}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il collaboratore esterno: {name}? Questa azione non può essere annullata."
@@ -2667,6 +2677,9 @@ msgstr "Cespiti"
 
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
+
+msgid "assign a first article plan for"
+msgstr ""
 
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
@@ -3925,6 +3938,12 @@ msgstr "Completamento in corso — riprova in Officina"
 
 msgid "Completion Time"
 msgstr "Tempo di completamento"
+
+msgid "Compliance Statement"
+msgstr ""
+
+msgid "Compliance Statements"
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5749,6 +5768,9 @@ msgstr "Elimina riga spedizione"
 msgid "Delete Shipping Method"
 msgstr "Elimina Metodo di Spedizione"
 
+msgid "Delete Statement"
+msgstr ""
+
 msgid "Delete step"
 msgstr "Elimina passaggio"
 
@@ -6474,6 +6496,9 @@ msgstr "Modifica tipo di avviso di modifica"
 msgid "Edit column visibility"
 msgstr "Modifica visibilità colonna"
 
+msgid "Edit Compliance Statement"
+msgstr ""
+
 msgid "Edit Contact"
 msgstr "Modifica Contatto"
 
@@ -6695,6 +6720,9 @@ msgstr "Modifica Metodo di Spedizione"
 
 msgid "Edit Size"
 msgstr "Modifica Dimensione"
+
+msgid "Edit Statement"
+msgstr ""
 
 msgid "Edit Stock Transfer"
 msgstr "Modifica Trasferimento Magazzino"
@@ -10539,6 +10567,9 @@ msgstr "Non corrisponde"
 msgid "Missing"
 msgstr "Mancante"
 
+msgid "Missing First Article Plans"
+msgstr ""
+
 msgid "Missing Information"
 msgstr "Informazioni Mancanti"
 
@@ -10821,6 +10852,9 @@ msgstr "Nuova azione dell'avviso di modifica"
 
 msgid "New Change Notice Type"
 msgstr "Nuovo tipo di avviso di modifica"
+
+msgid "New Compliance Statement"
+msgstr ""
 
 msgid "New Consumable"
 msgstr "Nuovo materiale di consumo"
@@ -13164,6 +13198,9 @@ msgstr "Stampa Etichetta"
 #. placeholder {0}: viewContent.contentType?.toUpperCase()
 msgid "Print Output ({0})"
 msgstr "Output di stampa ({0})"
+
+msgid "Printed on every Certificate of Conformance"
+msgstr ""
 
 msgid "Printer Settings"
 msgstr "Impostazioni Stampante"
@@ -18070,6 +18107,9 @@ msgstr "Queste operazioni utilizzano un processo con più fornitori. Scegli un f
 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Questi componenti sono sostituiti da questo. Ogni regola è impostata sul vecchio componente; aprilo per modificare la regola."
+
+msgid "These parts need a first article inspection but have no inspection plan to inspect against. Assign a first article plan on each part before releasing."
+msgstr ""
 
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
 msgstr "Queste righe si collegano a dati al di fuori di questa azienda, quindi non è possibile creare una copia di sicurezza dei tuoi dati attuali. Eliminarli non può essere annullato. Se risultano condivisi con altre aziende in questo gruppo, nulla viene eliminato e i dati demo non vengono applicati."

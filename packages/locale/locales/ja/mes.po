@@ -102,6 +102,9 @@ msgstr "バージョン情報"
 msgid "Accept"
 msgstr "承諾"
 
+msgid "Accept first article?"
+msgstr ""
+
 msgid "Accept Lot"
 msgstr "ロット承諾"
 
@@ -650,6 +653,13 @@ msgstr "アカウントのセットアップを完了する"
 msgid "Finish with material unpicked?"
 msgstr "材料がピッキングされていない状態で終了しますか?"
 
+msgid "First article"
+msgstr ""
+
+#. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
+msgid "First article required for {0}"
+msgstr ""
+
 #. placeholder {0}: formatRelativeTime( convertDateStringToIsoString(batchFacts.dueDate) )
 msgid "First due {0}"
 msgstr "最初の期日 {0}"
@@ -703,8 +713,14 @@ msgstr "{0}で"
 msgid "In Progress"
 msgstr "進行中"
 
+msgid "Inspect"
+msgstr ""
+
 msgid "Inspect Item"
 msgstr "アイテムを検査"
+
+msgid "Inspect the first unit on every characteristic before running the rest."
+msgstr ""
 
 msgid "inspected"
 msgstr "検査済み"
@@ -1314,6 +1330,9 @@ msgstr "記録済"
 msgid "Reject"
 msgstr "却下"
 
+msgid "Reject first article?"
+msgstr ""
+
 msgid "Reject Lot"
 msgstr "ロットを却下"
 
@@ -1627,6 +1646,12 @@ msgstr "タグ"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"
+
+msgid "The first article will be marked Failed and its results locked. No quantities are recorded."
+msgstr ""
+
+msgid "The first article will be marked Passed and its results locked. No quantities are recorded."
+msgstr ""
 
 msgid "The jobs and parts that make up this run."
 msgstr "このランを構成する製造指図と部品"
