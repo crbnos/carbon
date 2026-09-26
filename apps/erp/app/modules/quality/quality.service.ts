@@ -17,6 +17,15 @@ import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type { CertificationLineageRow } from "./certificationLineage";
 import { dedupeLineageRows, findReceivedRoots } from "./certificationLineage";
+import type {
+  FirstArticleFeature,
+  FirstArticleMeasurement
+} from "./firstArticleRows";
+import {
+  buildForm3Rows,
+  duplicateNumbers,
+  indexPartType
+} from "./firstArticleRows";
 
 const logger = getLogger("erp", "quality");
 
@@ -24,6 +33,9 @@ import type { inspectionStatus } from "../shared";
 import type {
   certificateValidator,
   complianceStatementValidator,
+  firstArticleCustomerApprovalValidator,
+  firstArticleInspectionHeaderValidator,
+  firstArticleInspectionProductValidator,
   gaugeCalibrationRecordValidator,
   gaugeCalibrationStatus,
   gaugeRole,
@@ -3261,4 +3273,585 @@ export async function upsertItemInspectionDocumentAssignment(
     companyId: assignment.companyId,
     createdBy: assignment.userId
   });
+}
+
+// -------------------------------------------------------------
+// First Article Inspections (AS9102)
+// -------------------------------------------------------------
+// The FAI is a 1:1 extension of a `First Article` inspection lot. Form 1 and
+// Form 2 are editable only while the FAI is Draft; after approval the only
+// edit is the customer approval. The lifecycle transitions (verify, reopen,
+// approve, delete) live in `firstArticle.server.ts` (Kysely transactions).
+
+const FIRST_ARTICLE_LOCKED = "This first article is locked";
+
+type FirstArticleResult<T> =
+  | { data: T; error: null }
+  | { data: null; error: { message: string } };
+
+export async function getFirstArticleInspections(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  args?: GenericQueryFilters & {
+    search: string | null;
+    status: string | null;
+  }
+) {
+  let query = client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name), job(jobId)",
+      { count: "exact" }
+    )
+    .eq("companyId", companyId);
+
+  if (args?.search) {
+    query = query.or(
+      `partNumber.ilike.%${args.search}%,partName.ilike.%${args.search}%,manufacturingProcessReference.ilike.%${args.search}%`
+    );
+  }
+
+  if (args?.status) {
+    // @ts-ignore - status is a valid enum value
+    query = query.eq("status", args.status);
+  }
+
+  if (args) {
+    query = setGenericQueryFilters(query, args, [
+      { column: "createdAt", ascending: false }
+    ]);
+  }
+
+  return query;
+}
+
+export async function getFirstArticleInspectionsByJob(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select(
+      "id, status, scope, itemId, jobMakeMethodId, inspection(inspectionId, status), item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+/** The FAI a `First Article` inspection lot belongs to; null for other lots. */
+export async function getFirstArticleInspectionByLot(
+  client: SupabaseClient<Database>,
+  inspectionId: string,
+  companyId: string
+) {
+  return client
+    .from("firstArticleInspection")
+    .select("id, status")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+}
+
+/**
+ * What the manual "New First Article" form offers for a job: its make methods
+ * (root and made sub-assemblies) and, for the baseline select, the approved
+ * FAIs of any revision of those parts.
+ */
+export async function getFirstArticleCreateOptions(
+  client: SupabaseClient<Database>,
+  jobId: string,
+  companyId: string
+): Promise<
+  FirstArticleResult<{
+    makeMethods: {
+      id: string;
+      itemId: string;
+      readableId: string;
+      label: string;
+    }[];
+    baselines: {
+      id: string;
+      readableId: string;
+      label: string;
+    }[];
+  }>
+> {
+  const makeMethods = await client
+    .from("jobMakeMethod")
+    .select(
+      "id, itemId, parentMaterialId, item(readableId, readableIdWithRevision, name)"
+    )
+    .eq("jobId", jobId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+  if (makeMethods.error) return { data: null, error: makeMethods.error };
+
+  const readableIds = [
+    ...new Set(
+      (makeMethods.data ?? [])
+        .map((method) => method.item?.readableId)
+        .filter((id): id is string => !!id)
+    )
+  ];
+
+  const approved =
+    readableIds.length > 0
+      ? await client
+          .from("firstArticleInspection")
+          .select(
+            "id, approvedAt, partNumber, partRevision, item!inner(readableId, readableIdWithRevision), inspection(inspectionId)"
+          )
+          .eq("companyId", companyId)
+          .eq("status", "Approved")
+          .in("item.readableId", readableIds)
+          .order("approvedAt", { ascending: false })
+      : { data: [], error: null };
+  if (approved.error) return { data: null, error: approved.error };
+
+  return {
+    data: {
+      makeMethods: (makeMethods.data ?? []).map((method) => ({
+        id: method.id,
+        itemId: method.itemId,
+        readableId: method.item?.readableId ?? "",
+        label: [
+          method.item?.readableIdWithRevision ?? method.item?.readableId,
+          method.item?.name
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      })),
+      baselines: (approved.data ?? []).map((fai) => ({
+        id: fai.id,
+        readableId: fai.item?.readableId ?? "",
+        label: [
+          fai.inspection?.inspectionId,
+          fai.item?.readableIdWithRevision ?? fai.partNumber
+        ]
+          .filter(Boolean)
+          .join(" — ")
+      }))
+    },
+    error: null
+  };
+}
+
+/**
+ * Everything the FAI detail page and the FAIR PDF show: the extension with its
+ * lot, the plan's features with the first sample's readings (Form 3), the Form
+ * 2 rows, and the Form 1 index derived live from the make method's materials.
+ */
+export async function getFirstArticleInspection(
+  client: SupabaseClient<Database>,
+  id: string,
+  companyId: string
+) {
+  const fai = await client
+    .from("firstArticleInspection")
+    .select(
+      "*, inspection(id, inspectionId, status, inspectionDocumentId, dispositionedAt), item(id, readableId, readableIdWithRevision, name, revision), job(id, jobId, status, customerId)"
+    )
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fai.error) return { data: null, error: fai.error } as const;
+  if (!fai.data || !fai.data.inspection) {
+    return {
+      data: null,
+      error: { message: "First article not found" }
+    } as const;
+  }
+
+  const firstArticle = fai.data;
+  const lot = fai.data.inspection;
+
+  const [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ] = await Promise.all([
+    lot.inspectionDocumentId
+      ? client
+          .from("inspectionFeature")
+          .select(
+            "id, label, description, type, nominalValue, tolerancePlus, toleranceMinus, unit, designator, referenceLocation, materialCondition, sizeFeatureId"
+          )
+          .eq("inspectionDocumentId", lot.inspectionDocumentId)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    client
+      .from("inspectionSample")
+      .select("id, status, trackedEntity(readableId)")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId)
+      .order("createdAt", { ascending: true })
+      .order("id", { ascending: true }),
+    client
+      .from("inspectionMeasurement")
+      .select(
+        "inspectionFeatureId, inspectionSampleId, value, status, bonus, allowable, notes"
+      )
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("nonConformanceInspection")
+      .select("nonConformanceId")
+      .eq("inspectionId", lot.id)
+      .eq("companyId", companyId),
+    client
+      .from("firstArticleInspectionProduct")
+      .select("*")
+      .eq("firstArticleInspectionId", id)
+      .eq("companyId", companyId)
+      .order("sortOrder", { ascending: true })
+      .order("createdAt", { ascending: true }),
+    client
+      .from("jobMaterial")
+      .select(
+        "id, itemId, methodType, item(readableId, readableIdWithRevision, name, type)"
+      )
+      .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+      .eq("companyId", companyId)
+      .order("order", { ascending: true }),
+    client
+      .from("jobOperation")
+      .select("id, description, process(name)")
+      .eq("jobMakeMethodId", firstArticle.jobMakeMethodId)
+      .eq("companyId", companyId)
+      .order("order", { ascending: true }),
+    firstArticle.baselineFirstArticleInspectionId
+      ? client
+          .from("firstArticleInspection")
+          .select("id, partNumber, partRevision, inspection(inspectionId)")
+          .eq("id", firstArticle.baselineFirstArticleInspectionId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
+
+  for (const result of [
+    features,
+    samples,
+    measurements,
+    ncrLinks,
+    products,
+    materials,
+    operations,
+    baseline
+  ]) {
+    if (result.error) return { data: null, error: result.error } as const;
+  }
+
+  const ncrIds = [
+    ...new Set((ncrLinks.data ?? []).map((link) => link.nonConformanceId))
+  ];
+  const indexMaterials = (materials.data ?? [])
+    .map((material) => ({
+      material,
+      partType: indexPartType({
+        itemType: material.item?.type ?? null,
+        methodType: material.methodType
+      })
+    }))
+    .filter(
+      (
+        entry
+      ): entry is {
+        material: (typeof entry)["material"];
+        partType: NonNullable<(typeof entry)["partType"]>;
+      } => entry.partType !== null
+    );
+  const indexItemIds = [
+    ...new Set(indexMaterials.map((entry) => entry.material.itemId))
+  ];
+
+  const [ncrs, approvedByItem] = await Promise.all([
+    ncrIds.length > 0
+      ? client
+          .from("nonConformance")
+          .select("id, nonConformanceId")
+          .in("id", ncrIds)
+          .eq("companyId", companyId)
+      : Promise.resolve({ data: [], error: null }),
+    indexItemIds.length > 0
+      ? client
+          .from("firstArticleInspection")
+          .select("id, itemId, approvedAt, inspection(inspectionId)")
+          .in("itemId", indexItemIds)
+          .eq("status", "Approved")
+          .eq("companyId", companyId)
+          .order("approvedAt", { ascending: false })
+      : Promise.resolve({ data: [], error: null })
+  ]);
+  if (ncrs.error) return { data: null, error: ncrs.error } as const;
+  if (approvedByItem.error) {
+    return { data: null, error: approvedByItem.error } as const;
+  }
+
+  // Newest first, so the first row per item is its latest approved FAI.
+  const latestApproved = new Map<
+    string,
+    { id: string; fairIdentifier: string | null }
+  >();
+  for (const row of approvedByItem.data ?? []) {
+    if (!latestApproved.has(row.itemId)) {
+      latestApproved.set(row.itemId, {
+        id: row.id,
+        fairIdentifier: row.inspection?.inspectionId ?? null
+      });
+    }
+  }
+
+  // One unit, every characteristic: Form 3 reports the lot's first sample.
+  const sample = samples.data?.[0] ?? null;
+  const measurementByFeatureId = new Map<string, FirstArticleMeasurement>();
+  for (const measurement of measurements.data ?? []) {
+    if (!sample || measurement.inspectionSampleId !== sample.id) continue;
+    measurementByFeatureId.set(measurement.inspectionFeatureId, measurement);
+  }
+
+  const ncrNumber =
+    (ncrs.data ?? [])
+      .map((ncr) => ncr.nonConformanceId)
+      .filter(Boolean)
+      .sort()
+      .join(", ") || null;
+
+  const characteristics = buildForm3Rows(
+    (features.data ?? []) as FirstArticleFeature[],
+    measurementByFeatureId,
+    ncrNumber
+  );
+
+  return {
+    data: {
+      firstArticle,
+      lot,
+      serialNumber: sample?.trackedEntity?.readableId ?? null,
+      hasMeasurements: (measurements.data ?? []).length > 0,
+      characteristics,
+      duplicateCharacteristicNumbers: duplicateNumbers(characteristics),
+      ncrNumber,
+      products: products.data ?? [],
+      index: indexMaterials.map(({ material, partType }) => {
+        const approved = latestApproved.get(material.itemId);
+        return {
+          jobMaterialId: material.id,
+          itemId: material.itemId,
+          partNumber:
+            material.item?.readableIdWithRevision ??
+            material.item?.readableId ??
+            "",
+          partName: material.item?.name ?? "",
+          partType,
+          firstArticleInspectionId: approved?.id ?? null,
+          fairIdentifier: approved?.fairIdentifier ?? null
+        };
+      }),
+      operations: (operations.data ?? []).map((operation) => ({
+        id: operation.id,
+        name: operation.process?.name ?? operation.description ?? ""
+      })),
+      baseline: baseline.data
+        ? {
+            id: baseline.data.id,
+            fairIdentifier: baseline.data.inspection?.inspectionId ?? null,
+            partNumber: baseline.data.partNumber,
+            partRevision: baseline.data.partRevision
+          }
+        : null
+    },
+    error: null
+  } as const;
+}
+
+export async function updateFirstArticleInspectionHeader(
+  client: SupabaseClient<Database>,
+  header: z.infer<typeof firstArticleInspectionHeaderValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, ...fields } = header;
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      ...fields,
+      partRevision: fields.partRevision ?? null,
+      drawingNumber: fields.drawingNumber ?? null,
+      drawingRevision: fields.drawingRevision ?? null,
+      additionalChanges: fields.additionalChanges ?? null,
+      supplierCode: fields.supplierCode ?? null,
+      purchaseOrderNumber: fields.purchaseOrderNumber ?? null,
+      baselineFirstArticleInspectionId:
+        fields.baselineFirstArticleInspectionId ?? null,
+      baselineReference: fields.baselineReference ?? null,
+      comments: fields.comments ?? null,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", id)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return { data: null, error: { message: FIRST_ARTICLE_LOCKED } };
+  }
+  return { data: { id }, error: null };
+}
+
+async function requireDraftFirstArticle(
+  client: SupabaseClient<Database>,
+  firstArticleInspectionId: string,
+  companyId: string
+): Promise<{ message: string } | null> {
+  const fai = await client
+    .from("firstArticleInspection")
+    .select("status")
+    .eq("id", firstArticleInspectionId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (fai.error) return fai.error;
+  if (!fai.data) return { message: "First article not found" };
+  if (fai.data.status !== "Draft") return { message: FIRST_ARTICLE_LOCKED };
+  return null;
+}
+
+export async function upsertFirstArticleInspectionProduct(
+  client: SupabaseClient<Database>,
+  product: z.infer<typeof firstArticleInspectionProductValidator> & {
+    companyId: string;
+    userId: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const { id, companyId, userId, firstArticleInspectionId, ...fields } =
+    product;
+
+  const locked = await requireDraftFirstArticle(
+    client,
+    firstArticleInspectionId,
+    companyId
+  );
+  if (locked) return { data: null, error: locked };
+
+  const values = {
+    kind: fields.kind,
+    name: fields.name,
+    specification: fields.specification ?? null,
+    code: fields.code ?? null,
+    supplier: fields.supplier ?? null,
+    certificateNumber: fields.certificateNumber ?? null,
+    certificateId: fields.certificateId ?? null,
+    functionalTestProcedureNumber: fields.functionalTestProcedureNumber ?? null,
+    acceptanceReportNumber: fields.acceptanceReportNumber ?? null,
+    comments: fields.comments ?? null,
+    customerApprovalVerification: fields.customerApprovalVerification
+  };
+
+  if (id) {
+    const updated = await client
+      .from("firstArticleInspectionProduct")
+      .update({
+        ...values,
+        updatedBy: userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", id)
+      .eq("firstArticleInspectionId", firstArticleInspectionId)
+      .eq("companyId", companyId)
+      .select("id");
+    if (updated.error) return { data: null, error: updated.error };
+    if (!updated.data?.length) {
+      return { data: null, error: { message: "Row not found" } };
+    }
+    return { data: { id }, error: null };
+  }
+
+  const last = await client
+    .from("firstArticleInspectionProduct")
+    .select("sortOrder")
+    .eq("firstArticleInspectionId", firstArticleInspectionId)
+    .eq("companyId", companyId)
+    .order("sortOrder", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (last.error) return { data: null, error: last.error };
+
+  const inserted = await client
+    .from("firstArticleInspectionProduct")
+    .insert({
+      ...values,
+      firstArticleInspectionId,
+      sortOrder: (last.data?.sortOrder ?? -1) + 1,
+      companyId,
+      createdBy: userId
+    })
+    .select("id")
+    .single();
+  if (inserted.error) return { data: null, error: inserted.error };
+  return { data: { id: inserted.data.id }, error: null };
+}
+
+export async function deleteFirstArticleInspectionProduct(
+  client: SupabaseClient<Database>,
+  args: { id: string; firstArticleInspectionId: string; companyId: string }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const locked = await requireDraftFirstArticle(
+    client,
+    args.firstArticleInspectionId,
+    args.companyId
+  );
+  if (locked) return { data: null, error: locked };
+
+  const deleted = await client
+    .from("firstArticleInspectionProduct")
+    .delete()
+    .eq("id", args.id)
+    .eq("firstArticleInspectionId", args.firstArticleInspectionId)
+    .eq("companyId", args.companyId)
+    .select("id");
+  if (deleted.error) return { data: null, error: deleted.error };
+  if (!deleted.data?.length) {
+    return { data: null, error: { message: "Row not found" } };
+  }
+  return { data: { id: args.id }, error: null };
+}
+
+/** AS9102 fields 24/25 — the only edit an approved FAI accepts. */
+export async function updateFirstArticleCustomerApproval(
+  client: SupabaseClient<Database>,
+  approval: z.infer<typeof firstArticleCustomerApprovalValidator> & {
+    companyId: string;
+    updatedBy: string;
+  }
+): Promise<FirstArticleResult<{ id: string }>> {
+  const result = await client
+    .from("firstArticleInspection")
+    .update({
+      customerApprovalName: approval.customerApprovalName ?? null,
+      customerApprovalDate: approval.customerApprovalDate ?? null,
+      updatedBy: approval.updatedBy,
+      updatedAt: datetime.timestamp()
+    })
+    .eq("id", approval.id)
+    .eq("companyId", approval.companyId)
+    .eq("status", "Approved")
+    .select("id");
+  if (result.error) return { data: null, error: result.error };
+  if (!result.data?.length) {
+    return {
+      data: null,
+      error: {
+        message: "Only an approved first article takes a customer approval"
+      }
+    };
+  }
+  return { data: { id: approval.id }, error: null };
 }

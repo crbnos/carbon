@@ -49,6 +49,7 @@ import {
   LuCirclePause,
   LuCirclePlay,
   LuCircleStop,
+  LuClipboardCheck,
   LuClipboardList,
   LuClock,
   LuEllipsisVertical,
@@ -56,6 +57,7 @@ import {
   LuLoaderCircle,
   LuPanelLeft,
   LuPanelRight,
+  LuPlus,
   LuQrCode,
   LuSettings,
   LuShoppingCart,
@@ -82,6 +84,9 @@ import {
   useRouteData,
   useUser
 } from "~/hooks";
+import type { JobFirstArticleInspection } from "~/modules/quality/types";
+import FirstArticleStatus from "~/modules/quality/ui/FirstArticles/FirstArticleStatus";
+import { useFirstArticleLabels } from "~/modules/quality/ui/FirstArticles/useFirstArticleLabels";
 import { useSuppliers } from "~/stores";
 import { generateBomIds } from "~/utils/bom";
 import { path } from "~/utils/path";
@@ -145,6 +150,12 @@ const JobHeader = () => {
   const routeData = useRouteData<{
     job: Job;
     unbatchedBatchableOperations?: number;
+    firstArticles?: JobFirstArticleInspection[];
+    firstArticlesDue?: {
+      jobMakeMethodId: string;
+      description: string;
+      reason: "New Part" | "Production Lapse";
+    }[];
   }>(path.to.job(jobId));
 
   const statusFetcher = useFetcher<{}>();
@@ -157,6 +168,12 @@ const JobHeader = () => {
   const status = routeData?.job?.status;
   const unbatchedBatchableOperations =
     routeData?.unbatchedBatchableOperations ?? 0;
+  const firstArticles = routeData?.firstArticles ?? [];
+  const firstArticlesDue = routeData?.firstArticlesDue ?? [];
+  const openFirstArticles = firstArticles.filter(
+    (firstArticle) => firstArticle.status !== "Approved"
+  );
+  const firstArticleLabels = useFirstArticleLabels();
 
   const getOptionFromPath = (jobId: string) => {
     if (location.pathname.includes(path.to.jobMaterials(jobId)))
@@ -326,6 +343,32 @@ const JobHeader = () => {
               {t`${unbatchedBatchableOperations} awaiting batching`}
             </Status>
           )}
+          {firstArticlesDue.length > 0 && (
+            <Status
+              color="orange"
+              tooltip={firstArticlesDue
+                .map(
+                  (due) =>
+                    `${due.description}: ${firstArticleLabels.reason(due.reason)}`
+                )
+                .join(", ")}
+            >
+              {t`FAI due`}
+            </Status>
+          )}
+          {openFirstArticles.length > 0 && (
+            <Status
+              color="yellow"
+              tooltip={openFirstArticles
+                .map(
+                  (firstArticle) =>
+                    `${firstArticle.inspection?.inspectionId ?? ""}: ${firstArticleLabels.status(firstArticle.status)}`
+                )
+                .join(", ")}
+            >
+              {t`FAI open`}
+            </Status>
+          )}
         </HStack>
         <HStack>
           {routeData?.job?.salesOrderId && routeData?.job.salesOrderLineId && (
@@ -462,6 +505,44 @@ const JobHeader = () => {
           >
             Release
           </SplitButton>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                leftIcon={<LuClipboardList />}
+                rightIcon={<LuChevronDown />}
+                variant="secondary"
+              >
+                <Trans>First Article</Trans>
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-72">
+              {firstArticles.map((firstArticle) => (
+                <DropdownMenuItem key={firstArticle.id} asChild>
+                  <Link to={path.to.firstArticle(firstArticle.id)}>
+                    <DropdownMenuIcon icon={<LuClipboardCheck />} />
+                    <span className="flex-1 truncate">
+                      {firstArticle.inspection?.inspectionId}{" "}
+                      {firstArticle.item?.readableIdWithRevision}
+                    </span>
+                    <FirstArticleStatus status={firstArticle.status} />
+                  </Link>
+                </DropdownMenuItem>
+              ))}
+              {firstArticles.length > 0 && <DropdownMenuSeparator />}
+              <DropdownMenuItem
+                disabled={!permissions.can("create", "quality")}
+                asChild
+              >
+                <Link
+                  to={`${path.to.newFirstArticle}?jobId=${encodeURIComponent(jobId)}`}
+                >
+                  <DropdownMenuIcon icon={<LuPlus />} />
+                  <Trans>New First Article</Trans>
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           <Button
             onClick={completeModal.onOpen}

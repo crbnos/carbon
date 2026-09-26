@@ -6401,6 +6401,9 @@ msgstr "Срок в пределах"
 msgid "Duplicate"
 msgstr "Дублировать"
 
+msgid "Duplicate characteristic numbers"
+msgstr ""
+
 msgid "Duplicate file names after image conversion"
 msgstr "Дублирующиеся имена файлов после преобразования изображения"
 
@@ -6478,6 +6481,10 @@ msgstr "например Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Каждая ячейка — это назначенные сотрудники в сравнении с необходимыми для работы в день сотрудниками."
+
+#. placeholder {0}: duplicates.join(", ")
+msgid "Each characteristic needs a unique number on the report. Used more than once: {0}"
+msgstr ""
 
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "Каждый производственный заказ сохраняет свою партию. Цех не может их менять."
@@ -7505,6 +7512,12 @@ msgstr "Дополнительные теги для разбора отчетн
 msgid "FAI Complete (Verified)"
 msgstr ""
 
+msgid "FAI due"
+msgstr ""
+
+msgid "FAI open"
+msgstr ""
+
 msgid "FAI Report"
 msgstr ""
 
@@ -8144,6 +8157,9 @@ msgid "Form 1: Part Number Accountability"
 msgstr ""
 
 msgid "Form 2: Product Accountability"
+msgstr ""
+
+msgid "Form 3: Characteristic Accountability"
 msgstr ""
 
 msgid "Format"
@@ -10918,6 +10934,9 @@ msgstr "Навигация"
 msgid "NC Program Change"
 msgstr ""
 
+msgid "NCR"
+msgstr ""
+
 msgid "NCRs by Type"
 msgstr "NCRs по типам"
 
@@ -11879,6 +11898,9 @@ msgstr "На этой площадке нет рабочих центров"
 
 msgid "No work centers exist"
 msgstr "Рабочих центров не существует"
+
+msgid "No."
+msgstr ""
 
 msgid "Nom"
 msgstr "Номин"
@@ -14305,6 +14327,9 @@ msgid "Reduced"
 msgstr "Ослабленный"
 
 msgid "Ref. location"
+msgstr ""
+
+msgid "Ref. Location"
 msgstr ""
 
 msgid "Reference"
@@ -17837,6 +17862,9 @@ msgstr "Правило Инкотермс (FOB, DAP, EXW, CIF, …), котор�
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "Правило Инкотермс (FOB, DAP, EXW, CIF, …), которое определяет, кто платит за доставку, кто несет риск и где происходит передача права собственности при отгрузке этому покупателю."
 
+msgid "The inspection plan has no characteristics."
+msgstr ""
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "Себестоимость Запасов, признаваемая при проведении Отгрузки, оцениваемая по методу Калькуляции Номенклатуры."
 
@@ -19668,6 +19696,9 @@ msgstr "Ошибка проверки"
 
 msgid "Verification failed"
 msgstr "Ошибка проверки"
+
+msgid "Verification of every design characteristic on the inspection plan"
+msgstr ""
 
 msgid "Verified"
 msgstr "Проверено"

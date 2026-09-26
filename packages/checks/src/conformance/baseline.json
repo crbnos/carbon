@@ -389,6 +389,7 @@
   "no-raw-rounding::apps/erp/app/modules/purchasing/ui/SupplierInteraction/SupplierInteractionDocuments.tsx::formData.append(\"size\", Math.round(size / 1024).toString());",
   "no-raw-rounding::apps/erp/app/modules/purchasing/ui/SupplierInteraction/SupplierInteractionLineDocuments.tsx::Math.floor((file.metadata?.size ?? 0) / 1024)",
   "no-raw-rounding::apps/erp/app/modules/purchasing/ui/SupplierInteraction/SupplierInteractionLineDocuments.tsx::formData.append(\"size\", Math.round(size / 1024).toString());",
+  "no-raw-rounding::apps/erp/app/modules/quality/firstArticle.server.ts::size: Math.round(pdf.byteLength / 1024),",
   "no-raw-rounding::apps/erp/app/modules/quality/samplingStandards.ts::const n = Math.max(1, Math.min(safeLot, Math.ceil((safeLot * pct) / 100)));",
   "no-raw-rounding::apps/erp/app/modules/quality/samplingStandards.ts::const safeLot = Math.max(1, Math.floor(lotSize));",
   "no-raw-rounding::apps/erp/app/modules/quality/ui/Certificates/CertificateForm.tsx::size: Math.round(selected.size / 1024)",

@@ -12,6 +12,7 @@ import { redirect } from "react-router";
 import invariant from "tiny-invariant";
 import {
   deleteIssue,
+  getFirstArticleInspectionByLot,
   getInspection,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
@@ -44,6 +45,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const createNcr =
     ((formData.get("createNcr") as string | null) ?? "true") !== "false";
 
+  // A First Article lot is rejected here too: verdict-only (the engine flips
+  // entities and computes a write-off for Receipt lots alone) and one-shot, as
+  // its FAI's Verify snapshots the verdict.
+  const firstArticle = (
+    await getFirstArticleInspectionByLot(client, id, companyId)
+  ).data;
+  const returnTo = firstArticle
+    ? path.to.firstArticle(firstArticle.id)
+    : path.to.inspection(id);
+
   // 1. Cascade reject — mark every tracked entity in the lot as Rejected
   //    and flip the lot's status to Failed (ISO 9001:2015 §8.7).
   const dispositionResult = await dispositionInspection({
@@ -53,7 +64,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     dispositionedBy: userId,
     // ERP reject does receipt-specific NCR/write-off work — Receipt lots only.
     // Job Operation lots are rejected (with scrap/rework) by the MES route.
-    requireSource: "Receipt"
+    requireSource: firstArticle ? "First Article" : "Receipt",
+    requireOpen: !!firstArticle
   });
   if (dispositionResult.error) {
     throw redirect(
@@ -113,8 +125,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // If the inspector opted out of an NCR, we're done — the lot is rejected.
   if (!createNcr) {
     throw redirect(
-      path.to.inspection(id),
-      await flash(request, success("Lot rejected"))
+      returnTo,
+      await flash(
+        request,
+        success(firstArticle ? "First article rejected" : "Lot rejected")
+      )
     );
   }
 
@@ -215,7 +230,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const createResult = await insertIssue(serviceRole, {
     name: issueTitle,
-    description: `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
+    description: firstArticle
+      ? `Auto-created from first article inspection ${inspectionReadableId} on ${sourceReadableId}.${failedFeaturesBlock}`
+      : `Auto-created from inbound inspection ${inspectionReadableId}. Lot size ${insp.lotSize}, sample ${insp.sampleSize}, Ac ${insp.acceptanceNumber} / Re ${insp.rejectionNumber}. Supplier: ${supplierName}.${failedFeaturesBlock}`,
     priority: "Medium",
     source: "Internal",
     locationId,
@@ -258,11 +275,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   };
-  const receiptLineEntities = await serviceRole
-    .from("trackedEntity")
-    .select("id")
-    .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
-    .eq("companyId", companyId);
+  // Only a Receipt lot's line carries received entities; a First Article
+  // lot's line id is a make method.
+  const receiptLineEntities =
+    insp.sourceDocument === "Receipt"
+      ? await serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("attributes ->> Receipt Line", insp.sourceDocumentLineId ?? "")
+          .eq("companyId", companyId)
+      : { data: [] as { id: string }[], error: null };
   if (receiptLineEntities.error) await failLotRead(receiptLineEntities.error);
   const allLotEntityIds = Array.from(
     new Set([

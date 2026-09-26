@@ -81,7 +81,9 @@ export type InspectionDispositionInput = {
   // complete/scrap/rework and wedge the operation (whose outcome the MES
   // disposition route owns). The MES route omits this so it can disposition
   // Job Operation lots.
-  requireSource?: "Receipt" | "Job Operation";
+  // A First Article verdict carries no posting either, so the ERP routes also
+  // accept "First Article" lots (one-shot, with requireOpen).
+  requireSource?: "Receipt" | "Job Operation" | "First Article";
 };
 
 export type InspectionMeasurementInput = {

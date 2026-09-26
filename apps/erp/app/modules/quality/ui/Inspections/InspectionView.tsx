@@ -144,6 +144,10 @@ const InspectionView = ({
   // (which closes the lot one-shot). Exposing Accept/Reject on a job-op lot would
   // hard-terminate it with no posting and wedge the operation.
   const isReceiptSource = inspection.sourceDocument === "Receipt";
+  // A First Article lot's verdict carries no posting either, so the ERP
+  // dispositions it too (one-shot — its FAI's Verify snapshots the verdict).
+  const isFirstArticle = inspection.sourceDocument === "First Article";
+  const canDisposition = isReceiptSource || isFirstArticle;
   const liveFeatures = useMemo(
     () => features.filter((f) => f.inspectionFeature != null),
     [features]
@@ -383,17 +387,17 @@ const InspectionView = ({
       const counts = featureCounts.get(feature.inspectionFeatureId);
       return counts != null && counts.failed >= feature.rejectionNumber;
     });
-    canAccept = isReceiptSource && !lotClosed && allFeaturesSatisfied;
+    canAccept = canDisposition && !lotClosed && allFeaturesSatisfied;
     canReject =
-      isReceiptSource && !lotClosed && (anyFeatureRejectable || fails > 0);
+      canDisposition && !lotClosed && (anyFeatureRejectable || fails > 0);
   } else {
     canAccept =
-      isReceiptSource &&
+      canDisposition &&
       !lotClosed &&
       inspected >= inspection.sampleSize &&
       fails <= inspection.acceptanceNumber;
     canReject =
-      isReceiptSource && !lotClosed && fails > inspection.acceptanceNumber;
+      canDisposition && !lotClosed && fails > inspection.acceptanceNumber;
   }
 
   const failedFeatureSummary = useMemo<FailedFeatureSummary[]>(() => {
@@ -515,7 +519,7 @@ const InspectionView = ({
               <Trans>Add Sample</Trans>
             </Button>
           )}
-          {isReceiptSource && (
+          {canDisposition && (
             <>
               <Button
                 variant="destructive"
@@ -715,9 +719,11 @@ const InspectionView = ({
           action={path.to.inspectionAccept(inspection.id)}
           title={t`Accept lot?`}
           text={
-            isSerial
-              ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
-              : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
+            isFirstArticle
+              ? t`The first article will be marked Passed. The verdict is final: nothing is posted, and the readings are locked.`
+              : isSerial
+                ? t`${lotEntities.length - inspected} un-sampled entities will be released to Available. Sampled passes stay Available and sampled failures stay Rejected.`
+                : t`The lot will be marked Passed. ${fails} sampled failure(s) are recorded for your records.`
           }
           confirmText={t`Accept Lot`}
           onCancel={acceptConfirmDisclosure.onClose}
@@ -730,9 +736,11 @@ const InspectionView = ({
           action={path.to.inspectionReject(inspection.id)}
           issueTypes={issueTypes}
           summary={
-            isSerial
-              ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
-              : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
+            isFirstArticle
+              ? t`The first article will be marked Failed. The verdict is final: nothing is posted, and the readings are locked.`
+              : isSerial
+                ? t`Statistical acceptance failed, so the entire lot is considered non-conforming (ISO 9001:2015 §8.7). All ${lotEntities.length} entities — ${passes} sampled pass(es), ${fails} failure(s), and ${Math.max(0, lotEntities.length - inspected)} un-inspected — will be marked Rejected.`
+                : t`Statistical acceptance failed, so the entire lot of ${inspection.lotSize} is considered non-conforming (ISO 9001:2015 §8.7) — ${passes} sampled pass(es) and ${fails} failure(s).`
           }
           failedFeatureSummary={failedFeatureSummary}
           onCancel={rejectConfirmDisclosure.onClose}

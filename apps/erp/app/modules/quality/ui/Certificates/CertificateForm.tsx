@@ -23,14 +23,31 @@ import { certificateTypes, certificateValidator } from "../../quality.models";
 type UploadedFile = { path: string; name: string; size: number };
 
 type CertificateFormProps = {
-  receiptLineId: string;
   supplierId?: string | null;
   isDisabled?: boolean;
   onSaved?: () => void;
-};
+} & (
+  | {
+      // A supplier certificate on a received line.
+      receiptLineId: string;
+      jobOperation?: never;
+    }
+  | {
+      // A special-process or functional-test certificate on a job operation
+      // (FAI Form 2). The caller picks the operations and where to post.
+      receiptLineId?: never;
+      jobOperation: {
+        options: { id: string; name: string }[];
+        action: string;
+        /** Storage folder under the company, e.g. `job/{jobId}`. */
+        uploadFolder: string;
+      };
+    }
+);
 
 const CertificateForm = ({
   receiptLineId,
+  jobOperation,
   supplierId,
   isDisabled = false,
   onSaved
@@ -64,7 +81,10 @@ const CertificateForm = ({
       return;
     }
 
-    const filePath = `${company.id}/inventory/${receiptLineId}/${
+    const folder = jobOperation
+      ? jobOperation.uploadFolder
+      : `inventory/${receiptLineId}`;
+    const filePath = `${company.id}/${folder}/${
       stripSpecialCharacters(selected.name) || "file"
     }`;
 
@@ -100,19 +120,24 @@ const CertificateForm = ({
       key={formKey}
       validator={certificateValidator}
       method="post"
-      action={path.to.receiptLineCertificates(receiptLineId)}
+      action={
+        jobOperation
+          ? jobOperation.action
+          : path.to.receiptLineCertificates(receiptLineId ?? "")
+      }
       defaultValues={{
-        type: "Material",
+        type: jobOperation ? "Special Process" : "Material",
         certificateNumber: "",
         specification: "",
         notes: "",
         supplierId: supplierId ?? undefined,
-        receiptLineId
+        receiptLineId,
+        jobOperationId: jobOperation?.options[0]?.id
       }}
       fetcher={fetcher}
       className="w-full"
     >
-      <Hidden name="receiptLineId" />
+      {receiptLineId && <Hidden name="receiptLineId" />}
       {file && (
         <>
           <Hidden name="path" value={file.path} />
@@ -141,6 +166,17 @@ const CertificateForm = ({
             onDrop={upload}
             disabled={isDisabled || isUploading}
             className="w-full"
+          />
+        )}
+        {jobOperation && (
+          <Select
+            name="jobOperationId"
+            label={t`Operation`}
+            options={jobOperation.options.map((operation) => ({
+              value: operation.id,
+              label: operation.name
+            }))}
+            isReadOnly={isDisabled}
           />
         )}
         <Select

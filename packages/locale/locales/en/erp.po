@@ -6401,6 +6401,9 @@ msgstr "Due within"
 msgid "Duplicate"
 msgstr "Duplicate"
 
+msgid "Duplicate characteristic numbers"
+msgstr "Duplicate characteristic numbers"
+
 msgid "Duplicate file names after image conversion"
 msgstr "Duplicate file names after image conversion"
 
@@ -6478,6 +6481,10 @@ msgstr "e.g. Zebra 2x1"
 
 msgid "Each cell is the people assigned against the people the day's work needs."
 msgstr "Each cell is the people assigned against the people the day's work needs."
+
+#. placeholder {0}: duplicates.join(", ")
+msgid "Each characteristic needs a unique number on the report. Used more than once: {0}"
+msgstr "Each characteristic needs a unique number on the report. Used more than once: {0}"
 
 msgid "Each job keeps its own lot. The shop floor can't change these."
 msgstr "Each job keeps its own lot. The shop floor can't change these."
@@ -7505,6 +7512,12 @@ msgstr "Extra tags for slicing your GL reporting"
 msgid "FAI Complete (Verified)"
 msgstr "FAI Complete (Verified)"
 
+msgid "FAI due"
+msgstr "FAI due"
+
+msgid "FAI open"
+msgstr "FAI open"
+
 msgid "FAI Report"
 msgstr "FAI Report"
 
@@ -8145,6 +8158,9 @@ msgstr "Form 1: Part Number Accountability"
 
 msgid "Form 2: Product Accountability"
 msgstr "Form 2: Product Accountability"
+
+msgid "Form 3: Characteristic Accountability"
+msgstr "Form 3: Characteristic Accountability"
 
 msgid "Format"
 msgstr "Format"
@@ -10918,6 +10934,9 @@ msgstr "Navigation"
 msgid "NC Program Change"
 msgstr "NC Program Change"
 
+msgid "NCR"
+msgstr "NCR"
+
 msgid "NCRs by Type"
 msgstr "NCRs by Type"
 
@@ -11879,6 +11898,9 @@ msgstr "No work centers at this location"
 
 msgid "No work centers exist"
 msgstr "No work centers exist"
+
+msgid "No."
+msgstr "No."
 
 msgid "Nom"
 msgstr "Nom"
@@ -14306,6 +14328,9 @@ msgstr "Reduced"
 
 msgid "Ref. location"
 msgstr "Ref. location"
+
+msgid "Ref. Location"
+msgstr "Ref. Location"
 
 msgid "Reference"
 msgstr "Reference"
@@ -17837,6 +17862,9 @@ msgstr "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freigh
 msgid "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 msgstr "The Incoterm rule (FOB, DAP, EXW, CIF, …) that governs who pays freight, who bears risk, and where the transfer of title occurs on shipments to this customer."
 
+msgid "The inspection plan has no characteristics."
+msgstr "The inspection plan has no characteristics."
+
 msgid "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 msgstr "The inventory cost recognized when a shipment posts, valued by the item's costing method."
 
@@ -19668,6 +19696,9 @@ msgstr "Verification Error"
 
 msgid "Verification failed"
 msgstr "Verification failed"
+
+msgid "Verification of every design characteristic on the inspection plan"
+msgstr "Verification of every design characteristic on the inspection plan"
 
 msgid "Verified"
 msgstr "Verified"

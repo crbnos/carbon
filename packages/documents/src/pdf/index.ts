@@ -14,6 +14,15 @@ import type { JobTravelerMaterial } from "./blocks/jobTraveler";
 import CertificateOfConformancePDF from "./CertificateOfConformancePDF";
 import { SAMPLE_CERTIFICATE_OF_CONFORMANCE } from "./certificateOfConformance.samples";
 import { Footer } from "./components";
+import type {
+  FirstArticleInspectionPDFCharacteristic,
+  FirstArticleInspectionPDFHeader,
+  FirstArticleInspectionPDFIndexRow,
+  FirstArticleInspectionPDFProduct,
+  FirstArticleInspectionPDFProps
+} from "./FirstArticleInspectionPDF";
+import FirstArticleInspectionPDF from "./FirstArticleInspectionPDF";
+import { SAMPLE_FIRST_ARTICLE_INSPECTION } from "./firstArticleInspection.samples";
 import { ensureFont, getSafeFontFamily, registerDocumentFonts } from "./fonts";
 import IssuePDF from "./IssuePDF";
 import { SAMPLE_ISSUE } from "./issue.samples";
@@ -43,6 +52,11 @@ export type {
   CertificateOfConformanceHeader,
   CertificateOfConformanceLine,
   CertificateSigner,
+  FirstArticleInspectionPDFCharacteristic,
+  FirstArticleInspectionPDFHeader,
+  FirstArticleInspectionPDFIndexRow,
+  FirstArticleInspectionPDFProduct,
+  FirstArticleInspectionPDFProps,
   JobTravelerMaterial
 };
 export {
@@ -51,6 +65,7 @@ export {
   CONFORMITY_STATEMENT,
   DOCUMENT_PDFS,
   ensureFont,
+  FirstArticleInspectionPDF,
   Footer,
   getPurchaseOrderDisplayId,
   getQuoteDisplayId,
@@ -66,6 +81,7 @@ export {
   QuotePDF,
   registerDocumentFonts,
   SAMPLE_CERTIFICATE_OF_CONFORMANCE,
+  SAMPLE_FIRST_ARTICLE_INSPECTION,
   SalesInvoicePDF,
   SAMPLE_ISSUE,
   SAMPLE_JOB_TRAVELER,

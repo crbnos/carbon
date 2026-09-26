@@ -2,6 +2,7 @@ import { useLingui } from "@lingui/react/macro";
 import {
   LuCircleGauge,
   LuClipboardCheck,
+  LuClipboardList,
   LuDraftingCompass,
   LuFileText,
   LuListChecks,
@@ -71,6 +72,11 @@ export default function useQualitySubmodules() {
           to: path.to.inspections,
           icon: <LuClipboardCheck />,
           table: "inspection"
+        },
+        {
+          name: t`First Articles`,
+          to: path.to.firstArticles,
+          icon: <LuClipboardList />
         }
       ]
     },
