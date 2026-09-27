@@ -484,6 +484,11 @@ export async function deleteUnitOfMeasure(
   return client.from("unitOfMeasure").delete().eq("id", id);
 }
 
+/**
+ * An item's configuration parameters and groups, as
+ * `{ data: { groups, parameters } }`. A failed read is an error, never an
+ * empty configuration.
+ */
 export async function getConfigurationParameters(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -506,17 +511,20 @@ export async function getConfigurationParameters(
     logger.error("Failed to get configuration parameters", {
       error: parameters.error
     });
-    return { groups: [], parameters: [] };
+    return { data: null, error: parameters.error };
   }
 
   if (groups.error) {
     logger.error("Failed to get configuration parameter groups", {
       error: groups.error
     });
-    return { groups: [], parameters: [] };
+    return { data: null, error: groups.error };
   }
 
-  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
+  return {
+    data: { groups: groups.data ?? [], parameters: parameters.data ?? [] },
+    error: null
+  };
 }
 
 export async function getConfigurationRules(
@@ -3797,11 +3805,9 @@ export async function upsertPart(
     ]);
 
     if (partInsert.error) return partInsert;
-    if (itemCostUpdate.error) {
-      logger.error("Failed to update item cost", {
-        error: itemCostUpdate.error
-      });
-    }
+    // As upsertTool/upsertConsumable: a rejected posting group or unit cost
+    // is the caller's error, not a log line behind a success.
+    if (itemCostUpdate.error) return itemCostUpdate;
 
     if (part.replenishmentSystem !== "Buy") {
       const itemReplenishmentInsert = await client
@@ -5369,11 +5375,8 @@ export async function upsertMaterial(
             .eq("itemId", insert.data?.id ?? "")
         )
       );
-      if (itemCostUpdate.some((update) => update.error)) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.find((update) => update.error)?.error
-        });
-      }
+      const failedCost = itemCostUpdate.find((update) => update.error);
+      if (failedCost) return failedCost;
     } else {
       const itemInsert = await client
         .from("item")
@@ -5405,11 +5408,7 @@ export async function upsertMaterial(
           })
         )
         .eq("itemId", itemId);
-      if (itemCostUpdate.error) {
-        logger.error("Failed to update item cost", {
-          error: itemCostUpdate.error
-        });
-      }
+      if (itemCostUpdate.error) return itemCostUpdate;
     }
 
     for (const itemId of newItemIds) {

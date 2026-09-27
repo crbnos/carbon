@@ -197,11 +197,18 @@ async function handleKanban({
     const jobId = id;
     let redirectUrl = path.to.job(jobId);
 
-    const operation = await getActiveJobOperationByJobId(
+    const activeOperation = await getActiveJobOperationByJobId(
       client,
       jobId,
       companyId
     );
+    if (activeOperation.error) {
+      logger.error("Failed to load the job's active operation", {
+        jobId,
+        error: activeOperation.error
+      });
+    }
+    const operation = activeOperation.data;
 
     if (operation && kanban.data.autoRelease) {
       let operationId = operation.id;

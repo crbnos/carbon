@@ -81,16 +81,16 @@ export type MaterialConfigurationData = {
 };
 
 export type ConfigurationParameter = NonNullable<
-  Awaited<ReturnType<typeof getConfigurationParameters>>["parameters"]
->[number];
+  Awaited<ReturnType<typeof getConfigurationParameters>>["data"]
+>["parameters"][number];
 
 export type ConfigurationRule = NonNullable<
   Awaited<ReturnType<typeof getConfigurationRules>>
 >[number];
 
 export type ConfigurationParameterGroup = NonNullable<
-  Awaited<ReturnType<typeof getConfigurationParameters>>["groups"]
->[number];
+  Awaited<ReturnType<typeof getConfigurationParameters>>["data"]
+>["groups"][number];
 
 // The `X`/`XListItem` pairs below are deliberately separate: `X` is the full
 // view row that detail screens read, `XListItem` is exactly what the list

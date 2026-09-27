@@ -25,8 +25,8 @@ type DraftMaterial = NonNullable<
 type DraftOperation = NonNullable<
   Awaited<ReturnType<typeof getMethodOperationsByMakeMethodId>>["data"]
 >[number];
-type DraftConfigParameters = Awaited<
-  ReturnType<typeof getConfigurationParameters>
+type DraftConfigParameters = NonNullable<
+  Awaited<ReturnType<typeof getConfigurationParameters>>["data"]
 >["parameters"];
 type DraftConfigRules = Awaited<ReturnType<typeof getConfigurationRules>>;
 

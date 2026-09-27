@@ -128,7 +128,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       ? getAssemblyUnits(client, instruction.data.modelUploadId)
       : Promise.resolve({ data: [] }),
     instruction.data.itemId
-      ? getFlattenedBomMaterials(client, instruction.data.itemId, companyId)
+      ? getFlattenedBomMaterials(
+          client,
+          instruction.data.itemId,
+          companyId
+        ).then((result) => result.data)
       : Promise.resolve([]),
     isAssemblerServiceHealthy(),
     getAssemblyInstructionVersions(client, instruction.data)

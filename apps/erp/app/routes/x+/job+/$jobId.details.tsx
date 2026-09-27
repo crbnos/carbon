@@ -139,7 +139,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id) ?? []
-    ),
+    ).then((result) => result.data),
     tags: tags.data ?? []
   };
 }

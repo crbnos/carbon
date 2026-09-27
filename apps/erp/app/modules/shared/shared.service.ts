@@ -1,6 +1,7 @@
 import type { Database, Tables } from "@carbon/database";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import type {
+  PostgrestError,
   PostgrestResponse,
   PostgrestSingleResponse,
   SupabaseClient
@@ -98,12 +99,14 @@ export { getDocumentType } from "@carbon/files";
 /**
  * The item's CAD model in the same shape the line views expose it, so it drops
  * straight into `<CadModel modelUpload={...} />`. Always the full shape — an item
- * with no model is every field null, never a narrower branch.
+ * with no model is every field null, never a narrower branch — returned as
+ * `{ data }`. An unknown item or a failed read is `error` (with the empty
+ * shape in `data`, which the in-app viewers fall back to).
  */
 export async function getModelByItemId(
   client: SupabaseClient<Database>,
   itemId: string
-): Promise<ItemModelUpload> {
+): Promise<{ data: ItemModelUpload; error: PostgrestError | null }> {
   const item = await client
     .from("item")
     .select("id, modelUploadId")
@@ -119,7 +122,8 @@ export async function getModelByItemId(
     thumbnailPath: null
   };
 
-  if (!item.data?.modelUploadId) return noModel;
+  if (item.error) return { data: noModel, error: item.error };
+  if (!item.data.modelUploadId) return { data: noModel, error: null };
 
   const model = await client
     .from("modelUpload")
@@ -127,15 +131,19 @@ export async function getModelByItemId(
     .eq("id", item.data.modelUploadId)
     .maybeSingle();
 
-  if (!model.data) return noModel;
+  if (model.error) return { data: noModel, error: model.error };
+  if (!model.data) return { data: noModel, error: null };
 
   return {
-    itemId: item.data.id,
-    modelId: model.data.id,
-    modelName: model.data.name,
-    modelPath: model.data.modelPath,
-    modelSize: model.data.size,
-    thumbnailPath: model.data.thumbnailPath
+    data: {
+      itemId: item.data.id,
+      modelId: model.data.id,
+      modelName: model.data.name,
+      modelPath: model.data.modelPath,
+      modelSize: model.data.size,
+      thumbnailPath: model.data.thumbnailPath
+    },
+    error: null
   };
 }
 

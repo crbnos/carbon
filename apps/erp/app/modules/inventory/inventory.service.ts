@@ -2824,14 +2824,20 @@ export async function getPickingListLines(
  * a picking list's items — drives the "No Stock" warning. Returns a map of
  * pickingListLineId → availableQuantity.
  */
+/**
+ * Available quantity per picking list line, as `{ data: Map<lineId, qty> }`
+ * (an entries array over the API). A failed read is `error`, with an empty map
+ * the picking list page falls back to.
+ */
 export async function getPickingListAvailability(
   client: SupabaseClient<Database>,
   pickingListId: string
-): Promise<Map<string, number>> {
+): Promise<{ data: Map<string, number>; error: PostgrestError | null }> {
   const result = await client.rpc("get_picking_list_availability", {
     p_picking_list_id: pickingListId
   });
   const map = new Map<string, number>();
+  if (result.error) return { data: map, error: result.error };
   for (const row of result.data ?? []) {
     map.set(
       (row as { pickingListLineId: string }).pickingListLineId,
@@ -2840,7 +2846,7 @@ export async function getPickingListAvailability(
       )
     );
   }
-  return map;
+  return { data: map, error: null };
 }
 
 export type PickingListRecommendation = {

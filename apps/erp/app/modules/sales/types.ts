@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { PostgrestError } from "@supabase/supabase-js";
 import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
 import type {
@@ -80,6 +81,8 @@ export type PriceListRow = {
 export type PriceListResult = {
   data: PriceListRow[];
   count: number;
+  /** A failed read is an error, never an empty list. */
+  error: PostgrestError | null;
 };
 
 export type PriceResolutionInput = {
@@ -272,7 +275,7 @@ export type SalesOrderTransactionType =
 
 export type SalesOrderRelatedItems = Awaited<
   ReturnType<typeof getSalesOrderRelatedItems>
->;
+>["data"];
 
 export type SalesRFQ = NonNullable<
   Awaited<ReturnType<typeof getSalesRFQs>>["data"]

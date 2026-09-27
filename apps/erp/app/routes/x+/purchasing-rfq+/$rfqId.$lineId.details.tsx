@@ -70,7 +70,7 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
   // says there is a model at all.
   const model =
     line.data?.modelPath && line.data.itemId
-      ? await getModelByItemId(serviceRole, line.data.itemId)
+      ? (await getModelByItemId(serviceRole, line.data.itemId)).data
       : null;
 
   return {

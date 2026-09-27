@@ -152,7 +152,7 @@ const QuoteMakeMethodTools = () => {
 
     // Fetch configuration parameters for the selected item
     const params = await getConfigurationParameters(carbon, itemId, companyId);
-    setConfigurationParameters(params);
+    setConfigurationParameters(params.data ?? { groups: [], parameters: [] });
 
     configureSelectModal.onClose();
     configuratorModal.onOpen();

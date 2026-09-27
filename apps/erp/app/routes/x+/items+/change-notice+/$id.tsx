@@ -191,9 +191,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
       const config = manufacturing.data?.requiresConfiguration
         ? {
-            parameters: (
-              await getConfigurationParameters(client, draftItemId, companyId)
-            ).parameters,
+            parameters:
+              (await getConfigurationParameters(client, draftItemId, companyId))
+                .data?.parameters ?? [],
             configurationRules: await getConfigurationRules(
               client,
               draftItemId,
@@ -201,8 +201,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             )
           }
         : {
-            parameters: [] as Awaited<
-              ReturnType<typeof getConfigurationParameters>
+            parameters: [] as NonNullable<
+              Awaited<ReturnType<typeof getConfigurationParameters>>["data"]
             >["parameters"],
             configurationRules: [] as Awaited<
               ReturnType<typeof getConfigurationRules>

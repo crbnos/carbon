@@ -197,7 +197,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       client,
       orderId,
       opportunity.data.id
-    ),
+    ).then((result) => result.data),
     opportunity: opportunity.data,
     customer: customer?.data ?? null,
     quote: quote?.data ?? null,

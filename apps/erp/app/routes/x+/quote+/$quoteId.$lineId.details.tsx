@@ -143,8 +143,10 @@ export const loader = async ({ request, params }: LoaderFunctionArgs) => {
             serviceRole,
             lineId,
             companyId
+          ).then((result) => result.data ?? { groups: [], parameters: [] }),
+          model: getModelByQuoteLineId(serviceRole, lineId).then(
+            (result) => result.data
           ),
-          model: getModelByQuoteLineId(serviceRole, lineId),
           tags: tags.data ?? [],
           rootMethodId: methodId
         };

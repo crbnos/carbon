@@ -1,12 +1,15 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getKanban } from "~/modules/inventory";
 import { getActiveJobOperationByJobId } from "~/modules/production";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "kanban-complete");
 
 async function handleKanbanComplete({
   client,
@@ -32,11 +35,19 @@ async function handleKanbanComplete({
     };
   }
 
-  const operation = await getActiveJobOperationByJobId(
+  const activeOperation = await getActiveJobOperationByJobId(
     client,
     kanban.data.jobId!,
     companyId
   );
+  // A failed read falls back to the job page, as "no active operation" does.
+  if (activeOperation.error) {
+    logger.error("Failed to load the job's active operation", {
+      jobId: kanban.data.jobId,
+      error: activeOperation.error
+    });
+  }
+  const operation = activeOperation.data;
 
   if (!operation) {
     return {

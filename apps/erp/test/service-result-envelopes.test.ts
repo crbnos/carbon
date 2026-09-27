@@ -42,8 +42,12 @@ function clientResolving(response: unknown) {
     "update",
     "eq",
     "in",
-    "order"
-  ]) {
+    "is",
+    "limit",
+    "or",
+    "order",
+    "range"
+]) {
     chain[method] = self;
   }
   chain.single = async () => response;
@@ -187,5 +191,55 @@ describe("unassignPeopleWeek", () => {
     });
     expect(result).toEqual({ removed: 4 });
     expect(JSON.stringify(result)).toBe('{"removed":4}');
+  });
+});
+
+describe("reads report a failed query instead of an empty success", () => {
+  const dbError = { code: "42703", message: "column does not exist" };
+
+  it("getBaseCatalog returns the query error", async () => {
+    const result = await sales.getBaseCatalog(
+      clientResolving({ data: null, count: null, error: dbError }),
+      "c1",
+      {}
+    );
+    expect(result).toEqual({ data: [], count: 0, error: dbError });
+  });
+
+  it("getConfigurationParametersByQuoteLineId reports an unknown line", async () => {
+    const notFound = { code: "PGRST116", message: "no rows" };
+    const result = await sales.getConfigurationParametersByQuoteLineId(
+      clientResolving({ data: null, error: notFound }),
+      "ql_missing",
+      "c1"
+    );
+    expect(result).toEqual({ data: null, error: notFound });
+  });
+
+  it("getModelForItem reports an unknown item instead of modelState none", async () => {
+    const notFound = { code: "PGRST116", message: "no rows" };
+    const result = await production.getModelForItem(
+      clientResolving({ data: null, error: notFound }),
+      "item_missing",
+      "c1"
+    );
+    expect(result).toEqual({ data: null, error: notFound });
+  });
+
+  it("getActiveJobOperationByJobId tells a failed read from no active operation", async () => {
+    expect(
+      await production.getActiveJobOperationByJobId(
+        clientResolving({ data: null, error: dbError }),
+        "job1",
+        "c1"
+      )
+    ).toEqual({ data: null, error: dbError });
+    expect(
+      await production.getActiveJobOperationByJobId(
+        clientResolving({ data: null, error: null }),
+        "job1",
+        "c1"
+      )
+    ).toEqual({ data: null, error: null });
   });
 });

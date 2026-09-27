@@ -100,7 +100,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         workCenterId: operation.workCenterId ?? undefined,
         workInstruction: operation.workInstruction as JSONContent | null
       })) ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId),
+    model: getModelByItemId(client, makeMethod.data.itemId).then(
+      (result) => result.data
+    ),
     makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,

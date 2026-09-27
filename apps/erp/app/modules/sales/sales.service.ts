@@ -602,6 +602,11 @@ export async function duplicatePricingRule(
     .single();
 }
 
+/**
+ * The configuration parameters and groups of a quote line's item, as
+ * `{ data: { groups, parameters } }`. An unknown quote line or a failed read is
+ * an error, never an empty configuration.
+ */
 export async function getConfigurationParametersByQuoteLineId(
   client: SupabaseClient<Database>,
   quoteLineId: string,
@@ -613,9 +618,7 @@ export async function getConfigurationParametersByQuoteLineId(
     .eq("id", quoteLineId)
     .single();
 
-  if (quoteLine.error || !quoteLine.data) {
-    return { groups: [], parameters: [] };
-  }
+  if (quoteLine.error) return { data: null, error: quoteLine.error };
 
   const [parameters, groups] = await Promise.all([
     client
@@ -634,17 +637,20 @@ export async function getConfigurationParametersByQuoteLineId(
     logger.error("Failed to get configuration parameters", {
       error: parameters.error
     });
-    return { groups: [], parameters: [] };
+    return { data: null, error: parameters.error };
   }
 
   if (groups.error) {
     logger.error("Failed to get configuration parameter groups", {
       error: groups.error
     });
-    return { groups: [], parameters: [] };
+    return { data: null, error: groups.error };
   }
 
-  return { groups: groups.data ?? [], parameters: parameters.data ?? [] };
+  return {
+    data: { groups: groups.data ?? [], parameters: parameters.data ?? [] },
+    error: null
+  };
 }
 
 export async function getCustomer(
@@ -1044,6 +1050,11 @@ export async function getExternalSalesOrderLines(
   return query;
 }
 
+/**
+ * The CAD model of a quote line's item (see `getModelByItemId`), as `{ data }`;
+ * `data` is null for a line without an item. An unknown quote line or a failed
+ * read is an error.
+ */
 export async function getModelByQuoteLineId(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -1054,7 +1065,8 @@ export async function getModelByQuoteLineId(
     .eq("id", quoteLineId)
     .single();
 
-  if (!quoteLine.data) return null;
+  if (quoteLine.error) return { data: null, error: quoteLine.error };
+  if (!quoteLine.data.itemId) return { data: null, error: null };
 
   return getModelByItemId(client, quoteLine.data.itemId);
 }
@@ -1764,10 +1776,20 @@ export async function getSalesOrderRelatedItems(
   }
 
   return {
-    jobs: jobs.data ?? [],
-    shipments: shipments.data ?? [],
-    invoices: invoices.data ?? [],
-    salesReturnOrders: Array.from(returnsById.values())
+    data: {
+      jobs: jobs.data ?? [],
+      shipments: shipments.data ?? [],
+      invoices: invoices.data ?? [],
+      salesReturnOrders: Array.from(returnsById.values())
+    },
+    // The sections still render from whatever loaded; the caller learns that
+    // one of them is incomplete.
+    error:
+      jobs.error ??
+      shipments.error ??
+      invoices.error ??
+      returnOrders.error ??
+      lineLinkedReturns.error
   };
 }
 
@@ -2396,7 +2418,7 @@ export async function resolvePrice(
 // helper assumes the column exists on the primary table, so we lift the
 // posting-group filter out, pre-resolve matching item IDs from itemCost, and
 // return the remaining filters to apply normally. Returns { itemIds: null }
-// when no posting-group filter is present.
+// when no posting-group filter is present, and the lookup's error when it fails.
 async function resolvePostingGroupFilter(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2404,28 +2426,30 @@ async function resolvePostingGroupFilter(
 ): Promise<{
   itemIds: string[] | null;
   filters: GenericQueryFilters["filters"];
+  error: PostgrestError | null;
 }> {
   if (!filters || filters.length === 0) {
-    return { itemIds: null, filters };
+    return { itemIds: null, filters, error: null };
   }
   const postingGroupFilters = filters.filter(
     (f): f is { column: string; operator: string; value: string } =>
       f.column === "itemPostingGroupId" && Boolean(f.value)
   );
   if (postingGroupFilters.length === 0) {
-    return { itemIds: null, filters };
+    return { itemIds: null, filters, error: null };
   }
   const remaining = filters.filter((f) => f.column !== "itemPostingGroupId");
   const groupIds = postingGroupFilters.flatMap((f) =>
     f.operator === "in" ? f.value.split(",") : [f.value]
   );
-  const { data } = await client
+  const { data, error } = await client
     .from("itemCost")
     .select("itemId")
     .eq("companyId", companyId)
     .in("itemPostingGroupId", groupIds);
+  if (error) return { itemIds: [], filters: remaining, error };
   const itemIds = (data ?? []).map((r) => r.itemId);
-  return { itemIds, filters: remaining };
+  return { itemIds, filters: remaining, error: null };
 }
 
 export async function resolvePriceList(
@@ -2454,13 +2478,14 @@ export async function resolvePriceList(
   } else if (args.customerTypeId) {
     scopeQuery = scopeQuery.eq("customerTypeId", args.customerTypeId);
   } else {
-    return { data: [], count: 0 };
+    return { data: [], count: 0, error: null };
   }
 
-  const { data: scopedOverrides } = await scopeQuery;
+  const { data: scopedOverrides, error: scopeError } = await scopeQuery;
+  if (scopeError) return { data: [], count: 0, error: scopeError };
   const overriddenItemIds = (scopedOverrides ?? []).map((r) => r.itemId);
   if (overriddenItemIds.length === 0) {
-    return { data: [], count: 0 };
+    return { data: [], count: 0, error: null };
   }
 
   let itemQuery = client
@@ -2478,11 +2503,17 @@ export async function resolvePriceList(
     );
   }
 
-  const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+  const {
+    itemIds: postingGroupItemIds,
+    filters: filtersWithoutPostingGroup,
+    error: postingGroupError
+  } = await resolvePostingGroupFilter(client, companyId, args.filters);
+  if (postingGroupError) {
+    return { data: [], count: 0, error: postingGroupError };
+  }
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
-      return { data: [], count: 0 };
+      return { data: [], count: 0, error: null };
     }
     itemQuery = itemQuery.in("id", postingGroupItemIds);
   }
@@ -2492,20 +2523,22 @@ export async function resolvePriceList(
     filters: filtersWithoutPostingGroup
   });
 
-  const { data: items, count } = await itemQuery;
+  const { data: items, count, error: itemsError } = await itemQuery;
+  if (itemsError) return { data: [], count: 0, error: itemsError };
   if (!items || items.length === 0) {
-    return { data: [], count: count ?? 0 };
+    return { data: [], count: count ?? 0, error: null };
   }
 
   const itemIds = items.map((i) => i.id);
 
   let resolvedCustomerTypeId = args.customerTypeId ?? null;
   if (args.customerId && !resolvedCustomerTypeId) {
-    const { data: cust } = await client
+    const { data: cust, error: customerError } = await client
       .from("customer")
       .select("customerTypeId")
       .eq("id", args.customerId)
       .maybeSingle();
+    if (customerError) return { data: [], count: 0, error: customerError };
     resolvedCustomerTypeId = cust?.customerTypeId ?? null;
   }
 
@@ -2538,28 +2571,30 @@ export async function resolvePriceList(
   const allOverrideMap = new Map<string, OverrideEntry>();
 
   if (args.customerId) {
-    const { data: rows } = await client
+    const { data: rows, error: overrideError } = await client
       .from("customerItemPriceOverride")
       .select(overrideSelect)
       .eq("companyId", companyId)
       .eq("customerId", args.customerId)
       .eq("active", true)
       .in("itemId", itemIds);
+    if (overrideError) return { data: [], count: 0, error: overrideError };
     fillMap(rows as unknown as ParentRow[] | null, overrideMap);
   }
 
   if (resolvedCustomerTypeId) {
-    const { data: rows } = await client
+    const { data: rows, error: overrideError } = await client
       .from("customerItemPriceOverride")
       .select(overrideSelect)
       .eq("companyId", companyId)
       .eq("customerTypeId", resolvedCustomerTypeId)
       .eq("active", true)
       .in("itemId", itemIds);
+    if (overrideError) return { data: [], count: 0, error: overrideError };
     fillMap(rows as unknown as ParentRow[] | null, typeOverrideMap);
   }
 
-  const { data: allRows } = await client
+  const { data: allRows, error: allRowsError } = await client
     .from("customerItemPriceOverride")
     .select(overrideSelect)
     .eq("companyId", companyId)
@@ -2567,6 +2602,7 @@ export async function resolvePriceList(
     .is("customerTypeId", null)
     .eq("active", true)
     .in("itemId", itemIds);
+  if (allRowsError) return { data: [], count: 0, error: allRowsError };
   fillMap(allRows as unknown as ParentRow[] | null, allOverrideMap);
 
   let rulesQuery = client
@@ -2578,7 +2614,8 @@ export async function resolvePriceList(
   rulesQuery = rulesQuery.or(`validFrom.is.null,validFrom.lte.${date}`);
   rulesQuery = rulesQuery.or(`validTo.is.null,validTo.gte.${date}`);
 
-  const { data: allRules } = await rulesQuery;
+  const { data: allRules, error: rulesError } = await rulesQuery;
+  if (rulesError) return { data: [], count: 0, error: rulesError };
 
   const rows: PriceListRow[] = items.map((item) => {
     const salePriceRow = Array.isArray(item.itemUnitSalePrice)
@@ -2737,7 +2774,8 @@ export async function resolvePriceList(
 
   return {
     data: rows,
-    count: count ?? 0
+    count: count ?? 0,
+    error: null
   };
 }
 
@@ -2761,11 +2799,17 @@ export async function getBaseCatalog(
     );
   }
 
-  const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
-    await resolvePostingGroupFilter(client, companyId, args.filters);
+  const {
+    itemIds: postingGroupItemIds,
+    filters: filtersWithoutPostingGroup,
+    error: postingGroupError
+  } = await resolvePostingGroupFilter(client, companyId, args.filters);
+  if (postingGroupError) {
+    return { data: [], count: 0, error: postingGroupError };
+  }
   if (postingGroupItemIds !== null) {
     if (postingGroupItemIds.length === 0) {
-      return { data: [], count: 0 };
+      return { data: [], count: 0, error: null };
     }
     query = query.in("id", postingGroupItemIds);
   }
@@ -2775,9 +2819,10 @@ export async function getBaseCatalog(
     filters: filtersWithoutPostingGroup
   });
 
-  const { data: items, count } = await query;
+  const { data: items, count, error } = await query;
+  if (error) return { data: [], count: 0, error };
   if (!items || items.length === 0) {
-    return { data: [], count: count ?? 0 };
+    return { data: [], count: count ?? 0, error: null };
   }
 
   const rows: PriceListRow[] = items.map((item) => {
@@ -2807,7 +2852,7 @@ export async function getBaseCatalog(
     };
   });
 
-  return { data: rows, count: count ?? 0 };
+  return { data: rows, count: count ?? 0, error: null };
 }
 
 export async function upsertCustomer(

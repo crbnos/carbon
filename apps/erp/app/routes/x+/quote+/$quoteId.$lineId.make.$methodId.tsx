@@ -94,7 +94,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         tags: o.tags ?? []
       })) ?? [],
     tags: tags.data ?? [],
-    model: getModelByItemId(client, makeMethod.data.itemId!)
+    model: getModelByItemId(client, makeMethod.data.itemId!).then(
+      (result) => result.data
+    )
   };
 }
 

@@ -66,8 +66,8 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const derived = await getModelForItem(client, itemId, companyId);
-  if (!derived.item) {
+  const { data: derived } = await getModelForItem(client, itemId, companyId);
+  if (!derived) {
     return data(
       {},
       await flash(request, error(null, "Failed to load the selected item"))

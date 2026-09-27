@@ -57,7 +57,7 @@ async function getJobOrderStatus(
     locationId
   );
 
-  return getJobOrderStatusMap(
+  const orderStatus = await getJobOrderStatusMap(
     client,
     jobId,
     companyId,
@@ -68,6 +68,7 @@ async function getJobOrderStatus(
       .today(await getLocationTimeZone(client, locationId, companyId))
       .toString()
   );
+  return orderStatus.data;
 }
 
 export const handle: Handle = {
@@ -141,7 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       client,
       job.data.itemId!,
       companyId
-    )
+    ).then((result) => result.data ?? { groups: [], parameters: [] })
   };
 }
 

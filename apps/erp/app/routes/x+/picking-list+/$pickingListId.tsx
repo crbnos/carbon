@@ -60,7 +60,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     pickingList: pickingList.data,
     pickingListLines: (pickingListLines.data ?? []).map((line) => ({
       ...line,
-      availableQuantity: availability.get(line.id) ?? 0
+      availableQuantity: availability.data.get(line.id) ?? 0
     })),
     // Deferred (not awaited): recommended serial/batch lots per line, streamed in
     // after the list paints so the at-a-glance subtext never blocks first render.

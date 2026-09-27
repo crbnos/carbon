@@ -1,4 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
@@ -7,6 +8,8 @@ import PriceListTable from "~/modules/sales/ui/Pricing/PriceOverridesTable";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
+
+const logger = getLogger("erp", "sales-price-list");
 
 export const handle: Handle = {
   breadcrumb: "Price List",
@@ -62,6 +65,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     listPromise,
     groupOptionsQuery
   ]);
+
+  // The page has always rendered an empty list on a failed read; keep that,
+  // but leave a trace now that the service reports the failure.
+  if (list.error) {
+    logger.error("Failed to load price list", {
+      companyId,
+      hasScope,
+      error: list.error
+    });
+  }
 
   const scopeOptions = (groupsResult.data ?? [])
     .filter((g) => !g.id.startsWith("11111111-1111"))

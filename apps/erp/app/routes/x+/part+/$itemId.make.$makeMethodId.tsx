@@ -86,11 +86,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const configData = partManufacturing.data?.requiresConfiguration
     ? {
-        configurationParametersAndGroups: await getConfigurationParameters(
-          client,
-          itemId,
-          companyId
-        ),
+        configurationParametersAndGroups: (
+          await getConfigurationParameters(client, itemId, companyId)
+        ).data ?? { groups: [], parameters: [] },
         configurationRules: await getConfigurationRules(
           client,
           itemId,
@@ -130,7 +128,9 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       })) ?? [],
     partManufacturing: partManufacturing.data,
     ...configData,
-    model: getModelByItemId(client, makeMethod.data.itemId),
+    model: getModelByItemId(client, makeMethod.data.itemId).then(
+      (result) => result.data
+    ),
     makeMethods: getMakeMethods(client, makeMethod.data.itemId, companyId),
     tags: tags.data ?? [],
     revisionStatus: revisionLock.revisionStatus,

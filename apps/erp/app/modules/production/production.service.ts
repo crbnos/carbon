@@ -650,16 +650,27 @@ export async function deleteProductionQuantity(
     .eq("id", productionQuantityId);
 }
 
+/**
+ * The first open operation of a job's top-level make method, as `{ data }`;
+ * `data` is null when the job has no open operation (or no make method). A
+ * failed read is an error, never "no active operation".
+ */
 export async function getActiveJobOperationByJobId(
   client: SupabaseClient<Database>,
   jobId: string,
   companyId: string
-): Promise<{
-  id: string;
-  setupTime: number;
-  laborTime: number;
-  machineTime: number;
-} | null> {
+): Promise<
+  | {
+      data: {
+        id: string;
+        setupTime: number;
+        laborTime: number;
+        machineTime: number;
+      } | null;
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
   const jobMakeMethod = await client
     .from("jobMakeMethod")
     .select("id")
@@ -668,24 +679,21 @@ export async function getActiveJobOperationByJobId(
     .eq("companyId", companyId)
     .maybeSingle();
 
-  if (jobMakeMethod.error || !jobMakeMethod.data) {
-    return null;
-  }
+  if (jobMakeMethod.error) return { data: null, error: jobMakeMethod.error };
+  if (!jobMakeMethod.data) return { data: null, error: null };
 
   const jobOperations = await client
     .from("jobOperation")
     .select("id, setupTime, laborTime, machineTime")
-    .eq("jobMakeMethodId", jobMakeMethod.data?.id!)
+    .eq("jobMakeMethodId", jobMakeMethod.data.id)
     .eq("companyId", companyId)
     .in("status", ["Todo", "Ready", "In Progress", "Waiting", "Paused"])
     .order("order", { ascending: true })
     .limit(1);
 
-  if (jobOperations.error || !jobOperations.data) {
-    return null;
-  }
+  if (jobOperations.error) return { data: null, error: jobOperations.error };
 
-  return jobOperations.data[0];
+  return { data: jobOperations.data[0] ?? null, error: null };
 }
 
 export async function getActiveJobOperationsByLocation(
@@ -1304,7 +1312,10 @@ export async function getJobMaterialShortfallByItem(
   locationId: string,
   materials: JobItemAvailability[],
   asOfDate?: string
-): Promise<Record<string, ItemShortfall>> {
+): Promise<{
+  data: Record<string, ItemShortfall>;
+  error: PostgrestError | null;
+}> {
   // Two pools per item, kept separate so allocation can hand out already-received
   // on-hand stock BEFORE incoming supply. quantityOnPurchaseOrder /
   // quantityOnProductionOrder already include planned/pending POs and planned
@@ -1327,7 +1338,7 @@ export async function getJobMaterialShortfallByItem(
   }
 
   const itemIds = Array.from(onHandByItem.keys());
-  if (itemIds.length === 0) return {};
+  if (itemIds.length === 0) return { data: {}, error: null };
 
   const successorByItem = new Map<string, { itemId: string; factor: number }>();
   const rules = await client
@@ -1338,6 +1349,7 @@ export async function getJobMaterialShortfallByItem(
     .in("itemId", itemIds)
     .eq("companyId", companyId)
     .eq("supersessionMode", "Consume First");
+  if (rules.error) return { data: {}, error: rules.error };
   for (const rule of rules.data ?? []) {
     if (!rule.successorItemId) continue;
     if (
@@ -1365,6 +1377,7 @@ export async function getJobMaterialShortfallByItem(
       company_id: companyId,
       item_id: successorId
     });
+    if (quantities.error) return { data: {}, error: quantities.error };
     const row = quantities.data?.[0];
     onHandByItem.set(successorId, Number(row?.quantityOnHand ?? 0));
     incomingByItem.set(
@@ -1375,7 +1388,7 @@ export async function getJobMaterialShortfallByItem(
   }
 
   // Remaining demand for those items across every active job at this location.
-  const { data } = await client
+  const { data, error: demandError } = await client
     .from("jobMaterial")
     .select(
       "id, itemId, jobId, methodType, quantity, quantityToIssue, job!inner(priority, status, locationId)"
@@ -1385,6 +1398,7 @@ export async function getJobMaterialShortfallByItem(
     .neq("methodType", "Make to Order")
     .in("job.status", ACTIVE_JOB_STATUSES)
     .eq("job.locationId", locationId);
+  if (demandError) return { data: {}, error: demandError };
 
   // Other jobs' demand is lumped per (item, job); THIS job's demand is also kept
   // per-line so its allocation can be split across its own BoM lines.
@@ -1507,7 +1521,7 @@ export async function getJobMaterialShortfallByItem(
       };
     }
   }
-  return shortfallByMaterial;
+  return { data: shortfallByMaterial, error: null };
 }
 
 type OrderStatusMaterial = {
@@ -1630,8 +1644,12 @@ function getJobOrderStatusByMaterial(
   return byMaterialId;
 }
 
-// One status per material id for a job — the single source the table and tree
-// both consume. Empty for jobs that show no indicators.
+/**
+ * One status per material id for a job — the single source the table and tree
+ * both consume. Empty for jobs that show no indicators. A failed supply or
+ * demand read is returned as `error` (with the statuses computed so far, which
+ * the in-app badges fall back to), never as a complete answer.
+ */
 export async function getJobOrderStatusMap(
   client: SupabaseClient<Database>,
   jobId: string,
@@ -1642,26 +1660,29 @@ export async function getJobOrderStatusMap(
     Awaited<ReturnType<typeof getJobMaterialsWithQuantityOnHand>>["data"]
   >,
   asOfDate?: string
-): Promise<Record<string, ItemOrderStatus>> {
+): Promise<{
+  data: Record<string, ItemOrderStatus>;
+  error: PostgrestError | null;
+}> {
   // Completed/Draft/Cancelled/Closed jobs show no procurement indicators.
-  if (isJobOrderStatusHidden(jobStatus)) return {};
+  if (isJobOrderStatusHidden(jobStatus)) return { data: {}, error: null };
 
   // PO lines + supply jobs drive the badge's status/supply indicators; the
   // shortfall reads incoming supply from the RPC totals, so all three run together.
-  const [purchaseOrderLines, supplyJobLines, shortfallByMaterialId] =
-    await Promise.all([
-      getJobMaterialPurchaseOrderLines(client, materials, locationId),
-      getJobMaterialSupplyJobLines(client, materials, companyId, locationId),
-      getJobMaterialShortfallByItem(
-        client,
-        jobId,
-        companyId,
-        locationId,
-        materials,
-        asOfDate
-      )
-    ]);
+  const [purchaseOrderLines, supplyJobLines, shortfall] = await Promise.all([
+    getJobMaterialPurchaseOrderLines(client, materials, locationId),
+    getJobMaterialSupplyJobLines(client, materials, companyId, locationId),
+    getJobMaterialShortfallByItem(
+      client,
+      jobId,
+      companyId,
+      locationId,
+      materials,
+      asOfDate
+    )
+  ]);
 
+  const shortfallByMaterialId = shortfall.data;
   const materialItemIds = new Set(
     materials.map((material) => material.jobMaterialItemId)
   );
@@ -1686,14 +1707,27 @@ export async function getJobOrderStatusMap(
             locationId
           )
         ])
-      : [[], []];
+      : [
+          { data: [], error: null },
+          { data: [], error: null }
+        ];
 
-  return getJobOrderStatusByMaterial(
-    materials,
-    purchaseOrderLines.concat(substitutePurchaseOrderLines),
-    supplyJobLines.concat(substituteSupplyJobLines),
-    shortfallByMaterialId
-  );
+  const error =
+    purchaseOrderLines.error ??
+    supplyJobLines.error ??
+    shortfall.error ??
+    substitutePurchaseOrderLines.error ??
+    substituteSupplyJobLines.error;
+
+  return {
+    data: getJobOrderStatusByMaterial(
+      materials,
+      purchaseOrderLines.data.concat(substitutePurchaseOrderLines.data),
+      supplyJobLines.data.concat(substituteSupplyJobLines.data),
+      shortfallByMaterialId
+    ),
+    error
+  };
 }
 
 export async function getJobMethodTree(
@@ -2281,9 +2315,12 @@ export async function getProductionDataByOperations(
   ]);
 
   return {
-    quantities: quantities.data ?? [],
-    events: events.data ?? [],
-    notes: notes.data ?? []
+    data: {
+      quantities: quantities.data ?? [],
+      events: events.data ?? [],
+      notes: notes.data ?? []
+    },
+    error: quantities.error ?? events.error ?? notes.error
   };
 }
 
@@ -6628,6 +6665,11 @@ export async function getAssemblyInstructionsForItem(
  * graph) is lazy — `modelState` tells the caller whether the model is ready,
  * convertible on demand, or unusable.
  */
+/**
+ * An item and its CAD model, as `{ data: { item, model, modelState } }`.
+ * `modelState` is "none" for an item without a model; an unknown item or a
+ * failed read is an error.
+ */
 export async function getModelForItem(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -6639,12 +6681,13 @@ export async function getModelForItem(
     .eq("id", itemId)
     .eq("companyId", companyId)
     .single();
-  if (item.error) {
-    return { item: null, model: null, modelState: "none" as const };
-  }
+  if (item.error) return { data: null, error: item.error };
 
   if (!item.data.modelUploadId) {
-    return { item: item.data, model: null, modelState: "none" as const };
+    return {
+      data: { item: item.data, model: null, modelState: "none" as const },
+      error: null
+    };
   }
 
   const model = await client
@@ -6654,11 +6697,15 @@ export async function getModelForItem(
     )
     .eq("id", item.data.modelUploadId)
     .maybeSingle();
+  if (model.error) return { data: null, error: model.error };
 
   return {
-    item: item.data,
-    model: model.data ?? null,
-    modelState: getAssemblyModelState(model.data ?? null)
+    data: {
+      item: item.data,
+      model: model.data ?? null,
+      modelState: getAssemblyModelState(model.data ?? null)
+    },
+    error: null
   };
 }
 
@@ -8011,7 +8058,7 @@ export async function syncAssemblyStepMaterialsFromMappings(
   const graphFile = await storage(client)
     .company(args.companyId)
     .download(graphPath);
-  if (!graphFile.data) {
+  if (graphFile.error || !graphFile.data) {
     return { data: null, error: ruleError("Failed to load the model graph") };
   }
   let graphIndex: AssemblyGraphIndex;
@@ -8287,21 +8334,26 @@ export async function getFlattenedBomMaterials(
   client: SupabaseClient<Database>,
   itemId: string,
   companyId: string
-): Promise<FlattenedBomMaterial[]> {
+): Promise<{
+  data: FlattenedBomMaterial[];
+  error: PostgrestError | null;
+}> {
   const makeMethods = await client
     .from("makeMethod")
     .select("id, status")
     .eq("itemId", itemId)
     .eq("companyId", companyId);
-  if (makeMethods.error || !makeMethods.data?.length) return [];
+  if (makeMethods.error) return { data: [], error: makeMethods.error };
+  if (!makeMethods.data.length) return { data: [], error: null };
 
   const active =
     makeMethods.data.find((method) => method.status === "Active") ??
     makeMethods.data[0];
-  if (!active) return [];
+  if (!active) return { data: [], error: null };
 
   const results: FlattenedBomMaterial[] = [];
   const visited = new Set<string>();
+  let walkError: PostgrestError | null = null;
 
   const walk = async (
     makeMethodId: string,
@@ -8318,6 +8370,10 @@ export async function getFlattenedBomMaterials(
       )
       .eq("makeMethodId", makeMethodId)
       .order("order", { ascending: true });
+    if (materials.error) {
+      walkError ??= materials.error;
+      return;
+    }
 
     for (const material of materials.data ?? []) {
       if (!material.itemId) continue;
@@ -8337,7 +8393,8 @@ export async function getFlattenedBomMaterials(
   };
 
   await walk(active.id, 1, 0);
-  return results;
+  if (walkError) return { data: [], error: walkError };
+  return { data: results, error: null };
 }
 
 export type AutoMatchResult = {
@@ -8400,7 +8457,7 @@ export async function autoMatchAssemblyComponents(
   const graphFile = await storage(client)
     .company(args.companyId)
     .download(graphPath);
-  if (!graphFile.data) {
+  if (graphFile.error || !graphFile.data) {
     return { data: null, error: ruleError("Failed to load the model graph") };
   }
   let graph: AssemblyGraph;
@@ -8423,7 +8480,13 @@ export async function autoMatchAssemblyComponents(
   };
   visit(graph.root);
 
-  const bom = await getFlattenedBomMaterials(client, itemId, args.companyId);
+  const flattened = await getFlattenedBomMaterials(
+    client,
+    itemId,
+    args.companyId
+  );
+  if (flattened.error) return { data: null, error: flattened.error };
+  const bom = flattened.data;
   if (bom.length === 0) {
     return {
       data: null,
@@ -9335,6 +9398,13 @@ export async function generateAssemblyStepsFromPlan(
     const graphFile = await storage(client)
       .company(args.companyId)
       .download(graphPath);
+    if (graphFile.error) {
+      // Best-effort: grouping degrades to per-part steps.
+      logger.error("Failed to load the assembly graph", {
+        graphPath,
+        error: graphFile.error
+      });
+    }
     if (graphFile.data) {
       try {
         const graph = JSON.parse(await graphFile.data.text()) as AssemblyGraph;
@@ -9563,7 +9633,10 @@ export async function getJobMaterialPurchaseOrderLines(
   client: SupabaseClient<Database>,
   materials: Array<{ jobMaterialItemId: string | null }>,
   locationId: string
-): Promise<JobMaterialPurchaseOrderLine[]> {
+): Promise<{
+  data: JobMaterialPurchaseOrderLine[];
+  error: PostgrestError | null;
+}> {
   const itemIds = Array.from(
     new Set(
       materials
@@ -9571,15 +9644,16 @@ export async function getJobMaterialPurchaseOrderLines(
         .filter((id): id is string => Boolean(id))
     )
   );
-  if (itemIds.length === 0) return [];
+  if (itemIds.length === 0) return { data: [], error: null };
 
-  const { data } = await client
+  const { data, error } = await client
     .from("purchaseOrderLine")
     .select("itemId, purchaseQuantity, quantityReceived, purchaseOrder(status)")
     .in("itemId", itemIds)
     .eq("locationId", locationId);
+  if (error) return { data: [], error };
 
-  return (data ?? []).map((line) => ({
+  const lines = (data ?? []).map((line) => ({
     itemId: line.itemId,
     purchaseQuantity: line.purchaseQuantity,
     quantityReceived: line.quantityReceived,
@@ -9590,6 +9664,7 @@ export async function getJobMaterialPurchaseOrderLines(
         } | null
       )?.status ?? null
   }));
+  return { data: lines, error: null };
 }
 
 // Active jobs that produce these material items — the supply-side counterpart to
@@ -9600,7 +9675,10 @@ export async function getJobMaterialSupplyJobLines(
   materials: Array<{ jobMaterialItemId: string | null }>,
   companyId: string,
   locationId: string
-): Promise<JobMaterialSupplyJobLine[]> {
+): Promise<{
+  data: JobMaterialSupplyJobLine[];
+  error: PostgrestError | null;
+}> {
   const itemIds = Array.from(
     new Set(
       materials
@@ -9608,20 +9686,24 @@ export async function getJobMaterialSupplyJobLines(
         .filter((id): id is string => Boolean(id))
     )
   );
-  if (itemIds.length === 0) return [];
+  if (itemIds.length === 0) return { data: [], error: null };
 
-  const { data } = await client
+  const { data, error } = await client
     .from("job")
     .select("itemId, status")
     .in("itemId", itemIds)
     .in("status", ACTIVE_JOB_STATUSES)
     .eq("companyId", companyId)
     .eq("locationId", locationId);
+  if (error) return { data: [], error };
 
-  return (data ?? []).map((job) => ({
-    itemId: job.itemId,
-    status: job.status
-  }));
+  return {
+    data: (data ?? []).map((job) => ({
+      itemId: job.itemId,
+      status: job.status
+    })),
+    error: null
+  };
 }
 
 // ─── Inspection Documents ─────────────────────────────────────────────────────

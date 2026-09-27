@@ -104,26 +104,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     .today(await getLocationTimeZone(client, locationId, companyId))
     .toString();
 
-  const [expiredItemIds, orderStatusByMaterialId, supersessions] =
-    await Promise.all([
-      getExpiredItemIds(
-        client,
-        companyId,
-        rows,
-        nearExpiryWarningDays,
-        locationId
-      ),
-      getJobOrderStatusMap(
-        client,
-        jobId,
-        companyId,
-        locationId,
-        job.data.status,
-        rows,
-        today
-      ),
-      getItemSupersessionsForItems(client, materialItemIds, companyId)
-    ]);
+  const [expiredItemIds, orderStatus, supersessions] = await Promise.all([
+    getExpiredItemIds(
+      client,
+      companyId,
+      rows,
+      nearExpiryWarningDays,
+      locationId
+    ),
+    getJobOrderStatusMap(
+      client,
+      jobId,
+      companyId,
+      locationId,
+      job.data.status,
+      rows,
+      today
+    ),
+    getItemSupersessionsForItems(client, materialItemIds, companyId)
+  ]);
+  const orderStatusByMaterialId = orderStatus.data;
   if (supersessions.error) {
     throw redirect(
       path.to.production,

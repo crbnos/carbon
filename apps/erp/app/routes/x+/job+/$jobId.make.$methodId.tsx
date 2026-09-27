@@ -115,9 +115,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     productionData: getProductionDataByOperations(
       client,
       operations?.data?.map((o) => o.id)
-    ),
+    ).then((result) => result.data),
     files: getPartDocuments(client, companyId, makeMethod.data),
-    model: getModelByItemId(client, makeMethod.data.itemId!),
+    model: getModelByItemId(client, makeMethod.data.itemId!).then(
+      (result) => result.data
+    ),
     tags: tags.data ?? []
   };
 }
