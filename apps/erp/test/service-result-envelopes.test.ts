@@ -175,7 +175,7 @@ describe("unassignPeopleWeek", () => {
   it("returns a JSON count instead of Kysely's bigint DeleteResult", async () => {
     const query = {
       where: () => query,
-      executeTakeFirst: async () => ({ numDeletedRows: 4n })
+      executeTakeFirst: async () => ({ numDeletedRows: BigInt(4) })
     };
     const db = { deleteFrom: () => query } as never;
     const result = await production.unassignPeopleWeek(db, {

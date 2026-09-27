@@ -214,7 +214,7 @@ describe("toWireValue — the HTTP serializer's rules", () => {
   });
 
   it("serializes a bigint as its decimal string", () => {
-    expect(toWireValue({ numDeletedRows: 3n })).toEqual({
+    expect(toWireValue({ numDeletedRows: BigInt(3) })).toEqual({
       numDeletedRows: "3"
     });
   });
