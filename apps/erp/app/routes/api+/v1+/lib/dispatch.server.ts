@@ -1,13 +1,14 @@
 // The bridge from an oRPC procedure to a Carbon service function.
 //
 // Owns the executeFunction lineage in full: positional-arg assembly from
-// serviceParams, payload stamping via enrichWithAuthContext, `_operation` handling,
-// and the Supabase unwrap. HTTP, MCP, the agent and the workflow dispatcher all pass
+// serviceParams and the manifest's declared context contract (`contextSlots`),
+// payload stamping via enrichWithAuthContext, `_operation` handling, and the
+// Supabase unwrap. HTTP, MCP, the agent and the workflow dispatcher all pass
 // through here. Unlike the legacy executor (which returned { success, … }), this
 // THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
 // callOperation reconstructs the { success:false, error } envelope.
 
-import type { AuthField, ManifestEntry } from "@carbon/api";
+import type { AuthField, ManifestEntry, PayloadContext } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
@@ -28,93 +29,131 @@ type AuthStampContext = Pick<
   "userId" | "companyId" | "companyGroupId"
 >;
 
-// Stamps auth identity onto typed payloads. Carbon's services expect auth
-// fields inside the payload (predates MCP). `fields` is per-tool from
-// tool-metadata.json so reads stay clean and updates don't overwrite createdBy.
+const IDENTITY_KEYS = [
+  "createdBy",
+  "updatedBy",
+  "companyId",
+  "companyGroupId"
+] as const;
+
+function identityValue(
+  field: AuthField,
+  context: AuthStampContext
+): string | undefined {
+  switch (field) {
+    case "createdBy":
+    case "updatedBy":
+    case "userId":
+      return context.userId;
+    case "companyId":
+      return context.companyId;
+    case "companyGroupId":
+      return context.companyGroupId;
+  }
+}
+
+/**
+ * The identity fields to set on one payload object: its contract's fields, or,
+ * for a union, the branch the service will take — read off the payload exactly
+ * as the service's `"key" in payload` test reads it, or, when the service splits
+ * on an identity field the dispatcher itself sets, off the caller's
+ * `_operation`.
+ */
+function branchFields(
+  row: Record<string, unknown>,
+  contract: PayloadContext,
+  operation: McpOperation | undefined
+): AuthField[] {
+  if (contract.byOperation) {
+    return operation ? contract.byOperation[operation] : [];
+  }
+  if (contract.discriminator) {
+    return contract.discriminator.key in row
+      ? contract.discriminator.present
+      : contract.discriminator.absent;
+  }
+  return contract.fields;
+}
+
+/**
+ * Sets the declared identity fields on one payload object from the
+ * authenticated context, and removes every other identity key the caller sent:
+ * the service declared exactly what it takes, and an undeclared key is either a
+ * column the table does not have (PGRST204) or a forged author. A payload whose
+ * type declares no fields (`opaque`) cannot say which keys are real, so a
+ * caller-sent identity key is overwritten there instead of removed. `userId` is
+ * never removed: in a row it is usually data (the employee being assigned).
+ */
+function stampRow(
+  row: Record<string, unknown>,
+  fields: readonly AuthField[],
+  context: AuthStampContext,
+  opaque: boolean | undefined
+): Record<string, unknown> {
+  const stamped: Record<string, unknown> = { ...row };
+  for (const key of IDENTITY_KEYS) {
+    if (!(key in stamped) || fields.includes(key)) continue;
+    if (opaque) stamped[key] = identityValue(key, context);
+    else delete stamped[key];
+  }
+  for (const field of fields) stamped[field] = identityValue(field, context);
+  return stamped;
+}
+
+/**
+ * Stamps auth identity onto one payload argument, following the argument's
+ * declared context contract (`contextSlots.payloads`, derived by the generator
+ * from the service signature): exactly the identity fields the service declares
+ * — per union branch, and per element for an array of rows — are set from the
+ * authenticated context, never from the caller.
+ */
 export function enrichWithAuthContext(
   value: unknown,
   context: AuthStampContext,
-  fields: AuthField[],
+  contract: PayloadContext | undefined,
   operation?: McpOperation
 ): unknown {
   if (!value || typeof value !== "object") return value;
-  if (fields.length === 0) return value;
 
-  // Array payloads (e.g. the row list for upsertQuoteLinePrices) need per-element
-  // stamping — enrichment never reached inside them, so a NOT NULL createdBy on
-  // the row table failed. Only createdBy is ADDED to elements (and only for an
-  // insert): element keys are spread straight into an INSERT, so adding
-  // companyId/updatedBy could add a column the row table doesn't have.
-  //
-  // But an identity key the CALLER put in a row is always OVERWRITTEN with the
-  // authenticated value, on every operation. The input schema preserves unknown
-  // keys, so without this a row could carry a forged createdBy/updatedBy (audit
-  // attribution) or a foreign companyId straight into a service that spreads it.
-  // Overwriting a key that is already present never changes the row's shape.
-  // userId is deliberately left alone: in a row it is usually data (the employee
-  // being assigned), not the caller.
   if (Array.isArray(value)) {
-    const addCreatedBy = operation !== "update" && fields.includes("createdBy");
     return value.map((element) => {
       if (!element || typeof element !== "object" || Array.isArray(element)) {
         return element;
       }
-      const row: Record<string, unknown> = {
-        ...(element as Record<string, unknown>)
-      };
-      if (addCreatedBy || "createdBy" in row) row.createdBy = context.userId;
-      if ("updatedBy" in row) row.updatedBy = context.userId;
-      if ("companyId" in row) row.companyId = context.companyId;
-      if ("companyGroupId" in row) row.companyGroupId = context.companyGroupId;
-      return row;
+      const row = element as Record<string, unknown>;
+      // Rows of a declared array get their declared fields; rows the caller put
+      // where the service expects something else only lose forged identity.
+      return contract?.elements
+        ? stampRow(
+            row,
+            branchFields(row, contract, operation),
+            context,
+            contract.opaque
+          )
+        : overwriteIdentityKeys(row, context);
     });
   }
 
-  const enriched: Record<string, unknown> = {
-    ...(value as Record<string, unknown>)
-  };
-
-  // A caller-supplied createdBy would send a `"createdBy" in` service down its
-  // insert branch.
-  if (operation === "update") {
-    delete enriched.createdBy;
-  } else if (fields.includes("createdBy")) {
-    // Overwrite, never fill a gap — a caller-supplied createdBy would attribute
-    // the record to someone else. The array branch stamps after its spread for
-    // the same reason, and the two shapes must not disagree.
-    enriched.createdBy = context.userId;
-  }
-  // Symmetric to createdBy: a stamped updatedBy sends a service that
-  // discriminates on `"updatedBy" in` (update-branch first — upsertJobMaterial,
-  // upsertQuoteMaterial, …) down its UPDATE branch, which matches zero rows for a
-  // new id and returns PGRST116, so the record never inserts. Suppress it on an
-  // explicit create so the row inserts. With no _operation (operation undefined)
-  // both audit fields are stamped, exactly as before.
-  if (operation === "create") {
-    delete enriched.updatedBy;
-  } else if (fields.includes("updatedBy")) {
-    enriched.updatedBy = context.userId;
-  }
-  if (fields.includes("companyId")) {
-    enriched.companyId = context.companyId;
-  }
-  if (fields.includes("companyGroupId")) {
-    enriched.companyGroupId = context.companyGroupId;
-  }
-  if (fields.includes("userId")) {
-    enriched.userId = context.userId;
-  }
+  const payload = value as Record<string, unknown>;
+  const enriched =
+    contract && !contract.elements
+      ? stampRow(
+          payload,
+          branchFields(payload, contract, operation),
+          context,
+          contract.opaque
+        )
+      : (overwriteIdentityKeys(payload, context) as Record<string, unknown>);
 
   // One level down, too. The input schema passes unknown keys through nested
   // objects as well, and a service handed the superuser `db` may spread one
   // straight into a Kysely `.set()` — `updateItemMethodAndSourcing` spreads
   // `itemUpdate`, so `{ itemUpdate: { companyId: "<other>" } }` moved the
-  // caller's items into another company. The same rule as the array branch:
-  // only an identity key the caller PUT there is overwritten, never added —
-  // createdBy/updatedBy included, so a nested row cannot forge attribution
-  // any more than a top-level array element can. Nested arrays inside THOSE
-  // are not reached.
+  // caller's items into another company. Only an identity key the caller PUT
+  // there is overwritten, never added: a nested row's shape is not declared in
+  // the contract. Nested arrays inside THOSE are not reached.
   for (const [key, nested] of Object.entries(enriched)) {
+    if (contract?.db?.includes(key)) continue;
     if (Array.isArray(nested)) {
       enriched[key] = nested.map((element) =>
         overwriteIdentityKeys(element, context)
@@ -127,17 +166,9 @@ export function enrichWithAuthContext(
   return enriched;
 }
 
-const IDENTITY_KEYS = [
-  "createdBy",
-  "updatedBy",
-  "companyId",
-  "companyGroupId"
-] as const;
-
 /** A copy of a plain object with any caller-supplied `createdBy` /
  *  `updatedBy` / `companyId` / `companyGroupId` replaced by the authenticated
- *  value (the same keys, and the same never-add rule, as the top-level array
- *  branch); anything else is returned as is. */
+ *  value; anything else is returned as is. */
 function overwriteIdentityKeys(
   value: unknown,
   context: AuthStampContext
@@ -149,10 +180,9 @@ function overwriteIdentityKeys(
   const row: Record<string, unknown> = {
     ...(value as Record<string, unknown>)
   };
-  if ("createdBy" in row) row.createdBy = context.userId;
-  if ("updatedBy" in row) row.updatedBy = context.userId;
-  if ("companyId" in row) row.companyId = context.companyId;
-  if ("companyGroupId" in row) row.companyGroupId = context.companyGroupId;
+  for (const key of IDENTITY_KEYS) {
+    if (key in row) row[key] = identityValue(key, context);
+  }
   return row;
 }
 
@@ -205,16 +235,46 @@ function declaredScalarParam(
     : undefined;
 }
 
-/** Params the loop fills from context rather than from the request body. */
-const CONTEXT_PARAM_NAMES = new Set([
-  "client",
-  "db",
-  "userId",
-  "companyId",
-  "companyGroupId",
-  "eliminationClient",
-  "args"
-]);
+/** The service params the caller supplies — every other slot is filled from
+ *  the authenticated context. */
+function payloadParams(meta: ManifestEntry): string[] {
+  return meta.serviceParams.filter(
+    (_, i) => meta.contextSlots.params[i] === "payload"
+  );
+}
+
+/**
+ * The one payload param that receives the whole request body when the caller
+ * does not address it by name: the sole payload param, or else the schema's
+ * sole required property when that is an object param (the same shape input
+ * validation accepts sent flat — `compileSoleWrapper`). Every other param the
+ * caller leaves out gets `undefined`, so an optional `options` / `window` /
+ * id list never receives the body meant for its sibling.
+ */
+function bodyTarget(meta: ManifestEntry): string | undefined {
+  const payload = payloadParams(meta);
+  const properties = (
+    meta.schema as { properties?: Record<string, { type?: unknown }> }
+  )?.properties;
+  if (payload.length === 1) {
+    // A sole array or scalar param is published wrapped under its own name and
+    // never describes the body; a same-named FIELD of a flattened object param
+    // (a collision, see addressesWholeParam) does not make it one.
+    const only = payload[0];
+    const type = properties?.[only]?.type;
+    const wrapsNonObject =
+      type !== undefined &&
+      type !== "object" &&
+      addressesWholeParam(meta, only);
+    return wrapsNonObject ? undefined : only;
+  }
+  const required = (meta.schema as { required?: unknown }).required;
+  if (!Array.isArray(required) || required.length !== 1) return undefined;
+  const sole = required[0] as string;
+  return payload.includes(sole) && properties?.[sole]?.type === "object"
+    ? sole
+    : undefined;
+}
 
 /**
  * Is `paramName` a key the caller genuinely addresses, or does it just happen to
@@ -237,16 +297,28 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   // under it — the documented `{ account: {...} }` wrapper.
   if (!properties || !(paramName in properties)) return true;
 
-  const payloadParams = meta.serviceParams.filter(
-    (p) => !CONTEXT_PARAM_NAMES.has(p)
-  );
-  if (payloadParams.length !== 1 || payloadParams[0] !== paramName) return true;
+  const payload = payloadParams(meta);
+  if (payload.length !== 1 || payload[0] !== paramName) return true;
 
   const own = Object.keys(properties).filter(
     (k) =>
       k !== "_operation" && !(k !== paramName && meta.serviceParams.includes(k))
   );
   return own.length === 1 && own[0] === paramName;
+}
+
+/** A payload property typed `Kysely<…>` is the server database client — the
+ *  route builds it with `getDatabaseClient()` and passes it in the payload
+ *  (`activateAssemblyInstructionVersion`). Never read from the caller. */
+function fillPayloadDb(
+  value: unknown,
+  contract: PayloadContext | undefined
+): unknown {
+  if (!contract?.db?.length) return value;
+  if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+  const filled: Record<string, unknown> = { ...(value as object) };
+  for (const key of contract.db) filled[key] = getDatabaseClient();
+  return filled;
 }
 
 function supabaseErrorMessage(error: unknown): string {
@@ -305,23 +377,44 @@ export async function dispatchOperation(
     ? (requestedOperation as McpOperation)
     : undefined;
 
+  const target = bodyTarget(meta);
   const functionArgs: any[] = [];
-  for (const paramName of meta.serviceParams) {
-    if (paramName === "client") {
-      functionArgs.push(context.client);
-    } else if (paramName === "db") {
-      functionArgs.push(getDatabaseClient());
-    } else if (paramName === "userId") {
-      functionArgs.push(context.userId);
-    } else if (paramName === "companyId") {
-      functionArgs.push(context.companyId);
-    } else if (paramName === "companyGroupId") {
-      functionArgs.push(context.companyGroupId);
-    } else if (paramName === "eliminationClient") {
-      // A second client for consolidation reads, defaulted by the service to its
-      // own `client`. Context, never caller-supplied.
-      functionArgs.push(context.client);
-    } else if (paramName === "args") {
+  meta.serviceParams.forEach((paramName, index) => {
+    const slot = meta.contextSlots.params[index];
+    switch (slot) {
+      case "client":
+        functionArgs.push(context.client);
+        return;
+      case "db":
+        functionArgs.push(getDatabaseClient());
+        return;
+      case "userId":
+      case "auditUser":
+        // A positional createdBy/updatedBy is the acting user, the same value
+        // the route passes (`updatedBy: userId`) — never read from the body.
+        functionArgs.push(context.userId);
+        return;
+      case "companyId":
+        functionArgs.push(context.companyId);
+        return;
+      case "companyGroupId":
+        functionArgs.push(context.companyGroupId);
+        return;
+      case "eliminationClient":
+        // A second client for consolidation reads, defaulted by the service to its
+        // own `client`. Context, never caller-supplied.
+        functionArgs.push(context.client);
+        return;
+    }
+
+    const contract = meta.contextSlots.payloads[paramName];
+    const fill = (value: unknown) =>
+      fillPayloadDb(
+        enrichWithAuthContext(value, context, contract, operation),
+        contract
+      );
+
+    if (paramName === "args") {
       // Two wire shapes, told apart by the operation's own schema: when it
       // declares an `args` object the body is `{ args: {...} }`, otherwise the
       // body already IS the args object. A flat body is accepted for both — 18
@@ -336,22 +429,13 @@ export async function dispatchOperation(
         !Array.isArray(wrapped)
           ? wrapped
           : normalizedArgs || {};
-      functionArgs.push(
-        enrichWithAuthContext(value, context, meta.injectAuth, operation)
-      );
+      functionArgs.push(fill(value));
     } else if (
       normalizedArgs &&
       paramName in normalizedArgs &&
       addressesWholeParam(meta, paramName)
     ) {
-      functionArgs.push(
-        enrichWithAuthContext(
-          normalizedArgs[paramName],
-          context,
-          meta.injectAuth,
-          operation
-        )
-      );
+      functionArgs.push(fill(normalizedArgs[paramName]));
     } else if (
       declaredScalarParam(meta, paramName) &&
       addressesWholeParam(meta, paramName)
@@ -364,6 +448,10 @@ export async function dispatchOperation(
       // addressesWholeParam guard keeps a collision op — whose same-named schema
       // entry describes a FIELD, so it looks scalar — falling through instead.
       functionArgs.push(undefined);
+    } else if (paramName !== target) {
+      // Not addressed, and not the param the body describes: an omitted
+      // optional param. The service applies its own default.
+      functionArgs.push(undefined);
     } else if (
       normalizedArgs &&
       Object.keys(normalizedArgs).length === 1 &&
@@ -373,28 +461,26 @@ export async function dispatchOperation(
     ) {
       // Single-key payload whose name doesn't match a param — unwrap and use it
       // positionally (the documented `{ args: {...} }` wrapper, or a guessed key).
-      functionArgs.push(
-        enrichWithAuthContext(
-          Object.values(normalizedArgs)[0],
-          context,
-          meta.injectAuth,
-          operation
-        )
-      );
+      functionArgs.push(fill(Object.values(normalizedArgs)[0]));
     } else if (normalizedArgs && Object.keys(normalizedArgs).length > 0) {
       // No key matched — pass the whole args object positionally (flat-field calls
       // like upsertPart(client, part)).
-      functionArgs.push(
-        enrichWithAuthContext(
-          { ...normalizedArgs },
-          context,
-          meta.injectAuth,
-          operation
-        )
-      );
+      functionArgs.push(fill({ ...normalizedArgs }));
+    } else if (
+      contract &&
+      !contract.elements &&
+      (contract.fields.length > 0 ||
+        contract.discriminator ||
+        contract.byOperation ||
+        contract.db?.length)
+    ) {
+      // Nothing sent, but the payload declares context of its own (a payload of
+      // only `{ companyId; userId }`, or a `db`): it still gets it.
+      functionArgs.push(fill({}));
+    } else {
+      functionArgs.push(undefined);
     }
-    // else: optional param with nothing to fill — skip.
-  }
+  });
 
   // Sales-rule gate — evaluates the RESOLVED payload for the gated sales
   // operations (line writes + finalize/convert transitions) and refuses on

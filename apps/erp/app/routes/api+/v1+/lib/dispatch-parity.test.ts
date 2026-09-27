@@ -6,6 +6,7 @@
 // values stand as golden literals: they ARE executeFunction's behavior, and a change
 // here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
+import type { AuthField, ManifestEntry, PayloadContext } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -25,6 +26,17 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  upsertSalesOrderShipment: vi.fn(),
+  updateJobOperationStatus: vi.fn(),
+  getCapacityReservationsForResources: vi.fn(),
+  getAccountsInScope: vi.fn(),
+  updateMaterialOrder: vi.fn(),
+  activateAssemblyInstructionVersion: vi.fn(),
+  clockIn: vi.fn(),
+  updateCompany: vi.fn(),
+  // Every operation without a named spy above resolves to this one, so the
+  // table-driven pass can dispatch the whole manifest.
+  anyOperation: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -79,6 +91,22 @@ vi.mock("./sales-rules-gate.server", () => ({
 }));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
+// Resolve every operation to a recording spy: its named spy when there is one,
+// else `anyOperation`. The per-module mocks above stay so nothing else that
+// imports a module namespace drags real app code in.
+vi.mock("./registry.server", () => {
+  const byName = spies as unknown as Record<string, unknown>;
+  const functions = new Proxy(
+    {},
+    {
+      get: (_target, fn) =>
+        typeof fn === "string" && typeof byName[fn] === "function"
+          ? byName[fn]
+          : spies.anyOperation
+    }
+  );
+  return { functionRegistry: new Proxy({}, { get: () => functions }) };
+});
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => spies.FAKE_DB
 }));
@@ -100,7 +128,7 @@ import {
   dispatchOperation,
   enrichWithAuthContext
 } from "./dispatch.server";
-import { operationsByName } from "./operations.server";
+import { OPERATIONS, operationsByName } from "./operations.server";
 
 const ctx: AuthedContext = {
   client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
@@ -155,7 +183,16 @@ const allSpies = [
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
-  spies.applyCreditsToInvoices
+  spies.applyCreditsToInvoices,
+  spies.upsertSalesOrderShipment,
+  spies.updateJobOperationStatus,
+  spies.getCapacityReservationsForResources,
+  spies.getAccountsInScope,
+  spies.updateMaterialOrder,
+  spies.activateAssemblyInstructionVersion,
+  spies.clockIn,
+  spies.updateCompany,
+  spies.anyOperation
 ];
 
 beforeEach(() => {
@@ -214,7 +251,9 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(result.dispatchError).toBeUndefined();
     const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
     expect("storageUnitIds" in payload).toBe(false);
-    expect(payload).toMatchObject({ companyId: "c1", updatedBy: "u1" });
+    // The update member of upsertMethodMaterial declares updatedBy alone.
+    expect(payload).toMatchObject({ updatedBy: "u1" });
+    expect("companyId" in payload).toBe(false);
   });
 
   it("forwards an explicit null storageUnitIds to clear on update", async () => {
@@ -303,23 +342,22 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     ]);
   });
 
-  it("a2. fills context positional params (companyGroupId, companyId) from context", async () => {
+  it("a2. fills context positional params (companyGroupId, companyId) from context, and stamps nothing the args type does not declare", async () => {
     const r = await runDispatch(
       "accounting_getTrialBalance",
       spies.getTrialBalance,
       { startDate: "2026-01-01" }
     );
     expect(r.calls).toEqual([
-      [
-        spies.FAKE_CLIENT,
-        "g1",
-        "c1",
-        { startDate: "2026-01-01", companyId: "c1" }
-      ]
+      [spies.FAKE_CLIENT, "g1", "c1", { startDate: "2026-01-01" }]
     ]);
   });
 
-  it("b. _operation create at top level: stripped, createdBy + companyId stamped, updatedBy NOT stamped (matches the create-variant service type / UI insert path)", async () => {
+  // upsertAccount's create member declares companyGroupId + createdBy (accounts
+  // are group-scoped; the table has no companyId column) and its update member
+  // declares id + updatedBy. The verb rule stamped companyId into both, which
+  // failed every write.
+  it("b. _operation create at top level: stripped, the create member's companyGroupId + createdBy stamped, nothing else", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
@@ -335,15 +373,16 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1"
+          companyGroupId: "g1"
         }
       ]
     ]);
     const [, payload] = r.calls[0] as [unknown, Record<string, unknown>];
     expect("updatedBy" in payload).toBe(false);
+    expect("companyId" in payload).toBe(false);
   });
 
-  it("c. _operation update nested in the payload: stripped, createdBy suppressed", async () => {
+  it("c. _operation update nested in the payload: stripped, only the update member's updatedBy stamped", async () => {
     const r = await runDispatch(
       "accounting_upsertAccount",
       spies.upsertAccount,
@@ -355,8 +394,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(payload).toEqual({
       id: "a1",
       name: "Cash",
-      updatedBy: "u1",
-      companyId: "c1"
+      updatedBy: "u1"
     });
     expect("createdBy" in payload).toBe(false);
   });
@@ -404,7 +442,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     );
   });
 
-  it("g. array payload on an insert: every object element gets createdBy stamped AFTER the spread; nothing else injected", async () => {
+  it("g. array payload: each object element gets the fields its element type declares (createdBy), set AFTER the spread; undeclared identity keys are dropped", async () => {
     const r = await runDispatch(
       "sales_upsertQuoteLinePrices",
       spies.upsertQuoteLinePrices,
@@ -413,6 +451,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         lineId: "l1",
         quoteLinePrices: [
           { quantity: 1, unitPrice: 5, createdBy: "forged" },
+          { quantity: 2, unitPrice: 4, companyId: "other-company" },
           42
         ]
       }
@@ -423,19 +462,22 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         "c1",
         "q1",
         "l1",
-        [{ quantity: 1, unitPrice: 5, createdBy: "u1" }, 42]
+        [
+          { quantity: 1, unitPrice: 5, createdBy: "u1" },
+          { quantity: 2, unitPrice: 4, createdBy: "u1" },
+          42
+        ]
       ]
     ]);
-    const rows = (r.calls[0] as unknown[])[4] as Record<string, unknown>[];
-    expect("companyId" in rows[0]).toBe(false);
-    expect("updatedBy" in rows[0]).toBe(false);
   });
 
-  it("h. array payload on an update adds nothing, but overwrites caller-supplied identity keys", () => {
-    // No manifest op combines `_operation` with an array payload, so this pins the
-    // enrichment helper directly.
+  it("h. array payload: declared element fields are ADDED to every row (a reorder's updatedBy); undeclared identity keys are dropped, a row's userId kept", () => {
+    // The reorder services (`updateMaterialOrder(client, updates: { id; order;
+    // updatedBy }[])`) destructure updatedBy from each element; the route builds
+    // every element with `updatedBy: userId`. The old never-add rule left it
+    // undefined, so reordering over MCP wiped the column.
     const rows = [
-      { id: "p1", sortOrder: 1 },
+      { id: "p1", order: 1 },
       {
         id: "p2",
         createdBy: "forged",
@@ -445,26 +487,27 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       },
       42
     ];
-    const out = enrichWithAuthContext(
-      rows,
-      ctx,
-      ["companyId", "createdBy", "updatedBy"],
-      "update"
-    );
+    const out = enrichWithAuthContext(rows, ctx, {
+      fields: ["updatedBy"],
+      elements: true
+    });
     expect(out).toEqual([
-      { id: "p1", sortOrder: 1 },
-      {
-        id: "p2",
-        createdBy: "u1",
-        updatedBy: "u1",
-        companyId: "c1",
-        // A row's userId is data (e.g. the assigned employee), never stamped.
-        userId: "employee-7"
-      },
+      { id: "p1", order: 1, updatedBy: "u1" },
+      // A row's userId is data (e.g. the assigned employee), never stamped.
+      { id: "p2", updatedBy: "u1", userId: "employee-7" },
       42
     ]);
     // The caller's array is not mutated.
     expect(rows[1]).toMatchObject({ createdBy: "forged" });
+  });
+
+  it("h1. an array the contract does not declare (elements: false) only has caller identity keys overwritten", () => {
+    const out = enrichWithAuthContext(
+      [{ id: "p1" }, { id: "p2", companyId: "other-company" }],
+      ctx,
+      { fields: ["companyId"] }
+    );
+    expect(out).toEqual([{ id: "p1" }, { id: "p2", companyId: "c1" }]);
   });
 
   it("h2. a Kysely reorder gets the AUTHENTICATED companyId/userId positionally, never the body's", async () => {
@@ -484,7 +527,8 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       }
     );
     // The parent quote id is the caller's (the service scopes every row to it);
-    // the identity fields never are.
+    // the identity fields never are. The element type declares no updatedBy
+    // (the service stamps its positional userId), so a forged one is dropped.
     expect(r.calls).toEqual([
       [
         spies.FAKE_DB,
@@ -492,7 +536,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         "u1",
         "q1",
         [
-          { id: "ql1", sortOrder: 2, updatedBy: "u1" },
+          { id: "ql1", sortOrder: 2 },
           { id: "ql2", sortOrder: 1 }
         ]
       ]
@@ -511,7 +555,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         rows: [{ id: "r1", companyGroupId: "other-group" }, { id: "r2" }]
       },
       ctx,
-      ["companyId", "updatedBy", "userId"],
+      { fields: ["companyId", "updatedBy", "userId"] },
       "update"
     );
     expect(out).toEqual({
@@ -536,7 +580,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         plain: { note: "untouched" }
       },
       ctx,
-      ["companyId"],
+      { fields: ["companyId"] },
       "update"
     );
     expect(out).toEqual({
@@ -584,8 +628,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         {
           locationId: "loc1",
           companyId: "c1",
-          createdBy: "u1",
-          updatedBy: "u1"
+          createdBy: "u1"
         }
       ]
     ]);
@@ -661,7 +704,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
           name: "Cash",
           number: "1000",
           createdBy: "u1",
-          companyId: "c1"
+          companyGroupId: "g1"
         }
       ]
     ]);
@@ -739,6 +782,124 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
       'production_upsertJobMaterial requires _operation to be "create" (insert a new record) or "update" (modify an existing one).'
     );
+  });
+
+  // --- The declared context contract (contextSlots) -------------------------
+
+  it('r. an `"id" in` upsert with an id is an edit: only the edit member\'s updatedBy is stamped, a caller createdBy is dropped', async () => {
+    // salesOrderShipment has updatedBy and no createdBy column: stamping the
+    // create member's createdBy into the update failed every call with PGRST204.
+    const r = await runDispatch(
+      "sales_upsertSalesOrderShipment",
+      spies.upsertSalesOrderShipment,
+      { id: "so1", trackingNumber: "T-1", createdBy: "forged" }
+    );
+    expect(r.calls).toEqual([
+      [spies.FAKE_CLIENT, { id: "so1", trackingNumber: "T-1", updatedBy: "u1" }]
+    ]);
+  });
+
+  it("s. a positional updatedBy is the acting user, never the request body", async () => {
+    const r = await runDispatch(
+      "production_updateJobOperationStatus",
+      spies.updateJobOperationStatus,
+      { id: "op1", status: "Done" }
+    );
+    expect(r.calls).toEqual([[spies.FAKE_CLIENT, "op1", "Done", "u1"]]);
+  });
+
+  it("t. an omitted optional object or array param gets undefined, not the body meant for its sibling", async () => {
+    const window = await runDispatch(
+      "production_getCapacityReservationsForResources",
+      spies.getCapacityReservationsForResources,
+      { locationId: "loc1" }
+    );
+    expect(window.calls).toEqual([
+      [spies.FAKE_CLIENT, "c1", "loc1", undefined]
+    ]);
+
+    const scrap = await runDispatch(
+      "accounting_getAccountsInScope",
+      spies.getAccountsInScope,
+      { scope: { source: "scrapAccounts" } }
+    );
+    expect(scrap.calls).toEqual([
+      [spies.FAKE_CLIENT, "g1", { source: "scrapAccounts" }, undefined]
+    ]);
+  });
+
+  it("t2. the flat body still reaches the sole required object param (insertJob's input), and not its optional options", async () => {
+    const r = await runDispatch("production_insertJob", spies.insertJob, {
+      itemId: "item_1",
+      quantity: 5
+    });
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        { itemId: "item_1", quantity: 5, companyId: "c1", createdBy: "u1" },
+        undefined
+      ]
+    ]);
+  });
+
+  it("u. reorder rows gain the updatedBy their element type declares", async () => {
+    const r = await runDispatch(
+      "items_updateMaterialOrder",
+      spies.updateMaterialOrder,
+      {
+        updates: [
+          { id: "m1", order: 2 },
+          { id: "m2", order: 1 }
+        ]
+      }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        [
+          { id: "m1", order: 2, updatedBy: "u1" },
+          { id: "m2", order: 1, updatedBy: "u1" }
+        ]
+      ]
+    ]);
+  });
+
+  it("v. a Kysely `db` declared inside the payload is filled with the server client", async () => {
+    const r = await runDispatch(
+      "production_activateAssemblyInstructionVersion",
+      spies.activateAssemblyInstructionVersion,
+      { id: "ai1", db: "forged" }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        { id: "ai1", companyId: "c1", userId: "u1", db: spies.FAKE_DB }
+      ]
+    ]);
+  });
+
+  it("w. a declared createdBy is stamped whatever the verb (clockIn)", async () => {
+    const r = await runDispatch("people_clockIn", spies.clockIn, {
+      employeeId: "e1"
+    });
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        { employeeId: "e1", companyId: "c1", createdBy: "u1" }
+      ]
+    ]);
+  });
+
+  it("x. an undeclared identity field is never stamped (updateCompany's payload declares updatedBy only)", async () => {
+    // `company` has no companyId column; the tenant is the positional companyId.
+    const r = await runDispatch("settings_updateCompany", spies.updateCompany, {
+      name: "Acme",
+      companyId: "other-company",
+      createdBy: "forged"
+    });
+    expect(r.calls).toEqual([
+      [spies.FAKE_CLIENT, "c1", { name: "Acme", updatedBy: "u1" }]
+    ]);
   });
 });
 
@@ -891,5 +1052,185 @@ describe("blocked tools (D5)", () => {
       errorKind: "execution",
       error: "Tool disabled: settings_seedCompany is not available via MCP."
     });
+  });
+});
+
+// --- Every manifest entry -------------------------------------------------
+
+const CONTEXT_VALUE: Record<string, unknown> = {
+  client: spies.FAKE_CLIENT,
+  eliminationClient: spies.FAKE_CLIENT,
+  db: spies.FAKE_DB,
+  userId: ctx.userId,
+  auditUser: ctx.userId,
+  companyId: ctx.companyId,
+  companyGroupId: ctx.companyGroupId
+};
+
+const FIELD_VALUE: Record<AuthField, string> = {
+  companyId: ctx.companyId,
+  companyGroupId: ctx.companyGroupId,
+  createdBy: ctx.userId,
+  updatedBy: ctx.userId,
+  userId: ctx.userId
+};
+
+/** Every (operation, _operation) pair the dispatcher can run. */
+type Run = [ManifestEntry, "create" | "update" | undefined];
+
+function runs(): Run[] {
+  return OPERATIONS.flatMap((op): Run[] =>
+    (op.schema as { properties?: Record<string, unknown> }).properties
+      ?._operation
+      ? [
+          [op, "create"],
+          [op, "update"]
+        ]
+      : [[op, undefined]]
+  );
+}
+
+async function dispatchAll(
+  op: ManifestEntry,
+  body: Record<string, unknown>
+): Promise<unknown[]> {
+  spies.anyOperation.mockClear();
+  const named = allSpies.find(
+    (spy) =>
+      spy !== spies.anyOperation &&
+      spy ===
+        (spies as Record<string, unknown>)[op.name.slice(op.module.length + 1)]
+  );
+  const spy = named ?? spies.anyOperation;
+  spy.mockClear();
+  await dispatchOperation(op, ctx, body);
+  const call = spy.mock.calls[0];
+  if (!call) throw new Error(`${op.name} was not dispatched`);
+  return [...call];
+}
+
+function expectedFields(
+  contract: PayloadContext,
+  row: Record<string, unknown>,
+  operation: "create" | "update" | undefined
+): AuthField[] {
+  if (contract.byOperation)
+    return operation ? contract.byOperation[operation] : [];
+  if (contract.discriminator) {
+    return contract.discriminator.key in row
+      ? contract.discriminator.present
+      : contract.discriminator.absent;
+  }
+  return contract.fields;
+}
+
+describe("the declared context contract, over every manifest entry", () => {
+  it("fills every positional context slot from the authenticated context", async () => {
+    const wrong: string[] = [];
+    for (const [op, operation] of runs()) {
+      const args = await dispatchAll(op, {
+        ...(operation ? { _operation: operation } : {})
+      });
+      op.contextSlots.params.forEach((slot, i) => {
+        if (slot === "payload") return;
+        if (args[i] !== CONTEXT_VALUE[slot]) {
+          wrong.push(`${op.name} arg ${i} (${slot})`);
+        }
+      });
+    }
+    expect(wrong).toEqual([]);
+  });
+
+  it("hands an unaddressed body to at most one payload param, and never to a context slot", async () => {
+    const probe = "__probe";
+    const leaks: string[] = [];
+    for (const [op, operation] of runs()) {
+      const args = await dispatchAll(op, {
+        [probe]: 1,
+        ...(operation ? { _operation: operation } : {})
+      });
+      const receivers = args
+        .map((arg, i) => ({ arg, i }))
+        .filter(
+          ({ arg }) =>
+            arg !== null &&
+            typeof arg === "object" &&
+            !Array.isArray(arg) &&
+            probe in (arg as object)
+        );
+      if (receivers.length > 1) {
+        leaks.push(
+          `${op.name}: ${receivers.map((r) => op.serviceParams[r.i]).join(", ")}`
+        );
+      }
+      for (const { i } of receivers) {
+        if (op.contextSlots.params[i] !== "payload") {
+          leaks.push(`${op.name}: context slot ${op.serviceParams[i]}`);
+        }
+      }
+    }
+    expect(leaks).toEqual([]);
+  });
+
+  it("stamps every declared identity field of every payload, and nothing undeclared", async () => {
+    const wrong: string[] = [];
+    for (const [op, operation] of runs()) {
+      for (const [name, contract] of Object.entries(op.contextSlots.payloads)) {
+        if (contract.opaque) continue;
+        const declared = new Set([
+          ...contract.fields,
+          ...(contract.discriminator?.present ?? []),
+          ...(contract.discriminator?.absent ?? []),
+          ...(contract.byOperation?.create ?? []),
+          ...(contract.byOperation?.update ?? [])
+        ]);
+        if (declared.size === 0 && !contract.db?.length) continue;
+        const index = op.serviceParams.indexOf(name);
+        // A forged value for every identity key, so a stamped field is visible
+        // and an undeclared one must be dropped.
+        const row: Record<string, unknown> = {
+          createdBy: "forged",
+          updatedBy: "forged",
+          companyId: "forged",
+          companyGroupId: "forged"
+        };
+        const value = contract.elements ? [row] : row;
+        const args = await dispatchAll(op, {
+          [name]: value,
+          ...(operation ? { _operation: operation } : {})
+        });
+        const received = contract.elements
+          ? (args[index] as unknown[] | undefined)?.[0]
+          : args[index];
+        if (!received || typeof received !== "object") {
+          wrong.push(`${op.name}.${name}: payload not received`);
+          continue;
+        }
+        const got = received as Record<string, unknown>;
+        // The forged row carries no discriminator key but the identity fields;
+        // a discriminator on an identity key is decided by _operation instead.
+        const fields = expectedFields(contract, row, operation);
+        for (const key of [
+          "createdBy",
+          "updatedBy",
+          "companyId",
+          "companyGroupId"
+        ] as const) {
+          const expected = fields.includes(key) ? FIELD_VALUE[key] : undefined;
+          if (got[key] !== expected) {
+            wrong.push(`${op.name}.${name}.${key}: ${String(got[key])}`);
+          }
+        }
+        if (fields.includes("userId") && got.userId !== ctx.userId) {
+          wrong.push(`${op.name}.${name}.userId`);
+        }
+        for (const dbField of contract.db ?? []) {
+          if (got[dbField] !== spies.FAKE_DB) {
+            wrong.push(`${op.name}.${name}.${dbField} (db)`);
+          }
+        }
+      }
+    }
+    expect(wrong).toEqual([]);
   });
 });

@@ -14,30 +14,6 @@ import {
   validatorToJsonSchema,
 } from "./validator-to-json-schema";
 
-/**
- * Auth/tenancy fields the caller never supplies — they are injected server-side
- * from the authenticated context (`injectAuth`). They exist on the validators
- * because forms submit them, but publishing them in the manifest would invite a
- * caller to set `companyId`.
- *
- * Shared with the textual parser in `service-metadata.ts`: a validator resolved
- * natively and the same one resolved textually must strip the same set, so this is
- * the single copy.
- *
- * `eliminationClient` is a second Supabase client for consolidation reads. Left out
- * of this set it becomes a required field no caller can express.
- */
-export const CONTEXT_PARAMS = new Set([
-  "client",
-  "db",
-  "companyId",
-  "userId",
-  "createdBy",
-  "updatedBy",
-  "companyGroupId",
-  "eliminationClient",
-]);
-
 /** A module whose validators are reused across modules when a local lookup misses. */
 const FALLBACK_MODULE = "shared";
 
@@ -62,40 +38,6 @@ export interface ValidatorRegistry {
     validatorsConverted: number;
     conversionFailures: ValidatorConversionFailure[];
   };
-}
-
-/**
- * Strip context params from the top level and from array `items` — a payload param
- * typed as an array of rows carries them per element, which is how `createdBy` used
- * to leak into `items.properties` (pinned by `apps/erp/test/mcp-tool-metadata.test.ts`).
- */
-function stripContextParams(schema: JsonSchema): JsonSchema {
-  const walk = (node: unknown): unknown => {
-    if (Array.isArray(node)) return node.map(walk);
-    if (typeof node !== "object" || node === null) return node;
-
-    const obj = { ...(node as JsonSchema) };
-    const properties = obj.properties as Record<string, unknown> | undefined;
-    if (properties) {
-      const kept: Record<string, unknown> = {};
-      for (const [key, value] of Object.entries(properties)) {
-        if (CONTEXT_PARAMS.has(key)) continue;
-        kept[key] = walk(value);
-      }
-      obj.properties = kept;
-
-      const required = obj.required as string[] | undefined;
-      if (Array.isArray(required)) {
-        const keptRequired = required.filter((r) => !CONTEXT_PARAMS.has(r));
-        if (keptRequired.length > 0) obj.required = keptRequired;
-        else delete obj.required;
-      }
-    }
-    if (obj.items) obj.items = walk(obj.items);
-    return obj;
-  };
-
-  return walk(schema) as JsonSchema;
 }
 
 function isConstStringArray(value: unknown): value is string[] {
@@ -141,9 +83,11 @@ export async function buildValidatorRegistry(
         }
         if (!isZodSchema(value)) continue;
         try {
-          const converted = stripContextParams(
-            validatorToJsonSchema(value as z.ZodType)
-          );
+          // Identity fields are NOT stripped here: whether a field is filled
+          // from the authenticated context depends on the operation that uses
+          // the validator, so the generator strips per operation, exactly the
+          // fields its declared context contract fills (service-signatures.ts).
+          const converted = validatorToJsonSchema(value as z.ZodType);
           schemas.set(`${mod}:${name}`, converted);
           stats.validatorsConverted++;
         } catch (err) {

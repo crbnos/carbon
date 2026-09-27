@@ -14,8 +14,9 @@ import * as fs from "fs";
 import * as path from "path";
 
 import type {
-  AuthField,
   Classification,
+  ContextSlot,
+  PayloadContext,
   ManifestEntry,
   PermissionAction,
   ToolPermission,
@@ -25,10 +26,14 @@ import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
 } from "./response-schema";
+import {
+  buildSignatureIndex,
+  deriveContextContract,
+  type SignatureIndex,
+} from "./service-signatures";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
   buildValidatorRegistry,
-  CONTEXT_PARAMS,
   type ValidatorRegistry,
 } from "./validator-registry";
 
@@ -82,54 +87,6 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
   inventory_insertWarehouseTransfer:
     "Create a warehouse transfer between locations. Generates sequence ID automatically.",
   inventory_updateWarehouseTransfer: "Update an existing warehouse transfer",
-};
-
-// Per-tool overrides of the auto-computed injectAuth set. The default rule
-// (insert* → companyId + createdBy + updatedBy) is wrong for tools that spread
-// their argument object straight into an INSERT on an append-only ledger table.
-// Those tables now carry an updatedBy column (schema uniformity, migration
-// 20260701143512), but by convention it must stay NULL — an "edit" is a new
-// offsetting row, never an in-place mutation. Injecting updatedBy would stamp it
-// on the ledger row and destroy the "untouched since creation" guarantee, so we
-// drop it here. Both tools below insert([data]) where data is built from the
-// spread of their injected args:
-//   - inventory_insertManualInventoryAdjustment → itemLedger
-//   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
-// account_upsertNotificationPreference spreads its argument into an upsert on
-// notificationPreference, which (like userModulePreference) carries no
-// createdBy/updatedBy columns at all — injecting them breaks the write. The
-// four lean material lookups (dimension, finish, grade, type) are the same:
-// no audit columns, argument spread into the row.
-const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
-  inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
-  accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
-  account_upsertNotificationPreference: ["companyId"],
-  items_upsertMaterialDimension: ["companyId"],
-  items_upsertMaterialFinish: ["companyId"],
-  items_upsertMaterialGrade: ["companyId"],
-  items_upsertMaterialType: ["companyId"],
-  // Both operations replace settlement rows in a transaction. Their verbs do
-  // not imply INSERT to the name-based rule, but the service requires the
-  // authenticated creator for every replacement row.
-  invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
-  invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
-  // Both read the caller's group-scoped currency with the payload's
-  // companyGroupId and write a memo, so it must come from the auth context —
-  // a caller-supplied group would resolve another group's currency rows.
-  purchasing_createPurchaseReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
-  sales_createSalesReturnOrderCredit: [
-    "companyId",
-    "companyGroupId",
-    "createdBy",
-    "updatedBy",
-    "userId",
-  ],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`
@@ -281,8 +238,8 @@ function inferTypeFromDefaultLiteral(literal: string): string {
 
 // A destructuring pattern is not a name; storing the raw source text put braces and
 // newlines into the manifest, so reformatting a signature churned the committed
-// digest. The synthetic name only has to avoid `CONTEXT_PARAMS` and the dispatcher's
-// `args` branch — nothing else reads a param name for meaning.
+// digest. The synthetic name only has to avoid the dispatcher's `args` branch —
+// nothing else reads a param name for meaning.
 function destructuredParamName(raw: string, existing: ParsedParam[]): string {
   if (!raw.startsWith("{")) return raw;
   const base = "destructured";
@@ -558,7 +515,7 @@ function typeToJsonSchema(
       const properties: Record<string, unknown> = {};
       const required: string[] = [];
       for (const field of fields) {
-        if (CONTEXT_PARAMS.has(field.name)) continue;
+        if (ctx?.contextFields?.has(field.name)) continue;
         properties[field.name] = typeToJsonSchema(field.typeStr, ctx);
         if (!field.optional) required.push(field.name);
       }
@@ -793,13 +750,13 @@ function lookupValidatorSchema(
   const native = ctx.validators?.getSchema(ctx.module ?? "", validatorName);
   if (native) {
     ctx.onResolved?.(validatorName, "native");
-    return native as Record<string, unknown>;
+    return omitContextFields(native as Record<string, unknown>, ctx);
   }
   if (ctx.modelsContent) {
     const textual = parseValidatorFields(validatorName, ctx.modelsContent);
     if (textual) {
       ctx.onResolved?.(validatorName, "textual");
-      return textual;
+      return omitContextFields(textual, ctx);
     }
   }
   ctx.onResolved?.(validatorName, "unresolved");
@@ -854,7 +811,7 @@ function parseInlineObjectType(
     if (!head) continue;
     const fieldName = head[1];
     const optional = head[2] === "?";
-    if (CONTEXT_PARAMS.has(fieldName)) continue;
+    if (ctx?.contextFields?.has(fieldName)) continue;
 
     const fieldType = f
       .slice(head[0].length)
@@ -1060,7 +1017,6 @@ function parseFirstZObject(expr: string): Record<string, unknown> | null {
     if (!colonMatch) continue;
     const fieldName = colonMatch[1];
 
-    if (CONTEXT_PARAMS.has(fieldName)) continue;
 
     const zodExpr = f.substring(colonMatch[0].length).trim();
     const schema = zodExprToJsonSchema(zodExpr);
@@ -1138,8 +1094,8 @@ function classifyFunction(
   // Destructive-by-omission: a write whose body deletes rows (e.g. the
   // delete-then-reinsert `upsert*Prices` rewrite) can silently drop data the
   // caller didn't include. Flag it so the client treats it as destructive, even
-  // though its name says `upsert`/`update`. injectAuth stays name-based below, so
-  // the insert branch still gets its createdBy.
+  // though its name says `upsert`/`update`. The context contract is read from
+  // the signature, so the insert branch still gets its declared createdBy.
   if (content && functionBodyDeletes(content, name)) return "DESTRUCTIVE";
   return "WRITE";
 }
@@ -1186,48 +1142,8 @@ function extractFunctionBody(content: string, funcName: string): string | null {
   );
 }
 
-function computeInjectAuth(
-  funcName: string,
-  classification: Classification
-): AuthField[] {
-  const lower = funcName.toLowerCase();
-  // Only READ tools take no audit fields. A DESTRUCTIVE label is just a caller
-  // hint — a delete-then-reinsert `upsert*` still inserts rows and needs its
-  // createdBy/updatedBy, so audit injection is keyed off the name verb, not the
-  // classification. A genuine `delete*` matches neither verb group and falls
-  // through to companyId-only.
-  if (classification === "READ") {
-    return ["companyId"];
-  }
-  if (
-    /^(upsert|create|insert|add|new|copy|duplicate|generate)/.test(lower)
-  ) {
-    return ["companyId", "createdBy", "updatedBy"];
-  }
-  if (
-    /^(update|modify|set|change|edit|approve|reject|finalize|toggle|move|reorder|recalculate|sync|favorite|unfavorite|send|release|close|convert|run)/.test(
-      lower
-    )
-  ) {
-    return ["companyId", "updatedBy"];
-  }
-  return ["companyId"];
-}
-
-export function withPayloadUserId(
-  fields: AuthField[],
-  func: ParsedFunction
-): AuthField[] {
-  if (fields.includes("userId")) return fields;
-  const declaresUserId = func.params.some(
-    (p) => p.name !== "userId" && /(^|[{;,\s])userId\s*\??\s*:/.test(p.typeStr)
-  );
-  return declaresUserId ? [...fields, "userId"] : fields;
-}
-
 // The permission an API-key caller must hold. `module` follows the service→permission
-// map; `actions` are derived from the operation verb, mirroring `computeInjectAuth`'s
-// verb groups but split into CRUD actions. An unmatched write verb (issue/post/ship/
+// map; `actions` are derived from the operation verb, split into CRUD actions. An unmatched write verb (issue/post/ship/
 // complete/...) requires `update` — the conservative mutation gate.
 function derivePermission(
   toolName: string,
@@ -1258,25 +1174,6 @@ function permissionActionsFor(
   return ["update"];
 }
 
-// Services that pick insert-vs-update by testing for an audit field on the
-// payload are the only ones MCP can't infer, so they need the `_operation` flag.
-// BOTH directions count: `"createdBy" in` (create-branch first, e.g.
-// upsertQuoteOperation) and `"updatedBy" in` (update-branch first, e.g.
-// upsertQuoteMaterial / upsertJobMaterial). The dispatch stamps createdBy on
-// create and updatedBy on update and suppresses the other, so either convention
-// lands on the branch the caller asked for.
-function usesOperationDiscriminator(
-  content: string,
-  funcName: string
-): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return (
-    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
-  );
-}
-
 // The `:` guard keeps `https://` intact.
 function stripComments(source: string): string {
   return source
@@ -1303,6 +1200,20 @@ function stripRedundantPatterns(node: unknown): void {
     }
     for (const value of Object.values(record)) stripRedundantPatterns(value);
   }
+}
+
+/** The fields one payload's contract fills, across every branch. These — and
+ *  only these — are left out of the published schema: a caller never supplies
+ *  them, and a field the dispatcher does not fill stays visible. */
+function contractFields(context: PayloadContext): Set<string> {
+  return new Set([
+    ...context.fields,
+    ...(context.discriminator?.present ?? []),
+    ...(context.discriminator?.absent ?? []),
+    ...(context.byOperation?.create ?? []),
+    ...(context.byOperation?.update ?? []),
+    ...(context.db ?? []),
+  ]);
 }
 
 function addOperationArg(schema: Record<string, unknown>): void {
@@ -1332,10 +1243,13 @@ function generateDescription(funcName: string): string {
 
 function buildToolSchema(
   func: ParsedFunction,
+  slots: readonly ContextSlot[],
   modelsContent: string | null,
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
-  const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
+  // Only payload params are the caller's; every other slot is filled from the
+  // authenticated context (see `service-signatures.ts`).
+  const userParams = func.params.filter((_, i) => slots[i] === "payload");
   const resolveCtx: TypeResolveContext = { ...ctx, modelsContent };
 
   if (userParams.length === 0) {
@@ -1363,7 +1277,7 @@ function buildToolSchema(
     // intersection-aware machinery and merge them flat — properties from every
     // branch, required only where required in EVERY branch (so a create-only
     // Omit<…, "id"> branch demotes `id` to optional, and auth fields never
-    // appear at all: CONTEXT_PARAMS strips them). Falls through untouched when
+    // appear at all: the context contract strips them). Falls through untouched when
     // any branch fails to resolve — the `& ({createdBy} | {updatedBy})` audit
     // union resolves to {} by design and keeps the verbatim-validator path.
     const looksComposed =
@@ -1421,7 +1335,10 @@ function buildToolSchema(
 
       // Preferred path: the REAL validator, converted by zod itself. Carries enum
       // values, numeric bounds and nested shapes the source-text parser cannot see.
-      const native = ctx.validators?.getSchema(ctx.module ?? "", validatorName);
+      const native = omitContextFields(
+        ctx.validators?.getSchema(ctx.module ?? "", validatorName) ?? null,
+        ctx
+      );
       if (native) {
         ctx.onResolved?.(validatorName, "native");
         const propCount = Object.keys(
@@ -1434,7 +1351,10 @@ function buildToolSchema(
       // to load or zod could not represent the validator — never a silent downgrade,
       // the caller records it.
       if (modelsContent) {
-        const resolved = parseValidatorFields(validatorName, modelsContent);
+        const resolved = omitContextFields(
+          parseValidatorFields(validatorName, modelsContent),
+          ctx
+        );
         if (resolved) {
           ctx.onResolved?.(validatorName, "textual");
           const propCount = Object.keys(
@@ -1566,7 +1486,42 @@ interface SchemaBuildContext {
   validators?: ValidatorRegistry;
   /** Module-local sources for bare type-alias resolution (see `resolveTypeAlias`). */
   aliasSources?: string[];
+  /** The fields this operation's context contract fills. Left out of the schema
+   *  while it is BUILT, so an identity-only union branch (`& ({ createdBy } |
+   *  { updatedBy })`) still collapses the way the resolvers expect. */
+  contextFields?: ReadonlySet<string>;
   onResolved?: (validatorName: string, how: ValidatorResolution) => void;
+}
+
+/**
+ * Drop the operation's context fields from a validator-derived schema, at every
+ * depth — a validator is shared by many operations, so this happens per
+ * operation rather than when the registry converts it.
+ */
+function omitContextFields<T>(schema: T, ctx: SchemaBuildContext): T {
+  const fields = ctx.contextFields;
+  if (!fields || fields.size === 0) return schema;
+  const walk = (node: unknown): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const obj = node as Record<string, unknown>;
+    const properties = obj.properties as Record<string, unknown> | undefined;
+    if (properties) {
+      for (const field of fields) delete properties[field];
+      for (const value of Object.values(properties)) walk(value);
+      if (Array.isArray(obj.required)) {
+        const kept = (obj.required as string[]).filter((r) => !fields.has(r));
+        if (kept.length > 0) obj.required = kept;
+        else delete obj.required;
+      }
+    }
+    if (obj.items) walk(obj.items);
+  };
+  walk(schema);
+  return schema;
 }
 
 function readIfExists(filePath: string): string | null {
@@ -1584,6 +1539,8 @@ export interface BuildOptions {
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
   responses?: ResponseSchemaIndex;
+  /** Declared signatures, for the context contract. Built on demand when absent. */
+  signatures?: SignatureIndex;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -1598,6 +1555,8 @@ export interface BuildOptions {
  */
 export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   const allTools: ManifestEntry[] = [];
+  const signatures = opts.signatures ?? buildSignatureIndex(MODULE_LIST);
+  const contractProblems: string[] = [];
 
   for (const mod of MODULE_LIST) {
     let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
@@ -1658,11 +1617,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
       const classification = classifyFunction(func.name, content);
-      const injectAuth = withPayloadUserId(
-        INJECT_AUTH_OVERRIDES[toolName] ||
-          computeInjectAuth(func.name, classification),
-        func
+      const contract = deriveContextContract(
+        func.params,
+        signatures.get(mod, func.name)
       );
+      for (const problem of contract.problems) {
+        contractProblems.push(`${toolName}: ${problem}`);
+      }
+      const { injectAuth, contextSlots } = contract;
       // A JSDoc on the function itself beats the override table (code closest
       // wins); the de-camelCased name remains the fallback.
       const description =
@@ -1676,20 +1638,28 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         func.name,
         classification
       );
-      const { schema, paramCount } = buildToolSchema(func, modelsContent, {
-        module: mod,
-        validators: opts.validators,
-        aliasSources,
-        onResolved: (validatorName, how) =>
-          opts.onValidatorResolved?.(toolName, validatorName, how),
-      });
+      const { schema, paramCount } = buildToolSchema(
+        func,
+        contextSlots.params,
+        modelsContent,
+        {
+          module: mod,
+          validators: opts.validators,
+          aliasSources,
+          contextFields: new Set(
+            Object.values(contextSlots.payloads).flatMap((context) => [
+              ...contractFields(context),
+            ])
+          ),
+          onResolved: (validatorName, how) =>
+            opts.onValidatorResolved?.(toolName, validatorName, how),
+        }
+      );
       stripRedundantPatterns(schema);
-      if (
-        injectAuth.includes("createdBy") &&
-        usesOperationDiscriminator(content, func.name)
-      ) {
-        addOperationArg(schema);
-      }
+      // A service that splits create from update on an identity field the
+      // dispatcher sets itself (`"createdBy" in payload`) cannot tell the two
+      // apart from the payload, so the caller names the branch.
+      if (contract.needsOperation) addOperationArg(schema);
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
       const paginates = functionBodyPaginates(content, func.name);
@@ -1702,6 +1672,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         paramCount,
         serviceParams,
         injectAuth,
+        contextSlots,
         permission,
         paginates,
         schema,
@@ -1711,6 +1682,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     }
 
     opts.onModule?.(mod, toolCount);
+  }
+
+  // A contract the signature does not determine would make the dispatcher
+  // guess which identity fields to stamp — the bug class this replaced.
+  if (contractProblems.length > 0) {
+    throw new Error(
+      `The context contract of ${contractProblems.length} operation(s) could not be derived from the declared signature:\n  ${contractProblems.join("\n  ")}`
+    );
   }
 
   return allTools;
@@ -1741,12 +1720,14 @@ export async function buildAllToolMetadataWithValidators(
 ): Promise<BuildWithValidatorsResult> {
   const validators = await buildValidatorRegistry(MODULE_LIST);
   const responses = buildResponseSchemaIndex(MODULE_LIST);
+  const signatures = buildSignatureIndex(MODULE_LIST);
   const resolutions: ValidatorResolutionRecord[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
     validators,
     responses,
+    signatures,
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);

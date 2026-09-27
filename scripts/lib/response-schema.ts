@@ -12,15 +12,10 @@
  * schema, ~10s to walk. The manifest grows 1.3 -> 1.6 MB, and it is gitignored.
  */
 
-import * as fs from "fs";
-import * as path from "path";
-import { Node, Project, type Type } from "ts-morph";
+import type { Node, Type } from "ts-morph";
+import { serviceProject } from "./service-signatures";
 
 export type JsonSchema = Record<string, unknown>;
-
-const ROOT = path.resolve(__dirname, "../..");
-const ERP_ROOT = path.join(ROOT, "apps/erp");
-const MODULES_DIR = path.join(ERP_ROOT, "app/modules");
 
 /**
  * Rows are wide (40+ columns) and embeds nest, so an uncapped walk can emit a
@@ -262,24 +257,14 @@ function isUseful(schema: JsonSchema): boolean {
 
 /**
  * Reflect every module's service functions once. Loading the TS project is the
- * expensive part (~4s), so it happens here and the result is a plain lookup the
- * synchronous manifest builder can consult.
+ * expensive part (~4s); it is shared with the signature index
+ * (`serviceProject`), and the result is a plain lookup the synchronous manifest
+ * builder can consult.
  */
 export function buildResponseSchemaIndex(
   modules: readonly string[]
 ): ResponseSchemaIndex {
-  const project = new Project({
-    tsConfigFilePath: path.join(ERP_ROOT, "tsconfig.json"),
-    skipAddingFilesFromTsConfig: true
-  });
-
-  const sources = modules.flatMap((mod) =>
-    [`${mod}.service.ts`, `${mod}.ee.service.ts`, `${mod}.mcp.server.ts`]
-      .map((name) => ({ mod, file: path.join(MODULES_DIR, mod, name) }))
-      .filter((entry) => fs.existsSync(entry.file))
-      .map((entry) => ({ mod: entry.mod, source: project.addSourceFileAtPath(entry.file) }))
-  );
-  project.resolveSourceFileDependencies();
+  const { sources } = serviceProject(modules);
 
   const schemas = new Map<string, JsonSchema>();
   const stats = { functions: 0, derived: 0, empty: 0 };

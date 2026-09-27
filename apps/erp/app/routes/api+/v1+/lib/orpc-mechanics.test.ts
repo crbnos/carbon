@@ -25,6 +25,10 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     paramCount: 1,
     serviceParams: ["client", "args"],
     injectAuth: [],
+    contextSlots: {
+      params: ["client", "payload"],
+      payloads: { args: { fields: [] } }
+    },
     permission: { module: null, actions: [] },
     paginates: false,
     schema: { type: "object", properties: { name: { type: "string" } } },

@@ -28,6 +28,9 @@ export interface DigestEntry {
   /** Stable hash of the response schema, or "none" when none was derived. */
   response: string;
   injectAuth: string;
+  /** Stable hash of the declared context contract (`contextSlots`) — which
+   *  argument is filled from the caller's identity, per union branch. */
+  context: string;
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
@@ -96,6 +99,7 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         schema: stableHash(t.schema),
         response: t.responseSchema ? stableHash(t.responseSchema) : "none",
         injectAuth: [...t.injectAuth].sort().join("+") || "none",
+        context: stableHash(t.contextSlots),
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
@@ -151,6 +155,9 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.injectAuth !== after.injectAuth) {
       parts.push(`injectAuth ${before.injectAuth} → ${after.injectAuth}`);
+    }
+    if (before.context !== after.context) {
+      parts.push("context contract changed");
     }
     if (before.paginates !== after.paginates) {
       parts.push(`paginates ${before.paginates} → ${after.paginates}`);

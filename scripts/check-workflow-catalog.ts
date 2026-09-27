@@ -124,6 +124,8 @@ for (const problem of validateCatalogInputs(
 
 type ToolMeta = {
   name: string;
+  /** Every identity field the dispatcher fills into a payload, per the
+   *  operation's declared context contract (`contextSlots`). */
   injectAuth?: string[];
   schema?: { required?: string[]; properties?: Record<string, unknown> };
 };

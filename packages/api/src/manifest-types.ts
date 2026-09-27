@@ -14,6 +14,53 @@ export type AuthField =
   | "updatedBy"
   | "userId";
 
+/**
+ * Where one positional service argument comes from. Every value but `payload` is
+ * filled from the authenticated context and never read from the request:
+ * `auditUser` is a positional `createdBy`/`updatedBy`, filled with the caller.
+ */
+export type ContextSlot =
+  | "client"
+  | "db"
+  | "userId"
+  | "companyId"
+  | "companyGroupId"
+  | "eliminationClient"
+  | "auditUser"
+  | "payload";
+
+/**
+ * The identity fields one payload argument DECLARES in the service signature —
+ * the dispatcher sets exactly these from the authenticated context.
+ */
+export interface PayloadContext {
+  /** Identity fields to set. Any other identity key the caller sent is removed
+   *  (unless `opaque`), so a payload never carries a column the service did not
+   *  declare. Used when there is no discriminator. */
+  fields: AuthField[];
+  /** The declared type is an array of rows: `fields` apply to each object element. */
+  elements?: boolean;
+  /** Properties typed `Kysely<…>`, filled with the server database client. */
+  db?: string[];
+  /** The declared type names no fields (`Json`, `Record<…>`, `any`): a
+   *  caller-sent identity key is overwritten, never removed or added. */
+  opaque?: boolean;
+  /** A union the service splits with `"key" in <param>`: `present` applies when
+   *  the payload carries `key`, `absent` otherwise. */
+  discriminator?: { key: string; present: AuthField[]; absent: AuthField[] };
+  /** A union split on an identity field: the caller's `_operation` picks the
+   *  branch, since the dispatcher itself sets that field. */
+  byOperation?: { create: AuthField[]; update: AuthField[] };
+}
+
+/** The declared context contract of one operation, derived from its signature. */
+export interface ContextSlots {
+  /** One slot per entry of `serviceParams`, in order. */
+  params: ContextSlot[];
+  /** The contract of each `payload` param, keyed by its `serviceParams` name. */
+  payloads: Record<string, PayloadContext>;
+}
+
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
@@ -34,17 +81,22 @@ export interface ManifestEntry {
   description: string;
   paramCount: number;
   serviceParams: string[];
+  /** Every identity field any payload of the operation declares — the union of
+   *  `contextSlots.payloads`. A summary for readers of the manifest; the
+   *  dispatcher reads `contextSlots`. */
   injectAuth: AuthField[];
+  /** What the dispatcher fills from the authenticated context, per argument. */
+  contextSlots: ContextSlots;
   permission: ToolPermission;
   /** Whether the service itself applies limit/offset (`setGenericQueryFilters`
    *  or a direct `.range(`). A list operation with `paginates: false` is a
    *  fetchAll read — pagination args are inert in the service, and the MCP
    *  layer pages the response at its own boundary instead. */
   paginates: boolean;
-  /** The JSON Schema for the operation's input. When the service branches on
-   *  `"createdBy" in payload`, a required `_operation: "create" | "update"`
-   *  property is present here — that property IS the marker (there is no parallel
-   *  flag), matching how the dispatcher decides today. */
+  /** The JSON Schema for the operation's input. When the service branches on an
+   *  identity field (`"createdBy" in payload`), a required
+   *  `_operation: "create" | "update"` property is present here, and
+   *  `contextSlots` carries the matching `byOperation` branch fields. */
   schema: Record<string, unknown>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could
