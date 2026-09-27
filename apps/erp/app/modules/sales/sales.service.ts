@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import type { Database, Json, TablesUpdate } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 import { storage } from "@carbon/files";
@@ -1991,6 +1991,11 @@ export async function getSalesRFQLines(
     .order("customerPartId", { ascending: true });
 }
 
+/**
+ * Create a contact and link it to a customer. `contact` takes the contact's own
+ * fields; a `contactId`, `customerLocationId` or `id` inside it is ignored — pass the
+ * location as the top-level `customerLocationId`.
+ */
 export async function insertCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -2001,11 +2006,20 @@ export async function insertCustomerContact(
     customFields?: Json;
   }
 ) {
+  // The form's own keys (the customer-contact row id, the contact id, the
+  // location) are not contact columns: the new-contact route stripped them
+  // before calling, and an API caller does not.
+  const {
+    id: _id,
+    contactId: _contactId,
+    customerLocationId: _customerLocationId,
+    ...contact
+  } = customerContact.contact;
   const insertContact = await client
     .from("contact")
     .insert([
       {
-        ...customerContact.contact,
+        ...contact,
         isCustomer: true,
         companyId: customerContact.companyId
       }
@@ -3125,6 +3139,11 @@ export async function updateCustomerAccounting(
     .eq("id", customerAccounting.id);
 }
 
+/**
+ * Update a customer contact: the contact's own fields, and — on the
+ * customer-contact link — its location and custom fields when sent. A
+ * `contactId`, `customerLocationId` or `id` inside `contact` is ignored.
+ */
 export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -3134,27 +3153,47 @@ export async function updateCustomerContact(
     customFields?: Json;
   }
 ) {
-  if (customerContact.customFields) {
-    const customFieldUpdate = await client
+  // The link row takes the location and the custom fields; each is written
+  // only when sent, so a location change no longer depends on custom fields
+  // being present (the form always sends both).
+  const linkUpdate = {
+    ...(customerContact.customFields !== undefined && {
+      customFields: customerContact.customFields
+    }),
+    ...(customerContact.customerLocationId !== undefined && {
+      customerLocationId: customerContact.customerLocationId
+    })
+  } satisfies TablesUpdate<"customerContact">;
+  if (Object.keys(linkUpdate).length > 0) {
+    const linkResult = await client
       .from("customerContact")
-      .update({
-        customFields: customerContact.customFields,
-        customerLocationId: customerContact.customerLocationId
-      })
+      .update(linkUpdate)
       .eq("contactId", customerContact.contactId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+    if (linkResult.error) {
+      return linkResult;
     }
   }
+
+  // The form's own keys are not contact columns (see insertCustomerContact).
+  const {
+    id: _id,
+    contactId: _contactId,
+    customerLocationId: _customerLocationId,
+    ...contact
+  } = customerContact.contact;
   return client
     .from("contact")
-    .update(sanitize(customerContact.contact))
+    .update(sanitize(contact))
     .eq("id", customerContact.contactId)
     .select("id")
     .single();
 }
 
+/**
+ * Update a customer location: its name and custom fields on the location row
+ * (each written when sent), and its address fields.
+ */
 export async function updateCustomerLocation(
   client: SupabaseClient<Database>,
   customerLocation: {
@@ -3171,17 +3210,22 @@ export async function updateCustomerLocation(
     customFields?: Json;
   }
 ) {
-  if (customerLocation.customFields) {
-    const customFieldUpdate = await client
+  // The name used to be written only alongside custom fields; the form always
+  // sends both, an API caller renaming a location does not.
+  const locationUpdate = {
+    ...(customerLocation.name !== undefined && { name: customerLocation.name }),
+    ...(customerLocation.customFields !== undefined && {
+      customFields: customerLocation.customFields
+    })
+  } satisfies TablesUpdate<"customerLocation">;
+  if (Object.keys(locationUpdate).length > 0) {
+    const locationResult = await client
       .from("customerLocation")
-      .update({
-        name: customerLocation.name,
-        customFields: customerLocation.customFields
-      })
+      .update(locationUpdate)
       .eq("addressId", customerLocation.addressId);
 
-    if (customFieldUpdate.error) {
-      return customFieldUpdate;
+    if (locationResult.error) {
+      return locationResult;
     }
   }
   return client

@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import type { Database, Json, TablesUpdate } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type {
   ExpressionBuilder,
@@ -3885,16 +3885,62 @@ export async function upsertPart(
   return updated;
 }
 
+/**
+ * The item columns the item form edits. `readableId` and `type` are shown
+ * read-only there, and cost, posting group, default storage unit and shelf
+ * life live in other tables — they are written by `upsertItemCost`,
+ * `upsertItemDefaultPickMethod` and `upsertItemShelfLife`.
+ */
+const ITEM_FORM_COLUMNS = [
+  "name",
+  "description",
+  "mpn",
+  "replenishmentSystem",
+  "defaultMethodType",
+  "itemTrackingType",
+  "unitOfMeasureCode"
+] as const satisfies readonly (keyof TablesUpdate<"item">)[];
+
+/**
+ * Update an item's own columns: name, description, MPN, replenishment,
+ * default method, tracking type and unit of measure. It never renames the
+ * item (`readableId`) or changes its type. Use `items_upsertItemCost` for
+ * unit cost and posting group, `items_upsertItemDefaultPickMethod` for the
+ * default storage unit, and `items_upsertItemShelfLife` for shelf life.
+ */
 export async function updateItem(
   client: SupabaseClient<Database>,
-  item: z.infer<typeof itemValidator> & {
+  item: Omit<
+    z.infer<typeof itemValidator>,
+    | "readableId"
+    | "postingGroupId"
+    | "unitCost"
+    | "defaultStorageUnitId"
+    | "shelfLifeMode"
+    | "shelfLifeDays"
+    | "shelfLifeTriggerProcessId"
+    | "shelfLifeTriggerTiming"
+    | "shelfLifeCalculateFromBom"
+  > & {
     companyId: string;
     type: Database["public"]["Enums"]["itemType"];
   }
 ) {
+  // Only the keys the caller sent: a sent-but-blank form field is `undefined`
+  // and clears the column (sanitize), an unsent one is left alone.
+  const update: TablesUpdate<"item"> = {};
+  for (const column of ITEM_FORM_COLUMNS) {
+    if (column in item) {
+      (update as Record<string, unknown>)[column] = item[column];
+    }
+  }
+  if ("updatedBy" in item) {
+    update.updatedBy = (item as { updatedBy?: string }).updatedBy;
+  }
+
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(sanitize(update))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
