@@ -370,6 +370,30 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
   deleted `executeFunction`) — a change there is a behavior change for MCP,
   the agent, workflows and HTTP at once.
+- **Two route-guard gates run after arg assembly, before the service**, both
+  reading the RESOLVED positional payload and refusing with `FORBIDDEN`:
+  `checkSalesRulesForOperation` (`sales-rules-gate.server.ts`) and
+  `checkDocumentLocksForOperation` (`document-lock-gate.server.ts`, tables and
+  pure logic in `document-lock-rules.ts`). The lock gate exists because the
+  ERP's document locks live in ROUTE actions (`requireUnlocked` /
+  `requireUnlockedBulk` from `~/utils/lockedGuard.server`, `checkRevisionLock`
+  and the change-notice guards from `items.server.ts`, inline delete checks on
+  posted receipts/shipments/counts, the PO delete approval rule, the return
+  order rules), which the dispatch never runs. A lock belongs to a route
+  ACTION, not a table — the UI keeps writing locked documents through
+  unguarded routes (status transitions and reopen, favorites, line reorder,
+  line-to-job, `deleteSalesOrder`) — so the gate is three hand-written tables
+  keyed by TOOL name: `LOCK_OPERATIONS` (header status predicate + the route's
+  message, with FK hops for id-only writes and every id of a bulk write),
+  `METHOD_LOCK_OPERATIONS` (`checkRevisionLock` + `assertMethodOperationIsDraft`;
+  a `warn` verdict proceeds, as the routes do), and `INLINE_GUARDS` (per-tool
+  functions copied from the imperative route checks). A tool not in a table is
+  not gated. `apps/erp/test/mcp-document-lock-coverage.test.ts` scans
+  `routes/x+` and fails when a guarded route calls a registry write that is
+  neither gated nor exempted with a reason, when an entry cites a route with no
+  guard (an invented lock), or when a sibling write tool (same table) is
+  neither gated nor exempted. Adding a lock to a route therefore means adding
+  the tool to a table (or an exemption) in the same change.
 
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)
 
