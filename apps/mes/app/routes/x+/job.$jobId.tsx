@@ -9,7 +9,7 @@ import {
   SidebarTrigger
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
-import { LuArrowLeft, LuClipboardCheck } from "react-icons/lu";
+import { LuArrowLeft, LuClipboardCheck, LuTriangleAlert } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Link, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
@@ -17,6 +17,7 @@ import {
   getJobOperationDependencies,
   getJobOperations
 } from "~/services/operations.service";
+import { getFirstArticlePlansMissingForJob } from "~/services/quality.server";
 import { getOpenFirstArticleInspectionsForJob } from "~/services/quality.service";
 import { path } from "~/utils/path";
 
@@ -27,11 +28,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, operations, dependencies, firstArticles] = await Promise.all([
+  const [
+    job,
+    operations,
+    dependencies,
+    firstArticles,
+    firstArticlePlansMissing
+  ] = await Promise.all([
     serviceRole.from("jobs").select("jobId").eq("id", jobId).single(),
     getJobOperations(serviceRole, jobId),
     getJobOperationDependencies(serviceRole, jobId),
-    getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId)
+    getOpenFirstArticleInspectionsForJob(serviceRole, jobId, companyId),
+    // Parts that need a first article but resolve no plan — the ERP release
+    // blocker, which an MES auto-start skips. Warned about, never blocking.
+    getFirstArticlePlansMissingForJob(serviceRole, { jobId, companyId })
   ]);
 
   return {
@@ -42,13 +52,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       id: lot.id,
       inspectionId: lot.inspectionId,
       itemReadableId: lot.item?.readableId ?? lot.itemReadableId ?? null
-    }))
+    })),
+    firstArticlePlansMissing
   };
 }
 
 export default function JobDagRoute() {
-  const { readableId, operations, dependencies, firstArticles } =
-    useLoaderData<typeof loader>();
+  const {
+    readableId,
+    operations,
+    dependencies,
+    firstArticles,
+    firstArticlePlansMissing
+  } = useLoaderData<typeof loader>();
 
   return (
     <div className="flex flex-col flex-1">
@@ -65,8 +81,22 @@ export default function JobDagRoute() {
         </div>
       </header>
 
-      {firstArticles.length > 0 ? (
+      {firstArticles.length > 0 || firstArticlePlansMissing.length > 0 ? (
         <div className="flex flex-col gap-2 border-b bg-card px-4 py-3">
+          {firstArticlePlansMissing.map(({ jobMakeMethodId, description }) => (
+            <Alert key={jobMakeMethodId} variant="warning">
+              <LuTriangleAlert />
+              <AlertTitle>
+                <Trans>First article plan missing for {description}</Trans>
+              </AlertTitle>
+              <AlertDescription>
+                <Trans>
+                  Tell quality — this part needs a first article, but no
+                  inspection plan is assigned to it.
+                </Trans>
+              </AlertDescription>
+            </Alert>
+          ))}
           {firstArticles.map((firstArticle) => (
             <Alert key={firstArticle.id} variant="warning">
               <LuClipboardCheck />

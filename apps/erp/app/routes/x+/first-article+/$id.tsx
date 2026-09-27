@@ -9,12 +9,14 @@ import {
   getFirstArticleCreateOptions,
   getFirstArticleInspection
 } from "~/modules/quality";
+import { seedFirstArticleProductsOnView } from "~/modules/quality/firstArticle.server";
 import {
   FirstArticleCharacteristics,
   FirstArticleForm1,
   FirstArticleHeader,
   FirstArticleProducts
 } from "~/modules/quality/ui/FirstArticles";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -34,7 +36,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const detail = await getFirstArticleInspection(client, id, companyId);
+  let detail = await getFirstArticleInspection(client, id, companyId);
+
+  // An FAI the MES auto-start generated has no Form 2: the lineage resolver
+  // that seeds it lives here. Seed it once, the first time it is opened — the
+  // seed re-checks emptiness under the FAI's row lock, so it is a no-op if
+  // rows appeared meanwhile.
+  if (
+    detail.data &&
+    detail.data.firstArticle.status === "Draft" &&
+    detail.data.firstArticle.jobId &&
+    detail.data.firstArticle.jobMakeMethodId &&
+    detail.data.products.length === 0
+  ) {
+    const inserted = await seedFirstArticleProductsOnView(
+      getDatabaseClient(),
+      client,
+      { id, companyId, userId }
+    );
+    if (inserted > 0) {
+      detail = await getFirstArticleInspection(client, id, companyId);
+    }
+  }
+
   if (detail.error || !detail.data) {
     throw redirect(
       path.to.firstArticles,

@@ -1,7 +1,13 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { getLocationTimeZone } from "@carbon/database";
-import { lockIssueDispositions } from "@carbon/database/quality";
+import { getCompanyTimeZone, getLocationTimeZone } from "@carbon/database";
+import { resolveFirstArticleNeeds } from "@carbon/database/first-article";
+import {
+  createFirstArticleInspections,
+  loadFirstArticleNeedInput,
+  lockIssueDispositions
+} from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
@@ -17,6 +23,85 @@ import {
 } from "~/services/quality.service";
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
+
+const logger = getLogger("mes", "first-article");
+
+// -------------------------------------------------------------
+// First Article (AS9102) on the shop floor
+// -------------------------------------------------------------
+
+/**
+ * First Article generation for a job the MES auto-start moved straight from
+ * Draft / Planned to In Progress (`startProductionEvent`'s `onJobReleased`) —
+ * the release the ERP would otherwise have run `afterJobsReleased` for. Same
+ * shared generator and the same `resolveFirstArticleNeeds`, so the lots match
+ * an ERP release. Form 2 is NOT seeded here: its lineage resolver lives in the
+ * ERP, which seeds an empty Draft FAI the first time its detail page loads.
+ *
+ * Best-effort: a failure is logged and never fails the production event. The
+ * release blocker is deliberately not applied — the operator is already
+ * working; a part with no plan shows the "plan missing" banner instead
+ * (`getFirstArticlePlansMissingForJob`).
+ */
+export async function generateFirstArticlesForStartedJob(
+  serviceRole: ServiceRole,
+  args: { jobId: string; companyId: string; userId: string }
+): Promise<void> {
+  try {
+    const today = datetime
+      .today(await getCompanyTimeZone(serviceRole, args.companyId))
+      .toString();
+    const created = await createFirstArticleInspections(getDatabaseClient(), {
+      ...args,
+      today
+    });
+    if (created.error) {
+      logger.error("Failed to create first article inspections", {
+        error: created.error,
+        ...args
+      });
+    }
+  } catch (err) {
+    logger.error("Failed to create first article inspections", {
+      error: err,
+      ...args
+    });
+  }
+}
+
+/**
+ * The job's parts whose first article is required and due but has no plan to
+ * inspect against (`resolveFirstArticleNeeds` → `blocked`) — the ERP release
+ * blocker. A job the MES auto-started skipped that blocker, so the job and
+ * operation pages warn the operator instead of refusing the start.
+ * Informational: a failure is logged and reads as nothing missing.
+ */
+export async function getFirstArticlePlansMissingForJob(
+  serviceRole: ServiceRole,
+  args: { jobId: string; companyId: string }
+): Promise<{ jobMakeMethodId: string; description: string }[]> {
+  try {
+    const today = datetime
+      .today(await getCompanyTimeZone(serviceRole, args.companyId))
+      .toString();
+    const input = await loadFirstArticleNeedInput(getDatabaseClient(), {
+      ...args,
+      today
+    });
+    return resolveFirstArticleNeeds(input)
+      .filter((need) => need.blocked)
+      .map((need) => ({
+        jobMakeMethodId: need.jobMakeMethodId,
+        description: need.description
+      }));
+  } catch (err) {
+    logger.error("Failed to evaluate first article plans", {
+      error: err,
+      ...args
+    });
+    return [];
+  }
+}
 
 export type ProductionEventIds = {
   setupProductionEventId?: string;

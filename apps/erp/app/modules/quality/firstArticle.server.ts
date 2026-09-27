@@ -168,15 +168,51 @@ function productKey(row: {
 }
 
 /**
- * Seeds Form 2 from the job's certification lineage at generation. Same as a
- * refresh on a Draft FAI with no rows yet.
+ * Seeds Form 2 from the job's certification lineage — at generation, and
+ * lazily for an FAI the MES generated (see `seedFirstArticleProductsOnView`).
+ * A no-op once the FAI has any Form 2 row: the emptiness is re-checked under
+ * the FAI's row lock, so two concurrent seeds cannot both insert.
  */
 export async function seedFirstArticleProducts(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; userId: string }
 ): Promise<Result<{ inserted: number }>> {
-  return refreshFirstArticleProducts(db, client, args);
+  return insertLineageProducts(db, client, args, { onlyIfEmpty: true });
+}
+
+/**
+ * The MES auto-start generates First Article lots without Form 2 — the lineage
+ * resolver lives here, in the ERP. The detail page calls this when it loads a
+ * Draft FAI that still has its job and make method but no Form 2 rows, so the
+ * seed happens once, the first time anyone opens it. Best-effort: a failure is
+ * logged and the page loads without the rows (Refresh from traceability still
+ * works). Returns how many rows were inserted.
+ */
+export async function seedFirstArticleProductsOnView(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string }
+): Promise<number> {
+  try {
+    const seeded = await seedFirstArticleProducts(db, client, args);
+    if (seeded.error) {
+      logger.error("Failed to seed first article Form 2 on view", {
+        error: seeded.error,
+        firstArticleInspectionId: args.id,
+        companyId: args.companyId
+      });
+      return 0;
+    }
+    return seeded.data.inserted;
+  } catch (err) {
+    logger.error("Failed to seed first article Form 2 on view", {
+      error: err,
+      firstArticleInspectionId: args.id,
+      companyId: args.companyId
+    });
+    return 0;
+  }
 }
 
 /**
@@ -188,6 +224,15 @@ export async function refreshFirstArticleProducts(
   db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; userId: string }
+): Promise<Result<{ inserted: number }>> {
+  return insertLineageProducts(db, client, args, { onlyIfEmpty: false });
+}
+
+async function insertLineageProducts(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: { id: string; companyId: string; userId: string },
+  { onlyIfEmpty }: { onlyIfEmpty: boolean }
 ): Promise<Result<{ inserted: number }>> {
   const { id, companyId, userId } = args;
 
@@ -230,6 +275,9 @@ export async function refreshFirstArticleProducts(
         .where("firstArticleInspectionId", "=", id)
         .where("companyId", "=", companyId)
         .execute();
+      // A seed only fills an empty Form 2: rows that appeared since the
+      // caller looked (a concurrent seed, a manual row) mean it is done.
+      if (onlyIfEmpty && existing.length > 0) return 0;
 
       const present = new Set(existing.map(productKey));
       let sortOrder = existing.reduce(
