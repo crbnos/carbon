@@ -49,7 +49,8 @@ note: policies({
 - `serviceOnly()` — RLS on, no policy: only the service role reaches it.
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.
-- `legacy.*` wraps the deprecated `has_company_permission`-family helpers still on some tables.
+- `legacy.*` wraps the deprecated helpers still on some tables: `legacy.permission` renders
+  `get_companies_with_permission`, `legacy.permissionCompanies` renders `get_permission_companies`.
 
 ## Shipping a change
 

@@ -1,5 +1,11 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
-import { noAuthzDdlInMigrations } from "./no-authz-ddl-in-migrations";
+import { repoRoot } from "../sources/migrations";
+import {
+  GENERATED_AUTHZ_MIGRATION,
+  noAuthzDdlInMigrations
+} from "./no-authz-ddl-in-migrations";
 
 const check = noAuthzDdlInMigrations(["get_companies_with_employee_role"]);
 const NEW = "20260928120000_widget.sql";
@@ -42,6 +48,21 @@ DROP FUNCTION IF EXISTS get_companies_with_employee_role();`;
         "CREATE OR REPLACE FUNCTION public.get_part_details() RETURNS void AS $$ $$;"
       )
     ).toEqual([]);
+  });
+
+  it("exempts only the exact header `authz migration` writes", () => {
+    const source = readFileSync(
+      join(repoRoot(), "packages/database/src/authz/migration.ts"),
+      "utf8"
+    );
+    expect(source).toContain(JSON.stringify(GENERATED_AUTHZ_MIGRATION));
+    const edited = GENERATED_AUTHZ_MIGRATION.replace("Do not edit.", "Edited.");
+    expect(
+      check.scan(
+        NEW,
+        `${edited}\nCREATE POLICY "SELECT" ON public.widget FOR SELECT USING (true);`
+      )
+    ).toHaveLength(1);
   });
 
   it("allows a migration rendered by `authz migration`", () => {
