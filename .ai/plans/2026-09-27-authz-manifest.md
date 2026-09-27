@@ -66,8 +66,9 @@ changes through `authz migration`; `migration.test.ts` fails CI until it does. G
       get_company_id_from_foreign_key refused as an RPC; H3: legacy permission helpers drop the
       '0' wildcard and intersect membership, API keys scope-checked. Shipped with journal in
       the generated migration 20260927172338_authz-security-fixes.sql (`authz migration`)
-- [ ] App drift: the attribute route lets users_update edit others' values; the DB wants
-      resources_update
+- [x] App drift: the attribute upsert route checked users_update; it and the DB now both use
+      resources_update, and users can clear their own self-managed values (the delete route
+      offered it; the DB refused silently) — generated 20260927230425
 - [ ] Any-employee writes (`trackedEntity`, `riskRegister`, …) → permission?
 - [ ] Unscoped API keys reading `employee`-read tables
 - [ ] Re-wire CI once every active workspace has a Postgres connection

@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const clientClaims = await getUserClaims(userId, companyId);
   const canUpdateAnyUser =
     // biome-ignore lint/complexity/useLiteralKeys: suppressed due to migration
-    clientClaims.permissions["users"]?.update?.includes(companyId);
+    clientClaims.permissions["resources"]?.update?.includes(companyId);
 
   if (!canUpdateAnyUser && userId !== targetUserId) {
     return data(

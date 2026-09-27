@@ -1491,14 +1491,12 @@ export const manifest = {
     update: inCompany("companyId", "resources_update"),
     delete: inCompany("companyId", "resources_delete")
   }),
-  // A user reads and writes their own values, for attributes of a company they belong to;
-  // resources_update manages everyone's. (The imported "insert" policy was FOR UPDATE with
-  // no USING, so the account page could not save a value without resources_update.)
+  // A user reads, writes and clears their own values of self-managed attributes, in a
+  // company they belong to; resources_update manages everyone's. (The imported "insert"
+  // policy was FOR UPDATE with no USING, so the account page could not save a value without
+  // resources_update.)
   userAttributeValue: policies({
-    select: or(and(owner("userId"), ownAttribute), managedAttribute),
-    insert: or(and(owner("userId"), ownAttribute), managedAttribute),
-    update: or(and(owner("userId"), ownAttribute), managedAttribute),
-    delete: managedAttribute
+    all: or(and(owner("userId"), ownAttribute), managedAttribute)
   }),
   userModulePreference: policies({ all: owner("userId") }),
   userPermission: policies({

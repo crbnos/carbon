@@ -175,7 +175,16 @@ BEGIN
     RAISE EXCEPTION 'a plain employee set another user''s value';
   EXCEPTION WHEN insufficient_privilege THEN NULL;
   END;
-  RAISE NOTICE 'PASS users save their own attribute values, only in their own company';
+  ASSERT pg_temp.allows('userAttributeValue', 'DELETE', 'using',
+    jsonb_build_object('userAttributeId', attribute_a, 'userId', w)),
+    'a user can clear their own self-managed value';
+  ASSERT NOT pg_temp.allows('userAttributeValue', 'DELETE', 'using',
+    jsonb_build_object('userAttributeId', attribute_a, 'userId', v)),
+    'a plain employee cleared another user''s value';
+  ASSERT NOT pg_temp.allows('userAttributeValue', 'DELETE', 'using',
+    jsonb_build_object('userAttributeId', attribute_locked, 'userId', w)),
+    'a user cleared their own value of an attribute that is not self-managed';
+  RAISE NOTICE 'PASS users save and clear their own attribute values, only in their own company';
   RESET ROLE;
 
   -- ── get_company_id_from_foreign_key: refused as an API endpoint, fine inside a query ──
