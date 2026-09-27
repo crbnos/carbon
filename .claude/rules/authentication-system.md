@@ -207,10 +207,46 @@ querying), and every route entry point checks it too — login buttons, the
   (compose substitution → `GOTRUE_SAML_*`; `crbn reload` does not read root `.env` —
   see `.ai/lessons.md`).
 
+## CSRF and CSP (`middleware/security.server.ts`, `lib/security.ts`)
+
+The `carbon` cookie is `SameSite=Lax` on the PARENT domain (`carbon.ms`), so every
+`*.carbon.ms` host is same-site and Lax alone is not a CSRF defence. `securityMiddleware`
+(root `middleware` of erp, mes, academy, starter) refuses a POST/PUT/PATCH/DELETE when
+`Sec-Fetch-Site` is anything but `same-origin`/`none`, or — without that header — when
+`Origin` differs from the addressed host (`x-forwarded-host ?? host`; never `request.url`,
+the internal origin behind portless/Vercel). No `Origin` at all is a server (webhooks,
+Inngest, assembler callback, API-key clients, the MES→ERP proxy) and passes, so webhooks
+need no exemption; `CROSS_ORIGIN_ENDPOINTS` is only `/token`, `/register`, `/api/mcp`.
+Browser submissions arrive as `…/path.data`, stripped before matching.
+React Router 7.18 has its own check (`throwIfPotentialCSRFAttack`: `Origin` host vs
+`request.url` host, 400) — but only on DOCUMENT and `.data` actions, and it runs before
+middleware. Resource routes (every `api+` action) get no check from it; the middleware is
+what refuses those (checked 2026-09-28: `handleResourceRequest` calls no origin check; a
+cross-site POST to an `api+` route now gets the middleware's 403).
+
+GET loaders that write (kanban QR `api+/kanban.$id.tsx`, MES `x+/start|end.$operationId`,
+invoice `new` routes, `settings.sequence.next`, stock-transfer pick/unpick, stripe-connect
+dashboard) call `rejectCrossSiteNavigation`: 403 on `Sec-Fetch-Site: cross-site`,
+while a QR scan (`none`) and the ERP→MES redirect (`same-site`) pass. Deliberately unguarded:
+`api+/link.ts` (company switch from email links — webmail clicks are cross-site) and
+stripe-connect `connect` (Stripe's expired-link `refresh_url` lands on `callback`, which
+redirects there: a chain started on stripe.com, so cross-site).
+
+CSP: the middleware puts a per-request nonce in `nonceContext`; `entry.server` passes it
+to `vercelHandleRequest(…, { nonce })`, which React Router's `<Links>`, `<Scripts>` and
+`<ScrollRestoration>` read from framework context; the inline `window.env` script reads
+`UNSAFE_FrameworkContext`. The enforced policy is still the old baseline (`object-src`,
+`base-uri`, `frame-ancestors`); the strict nonce + `strict-dynamic` policy
+(`buildContentSecurityPolicy`) ships as `Content-Security-Policy-Report-Only`, reporting
+to `/api/csp-report` in each app. Why each exception exists (`wasm-unsafe-eval`, ERP
+`unsafe-eval` for the configurator, `style-src 'unsafe-inline'`, `img-src https:`) and
+why there is no `form-action`: `.ai/plans/2026-09-28-csp-csrf.md`.
+
 ## Sessions (`session.server.ts`)
 
 - `createCookieSessionStorage`, cookie name **`carbon`**, `httpOnly`, `sameSite: "lax"`
-  (`"none"` in Test edition), `secure`/`domain` from `DOMAIN` in non-test. Payload stored
+  (`"none"` in Test edition, always with `Secure` — browsers drop `None` without it),
+  `secure`/`domain` from `DOMAIN` in non-test. Payload stored
   under key `SESSION_KEY = "auth"`; `SESSION_MAX_AGE = 7 days`.
 - `requireAuthSession` reads/validates; `getOrRefreshAuthSession` refreshes within
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.

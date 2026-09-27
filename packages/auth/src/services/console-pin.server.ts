@@ -54,7 +54,7 @@ interface StoredConsolePinIn extends ConsolePinIn {
 }
 
 const isTestEdition = CarbonEdition === Edition.Test;
-const secure = !!getCookieDomain(DOMAIN);
+const secure = isTestEdition || !!getCookieDomain(DOMAIN);
 
 const cookies = new Map<string, Cookie>();
 
