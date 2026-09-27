@@ -16,6 +16,7 @@ import * as path from "path";
 import type {
   AuthField,
   Classification,
+  FieldCoercer,
   ManifestEntry,
   PermissionAction,
   ToolPermission,
@@ -31,6 +32,10 @@ import {
   CONTEXT_PARAMS,
   type ValidatorRegistry,
 } from "./validator-registry";
+import {
+  COERCE_MARKER,
+  type CoerceSource,
+} from "./validator-to-json-schema";
 
 const ROOT = path.resolve(__dirname, "../..");
 const MODULES_DIR = path.join(ROOT, "apps/erp/app/modules");
@@ -435,7 +440,11 @@ function typeToJsonSchema(
   if (nullableMatch) {
     const inner = typeToJsonSchema(nullableMatch[1].trim(), ctx);
     if (Array.isArray(inner.anyOf)) {
-      return { anyOf: [...(inner.anyOf as unknown[]), { type: "null" }] };
+      // Keep the member's other keywords (description, the coerce marker).
+      return {
+        ...inner,
+        anyOf: [...(inner.anyOf as unknown[]), { type: "null" }],
+      };
     }
     if (inner.type) {
       return { ...inner, type: [inner.type, "null"] };
@@ -734,9 +743,16 @@ function resolveNestedInferType(
 }
 
 function resolveInferExpression(
-  t: string,
+  raw: string,
   ctx: TypeResolveContext
 ): Record<string, unknown> | null {
+  // A formatter-wrapped reference (`z.infer<\n  typeof V\n>["field"]`) is the
+  // same type; collapse the whitespace so the anchored patterns below match.
+  const t = raw
+    .replace(/\s+/g, " ")
+    .replace(/<\s+/g, "<")
+    .replace(/\s+>/g, ">")
+    .trim();
   let m = t.match(/^z\.infer<typeof\s+(\w+)>$/);
   if (m) return lookupValidatorSchema(m[1], ctx);
 
@@ -1305,6 +1321,133 @@ function stripRedundantPatterns(node: unknown): void {
   }
 }
 
+/**
+ * Lift the transform markers `validatorToJsonSchema` left on property schemas
+ * into a flat coercer list, deleting every marker from the published schema.
+ * Only markers reached through `properties` / `items` chains are recorded (they
+ * have an unambiguous input path); a marker under a combinator is dropped.
+ */
+export function extractFieldCoercers(
+  schema: Record<string, unknown>
+): FieldCoercer[] {
+  const found: FieldCoercer[] = [];
+  const walk = (node: unknown, at: string[] | null): void => {
+    if (Array.isArray(node)) {
+      for (const item of node) walk(item, null);
+      return;
+    }
+    if (!node || typeof node !== "object") return;
+    const obj = node as Record<string, unknown>;
+    const marker = obj[COERCE_MARKER] as CoerceSource | undefined;
+    if (marker) {
+      delete obj[COERCE_MARKER];
+      // Only a property path: a marker on the payload root would run a whole
+      // validator over the whole input, which is exactly what must not happen.
+      if (at && at.length > 0) {
+        found.push({
+          at,
+          module: marker.module,
+          validator: marker.validator,
+          field: marker.field,
+        });
+      }
+    }
+    for (const [key, value] of Object.entries(obj)) {
+      if (key === "properties" && value && typeof value === "object") {
+        for (const [prop, child] of Object.entries(
+          value as Record<string, unknown>
+        )) {
+          walk(child, at ? [...at, prop] : null);
+        }
+      } else if (key === "items") {
+        walk(value, at ? [...at, "*"] : null);
+      } else {
+        walk(value, null);
+      }
+    }
+  };
+  walk(schema, []);
+  return found;
+}
+
+/**
+ * Is this a tool that can modify an existing row? Such a tool must not publish
+ * `default`: `jsonSchemaInput` compiles the published schema with
+ * `z.fromJSONSchema`, whose parse materialises every default, so a partial
+ * update that omitted a defaulted field overwrote the stored value with it
+ * (`taxExempt: true` → `false`, a pricing rule's `priority` → 0).
+ */
+function isUpdateCapable(
+  funcName: string,
+  schema: Record<string, unknown>
+): boolean {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  return Boolean(properties?._operation) || /^(update|upsert)/.test(funcName);
+}
+
+/**
+ * Remove `default` from every property reachable from the root through
+ * `properties` chains — the record's own columns. Defaults inside array
+ * `items` or `additionalProperties` describe elements of a collection the
+ * service writes whole, so they stay. Returns the removed TOP-LEVEL defaults.
+ */
+export function stripUpdateDefaults(
+  schema: Record<string, unknown>
+): Record<string, unknown> {
+  const topLevel: Record<string, unknown> = {};
+  const walk = (node: Record<string, unknown>, depth: number): void => {
+    const properties = node.properties as
+      | Record<string, Record<string, unknown>>
+      | undefined;
+    if (!properties) return;
+    for (const [key, prop] of Object.entries(properties)) {
+      if (!prop || typeof prop !== "object") continue;
+      if ("default" in prop) {
+        if (depth === 0) topLevel[key] = prop.default;
+        delete prop.default;
+      }
+      walk(prop, depth + 1);
+    }
+  };
+  walk(schema, 0);
+  return topLevel;
+}
+
+/**
+ * Does the tool have a create path dispatch can recognise? `_operation: create`
+ * for a discriminated upsert, or no `id` in the payload for an upsert whose
+ * body branches on `"id" in`.
+ */
+function hasRecognisableCreatePath(
+  content: string,
+  funcName: string,
+  schema: Record<string, unknown>
+): boolean {
+  const properties = schema.properties as Record<string, unknown> | undefined;
+  if (properties?._operation) return true;
+  if (!funcName.startsWith("upsert")) return false;
+  const body = extractFunctionBody(content, funcName);
+  return body !== null && /"id"\s+in\s+\w+/.test(stripComments(body));
+}
+
+function describeCreateDefaults(
+  schema: Record<string, unknown>,
+  defaults: Record<string, unknown>
+): void {
+  const properties = schema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  for (const [key, value] of Object.entries(defaults)) {
+    const prop = properties?.[key];
+    if (!prop) continue;
+    const note = `Defaults to ${JSON.stringify(value)} when creating.`;
+    prop.description =
+      typeof prop.description === "string" && prop.description
+        ? `${prop.description} ${note}`
+        : note;
+  }
+}
+
 function addOperationArg(schema: Record<string, unknown>): void {
   const properties = (schema.properties ?? {}) as Record<string, unknown>;
   properties._operation = {
@@ -1691,6 +1834,19 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         addOperationArg(schema);
       }
 
+      const coercers = extractFieldCoercers(schema);
+      let createDefaults: Record<string, unknown> | undefined;
+      if (classification !== "READ" && isUpdateCapable(func.name, schema)) {
+        const removed = stripUpdateDefaults(schema);
+        if (
+          Object.keys(removed).length > 0 &&
+          hasRecognisableCreatePath(content, func.name, schema)
+        ) {
+          createDefaults = removed;
+          describeCreateDefaults(schema, removed);
+        }
+      }
+
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
       const paginates = functionBodyPaginates(content, func.name);
 
@@ -1705,6 +1861,8 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         permission,
         paginates,
         schema,
+        ...(coercers.length > 0 ? { coercers } : {}),
+        ...(createDefaults ? { createDefaults } : {}),
         ...(responseSchema ? { responseSchema } : {}),
       });
       toolCount++;

@@ -31,6 +31,10 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** Input paths dispatch coerces through their validator field (absent: none). */
+  coerce?: string;
+  /** Top-level defaults applied on the create path only (absent: none). */
+  createDefaults?: string;
 }
 
 export interface ManifestDigest {
@@ -99,7 +103,13 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
-        paginates: t.paginates
+        paginates: t.paginates,
+        ...(t.coercers?.length
+          ? { coerce: t.coercers.map((c) => c.at.join(".")).join("+") }
+          : {}),
+        ...(t.createDefaults
+          ? { createDefaults: Object.keys(t.createDefaults).sort().join("+") }
+          : {})
       }))
   };
 }

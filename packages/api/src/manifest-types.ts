@@ -26,6 +26,24 @@ export interface ToolPermission {
   actions: PermissionAction[];
 }
 
+/**
+ * One field whose validator transforms the value before the service sees it
+ * (`toTiptapDoc`, `JSON.parse` of a `lines` payload, a string-encoded boolean).
+ * The UI runs that transform when it validates the form post; dispatch runs the
+ * same field sub-schema on the caller's value so the service receives what the
+ * UI would hand it.
+ */
+export interface FieldCoercer {
+  /** Property path in the operation's input; `*` means every array element. */
+  at: string[];
+  /** Models module that exports the validator (`shared` for cross-module ones). */
+  module: string;
+  /** Exported validator name. */
+  validator: string;
+  /** Field path inside the validator; `*` means the array element schema. */
+  field: string[];
+}
+
 /** One operation in the manifest — the successor of a `tool-metadata.json` entry. */
 export interface ManifestEntry {
   name: string;
@@ -46,6 +64,14 @@ export interface ManifestEntry {
    *  property is present here — that property IS the marker (there is no parallel
    *  flag), matching how the dispatcher decides today. */
   schema: Record<string, unknown>;
+  /** Transform-bearing fields dispatch coerces through their validator
+   *  sub-schema, only when the caller sent them. Absent when there are none. */
+  coercers?: FieldCoercer[];
+  /** Validator defaults for a create-capable upsert, applied by dispatch on the
+   *  CREATE path only (an absent top-level key gets the value). They are not
+   *  published as `default` in `schema`: input validation materialises a
+   *  published default, which overwrote stored values on every partial update. */
+  createDefaults?: Record<string, unknown>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could
    *  be derived (an `any`, a void, or an opaque shape). Describes the payload the

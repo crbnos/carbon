@@ -142,7 +142,10 @@ export async function buildValidatorRegistry(
         if (!isZodSchema(value)) continue;
         try {
           const converted = stripContextParams(
-            validatorToJsonSchema(value as z.ZodType)
+            validatorToJsonSchema(value as z.ZodType, {
+              module: mod,
+              validator: name,
+            })
           );
           schemas.set(`${mod}:${name}`, converted);
           stats.validatorsConverted++;

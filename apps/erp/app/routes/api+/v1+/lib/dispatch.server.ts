@@ -11,6 +11,10 @@ import type { AuthField, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import {
+  applyCreateDefaults,
+  applyFieldCoercers
+} from "./field-coercers.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
@@ -268,7 +272,7 @@ export async function dispatchOperation(
       : undefined;
 
   // Strip the MCP `_operation` discriminator before the args reach the service.
-  const { operations: requestedOperations, args: normalizedArgs } =
+  const { operations: requestedOperations, args: operationArgs } =
     extractOperation(rawArgs);
 
   const funcName = meta.name.slice(meta.module.length + 1);
@@ -304,6 +308,19 @@ export async function dispatchOperation(
   const operation = needsOperation
     ? (requestedOperation as McpOperation)
     : undefined;
+
+  // The form bridge the UI runs before calling a service: the validator's
+  // per-field transforms (rich text → tiptap doc, JSON-string rows → array),
+  // then — on a create only — the validator defaults the manifest no longer
+  // publishes. See field-coercers.server.ts.
+  const isCreate = needsOperation
+    ? operation === "create"
+    : !(operationArgs && "id" in operationArgs);
+  const normalizedArgs = applyCreateDefaults(
+    meta,
+    await applyFieldCoercers(meta, operationArgs),
+    isCreate
+  );
 
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {

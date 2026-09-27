@@ -23,6 +23,12 @@ zod round-trip. Internal workspace package — never published to npm.
   `job.create` sends `insertJob`'s inner fields at the top level). An
   unconvertible schema falls back to pass-through rather than failing every
   request to that operation.
+- `jsonSchemaInput()` materialises every published `default` (that is what
+  `z.fromJSONSchema` parse does). The generator therefore never publishes a
+  `default` on an update-capable operation; create-path defaults travel as
+  `ManifestEntry.createDefaults` and dispatch applies them. Transform-bearing
+  validator fields travel as `ManifestEntry.coercers`. Both are described in
+  `.claude/rules/mcp-tools-reference.md` ("The form bridge").
 - Keep `@orpc/openapi` imports in `schema.ts` type-only — it is a devDependency, and
   the runtime module must not pull it in.
 

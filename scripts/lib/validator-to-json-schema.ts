@@ -27,11 +27,184 @@ const CONVERT_OPTIONS = {
 } as const;
 
 /** Convert a zod validator, then normalize. Throws if zod cannot represent it. */
-export function validatorToJsonSchema(validator: z.ZodType): JsonSchema {
+export function validatorToJsonSchema(
+  validator: z.ZodType,
+  source?: { module: string; validator: string }
+): JsonSchema {
   const raw = z.toJSONSchema(validator, CONVERT_OPTIONS) as JsonSchema;
   const normalized = normalizeJsonSchema(raw);
   annotateStringEncodedBooleans(validator, normalized);
+  if (source) {
+    // A standalone field validator (`optionalTiptapDoc`) that a service types a
+    // field with — `notes?: z.infer<typeof optionalTiptapDoc>` — carries the
+    // marker on its own root. An OBJECT validator never does: dispatch runs
+    // field sub-schemas only, never a whole validator.
+    if (unwrapToContainer(validator) === null && isTransformField(validator)) {
+      const marker: CoerceSource = { ...source, field: [] };
+      normalized[COERCE_MARKER] = marker;
+    } else {
+      markTransformFields(validator, normalized, source, []);
+    }
+  }
   return normalized;
+}
+
+/**
+ * The schema keyword a transform-bearing property carries between validator
+ * conversion and manifest assembly. It rides along wherever the property's
+ * schema is copied (flattened, nested under a param name, through `Omit<>` /
+ * indexed access), and the generator lifts it out of the published schema into
+ * the tool's `coercers` list (`extractFieldCoercers` in service-metadata.ts).
+ * It never reaches a caller.
+ */
+export const COERCE_MARKER = "x-carbon-coerce";
+
+/** Where a transform-bearing field lives: the models module, the exported
+ *  validator, and the field path inside it (`*` = every array element). */
+export interface CoerceSource {
+  module: string;
+  validator: string;
+  field: string[];
+}
+
+/**
+ * Mark every field whose validator transforms the value it receives.
+ *
+ * The manifest publishes the INPUT side of a validator (see CONVERT_OPTIONS),
+ * and the service is typed from its OUTPUT (`z.infer`). The UI bridges the two
+ * by running the validator on the form post; the API dispatch never does, so a
+ * transform — `toTiptapDoc` on a rich-text description, `JSON.parse` on a
+ * `lines` field, `"true"` → `true` on a string-encoded boolean — simply did not
+ * happen and the service received the wire value. Marking the field lets
+ * dispatch run exactly that field's sub-schema on the value the caller sent,
+ * and nothing else.
+ *
+ * A field counts when its io:"input" and io:"output" JSON Schemas differ once
+ * `default` is ignored (a default is not a transform, and the update path must
+ * not materialise one — see `stripUpdateDefaults`). `zfd.checkbox()` is left
+ * out: a JSON caller already sends the boolean it produces.
+ */
+function markTransformFields(
+  node: unknown,
+  json: JsonSchema | undefined,
+  source: { module: string; validator: string },
+  path: string[]
+): void {
+  if (!json || typeof json !== "object") return;
+  const target = unwrapToContainer(node);
+  if (!target) return;
+
+  if (target.kind === "array") {
+    const items = json.items as JsonSchema | undefined;
+    markTransformFields(target.element, items, source, [...path, "*"]);
+    return;
+  }
+
+  const props = json.properties as Record<string, JsonSchema> | undefined;
+  if (!props) return;
+  for (const [key, field] of Object.entries(target.shape)) {
+    const prop = props[key];
+    if (!prop || typeof prop !== "object") continue;
+    if (isTransformField(field)) {
+      const marker: CoerceSource = {
+        module: source.module,
+        validator: source.validator,
+        field: [...path, key],
+      };
+      prop[COERCE_MARKER] = marker;
+      continue;
+    }
+    markTransformFields(field, prop, source, [...path, key]);
+  }
+}
+
+type ZodDefLike = {
+  type?: string;
+  innerType?: unknown;
+  in?: unknown;
+  element?: unknown;
+  shape?: Record<string, unknown>;
+};
+
+const WRAPPER_TYPES = new Set([
+  "optional",
+  "nullable",
+  "default",
+  "prefault",
+  "readonly",
+  "catch",
+  "nonoptional",
+]);
+
+function defOf(node: unknown): ZodDefLike | undefined {
+  return (node as { _zod?: { def?: ZodDefLike } } | null)?._zod?.def;
+}
+
+/** Strip optional/nullable/default-style wrappers. */
+export function unwrapZodWrappers(node: unknown): unknown {
+  let current = node;
+  for (let i = 0; i < 16; i++) {
+    const def = defOf(current);
+    if (!def?.type || !WRAPPER_TYPES.has(def.type)) return current;
+    current = def.innerType;
+  }
+  return current;
+}
+
+/** The object shape or array element under a field, looking through wrappers
+ *  and an object-level `.transform()` / preprocess (`pipe`, input side). */
+function unwrapToContainer(
+  node: unknown
+):
+  | { kind: "object"; shape: Record<string, unknown> }
+  | { kind: "array"; element: unknown }
+  | null {
+  let current = node;
+  for (let i = 0; i < 16; i++) {
+    current = unwrapZodWrappers(current);
+    const def = defOf(current);
+    if (!def) return null;
+    if (def.type === "object") {
+      const shape =
+        (current as { shape?: Record<string, unknown> }).shape ?? def.shape;
+      return shape ? { kind: "object", shape } : null;
+    }
+    if (def.type === "array") return { kind: "array", element: def.element };
+    if (def.type === "pipe") {
+      current = def.in;
+      continue;
+    }
+    return null;
+  }
+  return null;
+}
+
+function isTransformField(field: unknown): boolean {
+  const def = defOf(unwrapZodWrappers(field));
+  if (def?.type !== "pipe" && def?.type !== "transform") return false;
+  try {
+    const input = withoutDefaults(
+      z.toJSONSchema(field as z.ZodType, CONVERT_OPTIONS)
+    );
+    const output = withoutDefaults(
+      z.toJSONSchema(field as z.ZodType, { ...CONVERT_OPTIONS, io: "output" })
+    );
+    if (JSON.stringify(input) === JSON.stringify(output)) return false;
+    return collapseCheckbox(input as JsonSchema) === null;
+  } catch {
+    return false;
+  }
+}
+
+function withoutDefaults(node: unknown): unknown {
+  if (Array.isArray(node)) return node.map(withoutDefaults);
+  if (!node || typeof node !== "object") return node;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
+    if (key === "default" || key === "$schema") continue;
+    out[key] = withoutDefaults(value);
+  }
+  return out;
 }
 
 /**
