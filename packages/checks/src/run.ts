@@ -18,6 +18,7 @@ import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits"
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
+import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
@@ -28,7 +29,10 @@ import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
-import { loadTypescriptFiles } from "./sources/typescript";
+import {
+  loadTypescriptFiles,
+  REQUEST_HANDLING_ROOTS
+} from "./sources/typescript";
 
 export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
   noNumericPrecision,
@@ -110,6 +114,9 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
     ...scanAll(loadTypescriptFiles(root), TS_CHECKS),
+    ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
+      noRawForwardedHeaders
+    ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS)
   ];
 }

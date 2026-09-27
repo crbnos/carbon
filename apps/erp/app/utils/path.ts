@@ -4,6 +4,7 @@ import {
   getMESUrl,
   SUPABASE_URL
 } from "@carbon/auth";
+import { getRequestOrigin } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -2398,26 +2399,17 @@ export const getStoragePath = (bucket: string, path: string) => {
  * cross-origin or unparsable referer yields null and callers fall back to
  * their fixed route.
  *
- * Behind a TLS-terminating load balancer `request.url` is `http://` (the
- * server does not trust proxy headers) while the browser's Referer is
- * `https://`, so the scheme comes from `X-Forwarded-Proto` when it names one.
- * Only the scheme is taken from it; the host still has to match.
+ * Compared with the origin the client addressed (`getRequestOrigin`), not
+ * `request.url`'s: behind the proxy that is the internal scheme and host, which
+ * never matches a real Referer.
  */
 export const requestReferrer = (request: Request, withParams = true) => {
   const referer = request.headers.get("referer");
   if (!referer) return null;
   try {
-    const requestUrl = new URL(request.url);
-    const forwardedProto = request.headers
-      .get("x-forwarded-proto")
-      ?.split(",")[0]
-      ?.trim()
-      .toLowerCase();
-    if (forwardedProto === "http" || forwardedProto === "https") {
-      requestUrl.protocol = `${forwardedProto}:`;
-    }
-    const url = new URL(referer, requestUrl.origin);
-    if (url.origin !== requestUrl.origin) return null;
+    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
+    const url = new URL(referer, origin);
+    if (url.origin !== origin) return null;
     return url.pathname + url.search + url.hash;
   } catch {
     return null;

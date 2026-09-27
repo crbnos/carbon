@@ -2,6 +2,8 @@
 // rules are unit-tested as plain functions; the middleware in
 // ../middleware/security.server.ts wires them to requests.
 
+import { getRequestHost } from "@carbon/utils";
+
 type HeaderReader = Pick<Headers, "get">;
 
 const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
@@ -39,11 +41,9 @@ export function isCrossOriginRequestAllowed(
   const origin = headers.get("origin");
   if (!origin) return true;
 
-  // Compare with the host the browser addressed, never `request.url`: behind
-  // portless or Vercel that is the internal origin.
-  const host =
-    headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    headers.get("host");
+  // The host the browser addressed, never `request.url`'s (the internal origin
+  // behind the proxy).
+  const host = getRequestHost({ headers });
   if (!host) return false;
   try {
     return new URL(origin).host === host;

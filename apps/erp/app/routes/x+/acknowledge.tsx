@@ -7,7 +7,11 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
-import { datetime, requiresItarEntityCertification } from "@carbon/utils";
+import {
+  datetime,
+  getClientIp,
+  requiresItarEntityCertification
+} from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -21,11 +25,7 @@ const logger = getLogger("erp", "acknowledge");
 
 /** Best-effort request metadata for the compliance record. */
 function getRequestMeta(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ipAddress =
-    forwardedFor?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    null;
+  const ipAddress = getClientIp(request);
   const userAgent = request.headers.get("user-agent") ?? null;
   return { ipAddress, userAgent };
 }

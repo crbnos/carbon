@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { generateQRCodeBuffer } from "@carbon/documents/qr";
+import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getKanban } from "~/modules/inventory/inventory.service";
@@ -23,10 +24,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return data({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const url = new URL(request.url);
   let kanbanUrl = "";
   let qrColor = "000000";
-  const baseUrl = `${url.protocol}//${url.host}`;
+  // The origin the user is on, not request.url's (internal, http) — it is
+  // printed into the QR code.
+  const baseUrl = getRequestOrigin(request) ?? new URL(request.url).origin;
   if (action === "order") {
     kanbanUrl = `${baseUrl}${path.to.api.kanban(id)}`;
     qrColor = "000000"; // black

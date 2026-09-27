@@ -42,7 +42,7 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
+import { Edition, getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -104,7 +104,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),

@@ -6,7 +6,7 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { Edition, Plan } from "@carbon/utils";
+import { Edition, getClientIp, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
@@ -383,7 +383,7 @@ export async function requirePermissions(
       userId,
       actor: email,
       companyId,
-      ip: request.headers.get("x-forwarded-for") ?? undefined,
+      ip: getClientIp(request) ?? undefined,
       reason: JSON.stringify(requiredPermissions)
     });
     if (myClaims.role === null) {

@@ -213,8 +213,8 @@ The `carbon` cookie is `SameSite=Lax` on the PARENT domain (`carbon.ms`), so eve
 `*.carbon.ms` host is same-site and Lax alone is not a CSRF defence. `securityMiddleware`
 (root `middleware` of erp, mes, academy, starter) refuses a POST/PUT/PATCH/DELETE when
 `Sec-Fetch-Site` is anything but `same-origin`/`none`, or — without that header — when
-`Origin` differs from the addressed host (`x-forwarded-host ?? host`; never `request.url`,
-the internal origin behind portless/Vercel). No `Origin` at all is a server (webhooks,
+`Origin` differs from the addressed host (`getRequestHost`, `@carbon/utils`; never
+`request.url`, the internal origin behind the proxy). No `Origin` at all is a server (webhooks,
 Inngest, assembler callback, API-key clients, the MES→ERP proxy) and passes, so webhooks
 need no exemption; `CROSS_ORIGIN_ENDPOINTS` is only `/token`, `/register`, `/api/mcp`.
 Browser submissions arrive as `…/path.data`, stripped before matching.
