@@ -656,6 +656,12 @@ msgstr "Malzeme seçilmeden bitir?"
 msgid "First article"
 msgstr "İlk makale"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "{0} için ilk makale gerekli"
@@ -1643,6 +1649,9 @@ msgstr "Operatörü Değiştir"
 
 msgid "Tag"
 msgstr "Etiket"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Bu işlem için tamamlanan miktar, gerekli miktar olan {targetQuantity}'dan azdır."

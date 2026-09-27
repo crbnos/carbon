@@ -656,6 +656,12 @@ msgstr "미선택 재료가 있는 상태로 완료하시겠습니까?"
 msgid "First article"
 msgstr "첫 시제품"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "{0}에 첫 시제품이 필요합니다"
@@ -1643,6 +1649,9 @@ msgstr "작업자 전환"
 
 msgid "Tag"
 msgstr "태그"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "이 공정작업의 완료 수량이 필요 수량 {targetQuantity}보다 적습니다."

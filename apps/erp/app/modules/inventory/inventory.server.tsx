@@ -37,6 +37,7 @@ import { stripSpecialCharacters } from "~/utils/string";
 import type { CertificateOfConformanceShipmentData } from "./inventory.service";
 import {
   getCertificateOfConformanceData,
+  getCertificateOfConformanceDefaults,
   getCertificatesOfConformance
 } from "./inventory.service";
 
@@ -681,5 +682,152 @@ export async function emailIntegrationActive(
   } catch (error) {
     logger.error("Failed to read the email integration", { companyId, error });
     return false;
+  }
+}
+
+/** What an auto-issue reports with the post that triggered it. */
+export type CertificateAutoIssueOutcome = { ok: boolean; message: string };
+
+/**
+ * Issue (and email) the Certificate of Conformance a customer requires on
+ * every shipment, for each shipment a post just made Posted — one from the
+ * shipment post route, one per location from a sales invoice post. Runs after
+ * a post that stuck and never changes its result: every failure is reported,
+ * not thrown. Emails only when the company's email integration is active —
+ * the same gate as the manual Send. A shipment that already has an issued
+ * certificate (revision 0) is skipped, so a second call never reissues.
+ *
+ * Returns null when nothing was issued or attempted, else one summary for the
+ * caller's flash: `ok` is false when any shipment's issue failed.
+ */
+export async function autoIssueCertificatesOfConformance(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: {
+    shipmentIds: string[];
+    companyId: string;
+    userId: string;
+    locale: string;
+  }
+): Promise<CertificateAutoIssueOutcome | null> {
+  const outcomes: CertificateAutoIssueOutcome[] = [];
+  for (const shipmentId of args.shipmentIds) {
+    const outcome = await autoIssueCertificateOfConformance(db, client, {
+      companyId: args.companyId,
+      shipmentId,
+      userId: args.userId,
+      locale: args.locale
+    });
+    if (outcome) outcomes.push(outcome);
+  }
+  if (outcomes.length === 0) return null;
+  return {
+    ok: outcomes.every((outcome) => outcome.ok),
+    message: outcomes.map((outcome) => outcome.message).join(" ")
+  };
+}
+
+async function autoIssueCertificateOfConformance(
+  db: Kysely<KyselyDatabase>,
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    shipmentId: string;
+    userId: string;
+    locale: string;
+  }
+): Promise<CertificateAutoIssueOutcome | null> {
+  const { companyId, shipmentId, userId, locale } = args;
+  try {
+    const defaults = await getCertificateOfConformanceDefaults(
+      client,
+      companyId,
+      shipmentId
+    );
+    if (defaults.error) {
+      logger.error("Failed to read certificate requirements", {
+        shipmentId,
+        error: defaults.error
+      });
+      return null;
+    }
+    if (!defaults.data.requiresCertificateOfConformance) return null;
+
+    const existing = await client
+      .from("certificateOfConformance")
+      .select("id")
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId)
+      .eq("revision", 0)
+      .limit(1);
+    if (existing.error) {
+      logger.error("Failed to check for an issued certificate", {
+        shipmentId,
+        error: existing.error
+      });
+      return null;
+    }
+    if (existing.data.length > 0) return null;
+
+    const issued = await issueCertificateOfConformance(db, client, {
+      companyId,
+      shipmentId,
+      userId,
+      locale
+    });
+    if (issued.error) {
+      return {
+        ok: false,
+        message: `Shipment posted, but the certificate could not be issued: ${issued.error.message}`
+      };
+    }
+
+    const number = issued.data.number;
+    const contactId = defaults.data.shippingCustomerContactId;
+    if (!contactId) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: the customer has no shipping contact)`
+      };
+    }
+
+    if (!(await emailIntegrationActive(client, companyId))) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: the email integration is not active)`
+      };
+    }
+
+    const sent = await sendCertificateOfConformance(client, {
+      companyId,
+      shipmentId,
+      userId,
+      certificateOfConformanceId: issued.data.id,
+      customerContactId: contactId,
+      locale,
+      content: issued.data.content
+    });
+    if (sent.error) {
+      return {
+        ok: true,
+        message: `Certificate of Conformance ${number} issued (not emailed: ${sent.error.message})`
+      };
+    }
+
+    return {
+      ok: true,
+      message: `Certificate of Conformance ${number} issued and emailed to ${sent.data.to.join(", ")}`
+    };
+  } catch (err) {
+    logger.error("Failed to auto-issue certificate of conformance", {
+      shipmentId,
+      error: err
+    });
+    return {
+      ok: false,
+      message: `Shipment posted, but the certificate could not be issued: ${
+        err instanceof Error ? err.message : "unexpected error"
+      }`
+    };
   }
 }

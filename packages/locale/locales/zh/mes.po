@@ -656,6 +656,12 @@ msgstr "物料未拣货的情况下要完成吗？"
 msgid "First article"
 msgstr "首件"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "{0} 需要首件检验"
@@ -1643,6 +1649,9 @@ msgstr "切换操作员"
 
 msgid "Tag"
 msgstr "标签"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "此工序的完成数量小于所需数量 {targetQuantity}。"

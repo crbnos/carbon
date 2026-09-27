@@ -656,6 +656,12 @@ msgstr "¿Finalizar con material sin recoger?"
 msgid "First article"
 msgstr "Primera pieza"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "Primera pieza requerida para {0}"
@@ -1643,6 +1649,9 @@ msgstr "Cambiar operador"
 
 msgid "Tag"
 msgstr "Etiqueta"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {targetQuantity}."

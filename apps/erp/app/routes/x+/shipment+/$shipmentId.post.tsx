@@ -20,11 +20,9 @@ import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { upsertDocument } from "~/modules/documents";
-import { getCertificateOfConformanceDefaults } from "~/modules/inventory";
 import {
-  emailIntegrationActive,
-  issueCertificateOfConformance,
-  sendCertificateOfConformance
+  autoIssueCertificatesOfConformance,
+  type CertificateAutoIssueOutcome
 } from "~/modules/inventory/inventory.server";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
@@ -272,7 +270,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   /** Set by the catch below when the post was rolled back to Draft. */
   let reverted = false;
   /** The auto-issued certificate's outcome, reported with the post. */
-  let certificateOutcome: { ok: boolean; message: string } | null = null;
+  let certificateOutcome: CertificateAutoIssueOutcome | null = null;
 
   try {
     // Get shipment details to check if it's related to a sales order
@@ -463,12 +461,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       sourceDocument: shipmentForSurface?.sourceDocument ?? null
     });
 
-    certificateOutcome = await autoIssueCertificateOfConformance(request, {
+    certificateOutcome = await autoIssueCertificatesOfConformance(
+      getDatabaseClient(),
       client,
-      companyId,
-      shipmentId,
-      userId
-    });
+      {
+        shipmentIds: [shipmentId],
+        companyId,
+        userId,
+        locale: getPreferenceHeaders(request).locale
+      }
+    );
   }
 
   // One flash per response: the expired-batch warning and the certificate
@@ -490,98 +492,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(path.to.shipmentDetails(shipmentId));
-}
-
-/**
- * Issue (and email) the Certificate of Conformance a customer requires on
- * every shipment. Runs after a post that stuck and never changes its result:
- * every failure is reported, not thrown. Emails only when the company's email
- * integration is active — the same gate as the manual Send.
- */
-async function autoIssueCertificateOfConformance(
-  request: Request,
-  args: {
-    client: Parameters<typeof getCertificateOfConformanceDefaults>[0];
-    companyId: string;
-    shipmentId: string;
-    userId: string;
-  }
-): Promise<{ ok: boolean; message: string } | null> {
-  const { client, companyId, shipmentId, userId } = args;
-  try {
-    const defaults = await getCertificateOfConformanceDefaults(
-      client,
-      companyId,
-      shipmentId
-    );
-    if (defaults.error) {
-      logger.error("Failed to read certificate requirements", {
-        shipmentId,
-        error: defaults.error
-      });
-      return null;
-    }
-    if (!defaults.data.requiresCertificateOfConformance) return null;
-
-    const { locale } = getPreferenceHeaders(request);
-    const issued = await issueCertificateOfConformance(
-      getDatabaseClient(),
-      client,
-      { companyId, shipmentId, userId, locale }
-    );
-    if (issued.error) {
-      return {
-        ok: false,
-        message: `Shipment posted, but the certificate could not be issued: ${issued.error.message}`
-      };
-    }
-
-    const number = issued.data.number;
-    const contactId = defaults.data.shippingCustomerContactId;
-    if (!contactId) {
-      return {
-        ok: true,
-        message: `Certificate of Conformance ${number} issued (not emailed: the customer has no shipping contact)`
-      };
-    }
-
-    if (!(await emailIntegrationActive(client, companyId))) {
-      return {
-        ok: true,
-        message: `Certificate of Conformance ${number} issued (not emailed: the email integration is not active)`
-      };
-    }
-
-    const sent = await sendCertificateOfConformance(client, {
-      companyId,
-      shipmentId,
-      userId,
-      certificateOfConformanceId: issued.data.id,
-      customerContactId: contactId,
-      locale,
-      content: issued.data.content
-    });
-    if (sent.error) {
-      return {
-        ok: true,
-        message: `Certificate of Conformance ${number} issued (not emailed: ${sent.error.message})`
-      };
-    }
-
-    return {
-      ok: true,
-      message: `Certificate of Conformance ${number} issued and emailed to ${sent.data.to.join(", ")}`
-    };
-  } catch (err) {
-    logger.error("Failed to auto-issue certificate of conformance", {
-      shipmentId,
-      error: err
-    });
-    return {
-      ok: false,
-      message: `Shipment posted, but the certificate could not be issued: ${
-        err instanceof Error ? err.message : "unexpected error"
-      }`
-    };
-  }
 }

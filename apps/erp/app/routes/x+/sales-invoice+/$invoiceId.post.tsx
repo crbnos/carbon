@@ -22,13 +22,17 @@ import {
   retrieveConnectCustomer,
   upsertConnectCustomer
 } from "@carbon/stripe/connect.server";
-import { datetime } from "@carbon/utils";
+import { datetime, getPreferenceHeaders } from "@carbon/utils";
 import { parseDate, Time, toCalendarDateTime } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
+import {
+  autoIssueCertificatesOfConformance,
+  type CertificateAutoIssueOutcome
+} from "~/modules/inventory/inventory.server";
 import {
   getSalesInvoice,
   getSalesInvoiceCustomerDetails,
@@ -486,7 +490,65 @@ async function preflightStripeSend({
   };
 }
 
+/**
+ * Auto-issue the Certificate of Conformance for the shipments this invoice's
+ * post just created. `post-sales-invoice` inserts them already Posted — one
+ * per location, for invoice lines no earlier shipment covered — with
+ * `sourceDocument = 'Sales Invoice'` and `sourceDocumentId` = the invoice (the
+ * same key its void reads back), so they never pass the shipment post route.
+ * The service role matches the rest of this route after the post: the
+ * shipments are a side effect of a post the caller was allowed to make.
+ */
+async function autoIssueInvoiceShipmentCertificates(
+  serviceRole: ServiceRole,
+  args: { invoiceId: string; companyId: string; userId: string; locale: string }
+): Promise<CertificateAutoIssueOutcome | null> {
+  const { invoiceId, companyId, userId, locale } = args;
+  const shipments = await serviceRole
+    .from("shipment")
+    .select("id")
+    .eq("companyId", companyId)
+    .eq("sourceDocument", "Sales Invoice")
+    .eq("sourceDocumentId", invoiceId)
+    .eq("status", "Posted");
+  if (shipments.error) {
+    logger.error("Failed to read the shipments posted with the invoice", {
+      invoiceId,
+      error: shipments.error
+    });
+    return null;
+  }
+  if (shipments.data.length === 0) return null;
+
+  return autoIssueCertificatesOfConformance(getDatabaseClient(), serviceRole, {
+    shipmentIds: shipments.data.map((shipment) => shipment.id),
+    companyId,
+    userId,
+    locale
+  });
+}
+
 export async function action(args: ActionFunctionArgs) {
+  // Set once the post has committed; the outcome then rides on whatever the
+  // rest of the action returns — success or a later notification failure.
+  const certificates: { outcome: CertificateAutoIssueOutcome | null } = {
+    outcome: null
+  };
+  const result = await postSalesInvoice(args, certificates);
+  const { outcome } = certificates;
+  if (!outcome) return result;
+  return {
+    ...result,
+    message: `${result.message.replace(/[.!]?$/, ".")} ${outcome.message}`,
+    // The invoice post itself stands; this only turns the toast red.
+    certificateFailed: !outcome.ok
+  };
+}
+
+async function postSalesInvoice(
+  args: ActionFunctionArgs,
+  certificates: { outcome: CertificateAutoIssueOutcome | null }
+) {
   const { request, params } = args;
   assertIsPost(request);
 
@@ -722,6 +784,18 @@ export async function action(args: ActionFunctionArgs) {
     userId,
     salesInvoiceId: invoiceId
   });
+
+  // Before the PDF and the notification, so their early returns cannot skip
+  // it. Never changes the post's result — every failure is in the outcome.
+  certificates.outcome = await autoIssueInvoiceShipmentCertificates(
+    serviceRole,
+    {
+      invoiceId,
+      companyId,
+      userId,
+      locale: getPreferenceHeaders(request).locale
+    }
+  );
 
   const acceptLanguage = request.headers.get("accept-language");
   const locales = parseAcceptLanguage(acceptLanguage, {

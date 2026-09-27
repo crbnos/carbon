@@ -656,6 +656,12 @@ msgstr "Finish with material unpicked?"
 msgid "First article"
 msgstr "First article"
 
+msgid "First article plan missing for {description}"
+msgstr "First article plan missing for {description}"
+
+msgid "First article plan missing for {part}"
+msgstr "First article plan missing for {part}"
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "First article required for {0}"
@@ -1643,6 +1649,9 @@ msgstr "Switch Operator"
 
 msgid "Tag"
 msgstr "Tag"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "The completed quantity for this operation is less than the required quantity of {targetQuantity}."

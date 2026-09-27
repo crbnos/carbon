@@ -656,6 +656,12 @@ msgstr "材料がピッキングされていない状態で終了しますか?"
 msgid "First article"
 msgstr "初期品"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "{0} に初期品が必要です"
@@ -1643,6 +1649,9 @@ msgstr "作業者を切り替える"
 
 msgid "Tag"
 msgstr "タグ"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "この工程の完了数量が必要数量 {targetQuantity} を下回っています。"

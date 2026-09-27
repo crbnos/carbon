@@ -656,6 +656,12 @@ msgstr "सामग्री बिना चुने समाप्त क�
 msgid "First article"
 msgstr "पहली आर्टिकल"
 
+msgid "First article plan missing for {description}"
+msgstr ""
+
+msgid "First article plan missing for {part}"
+msgstr ""
+
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
 msgstr "पहली आर्टिकल {0} के लिए आवश्यक है"
@@ -1643,6 +1649,9 @@ msgstr "ऑपरेटर स्विच करें"
 
 msgid "Tag"
 msgstr "टैग"
+
+msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
+msgstr ""
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"
