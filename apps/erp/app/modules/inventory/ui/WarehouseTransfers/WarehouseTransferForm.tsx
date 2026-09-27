@@ -331,7 +331,7 @@ const WarehouseTransferForm = ({
             />
           ) : (
             <CardHeader>
-              <Heading as="h1" size="h3">
+              <Heading as="h1" size="h3" className="font-sans">
                 <Trans>New Warehouse Transfer</Trans>
               </Heading>
             </CardHeader>
