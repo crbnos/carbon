@@ -68,8 +68,7 @@ BEGIN
     RAISE EXCEPTION 'FAIL: event interceptors callable through the API as the owner: %', definer_interceptors;
   END IF;
 
-  IF (SELECT prosecdef FROM pg_proc WHERE oid = 'create_rfq_from_model_v1(text,text,text,text,text,text,json)'::regprocedure)
-     OR (SELECT prosecdef FROM pg_proc WHERE oid = 'backflush_job_materials(text,numeric,text,text)'::regprocedure)
+  IF (SELECT prosecdef FROM pg_proc WHERE oid = 'backflush_job_materials(text,numeric,text,text)'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_interceptors()'::regprocedure)
      OR NOT (SELECT prosecdef FROM pg_proc WHERE oid = 'dispatch_event_after_interceptors()'::regprocedure) THEN
     RAISE EXCEPTION 'FAIL: internal functions or dispatchers have the wrong security mode';

@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { parse } from "libpg-query";
-import type { Helper } from "./helpers";
+import { type Helper, RETIRED_HELPERS } from "./helpers";
 import { type AnyRule, type Manifest, render } from "./rules";
 import { assertOnlyPolicies } from "./sync";
 
@@ -143,6 +143,7 @@ async function readShipped(dir: string, managed: Set<string>) {
           shipped.helpers.set(name, { file, text });
           continue;
         }
+        if (schema === "public" && RETIRED_HELPERS.includes(name)) continue;
       } else if (node.DoStmt) {
         table = /tablename = '((?:[^']|'')+)'/
           .exec(text)?.[1]

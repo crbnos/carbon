@@ -1,4 +1,4 @@
-import { mkdtempSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdtempSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { describe, expect, test } from "vitest";
@@ -35,7 +35,7 @@ describe("unshipped: production gets every rule and helper through a migration",
   test("an edited rule, a new table and an edited helper are unshipped", async () => {
     const helpers = await loadHelpers();
     const edited = helpers.map((h) =>
-      h.name === "has_role"
+      h.name === "get_companies_with_employee_role"
         ? { ...h, sql: h.sql.replace("STABLE", "VOLATILE") }
         : h
     );
@@ -51,12 +51,12 @@ describe("unshipped: production gets every rule and helper through a migration",
     expect(result.tables).toEqual(
       expect.arrayContaining(["note", "brandNewTable"])
     );
-    expect(result.helpers).toContain("has_role");
+    expect(result.helpers).toContain("get_companies_with_employee_role");
   });
 
   test("a generated migration ships its tables and helpers", async () => {
     const helpers = (await loadHelpers()).map((h) =>
-      h.name === "has_role"
+      h.name === "get_companies_with_employee_role"
         ? { ...h, sql: h.sql.replace("STABLE", "VOLATILE") }
         : h
     );
@@ -67,17 +67,21 @@ describe("unshipped: production gets every rule and helper through a migration",
     } as Manifest;
     const sql = await renderMigration(
       edited,
-      helpers.filter((h) => h.name === "has_role"),
+      helpers.filter((h) => h.name === "get_companies_with_employee_role"),
       ["note", "tableView"]
     );
-    const dir = migrations({
-      // Ships tableView as a company rule first; the later file must win.
-      "20260101000001_security-fixes.sql": readFileSync(
-        path.join(MIGRATIONS_DIR, "20260927172338_authz-security-fixes.sql"),
-        "utf8"
-      ),
-      "20270101000001_ship.sql": sql
-    });
+    // Every real generated migration (20260927172338 ships tableView as a company rule
+    // first), then the edit: the later file must win.
+    const generated = Object.fromEntries(
+      readdirSync(MIGRATIONS_DIR)
+        .filter((f) => f.endsWith(".sql"))
+        .map(
+          (f) =>
+            [f, readFileSync(path.join(MIGRATIONS_DIR, f), "utf8")] as const
+        )
+        .filter(([, sql]) => sql.startsWith(GENERATED_HEADER))
+    );
+    const dir = migrations({ ...generated, "20270101000001_ship.sql": sql });
     const result = await unshipped(edited, helpers, dir);
     expect(result).toEqual({ tables: [], helpers: [], problems: [] });
   });

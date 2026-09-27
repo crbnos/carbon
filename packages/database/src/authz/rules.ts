@@ -29,29 +29,12 @@ export type Permission = `${Module}_${"view" | "create" | "update" | "delete"}`;
  * - `"member"`: get_companies_with_any_role() — employees, customers and suppliers.
  * - a Permission: get_companies_with_employee_permission() — scope-checked for API keys.
  * - `anyOf(...)`: holds at least one of the permissions.
- * - `legacy.permission(...)`: get_companies_with_permission() — deprecated (no employee
- *   check, API keys unscoped). Kept visible until someone replaces it deliberately.
  */
-export type Who =
-  | "employee"
-  | "member"
-  | Permission
-  | { anyOf: Permission[] }
-  | { legacy: Permission; helper?: "get_permission_companies" };
+export type Who = "employee" | "member" | Permission | { anyOf: Permission[] };
 
 export const anyOf = (...permissions: Permission[]): Who => ({
   anyOf: permissions
 });
-
-export const legacy = {
-  /** get_companies_with_permission(p) */
-  permission: (permission: Permission): Who => ({ legacy: permission }),
-  /** get_permission_companies(p): no employee check and no API key path at all. */
-  permissionCompanies: (permission: Permission): Who => ({
-    legacy: permission,
-    helper: "get_permission_companies"
-  })
-};
 
 // ─── Predicates ──────────────────────────────────────────────────────────────
 
@@ -68,11 +51,6 @@ const isPred = (value: unknown): value is Pred =>
 const companySet = (who: Exclude<Who, { anyOf: Permission[] }>) => {
   if (who === "employee") return sql`get_companies_with_employee_role()`;
   if (who === "member") return sql`get_companies_with_any_role()`;
-  if (typeof who === "object") {
-    return who.helper === "get_permission_companies"
-      ? sql`get_permission_companies(${sql.lit(who.legacy)})`
-      : sql`get_companies_with_permission(${sql.lit(who.legacy)})`;
-  }
   return sql`get_companies_with_employee_permission(${sql.lit(who)})`;
 };
 

@@ -74,8 +74,8 @@ newest migrations, e.g. `20260609143732_document-template.sql`):
   `packages/database/src/authz/manifest.ts` (usually `entityName: company("<module>")`),
   then ship it with `pnpm --filter @carbon/database authz migration <name>`; CI's
   `migration.test.ts` fails until you do. See `authz-manifest.md`.
-  - The old `has_role` / `has_company_permission` helpers are **deprecated** —
-    never use them. For tables without a `companyId`, reach the company through
+  - The old `has_role` / `has_company_permission` helpers no longer exist
+    (dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone). For tables without a `companyId`, reach the company through
     the parent via `EXISTS` (see `database-migration-patterns.md`).
 - **Never**: an `itemReadableId` column, or a precision spec on `NUMERIC`.
 - **Views** use `WITH(SECURITY_INVOKER=true)`.

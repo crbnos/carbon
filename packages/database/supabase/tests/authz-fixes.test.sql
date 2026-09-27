@@ -89,19 +89,16 @@ BEGIN
   INSERT INTO "userAttribute" (name, "userAttributeCategoryId", "attributeDataTypeId", "canSelfManage", "createdBy")
     VALUES ('Welding', category_b, 1, true, 'system') RETURNING id INTO attribute_b;
 
-  -- ── Deprecated permission helpers: only companies the caller belongs to (audit H3) ──
+  -- ── The deprecated permission helpers stay dropped (audit H3, then retired) ──
+  -- They admitted customer and supplier portal accounts; nothing may bring them back.
+  ASSERT NOT EXISTS (
+    SELECT 1 FROM pg_proc
+    WHERE pronamespace = 'public'::regnamespace
+      AND proname IN ('has_role', 'has_company_permission', 'get_companies_with_permission', 'get_permission_companies')
+  ), 'a deprecated RLS helper exists again';
+  RAISE NOTICE 'PASS deprecated permission helpers are gone';
   PERFORM pg_temp.act_as(u);
   SET LOCAL ROLE authenticated;
-  companies := get_companies_with_permission('documents_view');
-  ASSERT NOT (company_b = ANY(companies)), 'get_companies_with_permission must not grant a company the user is not in';
-  ASSERT company_a = ANY(companies), 'get_companies_with_permission still grants the user''s own company';
-  ASSERT coalesce(array_length(get_companies_with_permission('inventory_view'), 1), 0) = 0,
-    'the ''0'' wildcard must not expand to every company';
-  ASSERT NOT (company_b = ANY(coalesce(get_permission_companies('documents_view'), '{}'))),
-    'get_permission_companies must not grant a company the user is not in';
-  ASSERT NOT has_company_permission('documents_view', company_b),
-    'has_company_permission must not grant a company the user is not in';
-  RAISE NOTICE 'PASS deprecated permission helpers only grant companies the caller belongs to';
 
   -- ── userToCompany: an admin cannot attach another user to their company ──
   BEGIN

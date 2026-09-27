@@ -20,17 +20,20 @@ changes through `authz migration`; `migration.test.ts` fails CI until it does. G
 ## Now
 
 - [x] Add `libpg-query` (authz CLI only)
-- [x] Pieces API: who (`employee`, `member`, permission, `anyOf`, `legacy.*`) and predicates
+- [x] Pieces API: who (`employee`, `member`, permission, `anyOf`) and predicates
       (`inCompany`, `viaParent`, `exists`, `owner`, `portal.*`, `authenticated`, `isNull`,
       `where`, `or`, `and`); `company()` as sugar; `policies()` for everything else
 - [x] Strict SQL: every rendered rule (custom included) must parse to only CREATE POLICY on
       its own table (`assertOnlyPolicies`), checked before anything runs
-- [x] Helpers: 20 `helpers/<name>.sql` (validated: exactly one CREATE OR REPLACE FUNCTION
+- [x] Helpers: `helpers/<name>.sql` (20, now 16 after the retirement below) (validated: exactly one CREATE OR REPLACE FUNCTION
       public.<name>), synced first in the same transaction, applied in a savepoint and kept
       only if different; signature change fails loudly; `import-helpers` bootstrap = 0 drift;
       proven: a hand-made VOLATILE flip is detected and healed
-- [ ] Retiring helpers (drop when no pg_depend dependents AND no function body/view mentions
-      it) — nothing retirable yet: has_role / has_company_permission still back storage policies
+- [x] Retired the four deprecated helpers (has_role, has_company_permission,
+      get_companies_with_permission, get_permission_companies): manifest moved (generated
+      20260927224243), storage policies + is_claims_admin moved and unused create_rfq_* RPCs +
+      the helpers dropped (20260927224314). Portal accounts lose document / demand / supply
+      reads; API keys scoped to resources_* gain userAttribute* (consistent with every table)
 - [x] AST converter (`convert.ts`): 118 of 147 customs → pieces; each round-trips to the
       same canonical meaning; 61 rewritten in text, synced locally; all SQL tests green
       (except `integration-metadata-patch`, stale since #1725 — EXECUTE grants, not policies)
@@ -56,7 +59,6 @@ changes through `authz migration`; `migration.test.ts` fails CI until it does. G
 
 ## Later (needs approval — behavior changes)
 
-- [ ] Replace `legacy.*` deprecated helpers on the tables that still use them
 - [x] Fixed (tests/authz-fixes.test.sql; each fix proven red against its old definition):
       invoiceSettlement EXISTS self-compare; userAttributeValue (self-write of canSelfManage
       attributes in own company); note / tableView / maintenanceDispatchComment owner UPDATE

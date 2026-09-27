@@ -13,7 +13,6 @@ import {
   inGroup,
   isNotNull,
   isNull,
-  legacy,
   type Manifest,
   member,
   or,
@@ -81,7 +80,7 @@ const managedAttribute = through(
     "userAttributeCategoryId",
     "userAttributeCategory",
     "id",
-    inCompany("companyId", legacy.permissionCompanies("resources_update"))
+    inCompany("companyId", "resources_update")
   )
 );
 
@@ -400,21 +399,21 @@ export const manifest = {
   customFieldTable: policies({ select: authenticated }),
   demandActual: policies({
     select: or(
-      inCompany("companyId", legacy.permission("parts_view")),
-      inCompany("companyId", legacy.permission("inventory_view"))
+      inCompany("companyId", "parts_view"),
+      inCompany("companyId", "inventory_view")
     ),
     insert: inCompany("companyId", "inventory_create"),
     update: inCompany("companyId", "inventory_update"),
     delete: inCompany("companyId", "inventory_delete")
   }),
   demandForecast: company("inventory", {
-    read: legacy.permission("inventory_view")
+    read: "inventory_view"
   }),
   demandForecastSource: company("inventory", {
-    read: legacy.permission("inventory_view")
+    read: "inventory_view"
   }),
   demandProjection: company("inventory", {
-    read: legacy.permission("inventory_view")
+    read: "inventory_view"
   }),
   department: company("people"),
   depreciationRun: company("accounting", { read: "accounting_view" }),
@@ -422,12 +421,12 @@ export const manifest = {
   dimension: group("accounting"),
   dimensionValue: group("accounting"),
   document: custom(
-    "bespoke: readGroups/writeGroups arrays via groups_for_user, plus has_valid_api_key_for_company, on the deprecated get_companies_with_permission",
+    "bespoke: readGroups/writeGroups arrays via groups_for_user, plus has_valid_api_key_for_company",
     (t) => `
-    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_permission('documents_delete'::text) AS get_companies_with_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
-    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((("companyId" = ANY (( SELECT get_companies_with_permission('documents_create'::text) AS get_companies_with_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
-    CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((("companyId" = ANY (( SELECT get_companies_with_permission('documents_view'::text) AS get_companies_with_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "readGroups") = true))));
-    CREATE POLICY "UPDATE" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_permission('documents_update'::text) AS get_companies_with_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
+    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_delete'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
+    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_create'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
+    CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_view'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "readGroups") = true))));
+    CREATE POLICY "UPDATE" ON ${t} AS PERMISSIVE FOR UPDATE TO public USING ((("companyId" = ANY (( SELECT get_companies_with_employee_permission('documents_update'::text) AS get_companies_with_employee_permission)::text[])) AND (has_valid_api_key_for_company("companyId") OR ((groups_for_user((( SELECT auth.uid() AS uid))::text) && "writeGroups") = true))));
   `
   ),
   documentExtraction: policies({ all: inCompany("companyId", "employee") }),
@@ -1365,15 +1364,15 @@ export const manifest = {
   supplierType: company("purchasing", { read: "member" }),
   supplyActual: policies({
     select: or(
-      inCompany("companyId", legacy.permission("parts_view")),
-      inCompany("companyId", legacy.permission("inventory_view"))
+      inCompany("companyId", "parts_view"),
+      inCompany("companyId", "inventory_view")
     ),
     insert: inCompany("companyId", "inventory_create"),
     update: inCompany("companyId", "inventory_update"),
     delete: inCompany("companyId", "inventory_delete")
   }),
   supplyForecast: company("inventory", {
-    read: legacy.permission("inventory_view")
+    read: "inventory_view"
   }),
   tableView: policies({
     select: or(
@@ -1465,44 +1464,32 @@ export const manifest = {
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", legacy.permissionCompanies("resources_view"))
+      inCompany("companyId", "resources_view")
     ),
     insert: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", legacy.permissionCompanies("resources_create"))
+      inCompany("companyId", "resources_create")
     ),
     update: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", legacy.permissionCompanies("resources_update"))
+      inCompany("companyId", "resources_update")
     ),
     delete: through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      inCompany("companyId", legacy.permissionCompanies("resources_delete"))
+      inCompany("companyId", "resources_delete")
     )
   }),
   userAttributeCategory: policies({
-    select: inCompany(
-      "companyId",
-      legacy.permissionCompanies("resources_view")
-    ),
-    insert: inCompany(
-      "companyId",
-      legacy.permissionCompanies("resources_create")
-    ),
-    update: inCompany(
-      "companyId",
-      legacy.permissionCompanies("resources_update")
-    ),
-    delete: inCompany(
-      "companyId",
-      legacy.permissionCompanies("resources_delete")
-    )
+    select: inCompany("companyId", "resources_view"),
+    insert: inCompany("companyId", "resources_create"),
+    update: inCompany("companyId", "resources_update"),
+    delete: inCompany("companyId", "resources_delete")
   }),
   // A user reads and writes their own values, for attributes of a company they belong to;
   // resources_update manages everyone's. (The imported "insert" policy was FOR UPDATE with

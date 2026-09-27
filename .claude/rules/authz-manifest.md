@@ -49,8 +49,6 @@ note: policies({
 - `serviceOnly()` — RLS on, no policy: only the service role reaches it.
 - `custom(reason, sql)` — last resort (3 today). The rendered SQL must parse to only
   `CREATE POLICY` on its own table.
-- `legacy.*` wraps the deprecated helpers still on some tables: `legacy.permission` renders
-  `get_companies_with_permission`, `legacy.permissionCompanies` renders `get_permission_companies`.
 
 ## Shipping a change
 
@@ -91,5 +89,10 @@ Behaviour tests (run against a local database, each rolls back):
   read is always false.
 - `REVOKE EXECUTE` segfaults this image; `get_company_id_from_foreign_key` refuses a direct
   `/rpc/` call by checking `request.path` instead.
-- Retiring a helper is not automated: `has_role` / `has_company_permission` still back
-  storage policies.
+- Retiring a helper is not automated. Move every caller (manifest rules via `authz
+  migration`; storage policies and function bodies in a hand-written migration), delete its
+  `helpers/<name>.sql`, add it to `RETIRED_HELPERS` (`helpers.ts` — the generated migration
+  that last defined it stays valid), and `DROP FUNCTION` it in a migration AFTER the one that
+  moved the callers, without CASCADE so a missed dependent fails loudly. Done this way for
+  `has_role`, `has_company_permission`, `get_companies_with_permission`,
+  `get_permission_companies` (`20260927224243` + `20260927224314`).

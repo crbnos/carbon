@@ -17,6 +17,19 @@ export const HELPERS_DIR = path.join(
 
 export type Helper = { name: string; sql: string };
 
+/**
+ * Helpers that were managed here and have been dropped from the database (by a later
+ * migration). The generated migration that shipped their last definition still
+ * contains it; `unshipped()` accepts exactly these names there instead of reporting
+ * a function `authz migration` no longer writes.
+ */
+export const RETIRED_HELPERS = [
+  "get_companies_with_permission",
+  "get_permission_companies",
+  "has_company_permission",
+  "has_role"
+];
+
 // biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;
 

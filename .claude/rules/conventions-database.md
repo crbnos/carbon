@@ -111,7 +111,8 @@ which renders the four standard policies (`SELECT` any employee via
 locally and `pnpm --filter @carbon/database authz migration <name>` ships it to production.
 Full guide, including tables without a `companyId`: `authz-manifest.md`.
 
-- The old `has_role` / `has_company_permission` pattern is **deprecated** — never use it.
+- The old `has_role` / `has_company_permission` / `get_companies_with_permission` /
+  `get_permission_companies` helpers are gone — dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone.
 - For tables **without a `companyId` column**, reach the company through the parent
   (`parent(...)`, `viaParent`, `exists`), gating writes on the **write** permission.
 

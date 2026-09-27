@@ -82188,48 +82188,6 @@ export type Database = {
           table: string
         }[]
       }
-      create_rfq_from_model_v1: {
-        Args: {
-          company_id: string
-          customer_part_id: string
-          email: string
-          model_id: string
-          notes?: Json
-          sequence_number: string
-          unit_of_measure: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_id: string
-          rfq_readable_id: string
-        }[]
-      }
-      create_rfq_from_models_v1: {
-        Args: {
-          company_id: string
-          email: string
-          model_data: Json[]
-          sequence_number: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_ids: string[]
-          rfq_readable_id: string
-        }[]
-      }
-      create_rfq_from_models_v2: {
-        Args: {
-          company_id: string
-          email: string
-          model_data: Json[]
-          sequence_number: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_ids: string[]
-          rfq_readable_id: string
-        }[]
-      }
       create_search_subscriptions_for_company: {
         Args: { p_company_id: string }
         Returns: undefined
@@ -82618,10 +82576,6 @@ export type Database = {
         Returns: string[]
       }
       get_companies_with_employee_role: { Args: never; Returns: string[] }
-      get_companies_with_permission: {
-        Args: { permission: string }
-        Returns: string[]
-      }
       get_company_groups_for_employee: { Args: never; Returns: string[] }
       get_company_groups_for_root_permission: {
         Args: { permission: string }
@@ -83425,7 +83379,6 @@ export type Database = {
       }
       get_period_end_date: { Args: { period: string }; Returns: string }
       get_period_start_date: { Args: { period: string }; Returns: string }
-      get_permission_companies: { Args: { claim: string }; Returns: string[] }
       get_picking_list_availability: {
         Args: { p_picking_list_id: string }
         Returns: {
@@ -84214,14 +84167,6 @@ export type Database = {
         }[]
       }
       has_any_company_permission: { Args: { claim: string }; Returns: boolean }
-      has_company_permission: {
-        Args: { claim: string; company: string }
-        Returns: boolean
-      }
-      has_role: {
-        Args: { company: string; required_role: string }
-        Returns: boolean
-      }
       has_valid_api_key_for_company: {
         Args: { company: string }
         Returns: boolean
