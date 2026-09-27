@@ -111,8 +111,9 @@ app type. An unfilled slot is not a crash: `runAction` returns
 and `create.ts` handles both that and the legacy envelope shape: it checks
 `envelope.error` when the payload looks like one, and `idIn` walks a list if one
 came back. No id means `"The record was created but could not be read back."`,
-never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
-the dispatch layer (`enrichWithAuthContext` in
+never a silent success. The identity fields the service DECLARES (`companyId`,
+`createdBy`, …) are stamped by the dispatch layer from the operation's
+`contextSlots` (`enrichWithAuthContext` in
 `apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`).
 
 ## `createWorkflowServices` — the one port

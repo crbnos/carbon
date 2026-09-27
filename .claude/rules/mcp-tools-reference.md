@@ -3,6 +3,9 @@ paths:
   - "apps/erp/app/routes/api+/mcp+/**"
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
+  - "scripts/lib/service-signatures.ts"
+  - "scripts/lib/context-guards.ts"
+  - "apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts"
 ---
 
 # Carbon ERP MCP Server
@@ -29,7 +32,8 @@ catalogSearch, toolMetadata }`.
 > `build` and `test` depend on — so a fresh clone regenerates it before anything
 > imports it. The committed record of the published contract is its small companion
 > `tool-manifest.digest.json`: one line per operation carrying classification,
-> permission, injectAuth, argument count and a hash of the schema, so a contract
+> permission, injectAuth, argument count and hashes of the schema and the context
+> contract (`contextSlots`), so a contract
 > change is still one visible line in review. `pnpm check:manifest` regenerates and
 > fails if the digest is stale; pre-commit runs it when a service, models or
 > generator file is staged.
@@ -196,10 +200,10 @@ Three fixes from letting a real MCP agent drive the server; all pinned by
   branches now resolve through the intersection-aware machinery and merge
   flat: properties from every branch, required only where required in EVERY
   branch (so a create-only `Omit<…, "id">` branch demotes `id` to optional),
-  auth fields stripped via `CONTEXT_PARAMS`. An `Omit<…, "field">` is honored
+  the fields the context contract fills left out. An `Omit<…, "field">` is honored
   too — `purchasing_insertSupplier` no longer re-publishes the `id` its
   signature refuses. The `& ({createdBy} | {updatedBy})` audit union still
-  resolves to the validator verbatim by design (its extras are all injected).
+  resolves to the validator verbatim by design (its extras are all filled).
 - **String-encoded booleans publish their two legal values.**
   `zfd.text(z.string().transform((v) => v === "true"))` converted to a bare
   `{type:"string"}`, so JSON callers sent real booleans and got an opaque
@@ -242,14 +246,13 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   unknown keys (no generated schema sets `additionalProperties: false`) and
   accepts a lone wrapper's contents sent flat, since the dispatcher does too.
 - `tool-metadata.json` provides `serviceParams` (positional arg order, e.g.
-  `["client", "args"]`) and `injectAuth`. The dispatch builds the positional
-  arg array: `client`/`userId`/`companyId`/`companyGroupId` come from `ctx`; a
-  service whose param is `db` is handed `getDatabaseClient()`; payload params are
-  stamped with auth fields via `enrichWithAuthContext` (now in
-  `dispatch.server.ts`) — including `userId` when the payload itself declares one
-  (the edge-function wrappers), which the manifest marks via `injectAuth` and the
-  generator derives from the signature. Without it the service runs with no acting
-  user; `apps/erp/test/mcp-tool-auth-injection.test.ts` guards the pairing.
+  `["client", "args"]`) and `contextSlots`, the operation's **declared context
+  contract** (see "The context contract" below). The dispatch builds the
+  positional arg array from it: `client`/`userId`/`companyId`/`companyGroupId`/
+  `eliminationClient` come from `ctx`, a `db` param is handed
+  `getDatabaseClient()`, a positional `createdBy`/`updatedBy` (`auditUser`) is
+  the acting user, and each payload param is stamped by `enrichWithAuthContext`
+  with exactly the identity fields its type declares.
   A param literally named `args` is stamped too, and which wire shape it takes
   is read off the operation's schema: a declared `args` object means the body
   wraps it (`{ args: {...} }`) and the inner object is unwrapped; a flat schema
@@ -275,23 +278,28 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   op listing the param's own fields is describing it, so pass the whole body.
   `_operation` and any property that is itself another serviceParam (`args`, and
   scalar siblings like `locationId`) don't count toward that, since each is
-  addressed on its own pass. When a payload param is an **array** of rows,
-  `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
-  the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
-  table (e.g. `quoteLinePrice`) used to fail. `createdBy` is the only key ever
-  ADDED to an element (element keys spread straight into an INSERT). But an
-  identity key the CALLER supplied — `createdBy`, `updatedBy`, `companyId`,
-  `companyGroupId` — is always OVERWRITTEN with the authenticated value, in
-  top-level array elements, in objects nested one level inside an object
-  payload (`{ itemUpdate: {...} }`), and in array elements one level down
-  (`{ lines: [...] }`), on every operation including reads (where it can only
-  narrow to the caller's own company). `userId` is deliberately NOT
-  overwritten inside rows — there it is usually data (the assigned employee).
-  Anything deeper (an array inside a nested object) is NOT reached, so a
+  addressed on its own pass. Only ONE payload param can receive the whole
+  body when the caller does not address it by name: the sole payload param, or
+  the schema's sole required object property (the shape validation accepts sent
+  flat). Every other unaddressed param gets `undefined` — an optional `window`,
+  `options` or id list used to receive the body meant for its sibling.
+  When a payload param is an **array** of rows (`elements`), each object element
+  gets the fields its element type declares — a reorder's `updatedBy`, an
+  insert row's `createdBy`. An identity key (`createdBy`, `updatedBy`,
+  `companyId`, `companyGroupId`) the caller sent that the payload does NOT
+  declare is dropped, top level and per element: it is either a column the
+  table lacks (PGRST204) or a forged author. A payload whose type names no
+  fields (`Json`, `Record<…>`) is `opaque`: there the caller's key is
+  overwritten instead. One level down (`{ itemUpdate: {...} }`, `{ lines: [...] }`)
+  a caller-sent identity key is overwritten and nothing is added, on every
+  operation including reads (where it can only narrow to the caller's own
+  company). `userId` is never dropped or overwritten inside rows — there it is
+  usually data (the assigned employee). Anything deeper is NOT reached, so a
   service must not spread such a structure into a write. Pinned by
-  `dispatch-parity.test.ts` h, h3, h3b, h4. A Kysely service takes
-  `companyId`/`userId` as POSITIONAL params so they always come from context
-  (h2 — `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)`).
+  `dispatch-parity.test.ts` (g, h, h1, h3, h3b, h4, r–x and the table-driven
+  pass over every manifest entry). A Kysely service takes `companyId`/`userId`
+  as POSITIONAL params so they always come from context (h2 —
+  `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)`).
 - Blocked tools (`lib/mcp-blocked-tools.ts`, `MCP_BLOCKED_TOOL_NAMES`) are
   rejected in `call_tool`, in `callOperation`, and (belt-and-braces) in the
   `gate()` middleware — though the primary gate is that the generator excludes
@@ -325,10 +333,10 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   `SyntaxError` keep their opaque 500 because they mean Carbon has a bug. The
   mapper must never attach `data.supabase` — `callOperation` keys its
   `Database error:` envelope off that field.
-- `eliminationClient` is a **context param**, filled from `context.client` (which
-  is what the service itself defaults it to). Left out of the generator's
-  `CONTEXT_PARAMS` it became a required field a caller cannot express — a
-  Supabase client — so the two consolidated-balance ops failed every call.
+- `eliminationClient` is a **context slot**, filled from `context.client` (which
+  is what the service itself defaults it to). Published as a payload param it
+  became a required field a caller cannot express — a Supabase client — so the
+  two consolidated-balance ops failed every call.
 - Supabase query builders returned by services are awaited and the
   `{ data, error, count }` envelope is **unwrapped by the dispatch**:
   `callOperation` returns `{ success: true, data, count? }` or
@@ -381,7 +389,7 @@ functions that must import `*.server` modules — see the gotcha below — e.g.
 `production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
 exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
-`{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
+`{ name, module, classification, description, paramCount, serviceParams, injectAuth, contextSlots, permission, paginates, schema, responseSchema? }`.
 
 - **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
   `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
@@ -401,39 +409,55 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   append a period — hence the normalization), and are NOT part of the digest,
   so a description change is invisible in review by design. Pinned by
   `apps/erp/test/mcp-jsdoc-description.test.ts`.
-- **injectAuth** (`computeInjectAuth`): keyed off the **name verb, not the
-  classification** — only `READ` takes `["companyId"]`. `upsert|create|insert|
-  add|new|copy|duplicate|generate*` → `["companyId","createdBy","updatedBy"]`;
-  `update|set|sync|run|…*` → `["companyId","updatedBy"]`; anything else (incl. a
-  genuine `delete*`) → `["companyId"]`. A DESTRUCTIVE-classified `upsert*` still
-  inserts rows, so it keeps its `createdBy` — the label is only a caller hint.
+- **The context contract** (`contextSlots`, `scripts/lib/service-signatures.ts`):
+  read from each service's TypeScript signature with ts-morph (on the project
+  the response-schema index loads), never from its name. Per positional param
+  a slot: `client`, `db` (typed `Kysely`), `userId`, `companyId`,
+  `companyGroupId`, `eliminationClient`, `auditUser` (a positional
+  `createdBy`/`updatedBy`) or `payload`. Per payload param (or per element,
+  `elements`, for an array of rows) the identity fields it DECLARES —
+  `createdBy`, `updatedBy`, `companyId`, `companyGroupId` — plus `userId` when
+  the param's source text declares one (the edge-function wrappers; still a
+  textual rule, because some services use a validator's `userId` for the
+  target person), and `db` for a property typed `Kysely` (the dispatcher
+  fills it with `getDatabaseClient()`, as the route does for
+  `activateAssemblyInstructionVersion`). A union param whose members declare
+  different fields carries the branch test: `discriminator` for a
+  `"<key>" in <param>` test on a plain key (`"id" in` — stamped from the
+  payload the caller sent), `byOperation` for a test on an identity field the
+  dispatcher itself sets (`"createdBy" in`, `"updatedBy" in`,
+  `"companyId" in`). The test is followed through a local copy or rest
+  binding (`const { copyFromId, ...rest } = procedure; if ("id" in rest)`).
+  When every member requires the key (the shipment/payment/delivery upserts,
+  whose validators require `id`) the `else` is unreachable by type and the
+  edit member — the one without `createdBy` — is used. A union no test tells
+  apart **fails generation**. `injectAuth` is the union of all declared
+  fields, kept for the digest and `check-workflow-catalog.ts`. A field is left
+  out of the published schema only when the contract fills it. There is no
+  verb rule and no override table: to change what is stamped, change the
+  service signature. `apps/erp/test/mcp-tool-auth-injection.test.ts` guards
+  the contract and, through `scripts/lib/context-guards.ts`, that every
+  declared identity field reaching a write is a column of the written table
+  and that a NOT NULL audit column without a default is declared (eight
+  create branches are listed there pending a product decision). Note a
+  READ that declares `createdBy` as a filter gets it stamped too — declare a
+  filter under another name.
 
-- **`_operation`** (`usesOperationDiscriminator`): a tool whose service picks
-  insert-vs-update by testing for an audit field on the payload gets a **required**
-  `_operation: "create" | "update"` in its schema — the schema is the only marker,
-  there is no parallel metadata flag. **BOTH discriminator directions count**:
-  `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`) AND
-  `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
-  `upsertJobMaterial`, `upsertJob`, `upsertProductionQuantity`, `upsertPartner`,
-  `upsertPeriodCloseTaskDefinition`). The generator only matched `"createdBy" in`
-  until it was broadened — so the inverted ones shipped WITHOUT `_operation`, and
-  since `enrichWithAuthContext` always stamped `updatedBy`, their `"updatedBy" in`
-  test was always true: every create was forced down the UPDATE branch, matched
-  zero rows for a fresh id, and returned **PGRST116** — a silent no-op the customer
-  hit trying to add quote/job materials over the connector. (A few — `upsertJobOperation`,
-  `upsertContractor`, `upsertGaugeCalibrationRecord` — got `_operation` anyway from
-  a secondary `"createdBy" in` in the body, but were broken the same way until the
-  dispatch fix below, because their PRIMARY branch is `"updatedBy" in`.)
-  The dispatch (`api+/v1+/lib/dispatch.server.ts`) strips `_operation` from the args
-  (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
-  stamps audit fields **symmetrically**: on `"create"` it stamps `createdBy` and
-  **suppresses `updatedBy`**; on `"update"` it stamps `updatedBy` and **suppresses
-  `createdBy`** — so either convention lands on the branch the caller asked for, and
-  the create path matches the create-variant service type / UI insert (createdBy, no
-  updatedBy). With no `_operation` (operation `undefined`) both audit fields are
-  stamped, as before. Missing/invalid `_operation` on such a tool is rejected before
-  the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
-  Pinned by `dispatch-parity.test.ts` (cases o/p/q) and `mcp-tool-metadata.test.ts`.
+- **`_operation`**: a tool whose service picks insert-vs-update by testing an
+  identity field on the payload (`byOperation`) gets a **required**
+  `_operation: "create" | "update"` in its schema — the dispatcher sets that
+  field itself, so the caller has to name the branch. Both directions count:
+  `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`)
+  and `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
+  `upsertJobMaterial`); so does `upsertJournalEntryLine`'s `"companyId" in`.
+  `create` is the branch that declares `createdBy`. The dispatch strips
+  `_operation` from the args (top level *and* the `{ args: {...} }` wrapper)
+  and stamps exactly that branch's declared fields — so on `create` no
+  `updatedBy` and on `update` no `createdBy` reach the service, which then takes
+  the branch the caller asked for. Missing/invalid `_operation` on such a tool
+  is rejected before the service is called. A service that tests `"id" in`
+  needs no `_operation`: the payload itself says which branch runs. Pinned by
+  `dispatch-parity.test.ts` (cases b/c/o/p/q) and `mcp-tool-metadata.test.ts`.
 
 ## The 15 modules (current `tool-metadata.json`)
 

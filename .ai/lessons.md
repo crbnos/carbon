@@ -2351,3 +2351,25 @@ a row whose policy also covers the other rows the transaction writes.
 
 **Applies to:** any service that takes both `client` and `db` and writes with
 `db` on behalf of an API or MCP caller.
+
+## What the API stamps into a service call comes from the service signature
+
+**Context:** The MCP/API dispatcher fills identity fields (`createdBy`,
+`updatedBy`, `companyId`, `companyGroupId`) and positional context params from
+the caller's session.
+
+**Problem:** It used to decide which ones from the function-name verb, a
+hand-kept override table and parameter-name lists. That stamped a createdBy
+into tables without the column, rewrote the author on updates, never stamped a
+createdBy that `clockIn` declares, and handed a positional `updatedBy` the whole
+request body — about forty reproduced bugs of one class.
+
+**Rule:** The service signature is the contract (`contextSlots`, derived in
+`scripts/lib/service-signatures.ts`). Declare in the payload type exactly the
+identity fields the write needs; a union split on `"id" in` or on an identity
+field is followed automatically. Never add an override table back — change the
+signature. `apps/erp/test/mcp-tool-auth-injection.test.ts` checks every declared
+field against the written table.
+
+**Applies to:** every exported function in a `{module}.service.ts` or
+`{module}.mcp.server.ts`.
