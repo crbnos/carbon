@@ -68,8 +68,12 @@ export type PositionalSlot =
 
 /** What one union member (or the whole type, when it is not a union) declares. */
 export interface DeclaredShape {
-  /** Declared identity fields, sorted. */
+  /** Declared identity fields, sorted — filled from the authenticated context. */
   fields: IdentityField[];
+  /** Identity-named fields declared ONLY by a zod validator: a form field the
+   *  user fills in (production quantities' `createdBy` is the Employee picker),
+   *  so the caller supplies it, exactly as the form does. */
+  formFields: IdentityField[];
   /** Properties typed `Kysely<…>` — filled with the database client. */
   db: string[];
   /** Every declared property name, for discriminator resolution. */
@@ -162,8 +166,22 @@ function positionalSlotOf(
   return null;
 }
 
+/** Every declaration of the property is a `z.object({ … })` entry. */
+function declaredByValidatorOnly(property: import("ts-morph").Symbol): boolean {
+  const declarations = property.getDeclarations();
+  return (
+    declarations.length > 0 &&
+    declarations.every(
+      (declaration) =>
+        Node.isPropertyAssignment(declaration) ||
+        Node.isShorthandPropertyAssignment(declaration)
+    )
+  );
+}
+
 function declaredShape(type: Type): DeclaredShape {
   const fields: IdentityField[] = [];
+  const formFields: IdentityField[] = [];
   const db: string[] = [];
   const keys: string[] = [];
   const requiredKeys: string[] = [];
@@ -173,12 +191,17 @@ function declaredShape(type: Type): DeclaredShape {
     keys.push(name);
     if (!property.isOptional()) requiredKeys.push(name);
     if ((IDENTITY_FIELDS as readonly string[]).includes(name)) {
-      fields.push(name as IdentityField);
+      if (declaredByValidatorOnly(property)) {
+        formFields.push(name as IdentityField);
+      } else {
+        fields.push(name as IdentityField);
+      }
     }
     if (propertyIsKysely(property)) db.push(name);
   }
   return {
     fields: fields.sort(),
+    formFields: formFields.sort(),
     db: db.sort(),
     keys: keys.sort(),
     requiredKeys: requiredKeys.sort()
@@ -472,10 +495,14 @@ function payloadContext(
       : [...fields];
 
   const db = [...new Set(payload.members.flatMap((m) => m.db))].sort(byName);
+  const callerFields = [
+    ...new Set(payload.members.flatMap((m) => m.formFields))
+  ].sort(byName);
   const base: PayloadContext = {
     fields: [],
     ...(payload.elements ? { elements: true } : {}),
-    ...(db.length > 0 ? { db } : {})
+    ...(db.length > 0 ? { db } : {}),
+    ...(callerFields.length > 0 ? { callerFields } : {})
   };
 
   if (payload.scalar) {

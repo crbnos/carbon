@@ -218,6 +218,22 @@ describe("the declared context contract, through the real services", () => {
     });
   });
 
+  it("an identity-named FORM field is the caller's data, as in the form (the quantity's Employee)", async () => {
+    const { writes } = await run("production_updateProductionQuantity", {
+      id: "pq1",
+      jobOperationId: "op1",
+      type: "Production",
+      quantity: 3,
+      createdBy: "employee-7"
+    });
+    expect(writes).toHaveLength(1);
+    expect(writes[0].payload).toMatchObject({
+      createdBy: "employee-7",
+      updatedBy: "u1",
+      quantity: 3
+    });
+  });
+
   it("an omitted optional id list reaches the service as undefined", async () => {
     const { filters } = await run("accounting_getAccountsInScope", {
       scope: { source: "scrapAccounts" }

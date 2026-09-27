@@ -421,7 +421,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   textual rule, because some services use a validator's `userId` for the
   target person), and `db` for a property typed `Kysely` (the dispatcher
   fills it with `getDatabaseClient()`, as the route does for
-  `activateAssemblyInstructionVersion`). A union param whose members declare
+  `activateAssemblyInstructionVersion`). An identity-named field declared ONLY
+  by a zod validator is a form field, not context (`callerFields`): production
+  quantities store the form's Employee picker in `createdBy`, so the caller
+  supplies it exactly as the form does — it is published, never stamped and
+  never dropped. A union param whose members declare
   different fields carries the branch test: `discriminator` for a
   `"<key>" in <param>` test on a plain key (`"id" in` — stamped from the
   payload the caller sent), `byOperation` for a test on an identity field the

@@ -82,18 +82,21 @@ function branchFields(
  * column the table does not have (PGRST204) or a forged author. A payload whose
  * type declares no fields (`opaque`) cannot say which keys are real, so a
  * caller-sent identity key is overwritten there instead of removed. `userId` is
- * never removed: in a row it is usually data (the employee being assigned).
+ * never removed: in a row it is usually data (the employee being assigned), and
+ * neither is an identity-named field a form declares (`callerFields`).
  */
 function stampRow(
   row: Record<string, unknown>,
   fields: readonly AuthField[],
   context: AuthStampContext,
-  opaque: boolean | undefined
+  contract: PayloadContext
 ): Record<string, unknown> {
   const stamped: Record<string, unknown> = { ...row };
   for (const key of IDENTITY_KEYS) {
     if (!(key in stamped) || fields.includes(key)) continue;
-    if (opaque) stamped[key] = identityValue(key, context);
+    // A form field that happens to carry an identity name is the caller's data.
+    if (contract.callerFields?.includes(key)) continue;
+    if (contract.opaque) stamped[key] = identityValue(key, context);
     else delete stamped[key];
   }
   for (const field of fields) stamped[field] = identityValue(field, context);
@@ -128,7 +131,7 @@ export function enrichWithAuthContext(
             row,
             branchFields(row, contract, operation),
             context,
-            contract.opaque
+            contract
           )
         : overwriteIdentityKeys(row, context);
     });
@@ -141,7 +144,7 @@ export function enrichWithAuthContext(
           payload,
           branchFields(payload, contract, operation),
           context,
-          contract.opaque
+          contract
         )
       : (overwriteIdentityKeys(payload, context) as Record<string, unknown>);
 

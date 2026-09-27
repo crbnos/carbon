@@ -349,9 +349,14 @@ export function checkContextWrites(
             continue;
           }
           if (column.optional) continue;
+          // A form field of that name (the caller supplies it) also counts.
+          const formDeclared = payload.members.some((m) =>
+            m.formFields.includes(column.name as IdentityField)
+          );
           if (
             reaching.includes(column.name as IdentityField) ||
-            carried.explicit.has(column.name)
+            carried.explicit.has(column.name) ||
+            (formDeclared && !carried.alias.excluded.has(column.name))
           ) {
             continue;
           }

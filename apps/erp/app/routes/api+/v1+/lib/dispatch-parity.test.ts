@@ -1216,7 +1216,12 @@ describe("the declared context contract, over every manifest entry", () => {
           "companyId",
           "companyGroupId"
         ] as const) {
-          const expected = fields.includes(key) ? FIELD_VALUE[key] : undefined;
+          // A form field of that name is the caller's own value.
+          const expected = fields.includes(key)
+            ? FIELD_VALUE[key]
+            : contract.callerFields?.includes(key)
+              ? "forged"
+              : undefined;
           if (got[key] !== expected) {
             wrong.push(`${op.name}.${name}.${key}: ${String(got[key])}`);
           }

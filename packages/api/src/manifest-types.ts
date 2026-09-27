@@ -42,6 +42,10 @@ export interface PayloadContext {
   elements?: boolean;
   /** Properties typed `Kysely<…>`, filled with the server database client. */
   db?: string[];
+  /** Identity-named fields a FORM declares (a zod validator field, e.g. the
+   *  Employee picker stored in `createdBy`): the caller supplies them, as the
+   *  form does — never stamped, never removed, published in the schema. */
+  callerFields?: AuthField[];
   /** The declared type names no fields (`Json`, `Record<…>`, `any`): a
    *  caller-sent identity key is overwritten, never removed or added. */
   opaque?: boolean;
