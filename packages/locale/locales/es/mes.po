@@ -657,10 +657,10 @@ msgid "First article"
 msgstr "Primera pieza"
 
 msgid "First article plan missing for {description}"
-msgstr ""
+msgstr "Falta el plan de primera pieza para {description}"
 
 msgid "First article plan missing for {part}"
-msgstr ""
+msgstr "Falta el plan de primera pieza para {part}"
 
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
@@ -1651,7 +1651,7 @@ msgid "Tag"
 msgstr "Etiqueta"
 
 msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr ""
+msgstr "Notifique a Calidad — esta pieza necesita una inspección de primera pieza, pero no tiene un plan de inspección asignado."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "La cantidad completada para esta operación es menor que la cantidad requerida de {targetQuantity}."

@@ -657,10 +657,10 @@ msgid "First article"
 msgstr "पहली आर्टिकल"
 
 msgid "First article plan missing for {description}"
-msgstr ""
+msgstr "{description} के लिए प्रथम लेख योजना नहीं है"
 
 msgid "First article plan missing for {part}"
-msgstr ""
+msgstr "{part} के लिए प्रथम लेख योजना नहीं है"
 
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
@@ -1651,7 +1651,7 @@ msgid "Tag"
 msgstr "टैग"
 
 msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr ""
+msgstr "गुणवत्ता को बताएं — इस पार्ट को प्रथम लेख की आवश्यकता है, लेकिन इसके लिए कोई निरीक्षण योजना असाइन नहीं की गई है।"
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "इस ऑपरेशन के लिए पूर्ण मात्रा आवश्यक मात्रा {targetQuantity} से कम है।"

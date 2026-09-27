@@ -657,10 +657,10 @@ msgid "First article"
 msgstr "Первый образец"
 
 msgid "First article plan missing for {description}"
-msgstr ""
+msgstr "План первого образца отсутствует для {description}"
 
 msgid "First article plan missing for {part}"
-msgstr ""
+msgstr "План первого образца отсутствует для {part}"
 
 #. placeholder {0}: firstArticle.itemReadableId ?? firstArticle.inspectionId
 msgid "First article required for {0}"
@@ -1651,7 +1651,7 @@ msgid "Tag"
 msgstr "Тег"
 
 msgid "Tell quality — this part needs a first article, but no inspection plan is assigned to it."
-msgstr ""
+msgstr "Сообщите отделу качества — для этой детали требуется первый образец, но план контроля ей не назначен."
 
 msgid "The completed quantity for this operation is less than the required quantity of {targetQuantity}."
 msgstr "Количество готовой продукции по этой операции меньше требуемого количества {targetQuantity}."
