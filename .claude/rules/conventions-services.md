@@ -55,6 +55,41 @@ export async function getCustomer(client: SupabaseClient<Database>, id: string) 
   (e.g. `getOpenClockEntry` in `apps/mes/app/services/people.service.ts`).
 - No `try/catch`, no `if (error) throw` — return the response object untouched.
 
+## The result contract
+
+Every exported service is also an API/MCP operation, and the dispatcher
+(`apps/erp/app/routes/api+/v1+/lib/normalize-result.server.ts`) decides success
+or failure from the **declared return type**, classified by `pnpm generate:mcp`
+(`scripts/lib/result-shape.ts`) into the manifest's `resultShape`. A service
+returns exactly one of:
+
+- **`{ data, error }`** (plus `count` for a paged read) — a PostgREST/storage/
+  functions response, or the hand-rolled equivalent. The error is thrown to
+  the caller; `data` is returned.
+- **An array of those** — `Promise.all` over per-row updates. Any element's
+  error fails the call, exactly as the routes check `updates.some((u) => u.error)`.
+- **Nothing** (`void`), or a **plain value** that cannot fail (a pure
+  computation, a Kysely transaction that throws on failure).
+
+What the generator refuses (and `pnpm check:manifest` fails on):
+
+- A plain object with a member named `error`, `success` or `ok` — `{ error }`
+  alone, `{ rows, error }`, `{ success: false, message }`, `{ ok: false, reason }`.
+  None of them reaches a caller as a failure. Put the payload in `data`
+  (`{ data: { rows, expandedParentIds }, error }`) and return `{ data: null, error }`.
+- A union mixing an envelope with a plain value.
+- A `bigint` anywhere in the result (Kysely's `numDeletedRows`) — JSON cannot
+  carry it. Return `{ removed: Number(result.numDeletedRows) }`.
+
+Write a refusal the caller can act on as `ruleError(message)` (`~/utils/supabase`):
+its message reaches API/MCP callers as written, where a database failure is
+reduced to a fixed public message. A route that needs more than the message
+(e.g. a reason to branch on) spreads extra fields onto it —
+`{ ...ruleError(message), reason: "no-plan" }` (`generateAssemblyStepsFromPlan`).
+A single-record read that can find nothing without erroring (an RPC returning a
+set) reports zero rows as `{ code: "PGRST116" }`, the not-found a `.single()`
+read gives (`getOpportunity`).
+
 ## Lists: `companyId` + `setGenericQueryFilters`
 
 List functions take `companyId` explicitly and a `GenericQueryFilters` arg, run
@@ -221,6 +256,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - [ ] In the right place: ERP `modules/{module}/{module}.service.ts`, MES `services/*.service.ts`.
 - [ ] First arg is `client: SupabaseClient<Database>` (or `db: Kysely<KyselyDatabase>` for transactions).
 - [ ] Returns the raw `{ data, error }` — does **not** throw, does **not** unwrap.
+- [ ] Never `{ error }` alone, `{ success/ok: false }`, or a bigint (see The result contract).
 - [ ] List queries scope `.eq("companyId", companyId)` and run `setGenericQueryFilters`.
 - [ ] `.select(...)` + `.single()`/`.maybeSingle()` after insert/update to return the row.
 - [ ] Update payloads wrapped in `sanitize(...)`.

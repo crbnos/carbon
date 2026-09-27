@@ -329,8 +329,26 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   is what the service itself defaults it to). Left out of the generator's
   `CONTEXT_PARAMS` it became a required field a caller cannot express — a
   Supabase client — so the two consolidated-balance ops failed every call.
-- Supabase query builders returned by services are awaited and the
-  `{ data, error, count }` envelope is **unwrapped by the dispatch**:
+- Supabase query builders returned by services are awaited and the result is
+  read by its **static `resultShape`** (`api+/v1+/lib/normalize-result.server.ts`),
+  which the generator records per operation from the declared return type
+  (`scripts/lib/result-shape.ts`; the contract itself is in
+  `conventions-services.md` → The result contract). An `envelope` throws its
+  error and returns `data` + `count`; an `envelope-array` (`Promise.all` over
+  updates) throws if ANY element has an error — the routes' own
+  `updates.some((u) => u.error)` — and otherwise returns each element's `data`;
+  `plain`/`void` values are returned as-is; only `unknown` (an `any` return)
+  falls back to unwrapping a runtime `data` key. Envelope keys beside
+  `data`/`error`/`count` (`cta`, `hasMore`, `page`) are dropped and listed as
+  `droppedResultKeys` in the manifest — where they belong is undecided.
+  Data is converted to JSON values the way the HTTP OpenAPI serializer does
+  (`toWireValue`: Map → entries array, Set → array, bigint → string), so MCP,
+  the agent, workflows and HTTP receive the same thing; a Map's response schema
+  is its entries array, marked `x-carbon-map-entries` so `isListOperation` keeps
+  it bare over HTTP. A returned error is classified before it is thrown: anything
+  with a `code` (PostgrestError, pg error, `ruleError`) or a Functions/Storage
+  error keeps its identity; a string or a code-less `{ message }` becomes a
+  `ruleError`, so the caller sees the message as written.
   `callOperation` returns `{ success: true, data, count? }` or
   `{ success: false, error, errorKind: "database" | "execution" }`. The raw error
   rides on `ORPCError.data.supabase`, and the two surfaces treat it differently:

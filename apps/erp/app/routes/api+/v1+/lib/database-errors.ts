@@ -27,7 +27,9 @@ export const DATABASE_ERROR_MESSAGES: Record<DatabaseFailureKind, string> = {
 export function classifyDatabaseFailure(
   error: SupabaseFailure | null | undefined
 ): DatabaseFailureKind {
-  if (!error) return "unknown";
+  // The dispatcher wraps a returned string as a ruleError, so a primitive only
+  // reaches here from a caller that bypassed it — `"code" in` would throw.
+  if (!error || typeof error !== "object") return "unknown";
   if (error.name === "FunctionsHttpError") return "rule";
 
   switch ("code" in error ? error.code : undefined) {

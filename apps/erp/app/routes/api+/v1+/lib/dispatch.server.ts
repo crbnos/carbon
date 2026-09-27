@@ -2,7 +2,7 @@
 //
 // Owns the executeFunction lineage in full: positional-arg assembly from
 // serviceParams, payload stamping via enrichWithAuthContext, `_operation` handling,
-// and the Supabase unwrap. HTTP, MCP, the agent and the workflow dispatcher all pass
+// and reading the result by its static shape (normalize-result.server.ts). HTTP, MCP, the agent and the workflow dispatcher all pass
 // through here. Unlike the legacy executor (which returned { success, … }), this
 // THROWS an ORPCError on failure: the HTTP handler maps that to a status code and
 // callOperation reconstructs the { success:false, error } envelope.
@@ -11,13 +11,14 @@ import type { AuthField, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import {
+  type DispatchResult,
+  normalizeServiceResult
+} from "./normalize-result.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
-export interface DispatchResult {
-  data: unknown;
-  count?: number;
-}
+export type { DispatchResult };
 
 export type McpOperation = "create" | "update";
 
@@ -249,14 +250,6 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   return own.length === 1 && own[0] === paramName;
 }
 
-function supabaseErrorMessage(error: unknown): string {
-  if (typeof error === "string") return error;
-  if (error && typeof error === "object" && "message" in error) {
-    return String((error as { message: unknown }).message);
-  }
-  return JSON.stringify(error);
-}
-
 export async function dispatchOperation(
   meta: ManifestEntry,
   context: AuthedContext,
@@ -419,16 +412,8 @@ export async function dispatchOperation(
     result = await result;
   }
 
-  // Supabase response shape { data, error, count } — unwrap, or throw on error.
-  if (result && typeof result === "object" && "data" in result) {
-    const r = result as { data: unknown; error?: unknown; count?: number };
-    if (r.error) {
-      throw new ORPCError("BAD_REQUEST", {
-        message: supabaseErrorMessage(r.error),
-        data: { supabase: r.error }
-      });
-    }
-    return { data: r.data, count: r.count ?? undefined };
-  }
-  return { data: result };
+  // Read the result by the shape the generator recorded — never by sniffing it:
+  // an envelope's error (or any element's, for an envelope array) is thrown,
+  // everything else becomes wire data.
+  return normalizeServiceResult(meta, result);
 }

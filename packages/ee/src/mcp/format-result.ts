@@ -1,6 +1,8 @@
 // call_tool result formatting for the MCP surface ONLY — the HTTP API, the
 // in-app agent, and the workflow dispatcher consume callOperation's structured
-// data untouched. Everything here trades bytes for nothing an agent needs:
+// data untouched. That data is already JSON values: the dispatcher converts a
+// Map, Set or bigint the way the HTTP serializer does (`toWireValue`), so
+// nothing here decides a wire shape. Everything here trades bytes for nothing an agent needs:
 // compact JSON (indentation roughly doubles whitespace tokens on row arrays),
 // null-stripped rows (an ERP row is ~half null columns), and a hard row cap as
 // a backstop for the unpaginated `get*List` operations that ignore `limit`.
