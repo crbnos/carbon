@@ -28,6 +28,7 @@ import {
   getExchangeRate
 } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
+import type { optionalTiptapDoc } from "../shared/shared.models";
 import { upsertExternalLink } from "../shared/shared.service";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
@@ -1489,7 +1490,9 @@ export async function insertPurchaseOrder(
     receiptRequestedDate?: string;
     supplierReference?: string;
     notes?: Json;
-    externalNotes?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    externalNotes?: z.infer<typeof optionalTiptapDoc>;
     customFields?: Json;
   }
 ): Promise<{
@@ -2633,7 +2636,9 @@ export async function insertPurchasingRFQ(
     locationId?: string;
     employeeId?: string;
     status?: (typeof purchasingRfqStatusType)[number];
-    notes?: string;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc>;
     customFields?: Json;
   }
 ): Promise<{
@@ -2698,7 +2703,9 @@ export async function updatePurchasingRFQ(
     locationId?: string;
     employeeId?: string | null;
     status?: (typeof purchasingRfqStatusType)[number];
-    notes?: string | null;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
   }
 ): Promise<{

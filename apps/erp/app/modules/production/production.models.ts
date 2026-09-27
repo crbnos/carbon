@@ -12,6 +12,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalTiptapDoc,
   procedureStepType,
   standardFactorType,
   toTiptapDoc
@@ -878,7 +879,9 @@ export const procedureValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
   processId: zfd.text(z.string().optional()),
-  content: zfd.text(z.string().optional()),
+  // Rich text (json column): a form posts the editor's JSON text; stored as
+  // a tiptap document, never a string.
+  content: optionalTiptapDoc,
   copyFromId: zfd.text(z.string().optional())
 });
 
@@ -887,7 +890,9 @@ export const procedureStepValidator = z
     id: zfd.text(z.string().optional()),
     procedureId: z.string().min(1, { message: "Procedure is required" }),
     name: z.string().trim().min(1, { message: "Name is required" }),
-    description: zfd.text(z.string().optional()),
+    // Rich text (json column): the step editor posts its JSON text; stored as
+    // a tiptap document, as operation step descriptions are.
+    description: optionalTiptapDoc,
     type: z.enum(procedureStepType, {
       error: "Type is required"
     }),

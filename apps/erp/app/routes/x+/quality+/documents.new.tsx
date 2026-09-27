@@ -34,22 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, content, ...d } = validation.data;
 
-  let contentJSON;
-  try {
-    contentJSON = content ? JSON.parse(content) : {};
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  } catch (e) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          "Invalid quality document content format",
-          "Failed to parse quality document content"
-        )
-      )
-    );
-  }
+  // The validator already turned the editor's JSON text into a document.
+  const contentJSON = content ?? {};
 
   const insertQualityDocument = await upsertQualityDocument(client, {
     ...d,

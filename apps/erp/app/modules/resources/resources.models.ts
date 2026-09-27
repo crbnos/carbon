@@ -6,6 +6,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { operationTypes, standardFactorType } from "../shared";
+import { optionalTiptapDoc } from "../shared/shared.models";
 
 // Batch compatibility rule levels — mirrors BatchRuleLevel in @carbon/utils.
 // A tuple literal is needed for z.enum; kept in sync with BATCH_RULE_DIMENSIONS.
@@ -531,7 +532,9 @@ export const trainingType = ["Mandatory", "Optional"] as const;
 export const trainingValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
-  content: zfd.text(z.string().optional()),
+  // Rich text (json column): a form posts the editor's JSON text; stored as
+  // a tiptap document, never a string.
+  content: optionalTiptapDoc,
   grantsAbilityId: zfd.text(z.string().optional())
 });
 

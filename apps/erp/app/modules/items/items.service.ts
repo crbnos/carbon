@@ -25,7 +25,8 @@ import type {
   operationParameterValidator,
   operationStepSlideValidator,
   operationStepValidator,
-  operationToolValidator
+  operationToolValidator,
+  optionalTiptapDoc
 } from "../shared";
 import {
   lookupBuyPriceFromMap,
@@ -6350,8 +6351,12 @@ export async function insertChangeNotice(
     changeNoticeTypeId?: string;
     nonConformanceId?: string;
     openDate: string;
-    reasonForChange?: Json;
-    description?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    reasonForChange?: z.infer<typeof optionalTiptapDoc>;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    description?: z.infer<typeof optionalTiptapDoc>;
     dueDate?: string;
     assignee?: string;
     customFields?: Json;
@@ -6426,8 +6431,12 @@ export async function updateChangeNotice(
     changeOrderTypeId?: string | null;
     nonConformanceId?: string | null;
     openDate?: string;
-    reasonForChange?: Json;
-    description?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    reasonForChange?: z.infer<typeof optionalTiptapDoc>;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    description?: z.infer<typeof optionalTiptapDoc>;
     dueDate?: string | null;
     assignee?: string | null;
     customFields?: Json;

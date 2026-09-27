@@ -215,6 +215,42 @@ Three fixes from letting a real MCP agent drive the server; all pinned by
   boolean-for-string mistakes are caught at validation with a self-correcting
   message instead of surfacing as a Postgres 23502.
 
+### The form bridge: validator transforms and defaults
+
+Every write route runs `validator(V).validate(formData)` and hands the service
+the OUTPUT; the manifest publishes the INPUT (`io: "input"`). Dispatch never
+runs a whole validator (`zfd.checkbox()` maps an absent key to `false`,
+`zfd.text` drops `""` and rejects `null`, services take `Omit<…> & {…}`
+shapes). Two generator-driven pieces close the gap instead:
+
+- **Field coercers.** `validator-to-json-schema.ts` marks every validator
+  field whose input and output schemas differ (defaults and `zfd.checkbox`
+  ignored) — `toTiptapDoc` descriptions, `optionalTiptapDoc` notes, JSON-string
+  `lines`, string-encoded booleans. The marker rides the property schema
+  wherever it is copied (flattened, `Omit<>`, `V["field"]`, `| null`), and
+  `extractFieldCoercers` lifts it into `ManifestEntry.coercers`
+  (`{ at, module, validator, field }`). `dispatch.server.ts` runs
+  `applyFieldCoercers` (`field-coercers.server.ts`) on the raw input: each
+  field's own sub-schema, only on keys the caller sent, `null` passed through,
+  a failing value a 400 with the validator's message. A standalone field
+  validator (`optionalTiptapDoc`) is marked on its root, so a service field
+  typed `z.infer<typeof optionalTiptapDoc>` gets the same coercion.
+  Convention: a rich-text json column is fed by an `optionalTiptapDoc` (or
+  `toTiptapDoc`-transform) validator field, or a service field typed from
+  one — never `string` or `Json`. A route that `JSON.parse`s a field before
+  calling the service is the same smell; put the transform in the validator.
+- **No defaults on updates.** `jsonSchemaInput` compiles the published schema
+  with `z.fromJSONSchema`, whose parse materialises every `default`. For
+  update-capable tools (`_operation`, or an `update*`/`upsert*` verb) the
+  generator strips `default` from `properties` chains; for a recognisable
+  create path (`_operation`, or an `upsert*` branching on `"id" in`) the
+  top-level values move to `ManifestEntry.createDefaults` and the property
+  description, and dispatch fills them on create only.
+
+Guards: `apps/erp/test/mcp-form-bridge-guards.test.ts` (no update-capable
+default; no string property into a json column without a coercer),
+`api+/v1+/lib/field-coercers.test.ts`, `dispatch-form-bridge.test.ts`.
+
 ## How `call_tool` actually runs a tool (the canonical oRPC dispatch)
 
 `call_tool` does **not** go back through the MCP protocol — it calls

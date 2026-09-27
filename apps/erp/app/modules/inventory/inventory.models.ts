@@ -12,6 +12,7 @@ import {
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
+import { optionalTiptapDoc } from "../shared/shared.models";
 
 export const demandPeriodTypes = ["Week", "Day", "Month"] as const;
 export const demandSourceTypes = ["Sales Order", "Job Material"] as const;
@@ -672,7 +673,8 @@ export const pickingListValidator = z.object({
   locationId: z.string().min(1, { message: "Location is required" }),
   assignee: zfd.text(z.string().optional()),
   dueDate: zfd.text(z.string().optional()),
-  notes: zfd.text(z.string().optional())
+  // Rich text (json column): stored as a tiptap document, never a string.
+  notes: optionalTiptapDoc
 });
 
 export const pickingListLineValidator = z.object({

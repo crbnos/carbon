@@ -9,6 +9,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import type { optionalTiptapDoc } from "../shared/shared.models";
 import type {
   failureModeValidator,
   locationValidator,
@@ -1518,7 +1519,9 @@ export async function insertMaintenanceDispatch(
     plannedStartTime?: string;
     plannedEndTime?: string;
     takesWorkCenterOffline?: boolean;
-    content?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    content?: z.infer<typeof optionalTiptapDoc>;
   }
 ): Promise<{
   data: { id: string; maintenanceDispatchId: string } | null;
@@ -1605,7 +1608,9 @@ export async function updateMaintenanceDispatch(
     actualStartTime?: string | null;
     actualEndTime?: string | null;
     takesWorkCenterOffline?: boolean;
-    content?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    content?: z.infer<typeof optionalTiptapDoc>;
   }
 ): Promise<{
   data: { id: string } | null;
@@ -2027,6 +2032,12 @@ export async function upsertTrainingAssignment(
     .single();
 }
 
+/**
+ * Create or update a training question. `matchingPairs` may be sent as the
+ * JSON string the question form posts; it is parsed before it is stored, and
+ * a string that is not valid JSON is stored as null — as the question routes
+ * do.
+ */
 export async function upsertTrainingQuestion(
   client: SupabaseClient<Database>,
   trainingQuestion:
@@ -2039,19 +2050,46 @@ export async function upsertTrainingQuestion(
         updatedBy: string;
       })
 ) {
-  if ("id" in trainingQuestion) {
+  const matchingPairs = parseJsonText(trainingQuestion.matchingPairs);
+  const question = {
+    ...trainingQuestion,
+    ...(trainingQuestion.matchingPairs !== undefined && {
+      matchingPairs: matchingPairs.invalid ? null : matchingPairs.value
+    })
+  };
+
+  if ("id" in question) {
     return client
       .from("trainingQuestion")
-      .update(sanitize(trainingQuestion))
-      .eq("id", trainingQuestion.id)
+      .update(sanitize(question))
+      .eq("id", question.id)
       .select("id")
       .single();
   }
   return client
     .from("trainingQuestion")
-    .insert([trainingQuestion])
+    .insert([question])
     .select("id")
     .single();
+}
+
+/**
+ * A json column a form posts as JSON text. A string is parsed; anything else
+ * (the parsed value a route already produced, null, undefined) passes through.
+ */
+function parseJsonText(value: unknown): {
+  value: Json | undefined;
+  invalid: boolean;
+} {
+  if (typeof value !== "string") {
+    return { value: value as Json | undefined, invalid: false };
+  }
+  if (value === "") return { value: undefined, invalid: false };
+  try {
+    return { value: JSON.parse(value) as Json, invalid: false };
+  } catch {
+    return { value: undefined, invalid: true };
+  }
 }
 
 export async function upsertWorkCenter(

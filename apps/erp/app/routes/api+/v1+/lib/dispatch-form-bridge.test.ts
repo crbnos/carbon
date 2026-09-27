@@ -4,7 +4,7 @@
 // what the UI route would have handed it for the same values.
 
 import { jsonSchemaInput } from "@carbon/api/schema";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const spies = vi.hoisted(() => ({
   upsertMethodOperationStep: vi.fn(),
@@ -62,6 +62,7 @@ vi.mock("@lingui/react/macro", () => ({
 
 import type { AuthedContext } from "./base.server";
 import { dispatchOperation } from "./dispatch.server";
+import { modelsLoaders } from "./field-coercers.server";
 import { operationsByName } from "./operations.server";
 
 const ctx: AuthedContext = {
@@ -92,6 +93,10 @@ async function call(
   const payload = spy.mock.calls[0]?.[1] as Record<string, unknown>;
   return payload;
 }
+
+beforeAll(async () => {
+  await Promise.all(Object.values(modelsLoaders).map((load) => load()));
+}, 60_000);
 
 beforeEach(() => {
   for (const spy of Object.values(spies)) {

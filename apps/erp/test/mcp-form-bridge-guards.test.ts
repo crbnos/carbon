@@ -1,0 +1,163 @@
+// Guards for the API side of the form bridge (see
+// app/routes/api+/v1+/lib/field-coercers.server.ts). Every write route runs
+// its form validator and hands the service the OUTPUT; the manifest publishes
+// the INPUT. These scan the generated manifest, the service sources and the
+// generated DB types, and fail on the two ways that gap reopened:
+//
+//   1. A published `default` on a tool that can update a row. Input
+//      validation materialises it, so a partial update overwrote the stored
+//      value (a customer's `taxExempt` flipped to false).
+//   2. A property published as a plain string that lands in a json column
+//      with no coercer. The service stores the string scalar and every reader
+//      that expects a tiptap document or an array breaks.
+
+import { readdirSync, readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { describe, expect, it } from "vitest";
+import toolMetadataJson from "../app/routes/api+/mcp+/lib/tool-metadata.json";
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const MODULES_DIR = join(HERE, "../app/modules");
+const DB_TYPES = join(HERE, "../../../packages/database/src/types.ts");
+
+interface Tool {
+  name: string;
+  module: string;
+  classification: "READ" | "WRITE" | "DESTRUCTIVE";
+  schema: { properties?: Record<string, Record<string, unknown>> };
+  coercers?: Array<{ at: string[] }>;
+  createDefaults?: Record<string, unknown>;
+}
+
+const tools = (toolMetadataJson as unknown as { tools: Tool[] }).tools;
+const writeTools = tools.filter((t) => t.classification !== "READ");
+
+/**
+ * Json columns fed from a string on purpose, with the reason. Keep this list
+ * short: every entry is a place the service, not the dispatch bridge, turns
+ * the string into structure.
+ */
+const STRING_INTO_JSON_ALLOWED: Record<string, string> = {
+  "resources_upsertTrainingQuestion.matchingPairs":
+    "the service parses the JSON text, as the question routes did (the validator's refine reads the raw string)"
+};
+
+function isUpdateCapable(tool: Tool): boolean {
+  const fn = tool.name.slice(tool.module.length + 1);
+  return (
+    Boolean(tool.schema.properties?._operation) || /^(update|upsert)/.test(fn)
+  );
+}
+
+/** Paths of `default` keywords reachable through `properties` chains only. */
+function propertyDefaults(
+  node: Record<string, unknown>,
+  path: string[] = []
+): string[] {
+  const properties = node.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  if (!properties) return [];
+  return Object.entries(properties).flatMap(([key, prop]) => [
+    ...(prop && "default" in prop ? [[...path, key].join(".")] : []),
+    ...(prop ? propertyDefaults(prop, [...path, key]) : [])
+  ]);
+}
+
+const sourceCache = new Map<string, string>();
+function serviceSource(module: string): string {
+  const cached = sourceCache.get(module);
+  if (cached !== undefined) return cached;
+  const dir = join(MODULES_DIR, module);
+  const joined = readdirSync(dir)
+    .filter((f) => f.endsWith(".service.ts") || f.endsWith(".mcp.server.ts"))
+    .map((f) => readFileSync(join(dir, f), "utf8"))
+    .join("\n");
+  sourceCache.set(module, joined);
+  return joined;
+}
+
+function functionBody(source: string, fn: string): string {
+  const match = new RegExp(
+    `export\\s+(?:async\\s+)?function\\s+${fn}\\s*[<(]`
+  ).exec(source);
+  if (!match) return "";
+  const next = source.indexOf("\nexport ", match.index + match[0].length);
+  return source.slice(match.index, next === -1 ? undefined : next);
+}
+
+/** table → its Json-typed Row columns, from the generated public schema. */
+function jsonColumnsByTable(): Map<string, Set<string>> {
+  const types = readFileSync(DB_TYPES, "utf8");
+  const publicStart = types.indexOf("\n  public: {");
+  const tablesStart = types.indexOf("\n    Tables: {", publicStart);
+  const viewsStart = types.indexOf("\n    Views: {", tablesStart);
+  const block = types.slice(tablesStart, viewsStart);
+  const out = new Map<string, Set<string>>();
+  for (const table of block.matchAll(
+    /\n {6}(\w+): \{\n {8}Row: \{([\s\S]*?)\n {8}\}/g
+  )) {
+    const columns = [...table[2].matchAll(/\n {10}(\w+)\??: Json\b/g)].map(
+      (m) => m[1]
+    );
+    out.set(table[1], new Set(columns));
+  }
+  return out;
+}
+
+describe("form bridge guards", () => {
+  it("no update-capable tool publishes a JSON Schema default", () => {
+    const offenders = writeTools
+      .filter(isUpdateCapable)
+      .flatMap((t) => propertyDefaults(t.schema).map((p) => `${t.name}.${p}`));
+    expect(offenders).toEqual([]);
+  });
+
+  it("create defaults are only recorded for tools with a create path", () => {
+    for (const t of tools.filter((t) => t.createDefaults)) {
+      const fn = t.name.slice(t.module.length + 1);
+      expect(
+        Boolean(t.schema.properties?._operation) || fn.startsWith("upsert"),
+        t.name
+      ).toBe(true);
+    }
+  });
+
+  it("no published schema leaks the internal coerce marker", () => {
+    expect(JSON.stringify(tools).includes("x-carbon-coerce")).toBe(false);
+  });
+
+  it("no string property lands in a json column without a coercer", () => {
+    const jsonColumns = jsonColumnsByTable();
+    expect(jsonColumns.size).toBeGreaterThan(100);
+
+    const offenders: string[] = [];
+    for (const t of writeTools) {
+      const fn = t.name.slice(t.module.length + 1);
+      const body = functionBody(serviceSource(t.module), fn);
+      const written = new Set(
+        [
+          ...body.matchAll(/\.from\("(\w+)"\)\s*\.(?:insert|update|upsert)\b/g)
+        ].map((m) => m[1])
+      );
+      const coerced = new Set((t.coercers ?? []).map((c) => c.at.join(".")));
+      for (const [key, prop] of Object.entries(t.schema.properties ?? {})) {
+        const type = prop.type;
+        const isString =
+          type === "string" ||
+          (Array.isArray(type) &&
+            type.includes("string") &&
+            type.every((x) => x === "string" || x === "null"));
+        if (!isString || coerced.has(key)) continue;
+        const intoJson = [...written].some((table) =>
+          jsonColumns.get(table)?.has(key)
+        );
+        if (!intoJson) continue;
+        const id = `${t.name}.${key}`;
+        if (!(id in STRING_INTO_JSON_ALLOWED)) offenders.push(id);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+});

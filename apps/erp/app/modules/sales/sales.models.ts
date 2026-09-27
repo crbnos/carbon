@@ -465,8 +465,9 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
-  internalNotes: z.any().optional(),
-  externalNotes: z.any().optional(),
+  // Rich text (json columns): stored as a tiptap document, never a string.
+  internalNotes: optionalTiptapDoc,
+  externalNotes: optionalTiptapDoc,
   configuration: z.any().optional()
 });
 
@@ -1016,8 +1017,9 @@ export const salesRfqValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
   customerReference: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
-  externalNotes: zfd.text(z.string().optional()),
-  internalNotes: zfd.text(z.string().optional()),
+  // Rich text (json columns): stored as a tiptap document, never a string.
+  externalNotes: optionalTiptapDoc,
+  internalNotes: optionalTiptapDoc,
   locationId: zfd.text(z.string().optional()),
   rfqDate: z.string().min(1, { message: "Order Date is required" }),
   status: z.enum(salesRFQStatusType).optional(),

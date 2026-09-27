@@ -3582,7 +3582,9 @@ export async function insertQuote(
     estimatorId?: string;
     dueDate?: string;
     opportunityId?: string;
-    notes?: string;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof quoteValidator>["notes"];
     customFields?: Json;
   }
 ): Promise<{
@@ -3753,7 +3755,9 @@ export async function updateQuote(
     dueDate?: string | null;
     digitalQuoteAcceptedBy?: string | null;
     digitalQuoteAcceptedByEmail?: string | null;
-    notes?: string | null;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof quoteValidator>["notes"] | null;
     customFields?: Json;
   }
 ): Promise<{

@@ -34,22 +34,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, content, ...d } = validation.data;
 
-  let contentJSON;
-  try {
-    contentJSON = content ? JSON.parse(content) : {};
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-  } catch (e) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(
-          "Invalid training content format",
-          "Failed to parse training content"
-        )
-      )
-    );
-  }
+  // The validator already turned the editor's JSON text into a document.
+  const contentJSON = content ?? {};
 
   const insertTraining = await upsertTraining(client, {
     ...d,

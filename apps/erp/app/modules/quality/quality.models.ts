@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { procedureStepType } from "../shared/shared.models";
+import { optionalTiptapDoc, procedureStepType } from "../shared/shared.models";
 import {
   inspectionLevels,
   inspectionSeverities,
@@ -319,7 +319,9 @@ export const qualityDocumentValidator = z.object({
   id: zfd.text(z.string().optional()),
   name: z.string().trim().min(1, { message: "Name is required" }),
   version: zfd.numeric(z.number().min(0)),
-  content: zfd.text(z.string().optional()),
+  // Rich text (json column): a form posts the editor's JSON text; stored as
+  // a tiptap document, never a string.
+  content: optionalTiptapDoc,
   copyFromId: zfd.text(z.string().optional())
 });
 

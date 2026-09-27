@@ -51,7 +51,8 @@ import type {
   operationParameterValidator,
   operationStepSlideValidator,
   operationStepValidator,
-  operationToolValidator
+  operationToolValidator,
+  optionalTiptapDoc
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
 import { updateSortOrder } from "../shared/sort-order";
@@ -62,6 +63,7 @@ import {
 } from "./inspectionDocumentDb";
 import type {
   assemblyInstructionStatuses,
+  assemblyInstructionStepValidator,
   assemblyStepStatuses,
   deadlineTypes,
   failureModeValidator,
@@ -3638,7 +3640,9 @@ export async function updateJob(
     quoteLineId?: string | null;
     parentJobId?: string | null;
     modelUploadId?: string | null;
-    notes?: string | null;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
     scrapQuantity?: number;
     itemId?: string;
@@ -7263,7 +7267,11 @@ export async function upsertAssemblyInstructionStep(
     assemblyInstructionId: string;
     title?: string | null;
     type?: Database["public"]["Enums"]["procedureStepType"];
-    description?: Json;
+    /** Rich text: plain text, a JSON-encoded tiptap document, or the document
+     *  itself — stored as a tiptap document either way. */
+    description?: z.infer<
+      typeof assemblyInstructionStepValidator
+    >["description"];
     required?: boolean;
     unitOfMeasureCode?: string | null;
     minValue?: number | null;
