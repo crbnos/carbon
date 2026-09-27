@@ -17,6 +17,24 @@ export type AuthField =
 export type PermissionAction = "view" | "create" | "update" | "delete";
 
 /**
+ * What a service function's declared return type is, as the dispatcher reads it
+ * (`scripts/lib/result-shape.ts` classifies; `normalize-result.server.ts` acts):
+ * - `envelope`: `{ data, error?, count? … }` — the error is thrown, `data` returned.
+ * - `envelope-array`: an array of envelopes (`Promise.all` over writes) — any
+ *   element error is thrown, otherwise each element's `data` is returned.
+ * - `void`: nothing is returned.
+ * - `plain`: any other value, returned as-is; it cannot carry a failure.
+ * - `unknown`: `any`/`unknown`; the dispatcher falls back to unwrapping a
+ *   runtime `data` key.
+ */
+export type ResultShape =
+  | "envelope"
+  | "envelope-array"
+  | "void"
+  | "plain"
+  | "unknown";
+
+/**
  * The permission an API-key caller must hold to invoke the operation.
  * `module` is `null` for operations that gate only on a valid key of the company
  * (e.g. `account`, `shared`) rather than a specific permission module.
@@ -51,4 +69,10 @@ export interface ManifestEntry {
    *  be derived (an `any`, a void, or an opaque shape). Describes the payload the
    *  dispatcher puts in `data`, not the `{ data, count }` envelope around it. */
   responseSchema?: Record<string, unknown>;
+  /** How the dispatcher turns the service's return value into data or an error.
+   *  Absent only in a manifest generated before result shapes were recorded. */
+  resultShape?: ResultShape;
+  /** Envelope keys beside `data`/`error` (e.g. `cta`, `hasMore`) that the
+   *  dispatcher drops — no caller receives them. Absent when there are none. */
+  droppedResultKeys?: string[];
 }

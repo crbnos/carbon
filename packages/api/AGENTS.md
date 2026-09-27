@@ -43,7 +43,7 @@ pnpm run check:manifest        # digest current?
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction` (re-exports `./schema` too) |
+| `.` (index) | Manifest types: `ManifestEntry`, `ToolPermission`, `Classification`, `AuthField`, `PermissionAction`, `ResultShape` (re-exports `./schema` too) |
 | `./schema` | `jsonSchema()` pass-through Standard Schema wrapper, `CarbonJsonSchemaConverter` (OpenAPI generator plugin), `CARBON_VENDOR` |
 
 ## Consumers

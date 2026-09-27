@@ -15,6 +15,12 @@
 import * as fs from "fs";
 import * as path from "path";
 import { Node, Project, type Type } from "ts-morph";
+import {
+  awaitedType,
+  classifyResultType,
+  isEnvelopeType,
+  type ResultShapeReport
+} from "./result-shape";
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -35,46 +41,50 @@ const MAX_DEPTH = 6;
 const MAX_PROPERTIES = 120;
 
 /**
- * Collections `JSON.stringify` writes as `{}` — their members are methods and
- * symbol-keyed slots, none of which reach the wire. Walking them emitted the
- * checker's per-program symbol ids (`__@toStringTag@75448`) as property names,
- * so an unrelated edit anywhere renumbered them and flipped the tool's digest.
+ * Collections whose members are methods and symbol-keyed slots. Walking them
+ * emitted the checker's per-program symbol ids (`__@toStringTag@75448`) as
+ * property names, so an unrelated edit anywhere renumbered them and flipped the
+ * tool's digest. The dispatcher serializes a Map to its entries array and a Set
+ * to an array (`toWireValue`, the same rule the HTTP OpenAPI serializer
+ * applies), so those two reflect to that wire shape; the weak collections
+ * cannot be enumerated and stay opaque.
  */
-const JSON_OPAQUE_COLLECTIONS = new Set([
-  "Map",
-  "ReadonlyMap",
-  "WeakMap",
-  "Set",
-  "ReadonlySet",
-  "WeakSet"
-]);
+const MAP_COLLECTIONS = new Set(["Map", "ReadonlyMap"]);
+/** Marks a Map's entries-array schema; mirrored in `operations.server.ts`. */
+export const MAP_ENTRIES_MARKER = "x-carbon-map-entries";
+const SET_COLLECTIONS = new Set(["Set", "ReadonlySet"]);
+const JSON_OPAQUE_COLLECTIONS = new Set(["WeakMap", "WeakSet"]);
 
 /**
  * Peel the layers between the declared return type and the payload a caller sees:
- * `Promise<PostgrestSingleResponse<T>>` and the hand-rolled
- * `Promise<{ data: T | null; error }>` both reduce to `T`.
+ * `Promise<PostgrestSingleResponse<T>>`, a returned query builder, and the
+ * hand-rolled `Promise<{ data: T | null; error }>` all reduce to `T`.
  *
- * This mirrors `dispatch.server.ts`, which unwraps the Supabase result to `data`
- * plus an optional `count` before returning it — so the schema describes what lands
- * in the response's `data`, not the driver's envelope.
+ * This mirrors the dispatcher, which unwraps an ENVELOPE (`isEnvelopeType`, the
+ * predicate the result classifier shares) to `data` plus an optional `count` — so
+ * the schema describes what lands in the response's `data`, not the driver's
+ * envelope. A `{ data, count }` read is a list here exactly as it is at runtime.
  */
 export function unwrapResponseType(type: Type, at: Node): Type {
-  let current = type;
+  let current = awaitedType(type, at);
   for (let i = 0; i < 5; i++) {
     const name =
       current.getSymbol()?.getName() ?? current.getAliasSymbol()?.getName();
     const args = current.getTypeArguments();
 
-    if ((name === "Promise" || /^Postgrest\w*Response$/.test(name ?? "")) && args.length > 0) {
+    if (/^Postgrest\w*Response$/.test(name ?? "") && args.length > 0) {
       current = args[0];
       continue;
     }
 
-    // `{ data: T | null; error: ... }` — the shape services hand-roll.
+    // An envelope, or a union whose every member is one (the success/failure pair).
+    const members = current.isUnion()
+      ? current.getUnionTypes().filter((t) => !t.isNull() && !t.isUndefined())
+      : [current];
+    // `getProperty` on a union yields the union of the members' `data` types.
     const data = current.getProperty("data");
-    if (data && current.getProperty("error")) {
-      const dataType = data.getTypeAtLocation(at);
-      current = stripNullish(dataType);
+    if (data && members.length > 0 && members.every(isEnvelopeType)) {
+      current = stripNullish(data.getTypeAtLocation(at));
       continue;
     }
 
@@ -134,6 +144,33 @@ export function typeToJsonSchema(
     const symbolName = type.getSymbol()?.getName();
     if (symbolName && JSON_OPAQUE_COLLECTIONS.has(symbolName)) {
       return { type: "object" };
+    }
+    if (symbolName && MAP_COLLECTIONS.has(symbolName)) {
+      const [key, value] = type.getTypeArguments();
+      const members = dedupe(
+        [key, value]
+          .filter((t): t is Type => !!t)
+          .map((t) => typeToJsonSchema(t, at, depth + 2, seen))
+      );
+      return {
+        type: "array",
+        description: "Map entries as [key, value] pairs",
+        // A keyed result, not a list: `isListOperation` keeps it bare over HTTP.
+        [MAP_ENTRIES_MARKER]: true,
+        items: {
+          type: "array",
+          minItems: 2,
+          maxItems: 2,
+          items: members.length === 1 ? members[0] : { anyOf: members }
+        }
+      };
+    }
+    if (symbolName && SET_COLLECTIONS.has(symbolName)) {
+      const [element] = type.getTypeArguments();
+      return {
+        type: "array",
+        items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      };
     }
 
     const key = type.getText();
@@ -246,9 +283,13 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
   return out;
 }
 
+export type ResultContract = ResultShapeReport;
+
 export interface ResponseSchemaIndex {
   /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
   get(module: string, functionName: string): JsonSchema | null;
+  /** `{module}_{fn}` → the declared result's shape and contract violations. */
+  result(module: string, functionName: string): ResultContract | null;
   readonly stats: { functions: number; derived: number; empty: number };
 }
 
@@ -282,12 +323,25 @@ export function buildResponseSchemaIndex(
   project.resolveSourceFileDependencies();
 
   const schemas = new Map<string, JsonSchema>();
+  const results = new Map<string, ResultContract>();
   const stats = { functions: 0, derived: 0, empty: 0 };
 
   for (const { mod, source } of sources) {
     for (const fn of source.getFunctions()) {
       if (!fn.isExported()) continue;
       stats.functions++;
+      try {
+        results.set(
+          `${mod}_${fn.getName()}`,
+          classifyResultType(fn.getReturnType(), fn)
+        );
+      } catch (err) {
+        results.set(`${mod}_${fn.getName()}`, {
+          shape: "unknown",
+          violations: [`result type could not be classified: ${String(err)}`],
+          extras: []
+        });
+      }
       let schema: JsonSchema;
       try {
         schema = typeToJsonSchema(unwrapResponseType(fn.getReturnType(), fn), fn);
@@ -307,6 +361,9 @@ export function buildResponseSchemaIndex(
   return {
     get(module, functionName) {
       return schemas.get(`${module}_${functionName}`) ?? null;
+    },
+    result(module, functionName) {
+      return results.get(`${module}_${functionName}`) ?? null;
     },
     stats
   };

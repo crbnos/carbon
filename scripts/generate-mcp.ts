@@ -36,10 +36,33 @@ export const DIGEST_FILE = path.join(
 export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from service files...");
 
-  const { tools: allTools, registryStats, responseStats, resolutions } =
-    await buildAllToolMetadataWithValidators({
-      onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
-    });
+  const {
+    tools: allTools,
+    resultViolations,
+    registryStats,
+    responseStats,
+    resolutions,
+  } = await buildAllToolMetadataWithValidators({
+    onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
+  });
+
+  // The result contract (scripts/lib/result-shape.ts): a service whose return
+  // value can carry a failure the dispatcher cannot see would reach every
+  // caller as success. Refuse to publish it rather than warn.
+  if (resultViolations.length > 0) {
+    console.error(
+      `\n✗ ${resultViolations.length} service function(s) break the result contract:`
+    );
+    for (const { toolName, violations } of resultViolations) {
+      for (const violation of violations) {
+        console.error(`    ${toolName}: ${violation}`);
+      }
+    }
+    console.error(
+      "  See .claude/rules/conventions-services.md → The result contract."
+    );
+    throw new Error("Service result contract violated");
+  }
 
   // No timestamp: the file must be a pure function of the sources so repeated
   // runs on an unchanged tree are byte-identical.
@@ -70,6 +93,14 @@ export async function generateToolMetadata(): Promise<void> {
   console.log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
   );
+  const dropping = allTools.filter((t) => t.droppedResultKeys?.length);
+  if (dropping.length > 0) {
+    console.warn(
+      `  ⚠ ${dropping.length} operation(s) return envelope keys the dispatcher drops: ${dropping
+        .map((t) => `${t.name} (${t.droppedResultKeys?.join(", ")})`)
+        .join("; ")}`
+    );
+  }
   if (registryStats.moduleErrors.length > 0) {
     console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
     for (const e of registryStats.moduleErrors) {

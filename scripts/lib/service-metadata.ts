@@ -1584,6 +1584,8 @@ export interface BuildOptions {
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
   responses?: ResponseSchemaIndex;
+  /** Called for every operation whose result breaks the result contract. */
+  onResultViolation?: (toolName: string, violations: string[]) => void;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -1692,6 +1694,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       }
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
+      const result = opts.responses?.result(mod, func.name) ?? null;
       const paginates = functionBodyPaginates(content, func.name);
 
       allTools.push({
@@ -1706,7 +1709,12 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         paginates,
         schema,
         ...(responseSchema ? { responseSchema } : {}),
+        ...(result ? { resultShape: result.shape } : {}),
+        ...(result?.extras.length ? { droppedResultKeys: result.extras } : {}),
       });
+      if (result?.violations.length) {
+        opts.onResultViolation?.(toolName, result.violations);
+      }
       toolCount++;
     }
 
@@ -1723,8 +1731,15 @@ export interface ValidatorResolutionRecord {
   how: ValidatorResolution;
 }
 
+export interface ResultViolationRecord {
+  toolName: string;
+  violations: string[];
+}
+
 export interface BuildWithValidatorsResult {
   tools: ManifestEntry[];
+  /** Result-contract violations; the generator refuses to write while any exist. */
+  resultViolations: ResultViolationRecord[];
   registryStats: ValidatorRegistry["stats"];
   responseStats: ResponseSchemaIndex["stats"];
   resolutions: ValidatorResolutionRecord[];
@@ -1742,11 +1757,16 @@ export async function buildAllToolMetadataWithValidators(
   const validators = await buildValidatorRegistry(MODULE_LIST);
   const responses = buildResponseSchemaIndex(MODULE_LIST);
   const resolutions: ValidatorResolutionRecord[] = [];
+  const resultViolations: ResultViolationRecord[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
     validators,
     responses,
+    onResultViolation: (toolName, violations) => {
+      resultViolations.push({ toolName, violations });
+      opts.onResultViolation?.(toolName, violations);
+    },
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);
@@ -1755,6 +1775,7 @@ export async function buildAllToolMetadataWithValidators(
 
   return {
     tools,
+    resultViolations,
     registryStats: validators.stats,
     responseStats: responses.stats,
     resolutions,

@@ -20,6 +20,9 @@ export function operationId(op: ManifestEntry): string {
   return op.name.slice(op.module.length + 1);
 }
 
+/** The response-schema marker on a Map's entries array (scripts/lib/response-schema.ts). */
+const MAP_ENTRIES_MARKER = "x-carbon-map-entries";
+
 /**
  * Whether an operation's HTTP response is the LIST envelope `{ results, count }`
  * or the bare payload.
@@ -35,8 +38,12 @@ export function operationId(op: ManifestEntry): string {
  * treated as bare — those are `any`/void shapes with no pagination.
  */
 export function isListOperation(op: ManifestEntry): boolean {
-  const type = (op.responseSchema as { type?: string | string[] } | undefined)
-    ?.type;
+  const schema = op.responseSchema as
+    | { type?: string | string[]; [MAP_ENTRIES_MARKER]?: boolean }
+    | undefined;
+  // A Map result is serialized as its entries array but is keyed, not a list.
+  if (schema?.[MAP_ENTRIES_MARKER]) return false;
+  const type = schema?.type;
   return type === "array" || (Array.isArray(type) && type.includes("array"));
 }
 

@@ -39,8 +39,24 @@ async function main(): Promise<void> {
     fs.readFileSync(DIGEST_FILE, "utf-8")
   ) as ManifestDigest;
 
-  const { tools, registryStats } = await buildAllToolMetadataWithValidators();
+  const { tools, registryStats, resultViolations } =
+    await buildAllToolMetadataWithValidators();
   const fresh = buildManifestDigest(tools);
+
+  // The same refusal `generate:mcp` makes — a digest can be current and still
+  // describe a service whose failures reach callers as success.
+  if (resultViolations.length > 0) {
+    console.error("check-manifest: service functions break the result contract:\n");
+    for (const { toolName, violations } of resultViolations) {
+      for (const violation of violations) {
+        console.error(`  ${toolName}: ${violation}`);
+      }
+    }
+    console.error(
+      "\nSee .claude/rules/conventions-services.md → The result contract."
+    );
+    process.exit(1);
+  }
 
   const diff = diffDigests(committed, fresh);
   const drifted =
