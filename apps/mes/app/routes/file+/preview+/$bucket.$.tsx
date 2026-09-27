@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { CompanyBucket } from "@carbon/files";
 import {
   effectiveExtension,
+  fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
   isUnsafeStoragePath,
@@ -41,7 +42,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // that bypass the app (API uploads): browsers outside Safari can't render
   // HEIC, so ask storage for the imgproxy JPEG rendition instead.
   const isHeicFile = effectiveType === "heic" || effectiveType === "heif";
-  let contentType = effectiveType ? getContentType(effectiveType) : undefined;
+  let contentType = getContentType(effectiveType);
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
@@ -131,13 +132,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     }
   }
 
-  const headers = new Headers({
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
-
-  if (contentType) {
-    headers.set("Content-Type", contentType);
-  }
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
 
   if (isZst) {
     // Stream the storage object through a zstd decompress transform (Node

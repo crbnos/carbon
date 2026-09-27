@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
+  fileResponseHeaders,
   getContentType,
   hasCompanyPrivateObjectPathPrefix,
   isUnsafeStoragePath,
@@ -132,9 +133,9 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     }
   }
 
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
   return new Response(fileData, { status: 200, headers });
 };
