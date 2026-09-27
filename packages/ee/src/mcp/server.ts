@@ -175,10 +175,11 @@ export async function createMcpServer<Ctx extends McpContext>(
         };
       }
 
-      // List reads apply no limit unless the caller passes one (the schema's
-      // `default: 100` is documentation, not enforcement — an argless call
-      // returned up to PostgREST's 1000-row cap). MCP-only; the other
-      // callOperation callers (HTTP, agent, workflows) are untouched.
+      // List reads apply no limit unless the caller passes one — an argless
+      // call returned up to PostgREST's 1000-row cap. The published schema
+      // now defaults limit/offset to the same values, and input validation
+      // applies those defaults for every caller; this fill also covers the
+      // list operations whose schema declares no limit (fetchAll reads).
       // Two kinds of list service (manifest `paginates`):
       // - paginating (setGenericQueryFilters/.range): inject the PAIR — its
       //   `.range()` applies only when BOTH limit and offset are integers, so

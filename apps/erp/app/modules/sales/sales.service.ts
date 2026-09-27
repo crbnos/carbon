@@ -3420,6 +3420,12 @@ export async function updateQuoteFavorite(
   }
 }
 
+/**
+ * Set a sales RFQ's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app sends null only for Closed.
+ */
 export async function updateSalesRFQStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -3474,6 +3480,12 @@ export async function updateQuoteOperationOrder(
   return Promise.all(updatePromises);
 }
 
+/**
+ * Set a quote's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app never clears it on a status change.
+ */
 export async function updateQuoteStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -5412,6 +5424,12 @@ export async function updateSalesOrderFavorite(
   }
 }
 
+/**
+ * Set a sales order's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app sends null only for Closed.
+ */
 export async function updateSalesOrderStatus(
   client: SupabaseClient<Database>,
   update: {

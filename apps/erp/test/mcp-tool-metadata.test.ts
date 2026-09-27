@@ -308,4 +308,29 @@ describe("mcp tool-metadata generator", () => {
     // Standard (`"createdBy" in`) control — unchanged, still carries the flag.
     requiresOperation("sales_upsertQuoteOperation");
   });
+
+  // A required property whose only legal value is null forces every caller to
+  // send null — `assignee: null | undefined` did that on seven status tools and
+  // cleared the assignee on every status change. The checker-backed guards live
+  // in mcp-input-schema.test.ts; this one needs only the manifest.
+  it("never requires a property whose only legal value is null", () => {
+    for (const t of tools) {
+      for (const name of t.schema.required ?? []) {
+        expect(props(t)[name]?.type, `${t.name}.${name}`).not.toBe("null");
+      }
+    }
+  });
+
+  // List operations publish their GenericQueryFilters param flat, and any
+  // published limit default is the one the MCP layer injects (it was 100).
+  it("publishes list paging flat with the MCP default limit", () => {
+    for (const t of tools) {
+      expect(props(t).args?.properties?.limit?.default, t.name).toBeUndefined();
+      const limit = props(t).limit;
+      if (!limit || limit.default === undefined) continue;
+      expect(limit.default, t.name).toBe(25);
+      expect(t.schema.required ?? [], t.name).not.toContain("limit");
+      expect(t.schema.required ?? [], t.name).not.toContain("offset");
+    }
+  });
 });

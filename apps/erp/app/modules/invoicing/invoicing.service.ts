@@ -550,6 +550,12 @@ export async function updatePurchaseInvoiceExchangeRate(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
+/**
+ * Set a purchase invoice's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app sends null on every status except Partially Paid.
+ */
 export async function updatePurchaseInvoiceStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -595,6 +601,12 @@ export async function updateSalesInvoiceExchangeRate(
   return client.from("salesInvoice").update(update).eq("id", update.id);
 }
 
+/**
+ * Set a sales invoice's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app sends null on every status except Partially Paid.
+ */
 export async function updateSalesInvoiceStatus(
   client: SupabaseClient<Database>,
   update: {

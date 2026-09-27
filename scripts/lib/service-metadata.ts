@@ -21,8 +21,16 @@ import type {
   ToolPermission,
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
+import { MCP_DEFAULT_LIMIT } from "../../packages/ee/src/mcp/format-result";
+import { findInputSchemaViolations } from "./input-schema-guards";
+import {
+  buildParamSchemaIndex,
+  type CheckedParam,
+  type ParamSchemaIndex
+} from "./param-schema";
 import {
   buildResponseSchemaIndex,
+  loadServiceProject,
   type ResponseSchemaIndex,
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
@@ -388,9 +396,16 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
         continue;
       }
       const before = stripped.substring(0, colonIdx).trim();
-      const optional = before.endsWith("?");
       const rawName = before.replace(/\?$/, "").trim();
-      const typeStr = stripped.substring(colonIdx + 1).trim();
+      // A typed default (`quantity: number = 1`) keeps its initializer out of
+      // the type — left in, `string[] = []` published an array of `{}` — and
+      // makes the param optional: the service supplies the value.
+      const declared = stripped.substring(colonIdx + 1).trim();
+      const defaultIdx = findTopLevel(declared, "=");
+      const typeStr = (
+        defaultIdx === -1 ? declared : declared.substring(0, defaultIdx)
+      ).trim();
+      const optional = before.endsWith("?") || defaultIdx !== -1;
       params.push({
         name: destructuredParamName(rawName, params),
         typeStr,
@@ -648,7 +663,7 @@ function typeToJsonSchema(
     const base: Record<string, unknown> = {
       type: "object",
       properties: {
-        limit: { type: "integer", default: 100 },
+        limit: { type: "integer", default: MCP_DEFAULT_LIMIT },
         offset: { type: "integer", default: 0 },
       },
     };
@@ -1330,21 +1345,303 @@ function generateDescription(funcName: string): string {
 // Schema building for a function
 // ---------------------------------------------------------------------------
 
+/**
+ * The checker's view of the param at position `i`, when the checker and the
+ * textual parser agree on the parameter list (they always should; a mismatch
+ * means one of them misparsed, and the textual schema then stands alone).
+ */
+function checkedParamAt(
+  func: ParsedFunction,
+  checked: CheckedParam[] | null | undefined,
+  i: number
+): CheckedParam | null {
+  if (!checked || checked.length !== func.params.length) return null;
+  const param = func.params[i];
+  const info = checked[i];
+  const destructured = param.name.startsWith("destructured");
+  return destructured || info.name === param.name ? info : null;
+}
+
+/** Optional on the wire: `?`, an initializer, or a type that admits undefined. */
+function isOptionalParam(
+  param: ParsedParam,
+  checked: CheckedParam | null | undefined
+): boolean {
+  return param.optional || Boolean(checked?.optional);
+}
+
+/** One description from the inline `/** *\/` doc and the `@param` tag. */
+function mergeDescriptions(
+  ...parts: (string | undefined)[]
+): string | undefined {
+  const unique = [
+    ...new Set(parts.map((p) => p?.trim()).filter((p): p is string => !!p))
+  ];
+  return unique.length > 0 ? unique.join(" ") : undefined;
+}
+
+/**
+ * A schema that carries no type information where the TypeScript type does:
+ * `{}` itself, or an array / union whose members are `{}`. Descriptions and
+ * defaults do not count as type information.
+ */
+export function isOpaqueSchema(schema: unknown): boolean {
+  if (!schema || typeof schema !== "object") return false;
+  const record = schema as Record<string, unknown>;
+  const typed = Object.keys(record).filter(
+    (k) => k !== "description" && k !== "default"
+  );
+  if (typed.length === 0) return true;
+  if (record.type === "array") return isOpaqueSchema(record.items ?? {});
+  if (Array.isArray(record.anyOf)) {
+    return (record.anyOf as unknown[]).some(isOpaqueSchema);
+  }
+  return false;
+}
+
+/**
+ * The published property for one positional param. The textual schema stands
+ * where it resolved; where it is opaque the checker's schema replaces it
+ * (`job: Job`, `options: AgingOptions`). Optionality, the literal default and
+ * the description always come from the checker when it has them.
+ */
+function paramProperty(
+  param: ParsedParam,
+  checked: CheckedParam | null | undefined,
+  ctx: TypeResolveContext
+): { schema: Record<string, unknown>; required: boolean } {
+  // typeToJsonSchema handles inline objects AND arrays-of-objects (`{...}[]`),
+  // checking the `[]` suffix before the `{` prefix. Calling parseInlineObjectType
+  // directly here dropped the suffix, publishing an array param as a bare object.
+  let schema = typeToJsonSchema(param.typeStr, ctx);
+  if (
+    checked &&
+    !checked.opaque &&
+    isOpaqueSchema(schema) &&
+    !isOpaqueSchema(checked.schema)
+  ) {
+    schema = structuredClone(checked.schema);
+  } else if (schema.type === "object" && schema.properties) {
+    applyCheckedFields(schema, checked);
+  }
+  if (checked && "default" in checked) schema.default = checked.default;
+  const description = mergeDescriptions(param.description, checked?.description);
+  if (description) schema.description = description;
+  return { schema, required: !isOptionalParam(param, checked) };
+}
+
+/**
+ * A flattened param that is itself optional (`args?: {…}`) makes every field
+ * optional: the caller may send nothing at all.
+ */
+function withParamOptionality(
+  schema: Record<string, unknown>,
+  param: ParsedParam,
+  checked: CheckedParam | null | undefined
+): Record<string, unknown> {
+  if (isOptionalParam(param, checked)) delete schema.required;
+  return fillOpaqueFields(schema, checked);
+}
+
+/**
+ * Replace a flattened field's `{}` with the checker's type when the checker has
+ * one — a validator field typed `z.any()` whose TypeScript type is a real shape
+ * (an annotation list, say). Nothing else about the field changes.
+ */
+function fillOpaqueFields(
+  schema: Record<string, unknown>,
+  checked: CheckedParam | null | undefined
+): Record<string, unknown> {
+  const fields = checked?.fields;
+  const properties = schema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  if (!fields || !properties) return schema;
+  for (const [name, property] of Object.entries(properties)) {
+    const field = fields[name];
+    if (
+      field &&
+      !field.opaque &&
+      isOpaqueSchema(property) &&
+      !isOpaqueSchema(field.schema)
+    ) {
+      properties[name] = {
+        ...structuredClone(field.schema),
+        ...(property.description ? { description: property.description } : {})
+      };
+    }
+  }
+  return schema;
+}
+
+/**
+ * A param whose own fields are flattened into the schema (an inline object, a
+ * named row type): a field is optional when the checker says so, an opaque
+ * field takes the checker's type, and `@param name.field` tags describe fields.
+ * Zod-typed params never reach here — their fields come from the validator.
+ */
+function withCheckedFields(
+  schema: Record<string, unknown>,
+  param: ParsedParam,
+  checked: CheckedParam | null | undefined
+): Record<string, unknown> {
+  withParamOptionality(schema, param, checked);
+  return applyCheckedFields(schema, checked);
+}
+
+/** The field half of `withCheckedFields`, for an object schema of any param. */
+function applyCheckedFields(
+  schema: Record<string, unknown>,
+  checked: CheckedParam | null | undefined
+): Record<string, unknown> {
+  if (!checked || checked.usesValidator || !checked.fields) return schema;
+  const properties = (schema.properties ?? {}) as Record<
+    string,
+    Record<string, unknown>
+  >;
+  for (const [name, property] of Object.entries(properties)) {
+    const field = checked.fields[name];
+    if (
+      field &&
+      !field.opaque &&
+      isOpaqueSchema(property) &&
+      !isOpaqueSchema(field.schema)
+    ) {
+      properties[name] = {
+        ...structuredClone(field.schema),
+        ...(property.description ? { description: property.description } : {})
+      };
+    }
+    const description = mergeDescriptions(
+      properties[name].description as string | undefined,
+      checked.fieldDescriptions[name]
+    );
+    if (description) properties[name].description = description;
+  }
+  if (Array.isArray(schema.required)) {
+    const required = (schema.required as string[]).filter(
+      (name) => !checked.fields?.[name]?.optional
+    );
+    if (required.length > 0) schema.required = required;
+    else delete schema.required;
+  }
+  return schema;
+}
+
+/** Published when a service passes its GenericQueryFilters param on. */
+const FILTERS_DESCRIPTION =
+  "Column filters, all of which must match. value is a string; for `in` and `contains` it is a comma-separated list, as the app's list views send it.";
+const SORTS_DESCRIPTION =
+  "Sort order, applied in sequence. sortBy is a column of the returned rows; `table.column` sorts by a column of an embedded table.";
+
+/**
+ * The flat schema of a list operation: its sibling params as usual, plus the
+ * GenericQueryFilters param's members, `limit`/`offset` (defaults as the MCP
+ * layer applies them), and `filters`/`sorts` when the service honours them.
+ * Nothing contributed by the GenericQueryFilters param is required — services
+ * read `search` with truthiness checks and flags with `?? false`.
+ *
+ * The param must be named `args`: that is the name the dispatcher fills with
+ * the flat body (`dispatch.server.ts`), and the legacy `{ args: {…} }` envelope
+ * is still accepted there.
+ */
+function buildListToolSchema(
+  func: ParsedFunction,
+  user: { param: ParsedParam; checked: CheckedParam | null }[],
+  ctx: TypeResolveContext
+): { schema: Record<string, unknown>; paramCount: number } {
+  const properties: Record<string, unknown> = {};
+  const required: string[] = [];
+
+  for (const { param, checked } of user) {
+    const gqf = checked?.genericQueryFilters;
+    if (!gqf) continue;
+    if (param.name !== "args") {
+      throw new Error(
+        `${func.name}: a GenericQueryFilters param must be named "args" (found "${param.name}") — the dispatcher only fills "args" from a flat body`
+      );
+    }
+    for (const [name, field] of Object.entries(gqf.members)) {
+      const description = checked.fieldDescriptions[name];
+      properties[name] = {
+        ...structuredClone(field.schema),
+        ...(description ? { description } : {})
+      };
+    }
+    properties.limit = {
+      type: "integer",
+      default: MCP_DEFAULT_LIMIT,
+      description: "Maximum number of rows to return."
+    };
+    properties.offset = {
+      type: "integer",
+      default: 0,
+      description: "Number of rows to skip."
+    };
+    if (gqf.usage.filters) {
+      const item = structuredClone(gqf.filterItem) as {
+        properties?: Record<string, Record<string, unknown>>;
+      };
+      if (item.properties?.operator) {
+        item.properties.operator = {
+          type: "string",
+          enum: ctx.filterOperators ?? []
+        };
+      }
+      properties.filters = {
+        type: "array",
+        items: item,
+        description: FILTERS_DESCRIPTION
+      };
+    }
+    if (gqf.usage.sorts) {
+      properties.sorts = {
+        type: "array",
+        items: structuredClone(gqf.sortItem),
+        description: SORTS_DESCRIPTION
+      };
+    }
+  }
+
+  // Sibling params keep their own definitions (a sibling wins a name clash:
+  // the dispatcher reads it by name, and the same body key reaches `args`).
+  for (const { param, checked } of user) {
+    if (checked?.genericQueryFilters) continue;
+    const property = paramProperty(param, checked, ctx);
+    properties[param.name] = property.schema;
+    if (property.required) required.push(param.name);
+  }
+
+  const schema: Record<string, unknown> = { type: "object", properties };
+  if (required.length > 0) schema.required = required;
+  return { schema, paramCount: Object.keys(properties).length };
+}
+
 function buildToolSchema(
   func: ParsedFunction,
   modelsContent: string | null,
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
-  const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
+  const user = func.params
+    .map((param, i) => ({ param, checked: checkedParamAt(func, ctx.checked, i) }))
+    .filter(({ param }) => !CONTEXT_PARAMS.has(param.name));
+  const userParams = user.map(({ param }) => param);
   const resolveCtx: TypeResolveContext = { ...ctx, modelsContent };
 
   if (userParams.length === 0) {
     return { schema: { type: "object", properties: {} }, paramCount: 0 };
   }
 
+  // A GenericQueryFilters param is always published flat, beside any sibling
+  // params, and nothing in it is required.
+  if (user.some(({ checked }) => checked?.genericQueryFilters)) {
+    return buildListToolSchema(func, user, resolveCtx);
+  }
+
   // Single object param — flatten its fields into the schema
   if (userParams.length === 1) {
     const param = userParams[0];
+    const checked = user[0].checked;
 
     // Check for validator reference: z.infer<typeof validatorName>. Skip when the
     // type is an inline object literal (`{ ... }`) that merely CONTAINS a nested
@@ -1403,7 +1700,10 @@ function buildToolSchema(
         );
         const schema: Record<string, unknown> = { type: "object", properties };
         if (required.length > 0) schema.required = required;
-        return { schema, paramCount: Object.keys(properties).length };
+        return {
+          schema: withParamOptionality(schema, param, checked),
+          paramCount: Object.keys(properties).length
+        };
       }
     }
 
@@ -1427,7 +1727,10 @@ function buildToolSchema(
         const propCount = Object.keys(
           (native.properties as Record<string, unknown>) || {}
         ).length;
-        return { schema: native, paramCount: propCount };
+        return {
+          schema: withParamOptionality(structuredClone(native), param, checked),
+          paramCount: propCount
+        };
       }
 
       // Fallback: parse the validator's source text. Reached when the module failed
@@ -1440,7 +1743,10 @@ function buildToolSchema(
           const propCount = Object.keys(
             (resolved.properties as Record<string, unknown>) || {}
           ).length;
-          return { schema: resolved, paramCount: propCount };
+          return {
+            schema: withParamOptionality(resolved, param, checked),
+            paramCount: propCount
+          };
         }
       }
       ctx.onResolved?.(validatorName, "unresolved");
@@ -1462,7 +1768,7 @@ function buildToolSchema(
           schema: {
             type: "object",
             properties: { [param.name]: { type: "string", enum: values } },
-            required: param.optional ? undefined : [param.name],
+            required: isOptionalParam(param, checked) ? undefined : [param.name],
           },
           paramCount: 1,
         };
@@ -1478,39 +1784,29 @@ function buildToolSchema(
         const schema: Record<string, unknown> = {
           type: "object",
           properties: { [param.name]: resolved },
-          required: param.optional ? undefined : [param.name],
+          required: isOptionalParam(param, checked) ? undefined : [param.name],
         };
         return { schema, paramCount: 1 };
       }
       const propCount = Object.keys(
         (resolved.properties as Record<string, unknown>) || {}
       ).length;
-      return { schema: resolved, paramCount: propCount };
-    }
-
-    // GenericQueryFilters
-    if (param.typeStr.includes("GenericQueryFilters")) {
-      const innerSchema = typeToJsonSchema(param.typeStr, resolveCtx);
-      const schema: Record<string, unknown> = {
-        type: "object",
-        properties: { [param.name]: innerSchema },
+      return {
+        schema: withCheckedFields(resolved, param, checked),
+        paramCount: propCount
       };
-      const propCount = Object.keys(
-        (innerSchema.properties as Record<string, unknown>) || {}
-      ).length;
-      return { schema, paramCount: propCount };
     }
 
     // Simple primitive param
-    const propSchema = typeToJsonSchema(param.typeStr, resolveCtx);
+    const { schema: propSchema, required } = paramProperty(
+      param,
+      checked,
+      resolveCtx
+    );
     const schema: Record<string, unknown> = {
       type: "object",
-      properties: {
-        [param.name]: param.description
-          ? { ...propSchema, description: param.description }
-          : propSchema,
-      },
-      required: param.optional ? undefined : [param.name],
+      properties: { [param.name]: propSchema },
+      required: required ? [param.name] : undefined,
     };
     return { schema, paramCount: 1 };
   }
@@ -1518,15 +1814,10 @@ function buildToolSchema(
   // Multiple params — each becomes a property (or flattened if inline object)
   const properties: Record<string, unknown> = {};
   const required: string[] = [];
-  for (const param of userParams) {
-    // typeToJsonSchema handles inline objects AND arrays-of-objects (`{...}[]`),
-    // checking the `[]` suffix before the `{` prefix. Calling parseInlineObjectType
-    // directly here dropped the suffix, publishing an array param as a bare object.
-    const propSchema = typeToJsonSchema(param.typeStr, resolveCtx);
-    properties[param.name] = param.description
-      ? { ...propSchema, description: param.description }
-      : propSchema;
-    if (!param.optional) required.push(param.name);
+  for (const { param, checked } of user) {
+    const property = paramProperty(param, checked, resolveCtx);
+    properties[param.name] = property.schema;
+    if (property.required) required.push(param.name);
   }
 
   const schema: Record<string, unknown> = { type: "object", properties };
@@ -1564,6 +1855,10 @@ export type ValidatorResolution = "native" | "textual" | "unresolved";
 interface SchemaBuildContext {
   module?: string;
   validators?: ValidatorRegistry;
+  /** The checker's view of this function's params (see `param-schema.ts`). */
+  checked?: CheckedParam[] | null;
+  /** The operators `getGenericFilter` accepts. */
+  filterOperators?: string[];
   /** Module-local sources for bare type-alias resolution (see `resolveTypeAlias`). */
   aliasSources?: string[];
   onResolved?: (validatorName: string, how: ValidatorResolution) => void;
@@ -1584,6 +1879,12 @@ export interface BuildOptions {
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
   responses?: ResponseSchemaIndex;
+  /**
+   * The checker's view of each function's params. Absent = textual schemas
+   * only, which is lossy (typed defaults, `T | undefined`, named types and
+   * GenericQueryFilters params all degrade) — production always passes it.
+   */
+  params?: ParamSchemaIndex;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -1679,6 +1980,8 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const { schema, paramCount } = buildToolSchema(func, modelsContent, {
         module: mod,
         validators: opts.validators,
+        checked: opts.params?.get(mod, func.name),
+        filterOperators: opts.params?.filterOperators,
         aliasSources,
         onResolved: (validatorName, how) =>
           opts.onValidatorResolved?.(toolName, validatorName, how),
@@ -1740,18 +2043,31 @@ export async function buildAllToolMetadataWithValidators(
   opts: Omit<BuildOptions, "validators"> = {}
 ): Promise<BuildWithValidatorsResult> {
   const validators = await buildValidatorRegistry(MODULE_LIST);
-  const responses = buildResponseSchemaIndex(MODULE_LIST);
+  const project = loadServiceProject(MODULE_LIST);
+  const responses = buildResponseSchemaIndex(MODULE_LIST, project);
+  const params = buildParamSchemaIndex(MODULE_LIST, project);
   const resolutions: ValidatorResolutionRecord[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
     validators,
     responses,
+    params,
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);
     },
   });
+
+  // The published input schemas must agree with the checker on optionality,
+  // typed params and list-operation shape (see `input-schema-guards.ts`). A
+  // violation fails the run rather than shipping a schema a caller cannot meet.
+  const violations = findInputSchemaViolations(tools, params);
+  if (violations.length > 0) {
+    throw new Error(
+      `${violations.length} input schema violation(s):\n  ${violations.join("\n  ")}`
+    );
+  }
 
   return {
     tools,

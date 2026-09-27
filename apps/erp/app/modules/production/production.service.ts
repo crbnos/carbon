@@ -908,10 +908,22 @@ export const getPartDocuments = async (
   return results.filter((f) => f !== null).flat();
 };
 
+/**
+ * Files attached to a job, the item it makes, and the sales order line or quote
+ * line it was created from.
+ *
+ * @param job The job's id, plus the sales order line or quote line id it was
+ *   created from when there is one, whose files are included.
+ * @param itemId The item the job makes; its files are included.
+ */
 export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
-  job: Job,
+  job: {
+    id: Job["id"];
+    salesOrderLineId?: Job["salesOrderLineId"];
+    quoteLineId?: Job["quoteLineId"];
+  },
   itemId: string
 ): Promise<StorageItem[]> {
   const itemFiles = await getPartDocuments(client, companyId, { itemId });

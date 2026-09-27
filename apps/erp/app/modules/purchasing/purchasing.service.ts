@@ -1241,6 +1241,12 @@ export async function updatePurchaseOrderFavorite(
   }
 }
 
+/**
+ * Set a purchase order's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app sends null only for Closed.
+ */
 export async function updatePurchaseOrderStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1420,6 +1426,12 @@ export async function updateSupplierQuoteFavorite(
   }
 }
 
+/**
+ * Set a supplier quote's status.
+ *
+ * @param update.assignee Omit to keep the current assignee; null clears it.
+ *   The app never clears it on a status change.
+ */
 export async function updateSupplierQuoteStatus(
   client: SupabaseClient<Database>,
   update: {

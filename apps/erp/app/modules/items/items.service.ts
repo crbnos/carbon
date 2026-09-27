@@ -916,6 +916,8 @@ export async function getItemQuantities(
  * location is in play. Zero rows are dropped — the picker renders no badge for
  * an item it has no row for, so they carry no information and are the bulk of
  * the table on a tenant with history.
+ *
+ * @param locationId A location id, or "all" to total every location in one call.
  */
 export async function getItemStockQuantitiesByLocation(
   client: SupabaseClient<Database>,

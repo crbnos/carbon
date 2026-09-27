@@ -18,6 +18,8 @@ const spies = vi.hoisted(() => ({
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
   generateInventoryCountLines: vi.fn(),
+  getInventoryItems: vi.fn(),
+  getCustomers: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
   insertIssue: vi.fn(),
@@ -42,7 +44,8 @@ vi.mock("~/modules/accounting/accounting.service", () => ({
 }));
 vi.mock("~/modules/documents/documents.service", () => ({}));
 vi.mock("~/modules/inventory/inventory.service", () => ({
-  generateInventoryCountLines: spies.generateInventoryCountLines
+  generateInventoryCountLines: spies.generateInventoryCountLines,
+  getInventoryItems: spies.getInventoryItems
 }));
 vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
@@ -67,7 +70,8 @@ vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
-  insertSalesOrder: spies.insertSalesOrder
+  insertSalesOrder: spies.insertSalesOrder,
+  getCustomers: spies.getCustomers
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 // The sales-rule gate imports `~/modules/sales/sales.server` and
@@ -871,6 +875,97 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
       errorKind: "execution",
       error: "Invalid JSON arguments"
     });
+  });
+});
+
+// List operations publish their GenericQueryFilters `args` param FLAT, beside
+// sibling params (the generator reads it from the TypeScript checker). The
+// dispatcher hands the flat body to `args`, still reads each sibling by its own
+// name, and still accepts the legacy `{ args: {...} }` envelope that the old
+// nested schema taught.
+describe("list operations with a flat GenericQueryFilters args param", () => {
+  beforeEach(() => {
+    spies.getInventoryItems.mockReset();
+    spies.getCustomers.mockReset();
+  });
+
+  it("publishes args flat, with limit defaulting to MCP_DEFAULT_LIMIT", () => {
+    const meta = operationsByName.get("inventory_getInventoryItems");
+    const properties = meta?.schema.properties as Record<string, any>;
+    expect(properties.args).toBeUndefined();
+    expect(properties.limit?.default).toBe(25);
+    expect(meta?.schema.required).toEqual(["locationId"]);
+  });
+
+  it("f1. reads a sibling scalar by name and hands the flat body to args", async () => {
+    const r = await runDispatch(
+      "inventory_getInventoryItems",
+      spies.getInventoryItems,
+      { locationId: "loc_1", search: "bolt", limit: 5 }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        "loc_1",
+        "c1",
+        { locationId: "loc_1", search: "bolt", limit: 5, companyId: "c1" }
+      ]
+    ]);
+  });
+
+  it("f2. lifts a legacy args envelope sent beside a sibling param", async () => {
+    const r = await runDispatch(
+      "inventory_getInventoryItems",
+      spies.getInventoryItems,
+      { locationId: "loc_1", args: { search: "bolt", limit: 5 } }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        "loc_1",
+        "c1",
+        { locationId: "loc_1", search: "bolt", limit: 5, companyId: "c1" }
+      ]
+    ]);
+  });
+
+  it("f3. an argless call through validation gets the published limit/offset defaults", async () => {
+    spies.getCustomers.mockResolvedValue({ data: [], error: null, count: 0 });
+    const result = await callOperation("sales_getCustomers", ctx, {});
+    expect(result.success).toBe(true);
+    expect(spies.getCustomers.mock.calls).toEqual([
+      [spies.FAKE_CLIENT, "c1", { limit: 25, offset: 0, companyId: "c1" }]
+    ]);
+  });
+
+  it("f4. a lone legacy envelope is unwrapped before validation", async () => {
+    spies.getCustomers.mockResolvedValue({ data: [], error: null, count: 0 });
+    await callOperation("sales_getCustomers", ctx, {
+      args: {
+        limit: 3,
+        filters: [{ column: "name", operator: "eq", value: "Acme" }]
+      }
+    });
+    expect(spies.getCustomers.mock.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        "c1",
+        {
+          limit: 3,
+          offset: 0,
+          filters: [{ column: "name", operator: "eq", value: "Acme" }],
+          companyId: "c1"
+        }
+      ]
+    ]);
+  });
+
+  it("f5. an unknown filter operator is rejected by validation, before the service", async () => {
+    const result = await callOperation("sales_getCustomers", ctx, {
+      filters: [{ column: "name", operator: "like", value: "Acme" }]
+    });
+    expect(result.success).toBe(false);
+    expect(spies.getCustomers).not.toHaveBeenCalled();
   });
 });
 
