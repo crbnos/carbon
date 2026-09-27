@@ -25,6 +25,9 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  documentLock: vi.fn(
+    async (..._args: unknown[]): Promise<string | null> => null
+  ),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -76,6 +79,12 @@ vi.mock("~/modules/settings/settings.service", () => ({}));
 // these golden tests pin, so stub it as "no block".
 vi.mock("./sales-rules-gate.server", () => ({
   checkSalesRulesForOperation: vi.fn(async () => null)
+}));
+// The document-lock gate reads the database and imports server-only lock
+// helpers; its decisions are pinned in document-lock-gate.test.ts. Here it is a
+// switch, so the dispatch wiring (refuse before the service runs) is testable.
+vi.mock("./document-lock-gate.server", () => ({
+  checkDocumentLocksForOperation: spies.documentLock
 }));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
@@ -159,6 +168,8 @@ const allSpies = [
 ];
 
 beforeEach(() => {
+  spies.documentLock.mockReset();
+  spies.documentLock.mockResolvedValue(null);
   for (const spy of allSpies) {
     spy.mockReset();
     spy.mockResolvedValue({ data: null, error: null });
@@ -387,6 +398,42 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
       "accounting_upsertAccount received conflicting _operation values (create, update)."
     );
+  });
+
+  it("e2. a document-lock refusal is FORBIDDEN with the route's message, before the service runs", async () => {
+    spies.documentLock.mockResolvedValueOnce(
+      "This revision is released (Production). Open a change notice to modify it."
+    );
+    const r = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      {
+        _operation: "update",
+        id: "mm_1",
+        makeMethodId: "mk_1",
+        order: 1,
+        itemType: "Part",
+        methodType: "Pull from Inventory",
+        sourcingType: "Buy",
+        quantity: 2,
+        unitOfMeasureCode: "EA"
+      }
+    );
+    expect(r.calls).toEqual([]);
+    expect(r.dispatchError).toBeInstanceOf(ORPCError);
+    expect((r.dispatchError as ORPCError<string, unknown>).code).toBe(
+      "FORBIDDEN"
+    );
+    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
+      "This revision is released (Production). Open a change notice to modify it."
+    );
+    // The gate judged the resolved positional payload the service would get.
+    const [, , functionArgs] = spies.documentLock.mock.calls[0] as [
+      unknown,
+      unknown,
+      unknown[]
+    ];
+    expect(functionArgs[1]).toMatchObject({ id: "mm_1", makeMethodId: "mk_1" });
   });
 
   it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
