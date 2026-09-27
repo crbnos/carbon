@@ -12,7 +12,11 @@ import { getLocation, setLocation } from "~/services/location.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {
+    // Switching away from a portal company must work: a user can be an
+    // employee of one company and a customer or supplier of another.
+    allowPortalAccounts: true
+  });
   const companies = await getCompanies(client, userId);
 
   if (companies.error) {

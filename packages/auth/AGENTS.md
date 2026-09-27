@@ -5,6 +5,7 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 ## Always
 
 - Gate loaders/actions with `requirePermissions(request, { view?, create?, update?, delete? })` — never construct Supabase clients directly in routes.
+- `requirePermissions` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `allowPortalAccounts: true` ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
 - API key `scopes: {}` **denies all** — never treat empty scopes as full access.

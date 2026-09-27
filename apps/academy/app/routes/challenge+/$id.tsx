@@ -24,7 +24,10 @@ interface ActionData {
 }
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, userId } = await requirePermissions(request, {
+    // Records the learner's own progress, whatever their role in the company.
+    allowPortalAccounts: true
+  });
   const formData = await request.formData();
   const reset = formData.get("reset");
 

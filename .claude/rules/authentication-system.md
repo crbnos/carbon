@@ -348,11 +348,20 @@ Supabase's `auth.mfa_factors` — no app table.
 
 ## Permissions & RLS gating (`auth.server.ts` → `requirePermissions`)
 
-`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls? })` is
+`requirePermissions(request, { view?, create?, update?, delete?, role?, bypassRls?, allowPortalAccounts? })` is
 the gate used in every loader/action. Two paths:
 
 1. **`carbon-key` header present** → API-key auth (see below).
 2. **Otherwise** → `requireAuthSession`, then `getUserClaims(userId, companyId)`.
+   - A session whose role in the active company is `customer` or `supplier` (portal
+     accounts) is refused with a 403 BEFORE the empty-requirement early exit, unless the
+     route passes `allowPortalAccounts: true`. Portal accounts hold `documents_*`,
+     `parts_view`, `sales_view`/`purchasing_view`, and `{}` admitted any session, so before
+     this ~50 routes that read with the service role (file previews, job travelers, order
+     and quote pages) served them. No route is theirs: portal pages are share links on
+     the service role. Opted in: onboarding, company switch (erp/mes/starter),
+     `api+/link.ts`, academy challenge — each acts on the user's own identity. A 403, not a
+     redirect: the MES `/x` middleware calls `requirePermissions`, so a redirect there loops.
    - Claims are `{ role, permissions }`. Cached in **Redis** (`@carbon/kv`) at key
      `permissions:${userId}`; on miss, fetched via the `get_claims(uid, company)` RPC
      (`getCarbonServiceRole`) and cached. `makePermissionsFromClaims` shapes the result.
