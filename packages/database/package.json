@@ -20,6 +20,7 @@
   "exports": {
     ".": "./src/index.ts",
     "./client": "./src/client.ts",
+    "./configuration-rule": "./src/configuration-rule.ts",
     "./datetime": "./src/datetime.ts",
     "./fetch-all": "./src/fetch-all.ts",
     "./logging": "./src/logging.ts",
@@ -60,6 +61,7 @@
   "version": "0.0.0",
   "dependencies": {
     "@internationalized/date": "catalog:",
+    "@jitl/quickjs-singlefile-browser-release-sync": "0.32.0",
     "@jsquash/jpeg": "1.6.0",
     "@jsquash/png": "3.1.1",
     "@jsquash/resize": "2.1.1",
@@ -74,6 +76,7 @@
     "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "pg": "8.20.0",
+    "quickjs-emscripten-core": "0.32.0",
     "react-pdf": "catalog:",
     "sst": "catalog:",
     "zod": "catalog:"
