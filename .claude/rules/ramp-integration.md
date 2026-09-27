@@ -58,10 +58,15 @@ providers, which own the data and mirror it out.
 >   are both REQUIRED** — a create with no contact, and one whose contact carries no
 >   email, are each rejected `422 DEVELOPER_7001 "Missing data for required field"`
 >   (verified live 2026-09-26). So when `supplier.purchasingContactId` is unset,
->   `loadSpendVendorParties` falls back to the supplier's SOLE emailable contact
->   (`pickSoleEmailableContacts`); two or more is ambiguous and refuses, exactly as the
->   counterpart ladder does. Without that fallback a supplier with one perfectly good
->   contact blocked every bill for want of a pointer field nobody knew to set.
+>   `loadSpendVendorParties` falls back to the supplier's FIRST emailable contact
+>   (`pickVendorContacts`). "First" is meaningful only because the query orders by the
+>   `supplierContact` id — without that, the contact on the Ramp vendor would flip
+>   between syncs. An earlier version demanded exactly ONE and refused when ambiguous;
+>   that blocked the push over a choice nobody had made and that a human would make
+>   arbitrarily anyway, so a vendor naming the wrong colleague beats a bill that never
+>   arrives. Setting `purchasingContactId` still overrides the fallback. Without any
+>   fallback a supplier with one perfectly good contact blocked every bill for want of
+>   a pointer field nobody knew to set.
 >   `describeMissingVendorFields` names the supplier and the specific missing field.
 >   The PREVENTIVE half is the `requireSupplierContact` company setting
 >   (`apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
