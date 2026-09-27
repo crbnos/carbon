@@ -95,7 +95,7 @@ type DrivenSyncer = {
 
 function makeSyncer(
   Syncer: typeof CreditMemoSyncer | typeof VendorCreditSyncer,
-  entityType: "creditMemo" | "vendorCredit",
+  entityType: "creditMemo" | "supplierCredit",
   db: never = makeCreditNoteDb()
 ): DrivenSyncer {
   const syncer = new Syncer({
@@ -175,7 +175,7 @@ describe("VendorCreditSyncer.mapToRemote (ACCPAYCREDIT)", () => {
   it("builds a supplier memo of 250 as an AUTHORISED ACCPAYCREDIT with one account-coded line", async () => {
     const payload = await makeSyncer(
       VendorCreditSyncer,
-      "vendorCredit"
+      "supplierCredit"
     ).mapToRemote(memo());
 
     expect(payload.Type).toBe("ACCPAYCREDIT");
@@ -206,14 +206,14 @@ describe("VendorCreditSyncer.mapToRemote (ACCPAYCREDIT)", () => {
   it("pins CurrencyRate on a foreign memo, including a 1:1 snapshot", async () => {
     const foreign = await makeSyncer(
       VendorCreditSyncer,
-      "vendorCredit"
+      "supplierCredit"
     ).mapToRemote(memo({ currencyCode: "EUR", exchangeRate: 0.8 }));
     expect(foreign.CurrencyCode).toBe("EUR");
     expect(foreign.CurrencyRate).toBe(0.8);
 
     const identity = await makeSyncer(
       VendorCreditSyncer,
-      "vendorCredit"
+      "supplierCredit"
     ).mapToRemote(memo({ currencyCode: "EUR", exchangeRate: 1 }));
     expect(identity.CurrencyRate).toBe(1);
   });
@@ -249,7 +249,7 @@ describe("shouldSync — the v1 increaser limitation", () => {
   // Task 7 step 7: the canonical rule all three providers share. Each closes
   // Skipped WITH a reason, never a silent drop and never a malformed push.
   it("skips a supplier + Credit memo (AP UP) naming the v1 limitation", () => {
-    const result = makeSyncer(VendorCreditSyncer, "vendorCredit").shouldSync(
+    const result = makeSyncer(VendorCreditSyncer, "supplierCredit").shouldSync(
       drive({
         direction: "push",
         localEntity: memo({ direction: "Credit" })
@@ -274,7 +274,7 @@ describe("shouldSync — the v1 increaser limitation", () => {
 
   it("syncs the two decreasers", () => {
     expect(
-      makeSyncer(VendorCreditSyncer, "vendorCredit").shouldSync(
+      makeSyncer(VendorCreditSyncer, "supplierCredit").shouldSync(
         drive({ direction: "push", localEntity: memo() })
       )
     ).toBe(true);
@@ -302,7 +302,7 @@ describe("shouldSync — the remaining push gates", () => {
   });
 
   it("skips a Draft memo", () => {
-    const result = makeSyncer(VendorCreditSyncer, "vendorCredit").shouldSync(
+    const result = makeSyncer(VendorCreditSyncer, "supplierCredit").shouldSync(
       drive({
         direction: "push",
         localEntity: memo({ status: "Draft" })
@@ -312,7 +312,7 @@ describe("shouldSync — the remaining push gates", () => {
   });
 
   it("parks a cross-currency application rather than guessing the allocation", () => {
-    const result = makeSyncer(VendorCreditSyncer, "vendorCredit").shouldSync(
+    const result = makeSyncer(VendorCreditSyncer, "supplierCredit").shouldSync(
       drive({
         direction: "push",
         localEntity: memo({
@@ -338,7 +338,7 @@ describe("shouldSync — the remaining push gates", () => {
   });
 
   it("parks an application carrying a discount or write-off", () => {
-    const result = makeSyncer(VendorCreditSyncer, "vendorCredit").shouldSync(
+    const result = makeSyncer(VendorCreditSyncer, "supplierCredit").shouldSync(
       drive({
         direction: "push",
         localEntity: memo({
@@ -498,7 +498,7 @@ describe("VendorCreditSyncer.upsertRemote (create once, never duplicate)", () =>
     }) as XeroCreditNoteWrite;
 
   function makeUnmappedSyncer() {
-    const syncer = makeSyncer(VendorCreditSyncer, "vendorCredit");
+    const syncer = makeSyncer(VendorCreditSyncer, "supplierCredit");
     const patched = syncer as unknown as Record<string, any>;
     patched.provider = makeProvider();
     // No applications: this drives the create path only, so no allocation and

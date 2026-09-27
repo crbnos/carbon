@@ -65,7 +65,7 @@ describe("REQUIRED_SYNC_SUBSCRIPTIONS ↔ TABLE_TO_ENTITY_MAP ↔ syncer registr
       for (const subscription of REQUIRED_SYNC_SUBSCRIPTIONS[providerId]) {
         it(`routes '${subscription.table}' to a registered syncer`, () => {
           // A table may route to several entity types (memo → creditMemo +
-          // vendorCredit, resolved per row by party). EVERY one must be
+          // supplierCredit, resolved per row by party). EVERY one must be
           // registered, or that side is a dead letter.
           const entityTypes = getEntityTypesForTable(subscription.table);
           expect(

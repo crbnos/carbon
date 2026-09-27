@@ -649,7 +649,7 @@ const SYNC_ENTITY_READABLE_ID_SOURCES: Record<
   journalEntry: { table: "journal", column: "journalEntryId" },
   // One table, two entity types — the sweep splits `memo` by party.
   creditMemo: { table: "memo", column: "memoId" },
-  vendorCredit: { table: "memo", column: "memoId" }
+  supplierCredit: { table: "memo", column: "memoId" }
 };
 
 const JOURNAL_REVERSAL_SUFFIX = ":reversal";

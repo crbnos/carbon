@@ -103,7 +103,7 @@ export const XERO_CARBON_OWNED_ENTITIES = [
   "bill",
   "charge",
   "creditMemo",
-  "vendorCredit",
+  "supplierCredit",
   "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 

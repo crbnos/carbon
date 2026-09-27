@@ -3971,8 +3971,8 @@ msgstr "Configurer les comptes par défaut pour les transactions de trésorerie 
 msgid "Configure default accounts for inventory management"
 msgstr "Configurer les comptes par défaut pour la gestion des stocks"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "Configurer les comptes par défaut pour les transactions de fournisseur et de prestataire"
+msgid "Configure default accounts for supplier transactions"
+msgstr "Configurer les comptes par défaut pour les transactions fournisseur"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "Configurer les comptes de capitaux propres et de report à nouveau par défaut"
@@ -4916,8 +4916,8 @@ msgstr "Avoir"
 msgid "Credit Memos"
 msgstr "Avoirs"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "Les avoirs et les avoirs fournisseurs sont gérés séparément des factures de vente et d'achat, de sorte que les dettes fournisseurs puissent être traitées en dehors de la synchronisation tandis que les avoirs atteignent toujours le grand livre. L'activation d'une option fait avancer les avoirs à partir de la date d'activation — l'historique existant est laissé inchangé, et son intégration nécessite un remplissage explicite."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Les avoirs fournisseur et les crédits fournisseur sont traités séparément des factures, pour que les comptes fournisseurs puissent être gérés en dehors de la synchronisation tandis que les crédits atteignent toujours le grand livre. L'activation de l'une pousse les crédits de la date d'activation vers l'avant — l'historique existant est laissé tel quel, et son rapatriement nécessite une importation rétroactive explicite."
 
 msgid "Credit representation"
 msgstr "Représentation des avoirs"
@@ -11045,6 +11045,9 @@ msgstr "Nouvelle Unité de Stockage"
 msgid "New Supplier"
 msgstr "Nouveau Fournisseur"
 
+msgid "New Supplier Credit"
+msgstr "Nouvel avoir fournisseur"
+
 msgid "New Supplier Part"
 msgstr "Nouvelle pièce fournisseur"
 
@@ -11068,9 +11071,6 @@ msgstr "Nouvelle Ligne de Transfert"
 
 msgid "New Unit of Measure"
 msgstr "Nouvelle Unité de Mesure"
-
-msgid "New Vendor Credit"
-msgstr "Nouvel Avoir Fournisseur"
 
 msgid "New Version"
 msgstr "Nouvelle Version"
@@ -12347,8 +12347,8 @@ msgstr "Autres produits"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Compte Autres produits pour les gains de change quand un paiement règle une facture en devises étrangères à un taux plus favorable"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "Compte Autres produits pour les soldes fournisseurs apurés sans paiement complet au moment du règlement des comptes fournisseurs"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "Compte Autres produits pour les soldes fournisseurs résorbés sans paiement complet du règlement des comptes fournisseurs"
 
 msgid "Other Type"
 msgstr "Autre Type"
@@ -16801,6 +16801,12 @@ msgstr "Contact fournisseur"
 msgid "Supplier Contact"
 msgstr "Contact Fournisseur"
 
+msgid "Supplier Credit"
+msgstr "Avoir fournisseur"
+
+msgid "Supplier Credits"
+msgstr "Avoirs fournisseur"
+
 msgid "Supplier ID"
 msgstr "ID Fournisseur"
 
@@ -16923,6 +16929,9 @@ msgstr "Prix unitaire du fournisseur"
 
 msgid "Supplier updated"
 msgstr "Fournisseur mis à jour"
+
+msgid "Supplier Write-Off Income"
+msgstr "Passage en perte fournisseur"
 
 msgid "Supplier:"
 msgstr "Fournisseur :"
@@ -19354,15 +19363,6 @@ msgstr "Écarts uniquement"
 
 msgid "VAT Number"
 msgstr "Numéro de TVA"
-
-msgid "Vendor Credit"
-msgstr "Avoir Fournisseur"
-
-msgid "Vendor Credits"
-msgstr "Avoirs Fournisseur"
-
-msgid "Vendor Write-Off Income"
-msgstr "Produits de passage en perte fournisseur"
 
 msgid "Verdict"
 msgstr "Verdict"

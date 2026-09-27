@@ -3971,8 +3971,8 @@ msgstr "현금 및 은행 거래에 대한 기본 계정 설정"
 msgid "Configure default accounts for inventory management"
 msgstr "재고 관리를 위한 기본 계정 설정"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "매입처/공급업체 거래에 대한 기본 계정 설정"
+msgid "Configure default accounts for supplier transactions"
+msgstr "공급업체 거래를 위한 기본 계정 설정"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "기본 자본 및 이익잉여금 계정 설정"
@@ -4916,8 +4916,8 @@ msgstr "대변전표"
 msgid "Credit Memos"
 msgstr "대변전표"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "대변전표와 공급업체 대변은 송장 및 청구서와 별도로 제어되므로 매입채무는 동기화 외부에서 처리할 수 있으며 대변은 여전히 원장에 도달합니다. 하나를 활성화하면 활성화 날짜부터 대변이 앞으로 밀립니다. 기존 이력은 그대로 유지되며, 이를 가져오려면 명시적 역채우기가 필요합니다."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "대변전표와 공급업체 크레딧이 송장 및 청구서와 별도로 게이트되므로 매입채무는 동기화 외부에서 처리할 수 있는 반면 크레딧은 원장에 도달합니다. 하나를 활성화하면 활성화 날짜부터 크레딧을 적용합니다 — 기존 이력은 그대로 두고 이를 가져오려면 명시적인 백필이 필요합니다."
 
 msgid "Credit representation"
 msgstr "신용 메모의 표시"
@@ -11045,6 +11045,9 @@ msgstr "신규 보관 단위"
 msgid "New Supplier"
 msgstr "새 공급업체"
 
+msgid "New Supplier Credit"
+msgstr "새 공급업체 크레딧"
+
 msgid "New Supplier Part"
 msgstr "새 공급업체 부품"
 
@@ -11068,9 +11071,6 @@ msgstr "신규 이송 라인"
 
 msgid "New Unit of Measure"
 msgstr "새 측정 단위"
-
-msgid "New Vendor Credit"
-msgstr "신규 공급업체 신용"
 
 msgid "New Version"
 msgstr "새 버전"
@@ -12347,8 +12347,8 @@ msgstr "영업외수익"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "지불이 외화 송장을 더 유리한 환율로 결제할 때 FX 이익에 대한 영업외수익 계정"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "전액 지불 없이 매입채무 정산 시 정산된 공급업체 잔액에 대한 영업외수익 계정"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "매입채무 결제 시 전액 지불 없이 처리된 공급업체 잔액에 대한 영업외수익 계정"
 
 msgid "Other Type"
 msgstr "기타 유형"
@@ -16801,6 +16801,12 @@ msgstr "공급업체 담당자"
 msgid "Supplier Contact"
 msgstr "공급업체 담당자"
 
+msgid "Supplier Credit"
+msgstr "공급업체 크레딧"
+
+msgid "Supplier Credits"
+msgstr "공급업체 크레딧"
+
 msgid "Supplier ID"
 msgstr "공급업체 ID"
 
@@ -16923,6 +16929,9 @@ msgstr "공급업체 단가"
 
 msgid "Supplier updated"
 msgstr "공급업체가 업데이트되었습니다"
+
+msgid "Supplier Write-Off Income"
+msgstr "공급업체 대손 처리 수익"
 
 msgid "Supplier:"
 msgstr "공급업체:"
@@ -19354,15 +19363,6 @@ msgstr "차이만"
 
 msgid "VAT Number"
 msgstr "사업자등록번호"
-
-msgid "Vendor Credit"
-msgstr "공급업체 신용"
-
-msgid "Vendor Credits"
-msgstr "공급업체 신용"
-
-msgid "Vendor Write-Off Income"
-msgstr "공급업체 대손 처리 수익"
 
 msgid "Verdict"
 msgstr "판정"

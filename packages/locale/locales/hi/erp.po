@@ -3971,8 +3971,8 @@ msgstr "नकद और बैंकिंग लेनदेन के लि�
 msgid "Configure default accounts for inventory management"
 msgstr "इन्वेंटरी प्रबंधन के लिए डिफ़ॉल्ट खाते कॉन्फ़िगर करें"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "विक्रेता और आपूर्तिकर्ता लेनदेन के लिए डिफ़ॉल्ट खाते कॉन्फ़िगर करें"
+msgid "Configure default accounts for supplier transactions"
+msgstr "आपूर्तिकर्ता लेन-देन के लिए डिफ़ॉल्ट खाते कॉन्फ़िगर करें"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "इक्विटी और प्रतिधारित आय खाते कॉन्फ़िगर करें"
@@ -4916,8 +4916,8 @@ msgstr "क्रेडिट नोट"
 msgid "Credit Memos"
 msgstr "क्रेडिट नोट्स"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "क्रेडिट नोट और विक्रेता जमा को चालानों और बिलों से अलग से नियंत्रित किया जाता है, ताकि देय राशि को सिंक के बाहर संभाला जा सके जबकि जमा अभी भी खाता बहीखाता तक पहुंचते हैं। एक को सक्षम करने से सक्षम तारीख से जमा आगे बढ़ते हैं — मौजूदा इतिहास को अकेला छोड़ दिया जाता है, और इसे लाना स्पष्ट बैकफिल की आवश्यकता है।"
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "क्रेडिट नोट और आपूर्तिकर्ता क्रेडिट को चालान और बिलों से अलग से नियंत्रित किया जाता है, ताकि देय राशि को सिंक के बाहर संभाला जा सके जबकि क्रेडिट अभी भी खाता बही तक पहुंचते हैं। एक को सक्षम करने से सक्षमता की तारीख से क्रेडिट को आगे बढ़ाया जाता है — मौजूदा इतिहास को अकेले छोड़ दिया जाता है, और इसे आगे लाने के लिए एक स्पष्ट बैकफिल की आवश्यकता होती है।"
 
 msgid "Credit representation"
 msgstr "क्रेडिट मेमो का प्रतिनिधित्व"
@@ -11045,6 +11045,9 @@ msgstr "नई भंडारण इकाई"
 msgid "New Supplier"
 msgstr "नया आपूर्तिकर्ता"
 
+msgid "New Supplier Credit"
+msgstr "नया आपूर्तिकर्ता क्रेडिट"
+
 msgid "New Supplier Part"
 msgstr "नया आपूर्तिकर्ता भाग"
 
@@ -11068,9 +11071,6 @@ msgstr "नई स्थानांतरण पंक्ति"
 
 msgid "New Unit of Measure"
 msgstr "नई माप की इकाई"
-
-msgid "New Vendor Credit"
-msgstr "नया आपूर्तिकर्ता क्रेडिट"
 
 msgid "New Version"
 msgstr "नया संस्करण"
@@ -12347,8 +12347,8 @@ msgstr "अन्य आय"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "विदेशी मुद्रा लाभ के लिए अन्य आय खाता जब कोई भुगतान विदेशी-मुद्रा चालान को अधिक अनुकूल दर पर निपटाता है"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "अन्य आय खाता विक्रेता शेष राशि के लिए जो देय खाते निपटान पर पूर्ण भुगतान के बिना स्पष्ट किए जाते हैं"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "देय खाते निपटान पर पूर्ण भुगतान के बिना समाशोधित आपूर्तिकर्ता शेष राशि के लिए अन्य आय खाता"
 
 msgid "Other Type"
 msgstr "अन्य प्रकार"
@@ -16801,6 +16801,12 @@ msgstr "आपूर्तिकर्ता संपर्क"
 msgid "Supplier Contact"
 msgstr "आपूर्तिकर्ता संपर्क"
 
+msgid "Supplier Credit"
+msgstr "आपूर्तिकर्ता क्रेडिट"
+
+msgid "Supplier Credits"
+msgstr "आपूर्तिकर्ता क्रेडिट"
+
 msgid "Supplier ID"
 msgstr "आपूर्तिकर्ता ID"
 
@@ -16923,6 +16929,9 @@ msgstr "आपूर्तिकर्ता इकाई मूल्य"
 
 msgid "Supplier updated"
 msgstr "आपूर्तिकर्ता अपडेट किया गया"
+
+msgid "Supplier Write-Off Income"
+msgstr "आपूर्तिकर्ता बट्टे खाते की आय"
 
 msgid "Supplier:"
 msgstr "आपूर्तिकर्ता:"
@@ -19354,15 +19363,6 @@ msgstr "केवल विचलन"
 
 msgid "VAT Number"
 msgstr "वैट नंबर"
-
-msgid "Vendor Credit"
-msgstr "आपूर्तिकर्ता क्रेडिट"
-
-msgid "Vendor Credits"
-msgstr "आपूर्तिकर्ता क्रेडिट्स"
-
-msgid "Vendor Write-Off Income"
-msgstr "विक्रेता बट्टे खाते आय"
 
 msgid "Verdict"
 msgstr "परिणाम"

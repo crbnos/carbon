@@ -286,9 +286,9 @@ export async function resolvePaymentJournalFamily(
 
 /**
  * Which party a memo journal belongs to. The memo's PARTY — not its direction —
- * decides whether it is gated by the Credit Memos or Vendor Credits family
+ * decides whether it is gated by the Credit Memos or Supplier Credits family
  * (`family: "per-party"` in POSTING_POLICY), so a supplier memo in the Credit
- * direction is a vendor credit, not an AR document.
+ * direction is a supplier credit, not an AR document.
  */
 export async function resolveMemoJournalParty(
   client: SupabaseClient<Database>,
@@ -502,7 +502,7 @@ export async function planJournalPostingOperation(args: {
         ? CHARGE_CREDIT_PROVIDERS.has(args.providerId)
         : false,
       creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
-      vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled,
+      supplierCreditEnabled: syncConfig.entities.supplierCredit.enabled,
       reimbursementEnabled: syncConfig.entities.reimbursement.enabled
     },
     paymentFamily,
@@ -577,7 +577,7 @@ export function planJournalPostingFromState(args: {
     chargeEnabled?: boolean;
     chargeCreditEnabled?: boolean;
     creditMemoEnabled?: boolean;
-    vendorCreditEnabled?: boolean;
+    supplierCreditEnabled?: boolean;
     reimbursementEnabled?: boolean;
   };
   paymentFamily: "ar" | "ap" | null;

@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import type { z } from "zod";
 import {
@@ -29,8 +29,9 @@ import {
   Submit
 } from "~/components/Form";
 import PaymentTerm from "~/components/Form/PaymentTerm";
-import { usePermissions, useRouteData } from "~/hooks";
-import { salesInvoiceValidator } from "~/modules/invoicing";
+import { useCompanySettings, usePermissions, useRouteData } from "~/hooks";
+import type { salesInvoiceValidator } from "~/modules/invoicing";
+import { makeSalesInvoiceValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import { isSalesInvoiceLocked } from "../../invoicing.models";
 
@@ -156,10 +157,20 @@ const SalesInvoiceForm = ({ initialValues }: SalesInvoiceFormProps) => {
     }
   };
 
+  // The contact requirement is a company setting, so the schema is built per
+  // render — that is what marks the field and puts the error on the control
+  // instead of surfacing it after a failed submit.
+  const requireCustomerContact =
+    useCompanySettings()?.requireCustomerContact === true;
+  const contactAwareValidator = useMemo(
+    () => makeSalesInvoiceValidator({ requireCustomerContact }),
+    [requireCustomerContact]
+  );
+
   return (
     <ValidatedForm
       method="post"
-      validator={salesInvoiceValidator}
+      validator={contactAwareValidator}
       defaultValues={initialValues}
       isDisabled={isEditing && isLocked}
     >

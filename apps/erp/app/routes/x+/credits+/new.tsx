@@ -14,15 +14,15 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 // One create route, two presentations. ?party (from the originating list)
-// picks the type; Vendor Credit is a supplier Debit, Credit Memo a customer
+// picks the type; Supplier Credit is a supplier Debit, Credit Memo a customer
 // Credit. The breadcrumb links back to the matching list.
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: unknown) => {
     const isVendor =
-      (data as { type?: string } | undefined)?.type === "vendorCredit";
+      (data as { type?: string } | undefined)?.type === "supplierCredit";
     return [
       isVendor
-        ? { breadcrumb: msg`Vendor Credits`, to: path.to.vendorCredits }
+        ? { breadcrumb: msg`Supplier Credits`, to: path.to.supplierCredits }
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos }
     ];
   },
@@ -38,7 +38,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const currencyCode = company.data?.baseCurrencyCode ?? "";
 
   const party = new URL(request.url).searchParams.get("party");
-  const type = party === "supplier" ? "vendorCredit" : "creditMemo";
+  const type = party === "supplier" ? "supplierCredit" : "creditMemo";
 
   return {
     type,
@@ -46,7 +46,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       memoId: "",
       // Direction follows the type and is submitted hidden by the form.
       direction:
-        type === "vendorCredit" ? ("Debit" as const) : ("Credit" as const),
+        type === "supplierCredit" ? ("Debit" as const) : ("Credit" as const),
       customerId: "",
       supplierId: "",
       memoDate: datetime
@@ -119,7 +119,7 @@ export default function NewMemoRoute() {
     <div className="max-w-4xl w-full p-2 sm:p-0 mx-auto mt-0 md:mt-8">
       <MemoForm
         initialValues={initialValues}
-        type={type === "vendorCredit" ? "vendorCredit" : "creditMemo"}
+        type={type === "supplierCredit" ? "supplierCredit" : "creditMemo"}
       />
     </div>
   );

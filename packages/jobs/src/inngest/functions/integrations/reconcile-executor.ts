@@ -69,7 +69,7 @@ const SNAPSHOT_TABLES: Record<
     table: "memo",
     columns: "id, status, direction, customerId, supplierId, updatedAt"
   },
-  vendorCredit: {
+  supplierCredit: {
     table: "memo",
     columns: "id, status, direction, customerId, supplierId, updatedAt"
   }
@@ -465,7 +465,7 @@ export async function reconcileEntities(args: {
               args.providerId as ProviderID
             ),
             creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
-            vendorCreditEnabled: syncConfig.entities.vendorCredit.enabled,
+            supplierCreditEnabled: syncConfig.entities.supplierCredit.enabled,
             reimbursementEnabled: syncConfig.entities.reimbursement.enabled
           },
           inventoryAdjustmentEnabled:

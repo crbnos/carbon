@@ -169,10 +169,13 @@ const STATUS_COLORS: Record<
  * Display labels for sync entity types (keys of the accounting sync engine's
  * ENTITY_DEFINITIONS). Kept local so this client component doesn't import
  * runtime code from @carbon/ee/accounting.
+ *
+ * The `vendor` KEY is the sync engine's, but the label is Carbon's word for
+ * the thing — the row links to `path.to.supplier`.
  */
 const ENTITY_LABELS: Record<string, string> = {
   customer: "Customer",
-  vendor: "Vendor",
+  vendor: "Supplier",
   item: "Item",
   employee: "Employee",
   purchaseOrder: "Purchase Order",
@@ -183,6 +186,8 @@ const ENTITY_LABELS: Record<string, string> = {
   inventoryAdjustment: "Inventory Adjustment",
   journalEntry: "Journal Entry",
   charge: "Card Charge",
+  creditMemo: "Credit Memo",
+  supplierCredit: "Supplier Credit",
   reimbursement: "Reimbursement"
 };
 

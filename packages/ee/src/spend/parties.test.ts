@@ -1,8 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  describeMissingVendorFields,
-  pickSoleEmailableContacts
-} from "./parties";
+import { describeMissingVendorFields, pickVendorContacts } from "./parties";
 
 const party = (
   over: Partial<Parameters<typeof describeMissingVendorFields>[0]>
@@ -21,7 +18,7 @@ const party = (
     ...over
   }) as Parameters<typeof describeMissingVendorFields>[0];
 
-describe("pickSoleEmailableContacts", () => {
+describe("pickVendorContacts", () => {
   /**
    * A spend-vendor create needs `business_vendor_contacts.email` — Ramp rejects
    * both a create with no contact and one whose contact carries no email
@@ -31,26 +28,44 @@ describe("pickSoleEmailableContacts", () => {
    * contact with an address on file.
    */
   it("uses the sole emailable contact", () => {
-    const sole = pickSoleEmailableContacts([
+    const sole = pickVendorContacts([
       { supplierId: "sup_1", email: "aosei@dsrf.com" }
     ]);
 
     expect(sole.get("sup_1")?.email).toBe("aosei@dsrf.com");
   });
 
-  it("refuses to choose between two emailable contacts", () => {
-    // Picking either would put a stranger on the vendor record at the platform.
-    const sole = pickSoleEmailableContacts([
+  it("takes the FIRST when several are emailable", () => {
+    // Deliberately not a refusal. Demanding exactly one blocked the push over a
+    // choice nobody had made, and a human picking between two colleagues would
+    // be just as arbitrary. Setting the purchasing contact overrides this.
+    const sole = pickVendorContacts([
       { supplierId: "sup_1", email: "a@dsrf.com" },
       { supplierId: "sup_1", email: "b@dsrf.com" }
     ]);
 
-    expect(sole.has("sup_1")).toBe(false);
+    expect(sole.get("sup_1")?.email).toBe("a@dsrf.com");
+  });
+
+  it("is stable under the caller's order, which is what makes FIRST meaningful", () => {
+    // The query orders by the join row's id. If the caller ever stopped, the
+    // vendor's contact at the platform would flip between syncs.
+    const forwards = pickVendorContacts([
+      { supplierId: "sup_1", email: "a@dsrf.com" },
+      { supplierId: "sup_1", email: "b@dsrf.com" }
+    ]);
+    const backwards = pickVendorContacts([
+      { supplierId: "sup_1", email: "b@dsrf.com" },
+      { supplierId: "sup_1", email: "a@dsrf.com" }
+    ]);
+
+    expect(forwards.get("sup_1")?.email).toBe("a@dsrf.com");
+    expect(backwards.get("sup_1")?.email).toBe("b@dsrf.com");
   });
 
   it("ignores contacts with no usable email, and can still find a sole one", () => {
     // Three contacts but only one reachable ⇒ unambiguous.
-    const sole = pickSoleEmailableContacts([
+    const sole = pickVendorContacts([
       { supplierId: "sup_1", email: null },
       { supplierId: "sup_1", email: "   " },
       { supplierId: "sup_1", email: "only@dsrf.com" }
@@ -60,19 +75,19 @@ describe("pickSoleEmailableContacts", () => {
   });
 
   it("keeps suppliers independent", () => {
-    const sole = pickSoleEmailableContacts([
+    const sole = pickVendorContacts([
       { supplierId: "sup_1", email: "one@a.com" },
       { supplierId: "sup_2", email: "x@b.com" },
       { supplierId: "sup_2", email: "y@b.com" }
     ]);
 
     expect(sole.get("sup_1")?.email).toBe("one@a.com");
-    expect(sole.has("sup_2")).toBe(false);
+    expect(sole.get("sup_2")?.email).toBe("x@b.com");
   });
 
   it("yields nothing when no contact is emailable", () => {
     expect(
-      pickSoleEmailableContacts([{ supplierId: "sup_1", email: null }]).size
+      pickVendorContacts([{ supplierId: "sup_1", email: null }]).size
     ).toBe(0);
   });
 });
@@ -100,14 +115,6 @@ describe("describeMissingVendorFields", () => {
 
     expect(message).toContain("a contact email");
     expect(message).toContain("a country");
-  });
-
-  it("points at the purchasing contact as the fix for ambiguity", () => {
-    // The only way a supplier WITH contacts still lacks an email here is that
-    // several were emailable and the sole-contact rule refused to choose.
-    expect(describeMissingVendorFields(party({ contact: null }))).toContain(
-      "purchasing contact"
-    );
   });
 
   it("falls back to the id when the supplier has no name", () => {

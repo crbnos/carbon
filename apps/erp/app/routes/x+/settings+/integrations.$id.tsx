@@ -1531,7 +1531,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       familyAr,
       familyAp,
       familyCreditMemo,
-      familyVendorCredit,
+      familySupplierCredit,
       periodLockPolicy,
       lockDate
     } = validation.data;
@@ -1617,7 +1617,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
             ar: familyAr,
             ap: familyAp,
             creditMemo: familyCreditMemo,
-            vendorCredit: familyVendorCredit
+            supplierCredit: familySupplierCredit
           },
           sourceTypes,
           periodLockPolicy,

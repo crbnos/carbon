@@ -3571,7 +3571,7 @@ export async function getMemos(
     counterpartyIds: string[] | null;
     // Restrict to one party. A memo carries exactly one of customerId /
     // supplierId, so the two invoicing submodules pass "customer" (Credit Memos,
-    // AR) or "supplier" (Vendor Credits, AP); null returns both parties.
+    // AR) or "supplier" (Supplier Credits, AP); null returns both parties.
     party: "customer" | "supplier" | null;
   }
 ) {

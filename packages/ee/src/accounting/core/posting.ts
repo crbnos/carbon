@@ -103,9 +103,9 @@ export type PostingSyncDocumentSyncFlags = {
   /** The `creditMemo` entity is enabled — customer memos push as the
    * provider's native customer credit instead of a journal entry. */
   creditMemoEnabled?: boolean;
-  /** The `vendorCredit` entity is enabled — supplier memos push as the
+  /** The `supplierCredit` entity is enabled — supplier memos push as the
    * provider's native vendor credit instead of a journal entry. */
-  vendorCreditEnabled?: boolean;
+  supplierCreditEnabled?: boolean;
   /** The `charge` entity is enabled — Charges push as the
    * provider's native card-charge object instead of a journal entry. */
   chargeEnabled?: boolean;
@@ -348,14 +348,14 @@ export function getJournalPostingPolicyDecision(args: {
       args.memoParty === "customer"
         ? ("creditMemo" as const)
         : args.memoParty === "supplier"
-          ? ("vendorCredit" as const)
+          ? ("supplierCredit" as const)
           : null;
 
     if (!memoFamily) {
       return {
         kind: "warn",
         code: "MEMO_PARTY_UNRESOLVED",
-        message: `Journal source type "${sourceType}" could not be resolved to a customer or supplier memo. The memo's party — not its direction — decides whether it is gated by the Credit Memos or Vendor Credits family.`
+        message: `Journal source type "${sourceType}" could not be resolved to a customer or supplier memo. The memo's party — not its direction — decides whether it is gated by the Credit Memos or Supplier Credits family.`
       };
     }
 
@@ -407,7 +407,7 @@ function decideDocumentFamily(args: {
     | "bill"
     | "payment"
     | "creditMemo"
-    | "vendorCredit"
+    | "supplierCredit"
     | "reimbursement";
   mode: PostingSyncSettings["families"]["ar"];
   docSync: PostingSyncDocumentSyncFlags;
@@ -421,8 +421,8 @@ function decideDocumentFamily(args: {
         ? args.docSync.billEnabled
         : backingEntityType === "creditMemo"
           ? args.docSync.creditMemoEnabled === true
-          : backingEntityType === "vendorCredit"
-            ? args.docSync.vendorCreditEnabled === true
+          : backingEntityType === "supplierCredit"
+            ? args.docSync.supplierCreditEnabled === true
             : backingEntityType === "reimbursement"
               ? args.docSync.reimbursementEnabled === true
               : backingEntityType === "payment"

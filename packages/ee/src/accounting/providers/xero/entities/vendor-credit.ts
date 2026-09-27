@@ -1,7 +1,7 @@
 import { type MemoDirection, XeroCreditNoteSyncerBase } from "./credit-memo";
 
 /**
- * Supplier credits (`vendorCredit`): a supplier + **Debit** memo reduces AP and
+ * Supplier credits (`supplierCredit`): a supplier + **Debit** memo reduces AP and
  * is pushed as a Xero `ACCPAYCREDIT`. A supplier + Credit memo increases AP and
  * is skipped (XERO_MEMO_INCREASER_SKIP_REASON).
  *

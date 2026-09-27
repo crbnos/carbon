@@ -116,6 +116,7 @@ export async function loadSpendVendorParties(
       .innerJoin("contact", "contact.id", "supplierContact.contactId")
       .select([
         "supplierContact.supplierId as supplierId",
+        "supplierContact.id as supplierContactId",
         "contact.email as email",
         "contact.firstName as firstName",
         "contact.lastName as lastName",
@@ -125,9 +126,15 @@ export async function loadSpendVendorParties(
       ])
       .where("supplierContact.companyId", "=", companyId)
       .where("supplierContact.supplierId", "in", withoutContact)
+      // "First" has to MEAN something. Without an explicit order Postgres may
+      // return the rows differently between runs, and the vendor's contact at
+      // the platform would flip from one person to another on an ordinary
+      // re-push. Ordering by the join row's id is stable and approximates the
+      // order they were added.
+      .orderBy("supplierContact.id")
       .execute();
 
-    for (const [supplierId, contact] of pickSoleEmailableContacts(candidates)) {
+    for (const [supplierId, contact] of pickVendorContacts(candidates)) {
       soleContactBySupplier.set(supplierId, contact);
     }
   }
@@ -196,33 +203,34 @@ export async function loadSpendVendorParties(
 }
 
 /**
- * The one contact per supplier that can stand in for an unset purchasing contact.
+ * The contact to put on the platform's vendor record when the supplier has no
+ * purchasing contact set.
  *
- * "Emailable" because a vendor create without an email is rejected outright, so a
- * contact carrying none cannot substitute. EXACTLY one, never a guess: a supplier
- * with two emailable contacts has no unambiguous answer, and picking either would
- * put a stranger on the vendor record at the platform. The caller is told to set
- * the purchasing contact instead.
+ * "Emailable" because a vendor create without an email is rejected outright
+ * (`DEVELOPER_7001 "Missing data for required field"`, verified live 2026-09-26),
+ * so a phone-only contact cannot substitute.
  *
- * Same rule as the counterpart ladder: a single match links, ambiguity refuses.
+ * With several to choose from this takes the FIRST rather than refusing. An
+ * earlier version demanded exactly one and told the caller to set the purchasing
+ * contact — correct in the abstract, but it blocked the push over a choice
+ * nobody had made and that a human would make arbitrarily anyway. A vendor
+ * record carrying the wrong colleague is a smaller problem than a bill that
+ * never arrives, and setting the purchasing contact still overrides it.
+ *
+ * Callers must supply the candidates in a STABLE order (the query orders by the
+ * join row's id) — otherwise "first" changes between runs and the vendor's
+ * contact flips on an ordinary re-push.
  */
-export function pickSoleEmailableContacts<
+export function pickVendorContacts<
   T extends { supplierId: string; email: string | null }
 >(candidates: readonly T[]): Map<string, T> {
-  const bySupplier = new Map<string, T[]>();
+  const chosen = new Map<string, T>();
   for (const candidate of candidates) {
     if (!candidate.email?.trim()) continue;
-    const list = bySupplier.get(candidate.supplierId);
-    if (list) list.push(candidate);
-    else bySupplier.set(candidate.supplierId, [candidate]);
+    if (chosen.has(candidate.supplierId)) continue;
+    chosen.set(candidate.supplierId, candidate);
   }
-
-  const sole = new Map<string, T>();
-  for (const [supplierId, list] of bySupplier) {
-    const only = list.length === 1 ? list[0] : undefined;
-    if (only) sole.set(supplierId, only);
-  }
-  return sole;
+  return chosen;
 }
 
 /**
@@ -250,5 +258,5 @@ export function describeMissingVendorFields(
     return `${who} could not be created as a Ramp vendor; see the provider error on the previous attempt`;
   }
 
-  return `${who} needs ${missing.join(" and ")} before it can be created as a Ramp vendor. If the supplier has several contacts, set its purchasing contact so Carbon knows which to use.`;
+  return `${who} needs ${missing.join(" and ")} before it can be created as a Ramp vendor.`;
 }

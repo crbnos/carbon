@@ -43,9 +43,9 @@ type MemoFormValues = z.infer<typeof memoValidator>;
 // The one memo document is presented as two forms. `type` fixes both the party
 // and the internal Credit/Debit direction, so neither is a user choice:
 //   creditMemo  → customer, direction Credit (reduces what the customer owes)
-//   vendorCredit → supplier, direction Debit  (reduces what you owe the vendor)
+//   supplierCredit → supplier, direction Debit  (reduces what you owe the vendor)
 // The direction field is hidden and the type is announced in the header.
-export type MemoType = "creditMemo" | "vendorCredit";
+export type MemoType = "creditMemo" | "supplierCredit";
 
 type MemoFormProps = {
   initialValues: MemoFormValues & { status?: string };
@@ -72,9 +72,9 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   const deleteModal = useDisclosure();
   const voidModal = useDisclosure();
 
-  const isVendor = type === "vendorCredit";
+  const isVendor = type === "supplierCredit";
   const direction: "Credit" | "Debit" = isVendor ? "Debit" : "Credit";
-  const typeLabel = isVendor ? t`Vendor Credit` : t`Credit Memo`;
+  const typeLabel = isVendor ? t`Supplier Credit` : t`Credit Memo`;
 
   return (
     <>
@@ -136,7 +136,7 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
             <CardHeader>
               <CardTitle>
                 {isVendor ? (
-                  <Trans>New Vendor Credit</Trans>
+                  <Trans>New Supplier Credit</Trans>
                 ) : (
                   <Trans>New Credit Memo</Trans>
                 )}

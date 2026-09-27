@@ -63,7 +63,7 @@ export const LEDGER_FAMILY_KEYS: readonly LedgerFamilyKey[] = [
   "ar",
   "ap",
   "creditMemo",
-  "vendorCredit"
+  "supplierCredit"
 ];
 
 export type IntegrationTopology = {

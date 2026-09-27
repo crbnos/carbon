@@ -6,6 +6,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { requiredContactField } from "~/modules/settings/party-contact";
 import { address, contact } from "~/types/validators";
 import { incoterms, itemType, taxExemptionReasons } from "../shared";
 
@@ -186,11 +187,7 @@ export function makePurchaseOrderValidator(
   if (!options.requireSupplierContact) return basePurchaseOrder;
 
   return basePurchaseOrder.extend({
-    supplierContactId: zfd.text(
-      z
-        .string({ error: "Supplier contact is required" })
-        .min(1, { message: "Supplier contact is required" })
-    )
+    supplierContactId: requiredContactField("Supplier contact")
   });
 }
 
@@ -596,37 +593,66 @@ export const supplierTypeValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-export const supplierQuoteValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    supplierQuoteId: zfd.text(z.string().optional()),
-    supplierQuoteType: z.enum(purchaseOrderTypeType, {
-      error: "Type is required"
-    }),
-    supplierId: z.string().min(1, { message: "Supplier is required" }),
-    supplierLocationId: zfd.text(z.string().optional()),
-    supplierContactId: zfd.text(z.string().optional()),
-    supplierReference: zfd.text(z.string().optional()),
-    status: z.enum(supplierQuoteStatusType).optional(),
-    notes: z.any().optional(),
-    quotedDate: zfd.text(z.string().optional()),
-    expirationDate: zfd.text(z.string().optional()),
-    currencyCode: zfd.text(z.string().optional()),
-    exchangeRate: zfd.numeric(z.number().optional()),
-    exchangeRateUpdatedAt: zfd.text(z.string().optional())
-  })
-  .refine(
-    (data) => {
-      if (data.expirationDate) {
-        return data.expirationDate >= today(getLocalTimeZone()).toString();
-      }
-      return true;
-    },
-    {
-      message: "Expiration date must be today or after",
-      path: ["expirationDate"] // path of error
-    }
-  );
+const baseSupplierQuote = z.object({
+  id: zfd.text(z.string().optional()),
+  supplierQuoteId: zfd.text(z.string().optional()),
+  supplierQuoteType: z.enum(purchaseOrderTypeType, {
+    error: "Type is required"
+  }),
+  supplierId: z.string().min(1, { message: "Supplier is required" }),
+  supplierLocationId: zfd.text(z.string().optional()),
+  supplierContactId: zfd.text(z.string().optional()),
+  supplierReference: zfd.text(z.string().optional()),
+  status: z.enum(supplierQuoteStatusType).optional(),
+  notes: z.any().optional(),
+  quotedDate: zfd.text(z.string().optional()),
+  expirationDate: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  exchangeRateUpdatedAt: zfd.text(z.string().optional())
+});
+
+/**
+ * `requireSupplierContact` is a company setting, so the schema is built per
+ * request — a zod schema cannot read the database. See `makePurchaseOrderValidator`
+ * for why this belongs in the schema rather than in the action.
+ *
+ * The expiration refinement is applied AFTER the optional extend, because
+ * `.refine()` returns a ZodEffects and ZodEffects has no `.extend()`. Building the
+ * object first and refining last keeps both rules on whichever variant is returned.
+ */
+const supplierQuoteExpirationRule = (data: { expirationDate?: string }) => {
+  if (data.expirationDate) {
+    return data.expirationDate >= today(getLocalTimeZone()).toString();
+  }
+  return true;
+};
+
+const supplierQuoteExpirationError = {
+  message: "Expiration date must be today or after",
+  path: ["expirationDate"]
+};
+
+export function makeSupplierQuoteValidator(
+  options: { requireSupplierContact?: boolean } = {}
+) {
+  // Each branch refines its OWN object. Refining a union of the two schemas does
+  // not type-check (zod's `.refine` overloads cannot resolve against a union), and
+  // `.refine()` must come last regardless: it returns a ZodEffects, which has no
+  // `.extend()`.
+  if (!options.requireSupplierContact) {
+    return baseSupplierQuote.refine(
+      supplierQuoteExpirationRule,
+      supplierQuoteExpirationError
+    );
+  }
+
+  return baseSupplierQuote
+    .extend({ supplierContactId: requiredContactField("Supplier contact") })
+    .refine(supplierQuoteExpirationRule, supplierQuoteExpirationError);
+}
+
+export const supplierQuoteValidator = makeSupplierQuoteValidator();
 
 export const supplierQuoteLineValidator = z
   .object({

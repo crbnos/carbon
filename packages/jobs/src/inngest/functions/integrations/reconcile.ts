@@ -49,7 +49,7 @@ export type ReconcileEntityType =
   | "purchaseOrder"
   | "salesOrder"
   | "creditMemo"
-  | "vendorCredit";
+  | "supplierCredit";
 
 export type ReconcileRef = {
   entityType: ReconcileEntityType;
@@ -143,7 +143,7 @@ export type ReconcileContext = {
     chargeEnabled: boolean;
     chargeCreditEnabled: boolean;
     creditMemoEnabled?: boolean;
-    vendorCreditEnabled?: boolean;
+    supplierCreditEnabled?: boolean;
     reimbursementEnabled?: boolean;
   };
   inventoryAdjustmentEnabled: boolean;

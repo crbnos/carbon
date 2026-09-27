@@ -27,7 +27,7 @@ import {
 
 /**
  * QboVendorCreditSyncer — a posted Carbon SUPPLIER `memo` → a QuickBooks
- * Online `VendorCredit` (push-only; entityType "vendorCredit"), plus one
+ * Online `VendorCredit` (push-only; entityType "supplierCredit"), plus one
  * zero-cash `BillPayment` per `invoiceSettlement` that applies it.
  *
  * The AP side is the clean one: a `VendorCredit` line is
@@ -371,6 +371,12 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
 
     let remoteId = mapping?.externalId ?? null;
     if (!remoteId) {
+      // The "vendorCredit" / "vendorCreditApply" operation strings are FROZEN,
+      // not a missed rename: they are hashed into QuickBooks' own `RequestId`,
+      // the token QBO dedupes on. Renaming them to match Carbon's entity type
+      // would change the hash, so a document created before the rename and
+      // retried after it would present a new RequestId and QBO would create a
+      // SECOND VendorCredit.
       const created = await this.qboProvider.createVendorCredit(
         data,
         buildQboRequestId(this.companyId, "vendorCredit", localId)

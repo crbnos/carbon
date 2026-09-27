@@ -66,7 +66,7 @@ export function backingEntitiesOfFamily(
   // The memo families have no static POSTING_POLICY row (their source types are
   // "per-party"), but they DO have their own entities, and delegating one means
   // Carbon stops pushing that document.
-  if (family === "creditMemo" || family === "vendorCredit") {
+  if (family === "creditMemo" || family === "supplierCredit") {
     entities.add(family as keyof GlobalSyncConfig["entities"]);
   }
 

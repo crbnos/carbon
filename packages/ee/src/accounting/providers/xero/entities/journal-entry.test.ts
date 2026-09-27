@@ -388,7 +388,7 @@ describe("resolvePostingSyncSettings", () => {
       ap: "documents",
       // Memo families are opt-in, go-forward — see PostingSyncStoredSchema.
       creditMemo: "none",
-      vendorCredit: "none"
+      supplierCredit: "none"
     });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.periodLockPolicy).toBe("park");
     expect(DEFAULT_POSTING_SYNC_SETTINGS.onUnmappedDimensionValue).toBe("warn");
@@ -432,7 +432,7 @@ describe("resolvePostingSyncSettings", () => {
       ar: "documents",
       ap: "documents",
       creditMemo: "none",
-      vendorCredit: "none"
+      supplierCredit: "none"
     });
   });
 

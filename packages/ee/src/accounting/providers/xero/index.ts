@@ -63,7 +63,7 @@ export const xeroSyncerRegistry: SyncerRegistry = {
   // journals are DOC_BACKED-excluded. Balance-INCREASING memos skip with a
   // reason (XERO_MEMO_INCREASER_SKIP_REASON) — they are not credit documents.
   creditMemo: CreditMemoSyncer,
-  vendorCredit: VendorCreditSyncer,
+  supplierCredit: VendorCreditSyncer,
 
   // Employee reimbursements as an ACCPAY invoice against an employee Contact
   // — Xero has no reimbursement object, and no way to name the AP control

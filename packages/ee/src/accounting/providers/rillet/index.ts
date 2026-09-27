@@ -58,7 +58,7 @@ export const rilletSyncerRegistry: SyncerRegistry = {
   // direction, decides which one: a customer memo is a credit memo, a
   // supplier memo a vendor credit.
   creditMemo: RilletCreditMemoSyncer,
-  vendorCredit: RilletVendorCreditSyncer,
+  supplierCredit: RilletVendorCreditSyncer,
 
   // Employee reimbursements as Rillet's NATIVE reimbursement object — the
   // one provider that has one. It names its own payable account, so Carbon's

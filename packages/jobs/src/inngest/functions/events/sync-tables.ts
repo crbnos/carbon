@@ -30,13 +30,13 @@ export const TABLE_TO_ENTITY_MAP: Partial<
  * Tables that route to MORE THAN ONE entity type, resolved per ROW.
  *
  * `memo` is the only one: a customer memo is a `creditMemo`, a supplier memo a
- * `vendorCredit`, in both directions. Direction does NOT decide it — that was the
+ * `supplierCredit`, in both directions. Direction does NOT decide it — that was the
  * misclassification bug fixed in the posting policy, and the same rule applies here.
  */
 export const MULTI_ENTITY_TABLES: Partial<
   Record<string, AccountingEntityType[]>
 > = {
-  memo: ["creditMemo", "vendorCredit"]
+  memo: ["creditMemo", "supplierCredit"]
 };
 
 /** Every entity type a table can route to. Used by the subscriptions invariant test. */
@@ -55,7 +55,7 @@ export function getEntityTypeFromTable(
     // Party, not direction. Without the row we cannot tell — return null so the
     // caller records "no entity mapping" rather than guessing a side.
     if (row?.customerId) return "creditMemo";
-    if (row?.supplierId) return "vendorCredit";
+    if (row?.supplierId) return "supplierCredit";
     return null;
   }
   return TABLE_TO_ENTITY_MAP[table] ?? null;

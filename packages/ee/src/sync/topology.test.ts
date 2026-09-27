@@ -126,9 +126,9 @@ describe("buildIntegrationTopology", () => {
           { id: "rillet", active: true },
           { id: "ramp", active: true }
         ],
-        [RILLET, spend({ ownsLedgerFamilies: ["vendorCredit"] })]
+        [RILLET, spend({ ownsLedgerFamilies: ["supplierCredit"] })]
       );
-      expect(t.ledgerOwnership.vendorCredit).toEqual({
+      expect(t.ledgerOwnership.supplierCredit).toEqual({
         kind: "external",
         integrationId: "ramp"
       });

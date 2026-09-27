@@ -38,7 +38,7 @@ export type PostingSyncSettingsValues = {
     ar: PostingSyncFamilyMode;
     ap: PostingSyncFamilyMode;
     creditMemo: PostingSyncFamilyMode;
-    vendorCredit: PostingSyncFamilyMode;
+    supplierCredit: PostingSyncFamilyMode;
   };
   sourceTypes: Record<
     string,
@@ -185,7 +185,7 @@ export function PostingSyncSettings({
     (row) => row.representation === "journal" && row.sourceType !== "Manual"
   );
   // Split by which SECTION's controls govern the row. A "per-party" row (Credit
-  // Memo / Debit Memo) is gated by the Credit Memos / Vendor Credits selects, NOT
+  // Memo / Debit Memo) is gated by the Credit Memos / Supplier Credits selects, NOT
   // by Receivables/Payables — listing it under AR/AP reads as if those selects
   // controlled it.
   const documentRows = policy.filter(
@@ -197,7 +197,7 @@ export function PostingSyncSettings({
 
   /** The select that actually governs a memo policy row, by its direction. */
   const memoRowGovernedBy = (sourceType: string) =>
-    sourceType === "Debit Memo" ? t`Vendor Credits` : t`Credit Memos`;
+    sourceType === "Debit Memo" ? t`Supplier Credits` : t`Credit Memos`;
 
   const [rowState, setRowState] = useState<Record<string, SourceTypeRowState>>(
     () =>
@@ -258,7 +258,7 @@ export function PostingSyncSettings({
         // Memo families are NOT coerced the way ar/ap are above: their default
         // is "none" (opt-in, go-forward) and that must survive to the form.
         familyCreditMemo: settings.families.creditMemo,
-        familyVendorCredit: settings.families.vendorCredit,
+        familySupplierCredit: settings.families.supplierCredit,
         periodLockPolicy: settings.periodLockPolicy,
         lockDate: settings.lockDate
       }}
@@ -404,7 +404,7 @@ export function PostingSyncSettings({
             </Subheading>
             <p className="text-xs text-muted-foreground">
               <Trans>
-                Credit memos and vendor credits are gated separately from
+                Credit memos and supplier credits are gated separately from
                 invoices and bills, so payables can be handled outside the sync
                 while credits still reach the ledger. Enabling one pushes
                 credits from the enable date forward — existing history is left
@@ -422,12 +422,12 @@ export function PostingSyncSettings({
               delegatedTo={delegatedFamilies.creditMemo}
             />
             <FamilyRepresentationField
-              family="vendorCredit"
-              name="familyVendorCredit"
-              label={t`Vendor Credits`}
+              family="supplierCredit"
+              name="familySupplierCredit"
+              label={t`Supplier Credits`}
               options={familyOptions}
               settings={settings}
-              delegatedTo={delegatedFamilies.vendorCredit}
+              delegatedTo={delegatedFamilies.supplierCredit}
             />
           </div>
           <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
@@ -438,7 +438,7 @@ export function PostingSyncSettings({
               >
                 <span className="flex-1 text-sm">{row.sourceType}</span>
                 {/* The source type is named by DIRECTION ("Debit Memo") but the
-                    control is named by what it is ("Vendor Credits"); without
+                    control is named by what it is ("Supplier Credits"); without
                     this nothing on screen connects the two. */}
                 <Badge variant="secondary">
                   {memoRowGovernedBy(row.sourceType)}

@@ -15,7 +15,7 @@ import { assertXeroMoneyPrecision } from "../serialize";
  * Xero credit notes for Carbon `memo` rows.
  *
  * This file hosts the shared Xero credit-note machinery AND the AR
- * (`creditMemo`) syncer; `./vendor-credit` is the AP (`vendorCredit`) subclass.
+ * (`creditMemo`) syncer; `./vendor-credit` is the AP (`supplierCredit`) subclass.
  * The two differ only in party, Xero `Type`, the settled-document entity type
  * and whether Xero accepts a `Reference` — everything else (line building,
  * create, allocation, recovery) is identical, so it lives once here rather

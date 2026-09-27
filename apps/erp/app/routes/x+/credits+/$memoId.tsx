@@ -30,7 +30,7 @@ export const handle: Handle = {
     )?.memo;
     return [
       memo?.supplierId
-        ? { breadcrumb: msg`Vendor Credits`, to: path.to.vendorCredits }
+        ? { breadcrumb: msg`Supplier Credits`, to: path.to.supplierCredits }
         : { breadcrumb: msg`Credit Memos`, to: path.to.creditMemos },
       { breadcrumb: memo?.memoId }
     ];
@@ -129,7 +129,7 @@ export default function MemoDetailRoute() {
     status: memo.status ?? undefined
   };
 
-  const type = memo.supplierId ? "vendorCredit" : "creditMemo";
+  const type = memo.supplierId ? "supplierCredit" : "creditMemo";
 
   return (
     <VStack spacing={4} className="p-6 max-w-6xl w-full mx-auto">

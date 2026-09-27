@@ -3971,8 +3971,8 @@ msgstr "Установить счета учета по умолчанию дл�
 msgid "Configure default accounts for inventory management"
 msgstr "Настроить счета по умолчанию для управления запасами"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "Настроить счета по умолчанию для операций с продавцом и поставщиком"
+msgid "Configure default accounts for supplier transactions"
+msgstr "Настроить счета по умолчанию для операций поставщика"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "Установить счета учета по умолчанию для собственного капитала и нераспределенной прибыли"
@@ -4916,8 +4916,8 @@ msgstr "Кредит-нота"
 msgid "Credit Memos"
 msgstr "Кредит-ноты"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "Кредит-ноты и кредиты поставщиков контролируются отдельно от счетов и счетов-фактур, так что кредиторская задолженность может обрабатываться вне синхронизации, пока кредиты по-прежнему достигают главной книги. Включение одного из них отправляет кредиты с даты включения вперед — существующая история остается нетронутой, а внедрение требует явного заполнения."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Кредит-ноты и кредиты поставщика отделены от счетов-фактур и счетов, поэтому кредиторская задолженность может обрабатываться отдельно от синхронизации, в то время как кредиты по-прежнему поступают в главную книгу. Включение одного начинает отправлять кредиты с даты включения и далее — существующие данные остаются без изменений, и для их переноса требуется явное заполнение."
 
 msgid "Credit representation"
 msgstr "Представление кредит-нот"
@@ -11045,6 +11045,9 @@ msgstr "Новая единица хранения"
 msgid "New Supplier"
 msgstr "Новый поставщик"
 
+msgid "New Supplier Credit"
+msgstr "Новый кредит поставщика"
+
 msgid "New Supplier Part"
 msgstr "Новая деталь поставщика"
 
@@ -11068,9 +11071,6 @@ msgstr "Новая Строка перемещения"
 
 msgid "New Unit of Measure"
 msgstr "Новая единица измерения"
-
-msgid "New Vendor Credit"
-msgstr "Новый кредит поставщика"
 
 msgid "New Version"
 msgstr "Новая версия"
@@ -12347,8 +12347,8 @@ msgstr "Прочие доходы"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Счет прочих доходов для обменной прибыли, когда платеж погашает счет-фактуру в иностранной валюте по более выгодному курсу"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "Счет прочих доходов для остатков поставщиков, погашенных без полной оплаты при расчете по кредиторской задолженности"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "Счет прочих доходов для остатков поставщика, погашенных без полной оплаты при расчетах по кредиторской задолженности"
 
 msgid "Other Type"
 msgstr "Другой тип"
@@ -16801,6 +16801,12 @@ msgstr "Контактное лицо поставщика"
 msgid "Supplier Contact"
 msgstr "Контактное лицо поставщика"
 
+msgid "Supplier Credit"
+msgstr "Кредит поставщика"
+
+msgid "Supplier Credits"
+msgstr "Кредиты поставщика"
+
 msgid "Supplier ID"
 msgstr "ID поставщика"
 
@@ -16923,6 +16929,9 @@ msgstr "Цена поставщика за единицу"
 
 msgid "Supplier updated"
 msgstr "Поставщик обновлен"
+
+msgid "Supplier Write-Off Income"
+msgstr "Доходы от списания поставщика"
 
 msgid "Supplier:"
 msgstr "Поставщик:"
@@ -19354,15 +19363,6 @@ msgstr "Только отклонения"
 
 msgid "VAT Number"
 msgstr "ИНН"
-
-msgid "Vendor Credit"
-msgstr "Кредит поставщика"
-
-msgid "Vendor Credits"
-msgstr "Кредиты поставщиков"
-
-msgid "Vendor Write-Off Income"
-msgstr "Доход от списания задолженности перед поставщиком"
 
 msgid "Verdict"
 msgstr "Вывод"

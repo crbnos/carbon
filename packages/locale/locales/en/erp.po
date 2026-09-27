@@ -3971,8 +3971,8 @@ msgstr "Configure default accounts for cash and bank transactions"
 msgid "Configure default accounts for inventory management"
 msgstr "Configure default accounts for inventory management"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "Configure default accounts for vendor and supplier transactions"
+msgid "Configure default accounts for supplier transactions"
+msgstr "Configure default accounts for supplier transactions"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "Configure default equity and retained earnings accounts"
@@ -4916,8 +4916,8 @@ msgstr "Credit Memo"
 msgid "Credit Memos"
 msgstr "Credit Memos"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
 
 msgid "Credit representation"
 msgstr "Credit representation"
@@ -11045,6 +11045,9 @@ msgstr "New Storage Unit"
 msgid "New Supplier"
 msgstr "New Supplier"
 
+msgid "New Supplier Credit"
+msgstr "New Supplier Credit"
+
 msgid "New Supplier Part"
 msgstr "New Supplier Part"
 
@@ -11068,9 +11071,6 @@ msgstr "New Transfer Line"
 
 msgid "New Unit of Measure"
 msgstr "New Unit of Measure"
-
-msgid "New Vendor Credit"
-msgstr "New Vendor Credit"
 
 msgid "New Version"
 msgstr "New Version"
@@ -12347,8 +12347,8 @@ msgstr "Other Income"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "Other Income account for vendor balances cleared without full payment on AP settlement"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "Other Income account for supplier balances cleared without full payment on AP settlement"
 
 msgid "Other Type"
 msgstr "Other Type"
@@ -16801,6 +16801,12 @@ msgstr "Supplier contact"
 msgid "Supplier Contact"
 msgstr "Supplier Contact"
 
+msgid "Supplier Credit"
+msgstr "Supplier Credit"
+
+msgid "Supplier Credits"
+msgstr "Supplier Credits"
+
 msgid "Supplier ID"
 msgstr "Supplier ID"
 
@@ -16923,6 +16929,9 @@ msgstr "Supplier Unit Price"
 
 msgid "Supplier updated"
 msgstr "Supplier updated"
+
+msgid "Supplier Write-Off Income"
+msgstr "Supplier Write-Off Income"
 
 msgid "Supplier:"
 msgstr "Supplier:"
@@ -19354,15 +19363,6 @@ msgstr "Variance only"
 
 msgid "VAT Number"
 msgstr "VAT Number"
-
-msgid "Vendor Credit"
-msgstr "Vendor Credit"
-
-msgid "Vendor Credits"
-msgstr "Vendor Credits"
-
-msgid "Vendor Write-Off Income"
-msgstr "Vendor Write-Off Income"
 
 msgid "Verdict"
 msgstr "Verdict"

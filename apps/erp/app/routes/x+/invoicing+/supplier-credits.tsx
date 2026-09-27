@@ -8,11 +8,11 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
-// Accounts Receivable — customer credit/debit memos. The supplier side lives in
-// supplier-credits.tsx; both read the same `memo` table, scoped by party.
+// Accounts Payable — supplier credit/debit memos. The customer side lives in
+// credit-memos.tsx; both read the same `memo` table, scoped by party.
 export const handle: Handle = {
-  breadcrumb: "Credit Memos",
-  to: path.to.creditMemos,
+  breadcrumb: "Supplier Credits",
+  to: path.to.supplierCredits,
   module: "invoicing"
 };
 
@@ -38,8 +38,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     filters = []
   } = getGenericQueryFilters(searchParams);
 
-  // The "Customer" column filter is keyed as "counterparty"; pull it out and
-  // hand it to getMemos, which applies it to customerId. The rest pass through.
+  // The "Supplier" column filter is keyed as "counterparty"; pull it out and
+  // hand it to getMemos, which applies it to supplierId. The rest pass through.
   const counterpartyIds = filters
     .filter((f) => f.column === "counterparty")
     .flatMap((f) => (f.value ?? "").split(","))
@@ -50,7 +50,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     search,
     direction,
     status,
-    party: "customer",
+    party: "supplier",
     counterpartyIds: counterpartyIds.length > 0 ? counterpartyIds : null,
     limit,
     offset,
@@ -61,7 +61,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (memos.error) {
     throw redirect(
       path.to.invoicing,
-      await flash(request, error(memos.error, "Failed to fetch credit memos"))
+      await flash(
+        request,
+        error(memos.error, "Failed to fetch supplier credits")
+      )
     );
   }
 
@@ -71,7 +74,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   };
 }
 
-export default function CreditMemosRoute() {
+export default function SupplierCreditsRoute() {
   const { count, memos } = useLoaderData<typeof loader>();
-  return <MemosTable data={memos} count={count} party="customer" />;
+  return <MemosTable data={memos} count={count} party="supplier" />;
 }

@@ -3,7 +3,8 @@ import {
   hasEmailableContact,
   isEmailableContact,
   PARTY_CONTACT_SETTING,
-  partyContactRequiredMessage
+  partyContactRequiredMessage,
+  requiredContactField
 } from "./party-contact";
 
 describe("isEmailableContact", () => {
@@ -78,5 +79,30 @@ describe("partyContactRequiredMessage", () => {
     expect(partyContactRequiredMessage("supplier", "Acme")).toContain(
       "settings"
     );
+  });
+});
+
+describe("requiredContactField", () => {
+  /**
+   * One phrasing for all six documents, and the reason it is a helper rather than
+   * five copies: the message a user sees for a missing purchase-order contact and
+   * a missing sales-invoice contact should not drift apart.
+   */
+  it("rejects absent and empty values with a named message", () => {
+    const schema = requiredContactField("Supplier contact");
+
+    for (const value of [undefined, "", "   "]) {
+      const result = schema.safeParse(value);
+      expect(result.success).toBe(false);
+      expect(JSON.stringify(result.error?.issues)).toContain(
+        "Supplier contact is required"
+      );
+    }
+  });
+
+  it("accepts a real id", () => {
+    expect(
+      requiredContactField("Customer contact").safeParse("cnt_1").success
+    ).toBe(true);
   });
 });

@@ -60,9 +60,9 @@ export const qboSyncerRegistry: SyncerRegistry = {
   // Memo credits (posted `memo` rows) as native QBO credit documents:
   // a CUSTOMER memo -> CreditMemo, a SUPPLIER memo -> VendorCredit. Both are
   // push-only and gated by their own posting-sync family (creditMemo /
-  // vendorCredit), which default to "none".
+  // supplierCredit), which default to "none".
   creditMemo: QboCreditMemoSyncer,
-  vendorCredit: QboVendorCreditSyncer,
+  supplierCredit: QboVendorCreditSyncer,
 
   // Employee reimbursements as a Bill against an employee VENDOR — QBO has
   // no native reimbursement object. `APAccountRef` carries Carbon's

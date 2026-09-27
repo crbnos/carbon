@@ -20,7 +20,7 @@ import {
 
 /**
  * RilletVendorCreditSyncer — a Carbon supplier + Debit `memo` → a Rillet
- * vendor credit (push-only, create-only; entityType "vendorCredit").
+ * vendor credit (push-only, create-only; entityType "supplierCredit").
  *
  * A vendor credit is what a supplier debit memo IS: the AP balance comes
  * down and the offset is the memo's reason account. Rillet's
@@ -308,7 +308,7 @@ export class RilletVendorCreditSyncer extends RilletTransactionSyncer<
 
   /**
    * Carbon purchase-invoice id → Rillet bill id for every document this memo
-   * is applied to, JIT-syncing any that is not linked yet (`vendorCredit`
+   * is applied to, JIT-syncing any that is not linked yet (`supplierCredit`
    * declares `dependsOn: ['vendor','bill']` for exactly this).
    */
   private async resolveBillRemoteIds(

@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -31,9 +31,18 @@ import {
   Submit
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
+import {
+  useCompanySettings,
+  usePermissions,
+  useRouteData,
+  useUser
+} from "~/hooks";
+import { makeSalesOrderValidator } from "~/modules/sales";
 import { path } from "~/utils/path";
-import { isSalesOrderLocked, salesOrderValidator } from "../../sales.models";
+import {
+  isSalesOrderLocked,
+  type salesOrderValidator
+} from "../../sales.models";
 
 type SalesOrderFormValues = z.infer<typeof salesOrderValidator>;
 
@@ -121,11 +130,21 @@ const SalesOrderForm = ({ initialValues }: SalesOrderFormProps) => {
     }
   };
 
+  // The contact requirement is a company setting, so the schema is built per
+  // render — that is what marks the field and puts the error on the control
+  // instead of surfacing it after a failed submit.
+  const requireCustomerContact =
+    useCompanySettings()?.requireCustomerContact === true;
+  const contactAwareValidator = useMemo(
+    () => makeSalesOrderValidator({ requireCustomerContact }),
+    [requireCustomerContact]
+  );
+
   return (
     <Card>
       <ValidatedForm
         method="post"
-        validator={salesOrderValidator}
+        validator={contactAwareValidator}
         defaultValues={initialValues}
         isDisabled={isEditing && isLocked}
       >

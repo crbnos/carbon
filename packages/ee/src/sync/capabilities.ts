@@ -80,7 +80,7 @@ export type SpendCapabilities = SharedCapabilities & {
 };
 
 /** The families a company can delegate: the keys of `postingSync.families`. */
-export type LedgerFamilyKey = "ar" | "ap" | "creditMemo" | "vendorCredit";
+export type LedgerFamilyKey = "ar" | "ap" | "creditMemo" | "supplierCredit";
 
 export type SyncProviderCapabilities =
   | AccountingCapabilities

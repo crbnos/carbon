@@ -131,7 +131,7 @@ describe("SyncFactory", () => {
       inventoryAdjustment: InventoryAdjustmentSyncer,
       journalEntry: JournalEntrySyncer,
       creditMemo: XeroCreditMemoSyncer,
-      vendorCredit: XeroVendorCreditSyncer,
+      supplierCredit: XeroVendorCreditSyncer,
       reimbursement: XeroReimbursementSyncer,
       // Phase 3: pull-only Xero payment sync-back (ACCREC → AR, ACCPAY → AP)
       payment: XeroPaymentSyncer
@@ -176,7 +176,7 @@ describe("SyncFactory", () => {
       purchaseOrder: QboPurchaseOrderSyncer,
       journalEntry: QboJournalEntrySyncer,
       creditMemo: QboCreditMemoSyncer,
-      vendorCredit: QboVendorCreditSyncer,
+      supplierCredit: QboVendorCreditSyncer,
       reimbursement: QboReimbursementSyncer,
       payment: QboPaymentSyncer
     });
@@ -217,7 +217,7 @@ describe("SyncFactory", () => {
         "payment",
         "reimbursement",
         "vendor",
-        "vendorCredit"
+        "supplierCredit"
       ].sort()
     );
   });

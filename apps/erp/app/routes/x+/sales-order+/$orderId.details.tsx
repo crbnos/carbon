@@ -16,7 +16,7 @@ import {
   getSalesOrderPayment,
   getSalesOrderShipment,
   isSalesOrderLocked,
-  salesOrderValidator,
+  makeSalesOrderValidator,
   updateSalesOrder
 } from "~/modules/sales";
 import {
@@ -30,6 +30,7 @@ import {
   SalesOrderSummary
 } from "~/modules/sales/ui/SalesOrder";
 import type { SalesOrderShipmentFormRef } from "~/modules/sales/ui/SalesOrder/SalesOrderShipmentForm";
+import { getCompanySettings } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -107,12 +108,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales order. Reopen it first."
   });
 
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "sales"
   });
 
   const formData = await request.formData();
-  const validation = await validator(salesOrderValidator).validate(formData);
+  const validation = await validator(
+    makeSalesOrderValidator({
+      requireCustomerContact:
+        (await getCompanySettings(client, companyId)).data
+          ?.requireCustomerContact === true
+    })
+  ).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

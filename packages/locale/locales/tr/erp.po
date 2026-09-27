@@ -3971,8 +3971,8 @@ msgstr "Nakit ve banka işlemleri için varsayılan hesapları yapılandırın"
 msgid "Configure default accounts for inventory management"
 msgstr "Envanter yönetimi için varsayılan hesapları yapılandırın"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "Satıcı ve tedarikçi işlemleri için varsayılan hesapları yapılandırın"
+msgid "Configure default accounts for supplier transactions"
+msgstr "Tedarikçi işlemleri için varsayılan hesapları yapılandırın"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "Varsayılan Özkaynak ve Dağıtılmamış kârlar hesaplarını yapılandırın"
@@ -4916,8 +4916,8 @@ msgstr "Alacak dekontu"
 msgid "Credit Memos"
 msgstr "Alacak Dekontları"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "Alacak dekontları ve satıcı alacakları faturalar ve faturalardan ayrı olarak kontrol edilir, böylece borçlar senkronizasyon dışında işlenebilir ve alacaklar yine de deftere ulaşabilir. Birini etkinleştirmek, etkinleştirme tarihinden itibaren alacakları ileri taşır — mevcut geçmiş olduğu gibi bırakılır ve bunu getirmek açık bir geri doldurma gerektirir."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Alacak dektontları ve tedarikçi kredileri, faturalar ve senetlerden ayrı olarak kontrol edilir; böylece borçlar senkronizasyon dışında yönetilebilirken krediler yine de muhasebe defterine ulaşabilir. Birini etkinleştirmek, kredileri etkinleştirme tarihinden itibaren ileriye doğru gönderir — mevcut geçmiş olduğu gibi kalır ve bunu taşımak açık bir geri doldurma gerektirir."
 
 msgid "Credit representation"
 msgstr "Alacak dekontlarının gösterimi"
@@ -11045,6 +11045,9 @@ msgstr "Yeni Depolama Birimi"
 msgid "New Supplier"
 msgstr "Yeni Tedarikçi"
 
+msgid "New Supplier Credit"
+msgstr "Yeni Tedarikçi Kredisi"
+
 msgid "New Supplier Part"
 msgstr "Yeni Tedarikçi Parçası"
 
@@ -11068,9 +11071,6 @@ msgstr "Yeni Transfer Satırı"
 
 msgid "New Unit of Measure"
 msgstr "Yeni Bir Ölçü Birimi"
-
-msgid "New Vendor Credit"
-msgstr "Yeni Tedarikçi Alacağı"
 
 msgid "New Version"
 msgstr "Yeni Sürüm"
@@ -12347,8 +12347,8 @@ msgstr "Diğer Gelir"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Bir ödeme yabancı para birimindeki bir faturayı daha uygun bir oranda kapatırken FX kazançları için Diğer Gelir hesabı"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "Tam ödeme yapılmaksızın Borç hesapları mutabakatında kapatılan satıcı bakiyeleri için Diğer gelirler hesabı"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "Borç hesapları uzlaştırmasında tam ödeme yapılmadan temizlenen tedarikçi bakiyeleri için Diğer gelirler hesabı"
 
 msgid "Other Type"
 msgstr "Diğer Tür"
@@ -16801,6 +16801,12 @@ msgstr "tedarikçi ilgili kişisi"
 msgid "Supplier Contact"
 msgstr "Tedarikçi İlgili Kişisi"
 
+msgid "Supplier Credit"
+msgstr "Tedarikçi Kredisi"
+
+msgid "Supplier Credits"
+msgstr "Tedarikçi Kredileri"
+
 msgid "Supplier ID"
 msgstr "Tedarikçi Kimliği"
 
@@ -16923,6 +16929,9 @@ msgstr "Tedarikçi Birim Fiyatı"
 
 msgid "Supplier updated"
 msgstr "Tedarikçi güncellendi"
+
+msgid "Supplier Write-Off Income"
+msgstr "Tedarikçi Kayıttan Düşme Geliri"
 
 msgid "Supplier:"
 msgstr "Tedarikçi:"
@@ -19354,15 +19363,6 @@ msgstr "Yalnızca sapma"
 
 msgid "VAT Number"
 msgstr "Vergi numarası"
-
-msgid "Vendor Credit"
-msgstr "Tedarikçi Alacağı"
-
-msgid "Vendor Credits"
-msgstr "Tedarikçi Alacakları"
-
-msgid "Vendor Write-Off Income"
-msgstr "Tedarikçi Kayıttan Düşme Geliri"
 
 msgid "Verdict"
 msgstr "Sonuç"

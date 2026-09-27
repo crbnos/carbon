@@ -3971,8 +3971,8 @@ msgstr "現金と銀行取引のデフォルトアカウントを構成"
 msgid "Configure default accounts for inventory management"
 msgstr "在庫管理のデフォルトアカウントを構成する"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "ベンダーおよび仕入先取引のデフォルトアカウントを構成"
+msgid "Configure default accounts for supplier transactions"
+msgstr "仕入先取引のデフォルト勘定科目を設定"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "純資産および利益剰余金のデフォルトアカウントを構成"
@@ -4916,8 +4916,8 @@ msgstr "クレジットメモ"
 msgid "Credit Memos"
 msgstr "クレジットメモ"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "クレジットメモと仕入先クレジットは請求書から個別にゲートされているため、買掛金は同期の外で処理でき、クレジットメモは依然として帳簿に反映されます。1つを有効にすると、有効日からクレジットが先に進みます。既存の履歴はそのままにされ、その取り込みには明示的なバックフィルが必要です。"
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "クレジットメモと仕入先クレジットの同期は請求書の同期とは別々に制御されるため、買掛金は同期の外で処理できる一方、これらは台帳に記録されます。いずれかを有効化すると、有効化日以降のクレジットがプッシュされます。既存の履歴はそのままで、これを取り込むには明示的なバックフィルが必要です。"
 
 msgid "Credit representation"
 msgstr "クレジット・メモの表示"
@@ -11045,6 +11045,9 @@ msgstr "新しい保管ユニット"
 msgid "New Supplier"
 msgstr "新規仕入先"
 
+msgid "New Supplier Credit"
+msgstr "新しい仕入先クレジット"
+
 msgid "New Supplier Part"
 msgstr "新規仕入先部品"
 
@@ -11068,9 +11071,6 @@ msgstr "新規転送明細"
 
 msgid "New Unit of Measure"
 msgstr "新しい測定単位"
-
-msgid "New Vendor Credit"
-msgstr "新規仕入先クレジット"
 
 msgid "New Version"
 msgstr "新しいバージョン"
@@ -12347,8 +12347,8 @@ msgstr "営業外収益"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "支払が外貨請求書をより有利なレートで決済する場合の為替差益のための営業外収益勘定"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "買掛金決済で全額支払いなしに仕入先残高がクリアされる場合の営業外収益勘定"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "買掛金決済時に全額支払なしで消去された仕入先の残高に対する営業外収益勘定科目"
 
 msgid "Other Type"
 msgstr "その他のタイプ"
@@ -16801,6 +16801,12 @@ msgstr "仕入先担当者"
 msgid "Supplier Contact"
 msgstr "仕入先担当者"
 
+msgid "Supplier Credit"
+msgstr "仕入先クレジット"
+
+msgid "Supplier Credits"
+msgstr "仕入先クレジット"
+
 msgid "Supplier ID"
 msgstr "仕入先ID"
 
@@ -16923,6 +16929,9 @@ msgstr "仕入先単価"
 
 msgid "Supplier updated"
 msgstr "仕入先が更新されました"
+
+msgid "Supplier Write-Off Income"
+msgstr "仕入先償却収益"
 
 msgid "Supplier:"
 msgstr "仕入先："
@@ -19354,15 +19363,6 @@ msgstr "差異のみ"
 
 msgid "VAT Number"
 msgstr "VAT番号"
-
-msgid "Vendor Credit"
-msgstr "仕入先クレジット"
-
-msgid "Vendor Credits"
-msgstr "仕入先クレジット"
-
-msgid "Vendor Write-Off Income"
-msgstr "仕入先償却収益"
 
 msgid "Verdict"
 msgstr "判定"

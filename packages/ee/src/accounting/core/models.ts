@@ -148,7 +148,7 @@ export const ENTITY_DEFINITIONS: Record<
     ]
   },
   vendor: {
-    label: "Vendors",
+    label: "Suppliers",
     type: "master",
     supportedDirections: [
       "two-way",
@@ -226,8 +226,8 @@ export const ENTITY_DEFINITIONS: Record<
     dependsOn: ["customer", "invoice"],
     supportedDirections: ["push-to-accounting"]
   },
-  vendorCredit: {
-    label: "Vendor Credits",
+  supplierCredit: {
+    label: "Supplier Credits",
     type: "transaction",
     dependsOn: ["vendor", "bill"],
     supportedDirections: ["push-to-accounting"]
@@ -307,7 +307,7 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       direction: "push-to-accounting",
       owner: "carbon"
     },
-    vendorCredit: {
+    supplierCredit: {
       enabled: false,
       direction: "push-to-accounting",
       owner: "carbon"
@@ -346,7 +346,7 @@ export type PostingSourceFamily =
   | "per-line"
   /**
    * Resolved per journal from the MEMO'S PARTY, not its direction: a customer
-   * memo is gated by `creditMemo`, a supplier memo by `vendorCredit`, in both
+   * memo is gated by `creditMemo`, a supplier memo by `supplierCredit`, in both
    * directions. Direction alone would misfile the two "crossing" combos
    * (supplier+Credit, customer+Debit).
    */
@@ -367,7 +367,7 @@ export type PostingPolicyEntry = {
     | "bill"
     | "payment"
     | "creditMemo"
-    | "vendorCredit"
+    | "supplierCredit"
     | "reimbursement"
     /** Resolved from the memo's party at decision time. */
     | "per-party"
@@ -516,7 +516,7 @@ export const POSTING_POLICY: Record<
   "Credit Memo": {
     representation: "document",
     // Party-resolved, NOT direction-resolved — a supplier memo in the Credit
-    // direction is a vendor credit, not an AR document.
+    // direction is a supplier credit, not an AR document.
     family: "per-party",
     backingEntityType: "per-party",
     defaultEnabled: false,
@@ -662,7 +662,10 @@ const PostingSyncSourceTypeConfigSchema = z.object({
 
 /**
  * Upgrade a stored v2 posting-sync fragment (flat `sourceTypes: string[]`,
- * global `consolidation`, `includeManual`) to the v3 per-source-type shape.
+ * global `consolidation`, `includeManual`) to the v3 per-source-type shape,
+ * and carry the pre-rename `families.vendorCredit` key onto
+ * `families.supplierCredit`.
+ *
  * Behavior parity: the v2 enabled set carries over exactly, the global
  * consolidation becomes every type's granularity, and `includeManual` maps
  * to `sourceTypes.Manual.enabled`. v3 fragments pass through untouched.
@@ -670,7 +673,32 @@ const PostingSyncSourceTypeConfigSchema = z.object({
  */
 function normalizeStoredPostingSyncSettings(raw: unknown): unknown {
   if (typeof raw !== "object" || raw === null) return raw;
-  const record = raw as Record<string, unknown>;
+  let record = raw as Record<string, unknown>;
+
+  // `vendorCredit` → `supplierCredit` (Carbon says supplier; only the
+  // providers say vendor). The migration rewrites every stored row, so this
+  // only has to catch one written by an instance still running the old code
+  // during the deploy window. It matters because the key DEFAULTS to "none":
+  // a dropped value does not fail, it silently stops pushing supplier credits
+  // for a company that had turned them on.
+  const families = record.families;
+  if (
+    typeof families === "object" &&
+    families !== null &&
+    "vendorCredit" in families
+  ) {
+    const { vendorCredit, ...rest } = families as Record<string, unknown>;
+    record = {
+      ...record,
+      families: {
+        ...rest,
+        // A value already under the new key wins — it is the newer write.
+        supplierCredit:
+          (rest as { supplierCredit?: unknown }).supplierCredit ?? vendorCredit
+      }
+    };
+    raw = record;
+  }
 
   const isV2 =
     Array.isArray(record.sourceTypes) ||
@@ -729,13 +757,13 @@ const PostingSyncStoredSchema = z.object({
       // those credits in the provider, so pushing history would double-count.
       // Opt-in, go-forward (set syncFromDate on first enable).
       creditMemo: PostingSyncFamilyModeSchema.default("none"),
-      vendorCredit: PostingSyncFamilyModeSchema.default("none")
+      supplierCredit: PostingSyncFamilyModeSchema.default("none")
     })
     .default({
       ar: "documents",
       ap: "documents",
       creditMemo: "none",
-      vendorCredit: "none"
+      supplierCredit: "none"
     }),
   /** Partial per-source-type overrides; missing entries fill from POSTING_POLICY. */
   sourceTypes: z
@@ -870,7 +898,7 @@ export const SyncConfigSchema = z
         journalEntry: createEntityConfigSchema().optional(),
         charge: createEntityConfigSchema().optional(),
         creditMemo: createEntityConfigSchema().optional(),
-        vendorCredit: createEntityConfigSchema().optional(),
+        supplierCredit: createEntityConfigSchema().optional(),
         reimbursement: createEntityConfigSchema().optional()
       })
       .optional()

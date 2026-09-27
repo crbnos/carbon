@@ -196,7 +196,7 @@ const AccountDefaultsForm = ({
       {
         id: "payables",
         title: t`Accounts Payable`,
-        description: t`Configure default accounts for vendor and supplier transactions`,
+        description: t`Configure default accounts for supplier transactions`,
         fields: [
           {
             name: "payablesAccount",
@@ -220,8 +220,8 @@ const AccountDefaultsForm = ({
           },
           {
             name: "supplierWriteOffAccount",
-            label: t`Vendor Write-Off Income`,
-            description: t`Other Income account for vendor balances cleared without full payment on AP settlement`,
+            label: t`Supplier Write-Off Income`,
+            description: t`Other Income account for supplier balances cleared without full payment on AP settlement`,
             badgeType: "Revenue"
           },
           {

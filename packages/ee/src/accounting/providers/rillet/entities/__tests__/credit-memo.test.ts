@@ -422,7 +422,7 @@ describe("RilletVendorCreditSyncer", () => {
     const syncer = new RilletVendorCreditSyncer({
       database: {} as never,
       companyId: "company-1",
-      entityType: "vendorCredit",
+      entityType: "supplierCredit",
       config: {
         enabled: true,
         direction: "push-to-accounting",

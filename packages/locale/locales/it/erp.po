@@ -3971,8 +3971,8 @@ msgstr "Configurare i conti predefiniti per le transazioni di cassa e banca"
 msgid "Configure default accounts for inventory management"
 msgstr "Configurare i conti predefiniti per la gestione dell'inventario"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "Configurare i conti predefiniti per le transazioni di fornitore e venditore"
+msgid "Configure default accounts for supplier transactions"
+msgstr "Configura i conti predefiniti per le transazioni dei fornitori"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "Configurare i conti di patrimonio netto e utili non distribuiti predefiniti"
@@ -4916,8 +4916,8 @@ msgstr "Nota di Credito"
 msgid "Credit Memos"
 msgstr "Note di credito"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "Le note di credito e i crediti fornitori sono controllati separatamente dalle fatture di vendita e di acquisto, in modo che i debiti possono essere gestiti al di fuori della sincronizzazione mentre le note di credito raggiungono ancora il libro mastro. Abilitarne uno sposta i crediti dalla data di abilitazione in avanti — la cronologia esistente rimane invariata, e la loro importazione richiede un riempimento esplicito."
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "Le note di credito e i crediti fornitori sono gestiti separatamente dalle fatture di acquisto, così i debiti possono essere gestiti al di fuori della sincronizzazione mentre i crediti raggiungono comunque il registro. L'abilitazione di uno spinge i crediti dalla data di abilitazione in avanti — la cronologia esistente non viene modificata, e portarla avanti richiede un backfill esplicito."
 
 msgid "Credit representation"
 msgstr "Rappresentazione delle note di credito"
@@ -11045,6 +11045,9 @@ msgstr "Nuova Unità di Stoccaggio"
 msgid "New Supplier"
 msgstr "Nuovo Fornitore"
 
+msgid "New Supplier Credit"
+msgstr "Nuovo credito fornitore"
+
 msgid "New Supplier Part"
 msgstr "Nuovo Fornitore Parte"
 
@@ -11068,9 +11071,6 @@ msgstr "Nuova Riga di Trasferimento"
 
 msgid "New Unit of Measure"
 msgstr "Nuova Unità di Misura"
-
-msgid "New Vendor Credit"
-msgstr "Nuovo credito fornitore"
 
 msgid "New Version"
 msgstr "Nuova Versione"
@@ -12347,8 +12347,8 @@ msgstr "Altri proventi"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "Conto altri proventi per guadagni FX quando un pagamento salda una fattura in valuta estera a un tasso più favorevole"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "Conto altri proventi per saldi fornitori azzerati senza pagamento completo nella regolazione dei debiti verso fornitori"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "Conto degli altri proventi per saldi fornitori liquidati senza pagamento completo nella liquidazione dei debiti verso fornitori"
 
 msgid "Other Type"
 msgstr "Altro Tipo"
@@ -16801,6 +16801,12 @@ msgstr "Contatto fornitore"
 msgid "Supplier Contact"
 msgstr "Contatto Fornitore"
 
+msgid "Supplier Credit"
+msgstr "Credito fornitore"
+
+msgid "Supplier Credits"
+msgstr "Crediti fornitori"
+
 msgid "Supplier ID"
 msgstr "ID Fornitore"
 
@@ -16923,6 +16929,9 @@ msgstr "Prezzo Unitario Fornitore"
 
 msgid "Supplier updated"
 msgstr "Fornitore aggiornato"
+
+msgid "Supplier Write-Off Income"
+msgstr "Proventi da stralcio fornitori"
 
 msgid "Supplier:"
 msgstr "Fornitore:"
@@ -19354,15 +19363,6 @@ msgstr "Solo scostamento"
 
 msgid "VAT Number"
 msgstr "Partita IVA"
-
-msgid "Vendor Credit"
-msgstr "Credito fornitore"
-
-msgid "Vendor Credits"
-msgstr "Crediti fornitori"
-
-msgid "Vendor Write-Off Income"
-msgstr "Proventi da Stralcio"
 
 msgid "Verdict"
 msgstr "Verdetto"

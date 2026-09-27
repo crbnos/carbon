@@ -24,10 +24,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Read the memo before deleting so we can return to its party's list —
-  // supplier memos → Vendor Credits (AP), customer memos → Credit Memos (AR).
+  // supplier memos → Supplier Credits (AP), customer memos → Credit Memos (AR).
   const existing = await getMemo(client, memoId);
   const listPath = existing.data?.supplierId
-    ? path.to.vendorCredits
+    ? path.to.supplierCredits
     : path.to.creditMemos;
 
   const remove = await deleteMemo(client, memoId);

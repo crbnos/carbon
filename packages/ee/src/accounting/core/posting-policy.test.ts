@@ -301,9 +301,42 @@ describe("getJournalPostingPolicyDecision", () => {
       }
     });
 
+    /**
+     * `families.vendorCredit` was renamed to `families.supplierCredit`
+     * (Carbon says supplier; only the providers say vendor). The migration
+     * rewrites every stored row, but an instance still on the old code can
+     * write the old key mid-deploy — and because the key DEFAULTS to "none",
+     * dropping it does not fail, it silently stops pushing supplier credits
+     * for a company that had turned them on.
+     */
+    it("carries a stored families.vendorCredit onto supplierCredit", () => {
+      const decision = getJournalPostingPolicyDecision({
+        sourceType: "Debit Memo",
+        settings: settingsWith({ families: { vendorCredit: "documents" } }),
+        docSync: DOC_SYNC_ON,
+        memoParty: "supplier"
+      });
+      expect(decision).not.toMatchObject({ reason: "FAMILY_OFF" });
+    });
+
+    it("prefers supplierCredit when a stored fragment carries both keys", () => {
+      const decision = getJournalPostingPolicyDecision({
+        sourceType: "Debit Memo",
+        settings: settingsWith({
+          families: { vendorCredit: "documents", supplierCredit: "none" }
+        }),
+        docSync: DOC_SYNC_ON,
+        memoParty: "supplier"
+      });
+      expect(decision).toMatchObject({
+        kind: "exclude",
+        reason: "FAMILY_OFF"
+      });
+    });
+
     it("excludes memos as FAMILY_OFF by default (their families are opt-in)", () => {
       // Memos DO have a document representation now; what stops them by
-      // default is that creditMemo/vendorCredit default to "none".
+      // default is that creditMemo/supplierCredit default to "none".
       for (const [sourceType, memoParty] of [
         ["Credit Memo", "customer"],
         ["Debit Memo", "supplier"]
@@ -349,7 +382,7 @@ describe("getJournalPostingPolicyDecision", () => {
       });
       expect(decision).toEqual({ kind: "push", granularity: "individual" });
 
-      // Memos ride their OWN family (creditMemo/vendorCredit), not ar/ap.
+      // Memos ride their OWN family (creditMemo/supplierCredit), not ar/ap.
       const memo = getJournalPostingPolicyDecision({
         sourceType: "Credit Memo",
         settings: settingsWith({
@@ -357,7 +390,7 @@ describe("getJournalPostingPolicyDecision", () => {
             ar: "journals",
             ap: "documents",
             creditMemo: "journals",
-            vendorCredit: "none"
+            supplierCredit: "none"
           }
         }),
         docSync: { invoiceEnabled: false, billEnabled: true },
@@ -467,7 +500,7 @@ describe("memo family resolution (per-party)", () => {
     invoiceEnabled: false,
     billEnabled: false,
     creditMemoEnabled: true,
-    vendorCreditEnabled: true
+    supplierCreditEnabled: true
   };
 
   // Only the customer family is on. A supplier memo must NOT be gated by it —
@@ -477,7 +510,7 @@ describe("memo family resolution (per-party)", () => {
       ar: "none",
       ap: "none",
       creditMemo: "documents",
-      vendorCredit: "none"
+      supplierCredit: "none"
     }
   });
 
@@ -486,7 +519,7 @@ describe("memo family resolution (per-party)", () => {
       ar: "none",
       ap: "none",
       creditMemo: "none",
-      vendorCredit: "documents"
+      supplierCredit: "documents"
     }
   });
 
@@ -514,7 +547,7 @@ describe("memo family resolution (per-party)", () => {
     });
   });
 
-  it("gates a SUPPLIER memo by vendorCredit in both directions", () => {
+  it("gates a SUPPLIER memo by supplierCredit in both directions", () => {
     expect(decide("Debit Memo", "supplier", supplierOnly)).toMatchObject({
       kind: "exclude",
       reason: "DOC_BACKED"
@@ -548,7 +581,7 @@ describe("memo family resolution (per-party)", () => {
         ar: "documents",
         ap: "none",
         creditMemo: "none",
-        vendorCredit: "documents"
+        supplierCredit: "documents"
       }
     });
     expect(decide("Debit Memo", "supplier", apOff)).toMatchObject({

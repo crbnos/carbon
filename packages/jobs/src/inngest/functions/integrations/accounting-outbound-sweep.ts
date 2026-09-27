@@ -443,7 +443,7 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("reimbursements: reimbursement sync is disabled");
   }
 
-  // Credit memos / vendor credits — ONE table, TWO entity types. The memo's
+  // Credit memos / supplier credits — ONE table, TWO entity types. The memo's
   // PARTY decides which, so each side is paged separately with a party filter
   // and emits its own entity type. Same two-page shape as charges:
   // `memoDate` for the window (postingDate is nullable) plus `voidedAt` for
@@ -455,8 +455,8 @@ async function sweepCompanyProvider(args: {
       partyColumn: "customerId"
     },
     {
-      entityType: "vendorCredit" as const,
-      label: "vendor credits",
+      entityType: "supplierCredit" as const,
+      label: "supplier credits",
       partyColumn: "supplierId"
     }
   ]) {

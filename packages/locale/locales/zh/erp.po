@@ -3971,8 +3971,8 @@ msgstr "配置现金和银行交易的默认账户"
 msgid "Configure default accounts for inventory management"
 msgstr "配置库存管理的默认账户"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "配置供应商和供应商交易的默认账户"
+msgid "Configure default accounts for supplier transactions"
+msgstr "为供应商交易配置默认账户"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "配置默认所有者权益和未分配利润账户"
@@ -4916,8 +4916,8 @@ msgstr "贷项凭证"
 msgid "Credit Memos"
 msgstr "贷项凭证"
 
-msgid "Credit memos and vendor credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
-msgstr "贷项凭证和供应商贷项与发票和账单分开控制，因此应付款项可以在同步之外处理，同时贷方仍然到达总分类账。启用其中一个会从启用日期起推送贷方——现有历史记录保持不变，跨越它需要明确的回填。"
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "贷项凭证和供应商贷项凭证单独控制，与发票和账单分开，这样应付款项可以在同步外处理，同时贷项凭证仍然到达分类账。启用其中一个会从启用日期开始推送贷项凭证——现有的历史记录保持不变，将其带过来需要显式回补。"
 
 msgid "Credit representation"
 msgstr "信用备忘录的表示"
@@ -11045,6 +11045,9 @@ msgstr "新存储单元"
 msgid "New Supplier"
 msgstr "新供应商"
 
+msgid "New Supplier Credit"
+msgstr "新的供应商贷项凭证"
+
 msgid "New Supplier Part"
 msgstr "新供应商零件"
 
@@ -11068,9 +11071,6 @@ msgstr "新建调拨行"
 
 msgid "New Unit of Measure"
 msgstr "新计量单位"
-
-msgid "New Vendor Credit"
-msgstr "新建供应商贷项"
 
 msgid "New Version"
 msgstr "新版本"
@@ -12347,8 +12347,8 @@ msgstr "营业外收入"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "当付款以更优惠的汇率结算外币发票时用于外汇收益的营业外收入账户"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "在应付账款结算时，未全额付款清除的供应商余额使用的营业外收入账户"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "营业外收入账户，用于应付账款结算中未全额付款而清除的供应商余额"
 
 msgid "Other Type"
 msgstr "其他类型"
@@ -16801,6 +16801,12 @@ msgstr "供应商联系人"
 msgid "Supplier Contact"
 msgstr "供应商联系人"
 
+msgid "Supplier Credit"
+msgstr "供应商贷项凭证"
+
+msgid "Supplier Credits"
+msgstr "供应商贷项凭证"
+
 msgid "Supplier ID"
 msgstr "供应商 ID"
 
@@ -16923,6 +16929,9 @@ msgstr "供应商单价"
 
 msgid "Supplier updated"
 msgstr "供应商已更新"
+
+msgid "Supplier Write-Off Income"
+msgstr "供应商核销收益"
 
 msgid "Supplier:"
 msgstr "供应商："
@@ -19354,15 +19363,6 @@ msgstr "仅差异"
 
 msgid "VAT Number"
 msgstr "增值税号"
-
-msgid "Vendor Credit"
-msgstr "供应商贷项"
-
-msgid "Vendor Credits"
-msgstr "供应商贷项"
-
-msgid "Vendor Write-Off Income"
-msgstr "供应商核销收益"
 
 msgid "Verdict"
 msgstr "结果"

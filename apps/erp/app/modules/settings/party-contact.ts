@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { zfd } from "zod-form-data";
+
 /**
  * "A supplier / customer must have someone we can reach."
  *
@@ -61,4 +64,27 @@ export function partyContactRequiredMessage(
   const where = kind === "supplier" ? "Suppliers" : "Customers";
 
   return `${who} has no contact with an email address. Add one on the ${kind} record before posting. (${where} → Contacts. This is required by your company's settings.)`;
+}
+
+/**
+ * The schema for a document's contact field when the company requires one.
+ *
+ * Lives here so all six documents phrase the requirement identically, and so the
+ * rule sits next to the setting that governs it rather than being retyped in
+ * three modules.
+ *
+ * Callers apply it with `.extend()` on a base object rather than a ternary inside
+ * `z.object` — a ternary widens the INFERRED type, which makes the field look
+ * required to every existing caller even when the setting is off.
+ */
+export function requiredContactField(label: string) {
+  // `.trim()` before `.min(1)`: `zfd.text` turns an empty string into undefined but
+  // leaves a whitespace-only one alone, which would otherwise satisfy the
+  // requirement with a value that identifies nobody.
+  return zfd.text(
+    z
+      .string({ error: `${label} is required` })
+      .trim()
+      .min(1, { message: `${label} is required` })
+  );
 }

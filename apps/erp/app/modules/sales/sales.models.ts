@@ -10,6 +10,7 @@ import {
 } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+import { requiredContactField } from "~/modules/settings/party-contact";
 import { address, contact } from "~/types/validators";
 import { currencyCodes } from "../accounting";
 import {
@@ -389,7 +390,7 @@ export const quoteStatusType = [
   "Expired"
 ] as const;
 
-export const quoteValidator = z.object({
+const baseQuote = z.object({
   id: zfd.text(z.string().optional()),
   quoteId: zfd.text(z.string().optional()),
   name: zfd.text(z.string().optional()),
@@ -411,6 +412,28 @@ export const quoteValidator = z.object({
   digitalQuoteAcceptedBy: zfd.text(z.string().optional()),
   digitalQuoteAcceptedByEmail: zfd.text(z.string().optional())
 });
+
+/**
+ * `requireCustomerContact` is a company setting, so the schema is built per request —
+ * a zod schema cannot read the database. Enforcing it HERE rather than in the
+ * action is what makes the field behave like a required field: the form marks
+ * it, the error lands on the control while the document is being filled in, and
+ * every other entry point is held to the same rule by construction.
+ *
+ * Returns the base object untouched when the setting is off, so the common path
+ * is unchanged and `z.infer<typeof quoteValidator>` keeps its shape.
+ */
+export function makeQuoteValidator(
+  options: { requireCustomerContact?: boolean } = {}
+) {
+  if (!options.requireCustomerContact) return baseQuote;
+
+  return baseQuote.extend({
+    customerContactId: requiredContactField("Customer contact")
+  });
+}
+
+export const quoteValidator = baseQuote;
 
 export const quoteLineAdditionalChargesValidator = z.record(
   z.string(),
@@ -835,7 +858,7 @@ export const salesConfirmValidator = z
     }
   );
 
-export const salesOrderValidator = z.object({
+const baseSalesOrder = z.object({
   id: zfd.text(z.string().optional()),
   salesOrderId: zfd.text(z.string().optional()),
   orderDate: zfd.text(z.string().optional()),
@@ -855,6 +878,28 @@ export const salesOrderValidator = z.object({
   exchangeRateUpdatedAt: zfd.text(z.string().optional()),
   salesPersonId: zfd.text(z.string().optional())
 });
+
+/**
+ * `requireCustomerContact` is a company setting, so the schema is built per request —
+ * a zod schema cannot read the database. Enforcing it HERE rather than in the
+ * action is what makes the field behave like a required field: the form marks
+ * it, the error lands on the control while the document is being filled in, and
+ * every other entry point is held to the same rule by construction.
+ *
+ * Returns the base object untouched when the setting is off, so the common path
+ * is unchanged and `z.infer<typeof salesOrderValidator>` keeps its shape.
+ */
+export function makeSalesOrderValidator(
+  options: { requireCustomerContact?: boolean } = {}
+) {
+  if (!options.requireCustomerContact) return baseSalesOrder;
+
+  return baseSalesOrder.extend({
+    customerContactId: requiredContactField("Customer contact")
+  });
+}
+
+export const salesOrderValidator = baseSalesOrder;
 
 export const salesOrderShipmentValidator = z
   .object({

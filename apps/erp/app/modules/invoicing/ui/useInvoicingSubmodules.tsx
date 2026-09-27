@@ -51,8 +51,8 @@ export default function useInvoicingSubmodules() {
           permission: "invoicing"
         },
         {
-          name: t`Vendor Credits`,
-          to: path.to.vendorCredits,
+          name: t`Supplier Credits`,
+          to: path.to.supplierCredits,
           icon: <LuCreditCard />,
           table: "memo",
           permission: "invoicing"

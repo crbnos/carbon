@@ -10,7 +10,7 @@ const RILLET: ProviderDescriptor = {
 };
 
 function ramp(
-  ownsLedgerFamilies: Array<"ar" | "ap" | "creditMemo" | "vendorCredit">
+  ownsLedgerFamilies: Array<"ar" | "ap" | "creditMemo" | "supplierCredit">
 ) {
   return {
     integrationId: "ramp",
@@ -31,7 +31,7 @@ const ROWS = [
 ];
 
 function apply(
-  families: Array<"ar" | "ap" | "creditMemo" | "vendorCredit">,
+  families: Array<"ar" | "ap" | "creditMemo" | "supplierCredit">,
   integrationId?: string
 ) {
   return applyLedgerDelegation({
@@ -65,7 +65,12 @@ describe("backingEntitiesOfFamily", () => {
   });
 
   it("never returns the per-party sentinel as an entity", () => {
-    for (const family of ["ar", "ap", "creditMemo", "vendorCredit"] as const) {
+    for (const family of [
+      "ar",
+      "ap",
+      "creditMemo",
+      "supplierCredit"
+    ] as const) {
       expect(backingEntitiesOfFamily(family)).not.toContain(
         "per-party" as never
       );
@@ -74,7 +79,9 @@ describe("backingEntitiesOfFamily", () => {
 
   it("resolves a memo family to its own entity", () => {
     expect(backingEntitiesOfFamily("creditMemo")).toEqual(["creditMemo"]);
-    expect(backingEntitiesOfFamily("vendorCredit")).toEqual(["vendorCredit"]);
+    expect(backingEntitiesOfFamily("supplierCredit")).toEqual([
+      "supplierCredit"
+    ]);
   });
 });
 
@@ -120,11 +127,11 @@ describe("applyLedgerDelegation", () => {
   });
 
   it("reports what was delegated and to whom", () => {
-    const result = apply(["ap", "vendorCredit"]);
+    const result = apply(["ap", "supplierCredit"]);
     expect(result.delegated).toEqual(
       expect.arrayContaining([
         { family: "ap", integrationId: "ramp" },
-        { family: "vendorCredit", integrationId: "ramp" }
+        { family: "supplierCredit", integrationId: "ramp" }
       ])
     );
   });

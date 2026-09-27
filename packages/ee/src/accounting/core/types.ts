@@ -353,7 +353,7 @@ export type AccountingEntityType =
   /** A Carbon `memo` on a CUSTOMER, pushed as the provider's native customer credit. */
   | "creditMemo"
   /** A Carbon `memo` on a SUPPLIER, pushed as the provider's native vendor credit. */
-  | "vendorCredit"
+  | "supplierCredit"
   /**
    * A Carbon `reimbursement` (employee expense payable) pushed as the
    * provider's native reimbursement object, or an employee-vendor bill where

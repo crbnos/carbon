@@ -51,7 +51,7 @@ type MemosTableProps = {
   data: MemoRow[];
   count: number;
   // Which party this list is scoped to. "customer" → Credit Memos (AR),
-  // "supplier" → Vendor Credits (AP). Drives the counterparty column, the
+  // "supplier" → Supplier Credits (AP). Drives the counterparty column, the
   // title, and the New-button label/default party.
   party: "customer" | "supplier";
 };
@@ -231,13 +231,13 @@ const MemosTable = memo(({ data, count, party }: MemosTableProps) => {
         primaryAction={
           permissions.can("create", "invoicing") && (
             <New
-              label={party === "supplier" ? t`Vendor Credit` : t`Credit Memo`}
+              label={party === "supplier" ? t`Supplier Credit` : t`Credit Memo`}
               to={`${path.to.memoNew}?party=${party}`}
             />
           )
         }
         renderContextMenu={renderContextMenu}
-        title={party === "supplier" ? t`Vendor Credits` : t`Credit Memos`}
+        title={party === "supplier" ? t`Supplier Credits` : t`Credit Memos`}
         table="memo"
         withSavedView
       />

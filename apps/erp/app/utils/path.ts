@@ -1460,7 +1460,7 @@ export const path = {
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
     // detail/create/post/void routes live under `x/credits`; the LIST is split
     // by party into two invoicing submodules — customer memos surface as
-    // `creditMemos` (AR), supplier memos as `vendorCredits` (AP).
+    // `creditMemos` (AR), supplier memos as `supplierCredits` (AP).
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
     memoDelete: (id: string) => generatePath(`${x}/credits/${id}/delete`),
     memoNew: `${x}/credits/new`,
@@ -2250,6 +2250,7 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/contacts/${id}`),
     supplierContacts: (id: string) =>
       generatePath(`${x}/supplier/${id}/contacts`),
+    supplierCredits: `${x}/invoicing/supplier-credits`,
     supplierDefaultAttachments: (supplierId: string) =>
       generatePath(`${x}/supplier/${supplierId}/default-attachments`),
     supplierDetails: (id: string) =>
@@ -2347,7 +2348,6 @@ export const path = {
     updateIssueItem: `${x}/issue/item/update`,
     userAttribute: (id: string) => generatePath(`${x}/account/${id}/attribute`),
     users: `${x}/users`,
-    vendorCredits: `${x}/invoicing/vendor-credits`,
     warehouseTransfer: (id: string) =>
       generatePath(`${x}/warehouse-transfer/${id}`),
     warehouseTransferDetails: (id: string) =>

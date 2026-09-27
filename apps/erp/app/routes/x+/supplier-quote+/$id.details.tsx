@@ -11,7 +11,7 @@ import { useRouteData } from "~/hooks";
 import {
   getSupplierQuote,
   isSupplierQuoteLocked,
-  supplierQuoteValidator,
+  makeSupplierQuoteValidator,
   updateSupplierQuote
 } from "~/modules/purchasing";
 import type {
@@ -24,6 +24,7 @@ import {
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import SupplierInteractionState from "~/modules/purchasing/ui/SupplierInteraction/SupplierInteractionState";
 import SupplierQuoteSummary from "~/modules/purchasing/ui/SupplierQuote/SupplierQuoteSummary";
+import { getCompanySettings } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -52,7 +53,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, userId, companyId } = await requirePermissions(request, {
     update: "purchasing"
   });
 
@@ -71,7 +72,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(supplierQuoteValidator).validate(formData);
+  const validation = await validator(
+    makeSupplierQuoteValidator({
+      requireSupplierContact:
+        (await getCompanySettings(client, companyId)).data
+          ?.requireSupplierContact === true
+    })
+  ).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);
