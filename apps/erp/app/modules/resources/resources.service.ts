@@ -1610,7 +1610,7 @@ export async function updateMaintenanceDispatch(
     takesWorkCenterOffline?: boolean;
     /** Rich text: plain text, a JSON-encoded tiptap document, or the document
      *  itself — stored as a tiptap document either way. */
-    content?: z.infer<typeof optionalTiptapDoc>;
+    content?: z.infer<typeof optionalTiptapDoc> | null;
   }
 ): Promise<{
   data: { id: string } | null;

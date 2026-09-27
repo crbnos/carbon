@@ -466,8 +466,8 @@ export const quoteLineValidator = z.object({
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
   // Rich text (json columns): stored as a tiptap document, never a string.
-  internalNotes: optionalTiptapDoc,
-  externalNotes: optionalTiptapDoc,
+  internalNotes: optionalTiptapDoc.nullable(),
+  externalNotes: optionalTiptapDoc.nullable(),
   configuration: z.any().optional()
 });
 

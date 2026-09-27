@@ -6433,10 +6433,10 @@ export async function updateChangeNotice(
     openDate?: string;
     /** Rich text: plain text, a JSON-encoded tiptap document, or the document
      *  itself — stored as a tiptap document either way. */
-    reasonForChange?: z.infer<typeof optionalTiptapDoc>;
+    reasonForChange?: z.infer<typeof optionalTiptapDoc> | null;
     /** Rich text: plain text, a JSON-encoded tiptap document, or the document
      *  itself — stored as a tiptap document either way. */
-    description?: z.infer<typeof optionalTiptapDoc>;
+    description?: z.infer<typeof optionalTiptapDoc> | null;
     dueDate?: string | null;
     assignee?: string | null;
     customFields?: Json;
