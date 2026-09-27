@@ -269,9 +269,14 @@ export async function reconcileEntities(args: {
 
     // Mapping state is loaded in one unbounded SQL query. Payment keys can
     // fan out as <paymentId>:<documentId>; their prefix is the source identity.
+    //
+    // `lastSyncedAt` is typed to admit a `Date`: this read goes through
+    // Kysely, and node-postgres decodes timestamptz as a Date whatever the
+    // generated types claim. `reconcileMasterData` compares it as an
+    // instant for exactly that reason — do not narrow this to `string`.
     const mappingByEntity = new Map<
       string,
-      { externalId: string | null; lastSyncedAt: string | null }
+      { externalId: string | null; lastSyncedAt: string | Date | null }
     >();
     const unvoidedPushMappings = new Set<string>();
     if (MAPPED_TYPES.has(entityType)) {

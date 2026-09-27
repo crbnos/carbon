@@ -97,7 +97,7 @@ export async function action(args: ActionFunctionArgs) {
   if (supplierContactError) {
     throw redirect(
       path.to.purchaseOrder(orderId),
-      await flash(request, error(supplierContactError))
+      await flash(request, error(null, supplierContactError))
     );
   }
 

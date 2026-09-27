@@ -74,7 +74,7 @@ export async function action(args: ActionFunctionArgs) {
   if (customerContactError) {
     throw redirect(
       path.to.quote(quoteId),
-      await flash(request, error(customerContactError))
+      await flash(request, error(null, customerContactError))
     );
   }
 

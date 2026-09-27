@@ -721,6 +721,60 @@ describe("golden: master data", () => {
     ).toEqual(["enqueue"]);
   });
 
+  /**
+   * The executor loads `lastSyncedAt` through Kysely, where node-postgres
+   * decodes timestamptz as a `Date` while the generated types say `string`;
+   * `snapshot.updatedAt` arrives from supabase-js as a PostgREST string.
+   * Comparing those two directly coerces the string to NaN, so the check
+   * above silently never fired and every master-data row edited inside the
+   * 7-day sweep window re-enqueued a no-op push twice an hour. These pin the
+   * REAL argument shapes, not two matching ISO strings.
+   */
+  it("FIX-3: unchanged, with the Date the executor actually passes ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T05:59:30.25629+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("FIX-3: changed, with the Date the executor actually passes ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T06:30:00.123456+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("FIX-3: same instant in two spellings ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T05:59:32.765+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
   it("deleted row ⇔ legacy DELETE skip", () => {
     expect(
       kinds(

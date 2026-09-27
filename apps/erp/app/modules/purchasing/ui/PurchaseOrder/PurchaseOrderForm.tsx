@@ -12,7 +12,7 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { flushSync } from "react-dom";
 import { useParams } from "react-router";
 import type { z } from "zod";
@@ -29,13 +29,15 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import {
+  useCompanySettings,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
 import {
+  makePurchaseOrderValidator,
   purchaseOrderTypeType,
-  purchaseOrderValidator
+  type purchaseOrderValidator
 } from "~/modules/purchasing";
 import { path } from "~/utils/path";
 import { isPurchaseOrderLocked } from "../../purchasing.models";
@@ -111,11 +113,21 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
     }
   };
 
+  // The supplier-contact requirement is a company setting, so the schema is built
+  // per render. Marking the field required in the schema is what puts the error on
+  // the control itself instead of surfacing it after the fact.
+  const requireSupplierContact =
+    useCompanySettings()?.requireSupplierContact === true;
+  const validator = useMemo(
+    () => makePurchaseOrderValidator({ requireSupplierContact }),
+    [requireSupplierContact]
+  );
+
   return (
     <Card>
       <ValidatedForm
         method="post"
-        validator={purchaseOrderValidator}
+        validator={validator}
         defaultValues={initialValues}
         className="w-full"
         isDisabled={isEditing && isLocked}

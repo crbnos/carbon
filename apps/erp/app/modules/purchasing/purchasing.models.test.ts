@@ -18,8 +18,10 @@ vi.mock("@carbon/glossary", () => ({
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
+  makePurchaseOrderValidator,
   PURCHASE_ORDER_LOCKED_STATUSES,
-  purchaseOrderStatusType
+  purchaseOrderStatusType,
+  purchaseOrderValidator
 } from "./purchasing.models";
 
 const ORDER_DATE = "2026-06-01";
@@ -111,5 +113,61 @@ describe("canCreatePurchaseOrderRevision", () => {
     for (const status of PURCHASE_ORDER_LOCKED_STATUSES) {
       expect(isPurchaseOrderLocked(status)).toBe(true);
     }
+  });
+});
+
+describe("makePurchaseOrderValidator", () => {
+  /**
+   * `requireSupplierContact` is a company setting, so the schema is built per
+   * request. Enforcing it in the SCHEMA rather than in the action is what makes
+   * the error land on the field: a route-level check could only flash after the
+   * fact, and when the flash was miswired it failed silently — the document just
+   * did not finalize and nothing said why.
+   */
+  const base = {
+    purchaseOrderType: "Purchase" as const,
+    supplierId: "sup_1"
+  };
+
+  it("leaves the contact optional by default", () => {
+    const result = makePurchaseOrderValidator().safeParse(base);
+    expect(result.success).toBe(true);
+  });
+
+  it("is byte-identical to the exported validator when the setting is off", () => {
+    // The common path must not change shape — a ternary inside `z.object`
+    // widened the inferred type and made the field look required to every
+    // existing caller.
+    expect(makePurchaseOrderValidator()).toBe(purchaseOrderValidator);
+    expect(makePurchaseOrderValidator({ requireSupplierContact: false })).toBe(
+      purchaseOrderValidator
+    );
+  });
+
+  it("requires the contact when the setting is on", () => {
+    const validatorWith = makePurchaseOrderValidator({
+      requireSupplierContact: true
+    });
+
+    const missing = validatorWith.safeParse(base);
+    expect(missing.success).toBe(false);
+    expect(JSON.stringify(missing.error?.issues)).toContain(
+      "Supplier contact is required"
+    );
+
+    const present = validatorWith.safeParse({
+      ...base,
+      supplierContactId: "cnt_1"
+    });
+    expect(present.success).toBe(true);
+  });
+
+  it("rejects an empty contact, not just an absent one", () => {
+    // An empty select posts "" rather than omitting the field.
+    const result = makePurchaseOrderValidator({
+      requireSupplierContact: true
+    }).safeParse({ ...base, supplierContactId: "" });
+
+    expect(result.success).toBe(false);
   });
 });

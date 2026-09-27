@@ -85,7 +85,12 @@ export type ReconcileEntityInput = {
   hasMappingWithExternalId: boolean;
   /** A native push mapping remains remotely active (including payment fan-out). */
   hasUnvoidedPushMapping?: boolean;
-  lastSyncedAt: string | null;
+  /**
+   * `externalIntegrationMapping.lastSyncedAt`. Typed to admit a `Date`:
+   * the executor loads it through Kysely, where node-postgres decodes
+   * timestamptz as a Date regardless of what the generated types say.
+   */
+  lastSyncedAt: string | Date | null;
   /** A Pending/In Flight push op exists for the tuple. */
   hasLiveOperation: boolean;
   /** Newest push op for the tuple (by createdAt), live or terminal. */
@@ -482,6 +487,24 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
 }
 
 /**
+ * Epoch ms for a timestamp that reached us as either an ISO string
+ * (supabase-js / PostgREST) or a `Date` (Kysely — node-postgres hands back
+ * a Date for timestamptz while the generated types say `string`). Null when
+ * it is neither, or unparseable.
+ *
+ * Comparing the two forms DIRECTLY is the trap: `string <= Date` coerces
+ * both toward numbers, the string becomes NaN, and every such comparison is
+ * false. That silently disabled the change check below, so every master-data
+ * row edited inside the sweep window re-enqueued a no-op push twice an hour
+ * for the whole 7-day window.
+ */
+function instantMs(value: string | Date | null | undefined): number | null {
+  if (value == null) return null;
+  const ms = value instanceof Date ? value.getTime() : Date.parse(value);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+/**
  * Master data (customer/vendor/item/PO/SO). State-shaped change detection:
  * enqueue when nothing exists remotely, or when the row changed since the
  * last successful sync (updatedAt > mapping.lastSyncedAt). This REPLACES
@@ -489,6 +512,11 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
  * unchanged just-synced entity reconciles to nothing (no window to expire),
  * and a changed one enqueues immediately (no window to swallow it). The
  * drain's fast-bailout remains the backstop for false positives.
+ *
+ * The two timestamps are compared as INSTANTS, never as strings: they are
+ * loaded by different clients (see `instantMs`), and even two ISO strings
+ * disagree on fractional-digit count and `Z` vs `+00:00`, so lexicographic
+ * order is only accidentally right.
  */
 function reconcileMasterData(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
@@ -500,11 +528,13 @@ function reconcileMasterData(input: ReconcileEntityInput): ReconcileDecision {
   if (input.hasLiveOperation) {
     return nothing("a live operation already covers this entity");
   }
+  const lastSyncedMs = instantMs(input.lastSyncedAt);
+  const updatedMs = instantMs(snapshot.updatedAt);
   if (
     input.hasMappingWithExternalId &&
-    input.lastSyncedAt != null &&
-    snapshot.updatedAt != null &&
-    snapshot.updatedAt <= input.lastSyncedAt
+    lastSyncedMs != null &&
+    updatedMs != null &&
+    updatedMs <= lastSyncedMs
   ) {
     return nothing("unchanged since the last successful sync");
   }

@@ -49,7 +49,7 @@ export async function action(args: ActionFunctionArgs) {
   if (supplierContactError) {
     throw redirect(
       path.to.supplierQuote(id),
-      await flash(request, error(supplierContactError))
+      await flash(request, error(null, supplierContactError))
     );
   }
 

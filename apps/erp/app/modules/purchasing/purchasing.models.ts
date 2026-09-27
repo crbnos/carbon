@@ -129,7 +129,22 @@ export const plannedOrderValidator = z.object({
 
 export type PlannedOrder = z.infer<typeof plannedOrderValidator>;
 
-export const purchaseOrderValidator = z.object({
+/**
+ * `requireSupplierContact` is a COMPANY SETTING, and a zod schema cannot read the
+ * database — so the schema is built per request instead of being a fixed object.
+ *
+ * Doing it here rather than as a check in the action is what makes the field
+ * behave like a required field everywhere: the form marks it, the inline error
+ * lands ON the control instead of arriving as a toast after a failed submit, and
+ * every other entry point (the API, MCP, a duplicate) is held to the same rule by
+ * construction. A route-level check reached only the paths someone remembered to
+ * edit — and when the document had already been saved, the only feedback left was
+ * a redirect that looked like nothing happening.
+ *
+ * `purchaseOrderValidator` stays exported as the permissive default so existing
+ * call sites and `z.infer` keep working unchanged.
+ */
+const basePurchaseOrder = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
   purchaseOrderType: z.enum(purchaseOrderTypeType, {
@@ -147,6 +162,39 @@ export const purchaseOrderValidator = z.object({
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
 });
+
+/**
+ * `requireSupplierContact` is a COMPANY SETTING, and a zod schema cannot read the
+ * database — so the schema is built per request rather than being a fixed object.
+ *
+ * Doing it here rather than as a check in the action is what makes the field
+ * behave like a required field everywhere: the form marks it, the inline error
+ * lands ON the control instead of arriving as a toast after a failed submit, and
+ * every other entry point (the API, MCP, a duplicate) is held to the same rule by
+ * construction. A route-level check only covered the paths someone remembered to
+ * edit — and once the document was already saved, the only feedback left was a
+ * redirect that looked like nothing happening.
+ *
+ * Returns the BASE schema when the setting is off, so the common path is
+ * byte-identical to before and `z.infer<typeof purchaseOrderValidator>` keeps its
+ * existing shape (a ternary inside `z.object` widened the inferred type and made
+ * the field look required to every existing caller).
+ */
+export function makePurchaseOrderValidator(
+  options: { requireSupplierContact?: boolean } = {}
+) {
+  if (!options.requireSupplierContact) return basePurchaseOrder;
+
+  return basePurchaseOrder.extend({
+    supplierContactId: zfd.text(
+      z
+        .string({ error: "Supplier contact is required" })
+        .min(1, { message: "Supplier contact is required" })
+    )
+  });
+}
+
+export const purchaseOrderValidator = basePurchaseOrder;
 
 export const supplierQuoteFinalizeValidator = z
   .object({
