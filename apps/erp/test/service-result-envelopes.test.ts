@@ -201,7 +201,7 @@ describe("reads report a failed query instead of an empty success", () => {
     const result = await sales.getBaseCatalog(
       clientResolving({ data: null, count: null, error: dbError }),
       "c1",
-      {}
+      { limit: 25, offset: 0 }
     );
     expect(result).toEqual({ data: [], count: 0, error: dbError });
   });

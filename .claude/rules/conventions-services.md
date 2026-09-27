@@ -90,6 +90,20 @@ A single-record read that can find nothing without erroring (an RPC returning a
 set) reports zero rows as `{ code: "PGRST116" }`, the not-found a `.single()`
 read gives (`getOpportunity`).
 
+### Every awaited response's `error` is read
+
+A service that awaits a query must read its `error` (or return the response
+whole). `const { data } = await q` followed by `data ?? []` turns a failed
+read into an empty success — the API and MCP answer "no rows" when the query
+failed. When a UI caller wants to degrade to an empty view, return the empty
+value in `data` next to the error (`getModelByItemId`, `getBaseCatalog`) and let
+the route read `.data`; the dispatcher still throws the error to API/MCP callers.
+`apps/erp/test/mcp-service-error-contract.test.ts` scans every exported service
+for awaited Supabase/storage/functions responses whose error is neither read
+nor forwarded, against `mcp-service-error-contract.baseline.json`. The baseline
+may only shrink: fix a site, then regenerate it with
+`UPDATE_ERROR_BASELINE=1 pnpm vitest run test/mcp-service-error-contract.test.ts`.
+
 ## Lists: `companyId` + `setGenericQueryFilters`
 
 List functions take `companyId` explicitly and a `GenericQueryFilters` arg, run
@@ -257,6 +271,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - [ ] First arg is `client: SupabaseClient<Database>` (or `db: Kysely<KyselyDatabase>` for transactions).
 - [ ] Returns the raw `{ data, error }` — does **not** throw, does **not** unwrap.
 - [ ] Never `{ error }` alone, `{ success/ok: false }`, or a bigint (see The result contract).
+- [ ] Every awaited query's `error` is read or the response is returned whole.
 - [ ] List queries scope `.eq("companyId", companyId)` and run `setGenericQueryFilters`.
 - [ ] `.select(...)` + `.single()`/`.maybeSingle()` after insert/update to return the row.
 - [ ] Update payloads wrapped in `sanitize(...)`.
