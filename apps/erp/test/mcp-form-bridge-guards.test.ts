@@ -10,6 +10,9 @@
 //   2. A property published as a plain string that lands in a json column
 //      with no coercer. The service stores the string scalar and every reader
 //      that expects a tiptap document or an array breaks.
+//   3. A create path that inserts a readable document number (`paymentId`,
+//      `memoId`, …) it neither allocates nor requires. The UI route allocated
+//      it before calling; an API caller got a NOT NULL violation.
 
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
@@ -87,13 +90,51 @@ function functionBody(source: string, fn: string): string {
   return source.slice(match.index, next === -1 ? undefined : next);
 }
 
-/** table → its Json-typed Row columns, from the generated public schema. */
-function jsonColumnsByTable(): Map<string, Set<string>> {
+function publicTablesBlock(): string {
   const types = readFileSync(DB_TYPES, "utf8");
   const publicStart = types.indexOf("\n  public: {");
   const tablesStart = types.indexOf("\n    Tables: {", publicStart);
   const viewsStart = types.indexOf("\n    Views: {", tablesStart);
-  const block = types.slice(tablesStart, viewsStart);
+  return types.slice(tablesStart, viewsStart);
+}
+
+/**
+ * table → its readable-number column, for every table whose Insert type
+ * requires a `<table>Id` string (purchaseOrder.purchaseOrderId, …), plus
+ * memo, whose number is drawn from the creditMemo/debitMemo sequences.
+ */
+function readableIdColumns(): Map<string, string> {
+  const out = new Map<string, string>([["memo", "memoId"]]);
+  for (const table of publicTablesBlock().matchAll(
+    /\n {6}(\w+): \{\n {8}Row: \{[\s\S]*?\n {8}Insert: \{([\s\S]*?)\n {8}\}/g
+  )) {
+    const column = `${table[1]}Id`;
+    if (new RegExp(`\\n {10}${column}: string\\b`).test(table[2])) {
+      out.set(table[1], column);
+    }
+  }
+  return out;
+}
+
+/** Every property name listed in any `required` array of a schema. */
+function requiredAnywhere(node: unknown, out = new Set<string>()): Set<string> {
+  if (Array.isArray(node)) {
+    for (const item of node) requiredAnywhere(item, out);
+  } else if (node && typeof node === "object") {
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "required" && Array.isArray(value)) {
+        for (const name of value) out.add(String(name));
+      } else {
+        requiredAnywhere(value, out);
+      }
+    }
+  }
+  return out;
+}
+
+/** table → its Json-typed Row columns, from the generated public schema. */
+function jsonColumnsByTable(): Map<string, Set<string>> {
+  const block = publicTablesBlock();
   const out = new Map<string, Set<string>>();
   for (const table of block.matchAll(
     /\n {6}(\w+): \{\n {8}Row: \{([\s\S]*?)\n {8}\}/g
@@ -156,6 +197,32 @@ describe("form bridge guards", () => {
         if (!intoJson) continue;
         const id = `${t.name}.${key}`;
         if (!(id in STRING_INTO_JSON_ALLOWED)) offenders.push(id);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("every create path that inserts a readable number allocates or requires it", () => {
+    const readable = readableIdColumns();
+    expect(readable.get("purchaseOrder")).toBe("purchaseOrderId");
+
+    const offenders: string[] = [];
+    for (const t of writeTools) {
+      const fn = t.name.slice(t.module.length + 1);
+      const body = functionBody(serviceSource(t.module), fn);
+      const allocates =
+        /get_next_sequence|getNextSequence|getOrAllocateReadableId|functions\.invoke\(\s*"create"/.test(
+          body
+        );
+      if (allocates) continue;
+      const required = requiredAnywhere(t.schema);
+      for (const [table, column] of readable) {
+        const inserts = new RegExp(
+          `\\.from\\("${table}"\\)\\s*\\.(?:insert|upsert)\\b|insertInto\\("${table}"\\)`
+        ).test(body);
+        if (inserts && !required.has(column)) {
+          offenders.push(`${t.name} → ${table}.${column}`);
+        }
       }
     }
     expect(offenders).toEqual([]);
