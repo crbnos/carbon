@@ -17,7 +17,10 @@ import type { LoaderFunctionArgs } from "react-router";
 const logger = getLogger("erp", "bucket");
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {});
+  // Employees only: the read below uses the service role, so this is the whole
+  // gate. A customer or supplier portal account is also a session in the company
+  // and would otherwise read every private file it has.
+  const { companyId } = await requirePermissions(request, { role: "employee" });
   const { bucket } = params;
   let path = params["*"];
 
