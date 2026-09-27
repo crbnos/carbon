@@ -91723,9 +91723,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91733,6 +91730,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -91932,9 +91932,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -91942,6 +91939,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -92095,9 +92095,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -92105,6 +92102,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -93756,45 +93756,6 @@ export default {
         tags: ["(rpc) get_current_training_period"]
       }
     },
-    "/rpc/has_company_permission": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                claim: {
-                  format: "text",
-                  type: "string"
-                },
-                company: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["claim", "company"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) has_company_permission"]
-      }
-    },
     "/rpc/create_audit_log_table": {
       post: {
         parameters: [
@@ -93902,59 +93863,6 @@ export default {
           }
         },
         tags: ["(rpc) set_shelf_life_for_operation"]
-      }
-    },
-    "/rpc/create_rfq_from_models_v2": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company_id: {
-                  format: "text",
-                  type: "string"
-                },
-                email: {
-                  format: "text",
-                  type: "string"
-                },
-                model_data: {
-                  format: "json[]",
-                  items: {},
-                  type: "array"
-                },
-                sequence_number: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: [
-                "company_id",
-                "email",
-                "sequence_number",
-                "model_data"
-              ],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) create_rfq_from_models_v2"]
       }
     },
     "/rpc/save_inspection_document_atomic": {
@@ -94403,6 +94311,28 @@ export default {
       }
     },
     "/rpc/get_companies_with_employee_permission": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "permission",
+            required: true,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_companies_with_employee_permission"]
+      },
       post: {
         parameters: [
           {
@@ -94789,63 +94719,6 @@ export default {
         tags: ["(rpc) get_direct_ancestors_of_tracked_entity"]
       }
     },
-    "/rpc/get_permission_companies": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "claim",
-            required: true,
-            type: "string"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) get_permission_companies"]
-      },
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                claim: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["claim"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) get_permission_companies"]
-      }
-    },
     "/rpc/get_tool_details": {
       post: {
         parameters: [
@@ -95132,59 +95005,6 @@ export default {
           }
         },
         tags: ["(rpc) insert_audit_log_batch"]
-      }
-    },
-    "/rpc/create_rfq_from_models_v1": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company_id: {
-                  format: "text",
-                  type: "string"
-                },
-                email: {
-                  format: "text",
-                  type: "string"
-                },
-                model_data: {
-                  format: "json[]",
-                  items: {},
-                  type: "array"
-                },
-                sequence_number: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: [
-                "company_id",
-                "email",
-                "sequence_number",
-                "model_data"
-              ],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) create_rfq_from_models_v1"]
       }
     },
     "/rpc/sync_edit_document_transaction": {
@@ -95558,41 +95378,6 @@ export default {
           }
         },
         tags: ["(rpc) get_period_end_date"]
-      }
-    },
-    "/rpc/get_companies_with_permission": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                permission: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["permission"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) get_companies_with_permission"]
       }
     },
     "/rpc/attach_audit_log_append_only": {
@@ -99914,71 +99699,6 @@ export default {
         tags: ["(rpc) show_trgm"]
       }
     },
-    "/rpc/create_rfq_from_model_v1": {
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company_id: {
-                  format: "text",
-                  type: "string"
-                },
-                customer_part_id: {
-                  format: "text",
-                  type: "string"
-                },
-                email: {
-                  format: "text",
-                  type: "string"
-                },
-                model_id: {
-                  format: "text",
-                  type: "string"
-                },
-                notes: {
-                  format: "json"
-                },
-                sequence_number: {
-                  format: "text",
-                  type: "string"
-                },
-                unit_of_measure: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: [
-                "company_id",
-                "customer_part_id",
-                "email",
-                "model_id",
-                "sequence_number",
-                "unit_of_measure"
-              ],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) create_rfq_from_model_v1"]
-      }
-    },
     "/rpc/increment_notification_delivery": {
       post: {
         parameters: [
@@ -103493,74 +103213,6 @@ export default {
           }
         },
         tags: ["(rpc) nanoid"]
-      }
-    },
-    "/rpc/has_role": {
-      get: {
-        parameters: [
-          {
-            format: "text",
-            in: "query",
-            name: "required_role",
-            required: true,
-            type: "string"
-          },
-          {
-            format: "text",
-            in: "query",
-            name: "company",
-            required: true,
-            type: "string"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) has_role"]
-      },
-      post: {
-        parameters: [
-          {
-            in: "body",
-            name: "args",
-            required: true,
-            schema: {
-              properties: {
-                company: {
-                  format: "text",
-                  type: "string"
-                },
-                required_role: {
-                  format: "text",
-                  type: "string"
-                }
-              },
-              required: ["required_role", "company"],
-              type: "object"
-            }
-          },
-          {
-            $ref: "#/parameters/preferParams"
-          }
-        ],
-        produces: [
-          "application/json",
-          "application/vnd.pgrst.object+json;nulls=stripped",
-          "application/vnd.pgrst.object+json"
-        ],
-        responses: {
-          "200": {
-            description: "OK"
-          }
-        },
-        tags: ["(rpc) has_role"]
       }
     },
     "/rpc/snapshotAccountingPeriodBalances": {
@@ -149674,10 +149326,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler"
       ],
       properties: {
@@ -149925,13 +149577,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -149946,6 +149591,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         includeOperationsOnTraveler: {
           default: true,
@@ -199379,12 +199031,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -199399,6 +199045,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"
