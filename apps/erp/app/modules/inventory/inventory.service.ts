@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import type { Database, Json, TablesUpdate } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -2075,15 +2075,17 @@ export async function updateInventoryCountStatus(
 
 export async function updateBatchPropertyOrder(
   client: SupabaseClient<Database>,
-  data: Omit<
-    z.infer<typeof batchPropertyOrderValidator>,
-    "batchPropertyGroupId"
-  > & {
-    batchPropertyGroupId?: string | null;
+  data: z.infer<typeof batchPropertyOrderValidator> & {
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  return client
+    .from("batchProperty")
+    .update({
+      sortOrder: data.sortOrder,
+      updatedBy: data.updatedBy
+    } satisfies TablesUpdate<"batchProperty">)
+    .eq("id", data.id);
 }
 
 export async function updateStockTransferStatus(
@@ -2141,12 +2143,10 @@ export async function upsertKanban(
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         id: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
   if ("createdBy" in kanban) {

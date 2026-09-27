@@ -10,7 +10,9 @@
 //   2. A property published as a plain string that lands in a json column
 //      with no coercer. The service stores the string scalar and every reader
 //      that expects a tiptap document or an array breaks.
-//   3. A create path that inserts a readable document number (`paymentId`,
+//   3. A published property the service spreads straight into a table that
+//      has no such column (PGRST204 for any caller who sends it).
+//   4. A create path that inserts a readable document number (`paymentId`,
 //      `memoId`, …) it neither allocates nor requires. The UI route allocated
 //      it before calling; an API caller got a NOT NULL violation.
 
@@ -27,6 +29,7 @@ const DB_TYPES = join(HERE, "../../../packages/database/src/types.ts");
 interface Tool {
   name: string;
   module: string;
+  serviceParams: string[];
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
   schema: { properties?: Record<string, Record<string, unknown>> };
   coercers?: Array<{ at: string[] }>;
@@ -112,6 +115,20 @@ function readableIdColumns(): Map<string, string> {
     if (new RegExp(`\\n {10}${column}: string\\b`).test(table[2])) {
       out.set(table[1], column);
     }
+  }
+  return out;
+}
+
+/** table → every Row column, from the generated public schema. */
+function columnsByTable(): Map<string, Set<string>> {
+  const out = new Map<string, Set<string>>();
+  for (const table of publicTablesBlock().matchAll(
+    /\n {6}(\w+): \{\n {8}Row: \{([\s\S]*?)\n {8}\}/g
+  )) {
+    out.set(
+      table[1],
+      new Set([...table[2].matchAll(/\n {10}(\w+)\??:/g)].map((m) => m[1]))
+    );
   }
   return out;
 }
@@ -222,6 +239,55 @@ describe("form bridge guards", () => {
         ).test(body);
         if (inserts && !required.has(column)) {
           offenders.push(`${t.name} → ${table}.${column}`);
+        }
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("no published property is spread into a table that lacks the column", () => {
+    const columns = columnsByTable();
+    const injected = new Set([
+      "_operation",
+      "id",
+      "companyId",
+      "companyGroupId",
+      "createdBy",
+      "updatedBy",
+      "userId"
+    ]);
+    const offenders: string[] = [];
+    for (const t of writeTools) {
+      const payload = t.serviceParams.filter(
+        (p) =>
+          !["client", "db", "userId", "companyId", "companyGroupId", "args"].includes(p)
+      );
+      if (payload.length !== 1) continue;
+      const param = payload[0];
+      const body = functionBody(
+        serviceSource(t.module),
+        t.name.slice(t.module.length + 1)
+      );
+      // The whole payload object written as the row: `.update(sanitize(p))`,
+      // `.insert([p])`, `.insert({ ...p, … })`.
+      const spreadInto = new RegExp(
+        `\\.from\\("(\\w+)"\\)\\s*\\.(?:update|insert|upsert)\\(\\s*(?:sanitize\\()?\\s*\\[?\\s*(?:\\{\\s*\\.\\.\\.(?:sanitize\\()?)?${param}\\s*[)\\],}]`,
+        "g"
+      );
+      // A payload published under its own param name is checked one level down.
+      const wrapper = t.schema.properties?.[param] as
+        | { properties?: Record<string, unknown> }
+        | undefined;
+      const properties = Object.keys(
+        (wrapper ? wrapper.properties : t.schema.properties) ?? {}
+      );
+      for (const [, table] of body.matchAll(spreadInto)) {
+        const known = columns.get(table);
+        if (!known) continue;
+        for (const key of properties) {
+          if (!injected.has(key) && !known.has(key)) {
+            offenders.push(`${t.name}.${key} → ${table}`);
+          }
         }
       }
     }

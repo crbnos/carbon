@@ -1454,12 +1454,10 @@ export async function upsertFailureMode(
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         id: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
   if ("createdBy" in failureMode) {

@@ -802,14 +802,20 @@ export async function updatePurchaseInvoice(
 export async function upsertPurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoice:
-    | (Omit<z.infer<typeof purchaseInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof purchaseInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         invoiceId: string;
         companyId: string;
         companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof purchaseInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof purchaseInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         id: string;
         invoiceId: string;
         updatedBy: string;
@@ -1180,14 +1186,20 @@ export async function updateSalesInvoice(
 export async function upsertSalesInvoice(
   client: SupabaseClient<Database>,
   salesInvoice:
-    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         invoiceId: string;
         companyId: string;
         companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         id: string;
         invoiceId: string;
         updatedBy: string;
@@ -1319,12 +1331,18 @@ export async function upsertSalesInvoiceShipment(
 export async function upsertSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLine:
-    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceLineValidator>,
+        "id" | "purchaseOrderId" | "purchaseOrderLineId"
+      > & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceLineValidator>,
+        "id" | "purchaseOrderId" | "purchaseOrderLineId"
+      > & {
         id: string;
         updatedBy: string;
         customFields?: Json;

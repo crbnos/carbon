@@ -6034,12 +6034,12 @@ export async function upsertSalesOrderShipment(
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id" | "serviceId"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id" | "serviceId"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
@@ -6122,11 +6122,11 @@ export async function updateSalesOrderLineOrder(
 export async function upsertSalesOrderPayment(
   client: SupabaseClient<Database>,
   salesOrderPayment:
-    | (z.infer<typeof salesOrderPaymentValidator> & {
+    | (Omit<z.infer<typeof salesOrderPaymentValidator>, "currencyCode"> & {
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesOrderPaymentValidator> & {
+    | (Omit<z.infer<typeof salesOrderPaymentValidator>, "currencyCode"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
