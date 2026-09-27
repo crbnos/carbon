@@ -636,9 +636,44 @@ export async function getSupplierInteraction(
     }
   );
 
+  if (response.error) {
+    return response as unknown as PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchasingRfq: PurchasingRFQ;
+      supplierQuotes: SupplierQuote[];
+      purchaseOrders: PurchaseOrder[];
+      purchaseInvoices: PurchaseInvoice[];
+    }>;
+  }
+  const row = response.data?.[0];
+  if (!row) {
+    // The RPC returns a set, so an unknown id is zero rows rather than an
+    // error. Report it as the not-found a `.single()` read gives.
+    return {
+      data: null,
+      error: {
+        code: "PGRST116",
+        message: `Supplier interaction ${opportunityId} not found`,
+        details: "",
+        hint: "",
+        name: "PostgrestError"
+      },
+      count: null,
+      status: 406,
+      statusText: "Not Acceptable"
+    } as unknown as PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchasingRfq: PurchasingRFQ;
+      supplierQuotes: SupplierQuote[];
+      purchaseOrders: PurchaseOrder[];
+      purchaseInvoices: PurchaseInvoice[];
+    }>;
+  }
   return {
-    data: response.data?.[0],
-    error: response.error
+    data: row,
+    error: null
   } as unknown as PostgrestSingleResponse<{
     id: string;
     companyId: string;

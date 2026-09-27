@@ -9,6 +9,7 @@ import {
   updateSalesOrderStatus
 } from "~/modules/sales";
 import { path, requestReferrer } from "~/utils/path";
+import { SERVICE_RULE_ERROR_CODE } from "~/utils/supabase";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -48,16 +49,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const result = await cancelSalesOrder(client, { id, userId, jobs });
 
-    if (!result.success) {
+    if (result.error) {
+      // A refusal is written for the user; a database failure gets a prefix.
+      const message =
+        result.error.code === SERVICE_RULE_ERROR_CODE
+          ? result.error.message
+          : `Failed to cancel sales order: ${result.error.message}`;
       throw redirect(
         requestReferrer(request) ?? path.to.salesOrderDetails(id),
-        await flash(request, error(null, result.message))
+        await flash(request, error(null, message))
       );
     }
 
     throw redirect(
       requestReferrer(request) ?? path.to.quote(id),
-      await flash(request, success(result.message))
+      await flash(request, success(result.data.message))
     );
   }
 

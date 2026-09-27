@@ -25,7 +25,7 @@ import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
   operationParameterValidator,
@@ -1130,9 +1130,46 @@ export async function getOpportunity(
     opportunity_id: opportunityId
   });
 
+  if (response.error) {
+    return response as unknown as PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchaseOrderDocumentPath: string;
+      requestForQuoteDocumentPath: string;
+      salesRfqs: SalesRFQ[];
+      quotes: Quotation[];
+      salesOrders: SalesOrder[];
+    }>;
+  }
+  const row = response.data?.[0];
+  if (!row) {
+    // The RPC returns a set, so an unknown id is zero rows rather than an
+    // error. Report it as the not-found a `.single()` read gives.
+    return {
+      data: null,
+      error: {
+        code: "PGRST116",
+        message: `Opportunity ${opportunityId} not found`,
+        details: "",
+        hint: "",
+        name: "PostgrestError"
+      },
+      count: null,
+      status: 406,
+      statusText: "Not Acceptable"
+    } as unknown as PostgrestSingleResponse<{
+      id: string;
+      companyId: string;
+      purchaseOrderDocumentPath: string;
+      requestForQuoteDocumentPath: string;
+      salesRfqs: SalesRFQ[];
+      quotes: Quotation[];
+      salesOrders: SalesOrder[];
+    }>;
+  }
   return {
-    data: response.data?.[0],
-    error: response.error
+    data: row,
+    error: null
   } as unknown as PostgrestSingleResponse<{
     id: string;
     companyId: string;
@@ -4520,10 +4557,14 @@ export type QuoteLinePriceRow = {
   priceSource?: string;
 };
 
-type BuildPriceRowsResult = {
-  rows: QuoteLinePriceRow[];
-  error: unknown | null;
-};
+type PriceRowsError = PostgrestError | ReturnType<typeof ruleError>;
+
+type BuildPriceRowsResult =
+  | { data: QuoteLinePriceRow[]; error: null }
+  | { data: null; error: PriceRowsError };
+
+/** What the resolve/calculate helpers return: the insert's own response shape. */
+type PriceRowsWriteResult = { data: null; error: PriceRowsError | null };
 
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
@@ -4533,7 +4574,7 @@ export async function buildMakeToOrderPriceRows(
   userId: string,
   itemIdOverride?: string | null
 ): Promise<BuildPriceRowsResult> {
-  if (!quantities.length) return { rows: [], error: null };
+  if (!quantities.length) return { data: [], error: null };
 
   // 1. Fetch quote (with companyId + customerId) and line in parallel
   const [quoteResult, lineResult] = await Promise.all([
@@ -4549,8 +4590,8 @@ export async function buildMakeToOrderPriceRows(
       .single()
   ]);
 
-  if (quoteResult.error) return { rows: [], error: quoteResult.error };
-  if (lineResult.error) return { rows: [], error: lineResult.error };
+  if (quoteResult.error) return { data: null, error: quoteResult.error };
+  if (lineResult.error) return { data: null, error: lineResult.error };
 
   // Fetch settings filtered by company (required for service-role access)
   const settingsResult = await client
@@ -4559,7 +4600,7 @@ export async function buildMakeToOrderPriceRows(
     .eq("id", quoteResult.data.companyId)
     .single();
 
-  if (settingsResult.error) return { rows: [], error: settingsResult.error };
+  if (settingsResult.error) return { data: null, error: settingsResult.error };
 
   const companyId = quoteResult.data.companyId;
   const customerId = quoteResult.data.customerId ?? undefined;
@@ -4570,8 +4611,8 @@ export async function buildMakeToOrderPriceRows(
   const exchangeRate = quoteResult.data.exchangeRate;
   if (exchangeRate === null) {
     return {
-      rows: [],
-      error: new Error(`Quote ${quoteId} has no exchange rate`)
+      data: null,
+      error: ruleError(`Quote ${quoteId} has no exchange rate`)
     };
   }
   const precision = lineResult.data.unitPricePrecision ?? 2;
@@ -4590,7 +4631,7 @@ export async function buildMakeToOrderPriceRows(
   const result = await buildCostEffects(client, quoteLineId);
   // buildCostEffects returns null when the line has no costed method yet —
   // treat as a no-op so partial drafts don't block the save.
-  if (!result) return { rows: [], error: null };
+  if (!result) return { data: [], error: null };
 
   const { effects } = result;
 
@@ -4634,7 +4675,7 @@ export async function buildMakeToOrderPriceRows(
     });
   }
 
-  return { rows: priceRows, error: null };
+  return { data: priceRows, error: null };
 }
 
 export async function calculatePricesForQuantities(
@@ -4643,16 +4684,16 @@ export async function calculatePricesForQuantities(
   quoteLineId: string,
   quantities: number[],
   userId: string
-) {
-  const { rows, error } = await buildMakeToOrderPriceRows(
+): Promise<PriceRowsWriteResult> {
+  const { data: rows, error } = await buildMakeToOrderPriceRows(
     client,
     quoteId,
     quoteLineId,
     quantities,
     userId
   );
-  if (error) return { error };
-  if (!rows.length) return { error: null };
+  if (error) return { data: null, error };
+  if (!rows.length) return { data: null, error: null };
 
   const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
@@ -4660,9 +4701,9 @@ export async function calculatePricesForQuantities(
       quoteLineId,
       error: insertResult.error
     });
-    return { error: insertResult.error };
+    return { data: null, error: insertResult.error };
   }
-  return { error: null };
+  return { data: null, error: null };
 }
 
 export async function buildPullFromInventoryPriceRows(
@@ -4674,7 +4715,7 @@ export async function buildPullFromInventoryPriceRows(
   userId: string,
   itemIdOverride?: string | null
 ): Promise<BuildPriceRowsResult> {
-  if (!quantities.length) return { rows: [], error: null };
+  if (!quantities.length) return { data: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4689,19 +4730,19 @@ export async function buildPullFromInventoryPriceRows(
       .single()
   ]);
 
-  if (quoteResult.error) return { rows: [], error: quoteResult.error };
-  if (lineResult.error) return { rows: [], error: lineResult.error };
+  if (quoteResult.error) return { data: null, error: quoteResult.error };
+  if (lineResult.error) return { data: null, error: lineResult.error };
 
   const itemId =
     itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
   // Missing itemId is a benign draft state, not an error.
-  if (!itemId) return { rows: [], error: null };
+  if (!itemId) return { data: [], error: null };
 
   const exchangeRate = quoteResult.data.exchangeRate;
   if (exchangeRate === null) {
     return {
-      rows: [],
-      error: new Error(`Quote ${quoteId} has no exchange rate`)
+      data: null,
+      error: ruleError(`Quote ${quoteId} has no exchange rate`)
     };
   }
   const precision = lineResult.data.unitPricePrecision ?? 2;
@@ -4728,7 +4769,7 @@ export async function buildPullFromInventoryPriceRows(
     });
   }
 
-  return { rows: priceRows, error: null };
+  return { data: priceRows, error: null };
 }
 
 export async function resolveQuoteLinePrices(
@@ -4738,8 +4779,8 @@ export async function resolveQuoteLinePrices(
   quoteLineId: string,
   quantities: number[],
   userId: string
-) {
-  const { rows, error } = await buildPullFromInventoryPriceRows(
+): Promise<PriceRowsWriteResult> {
+  const { data: rows, error } = await buildPullFromInventoryPriceRows(
     client,
     companyId,
     quoteId,
@@ -4747,8 +4788,8 @@ export async function resolveQuoteLinePrices(
     quantities,
     userId
   );
-  if (error) return { error };
-  if (!rows.length) return { error: null };
+  if (error) return { data: null, error };
+  if (!rows.length) return { data: null, error: null };
 
   const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
@@ -4756,9 +4797,9 @@ export async function resolveQuoteLinePrices(
       quoteLineId,
       error: insertResult.error
     });
-    return { error: insertResult.error };
+    return { data: null, error: insertResult.error };
   }
-  return { error: null };
+  return { data: null, error: null };
 }
 
 export async function buildPurchaseToOrderPriceRows(
@@ -4770,7 +4811,7 @@ export async function buildPurchaseToOrderPriceRows(
   userId: string,
   itemIdOverride?: string | null
 ): Promise<BuildPriceRowsResult> {
-  if (!quantities.length) return { rows: [], error: null };
+  if (!quantities.length) return { data: [], error: null };
 
   const [quoteResult, lineResult] = await Promise.all([
     client
@@ -4785,18 +4826,18 @@ export async function buildPurchaseToOrderPriceRows(
       .single()
   ]);
 
-  if (quoteResult.error) return { rows: [], error: quoteResult.error };
-  if (lineResult.error) return { rows: [], error: lineResult.error };
+  if (quoteResult.error) return { data: null, error: quoteResult.error };
+  if (lineResult.error) return { data: null, error: lineResult.error };
 
   const itemId =
     itemIdOverride === undefined ? lineResult.data.itemId : itemIdOverride;
-  if (!itemId) return { rows: [], error: null };
+  if (!itemId) return { data: [], error: null };
 
   const exchangeRate = quoteResult.data.exchangeRate;
   if (exchangeRate === null) {
     return {
-      rows: [],
-      error: new Error(`Quote ${quoteId} has no exchange rate`)
+      data: null,
+      error: ruleError(`Quote ${quoteId} has no exchange rate`)
     };
   }
   const precision = lineResult.data.unitPricePrecision ?? 2;
@@ -4827,7 +4868,7 @@ export async function buildPurchaseToOrderPriceRows(
     });
   }
 
-  return { rows: priceRows, error: null };
+  return { data: priceRows, error: null };
 }
 
 export async function resolvePurchaseToOrderPrices(
@@ -4837,8 +4878,8 @@ export async function resolvePurchaseToOrderPrices(
   quoteLineId: string,
   quantities: number[],
   userId: string
-) {
-  const { rows, error } = await buildPurchaseToOrderPriceRows(
+): Promise<PriceRowsWriteResult> {
+  const { data: rows, error } = await buildPurchaseToOrderPriceRows(
     client,
     companyId,
     quoteId,
@@ -4846,8 +4887,8 @@ export async function resolvePurchaseToOrderPrices(
     quantities,
     userId
   );
-  if (error) return { error };
-  if (!rows.length) return { error: null };
+  if (error) return { data: null, error };
+  if (!rows.length) return { data: null, error: null };
 
   const insertResult = await client.from("quoteLinePrice").insert(rows);
   if (insertResult.error) {
@@ -4855,9 +4896,9 @@ export async function resolvePurchaseToOrderPrices(
       quoteLineId,
       error: insertResult.error
     });
-    return { error: insertResult.error };
+    return { data: null, error: insertResult.error };
   }
-  return { error: null };
+  return { data: null, error: null };
 }
 
 export async function recalculateQuoteLinePrices(
@@ -4866,7 +4907,7 @@ export async function recalculateQuoteLinePrices(
   quoteId: string,
   quoteLineId: string,
   userId: string
-) {
+): Promise<PriceRowsWriteResult> {
   // Callers pass a service-role client and URL ids: the line must belong to
   // this quote AND this company before any price row is read or rewritten.
   const [lineResult, quoteResult] = await Promise.all([
@@ -4885,17 +4926,15 @@ export async function recalculateQuoteLinePrices(
       .maybeSingle()
   ]);
 
-  if (lineResult.error) return { error: lineResult.error };
-  if (quoteResult.error) return { error: quoteResult.error };
+  if (lineResult.error) return { data: null, error: lineResult.error };
+  if (quoteResult.error) return { data: null, error: quoteResult.error };
   if (!lineResult.data || !quoteResult.data) {
     logger.error("Quote line not found for price recalculation", {
       companyId,
       quoteId,
       quoteLineId
     });
-    return {
-      error: { message: "Quote line not found" } as PostgrestError
-    };
+    return { data: null, error: ruleError("Quote line not found") };
   }
 
   // 1. Fetch existing price rows
@@ -4905,8 +4944,8 @@ export async function recalculateQuoteLinePrices(
     .eq("quoteLineId", quoteLineId)
     .eq("companyId", companyId);
 
-  if (existingPrices.error) return { error: existingPrices.error };
-  if (!existingPrices.data?.length) return { error: null };
+  if (existingPrices.error) return { data: null, error: existingPrices.error };
+  if (!existingPrices.data?.length) return { data: null, error: null };
 
   // 2. Line precision and customer context for engine pipe-through
   const precision = lineResult.data.unitPricePrecision ?? 2;
@@ -4934,7 +4973,7 @@ export async function recalculateQuoteLinePrices(
 
   // 3. Build cost effects
   const result = await buildCostEffects(client, quoteLineId);
-  if (!result) return { error: null };
+  if (!result) return { data: null, error: null };
 
   const { effects } = result;
 
@@ -5017,10 +5056,10 @@ export async function recalculateQuoteLinePrices(
         quantity: row.quantity,
         error: updateResult.error
       });
-      return { error: updateResult.error };
+      return { data: null, error: updateResult.error };
     }
   }
-  return { error: null };
+  return { data: null, error: null };
 }
 
 export async function upsertQuoteLineMethod(
@@ -5432,7 +5471,14 @@ export async function updateSalesOrderStatus(
       : {})
   };
 
-  return client.from("salesOrder").update(updateData).eq("id", update.id);
+  // `.single()` turns an unknown id into PGRST116 instead of a silent no-op,
+  // like updateSalesOrder.
+  return client
+    .from("salesOrder")
+    .update(updateData)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function insertSalesOrder(
@@ -5686,6 +5732,12 @@ export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
   "Paused"
 ];
 
+/**
+ * Cancel a sales order and its live jobs (all of them, or only `jobs`).
+ * Returns `{ message, cancelledJobIds }`. An unknown order is an error; so is
+ * a failure to look up or cancel the jobs, even though the order itself is
+ * already Cancelled by then — the message says so.
+ */
 export async function cancelSalesOrder(
   client: SupabaseClient<Database>,
   args: {
@@ -5693,11 +5745,13 @@ export async function cancelSalesOrder(
     userId: string;
     jobs?: string[];
   }
-): Promise<{
-  success: boolean;
-  message: string;
-  cancelledJobIds: string[];
-}> {
+): Promise<
+  | { data: { message: string; cancelledJobIds: string[] }; error: null }
+  | {
+      data: null;
+      error: PostgrestError | ReturnType<typeof ruleError>;
+    }
+> {
   const orderUpdate = await updateSalesOrderStatus(client, {
     id: args.id,
     status: "Cancelled",
@@ -5706,11 +5760,7 @@ export async function cancelSalesOrder(
   });
 
   if (orderUpdate.error) {
-    return {
-      success: false,
-      message: `Failed to cancel sales order: ${orderUpdate.error.message}`,
-      cancelledJobIds: []
-    };
+    return { data: null, error: orderUpdate.error };
   }
 
   // Resolve the set of job ids to cancel.
@@ -5723,10 +5773,10 @@ export async function cancelSalesOrder(
       .in("status", LIVE_JOB_STATUSES);
     if (liveJobs.error) {
       return {
-        success: false,
-        message:
-          "Sales order cancelled, but failed to look up associated jobs to cancel",
-        cancelledJobIds: []
+        data: null,
+        error: ruleError(
+          "Sales order cancelled, but failed to look up associated jobs to cancel"
+        )
       };
     }
     jobIdsToCancel = (liveJobs.data ?? [])
@@ -5738,9 +5788,8 @@ export async function cancelSalesOrder(
 
   if (jobIdsToCancel.length === 0) {
     return {
-      success: true,
-      message: "Sales order cancelled",
-      cancelledJobIds: []
+      data: { message: "Sales order cancelled", cancelledJobIds: [] },
+      error: null
     };
   }
 
@@ -5753,9 +5802,10 @@ export async function cancelSalesOrder(
 
   if (jobUpdate.error) {
     return {
-      success: false,
-      message: `Sales order cancelled, but failed to cancel some associated jobs: ${jobUpdate.error.message}`,
-      cancelledJobIds: []
+      data: null,
+      error: ruleError(
+        `Sales order cancelled, but failed to cancel some associated jobs: ${jobUpdate.error.message}`
+      )
     };
   }
 
@@ -5764,12 +5814,14 @@ export async function cancelSalesOrder(
     .filter((v): v is string => Boolean(v));
 
   return {
-    success: true,
-    message:
-      cancelledJobIds.length === 0
-        ? "Sales order cancelled"
-        : `Sales order cancelled and ${cancelledJobIds.length} job${cancelledJobIds.length === 1 ? "" : "s"} cancelled`,
-    cancelledJobIds
+    data: {
+      message:
+        cancelledJobIds.length === 0
+          ? "Sales order cancelled"
+          : `Sales order cancelled and ${cancelledJobIds.length} job${cancelledJobIds.length === 1 ? "" : "s"} cancelled`,
+      cancelledJobIds
+    },
+    error: null
   };
 }
 

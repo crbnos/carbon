@@ -337,7 +337,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-    priceRows = built.rows;
+    priceRows = built.data;
   }
 
   try {
