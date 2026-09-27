@@ -22,7 +22,7 @@
 
 import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, writeFileSync } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { parseArgs } from "node:util";
 import type { KyselyDatabase } from "@carbon/database/client";
@@ -45,7 +45,9 @@ import {
   SCHEMA_REPO_PATH
 } from "./backup-baseline";
 
-const SCHEMA_FILE = join(import.meta.dirname, "../../manifests/schema.json");
+/** This file lives at `packages/jobs/src/scripts/`, so the repo root is four up. */
+const REPO_ROOT = resolve(import.meta.dirname, "../../../..");
+const SCHEMA_FILE = join(REPO_ROOT, SCHEMA_REPO_PATH);
 /** A hook that hangs is a hook people bypass. */
 const FETCH_TIMEOUT_MS = 3000;
 
@@ -173,8 +175,18 @@ function reportBlocking(
   return true;
 }
 
+/**
+ * Every git call runs from the repo root, pinned to it as the work tree. The
+ * pre-commit hook exports `GIT_DIR` (and `GIT_INDEX_FILE`) but no `GIT_WORK_TREE`,
+ * and with `GIT_DIR` set git takes the CURRENT DIRECTORY as the work-tree root —
+ * here `packages/jobs`, since pnpm --filter runs the script there. In a linked
+ * worktree that turned `git add <abs>/packages/jobs/manifests/schema.json` into a
+ * stray root-level `manifests/schema.json`. Paths passed in are repo-relative.
+ */
 function git(args: string[]): string {
   return execFileSync("git", args, {
+    cwd: REPO_ROOT,
+    env: { ...process.env, GIT_WORK_TREE: REPO_ROOT },
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"]
   }).trim();
@@ -223,7 +235,7 @@ function writeSchemaFile(catalog: Catalog): void {
     // Cosmetic only — never block a commit on the formatter.
   }
   try {
-    git(["add", SCHEMA_FILE]);
+    git(["add", "--", SCHEMA_REPO_PATH]);
     console.log(
       `Updated and staged ${SCHEMA_REPO_PATH} (${manifest.tables.length} tables) — the baseline the next migration is checked against.`
     );
